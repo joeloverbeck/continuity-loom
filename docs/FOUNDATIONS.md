@@ -346,6 +346,7 @@ Hard validation must include objective continuity contradictions and determinist
 - missing onstage cast when required by prose mode;
 - missing manual directive;
 - missing stop guidance;
+- manual directive or stop guidance requests a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
 - selected secret is both hidden from POV and revealed to POV by another selected record;
 - no current authoritative state for an active physical interaction;
 - active physical action lacks necessary bodies, objects, routes, consent/force conditions where relevant, or available time;
@@ -879,6 +880,7 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 
 - Does it allow generation from contradictory current state?
 - Does it allow generation when mandatory generation-time fields are missing?
+- Does it allow a manual directive or stop guidance that asks for whole chapters, global outlines, alternate options, future summaries, plot beats, or multiple response points instead of one local prose segment?
 - Does it allow impossible physical movement, perception, timing, object possession, or knowledge?
 - Does it allow secret leakage when deterministic records forbid it?
 - Does it allow a user override for hard validation failure in v1?

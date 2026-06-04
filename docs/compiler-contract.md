@@ -130,10 +130,10 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `{active_obligations}` | Selected OBLIGATION records | No | Block if assumes contradicted state | `None active` | Durable-change support. |
 | `{active_consequences}` | Selected CONSEQUENCE records | No | Block if assumes contradicted state | `None active` | Durable-change support. |
 | `{active_open_threads}` | Selected OPEN THREAD records | No | Warn if too many high-urgency threads | `None active` | Never commands closure. |
-| `{active_onstage_full_cast_dossiers}` | CAST MEMBER selected active/onstage full, including all populated fields | Required for active person-like cast materially involved | Block if required core missing | N/A if no active person-like cast | Include all populated fields. No silent compression. |
-| `Current generation voice override` line | CAST VOICE OVERRIDES targeting active/onstage cast | No | No block unless contradictory | Omit when absent | Temporary, scoped, not durable. |
-| sample utterances inside dossiers | CAST MEMBER.sample_utterances selected by user or deterministic metadata | No | No block | Omit; optional explicit `No selected sample utterances` allowed in examples | At most three; default zero; `may_reuse_cadence_not_text`, not `may_echo_lightly`. |
-| `{present_minor_cast_notes}` | ENTITY/CAST MEMBER selected present-minor + current status + compressed voice note | No | No block; block only if present-minor speech is required and voice note absent | `None` | Compressed notes only. |
+| `{active_onstage_full_cast_dossiers}` | CAST MEMBER selected active/onstage full, including all populated fields | Required for active person-like cast materially involved | Block if required core missing | N/A if no active person-like cast | Include all populated fields. Render structured fields core-first: identity, voice_anchor plus voice_extended/speech-pattern fields, pressure_behavior_core, body_presence_core, agency_core, remaining optional extended fields, selected samples last. No silent compression. |
+| `Current generation voice override` line | CAST VOICE OVERRIDES targeting active/onstage cast | No | No block unless contradictory | Omit when absent | Temporary, scoped, not durable. For present-minor targets, render inside `{present_minor_cast_notes}` only. |
+| sample utterances inside dossiers | CAST MEMBER.sample_utterances selected by user or deterministic metadata | No | No block | Omit; optional explicit `No selected sample utterances` allowed in examples | At most three; default zero; one short line each, normally <=40 words; `may_reuse_cadence_not_text`, not `may_echo_lightly`. |
+| `{present_minor_cast_notes}` | ENTITY/CAST MEMBER selected present-minor + current status + compressed voice note + temporary voice override when present | No | No block; block only if present-minor speech is required and voice note absent | `None` | Compressed notes only. Temporary overrides remain current-generation only. |
 | `{offstage_relevance_notes}` | ENTITY/CAST selected offstage + offstage pressure records | Required if offstage interruption/pressure active | Block if interruption lacks route/timing/communication | `None` | No full offstage dossier unless active. |
 | `{pov_accessible_facts}` | Selected FACT known to POV/public | No except when directive depends on them | Block if required fact missing | `None beyond current state and hard canon` | Prevents generic fact leakage. |
 | `{writer_visible_or_non_pov_facts}` | Selected FACT not POV-accessible; SECRET/EVENT-derived writer-visible truth | No | Block if hidden fact lacks reveal constraints | `None` | Not narrator knowledge. |
@@ -150,7 +150,7 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `<invention_permissions>` | Template constant + configured durable-change permissions | Yes | Block if absent | N/A | Human gatekeeping. |
 | `<contradiction_prohibitions>` | Template constant + selected current locks | Yes | Block if absent | N/A | Cannot be weakened by directive. |
 | `<prose_craft>` | Template constant + story/prose preferences + cast voice fields | Yes | Warn if style conflicts with prose mode | N/A | Craft cannot alter continuity. |
-| `{soft_unit_guidance}` | STOP GUIDANCE generation-time field | Yes | Block if blank | N/A | Replaces beat count. |
+| `{soft_unit_guidance}` | STOP GUIDANCE.soft_unit_guidance generation-time field | Yes | Block if blank, non-local, or contradictory with manual directive | N/A | Replaces beat count; must describe the next local unit, not a chapter/arc/future summary. |
 | `<final_output_instruction>` | Template constant | Yes | Block if absent | N/A | Final prompt edge. |
 | `validation_focus_tags` | GENERATION VALIDATION FOCUS | Yes, validation-only | Block if generation context absent | Not prompt-facing | Activates matrix rows only. |
 
@@ -160,7 +160,7 @@ Generation blocks unless these are satisfied:
 
 1. Role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction exist.
 2. Story title, premise, tone/content envelope, language/register, and prose mode are populated enough to avoid a generic story prompt.
-3. Current authoritative state, immediate handoff, manual directive, and stop guidance exist.
+3. Current authoritative state, immediate handoff, manual directive, and stop guidance exist, and the manual directive/stop guidance remain local-prose-only.
 4. Non-omniscient POV has a populated POV knowledge profile.
 5. Active secrets have holders, protected non-holders, allowed cues when clues may appear, forbidden reveals, and reveal permission.
 6. Active physical interaction has current location, onstage entities, positions/distance, object possession when objects matter, visibility/line of sight, routes/exits, available time, and impossible/unavailable actions where omission would invite error.
@@ -195,6 +195,12 @@ Generation blocks unless these are satisfied:
 | `institutional_involvement_possible` | Requires institution/entity record or explicit current-state route, communication/access mechanism, jurisdiction or authority relation if relevant, and current opportunity for contact. |
 | `clock_tick_possible` | Requires active clock, current pressure, tick trigger, next threshold, possible effects, and concrete event that could visibly cause tick. |
 | `obligation_breach_possible` | Requires obligation terms, owed_by, owed_to, visibility, consequence_if_broken, and current opportunity/pressure to breach or fulfill. |
+
+Universal blockers not tied to a single validation focus tag:
+
+- manual directive or stop guidance requesting a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
+- manual directive and stop guidance contradicting each other about the local unit or stop boundary;
+- template, schema, or compiler-contract version mismatch that leaves a prompt placeholder without a deterministic source.
 
 Warnings that must not block:
 

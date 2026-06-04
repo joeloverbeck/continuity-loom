@@ -287,6 +287,24 @@ Requirements:
 - Tags are selected by the user or deterministic UI controls, not by an LLM.
 - Tags are validation-facing by default and should not compile into the prose prompt.
 
+### 3.8 STOP GUIDANCE
+
+Generation-time field defining the local unit and response-point boundary. This is required for every generation and compiles into `{soft_unit_guidance}` inside `<stop_rule>`.
+
+Fields:
+
+```yaml
+soft_unit_guidance: prose
+```
+
+Rules:
+
+- Always included.
+- Must describe the next local unit of causally connected forward motion, such as one approach, one exchange, one discovery, one refusal, one physical maneuver, one interruption, one reveal-withheld, or one practical result.
+- Must not request a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points.
+- Blocks generation if blank, structurally non-local, or contradictory with the manual directive.
+- The stop rule outranks desired length, drama, escalation, or completion.
+
 ## 4. Core entity records
 
 ### 4.1 ENTITY
@@ -416,7 +434,7 @@ agency_and_planning_extended:
   fallback_style: prose
   planning_blind_spots: prose
 sample_utterances:
-  - text: string
+  - text: string  # one short line; target <=40 words; no multi-paragraph samples
     situation: prose
     speech_function: refusal | bargaining | evasion | intimacy | anger | politeness | threat | lie | confession | performance | other
     pressure_tags: prose list
@@ -462,6 +480,7 @@ Requirements:
 - Optional.
 - Default compiled count is zero.
 - At most three per active/onstage character may compile.
+- Each compiled sample should be one short line, normally no more than about 40 words. Multi-paragraph samples are not allowed.
 - Compile only when user-selected or deterministically selected by explicit `speech_function`/`pressure_tags` metadata matching current generation-time pressure.
 - Default copy policy is `never_copy_verbatim`.
 - `may_reuse_cadence_not_text` permits transfer of rhythm, speech function, register, or tactical pattern; it does not permit close wording reuse.
@@ -473,6 +492,7 @@ Requirements:
 ```yaml
 active_onstage_full:
   include: all populated dossier fields + local_function + compiled voice/body pressure pin + current knowledge constraints + temporary voice override when present
+  render_order: identity -> voice_anchor -> voice_extended/speech-pattern fields -> pressure_behavior_core -> body_presence_core -> agency_core -> remaining optional extended fields in schema order -> selected sample_utterances last
 present_minor_compressed:
   include: identity, current physical state, immediate behavior, voice warning, allowed actions, temporary override if any
 offstage_relevance:
@@ -482,6 +502,8 @@ background:
 ```
 
 Local-function sub-bands determine minimum completeness and pin requirements. They must not become a back door for silently compressing active/onstage cast. A materially active cast member with a full dossier remains full.
+
+Core-first render order is a salience rule, not a compression rule. It improves long-context use while preserving all populated active/onstage fields.
 
 ## 6. Knowledge, truth, and concealment records
 
@@ -867,6 +889,7 @@ Blockers include:
 - active plan held by a dead, unconscious, captive, incapacitated, absent, or otherwise unable entity with no plausible means to act;
 - selected POV both lacks and has the same secret according to selected records;
 - manual directive requiring impossible movement, perception, timing, object possession, knowledge, or reveal;
+- manual directive or stop guidance requesting a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
 - current authoritative state contradicting immediate handoff;
 - relationship record implying actual contact between characters who have not met unless one-sided;
 - clock threshold selected as happened while clock remains unticked and no consequence exists;

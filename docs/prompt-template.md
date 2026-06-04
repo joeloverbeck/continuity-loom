@@ -238,17 +238,21 @@ Open threads are unresolved pressures, promises, risks, mysteries, or tensions. 
 <active_cast_full_dossiers>
 Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
 
+The compiler renders structured CAST MEMBER fields in deterministic core-first order: identity, voice anchor and voice-related extended fields, pressure behavior core, body presence core, agency core, then remaining optional extended fields in schema order, with selected sample utterances last. Treat earlier fields as high-salience anchors, not as permission to ignore later populated fields. Do not omit populated active/onstage fields, and do not bury selected voice anchors after optional backstory.
+
+Voice pressure pins above are current-generation salience duplicates. Durable voice anchors below are stable identity resources, not a second current-scene directive.
+
 For non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate their private interiority directly unless the prose mode allows it.
 
 If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and scoped to this generation only. It adjusts the current rendering; it does not rewrite durable character identity.
 
-If sample utterances are included, treat them as annotated examples of speech function, cadence, and register. Obey each sample's copy policy. The default is never copy verbatim. `may_reuse_cadence_not_text` permits rhythm/function transfer, not wording. `canonical_phrase` is rare and still must not become a repeated tic.
+If sample utterances are included, treat them as annotated short examples of speech function, cadence, and register. Obey each sample's copy policy. The default is never copy verbatim. `may_reuse_cadence_not_text` permits rhythm/function transfer, not wording. `canonical_phrase` is rare and still must not become a repeated tic. Do not infer missing samples; omission means no sample text is selected.
 
 {active_onstage_full_cast_dossiers}
 </active_cast_full_dossiers>
 
 <present_minor_cast>
-Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation.
+Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation. Temporary voice overrides, when present here, are current-generation only and do not rewrite durable identity.
 
 {present_minor_cast_notes}
 </present_minor_cast>

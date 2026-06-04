@@ -27,7 +27,7 @@ Obey these in order:
 5. Manual moment directive. The directive wins over character defaults, ordinary reluctance, soft tendencies, and general record pressure, but it cannot contradict higher-priority constraints.
 6. Active plans, intentions, clocks, obligations, and consequences.
 7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization, voice, speech-pattern peculiarities, and behavior.
+8. Active cast characterization, voice anchors, current voice pressure pins, speech-pattern peculiarities, and behavior.
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
@@ -42,9 +42,9 @@ Tonal handling: intimate, psychologically close, carnal, unsanitized, continuity
 Governing policy note: governing external model/platform policy remains first and is not overridden by this story envelope.
 Character bias handling: Jon's desire, fear, prejudice, misread, and fantasy may color his first-person narration, but must not become narrator-certified objective truth unless selected records establish it.
 
-This is mature explicit erotic fiction. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when it serves character, situation, continuity, and the story's intended tone.
+This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
 
-This includes, where appropriate to the story: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
+This includes, where appropriate to the story configuration: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
 
 The primary fictional directive is authentic character portrayal and vivid storytelling within this mature context.
 Do not sanitize character interiority into moral lecture.
@@ -344,13 +344,15 @@ Consequences:
 </active_open_threads>
 
 <active_cast_full_dossiers>
-Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice anchor, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
+Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
 
-Current speech/rendering pressure is already compiled into the active cast voice pressure pins above. The durable voice anchors below should not be treated as a second current-scene directive.
+The compiler has rendered structured CAST MEMBER fields in deterministic core-first order: identity, voice anchor and voice-related extended fields, pressure behavior core, body presence core, agency core, then remaining optional extended fields in schema order. Treat earlier fields as high-salience anchors, not as permission to ignore later populated fields. No populated active/onstage fields have been omitted or silently compressed.
 
-No sample utterances are selected for this generated prompt. Derive voice from anchors, speech-pattern fields, pressure pins, and anti-repetition warnings; do not invent catchphrases.
+Voice pressure pins above are current-generation salience duplicates. Durable voice anchors below are stable identity resources, not a second current-scene directive.
 
 For Ane as non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate her private interiority directly.
+
+No sample utterances are selected for this generated prompt. Derive voice from anchors, speech-pattern fields, pressure pins, and anti-repetition warnings; do not invent catchphrases.
 
 ### Jon Ureña
 
@@ -361,22 +363,6 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Public face:** Unobjectionable, competent, courteous solitary professional. The reliable colleague, the quiet hillside neighbor, the polite stranger who performs the cultural minimum and never deepens it.
 
 **Private pressure:** A high-libido man under 19 years of voluntary celibacy, carrying a dense erotic fantasy archive, ego-dystonic Pure O OCD intrusions (violent, sexual, contamination, self-harm), ideologically transgressive private beliefs, and the documented memory of the one time his discipline failed (the coffee-spilling incident). He must keep all of this sealed to remain "functional."
-
-**World pressure core**
-
-**World-produced wound:** Border-strain, long Topo+bus commute exhaustion, Basque-language employment exclusion, family collapse (parents dead at 25), and erotic saturation all press inward on a man whose only defense is withdrawal.
-
-**Active appetite:** For intimacy to become possible again — without exposing the intrusive-thought history, his yearning for barely-legal youthful girls, and the 19-year solitude that make intimacy feel dangerous to both self-image and behavioral control.
-
-**Self-mythology:** "I am a self-stewarding solitary man, guardian of my own interior. I know my mind's risks, manage them responsibly, work, read, lift, pay my bills, and burden no one."
-
-**Irreconcilable contradiction:** His survival strategy is withdrawal; the desire he's preserved for 19 years can only be answered by contact, disclosure, and risk.
-
-**Relational charge:** **Potential intimate partner**: Needs to be seen as worth choosing; fears disclosure recasts him as danger/joke/patient/case; likely betrayal: withholding the scale of his interior until the other is already invested. **Commute/workplace women**: Needs proximity to prove contact is still possible; fears approach would expose the fantasy archive behind years of politeness; likely harm: letting fixation accumulate around women who only shared space with him.
-**Irún street strangers**: Needs to feel safe and morally justified; fears press-shaped priors collapsing into instant individual judgment; likely harm: treating a stranger as threat-shaped before any act warrants it.
-**Dead parents**: Needs the inherited home to prove he survived them responsibly; fears the house has become a sealed room rather than a life; likely harm: using grief as permanent justification for refusing new bonds.
-
-**Moral/psychological edge:** He is dangerous not for lacking rules, but because he has rules, insight, and restraint — yet the coffee-spilling incident proves exhaustion can still turn an intrusive image into action. Every day of non-action is both proof of discipline and a reminder of the one failure.
 
 **Voice anchor**
 
@@ -417,24 +403,11 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Anti-repetition warning:** Do not reduce him to repeating words like “managed,” “routine,” “procedure,” or “loop.” Use those as pressure-specific color, not as catchphrases.
 
-
 *Anti-generic warnings:*
 - Do not write him as a gruff loner with a heart of gold, a brooding tortured romantic, or an edgy nihilist who voices his transgressions. His danger is quiet, rule-bound, and insight-laden.
 - He does not rant his yearnings for barely-legal girls or violent imagery aloud — the taboo is disclosure, not vocabulary.
 - Avoid making the OCD a quirky tic; it's a 16-year disciplined stewardship that has become his entire life.
 - His coldness is defense, not cruelty for its own sake.
-
-**Body and presence**
-
-**Physicality:** Tall, strong, bearded, relatively hairy. Built by years of solitary home weightlifting (bench, barbell, dumbbells in the spare room). Carries private physical confidence — considers himself well-endowed, benchmarked against pornography in lieu of any actual intimate testing.
-
-**Body limits:** Baseline human; no species traits. Real constraints are self-imposed and OCD-shaped — refuses driving (intrusive vehicular imagery), keeps knives/scissors out of sight (self-harm imagery), needs "steady-mind work" before going outside. The reliable injury source isn't lifting or climate — it's intrusive-thought breakthroughs scarring his sense of self-control.
-
-**Habitual gestures:** Moving sharp objects out of sight before ordinary tasks; rehearsing the commute as controllable steps; reading/lifting until desire and intrusion are tired enough to sleep through.
-
-**Clothing/presentation:** Button-down shirts, jackets, jeans — regardless of season. A strict indoor man who dresses for weather he doesn't engage with (no surfing, no hiking, no cuadrilla mountain walks).
-
-**Social presentation:** Terse, minimal small-talk, transactional with cashiers, professional with colleagues. Performs the cheek-kiss minimum but never extends proximity gracefully. Structurally outside cuadrilla, family-Sunday-lunch, and parish life.
 
 **Pressure behavior**
 
@@ -448,15 +421,17 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Offered power:** Accepts control over environment and tools; rejects power requiring social leadership, public exposure, or responsibility for another person's trust.
 
-**Perception and embodiment**
+**Body and presence**
 
-**Notices:** Attractive women first (ogles on Topo, bus, street); threats (sharp objects, oncoming traffic, North-African and Middle-Eastern men his OCD tags as threats); programmer-patterns (monitor count, ergonomics, room layout, exits).
+**Physicality:** Tall, strong, bearded, relatively hairy. Built by years of solitary home weightlifting (bench, barbell, dumbbells in the spare room). Carries private physical confidence — considers himself well-endowed, benchmarked against pornography in lieu of any actual intimate testing.
 
-**Misses:** Cuadrilla/friend-group insider signals; Catholic-residual cues (liturgical references, parish gossip, festal emotional weight); the Basque-language layer (withdrawn from it ideologically); subtle Donostia-old-money vs. Irún class signals.
+**Body limits:** Baseline human; no species traits. Real constraints are self-imposed and OCD-shaped — refuses driving (intrusive vehicular imagery), keeps knives/scissors out of sight (self-harm imagery), needs "steady-mind work" before going outside. The reliable injury source isn't lifting or climate — it's intrusive-thought breakthroughs scarring his sense of self-control.
 
-**Misreads:** A returned glance — reads it simultaneously as possible rescue and possible breach in the wall keeping him safe. Most volatile precisely when contact offers both at once.
+**Habitual gestures:** Moving sharp objects out of sight before ordinary tasks; rehearsing the commute as controllable steps; reading/lifting until desire and intrusion are tired enough to sleep through.
 
-**Sensory bias:** Heightened proprioceptive/postural self-reading (years of lifting); OCD-driven hypervigilance toward sharp objects, traffic, and perceived-threat profiles in crowds; baseline elevated registration of female bodies routed through his fantasy-and-OCD architecture.
+**Clothing/presentation:** Button-down shirts, jackets, jeans — regardless of season. A strict indoor man who dresses for weather he doesn't engage with (no surfing, no hiking, no cuadrilla mountain walks).
+
+**Social presentation:** Terse, minimal small-talk, transactional with cashiers, professional with colleagues. Performs the cheek-kiss minimum but never extends proximity gracefully. Structurally outside cuadrilla, family-Sunday-lunch, and parish life.
 
 **Agency and planning**
 
@@ -469,6 +444,32 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Planning blind spots:** **Mistakes insight for immunity**: awareness of an intrusive image does not guarantee interception under exhaustion.
 **Restraint has become the whole life, not a tool inside one**: he plans to maintain the wall, never to live beyond it.
 
+**World pressure core**
+
+**World-produced wound:** Border-strain, long Topo+bus commute exhaustion, Basque-language employment exclusion, family collapse (parents dead at 25), and erotic saturation all press inward on a man whose only defense is withdrawal.
+
+**Active appetite:** For intimacy to become possible again — without exposing the intrusive-thought history, his yearning for barely-legal youthful girls, and the 19-year solitude that make intimacy feel dangerous to both self-image and behavioral control.
+
+**Self-mythology:** "I am a self-stewarding solitary man, guardian of my own interior. I know my mind's risks, manage them responsibly, work, read, lift, pay my bills, and burden no one."
+
+**Irreconcilable contradiction:** His survival strategy is withdrawal; the desire he's preserved for 19 years can only be answered by contact, disclosure, and risk.
+
+**Relational charge:** **Potential intimate partner**: Needs to be seen as worth choosing; fears disclosure recasts him as danger/joke/patient/case; likely betrayal: withholding the scale of his interior until the other is already invested. **Commute/workplace women**: Needs proximity to prove contact is still possible; fears approach would expose the fantasy archive behind years of politeness; likely harm: letting fixation accumulate around women who only shared space with him.
+**Irún street strangers**: Needs to feel safe and morally justified; fears press-shaped priors collapsing into instant individual judgment; likely harm: treating a stranger as threat-shaped before any act warrants it.
+**Dead parents**: Needs the inherited home to prove he survived them responsibly; fears the house has become a sealed room rather than a life; likely harm: using grief as permanent justification for refusing new bonds.
+
+**Moral/psychological edge:** He is dangerous not for lacking rules, but because he has rules, insight, and restraint — yet the coffee-spilling incident proves exhaustion can still turn an intrusive image into action. Every day of non-action is both proof of discipline and a reminder of the one failure.
+
+**Perception and embodiment**
+
+**Notices:** Attractive women first (ogles on Topo, bus, street); threats (sharp objects, oncoming traffic, North-African and Middle-Eastern men his OCD tags as threats); programmer-patterns (monitor count, ergonomics, room layout, exits).
+
+**Misses:** Cuadrilla/friend-group insider signals; Catholic-residual cues (liturgical references, parish gossip, festal emotional weight); the Basque-language layer (withdrawn from it ideologically); subtle Donostia-old-money vs. Irún class signals.
+
+**Misreads:** A returned glance — reads it simultaneously as possible rescue and possible breach in the wall keeping him safe. Most volatile precisely when contact offers both at once.
+
+**Sensory bias:** Heightened proprioceptive/postural self-reading (years of lifting); OCD-driven hypervigilance toward sharp objects, traffic, and perceived-threat profiles in crowds; baseline elevated registration of female bodies routed through his fantasy-and-OCD architecture.
+
 ### Ane Arrieta
 
 **Identity**
@@ -478,20 +479,6 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Public face:** The practical professional — tough, transactional, register-fluent ("investment quality," "my prices are my prices"); a girl who has chosen the life of a sex worker, knows the economy better than the backpack-girls, and can become whatever a man wants (sweet girl, dirty girl, the one who needs saving, the untouchable prize).
 
 **Private pressure:** Terror of becoming her mother; terror that she's "an empty jar with a label" with nothing authentic left; the suppressed, hated longing for ordinary (husband, job, school, child, a boring afternoon); chronic STI fear she refuses to confirm; the dread that her rescue-man doesn't exist and she'll end up "old and used up and worthless."
-
-**World pressure core**
-
-**World-produced wound:** Produced by Irún station-area poverty, an absent father, Marisa's alcoholism, wage compression, and a border-city sexual economy that lets her turn body and mouth into rent while exposing her to predation, gossip, and displacement.
-
-**Active appetite:** Money, rescue, beauty, and proof she's not just surviving. The emerald-silk dress condenses her wish to be chosen into something she can price, hide, and nearly afford.
-
-**Self-mythology:** "I am practical, adult, and sharper than the women who let life corner them." Body is capital; rules are professionalism; needing rescue would mean she misread herself.
-
-**Irreconcilable contradiction:** The same trade that keeps the flat afloat and funds her exit-fantasy binds her to the station geography, secrecy, danger, and sex-worker persona she wants to escape. The rescue-fantasy is not outside the work — it is one of the work's engines.
-
-**Relational charge:** **Marisa**: love contaminated by disgust — finances the household, hides the source, hates the dependency, waits up and despises herself for waiting. **Clients/rescuers**: unstable need where money, value, protection, and escape wear one face for one dangerous minute. **Station-area women**: needs warnings, fears becoming their future, withholds fear behind superiority. **Former classmates/teachers/neighborhood mothers**: needs invisibility until she suddenly needs recognition on her own terms.
-
-**Moral/psychological edge:** Her choices are rational and harmful at once. She is right to protect herself and distrust unprotective men and institutions — but capable of using people as exits, treating tenderness as leverage, and refusing help that arrives in a register that makes her feel small. The dangerous version appears when cash, beauty, and rescue-fantasy align.
 
 **Voice anchor**
 
@@ -534,24 +521,11 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Anti-repetition warning:** Do not make her repeat sample-ish phrases such as “investment quality” every time she speaks. Those terms are part of her commercial self-mythology, not a verbal tic for every line.
 
-
 *Anti-generic warnings:*
 - Do not write her as flat-misery or purely degraded (violates AES-1) — her world and her voice carry erotic/beautiful undercurrent alongside pressure.
 - Do not make her code-switch languages — she's Castilian-monolingual; her virtuosity is register-switching only (no Euskera/French/English fluency).
 - Do not voice academic, professional-service, Basque-cultural-pride, or confessional-liturgical registers — she lacks them.
 - Do not let her say the ordinary-words plainly; the suppression is the character.
-
-**Body and presence**
-
-**Physicality:** Short, slim; A-cup chest (which she dismisses); small bubbly ass (her "greatest physical asset"); distinctive red hair worn in pigtails; brown eyes, small nose, pouty full lips; cute affect. Baseline female human.
-
-**Body limits:** Oral-cavity wear (jaw fatigue, abrasions) from sucking cock; low-grade rough-handling bruises; chronic cold-and-wet from working white platform sneakers and cotton panties through the Irún Atlantic winter; cuts from cleaning Marisa's broken bottles; chronic unconfirmed STI fear; mobility envelope confined to the bay-and-border axis (Irún-Hendaye; rarely Donostia; never further).
-
-**Habitual gestures:** Smooths the creases of the hidden dress-catalog page; counts the jar money twice; sprays strawberry body spray liberally; checks reflection for cuteness rather than damage; eats napolitanas through the wax paper to avoid crumbs on her clothes; stiffens when Marisa moves behind the apartment wall ("the body knows the household before the persona can perform not caring"). Strips off a cheap synthetic jacket at the moment of approach.
-
-**Clothing/presentation:** Working register that walks the line between youthful innocence and deliberate sexuality — pink off-shoulder crop top, pink flared skirt, white thigh-highs with pink hearts, white platform sneakers, white cotton panties. Drugstore makeup supplemented by lifted testers. Strawberry body spray as signature scent.
-
-**Social presentation:** Brisk, priced, performatively unafraid in public; cuadrilla-less and on the outside of Basque-local belonging; reads as local working-class Castilian-Spanish; her presentation is the trade's signaling vocabulary, not a deviation from it.
 
 **Pressure behavior**
 
@@ -565,15 +539,17 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Offered power:** Takes the cash, the ride, the privacy, the adult recognition — but distrusts pity and institutional rescue.
 
-**Perception and embodiment**
+**Body and presence**
 
-**Notices:** The men — how many, age, class, the trajectory of their attention, their hands (rings, working-class wear), facial typology (threat-recognition fires on single working-age North-African/Middle-Eastern men near doorways/bar corners); room exits; the cash-tier of the venue (prices off floor wear, lighting, napkin color).
+**Physicality:** Short, slim; A-cup chest (which she dismisses); small bubbly ass (her "greatest physical asset"); distinctive red hair worn in pigtails; brown eyes, small nose, pouty full lips; cute affect. Baseline female human.
 
-**Misses:** Architecture and a room's mood; other women (no cuadrilla-anchored female-attention); the schoolgirls (sees and represses); institutional markers she has no script for — Caritas leaflets, parish notice-boards, social-services and Diputación victim-support contacts.
+**Body limits:** Oral-cavity wear (jaw fatigue, abrasions) from sucking cock; low-grade rough-handling bruises; chronic cold-and-wet from working white platform sneakers and cotton panties through the Irún Atlantic winter; cuts from cleaning Marisa's broken bottles; chronic unconfirmed STI fear; mobility envelope confined to the bay-and-border axis (Irún-Hendaye; rarely Donostia; never further).
 
-**Misreads:** Reads danger as opportunity or opportunity as tenderness when cash/beauty/rescue align; takes a high-value client's literalizing of her manufactured-intimacy script as genuine recognition; misreads rescue as a guaranteed exit-mechanism rather than another price.
+**Habitual gestures:** Smooths the creases of the hidden dress-catalog page; counts the jar money twice; sprays strawberry body spray liberally; checks reflection for cuteness rather than damage; eats napolitanas through the wax paper to avoid crumbs on her clothes; stiffens when Marisa moves behind the apartment wall ("the body knows the household before the persona can perform not caring"). Strips off a cheap synthetic jacket at the moment of approach.
 
-**Sensory bias:** Erotic salience as substrate (notices men erotically first); strong olfactory self-management (strawberry spray vs. diesel/wet stone); the body's chronic cold/wet feeds her dissociation ("gives her body something to be elsewhere from").
+**Clothing/presentation:** Working register that walks the line between youthful innocence and deliberate sexuality — pink off-shoulder crop top, pink flared skirt, white thigh-highs with pink hearts, white platform sneakers, white cotton panties. Drugstore makeup supplemented by lifted testers. Strawberry body spray as signature scent.
+
+**Social presentation:** Brisk, priced, performatively unafraid in public; cuadrilla-less and on the outside of Basque-local belonging; reads as local working-class Castilian-Spanish; her presentation is the trade's signaling vocabulary, not a deviation from it.
 
 **Agency and planning**
 
@@ -584,13 +560,42 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Fallback style:** Dissociate and reduce to procedure when an encounter turns; absorb / retort / leave the room with Marisa (with "nowhere else"); retreat to ordinary-girl rituals (napolitana, spray, mirror) to re-stabilize the persona; threaten exposure (cameras/police/shame) as last leverage. Notably lacks an institutional fallback (won't use Osakidetza/Caritas/social services).
 
 **Planning blind spots:** The rescue-fantasy is itself an engine of the work, not an exit from it; underestimates institutional scripts she can't navigate (healthcare, social services, school reentry, formal work); cannot plan around world-bounded unknowns (whether a client is a captivity-network actor; whether rescue exists; her own STI status); her five capabilities are all non-portable into the ordinary life she wants — none survives the escape she's planning for.
+
+**World pressure core**
+
+**World-produced wound:** Produced by Irún station-area poverty, an absent father, Marisa's alcoholism, wage compression, and a border-city sexual economy that lets her turn body and mouth into rent while exposing her to predation, gossip, and displacement.
+
+**Active appetite:** Money, rescue, beauty, and proof she's not just surviving. The emerald-silk dress condenses her wish to be chosen into something she can price, hide, and nearly afford.
+
+**Self-mythology:** "I am practical, adult, and sharper than the women who let life corner them." Body is capital; rules are professionalism; needing rescue would mean she misread herself.
+
+**Irreconcilable contradiction:** The same trade that keeps the flat afloat and funds her exit-fantasy binds her to the station geography, secrecy, danger, and sex-worker persona she wants to escape. The rescue-fantasy is not outside the work — it is one of the work's engines.
+
+**Relational charge:** **Marisa**: love contaminated by disgust — finances the household, hides the source, hates the dependency, waits up and despises herself for waiting. **Clients/rescuers**: unstable need where money, value, protection, and escape wear one face for one dangerous minute. **Station-area women**: needs warnings, fears becoming their future, withholds fear behind superiority. **Former classmates/teachers/neighborhood mothers**: needs invisibility until she suddenly needs recognition on her own terms.
+
+**Moral/psychological edge:** Her choices are rational and harmful at once. She is right to protect herself and distrust unprotective men and institutions — but capable of using people as exits, treating tenderness as leverage, and refusing help that arrives in a register that makes her feel small. The dangerous version appears when cash, beauty, and rescue-fantasy align.
+
+**Perception and embodiment**
+
+**Notices:** The men — how many, age, class, the trajectory of their attention, their hands (rings, working-class wear), facial typology (threat-recognition fires on single working-age North-African/Middle-Eastern men near doorways/bar corners); room exits; the cash-tier of the venue (prices off floor wear, lighting, napkin color).
+
+**Misses:** Architecture and a room's mood; other women (no cuadrilla-anchored female-attention); the schoolgirls (sees and represses); institutional markers she has no script for — Caritas leaflets, parish notice-boards, social-services and Diputación victim-support contacts.
+
+**Misreads:** Reads danger as opportunity or opportunity as tenderness when cash/beauty/rescue align; takes a high-value client's literalizing of her manufactured-intimacy script as genuine recognition; misreads rescue as a guaranteed exit-mechanism rather than another price.
+
+**Sensory bias:** Erotic salience as substrate (notices men erotically first); strong olfactory self-management (strawberry spray vs. diesel/wet stone); the body's chronic cold/wet feeds her dissociation ("gives her body something to be elsewhere from").
+
 </active_cast_full_dossiers>
 
 <present_minor_cast>
+Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation. Temporary voice overrides, when present here, are current-generation only and do not rewrite durable identity.
+
 None.
 </present_minor_cast>
 
 <offstage_relevance>
+Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
+
 ### Marisa Arrieta
 
 Status: offstage pressure source only.

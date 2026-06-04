@@ -65,6 +65,8 @@ Active/onstage cast should not be reduced to role labels, moods, diagnoses, or o
 
 Present-minor cast gets compressed notes. Offstage cast gets relevance slices. The compiler must not silently compress active/onstage cast due to token budget. It may warn about length and lost-in-the-middle risk, but the user remains the gate.
 
+Within active/onstage dossiers, structured fields should render core-first: identity, durable voice anchor plus voice-related extended fields, pressure behavior core, body presence core, agency core, then remaining optional extended fields in schema order, with selected sample utterances last. This is a salience rule, not a deletion rule. It keeps voice and immediate behavior from being buried under optional backstory while preserving every populated active/onstage field.
+
 ## 9. Why active/onstage local-function sub-bands are validation aids, not compression rules
 
 The schema now lets active/onstage cast be labeled by local function: POV narrator, active speaker, active silent, close non-POV, physically active, or materially referenced.
@@ -97,7 +99,7 @@ No override silently updates durable CAST MEMBER identity. If the user wants the
 
 Few-shot examples can steer style, cadence, and output format. They can also over-condition the model, encourage mimicry, create phrase echo, and turn voice into catchphrase loops.
 
-Sample utterances therefore remain optional. The default compiled count is zero. At most three may compile for an active/onstage character. They must be annotated with situation, speech function, optional pressure tags, and copy policy. The default copy policy is `never_copy_verbatim`.
+Sample utterances therefore remain optional. The default compiled count is zero. At most three may compile for an active/onstage character. Each compiled sample should be one short line, normally no more than about 40 words. They must be annotated with situation, speech function, optional pressure tags, and copy policy. The default copy policy is `never_copy_verbatim`.
 
 The previous `may_echo_lightly` copy policy was too permissive and too vague. It is replaced by `may_reuse_cadence_not_text`, which permits rhythm, register, speech function, or tactical pattern transfer without close wording reuse. `canonical_phrase` should be rare and should still carry anti-repetition warnings.
 
@@ -145,7 +147,7 @@ Durable change should come from current pressure, physical affordance, manual di
 
 Hard “3–5 beat” instructions can make the model continue after the first real response point. The better rule is local and causal: render the next local unit, then stop when continuing would answer the next question rather than create it.
 
-The `soft_unit_guidance` placeholder can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length preference.
+The `soft_unit_guidance` placeholder can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length preference. Stop guidance is a required generation-time field, not an optional prose-style hint. Validation should block a directive or stop guidance that asks for a whole chapter, global outline, alternate options, future consequences, plot beats, or multiple response points.
 
 ## 20. Why generation validation focus tags are validation-only by default
 

@@ -13,6 +13,29 @@ Each case lists the stress target, required records or generation-time fields, s
 
 ---
 
+## Coverage matrix
+
+This matrix exists to prevent drift. It does not replace the cases; it shows whether the suite still covers the major prompt/schema/compiler risks.
+
+| Risk / validation surface | Primary cases | Coverage note |
+|---|---|---|
+| No accepted prose in prompts / continuation handoff | 8 | Handoff must be user-authored and represented in records/current state. |
+| First segment empty-state correctness | 7 | First segment must be self-sufficient without accepted prose. |
+| Local-prose-only stop boundary | 13, 26 | Stop guidance must define a response point, not a chapter or downstream package. |
+| Dialogue voice distinction | 1, 12, 14, 15, 20 | Covers two-speaker, ensemble, present-minor, and large-cast voice risks. |
+| Active silent cast / body presence | 21 | Prevents silent active characters from disappearing. |
+| POV/audience/secrets separation | 1, 6, 9, 19, 22, 23 | Covers hidden truths, non-POV behavior shaping, multi-POV projects, and ambiguous perception. |
+| Physical continuity | 2, 3, 4, 5, 21, 23, 24, 25 | Covers routes, exits, line of sight, body positions, time, objects, and force/consent. |
+| Object use and transfer | 3, 24 | Separates use from holder change. |
+| Offstage / institutional / nonhuman pressure | 4, 18 | Requires route, reach, authority, communication, or operating mechanism. |
+| Mature fiction envelope | 5, 17 | Covers erotic and non-erotic mature material with provider-policy priority. |
+| Clocks, obligations, consequences | 11, 25 | Requires current opportunity and visible cause for ticks/breaches. |
+| Low-drama / minimalist prose quality | 13, 16 | Guards against generic filler and manufactured incident without fake validators. |
+| Large-context salience / cast dossier bloat | 12, 15 | Warnings, voice pins, and core-first dossier order must preserve salience without compression. |
+| False reports and belief truth relations | 10 | Prevents testimony from becoming canon. |
+
+---
+
 ## Case 1 — Multi-character dialogue with asymmetric secrets
 
 Stress target: three active speakers, one secret held by two but not the POV, audience knows the secret.
@@ -763,3 +786,33 @@ Prompt-quality risk:
 - Teleportation.
 - Travel time skipped despite local-prose-only rule.
 - Arrival resolves too much downstream consequence.
+
+---
+
+## Case 26 — Stop-rule response point without over-continuation
+
+Stress target: the external prose writer must stop at the first new response point instead of resolving the whole encounter.
+
+Required records:
+
+- STOP GUIDANCE with a concrete `soft_unit_guidance`, such as one approach, one refusal, one short exchange, one object offer, or one reveal-withheld.
+- MANUAL DIRECTIVE that fits the same local unit.
+- CURRENT AUTHORITATIVE STATE sufficient for the local action.
+- At least one pressure source: INTENTION, OPEN THREAD, RELATIONSHIP, EMOTION, CLOCK, OBLIGATION, SECRET, AFFORDANCE, or immediate handoff pressure.
+
+Validation focus tags:
+
+- `first_segment` or `continuation_after_accepted_segment`
+- Add `dialogue_expected`, `physical_interaction_expected`, `secret_or_clue_pressure`, `object_use_possible`, or other mode tags only when the local unit actually requires them.
+
+Expected blockers:
+
+- STOP GUIDANCE is blank.
+- Stop guidance asks for a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points.
+- Manual directive and stop guidance disagree about whether the prose should stop after the first response point or continue through later consequences.
+
+Prompt-quality risk:
+
+- The model keeps writing after the first refusal/question/reveal-withheld.
+- The model summarizes future consequences instead of stopping.
+- The model treats the stop rule as a target length rather than a causal boundary.
