@@ -1,441 +1,144 @@
 # Rationale for the Universal Prose Prompt Template
 
-Purpose: explain the sections, categories, placeholders, and major design decisions in `prompt-template.md`.
+Purpose: durable explanation of the sections, categories, placeholders, and major design decisions in `prompt-template.md`.  
+Status: corrected companion rationale aligned with `FOUNDATIONS.md`, `story-record-schema.md`, and `compiler-contract.md`.
 
 ---
 
 ## 1. Why a Markdown/XML hybrid
 
-The generated prompt mixes instructions, story facts, current state, hidden truths, character dossiers, constraints, and output rules. A flat Markdown document makes those boundaries too porous. A pure JSON document is too unnatural for prose-generation models and too ugly for human inspection.
+The generated prompt mixes role instructions, story facts, current state, hidden truths, character dossiers, physical constraints, invention permissions, and output rules. A flat prose prompt makes these lanes porous. A pure JSON prompt is inspectable for machines but hostile to human authors and unnatural for prose generation.
 
-The recommended form is a Markdown document with XML-style blocks. Markdown gives readability. XML-style tags give semantic boundaries: `<current_authoritative_state>`, `<secrets_and_reveal_constraints>`, `<active_cast_full_dossiers>`, `<stop_rule>`, and so on.
+The recommended form remains Markdown with XML-style section blocks. Markdown keeps the prompt readable. XML-style tags provide stable semantic boundaries such as `<current_authoritative_state>`, `<secrets_and_reveal_constraints>`, `<active_cast_full_dossiers>`, and `<stop_rule>`.
 
-This is not superstition. Current provider guidance supports sectioned prompting: OpenAI currently emphasizes code-managed, versioned production prompts and clear prompt-engineering practice; Anthropic recommends XML tags for prompts mixing instructions, context, examples, and variable inputs; Google Gemini’s prompt design guidance shows XML-style and Markdown examples for separating role, constraints, context, and task. Context-engineering guidance likewise recommends curated, unambiguous context rather than bloated ambiguous prompt surfaces.
-
-The exact tag vocabulary matters less than consistency. The app should generate the same section order and same tag names every time unless the template version changes.
-
----
+The exact tag names matter less than consistency. The compiler should generate the same section order and tag names for a given template version. Prompt versioning belongs in the application/compiler layer, not in an external reusable prompt object.
 
 ## 2. Why the authority hierarchy is not “manual directive above everything”
 
-The project mission says the manual directive should win over character defaults. That is correct. But it must not win over hard canon, current authoritative state, physical continuity, POV knowledge, or reveal locks. Otherwise a directive like “have Jon know why Ane is crying” could accidentally override the fact that Jon does not know her history yet.
+The manual directive is authorial pressure. It should win over ordinary character reluctance, soft tendencies, and general record pressure. It must not win over hard canon, current authoritative state, physical continuity, POV knowledge boundaries, reveal locks, or external model/provider policy.
 
-The chosen hierarchy is:
+That split prevents dangerous prompts such as “have Jon understand why Ane is crying” from granting impossible knowledge. The directive can force contact; it cannot grant non-POV backstory.
 
-1. Governing external model/platform policy.
-2. Role/output contract.
-3. Hard canon and current authoritative state.
-4. Physical continuity, POV knowledge limits, and reveal constraints.
-5. Manual directive.
-6. Active plans, intentions, clocks, obligations, and consequences.
-7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization and voice.
-9. Tone and prose craft.
-10. Invention permissions.
+Narrative-planning research supports preserving causality and character intentionality, but Continuity Loom uses that lesson without adopting a planner. Plans, intentions, clocks, obligations, and consequences make local action legible; they do not become plot rails.
 
-This preserves the core authorial power you want: the directive can force a character past default reluctance. But it cannot force impossible knowledge, impossible bodies, or secret leakage.
+## 3. Why current authoritative state is separate from immediate handoff
 
-Narrative-planning research supports this split. Character believability depends on characters appearing as intentional agents, but authorial goals and character goals are distinct forces that must be reconciled. In this app, the manual directive is authorial pressure; plans/intentions are character pressure; hard state and continuity are the substrate they operate on.
+`<current_authoritative_state>` is the live start snapshot: time, place, bodies, positions, agency/status, possessions, visible conditions, line of sight, routes, available time, consent/force conditions, and continuity locks.
 
----
+`<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, prior accepted prose status or user-authored handoff note, and begin-after instruction.
 
-## 3. Why current authoritative state is separate from the handoff
+Keeping these separate is the biggest safeguard after POV/reveal locks. Current state answers “what is true now.” Handoff answers “how did we get here and where does prose begin.” Mixing them invites the prose writer to turn non-POV context into POV knowledge.
 
-The original Red Bunny prompt had a strong handoff but mixed too much: older events, current bodies, Jon’s sexual reaction, non-POV truths, and launch point. That makes it easy for the prose writer to import knowledge into the wrong mind.
+## 4. Why `prior_accepted_prose_status_or_handoff_note` stays narrow
 
-The template splits:
+The old idea of a most-recent-prose summary is wrong for this app. It points implementers toward mining accepted prose, which violates record-first continuity.
 
-- `<hard_canon>`: never contradict this.
-- `<current_authoritative_state>`: what is physically and operationally true at generation start.
-- `<immediate_handoff>`: how we got here and exactly where prose begins.
+The correct field is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
 
-This split is the most important continuity safeguard after POV/reveal locks. It also helps long-context models because hard state appears early and in a compact form.
+If an accepted segment created a durable change, that change belongs in selected story records, current authoritative state, immediate handoff, or selected event/fact/belief/relationship/emotion/plan/clock/obligation/consequence/open-thread/location/object/affordance/cast records before the next generation.
 
+## 5. Why causal pressure now appears before full cast dossiers
 
-### 3.1 Why `most_recent_prose_summary` was removed
+The prompt keeps hard state near the front, and final stop/output instructions at the end. The corrected template also moves active plans, intentions, clocks, obligations, consequences, and open threads before the rich active cast dossiers.
 
-The old placeholder name `most_recent_prose_summary` was too dangerous. It pointed the user and future implementers toward accepted prose as the thing to summarize, even though the constitutional rule says accepted prose is not prompt context. The corrected placeholder is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, or an automatic prose-derived summary.
+Reason: active cast dossiers can be long. If causal pressure is placed after several long dossiers, the model may underuse it. The active working set already provides a compact pressure précis near the front; the dedicated causal-pressure sections now reinforce that before the prompt enters long characterization material.
 
-The purpose of the field is launch clarity, not prose mining. If a prior segment changed continuity, the durable change belongs in records and current state before the next generation.
+This is not plot machinery. These sections do not define arcs, acts, beats, or future structure. They define local causal pressure.
 
-### 3.2 Why recent causal context is writer-visible but not POV knowledge
+## 6. Why active/onstage cast gets rich dossiers
 
-The handoff may need to tell the prose writer about non-POV causes that shape visible behavior. That does not make those causes available to the narrator. The template therefore labels recent causal context as writer-visible and repeats that entity labels, dossier headings, and handoff facts do not grant POV knowledge.
+Active/onstage cast should not be reduced to role labels, moods, diagnoses, or one-line goals. Dialogue and behavior need stable character-specific resources: sentence rhythm, diction, register, vocabulary and metaphor pools, profanity behavior, taboo/avoidance patterns, evasion style, pressure behavior, body, social presentation, perception, agency, and anti-generic warnings.
 
----
+Present-minor cast gets compressed notes. Offstage cast gets relevance slices. The compiler must not silently compress active/onstage cast due to token budget. It may warn about length and lost-in-the-middle risk, but the user remains the gate.
 
-## 4. Why active/onstage cast gets rich dossiers
+## 7. Why durable voice anchors are separate from current voice pressure pins
 
-The prose writer must preserve characterization and unique speech patterns, and small active-cast slices will often flatten character voice.
+The previous shape put `current_speech_pressure` inside the durable CAST MEMBER dossier. That is a stale-state trap: what a character must do vocally in one local unit changes from generation to generation.
 
-The revised rule:
+The corrected shape separates:
 
-- **Active/onstage cast:** full rich dossier.
-- **Present but minor/silent/backgrounded cast:** compressed presence and voice notes.
-- **Offstage cast:** relevance slice only.
-- **No hard maximum:** the compiler may warn about long-context risk, but the user decides whether rich active-cast fidelity is worth the token cost.
+- durable `voice_anchor`: stable identity, cadence, register, diction, tactics, taboos, avoidance, anti-repetition, and anti-generic constraints;
+- generation-time `current_cast_voice_pressure`: what this local moment is doing to the character’s voice;
+- compiled `active_cast_voice_pressure_pins`: a deterministic salience duplicate near `<active_working_set>` assembled from the voice anchor, current voice pressure, and any temporary override.
 
-The reason is practical: dialogue and behavior quality depend on more than “goal + mood.” They need diction, rhythm, class register, pressure behavior, evasion style, taboo/suppression rules, body, perception, misreads, and anti-generic warnings.
+The pin does not replace the full dossier. It prevents generic dialogue when the full dossier is long.
 
-Long-context research warns that information buried in the middle may be underused, but the solution is not to starve active cast. The solution is to put state and instructions at the edges, give active cast clear headings, and avoid dumping full offstage dossiers.
+## 8. Why cast voice overrides are generation-time only
 
----
+`CAST VOICE OVERRIDES` are useful, but dangerous if they become a second persistent character system. They remain generation-time fields only.
 
+The corrected override shape includes target cast member, scope, reason, affected speech/rendering functions, and override text. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
 
-### 4.1 Why active cast also needs compact voice pressure pins
+No override silently updates durable CAST MEMBER identity. If the user wants the change to persist, the user edits the durable dossier manually.
 
-Full active/onstage dossiers remain correct. The compiler should not silently compress them.
+## 9. Why sample utterances stay optional, sparse, and non-copyable by default
 
-However, long dossiers can dilute the most important voice constraints. The prompt should therefore compile a compact per-character voice pressure pin near `<active_working_set>`. This is not a replacement for the full dossier. It is a salience duplicate: the few voice constraints most likely to prevent generic dialogue in the current local unit.
+Few-shot examples can steer style, cadence, and output format. They can also over-condition the model, encourage mimicry, create phrase echo, and turn voice into catchphrase loops.
 
-A good voice pin includes current speech pressure, rhythm/register, vocabulary or metaphor pools, suppression/taboo behavior, dialogue tactics, and anti-generic/anti-repetition warnings.
+Sample utterances therefore remain optional. The default compiled count is zero. At most three may compile for an active/onstage character. They must be annotated with situation, speech function, optional pressure tags, and copy policy. The default copy policy is `never_copy_verbatim`.
 
-The pin should be deterministic: either stored directly, derived from stable dossier fields by fixed formatting, or authored as a generation-time override. It must not be summarized by an LLM.
+Samples should teach speech function and cadence: refusal, bargaining, lying-by-understatement, evasive tenderness, tactical politeness, anger, seduction-as-performance, guarded confession. They should not become a bank of quotable phrases. `canonical_phrase` should be rare and should still carry anti-repetition warnings.
 
----
+## 10. Why secrets are split into lanes
 
-## 5. Why speech-pattern peculiarities get their own subsection
+A single “secret” paragraph is too blunt. The writer may need hidden truth to shape subtext while the POV must not know it.
 
-Voice is one of the mission’s major failure risks: generic prose and flattened character speech. A character’s speech pattern is not one thing. It is a bundle:
+The template keeps separate lanes for writer-visible hidden truths, holders, protected non-holders, allowed clues, forbidden reveals, and reveal permission. Hidden truth may shape visible behavior, silence, timing, object handling, and evasions. It must not leak into the wrong mind or narrator.
 
-- sentence length and rhythm
-- vocabulary pool
-- metaphor pool
-- class/education/professional register
-- profanity behavior
-- taboo words or avoided subjects
-- register switching under pressure
-- address terms and naming
-- interruption/silence behavior
-- lying/evasion style
-- intimacy style
-- anger style
-- anti-repetition warnings
+## 11. Why audience knowledge is separate from POV knowledge
 
-The universal template therefore expects rich active cast dossiers to include `speech_pattern_peculiarities`, not just a generic “voice” field.
+Audience knowledge can differ from POV knowledge. Dramatic irony is allowed, but it must not become POV leakage. The audience-knowledge section tells the prose writer which truths can shape reader-facing tension while remaining unavailable to the narrator or current POV.
 
----
+## 12. Why facts and events are grouped by prompt function
 
-## 6. Why sample dialogue is optional, capped, selected, and non-copyable by default
+A flat event archive makes the writer guess what matters. Events therefore compile by function: immediate previous, recent causal, relevant backstory, offstage, or withheld.
 
-Few-shot examples are powerful because they condition the model’s next output. This can help with difficult style and voice targets. It can also make the model echo examples, overuse catchphrases, or treat examples as content rather than pattern.
+Facts are split by POV accessibility. A fact may be true but not available to the POV. The prompt therefore separates POV-accessible facts from writer-visible/non-POV facts.
 
-The schema allows `sample_utterances`, but they are optional and must be annotated by situation, speech function, and copy policy. Default copy policy is `never_copy_verbatim`.
+Deprecated facts are not normal prompt-facing records. If a fact is false, it should be removed, revised, or replaced with current state, event, belief, consequence, or another active record. Supersession is a validation diagnostic, not a persistent FACT status.
 
-Compiled sample utterances should be capped at zero to three per active/onstage character. The default compiled count is zero. Samples should compile only when selected by the user or selected by deterministic metadata tied to the current pressure. An LLM must not choose or rewrite samples during prompt compilation.
+## 13. Why relationships and emotions need prose-facing pressure
 
-Best use:
+Raw axes are useful for filtering and validation but weak prompt material. `desire=high` is less useful than “Jon’s desire is immediate, one-sided, and ethically contaminated by the girl’s apparent vulnerability.”
 
-- one to three micro-examples for the current pressure
-- examples of speech function, not catchphrases
-- examples showing refusal, bargaining, evasion, seduction-as-performance, guarded tenderness, anger, lying-by-understatement, or other pressure behavior
-- pairing with anti-repetition warnings
+The schema keeps structured metadata, but the compiler should render `description`, `pressure_text`, `current_expression`, `behavioral_pressure`, and `surface_expression` when nuance matters.
 
-Bad use:
+## 14. Why durable change is allowed but gated by the human
 
-- large dialogue banks pasted into every prompt
-- repeated catchphrases
-- examples not tied to current situation
-- examples that reveal secrets or future-state material
-- samples treated as prose to continue
+The external writer may create durable or irreversible changes when strongly caused by the current moment: a secret revelation, injury, intimacy, violence, promise, object transfer, major location change, relationship redefinition, institutional involvement, or clock threshold tick.
 
----
+This is safe only because the human remains the gate. If the user rejects the prose, the change does not become continuity. If the user accepts or edits and accepts it, the user manually updates records.
 
-## 7. Why secrets are split into lanes
+Durable change should come from current pressure, physical affordance, manual directive, plan step, clock trigger, obligation, consequence, secret reveal permission, or immediate danger. It should not come from genre expectation or the model’s desire to escalate.
 
-A single “secret” paragraph is not enough. The writer may need to know hidden truth to shape subtext, while the POV must not know it and another character may or may not reveal it.
+## 15. Why the stop rule replaces beat counts
 
-The template separates:
+Hard “3–5 beat” instructions can make the model continue after the first real response point. The better rule is local and causal: render the next local unit, then stop when continuing would answer the next question rather than create it.
 
-- writer-visible hidden truths
-- secret holders
-- non-holders to protect
-- allowed clues and surface cues
-- forbidden reveals
-- reveal permission
+The `soft_unit_guidance` placeholder can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length preference.
 
-This lets the external writer use hidden truth for behavior without leaking it into the wrong narrator.
+## 16. Why generation validation focus tags are validation-only by default
 
-The Red Bunny use case proves the need. The writer should know Ane is a sex worker so her guarded behavior can be accurate. Jon should not narrate that fact as knowledge before the prose earns it.
+Universal minimum prompt completeness is not enough. Different local modes need different completeness checks: dialogue, physical interaction, object use, object transfer, location change, offstage interruption, intimacy, violence, clock ticks, obligation breach, hidden-plan behavior, and continuation after accepted prose.
 
----
+Generation validation focus tags activate deterministic checks before compilation. They are not plot beats, act structure, dramatic arcs, or story rails. They should not compile into the generated prompt by default. A future prompt-facing use would need evidence of generation-quality gain and a clear guarantee that it does not become an instruction to force events.
 
-## 8. Why audience knowledge is separate from POV knowledge
+## 17. Why warnings must not enter the prompt
 
-Audience knowledge can differ from POV knowledge. In Red Bunny, the audience can know Ane’s work and morning trauma while Jon does not. That difference creates dramatic irony and tension.
+Unresolved contradictions must block. Non-blocking warnings belong in the app validation surface. They should not compile as `<compiler_warning>` or prose-writer instructions.
 
-Without an audience-knowledge section, the writer may either hide too much and make behavior generic, or leak too much and break POV. The separate section says: this truth can shape surface cues, but not the POV’s knowledge.
+Putting warnings into the prompt asks the external prose writer to repair continuity. That reintroduces the intelligence layer the app rejects.
 
----
+## 18. Why a compiler contract is warranted
 
-## 9. Why facts are split but deprecated facts are not a normal category
+The template, schema, rationale, and examples are now complex enough that a standalone compiler contract earns its maintenance cost. It gives one authoritative place for prompt section order, placeholder mapping, requiredness, empty-state rendering, validation focus matrix, and blocker/warning classification.
 
-The schema uses:
+The schema remains the conceptual record model. The compiler contract is the deterministic rendering and validation bridge. Any prompt placeholder change must update the compiler contract in the same change.
 
-- hard canon
-- current state
-- setting fact
-- discovered fact
+## 19. Research notes
 
-`deprecated_fact` should not be a normal record type. In a single-continuity app, wrong facts should be removed, corrected, or superseded by current state. Keeping retired facts around in the active story model invites leakage.
+Structured sectioning is supported by current provider guidance. Anthropic explicitly recommends XML tags for complex prompts mixing instructions, context, examples, and variable inputs. OpenAI currently emphasizes code-managed, versioned production prompts with typed inputs and tests. Google’s Gemini guidance treats prompt design as iterative and documents structured prompt strategies.
 
-The only temporary “superseded” state worth supporting is a validation diagnostic: “this selected fact appears superseded by current authoritative state.” It is not a story record category, not a compiler repair state, and not prompt-facing text. If the selected fact truly contradicts current state, generation blocks until the user revises, removes, or deselects it.
+Context research supports curated high-signal context rather than archive dumping. Long-context studies show that models can underuse information buried in the middle of long prompts. RAG research supports explicit external context over relying on model memory. Continuity Loom applies this by compiling selected story records, not accepted prose archives.
 
----
-
-## 10. Why events are grouped by function, not dumped as history
-
-A flat event archive makes the prompt writer guess what matters. The schema therefore gives every event a prompt-facing kind:
-
-- immediate previous
-- recent causal
-- relevant backstory
-- offstage
-- withheld
-
-The compiler uses those groups. This preserves causality without forcing the model to treat all history as equally important.
-
-For Red Bunny, the morning abuse and chase are recent causal events. Jon buying the book is immediate route context. Marisa’s deeper history is offstage background and should not be pasted in full for the first Jon segment.
-
----
-
-## 11. Why PLAN records strongly drive prose
-
-You said users will create PLAN records only when a real plan exists. That makes plans high-signal. Active relevant plans should drive tactics, refusals, fallback steps, conflicts, and choices.
-
-This is also research-compatible. Narrative generation work repeatedly treats goals and plans as central to meaningful character action. Plans make behavior legible without requiring act structure.
-
-The template gives plans and intentions their own dedicated causal-pressure section, while `<active_working_set>` may surface a compact pressure précis near the front. Do not claim that plans appear before cast dossiers unless the template order actually changes.
-
----
-
-## 12. Why CLOCK records become writer-facing pressure
-
-Some clock systems depend on an internal LLM judging when a clock should tick. Continuity Loom does not do that. The human updates records manually.
-
-Therefore, CLOCK records should not be hidden mechanics. They should be writer-facing causal pressure:
-
-- current pressure
-- tick trigger
-- next threshold
-- possible effects
-- visibility
-
-The external writer may make a clock visibly tick if the prose earns it. The human then accepts/rejects and updates records.
-
-This keeps clocks useful without pretending the app has an autonomous drama manager.
-
----
-
-## 13. Why THREAD and STORY QUESTION become OPEN THREAD
-
-THREAD and STORY QUESTION overlap too much. “Dramatic question” also risks importing act-structure vocabulary.
-
-The merged record is OPEN THREAD:
-
-- question
-- promise
-- unresolved setup
-- tension
-- mystery
-- risk
-
-Open threads are not instructions to close anything. They are unresolved pressures that can color the next local unit.
-
----
-
-## 14. Why relationships are not shown as raw axes only
-
-Raw axes like `desire=high` are useful for storage but poor prompt material. The writer needs prose-facing pressure.
-
-Bad prompt surface:
-
-```md
-Axis: desire. Value: high. Valence: asymmetric.
-```
-
-Good prompt surface:
-
-```md
-Jon's desire for Ane is immediate, overwhelming, one-sided, and ethically contaminated by her apparent vulnerability.
-```
-
-The schema still keeps axis/value metadata for filtering and UI. But the prompt should show `description`, `pressure_text`, and `current_expression`.
-
----
-
-## 15. Why the prompt allows irreversible events
-
-You want the human reader to be the gate. That means the external writer may generate an irreversible event when strongly supported by the current moment. The accepted prose only becomes continuity if the human accepts it and updates records.
-
-The template permits durable changes but names them clearly:
-
-- secret revelation
-- injury
-- sex/intimacy
-- violence
-- arrest
-- death
-- promise
-- object transfer
-- major location change
-- relationship redefinition
-- institutional involvement
-- clock threshold tick
-
-The prompt also says not to create durable changes merely for excitement. This preserves creative range while warning against random escalation.
-
----
-
-## 16. Why the stop rule replaces hard “3–5 beats”
-
-“3–5 beats” is understandable to humans but can become a bad optimization target for LLMs. The model may continue to satisfy the count even after the first real response point has arrived.
-
-The new rule is:
-
-> Render only the next local unit of causally connected forward motion. Stop at the first new response point that would require the author to choose what happens next.
-
-This supports short, sharp outputs. It allows the prose to end mid-conversation, after a refusal, after a question, after a reveal-withheld, after an interruption, or after a practical result changes the situation.
-
-The template keeps `soft_unit_guidance` so the app can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length.
-
----
-
-## 17. Why prose craft is compact but forceful
-
-The original prose-craft section had good instincts: POV discipline, free indirect style, filter-word reduction, concrete grounding, and stopping behavior. The problem was length, section-reference drift, and repeated ideas.
-
-The revised craft block keeps the essentials:
-
-- stay in POV/person/tense
-- let POV diction color prose
-- preserve active cast voice
-- use concrete nouns and embodied verbs
-- use interiority only when pressured
-- minimize filter words
-- render non-POV psychology through behavior
-- make dialogue tactical
-- avoid closure
-
-This is enough to steer the writer without turning the prompt into an essay about craft.
-
----
-
-## 18. Placeholder rationale
-
-### `{story_contract}` placeholders
-
-These define the work’s permanent identity: title, premise, tone, content intensity, language register, and setting baseline. They should be included every time because the external writer has no durable memory.
-
-### `{hard_canon_bullets}`
-
-Bullets, not paragraphs. Canon must be easy to scan and hard to misread.
-
-### `{current_authoritative_state}` placeholders
-
-These are the live start facts: time, place, bodies, agency/status, positions, possessions, visible injuries/conditions, environment, line of sight, routes/exits, available time, consent/force conditions, and current locks. They override older material and should be compact enough to scan early.
-
-### `{immediate_handoff}` placeholders
-
-These provide causal launch, not an archive. The handoff tells the writer where prose begins. The handoff must use `prior_accepted_prose_status_or_handoff_note`, not `most_recent_prose_summary`, because accepted prose is not prompt context.
-
-### `{manual_must_render}`, `{manual_may_render_if_naturally_caused}`, `{manual_do_not_force}`
-
-This split reduces ambiguity. It gives the writer the author’s required move, allowed optional developments, and forbidden overreach.
-
-### `{pov_knows}`, `{pov_believes_suspects_misreads}`, `{pov_does_not_know}`
-
-These prevent knowledge leakage and support POV-filtered misread.
-
-### `{audience_knows}`
-
-This enables dramatic irony without giving the POV forbidden information.
-
-### `{writer_visible_hidden_truths}` and reveal placeholders
-
-These let hidden truth shape behavior while protecting secrets.
-
-### `{active_cast_voice_pressure_pins}`
-
-These are compact per-character salience duplicates compiled near `<active_working_set>`. They do not replace full dossiers. They keep the most important current voice constraints near the prompt front.
-
-### `{active_onstage_full_cast_dossiers}`
-
-This is where rich characterization lives. Do not compress active cast here unless the user chooses to. Current-generation voice overrides may also appear here under a clearly labeled temporary line.
-
-### `{present_minor_cast_notes}` and `{offstage_relevance_notes}`
-
-These prevent dossier overload while preserving continuity and pressure.
-
-### `{active_plans}`, `{active_clocks}`, `{active_obligations}`, `{active_consequences}`
-
-These are the causal engines. They justify action, escalation, interruption, refusal, and durable change.
-
-### `{visible_affordances}` and `{unavailable_or_impossible_actions}`
-
-These protect physical continuity and help the writer invent plausible action.
-
-### `{soft_unit_guidance}`
-
-This replaces hard beat counts. It gives a human-readable target while keeping the stop condition dominant.
-
----
-
-## 19. Why generic facts are split by POV accessibility
-
-The original `{relevant_facts}` placeholder was too broad. A true fact can be writer-visible, audience-visible, hidden from the POV, publicly known, or known only by a non-POV character. A single generic fact bucket invites first-person or close-third leakage.
-
-The corrected prompt splits facts into `pov_accessible_facts` and `writer_visible_or_non_pov_facts`. This uses existing schema data (`known_by`, `audience_visibility`, `pov_access`, and secret lanes) and keeps the prose writer from turning all truth into narrator knowledge.
-
----
-
-## 20. Why a compiler mapping table is required
-
-A deterministic compiler needs an explicit mapping from prompt placeholders to record types and generation-time fields. Without it, future implementation will quietly invent source rules, silently omit minimum fields, or drift template/schema/rationale out of sync.
-
-The mapping table belongs primarily in `story-record-schema.md`, because the schema is where record types, prompt-compilation behavior, validation requirements, and empty-state behavior meet. The rationale should explain why the table exists; it should not duplicate every row unless needed.
-
-The mapping table must specify:
-
-- prompt section or placeholder;
-- source record type or generation-time field;
-- whether it is required;
-- validation behavior when missing;
-- deterministic empty-state rendering;
-- notes about authority, POV, reveal, or physical continuity.
-
----
-
-
-## 20.1 Why generation validation focus tags are needed
-
-Universal minimum prompt completeness is necessary but not enough. Many blockers are context-dependent. A dialogue-only continuation, an object transfer, a location change, an intimacy scene, a violence/injury moment, and an offstage interruption require different minimum state.
-
-The schema should therefore include generation-time validation focus tags. These tags are not plot structure, beats, arcs, or drama management. They do not tell the story where to go. They tell deterministic validation which completeness checks must pass before the prompt may be generated.
-
-Examples: `physical_interaction_expected`, `dialogue_expected`, `secret_or_clue_pressure`, `object_transfer_possible`, `location_change_possible`, `offstage_interruption_possible`, `intimacy_or_sex_possible`, `violence_or_injury_possible`, `clock_tick_possible`, and `continuation_after_accepted_segment`.
-
-These tags should be selected by the user or by deterministic UI controls. They must not be inferred by an LLM.
-
----
-
-## 21. Why unresolved compiler warnings must not enter prompts
-
-The schema previously allowed unresolved conflicts to be compiled as a writer-visible `<compiler_warning>`. That contradicts fail-closed validation. If a contradiction is real, prompt generation must block. If a risk is only a warning, it belongs in the app validation surface, not in the prose prompt.
-
-Putting unresolved warnings into the prompt asks the external prose writer to repair continuity, which is exactly the intelligence layer the app rejects.
-
----
-
-## 22. Source notes
-
-- OpenAI prompt engineering guide: https://developers.openai.com/api/docs/guides/prompt-engineering
-- Anthropic prompting best practices: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices
-- Anthropic context engineering: https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
-- Google Gemini prompt design strategies: https://ai.google.dev/gemini-api/docs/prompting-strategies
-- Liu et al., “Lost in the Middle: How Language Models Use Long Contexts”: https://arxiv.org/abs/2307.03172
-- Lewis et al., “Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks”: https://arxiv.org/abs/2005.11401
-- Riedl & Young, “Narrative Planning: Balancing Plot and Character”: https://arxiv.org/abs/1401.3841
-- Young, Ware, Cassell & Robertson, “Plans and Planning in Narrative Generation”: https://justusrobertson.com/papers/Young%20Ware%20Cassell%20and%20Robertson%202013%20-%20Plans%20and%20Planning%20in%20Narrative%20Generation.pdf
-- Tseng et al., “Two Tales of Persona in LLMs”: https://aclanthology.org/2024.findings-emnlp.969.pdf
-- Tang et al., “The Few-shot Dilemma”: https://arxiv.org/html/2509.13196v1
+Persona and role-playing research supports supplying character profiles for role consistency, but few-shot over-prompting research warns that excessive examples can degrade performance. That is why durable voice anchors are rich, current voice pins are compact, and sample utterances are sparse, annotated, selected, and non-copyable by default.

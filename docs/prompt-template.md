@@ -2,7 +2,8 @@
 
 Purpose: generated prompt surface for an external LLM prose writer  
 Output expected from external LLM: prose only  
-Style: portable Markdown/XML hybrid
+Style: portable Markdown/XML hybrid  
+Status: corrected implementation baseline
 
 ---
 
@@ -26,7 +27,7 @@ Obey these in order:
 5. Manual moment directive. The directive wins over character defaults, ordinary reluctance, soft tendencies, and general record pressure, but it cannot contradict higher-priority constraints.
 6. Active plans, intentions, clocks, obligations, and consequences.
 7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization, voice, speech-pattern peculiarities, and behavior.
+8. Active cast characterization, voice anchors, current voice pressure pins, speech-pattern peculiarities, and behavior.
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
@@ -39,11 +40,12 @@ RATING: {rating_label}
 
 This is fiction governed by the story-specific maturity envelope below. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
 
-This includes, where appropriate to the story: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
+This includes, where appropriate to the story configuration: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
 
 The primary fictional directive is authentic character portrayal and vivid storytelling within this mature context.
 Do not sanitize character interiority into moral lecture.
 Do not inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the prose.
+Do not convert a character's prejudice, fear, fantasy, or misread into narrator-certified truth unless selected records establish it as fact.
 This block describes the story's intended maturity envelope; it does not override governing external model/platform policy.
 </content_policy>
 
@@ -192,27 +194,9 @@ Voice pressure:
 
 Active cast voice pressure pins:
 {active_cast_voice_pressure_pins}
+
+Voice pressure pins are current-generation salience duplicates. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
 </active_working_set>
-
-<active_cast_full_dossiers>
-Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
-
-For non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate their private interiority directly unless the prose mode allows it.
-
-{active_onstage_full_cast_dossiers}
-</active_cast_full_dossiers>
-
-<present_minor_cast>
-Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only.
-
-{present_minor_cast_notes}
-</present_minor_cast>
-
-<offstage_relevance>
-Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
-
-{offstage_relevance_notes}
-</offstage_relevance>
 
 <active_plans_and_intentions>
 Intentions:
@@ -245,6 +229,30 @@ Use obligations and consequences as constraints on plausible choice and as cause
 
 Open threads are unresolved pressures, promises, risks, mysteries, or tensions. They are not act-structure instructions. Do not force closure merely because a thread is visible.
 </active_open_threads>
+
+<active_cast_full_dossiers>
+Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
+
+For non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate their private interiority directly unless the prose mode allows it.
+
+If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and scoped to this generation only. It adjusts the current rendering; it does not rewrite durable character identity.
+
+If sample utterances are included, treat them as annotated examples of speech function, cadence, and register. Obey each sample's copy policy. The default is never copy verbatim.
+
+{active_onstage_full_cast_dossiers}
+</active_cast_full_dossiers>
+
+<present_minor_cast>
+Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation.
+
+{present_minor_cast_notes}
+</present_minor_cast>
+
+<offstage_relevance>
+Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
+
+{offstage_relevance_notes}
+</offstage_relevance>
 
 <relevant_facts_beliefs_events>
 POV-accessible facts:
@@ -308,7 +316,7 @@ You may introduce a minor complication when it follows from:
 - a physical object or environmental condition
 - a secret, clue, or knowledge boundary
 
-You may create durable continuity changes when strongly caused by the current moment. Durable changes include secret revelation, injury, sex/intimacy, violence, arrest, death, promise, object transfer, major location change, relationship redefinition, institutional involvement, or a clock threshold ticking.
+You may create durable continuity changes when strongly caused by the current moment. Durable changes include secret revelation, injury, sex/intimacy, violence, arrest, death, promise, object transfer, object destruction, major location change, relationship redefinition, institutional involvement, or a clock threshold ticking.
 
 The human reader is the continuity gate. If the human accepts the prose, records will be updated manually. If the human rejects it, the prose does not become continuity.
 
@@ -322,6 +330,7 @@ Do not:
 - move characters or objects without plausible action/time
 - give characters knowledge they do not have
 - reveal secrets to the wrong character or narrator
+- turn character prejudice, fantasy, or misread into objective fact unless selected records establish it
 - flatten active cast into generic speech or generic psychology
 - copy, echo, or turn sample utterances into catchphrases unless a sample is explicitly marked `canonical_phrase` and the immediate moment earns it
 - summarize future consequences
@@ -334,7 +343,7 @@ Do not:
 <prose_craft>
 Stay inside the selected POV, person, tense, and psychic distance.
 Let the POV character's diction, judgments, omissions, bodily attention, and sentence rhythms color the prose.
-Use active cast voice and speech-pattern peculiarities. Characters should not sound interchangeable.
+Use active cast voice anchors, current voice pressure pins, and speech-pattern peculiarities. Characters should not sound interchangeable.
 Prefer concrete nouns, embodied verbs, pressure-shaped dialogue, specific sensory detail, and visible action.
 Use interiority when it is part of the moment's pressure; avoid explaining psychology from outside.
 Avoid unnecessary filter language such as "saw," "heard," "felt," "noticed," "realized," and "knew" unless the act of perceiving is itself the event; do not make prose stiff by mechanically purging useful perception verbs.

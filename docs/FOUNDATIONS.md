@@ -239,6 +239,9 @@ It must not:
 
 Structured fields carry operational meaning. Author-written prose fields carry nuance. The compiler must respect both. A relationship axis, status enum, or salience tag may help sort and validate records, but the prompt-facing rendering should use human-authored pressure text whenever nuance matters.
 
+Compiler mapping is part of deterministic compilation, not a convenience appendix. Any prompt placeholder, schema field used for prompt generation, validation-only field, empty-state rendering rule, or prompt-section ordering rule must have an explicit deterministic source in the compiler contract or schema mapping. Adding, renaming, deleting, or changing the requiredness of a prompt placeholder must update the compiler contract in the same change. Drift between template, schema, rationale, example, and compiler contract is a continuity bug.
+
+
 ---
 
 ## 9. Universal prose prompt contract
@@ -354,6 +357,9 @@ Hard validation must include objective continuity contradictions and determinist
 Validation errors must be legible and actionable. A validation error should identify the conflicting records or fields, explain the conflict in plain language, and indicate what the user can change.
 
 The app should distinguish warnings from blockers. Length warnings, lost-in-the-middle warnings, salience doubts, or missing optional nuance may be warnings. Contradictions, impossible prompt conditions, and missing mandatory generation fields are blockers.
+
+Generation validation focus tags may be used to activate context-dependent completeness checks, such as dialogue, physical interaction, object use or transfer, location change, intimacy, violence/injury, offstage interruption, hidden-plan behavior, clock ticks, obligation breach, or continuation after an accepted segment. These tags are validation controls, not plot beats, act structure, dramatic machinery, or instructions to force events. They should remain non-prompt-facing by default. If a future prompt-facing use is proposed, it must be justified by demonstrated generation-quality gain and must not weaken local-prose-only or no-plot-rails doctrine.
+
 
 ---
 
@@ -531,6 +537,11 @@ Active/onstage cast should receive full rich dossiers in the prompt. Present-but
 The compiler must not impose token-budget-driven compression on active/onstage cast. The user is the gate. The compiler may warn about prompt length or lost-in-the-middle risk, but it must not silently flatten active cast.
 
 Sample utterances are optional. When used, they must be annotated by situation, speech function, and copy policy. The default copy policy is never-copy-verbatim. Sample utterances should be sparse and pressure-relevant. They should teach speech function, cadence, and register; they must not become catchphrase banks or mimicry traps.
+
+A durable cast dossier should distinguish stable voice identity from current-generation voice pressure. Stable voice identity belongs in a durable voice anchor. Current voice pressure pins are compiled salience duplicates for the active local unit, assembled deterministically from the voice anchor, current generation-time pressure, and any temporary cast voice override. A current voice pressure pin is not a second character bible and must not silently rewrite durable identity.
+
+Temporary cast voice overrides are allowed only as generation-time instructions scoped to the current request. They may adjust dialogue, POV narration, register, rhythm, diction, nonverbal behavior, or silence behavior for the current local unit. They must be clearly labeled when compiled, must not persist into CAST MEMBER records automatically, and must not override hard canon, current state, physical continuity, POV/reveal locks, or governing provider policy.
+
 
 Active characters must not be reduced to role labels, moods, diagnoses, or moral positions. A dossier should preserve contradiction, pressure behavior, perception, agency, bodily presence, social presentation, and anti-generic warnings.
 
@@ -734,6 +745,9 @@ Continuity Loom does not self-sanitize mature fictional content beyond governing
 The app-level envelope must not attempt to override external model, provider, or platform policy. Governing external policy remains first in the authority hierarchy.
 
 The prose prompt should avoid assistant-style disclaimers, moral lectures, warnings, safety commentary, or out-of-fiction analysis inside generated prose.
+
+When mature fiction includes prejudiced, biased, or morally reprehensible perception, the prompt must preserve the distinction between character-held perception and narrator-certified truth. The prose may render a character's prejudice as voice, belief, misread, fear, or social pressure, but it must not convert that prejudice into objective story fact unless selected records actually establish it as fact.
+
 
 Each story may define rating, intensity, explicitness, tone, content handling, and content boundaries. Those story-level fields must be respected, but they do not replace provider policy or continuity constraints.
 

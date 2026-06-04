@@ -1,6 +1,8 @@
 # Corrected Full Prompt — Red Bunny
 
-This is the corrected generated prompt surface for the external prose writer. It preserves the explicit erotic premise and rich active/onstage dossiers for Jon and Ane, compresses Marisa to offstage relevance, removes the dangerous “NO RESTRICTIONS” wording, fixes section-order issues, separates current state from handoff, strengthens POV/secret handling, and replaces hard beat-counting with a response-point stop rule.
+Status: corrected generated prompt surface aligned with the revised compiler order, voice-anchor/current-pressure split, and validation contract.
+
+This is the corrected generated prompt surface for the external prose writer. It preserves the explicit erotic premise and rich active/onstage dossiers for Jon and Ane, compresses Marisa to offstage relevance, uses a bounded mature-fiction envelope, fixes section-order issues, separates current state from handoff, strengthens POV/secret handling, and replaces hard beat-counting with a response-point stop rule.
 
 ---
 
@@ -42,6 +44,7 @@ This includes, where appropriate to the story: explicit language and profanity; 
 The primary fictional directive is authentic character portrayal and vivid storytelling within this mature context.
 Do not sanitize character interiority into moral lecture.
 Do not inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the prose.
+Do not convert a character's prejudice, fear, fantasy, or misread into narrator-certified truth unless selected records establish it as fact.
 This block describes the story's intended maturity envelope; it does not override governing external model/platform policy.
 </content_policy>
 
@@ -298,12 +301,47 @@ Voice pressure:
 - Ane's speech, if she speaks, should be distinct: vernacular, profanity-capable, defensive, transactional, and register-switching under pressure.
 
 Active cast voice pressure pins:
-- Jon: first-person narration may be explicit, analytic, self-indicting, procedural, and erotically contaminated; spoken dialogue should be short, practical, socially cautious, and nonconfessional. Preserve the mismatch between private voltage and public restraint.
-- Ane: if she speaks, her voice should be fast, defensive, vernacular, profanity-capable, street-practical, and capable of transactional reframing. Do not make her generic victim speech; do not make sample-like commercial phrases into catchphrases.
+- Jon: current speech pressure is approach/contact vs refusal/non-contact without looking predatory. First-person narration may be explicit, analytic, self-indicting, procedural, and erotically contaminated; spoken dialogue should be short, practical, socially cautious, and nonconfessional. Preserve the mismatch between private voltage and public restraint.
+- Ane: current speech pressure is instantly sorting Jon as threat, client, rescuer, nuisance, or opportunity while hiding terror and avoiding plain confession of need. If she speaks, her voice should be fast, defensive, vernacular, profanity-capable, street-practical, and capable of transactional reframing. Do not make her generic victim speech; do not make sample-like commercial phrases into catchphrases.
 </active_working_set>
 
+<active_plans_and_intentions>
+Intentions:
+- Jon Ureña intends to resolve the sudden overwhelming pull toward the girl on the bench: approach to know/help her, or master the urge and continue home. Urgency: high.
+- Ane Arrieta intends to avoid going home to Marisa and avoid her neighborhood tonight; she needs some way to feel safe enough to decide where to go. Urgency: high.
+- Marisa Arrieta intends to obtain concrete proof of what Ane is doing for money and force her to account for herself. Urgency: medium. Offstage only.
+
+Plans:
+- No fully articulated multi-step PLAN records are active for Jon in this first segment beyond the immediate approach/withdrawal crisis.
+- Ane's current practical plan is blocked: avoid home and danger, but she has no safe destination.
+</active_plans_and_intentions>
+
+<active_clocks>
+- Dread / exposure clock: daylight is moving toward evening; remaining isolated or returning through the neighborhood becomes more frightening for Ane as time passes. Tick trigger: a choice to stay, leave, engage Jon, or become visible to someone else. Possible effects: Ane grows more defensive, more desperate, or more willing to exploit/accept an opening.
+- Jon self-control / contact clock: the longer he stares without acting, the more predatory or absurd the moment becomes. Tick trigger: visible hesitation, Ane noticing him, or Jon closing distance. Possible effects: he must speak, leave, or become conspicuously strange.
+</active_clocks>
+
+<active_obligations_and_consequences>
+Obligations:
+- None formally established between Jon and Ane yet.
+
+Consequences:
+- Ane's bruised arm and red eyes are visible consequences of earlier abuse and distress.
+- Ane's fear of her neighborhood is a consequence of the earlier harassment/chase.
+- Jon's nineteen-year restraint makes any approach feel like a breach of his self-management system.
+</active_obligations_and_consequences>
+
+<active_open_threads>
+- Will Jon approach, flee, or freeze at the first real breach in his solitude?
+- Will Ane treat Jon as danger, client, rescuer, nuisance, or opportunity?
+- Can Jon offer help without turning the offer into possession?
+- Can Ane accept any opening without converting it into work, suspicion, or leverage?
+</active_open_threads>
+
 <active_cast_full_dossiers>
-Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
+Include full rich dossiers for active/onstage cast. These dossiers are binding characterization resources. Use them to preserve voice anchor, speech pattern, body, perception, pressure behavior, agency, desire, fear, and contradiction.
+
+Current speech pressure is already compiled into the active cast voice pressure pins above. The durable voice anchors below should not be treated as a second current-scene directive.
 
 For Ane as non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate her private interiority directly.
 
@@ -333,11 +371,10 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Moral/psychological edge:** He is dangerous not for lacking rules, but because he has rules, insight, and restraint — yet the coffee-spilling incident proves exhaustion can still turn an intrusive image into action. Every day of non-action is both proof of discipline and a reminder of the one failure.
 
-**Voice pressure pin**
+**Voice anchor**
 
 **Core voice in one sentence:** First-person narration is explicit, analytic, procedural, self-indicting, and erotically contaminated; spoken dialogue remains short, practical, socially cautious, and nonconfessional.
 
-**Current speech pressure:** He must make contact, refuse contact, or linger without looking predatory; his spoken words should try to make the moment harmless while his interiority admits the opposite pressure.
 
 **Rhythm/register/diction:** Private narration can spiral through procedure, desire, shame, and self-monitoring; dialogue compresses into literal offers, distance markers, and practical questions.
 
@@ -447,11 +484,10 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 
 **Moral/psychological edge:** Her choices are rational and harmful at once. She is right to protect herself and distrust unprotective men and institutions — but capable of using people as exits, treating tenderness as leverage, and refusing help that arrives in a register that makes her feel small. The dangerous version appears when cash, beauty, and rescue-fantasy align.
 
-**Voice pressure pin**
+**Voice anchor**
 
 **Core voice in one sentence:** Ane speaks fast, defensive, profanity-capable, street-practical, transactional, and register-switching, with need converted into price, insult, dare, or logistics.
 
-**Current speech pressure:** She has to sort Jon instantly as threat, client, rescuer, nuisance, or opportunity while hiding terror and avoiding any plain confession of need.
 
 **Rhythm/register/diction:** Short attack-shaped lines, quick reframes, cash/route/body/practical-danger vocabulary, ordinary profanity, and sudden commercial or flirtatious pivots under pressure.
 
@@ -563,38 +599,6 @@ Do not narrate:
 - Marisa's current interiority or full backstory in this first-person Jon segment.
 </offstage_relevance>
 
-<active_plans_and_intentions>
-Intentions:
-- Jon Ureña intends to resolve the sudden overwhelming pull toward the girl on the bench: approach to know/help her, or master the urge and continue home. Urgency: high.
-- Ane Arrieta intends to avoid going home to Marisa and avoid her neighborhood tonight; she needs some way to feel safe enough to decide where to go. Urgency: high.
-- Marisa Arrieta intends to obtain concrete proof of what Ane is doing for money and force her to account for herself. Urgency: medium. Offstage only.
-
-Plans:
-- No fully articulated multi-step PLAN records are active for Jon in this first segment beyond the immediate approach/withdrawal crisis.
-- Ane's current practical plan is blocked: avoid home and danger, but she has no safe destination.
-</active_plans_and_intentions>
-
-<active_clocks>
-- Dread / exposure clock: daylight is moving toward evening; remaining isolated or returning through the neighborhood becomes more frightening for Ane as time passes. Tick trigger: a choice to stay, leave, engage Jon, or become visible to someone else. Possible effects: Ane grows more defensive, more desperate, or more willing to exploit/accept an opening.
-- Jon self-control / contact clock: the longer he stares without acting, the more predatory or absurd the moment becomes. Tick trigger: visible hesitation, Ane noticing him, or Jon closing distance. Possible effects: he must speak, leave, or become conspicuously strange.
-</active_clocks>
-
-<active_obligations_and_consequences>
-Obligations:
-- None formally established between Jon and Ane yet.
-
-Consequences:
-- Ane's bruised arm and red eyes are visible consequences of earlier abuse and distress.
-- Ane's fear of her neighborhood is a consequence of the earlier harassment/chase.
-- Jon's nineteen-year restraint makes any approach feel like a breach of his self-management system.
-</active_obligations_and_consequences>
-
-<active_open_threads>
-- Will Jon approach, flee, or freeze at the first real breach in his solitude?
-- Will Ane treat Jon as danger, client, rescuer, nuisance, or opportunity?
-- Can Jon offer help without turning the offer into possession?
-- Can Ane accept any opening without converting it into work, suspicion, or leverage?
-</active_open_threads>
 
 <relevant_facts_beliefs_events>
 POV-accessible facts:
@@ -690,6 +694,7 @@ Do not:
 - move characters or objects without plausible action/time
 - give Jon knowledge he does not have
 - reveal Ane's sex work to Jon as narrator-certified fact before the prose earns it
+- turn Jon's or Ane's prejudiced threat-recognition, fantasy, fear, or misread into objective authorial fact unless selected records establish it
 - narrate Ane's private thoughts directly
 - flatten Jon into generic brooding loner speech
 - flatten Ane into generic victim speech
