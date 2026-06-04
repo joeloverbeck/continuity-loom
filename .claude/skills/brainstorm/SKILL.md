@@ -61,7 +61,7 @@ Next-steps menu (user chooses)
 
    **Emit a 2-3 sentence summary** of what the reference material contains as user-facing text before any further exploration — this is the user's audit-trail anchor for verifying you understood the reference. For a multi-item report, summarize its *shape* (item count, structure, headline position) rather than enumerating each item; per-item detail belongs in the Step 3 triage. When the reference makes claims about the codebase or product state, treat them as hypotheses to verify during exploration (sub-step 6), and flag prominently any that exploration contradicts. When there is no reference material at all (pure analysis from the request text), no summary fires — proceed to exploration.
 
-2. **Topic classification.** Decide which category the brainstorm falls into and announce it on its own line before further tool calls:
+2. **Topic classification.** Announce the classification on its own line as soon as it's determinable — often right after reading the primary reference's frontmatter/intro, and in all cases before the broader project-context exploration in sub-step 7. Don't let a large multi-file reference read push the announcement arbitrarily late; classify from the minimum evidence that settles the category, then keep reading. Pick the category the brainstorm falls into:
    - **product-behavior**: anything that changes how the app behaves at runtime or what it stores — story records and the active working set, the generation-time brief, deterministic prompt compilation and the universal prompt contract, validation rules, POV/knowledge/secrets handling, physical continuity, cast dossiers and voice, causal-pressure records, the accepted-segment archive, prompt inspection, OpenRouter/secrets, local-first data ownership, the mature-fiction envelope, LLM-assistance surfaces, or UI/workflow over those surfaces. These are governed by `docs/FOUNDATIONS.md`.
    - **dev-process / docs / tooling**: work that does not change product behavior — build/test scripts, dev ergonomics, repo tooling, skill design, or documentation edits that don't change product semantics.
 
@@ -71,7 +71,7 @@ Next-steps menu (user chooses)
 
 4. **Calibrate initial confidence from the reference and request.** A thorough reference (rationale, decisions, structure) or a richly-specified request (problem analysis, evidence, root cause, code locations, a clear ask) can start confidence at 70-95%, reducing the interview to closing operational gaps. Don't ask motivational questions when the user has already demonstrated deep understanding.
 
-5. **Interview-skip threshold.** If exploration and research bring confidence to 95%+ before the interview starts, skip Step 2 and go to Step 3; announce the confidence level. At 85-94% with a user-framed, fully-constrained directive (enumerated alternatives, or a clear "do X" with minimal open choices — triage brainstorms are the common case), also skip the discovery interview: go to Step 3, announce confidence, and carry remaining gaps as named assumptions for the user to correct during approach/triage selection.
+5. **Interview-skip threshold.** If exploration and research bring confidence to 95%+ before the interview starts, skip Step 2 and go to Step 3; announce the confidence level. At 85-94% with a user-framed, fully-constrained directive (enumerated alternatives, or a clear "do X" with minimal open choices — triage brainstorms are the common case), also skip the discovery interview: go to Step 3, announce confidence, and carry remaining gaps as named assumptions for the user to correct during approach/triage selection. **When a remaining gap would *materially shape the deliverable*** (which approach, what gets stripped vs. kept, the deliverable's structure or class) rather than only a detail, prefer posing it via `AskUserQuestion` at approach-selection rather than carrying it as a silent assumption; reserve named-assumptions for detail-only gaps. (Mirrors §Guardrails §User pre-authorization, which applies the same shape-confirmation rule before writing.)
 
 6. **External research.** If the topic needs domain knowledge beyond the codebase (algorithms, industry practice, competing architectures), launch research agents BEFORE the interview and summarize findings for the user first. If codebase exploration already yields a clear root cause with concrete evidence, research may be skipped — note the skip. If research was supplied as a reference file or pasted prose, the sub-step 1 summary satisfies the announcement.
 
@@ -147,6 +147,8 @@ Close with a recommendation: name the chosen option upfront, then justify in 1-3
 
 **If the problem space is fully constrained** (a reference provides a proven design, or requirements eliminate alternatives), present a single approach with a one-sentence rationale naming the constraint that narrows the space. Don't invent artificial alternatives.
 
+**For a Port external skill deliverable** (adapting an external skill into this repo), the approach IS a transformations table — per-element strip / replace / preserve decisions, one row per substitution site (not per source line). Load `references/triage-and-deliverables.md` §Deliverable classification before presenting, and present that table as the approach/design so the user can redirect any row. Per its rule, **a substitution not itemized in the table is out of scope until itemized** — itemize file drops (e.g. a source `examples/` dir), domain re-mappings, and convention removals as rows, not loose prose. This shapes Step 3/Step 4; the Step 5 destination row points back to the same rule.
+
 **If the user challenges a dismissal**, redo the analysis from first principles rather than defending prior reasoning; if it reverses, say where the prior reasoning was incomplete. **If the user clarifies a constraint**, redo the approach proposal under the refined constraint without restarting Step 2 — cite which assumption was sharpened. Brief confirmation suffices when the recommendation still holds; full re-presentation is reserved for clarifications that flip it.
 
 **Wait for the user to choose** (or to ask you to refine/combine) before proceeding.
@@ -193,7 +195,7 @@ After design approval, do NOT implement until the user picks an implementation o
 | Modify existing skill file(s) | edit in place |
 | Project documentation (`README.md`, `docs/*.md`) | edit/create in place |
 | Amend `docs/FOUNDATIONS.md` (constitutional change) | edit in place — flag as a constitution amendment, require explicit sign-off |
-| Port external skill into repo | new `.claude/skills/<name>/SKILL.md` + delete source |
+| Port external skill into repo | new skill file(s) (`SKILL.md` + any `references/`) + delete source + a transformations table itemizing per-element strip/replace/preserve (see the Step 3 Port-external-skill note + `references/triage-and-deliverables.md` §Deliverable classification) |
 | Replaces an existing artifact | new file + delete old + update cross-references |
 | System spec | `specs/SPEC-NNN-<slug>.md` |
 | Implementation tickets | `tickets/<PREFIX>-NNN.md` |
