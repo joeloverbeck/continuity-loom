@@ -411,6 +411,12 @@ Atomic records do not mean thin records. They mean one record should normally ca
 
 CAST MEMBER is the exception. Active/onstage cast need rich dossiers because voice, behavior, body, perception, pressure response, and contradiction are too deep to preserve through tiny slices.
 
+Field economy means every field must earn its place through at least one concrete function: deterministic compilation, deterministic validation, continuity interpretation, character voice or behavior preservation, prose-quality protection, or authorial control.
+
+A field must not be deleted merely because its prose content cannot be fully validated deterministically. If a prose-rich field compiles as binding context that protects voice, characterization, continuity nuance, POV interpretation, or authorial control, it can be justified.
+
+Conversely, sophisticated-sounding fields that have no prompt-compilation use, no validation use, no continuity use, no voice/prose-quality use, and no authorial-control use should be merged, demoted, renamed, or deleted.
+
 Continuity Loom is current-continuity-first, not archive-first. Historical information matters only when it remains causally relevant, character-relevant, knowledge-relevant, or pressure-relevant to the current generation.
 
 ---

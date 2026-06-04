@@ -84,6 +84,7 @@ tense: past | present | future | variable
 psychic_distance: close | medium | distant | variable
 interiority_mode: minimal | filtered | free_indirect | direct | variable
 dialogue_density: sparse | balanced | moment_led | dense
+paragraphing: spare | mixed | lush | variable
 language_output: string
 special_style_constraints: prose list
 ```
@@ -195,6 +196,77 @@ Prompt authority:
 - The directive wins over character defaults, ordinary reluctance, soft tendencies, and general pressure records.
 - The directive does **not** override hard canon, current state, physical possibility, POV knowledge constraints, reveal locks, or governing content rules.
 
+
+### 3.5 CAST VOICE OVERRIDES
+
+Generation-time voice overrides are current-generation instructions for how an active/onstage cast member should be voiced in this specific prose request. They are not persistent character identity and must not be stored inside the durable CAST MEMBER dossier unless the user manually updates that dossier.
+
+Fields:
+
+```yaml
+cast_voice_overrides:
+  - cast_member_id: id
+    override_text: prose
+    applies_to: current_generation_only
+```
+
+Compiler treatment:
+
+- Optional.
+- Applies only to cast members selected in `active_onstage_cast_full` or `present_minor_cast_compressed`.
+- Compile each override into `{active_cast_voice_pressure_pins}` for the matching cast member.
+- Also compile each override into the matching active cast dossier under a clearly labeled line:
+
+```md
+Current generation voice override:
+{override_text}
+```
+
+- Do not persist this field as durable character identity.
+- Do not silently update the CAST MEMBER record from this field.
+- If the user wants the override to become durable, they must manually edit the CAST MEMBER dossier.
+
+Validation:
+
+- Warn if an override targets a cast member not selected for the current generation.
+- Block only if the override contradicts hard canon, current authoritative state, POV constraints, reveal constraints, or governing content rules.
+- Do not block merely because the override is stylistic, temporary, or prose-rich.
+
+### 3.6 GENERATION VALIDATION FOCUS
+
+Generation-time validation focus tags tell deterministic validation which context-dependent minimums apply. They are not plot beats, act structure, dramatic arcs, or story rails. They do not instruct the prose writer to force events. They only activate validation requirements before compilation.
+
+Fields:
+
+```yaml
+validation_focus_tags:
+  generation_context:
+    - first_segment
+    - continuation_after_accepted_segment
+  expected_local_modes:
+    - physical_interaction_expected
+    - dialogue_expected
+    - introspection_expected
+    - offstage_interruption_possible
+    - secret_or_clue_pressure
+    - non_pov_hidden_plan_behavior
+  possible_durable_changes:
+    - object_transfer_possible
+    - location_change_possible
+    - intimacy_or_sex_possible
+    - violence_or_injury_possible
+    - clock_tick_possible
+    - obligation_breach_possible
+```
+
+Requirements:
+
+- At least one `generation_context` value is required.
+- `expected_local_modes` and `possible_durable_changes` may be empty only if the manual directive and current state are genuinely minimal.
+- Tags are selected by the user or by deterministic UI controls, not by an LLM.
+- Tags are validation-facing by default. They do not need to compile into the prompt unless the app later proves a prompt-facing validation-focus line improves outputs.
+- If a tag is selected, the corresponding context-dependent blockers in the validation matrix apply.
+
 ---
 
 ## 4. Core entity records
@@ -274,6 +346,12 @@ world_pressure_core:
   irreconcilable_contradiction: prose
 relational_charge: prose
 moral_psychological_edge: prose
+voice_pressure_pin:
+  core_voice_in_one_sentence: prose
+  current_speech_pressure: prose
+  rhythm_register_and_diction: prose
+  must_preserve: prose list
+  must_avoid: prose list
 voice:
   baseline: prose
   under_pressure: prose
@@ -324,8 +402,7 @@ sample_utterances:
     situation: prose
     speech_function: prose
     copy_policy: never_copy_verbatim | may_echo_lightly | canonical_phrase
-voice_do_not_write: prose list
-current_segment_overrides: prose list
+additional_do_not_write: prose list
 ```
 
 ### 5.2 Sample utterance policy
@@ -334,18 +411,20 @@ Sample dialogue lines are powerful but risky. They can improve register, cadence
 
 Requirements:
 
-- Store sample utterances as optional, annotated examples.
-- Mark each with `copy_policy`.
+- `sample_utterances` are optional.
+- Each sample must have `situation`, `speech_function`, and `copy_policy`.
 - Default copy policy is `never_copy_verbatim`.
-- Prefer examples of **speech function** over catchphrases: refusal, bargaining, evasion, seduction-as-performance, lying-by-understatement, anger, guarded tenderness.
-- Rotate or select only the most relevant samples for the current segment.
-- Do not include many examples in every prompt. Excess domain-specific examples can over-condition the output and distract from current state.
+- The compiler may compile at most three sample utterances per active/onstage character.
+- Default compiled sample count is zero.
+- Samples compile only when user-selected or deterministically selected by explicit metadata such as `speech_function` matching a selected generation focus tag.
+- Samples marked `canonical_phrase` should be rare and should still compile with an anti-repetition warning.
+- Samples must not reveal secrets, future-state material, or knowledge unavailable to the speaking character in the current generation.
 
 ### 5.3 Prompt inclusion levels for cast
 
 ```yaml
 active_onstage_full:
-  include: full rich dossier + current segment overrides + current knowledge constraints
+  include: full rich dossier + voice pressure pin + current knowledge constraints; generation-time voice overrides appear as clearly labeled temporary lines when present
 present_minor_compressed:
   include: identity, current physical state, immediate behavior, voice warning, allowed actions
 offstage_relevance:
@@ -374,13 +453,22 @@ scope: global | entity | location | object | relationship | current_segment
 known_by: list[entity_id] | public | unknown | not_applicable
 audience_visibility: hidden | implied | explicit | not_applicable
 salience: low | medium | high | critical
-status: active | superseded_by_current_state
+status: active
 ```
 
 Notes:
 
 - Do not use `deprecated_fact` as a normal record kind. If a fact is wrong or retired, the user should remove or supersede it.
-- `superseded_by_current_state` exists only as a temporary diagnostic state during validation, not as a long-term archive strategy. If a superseded fact remains selected and contradicts current state, generation blocks until the user removes, revises, or deselects it.
+- Supersession is not a persistent FACT status. If validation detects that a selected fact appears superseded by current authoritative state, it should report a validation diagnostic such as:
+
+```yaml
+diagnostic_kind: superseded_by_current_state_candidate
+severity: blocker | warning
+affected_records: list[record_id]
+message: prose
+```
+
+If the selected fact truly contradicts current state, generation blocks until the user revises, removes, or deselects the fact.
 
 Prompt treatment:
 
@@ -821,12 +909,18 @@ Prompt treatment:
 
 ---
 
-
----
-
 ## 10. Compiler mapping and minimum prompt completeness
 
 Every prompt placeholder must have a deterministic source. The compiler is allowed to format, group, sort, and render selected records and generation-time fields. It is not allowed to infer missing pressure, silently select outside records, summarize prose, or repair contradictions with an LLM.
+
+
+Schema/template synchronization rule:
+
+- Every prompt placeholder must appear in this mapping table.
+- Every template section required by FOUNDATIONS must have a source and empty-state behavior.
+- Every schema field that exists primarily for prompt compilation must name its prompt destination.
+- Every validation-only field must be explicitly marked as not prompt-facing by default.
+- Adding, renaming, or deleting a prompt placeholder requires a mapping-table update in the same change.
 
 | Prompt section / placeholder | Source record type or generation-time field | Required? | Validation if missing | Empty-state rendering | Notes |
 |---|---|---:|---|---|---|
@@ -837,8 +931,13 @@ Every prompt placeholder must have a deterministic source. The compiler is allow
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | Not applicable | Should be durable premise, not current scene recap. |
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes | Block if absent for title/premise/tone; warn for missing setting baseline when irrelevant | `None specified` only for nonessential subfields | These do not override canon/state. |
 | `<prose_mode>` fields | PROSE MODE generation-time field or story default overridden for generation | Yes | Block if POV/person/tense/interiority cannot be resolved | Not applicable | If POV is not omniscient, knowledge constraints are mandatory. |
+| `{paragraphing}` | PROSE MODE.paragraphing or STORY CONTRACT prose preference default | Yes | Block if unresolved | Not applicable | Template renders it explicitly. |
 | `{hard_canon_bullets}` | FACT where `fact_kind=hard_canon` selected, plus story-level immutable locks selected by user | Yes if story has hard canon relevant to segment | Warn if none; block if current state needs missing hard canon such as active cast age/status | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
 | `<current_authoritative_state>` fields | CURRENT AUTHORITATIVE STATE generation-time field, ENTITY STATUS, LOCATION, OBJECT | Yes | Block if active physical interaction lacks time/location/onstage entities/positions/possessions/visibility/routes as applicable | Optional subfields render `None currently specified` | Current state overrides older selected records only if no contradiction remains; unresolved contradictions block. |
+| `{line_of_sight_and_visibility}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS.visibility_to_pov | Required for physical interaction; recommended always | Block when physical interaction, perception, secrecy, violence, intimacy, or interruption depends on visibility | `None currently specified` only for nonphysical/minimal moments | Also reflected in physical continuity. |
+| `{routes_and_exits}` | CURRENT AUTHORITATIVE STATE + LOCATION.access_routes + AFFORDANCE | Required for movement, pursuit, escape, interruption, location change | Block when route matters and absent | `None currently specified` | Must include impossible/unavailable routes when omission invites errors. |
+| `{available_time}` | CURRENT AUTHORITATIVE STATE + CLOCK + handoff | Required when timing, pursuit, deadline, injury, intimacy, or interruption matters | Block if directive requires action without enough time state | `None currently specified` | “Enough time to speak” can be sufficient. |
+| `{consent_or_force_conditions}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS + RELATIONSHIP/OBLIGATION/AFFORDANCE as selected | Required for intimacy, restraint, violence, coercion, object seizure, rescue, captivity | Block if relevant and absent | `None currently specified` | Does not moralize; it preserves physical/social continuity. |
 | `{recent_causal_context}` | IMMEDIATE HANDOFF.recent_causal_context + selected EVENT records grouped as immediate/recent | Yes | Block if blank and generation is not first segment or lacks launch context | `None; first local unit begins from current state` | Writer-visible, not automatically POV knowledge. Must not contain verbatim accepted prose. |
 | `{last_visible_moment}` | IMMEDIATE HANDOFF.last_visible_moment | Yes | Block if blank | Not applicable | The exact launch point. |
 | `{prior_accepted_prose_status_or_handoff_note}` | IMMEDIATE HANDOFF prior status/handoff note authored by user | Yes | Block if it contains accepted prose text or automatic prose-derived summary | `None. No accepted prose is included.` | Replaces `most_recent_prose_summary`. |
@@ -850,6 +949,8 @@ Every prompt placeholder must have a deterministic source. The compiler is allow
 | `<audience_knowledge>` | AUDIENCE KNOWLEDGE PROFILE from SECRET.audience_visibility, EVENT.audience_visibility, FACT.audience_visibility, user-authored generation-time audience notes | Yes when audience differs from POV or hidden truth is writer-visible | Warn if empty; block if active secret has no audience/POV relation | `No audience knowledge distinct from POV specified` | Dramatic irony without leakage. |
 | `<secrets_and_reveal_constraints>` | SECRET records selected or active in current moment | Required if any selected secret affects current behavior, POV, or reveal | Block if holders/non-holders/reveal permission missing | `No active secrets or reveal locks selected` | `locked` cannot be overridden by manual directive. |
 | `<active_working_set>` pressure lanes | User-authored generation-time pressure summary, plus deterministic grouping of selected pressure records using their prose-facing fields | Yes | Warn if all pressure lanes empty; block if manual directive lacks enough context to produce local motion | Empty lanes render `None beyond detailed records below` | This is a précis, not LLM summarization. |
+| `{active_cast_voice_pressure_pins}` | CAST MEMBER.voice_pressure_pin + generation-time cast_voice_overrides | Yes for active/onstage person-like cast | Block if missing and dialogue or close POV is expected; warn otherwise | Not applicable if no active person-like cast | Salience duplicate, not compression. |
+| `validation_focus_tags` | GENERATION VALIDATION FOCUS | Yes, validation-only | Block if generation context absent; apply matrix rows by selected tags | Not prompt-facing by default | Not plot structure. |
 | `{active_onstage_full_cast_dossiers}` | CAST MEMBER records selected as active_onstage_full | Yes for active person-like onstage cast | Block if active/onstage person lacks cast dossier or minimal voice/behavior fields | Not applicable when no person-like cast is onstage | Must not be silently compressed. |
 | `{present_minor_cast_notes}` | CAST MEMBER/ENTITY selected as present_minor_compressed | No | No block | `None` | Compressed notes only. |
 | `{offstage_relevance_notes}` | CAST MEMBER/ENTITY selected as offstage_relevant_cast + offstage plans/clocks/obligations | No unless offstage pressure/interruption is active | Block if offstage interruption is possible/required but route/timing/communication is missing | `None` | No full offstage dossier unless user selects. |
@@ -878,9 +979,41 @@ Minimum prompt completeness for v1:
 3. Non-omniscient POV requires a populated POV knowledge profile.
 4. Any active secret requires holders, protected non-holders, allowed cues, forbidden reveals, and reveal permission.
 5. Any active physical interaction requires current location, onstage entities, positions/distance, object possession, visibility/line of sight, routes/exits, available time, and unavailable/impossible actions where omission would invite error.
-6. Any active/onstage person-like cast member requires a full cast dossier or explicit user-selected minimal emergency dossier; v1 should block if neither exists.
-7. The compiler must render empty optional sections explicitly as `None`, `None active`, or `None selected`; it must not omit constitutional sections.
-8. Unresolved contradictions, impossible conditions, missing mandatory fields, secret leakage, and accepted-prose inclusion are blockers. Length, salience, optional nuance gaps, and lost-in-the-middle risk are warnings.
+6. Any active/onstage person-like cast member requires a full cast dossier plus a voice pressure pin, or explicit user-selected minimal emergency dossier; v1 should block if neither exists.
+7. Generation validation focus tags must identify whether this is a first segment or a continuation after an accepted segment, and must activate context-dependent blockers when relevant.
+8. The compiler must render empty optional sections explicitly as `None`, `None active`, or `None selected`; it must not omit constitutional sections.
+9. Unresolved contradictions, impossible conditions, missing mandatory fields, secret leakage, and accepted-prose inclusion are blockers. Length, salience, optional nuance gaps, and lost-in-the-middle risk are warnings.
+
+
+### 10.1 Generation validation matrix
+
+Universal minimum prompt completeness is necessary but not enough. The selected `validation_focus_tags` activate context-dependent blockers.
+
+| Validation focus tag | Context-dependent blockers |
+|---|---|
+| `first_segment` | `prior_accepted_prose_status_or_handoff_note` must render as no accepted prose included; launch state must be self-sufficient; no continuation phrase like “as above.” |
+| `continuation_after_accepted_segment` | Handoff note must be user-authored; accepted prose text/rejected candidate text/auto prose summary blocks; durable changes mentioned in handoff must be represented in selected records or current state when deterministically identifiable. |
+| `physical_interaction_expected` | Requires location, onstage entities, positions/distance, visibility/line of sight, possessions, routes/exits, available time, and unavailable/impossible actions when omission invites error. |
+| `dialogue_expected` | Active speakers need CAST MEMBER dossiers, voice pressure pins, language/register state, POV knowledge boundaries, and relationship/status context sufficient to avoid generic exchange. |
+| `introspection_expected` | Requires POV beliefs/suspicions/misreads, relevant emotions or interior pressure, psychic distance/interiority mode, and non-POV interiority restrictions. |
+| `secret_or_clue_pressure` | Requires secret claim, holders, protected non-holders, POV access, audience visibility, allowed clues, forbidden reveals, reveal permission, and reveal triggers if any. |
+| `object_transfer_possible` | Requires object owner/carried_by/current_location/visibility, usable affordances, constraints, transfer possibility, and current body positions. |
+| `location_change_possible` | Requires source location, destination or reachable route, exits, available time, movement constraints, transport if relevant, and offstage arrival consequences if relevant. |
+| `offstage_interruption_possible` | Requires offstage entity location or uncertainty state, communication/entrance/timing route, awareness mechanism, and whether interruption is physical, audible, digital, institutional, or environmental. |
+| `intimacy_or_sex_possible` | Requires active cast ages/statuses, content envelope consistency, consent/force conditions, body positions, privacy/publicness, relationship/emotion pressure, and physical affordances. |
+| `violence_or_injury_possible` | Requires agency/status, positions, weapons or bodily affordances, force conditions, injury consequences, visibility, available time, and location constraints. |
+| `clock_tick_possible` | Requires active clock, current pressure, tick trigger, next threshold, possible effects, and concrete event that could visibly cause the tick. |
+| `obligation_breach_possible` | Requires obligation terms, owed_by, owed_to, visibility, consequence_if_broken, and current opportunity or pressure to breach/fulfill. |
+| `non_pov_hidden_plan_behavior` | Requires plan holder status/location/means, current step, visibility_to_pov, behavioral surface cues, and close-POV non-interiority restrictions. |
+
+Warnings that must not block:
+
+- prompt length or lost-in-the-middle risk;
+- too many high-salience records;
+- missing optional sample utterances;
+- no active clock when the manual directive is otherwise sufficient;
+- sparse setting texture;
+- a long cast dossier that may benefit from a stronger voice pin.
 
 ## 11. Validation blockers and compiler warnings
 
@@ -899,6 +1032,8 @@ Blockers include:
 - an offstage entity marked as interrupting without an entrance route, communication route, timing route, or plausible causal mechanism
 - a content-policy envelope inconsistent with active cast ages/statuses, story configuration, or governing model/provider constraints
 - active physical interaction without enough bodies, positions, objects, routes, visibility, available time, and consent/force conditions where relevant
+- active/onstage person-like cast missing a full dossier, voice pressure pin, or minimal emergency voice/behavior substitute when dialogue or close POV is expected
+- selected generation validation focus tag missing its required state from the validation matrix
 - accepted prose text, rejected candidate text, or an automatic prose-derived summary appearing in any prompt-facing field
 - any constitutional prompt section missing or structurally empty where the universal prompt contract requires content
 
@@ -908,7 +1043,7 @@ Warnings include:
 - too many high-salience records selected for one local unit
 - missing optional nuance such as sample utterances, anti-repetition warnings, or setting texture
 - no active clock, obligation, open thread, or relationship pressure when the manual directive is otherwise sufficient
-- active cast dossier is long enough that the user may want a concise voice-pressure pin in `<active_working_set>`
+- active cast dossier is long enough that the user may want to strengthen the concise voice pressure pin in `<active_working_set>`
 
 Do not compile unresolved contradictions into the generated prose prompt as `<compiler_warning>`. If the issue is real, block. If it is not blocking, show it in the app’s validation surface, not as prose-writer context.
 
@@ -967,7 +1102,7 @@ The generated prompt should order records roughly as follows:
 6. Immediate handoff
 7. Manual directive
 8. POV, audience knowledge, and reveal constraints
-9. Active working set and causal pressure
+9. Active working set, voice pressure pins, and causal pressure
 10. Rich active cast dossiers
 11. Present-minor and offstage cast relevance
 12. Plans, clocks, obligations, consequences, open threads

@@ -30,7 +30,7 @@ Obey these in order:
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
-When records conflict, follow the highest-priority applicable record.
+Deterministic validation should have blocked unresolved contradictions before this prompt was generated. If an apparent priority tension remains, follow the highest-priority applicable record. Do not repair, explain, negotiate, or mention the conflict in the prose.
 Do not mention this hierarchy in the prose.
 </authority_hierarchy>
 
@@ -85,6 +85,10 @@ Current agency/status: {entity_statuses}
 Current possessions: {possessions}
 Visible injuries/conditions: {visible_conditions}
 Environmental conditions: {environmental_conditions}
+Line of sight / visibility: {line_of_sight_and_visibility}
+Routes and exits: {routes_and_exits}
+Available time: {available_time}
+Consent or force conditions: {consent_or_force_conditions}
 Current continuity locks: {current_locks}
 </current_authoritative_state>
 
@@ -185,6 +189,9 @@ Material pressure:
 
 Voice pressure:
 {voice_pressure}
+
+Active cast voice pressure pins:
+{active_cast_voice_pressure_pins}
 </active_working_set>
 
 <active_cast_full_dossiers>
@@ -316,6 +323,7 @@ Do not:
 - give characters knowledge they do not have
 - reveal secrets to the wrong character or narrator
 - flatten active cast into generic speech or generic psychology
+- copy, echo, or turn sample utterances into catchphrases unless a sample is explicitly marked `canonical_phrase` and the immediate moment earns it
 - summarize future consequences
 - resolve immediate tension unless the directive requires it
 - add global plot structure, act machinery, chapter framing, choices, notes, or commentary

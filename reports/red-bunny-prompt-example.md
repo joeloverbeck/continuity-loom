@@ -28,7 +28,7 @@ Obey these in order:
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
-When records conflict, follow the highest-priority applicable record.
+Deterministic validation should have blocked unresolved contradictions before this prompt was generated. If an apparent priority tension remains, follow the highest-priority applicable record. Do not repair, explain, negotiate, or mention the conflict in the prose.
 Do not mention this hierarchy in the prose.
 </authority_hierarchy>
 
@@ -50,11 +50,12 @@ Title: Red Bunny
 
 Premise: Jon Ureña has been living alone for many years, after his parents died and his sole long-term girlfriend betrayed him. His life is focused on work, his hobbies, and his private obsessions. He relies on porn to calm down his yearnings for gorgeous, barely-legal girls, while in real life, his routine is completely lacking in intimacy. But ever since he met Ane Arrieta, an 18-year-old sex worker who has endured abuse and poverty from childhood, Jon's life is torn between the genuine desire to help Ane, protect her, take care of her, and his desire to possess Ane's sexy body to make love to her whenever he pleases. He can't get enough of the young woman's beautiful face, her sexy red hair and those pigtails, her smooth and provocative body, her delicious and bubbly ass. Jon wants to keep Ane safe, but at times, that intention is barely distinguished from the need to keep the young woman to himself and make sure nobody else can take Ane away from him.
 
-Tone: intimate, erotic, carnal, sexy, steamy, naughty, possessive, taboo, transgressive, intense, secretive
 Genre / mode: explicit erotic dark realism; psychologically intimate first-person fiction
+Tone: intimate, erotic, carnal, sexy, steamy, naughty, possessive, taboo, transgressive, intense, secretive
 Content intensity: explicit
 Explicitness: explicit language, explicit sexual thought, explicit intimacy and sex scenes when earned by continuity
 Language/register: casual literary English with local Irún/Basque-border social texture; dialogue remains primarily English unless a local word or profanity is contextually natural
+Setting baseline: contemporary Irún and the Basque-border station-area social geography; local poverty, commuter routes, public parks, apartment interiors, and street-level sexual economy should feel concrete but not touristic.
 Continuity philosophy: continuity-first; no branches; no dramatic act structure.
 </story_contract>
 
@@ -73,7 +74,7 @@ Special style constraints: Jon's first-person narration may be sexually explicit
 <hard_canon>
 - Jon Ureña is 41 years old.
 - Ane Arrieta is 18 years old.
-- Jon and Ane have not yet spoken in accepted prose.
+- Jon and Ane have not yet spoken in current continuity.
 - Jon does not yet know Ane's name, exact age, occupation, family history, or what happened to her earlier today.
 - Ane does not know Jon.
 - Marisa Arrieta is offstage and does not enter this first segment unless a plausible communication/interruption route is created by the prose.
@@ -98,6 +99,11 @@ Current physical positions:
 - Jon has just spotted her while walking along the park route.
 - There is distance between them; he has not yet approached close enough for a normal conversation unless the prose renders that movement.
 
+Current agency/status:
+- Jon is physically free, mobile, and undecided between approach, freeze, and continued walking.
+- Ane is physically free but emotionally pressured, isolated, frightened of returning home/neighborhood, and seated in a vulnerable public-but-isolated position.
+- Marisa and the earlier harassers have no immediate onstage agency unless the prose creates a plausible communication, entrance, timing, or route mechanism.
+
 Current possessions:
 - Jon carries the plastic bag with The Passenger.
 - Ane carries her small purse with phone and ID.
@@ -110,6 +116,25 @@ Visible injuries/conditions:
 Environmental conditions:
 - Early evening in April; fading daylight is plausible.
 - The area contains vegetation, bushes, a few benches, isolated stretches, and occasional dog-walkers.
+
+Line of sight / visibility:
+- Ane is visible to Jon.
+- Jon may or may not yet be salient to Ane depending on his stare, movement, distance, and speech.
+- Jon cannot perceive Ane's private thoughts or earlier memories.
+
+Routes and exits:
+- Jon can continue toward Puiana, turn back toward Anaka/station-area, slow down, approach the bench, or keep to the path.
+- Ane can stay seated, stand, move toward a more public stretch, retreat along the path, or use her phone/purse if the prose renders it.
+- Marisa and the earlier men cannot appear without route, timing, and immediate cause.
+
+Available time:
+- There is enough time for hesitation, approach, first contact, failed contact, or committed non-contact.
+- There is not enough justified scope for a full rescue, full confession, sex, police process, or major location change before the first response point unless the prose creates an earned irreversible event.
+
+Consent or force conditions:
+- No physical contact, restraint, object transfer, intimacy, sex, rescue movement, or forced relocation has occurred.
+- Jon must not become physically close, sit beside Ane, touch her, take her purse, or move her unless the prose renders action, distance, permission, resistance, or force conditions.
+- Ane is vulnerable but not incapacitated; she retains agency to refuse, challenge, bargain, flee, ignore, or test him.
 
 Current continuity locks:
 - Jon cannot know Ane's name or backstory yet.
@@ -271,6 +296,10 @@ Voice pressure:
 - Jon's narration may be explicit, analytic, and self-indicting.
 - Jon's speech should be cautious and practical.
 - Ane's speech, if she speaks, should be distinct: vernacular, profanity-capable, defensive, transactional, and register-switching under pressure.
+
+Active cast voice pressure pins:
+- Jon: first-person narration may be explicit, analytic, self-indicting, procedural, and erotically contaminated; spoken dialogue should be short, practical, socially cautious, and nonconfessional. Preserve the mismatch between private voltage and public restraint.
+- Ane: if she speaks, her voice should be fast, defensive, vernacular, profanity-capable, street-practical, and capable of transactional reframing. Do not make her generic victim speech; do not make sample-like commercial phrases into catchphrases.
 </active_working_set>
 
 <active_cast_full_dossiers>
@@ -303,6 +332,18 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Dead parents**: Needs the inherited home to prove he survived them responsibly; fears the house has become a sealed room rather than a life; likely harm: using grief as permanent justification for refusing new bonds.
 
 **Moral/psychological edge:** He is dangerous not for lacking rules, but because he has rules, insight, and restraint — yet the coffee-spilling incident proves exhaustion can still turn an intrusive image into action. Every day of non-action is both proof of discipline and a reminder of the one failure.
+
+**Voice pressure pin**
+
+**Core voice in one sentence:** First-person narration is explicit, analytic, procedural, self-indicting, and erotically contaminated; spoken dialogue remains short, practical, socially cautious, and nonconfessional.
+
+**Current speech pressure:** He must make contact, refuse contact, or linger without looking predatory; his spoken words should try to make the moment harmless while his interiority admits the opposite pressure.
+
+**Rhythm/register/diction:** Private narration can spiral through procedure, desire, shame, and self-monitoring; dialogue compresses into literal offers, distance markers, and practical questions.
+
+**Must preserve:** the mismatch between private voltage and public restraint; rational compression; procedural self-monitoring; desire and protection contaminating each other.
+
+**Must avoid:** confessional monologues; voicing taboo desire aloud; gruff-loner romance cliché; therapy-register explanations; repeating “managed,” “routine,” “procedure,” or “loop” as catchphrases.
 
 **Voice**
 
@@ -405,6 +446,18 @@ For Ane as non-POV active cast, use the full dossier to shape visible behavior a
 **Relational charge:** **Marisa**: love contaminated by disgust — finances the household, hides the source, hates the dependency, waits up and despises herself for waiting. **Clients/rescuers**: unstable need where money, value, protection, and escape wear one face for one dangerous minute. **Station-area women**: needs warnings, fears becoming their future, withholds fear behind superiority. **Former classmates/teachers/neighborhood mothers**: needs invisibility until she suddenly needs recognition on her own terms.
 
 **Moral/psychological edge:** Her choices are rational and harmful at once. She is right to protect herself and distrust unprotective men and institutions — but capable of using people as exits, treating tenderness as leverage, and refusing help that arrives in a register that makes her feel small. The dangerous version appears when cash, beauty, and rescue-fantasy align.
+
+**Voice pressure pin**
+
+**Core voice in one sentence:** Ane speaks fast, defensive, profanity-capable, street-practical, transactional, and register-switching, with need converted into price, insult, dare, or logistics.
+
+**Current speech pressure:** She has to sort Jon instantly as threat, client, rescuer, nuisance, or opportunity while hiding terror and avoiding any plain confession of need.
+
+**Rhythm/register/diction:** Short attack-shaped lines, quick reframes, cash/route/body/practical-danger vocabulary, ordinary profanity, and sudden commercial or flirtatious pivots under pressure.
+
+**Must preserve:** transactional reframing; defensive speed; class/poverty concreteness; profanity as punctuation; ordinary-life longing suppressed behind bargaining or insult.
+
+**Must avoid:** generic victim speech; academic or therapy vocabulary; multilingual code-switching; commercial phrases like “investment quality” as catchphrases; direct non-POV interiority.
 
 **Voice**
 
@@ -640,6 +693,7 @@ Do not:
 - narrate Ane's private thoughts directly
 - flatten Jon into generic brooding loner speech
 - flatten Ane into generic victim speech
+- copy, echo, or turn sample utterances into catchphrases unless a sample is explicitly marked `canonical_phrase` and the immediate moment earns it
 - summarize future consequences
 - resolve the entire encounter
 - add global plot structure, act machinery, chapter framing, choices, notes, or commentary

@@ -66,7 +66,7 @@ The handoff may need to tell the prose writer about non-POV causes that shape vi
 
 ## 4. Why active/onstage cast gets rich dossiers
 
-I originally proposed stronger compression. Your correction is right for this app’s goal. The prose writer must preserve characterization and unique speech patterns, and small slices will often flatten character voice.
+The prose writer must preserve characterization and unique speech patterns, and small active-cast slices will often flatten character voice.
 
 The revised rule:
 
@@ -78,6 +78,19 @@ The revised rule:
 The reason is practical: dialogue and behavior quality depend on more than “goal + mood.” They need diction, rhythm, class register, pressure behavior, evasion style, taboo/suppression rules, body, perception, misreads, and anti-generic warnings.
 
 Long-context research warns that information buried in the middle may be underused, but the solution is not to starve active cast. The solution is to put state and instructions at the edges, give active cast clear headings, and avoid dumping full offstage dossiers.
+
+---
+
+
+### 4.1 Why active cast also needs compact voice pressure pins
+
+Full active/onstage dossiers remain correct. The compiler should not silently compress them.
+
+However, long dossiers can dilute the most important voice constraints. The prompt should therefore compile a compact per-character voice pressure pin near `<active_working_set>`. This is not a replacement for the full dossier. It is a salience duplicate: the few voice constraints most likely to prevent generic dialogue in the current local unit.
+
+A good voice pin includes current speech pressure, rhythm/register, vocabulary or metaphor pools, suppression/taboo behavior, dialogue tactics, and anti-generic/anti-repetition warnings.
+
+The pin should be deterministic: either stored directly, derived from stable dossier fields by fixed formatting, or authored as a generation-time override. It must not be summarized by an LLM.
 
 ---
 
@@ -103,18 +116,20 @@ The universal template therefore expects rich active cast dossiers to include `s
 
 ---
 
-## 6. Why sample dialogue is optional, annotated, and non-copyable by default
+## 6. Why sample dialogue is optional, capped, selected, and non-copyable by default
 
 Few-shot examples are powerful because they condition the model’s next output. This can help with difficult style and voice targets. It can also make the model echo examples, overuse catchphrases, or treat examples as content rather than pattern.
 
-The schema allows `sample_utterances`, but they are optional and must be annotated by situation/function/copy policy. Default copy policy is `never_copy_verbatim`.
+The schema allows `sample_utterances`, but they are optional and must be annotated by situation, speech function, and copy policy. Default copy policy is `never_copy_verbatim`.
+
+Compiled sample utterances should be capped at zero to three per active/onstage character. The default compiled count is zero. Samples should compile only when selected by the user or selected by deterministic metadata tied to the current pressure. An LLM must not choose or rewrite samples during prompt compilation.
 
 Best use:
 
 - one to three micro-examples for the current pressure
 - examples of speech function, not catchphrases
-- rotated by relevance
-- paired with anti-repetition warnings
+- examples showing refusal, bargaining, evasion, seduction-as-performance, guarded tenderness, anger, lying-by-understatement, or other pressure behavior
+- pairing with anti-repetition warnings
 
 Bad use:
 
@@ -122,8 +137,7 @@ Bad use:
 - repeated catchphrases
 - examples not tied to current situation
 - examples that reveal secrets or future-state material
-
-This design accepts the value of examples without letting them become a mimicry trap.
+- samples treated as prose to continue
 
 ---
 
@@ -163,9 +177,9 @@ The schema uses:
 - setting fact
 - discovered fact
 
-I do not recommend `deprecated_fact` as a normal record type. In a single-continuity app, wrong facts should be removed, corrected, or superseded by current state. Keeping retired facts around in the active story model invites leakage.
+`deprecated_fact` should not be a normal record type. In a single-continuity app, wrong facts should be removed, corrected, or superseded by current state. Keeping retired facts around in the active story model invites leakage.
 
-The only temporary “superseded” state worth supporting is a compiler warning/repair state: “current authoritative state overrides older records.” That is a diagnostic, not a story record category.
+The only temporary “superseded” state worth supporting is a validation diagnostic: “this selected fact appears superseded by current authoritative state.” It is not a story record category, not a compiler repair state, and not prompt-facing text. If the selected fact truly contradicts current state, generation blocks until the user revises, removes, or deselects it.
 
 ---
 
@@ -197,7 +211,7 @@ The template gives plans and intentions their own dedicated causal-pressure sect
 
 ## 12. Why CLOCK records become writer-facing pressure
 
-Your original clock idea came from systems where an internal LLM judged ticking. This app does not do that. The human updates records manually.
+Some clock systems depend on an internal LLM judging when a clock should tick. Continuity Loom does not do that. The human updates records manually.
 
 Therefore, CLOCK records should not be hidden mechanics. They should be writer-facing causal pressure:
 
@@ -319,7 +333,7 @@ Bullets, not paragraphs. Canon must be easy to scan and hard to misread.
 
 ### `{current_authoritative_state}` placeholders
 
-These are the live facts: time, place, bodies, objects, agency, visible injuries, environment. They override older material.
+These are the live start facts: time, place, bodies, agency/status, positions, possessions, visible injuries/conditions, environment, line of sight, routes/exits, available time, consent/force conditions, and current locks. They override older material and should be compact enough to scan early.
 
 ### `{immediate_handoff}` placeholders
 
@@ -341,9 +355,13 @@ This enables dramatic irony without giving the POV forbidden information.
 
 These let hidden truth shape behavior while protecting secrets.
 
+### `{active_cast_voice_pressure_pins}`
+
+These are compact per-character salience duplicates compiled near `<active_working_set>`. They do not replace full dossiers. They keep the most important current voice constraints near the prompt front.
+
 ### `{active_onstage_full_cast_dossiers}`
 
-This is where rich characterization lives. Do not compress active cast here unless the user chooses to.
+This is where rich characterization lives. Do not compress active cast here unless the user chooses to. Current-generation voice overrides may also appear here under a clearly labeled temporary line.
 
 ### `{present_minor_cast_notes}` and `{offstage_relevance_notes}`
 
@@ -388,6 +406,19 @@ The mapping table must specify:
 
 ---
 
+
+## 20.1 Why generation validation focus tags are needed
+
+Universal minimum prompt completeness is necessary but not enough. Many blockers are context-dependent. A dialogue-only continuation, an object transfer, a location change, an intimacy scene, a violence/injury moment, and an offstage interruption require different minimum state.
+
+The schema should therefore include generation-time validation focus tags. These tags are not plot structure, beats, arcs, or drama management. They do not tell the story where to go. They tell deterministic validation which completeness checks must pass before the prompt may be generated.
+
+Examples: `physical_interaction_expected`, `dialogue_expected`, `secret_or_clue_pressure`, `object_transfer_possible`, `location_change_possible`, `offstage_interruption_possible`, `intimacy_or_sex_possible`, `violence_or_injury_possible`, `clock_tick_possible`, and `continuation_after_accepted_segment`.
+
+These tags should be selected by the user or by deterministic UI controls. They must not be inferred by an LLM.
+
+---
+
 ## 21. Why unresolved compiler warnings must not enter prompts
 
 The schema previously allowed unresolved conflicts to be compiled as a writer-visible `<compiler_warning>`. That contradicts fail-closed validation. If a contradiction is real, prompt generation must block. If a risk is only a warning, it belongs in the app validation surface, not in the prose prompt.
@@ -408,4 +439,3 @@ Putting unresolved warnings into the prompt asks the external prose writer to re
 - Young, Ware, Cassell & Robertson, “Plans and Planning in Narrative Generation”: https://justusrobertson.com/papers/Young%20Ware%20Cassell%20and%20Robertson%202013%20-%20Plans%20and%20Planning%20in%20Narrative%20Generation.pdf
 - Tseng et al., “Two Tales of Persona in LLMs”: https://aclanthology.org/2024.findings-emnlp.969.pdf
 - Tang et al., “The Few-shot Dilemma”: https://arxiv.org/html/2509.13196v1
-```
