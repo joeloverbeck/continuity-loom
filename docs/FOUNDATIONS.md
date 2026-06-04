@@ -315,7 +315,11 @@ The correct mechanism for carrying prior events forward is structured story stat
 
 The only allowed continuation-launch material is user-authored generation-time context, such as recent causal context, last visible moment, begin-exactly-after-this guidance, manual directive, relevant current state, and selected EVENT records.
 
-Any template field that appears to refer to the most recent accepted prose must be interpreted narrowly: it may contain `None`, or it may be replaced by a user-authored handoff note that summarizes continuity-relevant state. It must not contain verbatim accepted prose. It must not contain automatic authoritative prose-derived summary. It must not invite the model to mine the prose archive for canon.
+Prompt, schema, and compiler surfaces must not name or label any prompt field as “most recent accepted prose,” “accepted prose summary,” or anything that implies accepted prose is a prompt source.
+
+The correct generation-time field is `prior_accepted_prose_status_or_handoff_note`. It may contain `None`, or it may contain a user-authored continuity handoff note. It must not contain verbatim accepted prose, rejected candidate prose, superseded regeneration text, automatic prose-derived summary, or any instruction inviting the model, compiler, or user to mine the prose archive for canon.
+
+If a prior accepted segment created continuity-relevant durable change, that change belongs in story records, current authoritative state, immediate handoff, or selected EVENT/FACT/BELIEF/RELATIONSHIP/EMOTION/PLAN/CLOCK/OBLIGATION/CONSEQUENCE/OPEN THREAD/LOCATION/OBJECT/AFFORDANCE/CAST MEMBER records before the next prompt is generated.
 
 ---
 

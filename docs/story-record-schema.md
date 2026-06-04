@@ -118,7 +118,7 @@ Compiler requirements:
 
 - The compiler includes selected records in deterministic section order.
 - The user may override active selection.
-- Records outside the working set are omitted unless they are global locks or necessary current-state facts.
+- Records outside the working set are omitted unless the same information is present in explicit story configuration or generation-time fields authored/selected by the user. The compiler must not silently add globally important records merely because they seem important.
 - Active/onstage cast gets rich dossiers.
 - Present-but-minor cast gets compressed presence/voice/affordance notes.
 - Offstage cast gets relevance slices only.
@@ -140,6 +140,11 @@ possessions: prose or structured list
 visible_conditions: prose list
 environmental_conditions: prose
 current_locks: prose list
+entity_statuses: prose or compiled ENTITY STATUS list
+line_of_sight_and_visibility: prose
+routes_and_exits: prose list
+available_time: prose
+consent_or_force_conditions: prose | none
 ```
 
 Prompt treatment:
@@ -157,7 +162,7 @@ Fields:
 ```yaml
 recent_causal_context: prose
 last_visible_moment: prose
-most_recent_prose_summary: prose | none
+prior_accepted_prose_status_or_handoff_note: prose | none
 begin_after: prose
 ```
 
@@ -166,6 +171,7 @@ Prompt treatment:
 - Always included.
 - The external LLM begins after `last_visible_moment` or `begin_after`.
 - It may include relevant prior events leading to the first segment, but must not become a flat event archive.
+- It must not contain verbatim accepted prose or an automatic prose-derived summary. It is a user-authored continuity handoff only.
 
 ### 3.4 MANUAL MOMENT DIRECTIVE
 
@@ -234,7 +240,7 @@ Fields:
 ```yaml
 entity_id: id
 life: alive | dead | unknown | not_applicable
-agency: free | constrained | coerced | captive | incapacitated | unconscious | dead | unknown | not_applicable
+agency: free | constrained | coerced | captive | incapacitated | unconscious | unknown | not_applicable
 location: location_id | unknown | concealed | offstage | not_applicable
 visibility_to_pov: visible | audible | inferred | hidden | not_applicable
 current_activity: prose
@@ -243,7 +249,7 @@ current_activity: prose
 Prompt treatment:
 
 - Used to compile current authoritative state and physical continuity.
-- Conflicts with active plans or location records should generate warnings.
+- Conflicts with active plans, current state, or location records should generate validation blockers when they make the generation impossible or contradictory; they should generate warnings only for non-blocking salience or completeness risks.
 
 ---
 
@@ -368,13 +374,13 @@ scope: global | entity | location | object | relationship | current_segment
 known_by: list[entity_id] | public | unknown | not_applicable
 audience_visibility: hidden | implied | explicit | not_applicable
 salience: low | medium | high | critical
-status: active | resolved | superseded_by_current_state
+status: active | superseded_by_current_state
 ```
 
 Notes:
 
 - Do not use `deprecated_fact` as a normal record kind. If a fact is wrong or retired, the user should remove or supersede it.
-- `superseded_by_current_state` exists only as a temporary warning/repair state during compilation, not as a long-term archive strategy.
+- `superseded_by_current_state` exists only as a temporary diagnostic state during validation, not as a long-term archive strategy. If a superseded fact remains selected and contradicts current state, generation blocks until the user removes, revises, or deselects it.
 
 Prompt treatment:
 
@@ -444,7 +450,7 @@ Prompt treatment:
 - Compile into separate lanes: writer-visible hidden truth, holders, non-holders, allowed cues, forbidden reveals, reveal permission.
 - The writer may know the secret so behavior and subtext work.
 - The POV/narrator may not know the secret unless the POV access allows it.
-- Natural revelation is allowed only when `reveal_permission` is `natural_reveal_allowed` or when the manual directive explicitly permits it.
+- Natural revelation is allowed only when `reveal_permission` is `natural_reveal_allowed`. `directive_required` allows reveal only when the manual directive explicitly requires or permits it. `locked` cannot be overridden by manual directive.
 
 ### 6.4 POV KNOWLEDGE PROFILE
 
@@ -815,32 +821,100 @@ Prompt treatment:
 
 ---
 
-## 10. Compiler warnings
-
-The deterministic compiler should warn before prompt generation when the active working set contains:
-
-- two current locations for one entity
-- two holders for one object
-- an active plan held by a dead, unconscious, captive, or absent entity with no means to act
-- a POV character marked as not knowing a secret while another selected record grants that knowledge
-- a manual directive requiring impossible movement, impossible perception, or impossible knowledge
-- current state contradicting the immediate handoff
-- a relationship implying contact between characters who have not met, unless it is one-sided perception/desire/fear
-- a clock threshold that appears to have happened while the clock remains unticked
-- an offstage entity marked as interrupting without an entrance route, communication route, or timing
-- a content-policy envelope inconsistent with active cast ages/statuses or governing model policy
-
-If conflict remains unresolved, the prompt may include a writer-visible compiler warning:
-
-```md
-<compiler_warning>
-Current authoritative state overrides older records: {resolution}. Do not mention this warning in prose.
-</compiler_warning>
-```
 
 ---
 
-## 11. Local invention and durable change
+## 10. Compiler mapping and minimum prompt completeness
+
+Every prompt placeholder must have a deterministic source. The compiler is allowed to format, group, sort, and render selected records and generation-time fields. It is not allowed to infer missing pressure, silently select outside records, summarize prose, or repair contradictions with an LLM.
+
+| Prompt section / placeholder | Source record type or generation-time field | Required? | Validation if missing | Empty-state rendering | Notes |
+|---|---|---:|---|---|---|
+| `<role>` | Template constant | Yes | Block if template missing | Not applicable | No story data. |
+| `<authority_hierarchy>` | Template constant aligned with FOUNDATIONS | Yes | Block if omitted or reordered incompatibly | Not applicable | Manual directive remains below state, physical continuity, POV, and reveal locks. |
+| `{rating_label}` and content-policy body | UNIVERSAL CONTENT POLICY + STORY CONTRACT content fields | Yes | Block if rating/content envelope is absent or contradicts active cast ages/statuses/provider constraints | Render story-configured envelope; never render `NO RESTRICTIONS` | Governing provider/platform policy remains first. |
+| `{title}` | STORY CONTRACT.title | Yes | Block | Not applicable | Stable story identity. |
+| `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | Not applicable | Should be durable premise, not current scene recap. |
+| `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes | Block if absent for title/premise/tone; warn for missing setting baseline when irrelevant | `None specified` only for nonessential subfields | These do not override canon/state. |
+| `<prose_mode>` fields | PROSE MODE generation-time field or story default overridden for generation | Yes | Block if POV/person/tense/interiority cannot be resolved | Not applicable | If POV is not omniscient, knowledge constraints are mandatory. |
+| `{hard_canon_bullets}` | FACT where `fact_kind=hard_canon` selected, plus story-level immutable locks selected by user | Yes if story has hard canon relevant to segment | Warn if none; block if current state needs missing hard canon such as active cast age/status | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
+| `<current_authoritative_state>` fields | CURRENT AUTHORITATIVE STATE generation-time field, ENTITY STATUS, LOCATION, OBJECT | Yes | Block if active physical interaction lacks time/location/onstage entities/positions/possessions/visibility/routes as applicable | Optional subfields render `None currently specified` | Current state overrides older selected records only if no contradiction remains; unresolved contradictions block. |
+| `{recent_causal_context}` | IMMEDIATE HANDOFF.recent_causal_context + selected EVENT records grouped as immediate/recent | Yes | Block if blank and generation is not first segment or lacks launch context | `None; first local unit begins from current state` | Writer-visible, not automatically POV knowledge. Must not contain verbatim accepted prose. |
+| `{last_visible_moment}` | IMMEDIATE HANDOFF.last_visible_moment | Yes | Block if blank | Not applicable | The exact launch point. |
+| `{prior_accepted_prose_status_or_handoff_note}` | IMMEDIATE HANDOFF prior status/handoff note authored by user | Yes | Block if it contains accepted prose text or automatic prose-derived summary | `None. No accepted prose is included.` | Replaces `most_recent_prose_summary`. |
+| `{begin_after}` | IMMEDIATE HANDOFF.begin_after | Yes | Block if blank | Not applicable | Must not contradict last visible moment/current state. |
+| `{manual_must_render}` | MANUAL MOMENT DIRECTIVE.must_render | Yes | Block if absent/blank | Not applicable | May be a single plain instruction. |
+| `{manual_may_render_if_naturally_caused}` | MANUAL MOMENT DIRECTIVE.may_render_if_naturally_caused | No | No block | `None specified` | Optional invention corridor. |
+| `{manual_do_not_force}` | MANUAL MOMENT DIRECTIVE.do_not_force | No but recommended | Warn if blank for risky scenes | `None specified` | Useful guardrail against overreach. |
+| `<pov_knowledge_constraints>` | Compiled POV KNOWLEDGE PROFILE from PROSE MODE, FACT, BELIEF, SECRET, EVENT, ENTITY STATUS | Yes when POV is not omniscient | Block if missing, contradictory, or if selected secret is both hidden and granted to POV | Optional lanes render `None specified`; the section itself never omitted | Prompt labels do not grant POV knowledge. |
+| `<audience_knowledge>` | AUDIENCE KNOWLEDGE PROFILE from SECRET.audience_visibility, EVENT.audience_visibility, FACT.audience_visibility, user-authored generation-time audience notes | Yes when audience differs from POV or hidden truth is writer-visible | Warn if empty; block if active secret has no audience/POV relation | `No audience knowledge distinct from POV specified` | Dramatic irony without leakage. |
+| `<secrets_and_reveal_constraints>` | SECRET records selected or active in current moment | Required if any selected secret affects current behavior, POV, or reveal | Block if holders/non-holders/reveal permission missing | `No active secrets or reveal locks selected` | `locked` cannot be overridden by manual directive. |
+| `<active_working_set>` pressure lanes | User-authored generation-time pressure summary, plus deterministic grouping of selected pressure records using their prose-facing fields | Yes | Warn if all pressure lanes empty; block if manual directive lacks enough context to produce local motion | Empty lanes render `None beyond detailed records below` | This is a précis, not LLM summarization. |
+| `{active_onstage_full_cast_dossiers}` | CAST MEMBER records selected as active_onstage_full | Yes for active person-like onstage cast | Block if active/onstage person lacks cast dossier or minimal voice/behavior fields | Not applicable when no person-like cast is onstage | Must not be silently compressed. |
+| `{present_minor_cast_notes}` | CAST MEMBER/ENTITY selected as present_minor_compressed | No | No block | `None` | Compressed notes only. |
+| `{offstage_relevance_notes}` | CAST MEMBER/ENTITY selected as offstage_relevant_cast + offstage plans/clocks/obligations | No unless offstage pressure/interruption is active | Block if offstage interruption is possible/required but route/timing/communication is missing | `None` | No full offstage dossier unless user selects. |
+| `{active_intentions}` | INTENTION records selected, status active/blocked if relevant | No | Warn if manual directive implies a character goal but none is selected/authored | `None active` | Intentions are weaker than plans. |
+| `{active_plans}` | PLAN records selected, status active/blocked/suspended if current pressure | No unless directive depends on plan | Block if plan holder cannot act and plan is meant to drive prose | `None active` | Plans drive tactics only when current step can operate. |
+| `{active_clocks}` | CLOCK records selected, status active/paused as relevant | No | Block if selected clock contradicts current state; warn if clock appears stale | `None active` | Writer-facing pressure; human updates after acceptance. |
+| `{active_obligations}` / `{active_consequences}` | OBLIGATION and CONSEQUENCE records selected | No | Block if selected obligation/consequence assumes contradicted state | `None active` | Strong durable-change support. |
+| `{active_open_threads}` | OPEN THREAD records selected | No | Warn if too many high-urgency threads selected for a local unit | `None active` | Never commands closure. |
+| `{pov_accessible_facts}` | FACT records selected and known_by includes POV/public or POV knows via BELIEF | No, except where needed for directive/current state | Block if required fact missing for manual directive | `None beyond current state and hard canon` | Replaces generic `{relevant_facts}`. |
+| `{writer_visible_or_non_pov_facts}` | FACT records selected but not POV-accessible; SECRET/Event-derived facts with audience/writer visibility | No | Block if hidden fact lacks reveal constraints | `None` | Must not become narrator knowledge. |
+| `{pov_relevant_beliefs}` | BELIEF records held by POV | No | Warn if none and POV-heavy scene lacks interpretive pressure | `None specified` | Mark truth relation. |
+| `{non_pov_behavior_shaping_beliefs}` | BELIEF records held by non-POV cast | No | Block if used as direct non-POV interiority in close POV mode | `None specified` | Render through behavior. |
+| `{recent_events}`, `{relevant_backstory}`, `{offstage_or_withheld_events}` | EVENT records grouped by event_kind and visibility | No except when handoff/directive depends on them | Warn if too many background events selected; block if event contradicts current state | `None selected` | No flat archive dump. |
+| `{locations}`, `{objects}`, `{visible_affordances}`, `{unavailable_or_impossible_actions}` | LOCATION, OBJECT, AFFORDANCE, ENTITY STATUS, CURRENT AUTHORITATIVE STATE | Yes for active physical interaction | Block if physical continuity dangerously underspecified | Optional lanes render `None specified` | Include unavailable actions when omission invites error. |
+| `{physical_continuity}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS + LOCATION/OBJECT/AFFORDANCE | Yes for active physical interaction | Block if missing bodies/objects/routes/visibility/time/consent-force conditions where relevant | Not applicable only for nonphysical abstract prose, which v1 should rarely generate | Must be concrete and current. |
+| `<invention_permissions>` | Template constant + story/generation configured permissions | Yes | Block if absent | Not applicable | Durable changes require strong cause and human gatekeeping. |
+| `<contradiction_prohibitions>` | Template constant + selected current locks | Yes | Block if absent | Not applicable | Cannot be weakened by directive. |
+| `<prose_craft>` | Template constant + story/prose preferences + cast voice fields | Yes | Warn if special style constraints conflict with prose mode | Not applicable | Craft cannot alter continuity. |
+| `{soft_unit_guidance}` | STOP GUIDANCE generation-time field | Yes | Block if blank | Not applicable | Replaces beat count. |
+| `<final_output_instruction>` | Template constant | Yes | Block if absent | Not applicable | Keep at final prompt edge. |
+
+Minimum prompt completeness for v1:
+
+1. Role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction must always compile.
+2. Current authoritative state, immediate handoff, manual directive, and stop guidance must be present for every generation.
+3. Non-omniscient POV requires a populated POV knowledge profile.
+4. Any active secret requires holders, protected non-holders, allowed cues, forbidden reveals, and reveal permission.
+5. Any active physical interaction requires current location, onstage entities, positions/distance, object possession, visibility/line of sight, routes/exits, available time, and unavailable/impossible actions where omission would invite error.
+6. Any active/onstage person-like cast member requires a full cast dossier or explicit user-selected minimal emergency dossier; v1 should block if neither exists.
+7. The compiler must render empty optional sections explicitly as `None`, `None active`, or `None selected`; it must not omit constitutional sections.
+8. Unresolved contradictions, impossible conditions, missing mandatory fields, secret leakage, and accepted-prose inclusion are blockers. Length, salience, optional nuance gaps, and lost-in-the-middle risk are warnings.
+
+## 11. Validation blockers and compiler warnings
+
+The deterministic compiler must classify validation output as either blockers or warnings. Blockers prevent prompt generation and OpenRouter sending. Warnings may be shown to the user, but they do not become instructions to the external prose writer.
+
+Blockers include:
+
+- two current locations for one entity when both are selected as current
+- two holders for one object when both are selected as current
+- an active plan held by a dead, unconscious, captive, incapacitated, absent, or otherwise unable entity with no plausible means to act
+- a POV character marked as not knowing a secret while another selected record grants that knowledge
+- a manual directive requiring impossible movement, impossible perception, impossible timing, impossible object possession, impossible knowledge, or a reveal forbidden by a locked secret
+- current authoritative state contradicting immediate handoff
+- a relationship implying actual contact between characters who have not met, unless the record clearly marks one-sided perception/desire/fear
+- a clock threshold that selected records say has happened while the clock remains unticked and no resolved consequence exists
+- an offstage entity marked as interrupting without an entrance route, communication route, timing route, or plausible causal mechanism
+- a content-policy envelope inconsistent with active cast ages/statuses, story configuration, or governing model/provider constraints
+- active physical interaction without enough bodies, positions, objects, routes, visibility, available time, and consent/force conditions where relevant
+- accepted prose text, rejected candidate text, or an automatic prose-derived summary appearing in any prompt-facing field
+- any constitutional prompt section missing or structurally empty where the universal prompt contract requires content
+
+Warnings include:
+
+- prompt length or lost-in-the-middle risk
+- too many high-salience records selected for one local unit
+- missing optional nuance such as sample utterances, anti-repetition warnings, or setting texture
+- no active clock, obligation, open thread, or relationship pressure when the manual directive is otherwise sufficient
+- active cast dossier is long enough that the user may want a concise voice-pressure pin in `<active_working_set>`
+
+Do not compile unresolved contradictions into the generated prose prompt as `<compiler_warning>`. If the issue is real, block. If it is not blocking, show it in the app’s validation surface, not as prose-writer context.
+
+---
+
+## 12. Local invention and durable change
 
 The schema must support three levels of invention.
 
@@ -881,7 +955,7 @@ Durable changes should not be justified by:
 
 ---
 
-## 12. Prompt ordering requirements
+## 13. Prompt ordering requirements
 
 The generated prompt should order records roughly as follows:
 
@@ -897,7 +971,7 @@ The generated prompt should order records roughly as follows:
 10. Rich active cast dossiers
 11. Present-minor and offstage cast relevance
 12. Plans, clocks, obligations, consequences, open threads
-13. Facts, beliefs, events
+13. POV-accessible facts, writer-visible/non-POV facts, beliefs, events
 14. Locations, objects, affordances, physical continuity
 15. Invention permissions and contradiction prohibitions
 16. Prose craft
@@ -908,7 +982,7 @@ This order keeps critical state early, rich characterization available, and fina
 
 ---
 
-## 13. Research notes
+## 14. Research notes
 
 - Structured prompts with explicit sections are recommended by current provider guidance. OpenAI, Anthropic, and Google all document sectioned prompt practices; Anthropic and Google specifically show XML-style or tag/Markdown boundary patterns for mixed instructions, context, and tasks.
 - Long-context research shows that models can underuse information buried in the middle of long prompts. This supports placing hard state and final output/stop instructions at the beginning/end, and using section labels to reduce ambiguity.

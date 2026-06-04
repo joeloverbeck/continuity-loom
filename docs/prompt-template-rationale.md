@@ -1,6 +1,6 @@
 # Rationale for the Universal Prose Prompt Template
 
-Purpose: explain the sections, categories, placeholders, and major design decisions in `02-universal-prose-prompt-template.md`.
+Purpose: explain the sections, categories, placeholders, and major design decisions in `prompt-template.md`.
 
 ---
 
@@ -10,7 +10,7 @@ The generated prompt mixes instructions, story facts, current state, hidden trut
 
 The recommended form is a Markdown document with XML-style blocks. Markdown gives readability. XML-style tags give semantic boundaries: `<current_authoritative_state>`, `<secrets_and_reveal_constraints>`, `<active_cast_full_dossiers>`, `<stop_rule>`, and so on.
 
-This is not superstition. Current provider guidance supports sectioned prompting: OpenAI documents reusable structured prompts and prompt-engineering practices; Anthropic recommends clear structure and XML-style tags for prompts with mixed instructions/context/examples; Google Gemini’s prompt design guidance shows both XML-style and Markdown examples for separating role, constraints, context, and task. Long-context context-engineering guidance likewise recommends distinct sections and boundary markers.
+This is not superstition. Current provider guidance supports sectioned prompting: OpenAI currently emphasizes code-managed, versioned production prompts and clear prompt-engineering practice; Anthropic recommends XML tags for prompts mixing instructions, context, examples, and variable inputs; Google Gemini’s prompt design guidance shows XML-style and Markdown examples for separating role, constraints, context, and task. Context-engineering guidance likewise recommends curated, unambiguous context rather than bloated ambiguous prompt surfaces.
 
 The exact tag vocabulary matters less than consistency. The app should generate the same section order and same tag names every time unless the template version changes.
 
@@ -50,6 +50,17 @@ The template splits:
 - `<immediate_handoff>`: how we got here and exactly where prose begins.
 
 This split is the most important continuity safeguard after POV/reveal locks. It also helps long-context models because hard state appears early and in a compact form.
+
+
+### 3.1 Why `most_recent_prose_summary` was removed
+
+The old placeholder name `most_recent_prose_summary` was too dangerous. It pointed the user and future implementers toward accepted prose as the thing to summarize, even though the constitutional rule says accepted prose is not prompt context. The corrected placeholder is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, or an automatic prose-derived summary.
+
+The purpose of the field is launch clarity, not prose mining. If a prior segment changed continuity, the durable change belongs in records and current state before the next generation.
+
+### 3.2 Why recent causal context is writer-visible but not POV knowledge
+
+The handoff may need to tell the prose writer about non-POV causes that shape visible behavior. That does not make those causes available to the narrator. The template therefore labels recent causal context as writer-visible and repeats that entity labels, dossier headings, and handoff facts do not grant POV knowledge.
 
 ---
 
@@ -180,7 +191,7 @@ You said users will create PLAN records only when a real plan exists. That makes
 
 This is also research-compatible. Narrative generation work repeatedly treats goals and plans as central to meaningful character action. Plans make behavior legible without requiring act structure.
 
-The template places active plans and intentions before relationships, emotions, and cast dossiers because they have stronger causal force in the current moment.
+The template gives plans and intentions their own dedicated causal-pressure section, while `<active_working_set>` may surface a compact pressure précis near the front. Do not claim that plans appear before cast dossiers unless the template order actually changes.
 
 ---
 
@@ -312,7 +323,7 @@ These are the live facts: time, place, bodies, objects, agency, visible injuries
 
 ### `{immediate_handoff}` placeholders
 
-These provide causal launch, not an archive. The handoff tells the writer where prose begins.
+These provide causal launch, not an archive. The handoff tells the writer where prose begins. The handoff must use `prior_accepted_prose_status_or_handoff_note`, not `most_recent_prose_summary`, because accepted prose is not prompt context.
 
 ### `{manual_must_render}`, `{manual_may_render_if_naturally_caused}`, `{manual_do_not_force}`
 
@@ -352,7 +363,40 @@ This replaces hard beat counts. It gives a human-readable target while keeping t
 
 ---
 
-## 19. Source notes
+## 19. Why generic facts are split by POV accessibility
+
+The original `{relevant_facts}` placeholder was too broad. A true fact can be writer-visible, audience-visible, hidden from the POV, publicly known, or known only by a non-POV character. A single generic fact bucket invites first-person or close-third leakage.
+
+The corrected prompt splits facts into `pov_accessible_facts` and `writer_visible_or_non_pov_facts`. This uses existing schema data (`known_by`, `audience_visibility`, `pov_access`, and secret lanes) and keeps the prose writer from turning all truth into narrator knowledge.
+
+---
+
+## 20. Why a compiler mapping table is required
+
+A deterministic compiler needs an explicit mapping from prompt placeholders to record types and generation-time fields. Without it, future implementation will quietly invent source rules, silently omit minimum fields, or drift template/schema/rationale out of sync.
+
+The mapping table belongs primarily in `story-record-schema.md`, because the schema is where record types, prompt-compilation behavior, validation requirements, and empty-state behavior meet. The rationale should explain why the table exists; it should not duplicate every row unless needed.
+
+The mapping table must specify:
+
+- prompt section or placeholder;
+- source record type or generation-time field;
+- whether it is required;
+- validation behavior when missing;
+- deterministic empty-state rendering;
+- notes about authority, POV, reveal, or physical continuity.
+
+---
+
+## 21. Why unresolved compiler warnings must not enter prompts
+
+The schema previously allowed unresolved conflicts to be compiled as a writer-visible `<compiler_warning>`. That contradicts fail-closed validation. If a contradiction is real, prompt generation must block. If a risk is only a warning, it belongs in the app validation surface, not in the prose prompt.
+
+Putting unresolved warnings into the prompt asks the external prose writer to repair continuity, which is exactly the intelligence layer the app rejects.
+
+---
+
+## 22. Source notes
 
 - OpenAI prompt engineering guide: https://developers.openai.com/api/docs/guides/prompt-engineering
 - Anthropic prompting best practices: https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/claude-prompting-best-practices

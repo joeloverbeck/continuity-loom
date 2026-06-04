@@ -37,7 +37,7 @@ Do not mention this hierarchy in the prose.
 <content_policy>
 RATING: {rating_label}
 
-This is mature fiction. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when it serves character, situation, continuity, and the story's intended tone.
+This is fiction governed by the story-specific maturity envelope below. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
 
 This includes, where appropriate to the story: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
 
@@ -89,19 +89,19 @@ Current continuity locks: {current_locks}
 </current_authoritative_state>
 
 <immediate_handoff>
-Recent causal context:
+Recent causal context (writer-visible; not automatically POV knowledge):
 {recent_causal_context}
 
 Last visible moment:
 {last_visible_moment}
 
-Most recent accepted prose:
-{most_recent_prose_summary}
+Prior accepted prose status / user-authored continuity handoff:
+{prior_accepted_prose_status_or_handoff_note}
 
 Begin prose exactly after this point:
 {begin_after}
 
-Do not recap except through brief POV-colored perception or pressure.
+Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
 </immediate_handoff>
 
 <manual_directive priority="high">
@@ -127,6 +127,9 @@ POV does not know:
 
 POV cannot perceive right now:
 {pov_cannot_perceive_now}
+
+Prompt-label rule:
+Prompt labels, dossier headings, and entity names are writer-facing handles. They do not grant the POV knowledge of names, identities, secrets, motives, backstory, or offstage facts.
 
 Non-POV interiority rule:
 In first person or close third, do not narrate non-POV thoughts, feelings, memories, motives, or private knowledge as direct interiority. Use non-POV dossiers and hidden truths to shape visible behavior, speech, timing, evasion, silence, posture, and subtext. Only omniscient mode may violate this, and only if the prose mode explicitly says so.
@@ -164,7 +167,7 @@ Forbidden reveals now:
 Reveal permission:
 {reveal_permissions}
 
-A secret may be revealed only if its reveal permission, the manual directive, or immediate causality makes the reveal natural and earned. Otherwise, use surface action, evasions, misdirection, timing, omissions, object handling, charged silence, or clue pressure without leaking the hidden truth into the wrong mind or narrator.
+A secret may be revealed only if its reveal permission allows reveal in this generation. `locked` means no reveal even if the moment would become more dramatic. `clue_only` permits clues but not confirmation. `natural_reveal_allowed` permits reveal only when immediate causality earns it. `directive_required` permits reveal only when the manual directive explicitly requires or permits it. The manual directive cannot override locked secrets or higher-priority continuity constraints. Otherwise, use surface action, evasions, misdirection, timing, omissions, object handling, charged silence, or clue pressure without leaking the hidden truth into the wrong mind or narrator.
 </secrets_and_reveal_constraints>
 
 <active_working_set>
@@ -237,8 +240,11 @@ Open threads are unresolved pressures, promises, risks, mysteries, or tensions. 
 </active_open_threads>
 
 <relevant_facts_beliefs_events>
-Facts:
-{relevant_facts}
+POV-accessible facts:
+{pov_accessible_facts}
+
+Writer-visible or non-POV facts:
+{writer_visible_or_non_pov_facts}
 
 POV-relevant beliefs:
 {pov_relevant_beliefs}
@@ -323,7 +329,7 @@ Let the POV character's diction, judgments, omissions, bodily attention, and sen
 Use active cast voice and speech-pattern peculiarities. Characters should not sound interchangeable.
 Prefer concrete nouns, embodied verbs, pressure-shaped dialogue, specific sensory detail, and visible action.
 Use interiority when it is part of the moment's pressure; avoid explaining psychology from outside.
-Minimize filter language such as "saw," "heard," "felt," "noticed," "realized," and "knew" unless the act of perceiving is itself the event.
+Avoid unnecessary filter language such as "saw," "heard," "felt," "noticed," "realized," and "knew" unless the act of perceiving is itself the event; do not make prose stiff by mechanically purging useful perception verbs.
 Render non-POV psychology through behavior, speech, timing, silence, posture, gesture, object handling, and withheld response.
 Let dialogue carry tactic, friction, evasion, desire, fear, status, leverage, or need. Do not use dialogue as backstory delivery unless forced by the moment.
 Do not chase closure. The prose may stop mid-conversation, after a refusal, after a reveal-withheld, after an action creates new pressure, or after a practical result changes what can happen next.
@@ -344,6 +350,8 @@ Stop as soon as one of these occurs:
 - an interruption changes the immediate pressure
 - an irreversible event occurs
 - continuing would answer the next question rather than create it
+
+The stop triggers are not permission to escalate for its own sake. Irreversible events still require strong cause from the active working set, physical affordances, manual directive, or reveal permissions.
 
 Do not summarize what happens after the stop point.
 Do not continue to resolve the tension you just created.

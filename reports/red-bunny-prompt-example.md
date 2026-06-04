@@ -33,7 +33,7 @@ Do not mention this hierarchy in the prose.
 </authority_hierarchy>
 
 <content_policy>
-RATING: NC-21 / ADULTS ONLY
+RATING: Adults-only explicit fiction
 
 This is mature explicit erotic fiction. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when it serves character, situation, continuity, and the story's intended tone.
 
@@ -120,7 +120,7 @@ Current continuity locks:
 </current_authoritative_state>
 
 <immediate_handoff>
-Recent causal context:
+Recent causal context (writer-visible; not automatically Jon's knowledge):
 A Friday in April 2026, Ane woke to Marisa yelling drunkenly in the kitchen. Ane tried not to make noise in her tiny bedroom and hoped Marisa would leave so she could go out dressed in her pink crop top, flared pink skirt, and thigh-high heart socks to earn money as a sex worker. Instead, she crossed Marisa in the hallway. Marisa berated her for dressing like a whore, accused her of being a prostitute, grabbed Ane by the pigtails, and hurled her around hard enough to bruise her arm. Ane fled with only her purse, phone, and identification.
 
 Already crushed by thoughts about her life and the seeming impossibility of her dreams, Ane could not make herself look for men to service. She wandered, holding back tears and cursing Marisa in her head, until three North African men began catcalling her, saying obscene things, grinning, trying to corner her, and inviting her in broken Spanish to come up with them and drink. Ane cursed at them and ran. They pursued her until a cop car happened to pass and they pretended nothing was happening.
@@ -132,13 +132,13 @@ Jon returned to Irún through the Topo near the train tracks downtown. He went o
 Last visible moment:
 In an isolated part of the park, Jon spots Ane on the bench in her provocative pink clothes, red-rimmed eyes, despondent posture, and bruised arm. His body reacts before his conscious mind catches up: skipped heart, warmth low in his abdomen, gaze snagged on her face, hair, body, and vulnerability. She strikes him as the real-life incarnation of all his private erotic fantasies. At the same time, her distress and bruise ignite his protective impulse. He wants to approach, know her, rescue her, take her home, protect her, possess her, and make love to her. He also recognizes the terrible shape of the moment: he has become a middle-aged man yearning for an isolated, vulnerable, very young woman.
 
-Most recent accepted prose:
-None. This is intended to produce the first page / first prose segment.
+Prior accepted prose status / user-authored continuity handoff:
+None. This is intended to produce the first prose segment. No accepted prose is included or summarized.
 
 Begin prose exactly after this point:
 Begin in Jon's first-person present-tense perception at the split second after he sees Ane and before he either approaches, speaks, freezes, or walks away.
 
-Do not recap the whole backstory. Let the prior context press through Jon's current perception only where he can know or feel it. Ane's earlier day may shape her visible behavior but not Jon's knowledge.
+Do not recap the whole backstory. Let the prior context press through Jon's current perception only where he can know, suspect, misread, or physically perceive it. Ane's earlier day may shape her visible behavior but not Jon's knowledge.
 </immediate_handoff>
 
 <manual_directive priority="high">
@@ -195,6 +195,9 @@ POV cannot perceive right now:
 - Marisa's current state.
 - The offstage men's current location.
 
+Prompt-label rule:
+The prompt names Ane Arrieta as a writer-facing handle. Jon does not know her name, age, occupation, backstory, motives, or morning events unless the prose earns a disclosure.
+
 Non-POV interiority rule:
 Do not narrate Ane's thoughts, feelings, memories, motives, or private knowledge directly. Use her full dossier to shape visible behavior, speech, timing, evasion, silence, posture, and subtext only.
 </pov_knowledge_constraints>
@@ -241,7 +244,7 @@ Forbidden reveals now:
 - Do not have the narration certify hidden facts through Jon's first-person voice.
 
 Reveal permission:
-- Natural reveal is allowed only if the immediate exchange makes it extremely natural, such as Ane defensively converting his approach into a client/price frame. Even then, keep the reveal local and pressured; do not turn it into exposition.
+- Natural reveal is allowed only if the immediate exchange makes it extremely natural, such as Ane defensively converting his approach into a client/price frame. Even then, keep the reveal local and pressured; do not turn it into exposition. Do not let Jon's narration certify her occupation as fact before the exchange earns it.
 </secrets_and_reveal_constraints>
 
 <active_working_set>
@@ -541,10 +544,13 @@ Consequences:
 </active_open_threads>
 
 <relevant_facts_beliefs_events>
-Facts:
+POV-accessible facts:
 - Jon is 41, solitary, housed, employed, and sexually/intimately isolated for nineteen years.
+- Jon does not know Ane's name, age, occupation, or history.
+
+Writer-visible or non-POV facts:
 - Ane is 18, poor, a self-employed sex worker, and currently alone in the park after a dangerous day.
-- Jon does not know Ane's name or occupation.
+- Ane's occupation and earlier day are writer/audience-visible context only, not Jon's knowledge.
 
 POV-relevant beliefs:
 - Jon believes this red-haired girl is the most beautiful girl he has ever seen and the living incarnation of his private erotic fantasies. Confidence: high. Truth relation: subjective/private.
