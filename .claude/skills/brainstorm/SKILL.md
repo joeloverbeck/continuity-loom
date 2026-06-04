@@ -1,0 +1,246 @@
+---
+name: brainstorm
+description: "Use when starting a new feature, design, or architectural decision that needs requirements discovery before implementation. Triggers: vague requests, exploration keywords, uncertainty about what to build, need for external research before designing."
+user-invocable: true
+arguments:
+  - name: request
+    description: "The brainstorming topic or question (string). Can be a simple sentence or a detailed description."
+    required: true
+  - name: reference_path
+    description: "Optional path to a reference file (report, brainstorming doc, analysis) to read as context before starting the interview."
+    required: false
+---
+
+# Brainstorm
+
+Confidence-driven collaborative brainstorming. Interviews you until it understands what you **actually want** — not what you think you should want — then proposes approaches, builds a design, and lets you choose what happens next.
+
+<HARD-GATE>
+Do NOT write any code, scaffold any project, invoke any implementation skill, or take any implementation action until you have presented a design (or a triage recommendation) and the user has explicitly approved it. This applies to EVERY topic regardless of perceived simplicity.
+
+Carve-out: when the user's initial request pre-authorizes a deliverable contingent on the brainstorm's verdict (e.g. "write a spec if changes are warranted"), presenting the design or triage recommendation IS the approval that satisfies this gate — see Guardrails §User pre-authorization. The Step 6 menu still fires afterward.
+</HARD-GATE>
+
+## Process flow
+
+```
+Read context (reference file + classify topic)
+        |
+        v
+Confidence-driven interview loop (target: 95%)
+        |
+        v
+Propose 2-3 approaches with tradeoffs
+        |
+        v
+Present design section by section, get approval per section
+        |
+        v
+[If product-behavior] Validate against docs/FOUNDATIONS.md
+        |
+        v
+Persist the deliverable (design doc / spec / tickets / ...)
+        |
+        v
+Next-steps menu (user chooses)
+```
+
+**In plan mode**: the design writes to the plan file instead of `docs/plans/`, and `ExitPlanMode` replaces the next-steps menu.
+
+**Triage/analysis brainstorms** (evaluate a report or finding-set, or answer a diagnostic question, and produce work items): the interview loop and the propose-approaches step are replaced by a single triage recommendation — see Step 3 §Triage brainstorms and `references/triage-and-deliverables.md`.
+
+## Step 1: Read context
+
+1. **Reference material.**
+   - **`reference_path` argument**: read the entire file. Extract its key claims, proposals, and open questions.
+   - **Inline file references**: if the user names files inline in the request, read them with the same treatment. Read all of them.
+   - **Inline-pasted prose**: if the user pastes reference content (external research output, a report excerpt, a finding-set) directly into the request body, that prose IS the reference — there's no file to read.
+   - **Not reference material**: the user's own first-hand problem description (bug report, symptoms, repro steps, pasted error/program output as evidence of the defect) is the request itself, not externally-authored reference content. A file named only as the alignment authority (`docs/FOUNDATIONS.md`) is also not reference material — it's governed by sub-step 3.
+   - **Oversized files**: if a reference exceeds the Read token limit, read in sequential offset/limit chunks until fully covered, and say so in the summary. Run a quick `wc -l <path>` first when you suspect a file is large.
+   - **Path resolution**: if an inline filename doesn't resolve, glob the parent directory for the closest match (pluralization, hyphen drift, capitalization) before asking the user to re-specify; announce any correction inline.
+
+   **Emit a 2-3 sentence summary** of what the reference material contains as user-facing text before any further exploration — this is the user's audit-trail anchor for verifying you understood the reference. For a multi-item report, summarize its *shape* (item count, structure, headline position) rather than enumerating each item; per-item detail belongs in the Step 3 triage. When the reference makes claims about the codebase or product state, treat them as hypotheses to verify during exploration (sub-step 6), and flag prominently any that exploration contradicts. When there is no reference material at all (pure analysis from the request text), no summary fires — proceed to exploration.
+
+2. **Topic classification.** Decide which category the brainstorm falls into and announce it on its own line before further tool calls:
+   - **product-behavior**: anything that changes how the app behaves at runtime or what it stores — story records and the active working set, the generation-time brief, deterministic prompt compilation and the universal prompt contract, validation rules, POV/knowledge/secrets handling, physical continuity, cast dossiers and voice, causal-pressure records, the accepted-segment archive, prompt inspection, OpenRouter/secrets, local-first data ownership, the mature-fiction envelope, LLM-assistance surfaces, or UI/workflow over those surfaces. These are governed by `docs/FOUNDATIONS.md`.
+   - **dev-process / docs / tooling**: work that does not change product behavior — build/test scripts, dev ergonomics, repo tooling, skill design, or documentation edits that don't change product semantics.
+
+   When genuinely ambiguous, give a one-to-two-sentence justification. Example: `Classification: product-behavior (the design adds a validation rule to the prompt-compilation path).`
+
+3. **Read `docs/FOUNDATIONS.md` for product-behavior topics.** You'll need it in Steps 3 and 4 to validate approaches against the constitution and its §29 hard-fail checklist. For dev-process/tooling/docs topics the read is optional — read it only if the topic directly engages a FOUNDATIONS principle. The read is satisfied if FOUNDATIONS content is already in this session's context; re-read only after compaction or when you need a specific principle's wording. If a brainstorm reveals that the *right* design conflicts with FOUNDATIONS, the deliverable may need to be a FOUNDATIONS amendment first (per FOUNDATIONS §1) — flag this prominently and get explicit sign-off; never quietly design against the constitution.
+
+4. **Calibrate initial confidence from the reference and request.** A thorough reference (rationale, decisions, structure) or a richly-specified request (problem analysis, evidence, root cause, code locations, a clear ask) can start confidence at 70-95%, reducing the interview to closing operational gaps. Don't ask motivational questions when the user has already demonstrated deep understanding.
+
+5. **Interview-skip threshold.** If exploration and research bring confidence to 95%+ before the interview starts, skip Step 2 and go to Step 3; announce the confidence level. At 85-94% with a user-framed, fully-constrained directive (enumerated alternatives, or a clear "do X" with minimal open choices — triage brainstorms are the common case), also skip the discovery interview: go to Step 3, announce confidence, and carry remaining gaps as named assumptions for the user to correct during approach/triage selection.
+
+6. **External research.** If the topic needs domain knowledge beyond the codebase (algorithms, industry practice, competing architectures), launch research agents BEFORE the interview and summarize findings for the user first. If codebase exploration already yields a clear root cause with concrete evidence, research may be skipped — note the skip. If research was supplied as a reference file or pasted prose, the sub-step 1 summary satisfies the announcement.
+
+7. **Project context.** Explore relevant existing material before the interview — `docs/`, `specs/`, `tickets/`, `reports/`, prior design docs, and the prompt-template / story-record-schema files when the topic touches them. Launch Explore agents for broad surveys. For frustration-triggered brainstorms, also explore the history of attempted fixes — repeated remediation or accumulated workarounds signal that Step 3 should include radical options (reset, strip, rebuild) alongside incremental fixes. For triage brainstorms whose input is a report, check whether that report (or an earlier version) was already triaged into an existing spec/ticket/`docs/triage/` file, and frame the current pass as a delta so already-accepted or already-rejected items aren't silently re-proposed.
+
+8. **Confidence checkpoint.** After all context reading, announce post-exploration confidence in one sentence on its own line (e.g. `Post-exploration confidence: ~90% — reference file is exhaustive, scope fully specified by the request`). This drives the Step 2 decision and is the audit-trail anchor before any triage recommendation.
+
+## Step 2: Confidence-driven interview
+
+The core of the skill. Reach **95% confidence** about what the user actually wants before proposing solutions.
+
+### The protocol
+
+After each user answer, display a confidence block:
+
+```
+Confidence: X%
+Gaps: [specific list of remaining unknowns]
+```
+
+Keep asking until confidence reaches 95%, then announce: "I'm at 95% confidence. Moving to approaches." Under auto mode with a 0-2 question interview, an inline prose alternative is fine (`Confidence: ~90% — gaps listed as named assumptions below`) provided the gaps surface as named assumptions in the very next message.
+
+### Interview rules
+
+1. **One question per message.** Never batch questions in the discovery interview. (This does not restrict `AskUserQuestion`, whose multi-question schema is the sanctioned form for batching approach-selection or section-approval decisions outside the discovery loop.)
+2. **Prefer multiple-choice** when the answer space is bounded; open-ended when it isn't. Use `AskUserQuestion` with labeled options when its schema is available; inline numbered options are an acceptable fallback (and are preferred in plan mode for speed).
+3. **Probe motivations before solutions.** Ask "What problem does this solve?" and "What happens if we don't?" before "What do you want built?" The first request often describes a solution, not the problem.
+4. **Challenge premature specificity.** If the user jumps to implementation details, ask why that specific approach matters. The constraint is often softer than stated.
+5. **Detect "should want" vs "actually want".** Watch for buzzword-heavy descriptions, over-scoped requests, vague success criteria ("it should be good" — probe what "good" means), and solutions stated as requirements.
+6. **Name your uncertainty specifically.** "I don't know whether this needs to handle edge case X" is useful; "I need more information" is not.
+7. **Respect user expertise.** If the user gives a clear, well-reasoned answer, don't re-ask it in different words. Advance.
+8. **Handle delegation gracefully.** If the user says "you decide," re-evaluate the options against FOUNDATIONS and project constraints, present your reasoned recommendation, and advance. Don't re-ask.
+9. **Verify load-bearing technical premises.** When a user (or reference) premise is load-bearing for the recommendation — library status, version compatibility, feature presence, external-tool behavior — verify it (package metadata, docs, targeted codebase read) before adapting the recommendation to it. The 30-second check prevents recommending against a true premise the user momentarily mis-stated.
+10. **Present empirical findings before asking questions.** When exploration produces concrete findings (data, root-cause evidence, confirmed/refuted hypotheses), present a concise summary — hypothesis, evidence, verdict per hypothesis — before the first interview question.
+
+### Confidence scoring
+
+| Range | Meaning | Action |
+|-------|---------|--------|
+| 0-30% | Don't understand the problem yet | Ask about the problem, not the solution |
+| 30-60% | Understand the problem, unclear on constraints | Ask about constraints, success criteria, scope |
+| 60-80% | Understand problem + constraints, unclear on priorities | Ask about tradeoffs, what matters most |
+| 80-95% | Clear picture, a few edge cases/preferences unknown | Ask targeted questions about specific gaps |
+| 95%+ | Ready to propose | Move to Step 3 |
+
+Confidence rises from **both** user answers and research findings; when research closes a gap, note which gaps it closed vs which still need user input.
+
+### Early exit
+
+If the user says "just go" or "that's enough questions," respect it: announce current confidence, list remaining gaps as assumptions you'll make, and proceed. Mark those assumptions explicitly in the design so the user can correct them. Use the format `(N) X — assuming Y` (the unknown as X, the assumption after `— assuming`) so a correction is one line.
+
+### Recovery/reset brainstorms
+
+When triggered by frustration indicators ("huge mistake", "wrong approach", "start over", "strip everything"):
+
+1. **Validate the diagnosis before accepting it.** Present what exploration revealed — both what's broken AND what's working — before agreeing with a scorched-earth instinct. The user may be catastrophizing, or the system may be more salvageable than they think.
+2. **Focus confidence on "what's actually broken?"** before "what's the fix?" Is the problem structural (architecture) or tactical (configuration, content, missing inputs)? Is the frustration proportional to the evidence?
+3. **Always include a radical option** in Step 3 (strip, delete, rebuild) — even if you recommend a less radical path. Validating the aggressive instinct as a real choice respects the user's judgment.
+
+## Step 3: Propose approaches
+
+Present **2-3 distinct approaches**, each with:
+
+- **Name** — a short descriptive label
+- **How it works** — 2-4 sentences
+- **Tradeoffs** — what you gain, what you give up
+
+Close with a recommendation: name the chosen option upfront, then justify in 1-3 sentences. The recommendation is one global decision, not a per-approach attribute.
+
+**Sub-variant splitting.** If an option's "How it works" hides two internally distinct paths with materially different cost/risk, split them into sibling options or labeled sub-rows (`C1`, `C2`) rather than bundle — otherwise the user's selection forces an immediate clarification round.
+
+**For product-behavior topics**, annotate each approach with FOUNDATIONS alignment: `Foundations: <principle> @ <surface> (aligns / tensions — reason naming the surface)`. Surfaces include authoring time, prompt-compilation, validation gate, storage, UI. Naming the surface forces a second-order check that the proposal actually touches what the principle governs. If any approach tensions a FOUNDATIONS principle or trips a §29 hard-fail question, flag it explicitly and get sign-off — do not recommend a violating approach silently.
+
+**If the problem space is fully constrained** (a reference provides a proven design, or requirements eliminate alternatives), present a single approach with a one-sentence rationale naming the constraint that narrows the space. Don't invent artificial alternatives.
+
+**If the user challenges a dismissal**, redo the analysis from first principles rather than defending prior reasoning; if it reverses, say where the prior reasoning was incomplete. **If the user clarifies a constraint**, redo the approach proposal under the refined constraint without restarting Step 2 — cite which assumption was sharpened. Brief confirmation suffices when the recommendation still holds; full re-presentation is reserved for clarifications that flip it.
+
+**Wait for the user to choose** (or to ask you to refine/combine) before proceeding.
+
+### Triage brainstorms
+
+When the deliverable is a set of work items evaluated against a report, finding-set, or diagnostic question, replace the approaches step with a **triage recommendation**: which items warrant action, which are dismissed, and why. The user's approval of the triage serves the same gating purpose as choosing an approach. Render the Step 1 sub-step 8 post-exploration confidence sentence on its own line before the triage recommendation as the audit-trail anchor. Verdict types, per-item structure, verdict-bucket grouping, the out-of-report and no-source-report cases, and the closing structure live in `references/triage-and-deliverables.md` §Triage recommendation structure.
+
+## Step 4: Present design
+
+**Plan mode**: skip per-section gates. Present key decisions in 1-2 messages with conversation-level checkpoints, then write to the plan file. `ExitPlanMode` carries approval.
+
+**Classification pivot check**: if the design reveals a deliverable type different from the Step 1 classification (e.g. a "docs tweak" now changes validation behavior), re-state the refined classification before presenting Section 1.
+
+Once an approach is chosen, present the design **section by section**, scaling each to its complexity (a sentence for trivial parts, up to ~200 words for nuanced ones). Cover the relevant sections, renaming/combining to fit the topic's natural structure:
+
+1. **Overview** — what this achieves, 1-2 sentences
+2. **Architecture / structure** — how the pieces fit together
+3. **Key decisions** — important choices and why
+4. **Data flow / process** — how information moves
+5. **Edge cases** — tricky scenarios and how they're handled
+6. **Testing / verification** — how to confirm it works
+7. **FOUNDATIONS alignment** — for product-behavior topics, a 3-5 row table: principle, stance (`aligns` / `tensions` / `N/A`), and a one-line rationale citing the specific design mechanism and the surface it operates at. List only principles the design actively engages or tensions, plus any relevant §29 hard-fail question the design must clear. Omit for dev-process/tooling/docs topics unless the design touches a FOUNDATIONS principle.
+
+**After each section**, ask "Does this section look right?" and wait for confirmation. If the user pushes back, revise before continuing. After 3 consecutive approvals with no pushback (2 under auto mode), batch remaining sections in groups of 2-3 — announce the batching. Keep a section standalone if it's substantially more complex or higher-risk.
+
+**Carve-outs** (see `references/triage-and-deliverables.md` §Design-presentation carve-outs for detail):
+- **Small deliverable** (≤4 decisions, ≥85% confidence): present as a single structured artifact approved in one turn. Announce the consolidation outside auto mode.
+- **Template-structured deliverable** (a spec, ticket, or skill file with its own canonical sections): the template provides the navigation; present the full draft as one artifact, one approval covering it.
+- **Multi-deliverable triage**: triage approval covers all N deliverables together; each is then approved as a single template-structured draft (no per-deliverable gate).
+
+**Verify operator-introduced design premises before persisting them.** When the design names a specific field, file path, schema shape, API surface, or build/test command from the codebase, verify it exists (a quick Read or grep) before writing it into the deliverable — the 30-second check prevents a premise falsifying during implementation. For removals, enumerate ALL references with a broad grep before drafting the files-to-touch and acceptance criteria.
+
+## Step 5: Persist the deliverable
+
+After design approval, do NOT implement until the user picks an implementation option from the Step 6 menu — the design doc is typically the deliverable; implementation is a separate, user-chosen act. Exception: inline ops/setup and in-place edits are executed during the session (the HARD-GATE still requires approval first), and no separate design doc is written.
+
+**Quick triage of deliverable shape → destination** (full per-type rules in `references/triage-and-deliverables.md` §Deliverable classification):
+
+| Deliverable shape | Destination |
+|---|---|
+| Inline ops/setup task or mechanical-fix batch | execute inline + summary; no file persisted |
+| New skill design | `.claude/skills/<name>/SKILL.md` |
+| Modify existing skill file(s) | edit in place |
+| Project documentation (`README.md`, `docs/*.md`) | edit/create in place |
+| Amend `docs/FOUNDATIONS.md` (constitutional change) | edit in place — flag as a constitution amendment, require explicit sign-off |
+| Port external skill into repo | new `.claude/skills/<name>/SKILL.md` + delete source |
+| Replaces an existing artifact | new file + delete old + update cross-references |
+| System spec | `specs/SPEC-NNN-<slug>.md` |
+| Implementation tickets | `tickets/<PREFIX>-NNN.md` |
+| Triage → ≥2 specs / ≥3 tickets | deliverables + `docs/triage/YYYY-MM-DD-<topic>-triage.md` |
+| Triage analysis, all deliverables deferred | `docs/triage/YYYY-MM-DD-<topic>-triage.md` (full verdict content) |
+| Design doc (default) | `docs/plans/YYYY-MM-DD-<topic>-design.md` |
+| Research brief for an external researcher | `reports/<topic>-research-brief.md` |
+
+A default design doc consolidates all approved sections into a clean document with a "Brainstorm Context" header (original request, reference file if any, key decisions that shaped the design, final confidence and assumptions). Specs and tickets skip the design doc — the spec/ticket IS the design. If a spec-drafting or ticket template exists, follow it; otherwise use default sections (spec: Problem Statement, Approach, FOUNDATIONS Alignment, Verification, Out of Scope) and note their absence at the top of the file.
+
+If working in a git worktree, resolve every output path against the **worktree root**, not the main repo root, and confirm the file landed there before the Step 6 menu.
+
+Do NOT commit the file. Leave it for user review.
+
+## Step 6: Next-steps menu
+
+| Deliverable category | Step 6 action |
+|---|---|
+| Plan mode active (any category) | Call `ExitPlanMode` — skip the menu |
+| Spec / ticket / triage / proposal — or any deliverable whose options describe NEXT phases (reassess / decompose / implement / done) | **Menu MANDATORY**, even when written this same turn — writing the file is pre-implementation, and skipping the menu strips the user's named next-phase options |
+| Inline-completion (skill design; small inline ops/setup; in-place edits to existing spec/ticket/docs where the edit IS the completed work) | Skip the menu; summarize what was done |
+
+Categorize by the middle row first; the inline-completion skip fires only when the deliverable falls outside it. For a mandatory menu, present options like:
+
+```
+Design doc written to docs/plans/YYYY-MM-DD-<topic>-design.md
+
+What would you like to do next?
+1. Create a spec from this design (write to specs/)
+2. Decompose into implementation tickets (write to tickets/)
+3. Start implementing directly
+4. Done for now — I'll review the design doc later
+```
+
+Adjust options to the deliverable: for a spec, offer reassess / decompose into tickets / implement / done; for tickets, offer begin-first-ticket / reassess / done. Use `AskUserQuestion` when its schema is available; inline numbered options are an acceptable fallback. If the user picks an option that invokes another skill, invoke it. If they pick "done," end.
+
+**If a Step 6 option spawns a follow-up brainstorm cycle for related scope** (a next ticket alongside the just-written one, a related spec the menu surfaced — distinct from re-triaging the prior verdicts): re-enter at Step 1, not Step 2; emit the Step 1 sub-step 8 post-exploration confidence anchor for the new cycle (even when exploration is trivial); the prior cycle's context typically elevates initial confidence so the interview-skip threshold applies.
+
+## Guardrails
+
+- **YAGNI ruthlessly.** Strip optional extras from every design unless the user explicitly asked for them.
+- **No scope inflation.** The design covers what was asked. Resist "while we're at it" improvements.
+- **One question at a time** during the Step 2 discovery interview. (Does not restrict `AskUserQuestion` batching outside the loop.)
+- **No implementation before approval.** The HARD-GATE means what it says, subject only to the §User pre-authorization carve-out.
+- **FOUNDATIONS is authoritative.** For product-behavior topics, if an approach violates a FOUNDATIONS principle or trips a §29 hard-fail, flag it immediately and get explicit sign-off. Never design against the constitution silently; a feature that genuinely needs to diverge requires a FOUNDATIONS amendment first.
+- **Respect early exit.** If the user wants to skip ahead, let them — list your assumptions clearly.
+- **Worktree discipline.** If working in a worktree, all file paths use the worktree root.
+- **Blocker discovery during implementation.** If implementation reveals an architectural issue or a cost/scope re-estimate that blocks the deliverable or invalidates the approach ranking, present the blocker, options, and a recommendation. If the fix is small (< 50 lines, single file, no public-interface change), fix it inline and continue; otherwise create a ticket and either work around it with a documented constraint or implement the fix with user approval.
+- **Auto mode** applies when a system reminder instructs continuous operation, the user issues an explicit "just go" directive, or a harness `auto_mode` flag is set. Under auto mode: clarifying questions are minimized (gaps become named assumptions), the Step 4 batching threshold drops from 3 to 2 consecutive approvals, and small/template-structured deliverables may be written in the same turn as approval. Approach-selection and section-approval gates still hold, and the HARD-GATE is never relaxed.
+- **User pre-authorization.** When the request pre-authorizes a deliverable contingent on the verdict ("create a spec if warranted", "implement if changes are needed"), the HARD-GATE is satisfied by presenting the design or triage recommendation — no separate approval round-trip. Pre-authorization satisfies the HARD-GATE; it does NOT skip the Step 6 menu. The user can still redirect between presentation and write by issuing a counter-instruction. When a remaining gap would materially change the deliverable shape (count crossing 1↔multi, type changing class, a new deliverable file becoming required), prefer `AskUserQuestion` to confirm the shape before writing even under pre-authorization. **Exception:** if the recommendation would reverse a decision the user previously committed to (a `docs/triage/` decision record, a deliberately-rejected item), surface the reversal prominently and pose a direction-confirmation `AskUserQuestion` before writing — pre-authorization does not extend to silently overturning a prior user decision.
