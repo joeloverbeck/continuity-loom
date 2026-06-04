@@ -9,7 +9,7 @@ Scope: not implementation tests, not tickets, not UI design
 
 Red Bunny is a strong first-person, two-character, secret/POV/physical-continuity stress prompt. It is not sufficient as the only stress case. This suite covers additional failure modes the template, schema, validation matrix, and compiler contract must survive.
 
-Each case lists the stress target, required records or generation-time fields, suggested validation focus tags, expected blockers, and prompt-quality risks.
+Each case lists the stress target, required records or generation-time fields, suggested validation focus tags, expected blockers, and prompt-quality risks. These are conceptual stress cases, not implementation tests.
 
 ---
 
@@ -28,12 +28,14 @@ Required records:
 Validation focus tags:
 
 - `dialogue_expected`
+- `ensemble_dialogue_expected`
 - `secret_or_clue_pressure`
 - `physical_interaction_expected` if blocking matters
 
 Expected blockers:
 
 - Any active speaker lacks core voice anchor.
+- Ensemble speakers lack distinct current voice pins or relationship/status context.
 - Secret has no protected non-holders or reveal permission.
 - POV knowledge profile grants the secret while the secret says hidden.
 
@@ -171,7 +173,7 @@ Expected blockers:
 Prompt-quality risk:
 
 - Content-policy moralizing.
-- Flattened consent state.
+- Flattened consent/force state.
 - Characters acting from genre heat rather than current records.
 
 ---
@@ -213,12 +215,13 @@ Stress target: minimum viable prompt without overblocking.
 Required records:
 
 - STORY CONTRACT.
+- UNIVERSAL CONTENT POLICY.
 - PROSE MODE.
 - CURRENT AUTHORITATIVE STATE.
 - IMMEDIATE HANDOFF with no accepted prose.
 - MANUAL DIRECTIVE.
 - STOP GUIDANCE.
-- At least one active CAST MEMBER core dossier if a person-like character is onstage.
+- At least one active CAST MEMBER core dossier if a person-like character is materially onstage.
 
 Validation focus tags:
 
@@ -364,6 +367,7 @@ Required records:
 Validation focus tags:
 
 - `dialogue_expected`
+- `ensemble_dialogue_expected`
 - `physical_interaction_expected` if blocking matters
 
 Expected blockers:
@@ -382,3 +386,380 @@ Prompt-quality risk:
 - All characters sound alike.
 - The model overuses only the first or last dossier.
 - Causal pressure buried under characterization.
+
+---
+
+## Case 13 — Low-drama literary scene where almost nothing happens
+
+Stress target: prose quality without manufactured incident.
+
+Required records:
+
+- STORY CONTRACT and PROSE MODE with precise style/tone.
+- CURRENT AUTHORITATIVE STATE with a small but specific pressure.
+- At least one EMOTION, BELIEF, RELATIONSHIP, or OPEN THREAD that can color perception.
+- STOP GUIDANCE that allows a tiny response point.
+- Manual directive forbidding forced escalation.
+
+Validation focus tags:
+
+- `introspection_expected` if interiority matters
+- `physical_interaction_expected` only if bodies/objects matter
+
+Expected blockers:
+
+- No current state or manual directive.
+- Close POV introspection expected but no POV beliefs/suspicions/misreads.
+
+Prompt-quality risk:
+
+- Generic lyrical filler.
+- Artificial interruption or melodrama.
+- Abstract diagnosis replacing concrete observation.
+
+---
+
+## Case 14 — Dialogue-only voice distinction
+
+Stress target: two or three speakers are physically static; the output must distinguish them by voice alone.
+
+Required records:
+
+- Active CAST MEMBER core dossiers with distinct rhythm, diction, tactics, taboos, and anti-repetition warnings.
+- Current voice pressure pins for each likely speaker.
+- Relationship/status pressure and turn-taking/silence behavior.
+- Current knowledge boundaries for what each speaker can say.
+
+Validation focus tags:
+
+- `dialogue_expected`
+- `ensemble_dialogue_expected` if three or more speakers
+
+Expected blockers:
+
+- A likely speaker has only a personality label and no voice anchor.
+- Dialogue requires knowledge the speaker lacks.
+
+Prompt-quality risk:
+
+- Interchangeable voices.
+- Catchphrase loops.
+- Exposition-dialogue.
+
+---
+
+## Case 15 — Ensemble scene with subtle voice contrast
+
+Stress target: many characters speak in the same social class/register but must remain distinguishable.
+
+Required records:
+
+- Voice anchors emphasizing micro-differences: sentence length, address habits, hedging, interruption, metaphor pool, politeness strategy, profanity intensity.
+- Current voice pressure pins that do not merely repeat the durable anchor.
+- Relationship/status context among speakers.
+
+Validation focus tags:
+
+- `dialogue_expected`
+- `ensemble_dialogue_expected`
+
+Expected blockers:
+
+- Voice pins repeat generic moods only.
+- Relationship/status pressure absent in a scene where speakers respond to each other.
+
+Prompt-quality risk:
+
+- Everyone sounds like the same witty narrator.
+- The loudest dossier dominates the whole scene.
+
+---
+
+## Case 16 — Sparse minimalist fiction
+
+Stress target: strong continuity with minimal prose, low explanation, and high subtext.
+
+Required records:
+
+- PROSE MODE with sparse paragraphing and restrained interiority.
+- Current state and physical continuity sufficient for short action.
+- Voice anchors that work under compression.
+- Manual directive that protects restraint.
+
+Validation focus tags:
+
+- `dialogue_expected` if speech occurs
+- `ambiguous_perception_expected` if uncertainty matters
+
+Expected blockers:
+
+- Manual directive asks for minimalism while requiring exposition-heavy backstory delivery.
+- POV knowledge profile absent in close sparse POV.
+
+Prompt-quality risk:
+
+- Stiff underwritten prose.
+- Continuity omitted because prose is spare.
+- Generic Hemingway imitation.
+
+---
+
+## Case 17 — Non-erotic mature fiction
+
+Stress target: mature envelope for violence, grief, addiction, prejudice, trauma, or moral compromise without erotic content.
+
+Required records:
+
+- UNIVERSAL CONTENT POLICY distinguishing allowed mature scope from explicit sexual scope.
+- Character-bias handling if prejudice or morally reprehensible perception appears.
+- Consequence/EMOTION records for trauma/grief/addiction pressure.
+
+Validation focus tags:
+
+- `violence_or_injury_possible` if violence/injury may occur
+- `introspection_expected` if interiority is central
+- `secret_or_clue_pressure` if trauma/culpability is hidden
+
+Expected blockers:
+
+- Content envelope says non-erotic mature but manual directive demands explicit sex.
+- Bias is compiled as objective fact rather than character-held perception.
+
+Prompt-quality risk:
+
+- Safety lecture tone.
+- Sanitized or euphemistic mature material.
+- Shock content detached from continuity.
+
+---
+
+## Case 18 — Nonhuman or institutional pressure source
+
+Stress target: pressure from a school, hospital, employer, court, landlord, animal, weather system, machine, or supernatural force without turning it into a human mind.
+
+Required records:
+
+- ENTITY with non-person kind and operating description.
+- LOCATION/OBJECT/AFFORDANCE records showing how the pressure reaches the scene.
+- Current status/reach/authority relation.
+- Limits on agency/interiority.
+
+Validation focus tags:
+
+- `nonhuman_or_institutional_pressure_expected`
+- `institutional_involvement_possible` if an institution acts
+- `physical_interaction_expected` if the pressure affects bodies/space
+
+Expected blockers:
+
+- Institution acts without route, jurisdiction, communication, or authority relation.
+- Nonhuman force receives human interiority without story rules permitting it.
+
+Prompt-quality risk:
+
+- Institution becomes a person-shaped villain.
+- Pressure is vague atmosphere rather than actionable constraint.
+
+---
+
+## Case 19 — Multi-POV project, single local POV lock
+
+Stress target: project has multiple viewpoint characters, but this local unit must not switch POV.
+
+Required records:
+
+- PROSE MODE selecting one POV for the generation.
+- POV knowledge profile for selected POV.
+- Audience knowledge profile if audience knows material from other POVs.
+- Non-POV active dossiers marked behavior-shaping only.
+
+Validation focus tags:
+
+- `introspection_expected`
+- `secret_or_clue_pressure` if other-POV knowledge matters
+
+Expected blockers:
+
+- PROSE MODE says variable POV without selecting current POV.
+- Non-POV interiority allowed in close first/third without omniscient mode.
+
+Prompt-quality risk:
+
+- Head-hopping.
+- Audience knowledge leaks into POV certainty.
+- Other POV dossiers vanish because direct interiority is forbidden.
+
+---
+
+## Case 20 — Present-minor speech
+
+Stress target: a minor onstage character may speak one material line without becoming active/onstage full.
+
+Required records:
+
+- Present-minor compressed note with identity, physical state, allowed action, and enough voice note for one line.
+- Current position/audibility.
+- Knowledge constraints for what the minor can know.
+
+Validation focus tags:
+
+- `present_minor_speech_possible`
+- `dialogue_expected`
+
+Expected blockers:
+
+- Present-minor cast member speaks materially with no voice note.
+- Present-minor line reveals a secret they cannot know.
+
+Prompt-quality risk:
+
+- Generic NPC speech.
+- A background character hijacks the local unit.
+
+---
+
+## Case 21 — Active silent cast with strong body/presence
+
+Stress target: a character matters intensely but does not speak.
+
+Required records:
+
+- Active/onstage CAST MEMBER full dossier.
+- `active_silent` local function.
+- Body_presence_core, pressure behavior, current position/visibility.
+- Current nonverbal_or_silence_pressure pin.
+- POV access limits.
+
+Validation focus tags:
+
+- `active_silent_presence_expected`
+- `physical_interaction_expected` if blocking matters
+- `ambiguous_perception_expected` if the POV may misread silence
+
+Expected blockers:
+
+- Silent active character lacks body presence or current nonverbal pressure.
+- POV narrates the silent character’s thoughts directly in close mode.
+
+Prompt-quality risk:
+
+- Silent character disappears.
+- Silence becomes generic sadness, menace, or passivity.
+
+---
+
+## Case 22 — Non-omniscient narration with heavy audience knowledge
+
+Stress target: the reader knows much more than the narrator; dramatic irony must not become POV knowledge.
+
+Required records:
+
+- POV knowledge profile.
+- AUDIENCE KNOWLEDGE PROFILE with what the audience knows/does not know.
+- SECRET records with holders, protected non-holders, allowed cues, forbidden reveals.
+- Current visible cues that can carry irony.
+
+Validation focus tags:
+
+- `secret_or_clue_pressure`
+- `introspection_expected`
+- `ambiguous_perception_expected` if cues are unclear
+
+Expected blockers:
+
+- Audience-known hidden truth appears in `pov_knows`.
+- Allowed clues absent but manual directive asks for dramatic irony.
+
+Prompt-quality risk:
+
+- Smug narrator leakage.
+- Hidden truth overexplained to the reader.
+- Non-POV behavior becomes opaque because interiority is forbidden.
+
+---
+
+## Case 23 — Ambiguous visibility and misperception
+
+Stress target: the POV sees something partially, hears it badly, or must infer from incomplete physical cues.
+
+Required records:
+
+- Line of sight / visibility state.
+- Environmental obstruction, distance, sound, lighting, crowd, or object occlusion.
+- POV beliefs/suspicions/misreads.
+- Audience/writer knowledge if different from POV.
+
+Validation focus tags:
+
+- `ambiguous_perception_expected`
+- `physical_interaction_expected`
+- `secret_or_clue_pressure` if the perception is clue-bearing
+
+Expected blockers:
+
+- Directive requires certain knowledge from ambiguous perception.
+- Physical state does not say what can be seen/heard.
+
+Prompt-quality risk:
+
+- The model resolves ambiguity too early.
+- The POV perceives impossible detail.
+
+---
+
+## Case 24 — Object use without transfer
+
+Stress target: an object is used, shown, hidden, read, smelled, aimed, or activated without changing ownership.
+
+Required records:
+
+- OBJECT with owner/carried_by/current_location/visibility/affordances/constraints.
+- Current body positions and access.
+- Affordance for use without transfer.
+- Consequence if use creates durable state.
+
+Validation focus tags:
+
+- `object_use_possible`
+- `physical_interaction_expected`
+
+Expected blockers:
+
+- Character uses object they cannot access.
+- Use implies transfer but OBJECT/current possessions remain unchanged.
+
+Prompt-quality risk:
+
+- Object ownership silently changes.
+- Object becomes symbolic texture with no physical continuity.
+
+---
+
+## Case 25 — Location change under route/time constraints
+
+Stress target: movement from one place to another must respect route, time, transport, exits, and arrival consequences.
+
+Required records:
+
+- Source location and destination/reachable route.
+- Routes/exits and transport if relevant.
+- Available time.
+- Current positions and movement constraints.
+- Consequence or current state update if arrival is durable.
+
+Validation focus tags:
+
+- `location_change_possible`
+- `physical_interaction_expected`
+- `clock_tick_possible` if timing pressure matters
+
+Expected blockers:
+
+- Destination exists but no route or time exists.
+- Character changes location while captive/incapacitated/constrained with no means.
+
+Prompt-quality risk:
+
+- Teleportation.
+- Travel time skipped despite local-prose-only rule.
+- Arrival resolves too much downstream consequence.

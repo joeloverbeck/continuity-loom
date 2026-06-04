@@ -66,6 +66,7 @@ Required semantic content:
 - It must not attempt to override external model/provider/platform policy.
 - It should forbid assistant disclaimers, moral lectures, warnings, safety commentary, or out-of-fiction analysis inside prose.
 - It must preserve the distinction between character-held bias and narrator-certified fact.
+- All five fields compile into `<content_policy>`; the compiler must not replace them with a generic maturity boilerplate.
 
 ### 2.3 PROSE MODE
 
@@ -98,7 +99,9 @@ Fields:
 
 ```yaml
 selected_records: list[record_id]
-active_onstage_cast_full: list[cast_member_id]
+active_onstage_cast_full:
+  - cast_member_id: id
+    local_function: pov_narrator | active_speaker | active_silent | close_non_pov | physically_active | materially_referenced
 present_minor_cast_compressed: list[cast_member_id]
 offstage_relevant_cast: list[cast_member_id]
 selected_pov: entity_id | omniscient
@@ -110,6 +113,7 @@ Compiler requirements:
 - Include selected records in deterministic section order.
 - Do not silently add globally important records merely because they seem important.
 - Do not silently remove or compress selected active/onstage cast.
+- Use `local_function` to determine validation floors and voice/body pin requirements, not to reduce a full active/onstage dossier.
 - Warn about risky omissions or prompt length; block only when minimum completeness or contradiction rules require it.
 
 ### 3.2 CURRENT AUTHORITATIVE STATE
@@ -178,22 +182,28 @@ Rules:
 
 ### 3.5 CURRENT CAST VOICE PRESSURE
 
-Generation-time field used to compile active cast voice pressure pins. This is not durable identity.
+Generation-time field used to compile active cast voice pressure pins. This is not durable identity. It covers speech, POV narration, nonverbal behavior, silence, and turn-taking when those functions matter locally.
 
 Fields:
 
 ```yaml
 current_cast_voice_pressure:
   - cast_member_id: id
-    current_speech_pressure: prose
+    local_function: pov_narrator | active_speaker | active_silent | close_non_pov | present_minor_speaker | physically_active | materially_referenced
+    current_voice_pressure: prose
+    dialogue_pressure: prose | none
+    pov_narration_pressure: prose | none
+    nonverbal_or_silence_pressure: prose | none
     current_must_preserve: prose list
     current_must_avoid: prose list
 ```
 
 Rules:
 
-- Required when an active/onstage character is expected to speak materially or when close POV narration depends on a character-specific current voice pressure.
-- May be empty only when the durable voice anchor is sufficient and dialogue/close POV voice is not a focus.
+- Required when an active/onstage character is expected to speak materially.
+- Required when close POV narration depends on a character-specific current voice pressure.
+- Required when an active/onstage silent character’s body, gesture, posture, stillness, or social presence materially drives the local unit.
+- May be empty only when the durable voice anchor/body-presence core is sufficient and dialogue, close POV voice, and active silent presence are not a focus.
 - Compiles into `{active_cast_voice_pressure_pins}`.
 
 ### 3.6 CAST VOICE OVERRIDES
@@ -248,10 +258,14 @@ validation_focus_tags:
     - continuation_after_accepted_segment
   expected_local_modes:
     - dialogue_expected
+    - ensemble_dialogue_expected
     - introspection_expected
     - physical_interaction_expected
+    - active_silent_presence_expected
     - present_minor_speech_possible
+    - ambiguous_perception_expected
     - offstage_interruption_possible
+    - nonhuman_or_institutional_pressure_expected
     - secret_or_clue_pressure
     - non_pov_hidden_plan_behavior
   possible_durable_changes:
@@ -338,13 +352,16 @@ identity:
   public_face: prose
   private_pressure: prose
 voice_anchor:
-  core_voice_in_one_sentence: prose
-  baseline_register: prose
-  under_pressure: prose
-  rhythm_register_and_diction: prose
+  core_voice: prose
+  rhythm_and_syntax: prose
+  register_and_diction: prose
   vocabulary_and_metaphor_pools: prose
-  profanity_taboo_and_avoidance: prose
-  dialogue_tactics: prose
+  profanity_and_intensity: prose
+  taboo_and_avoidance_patterns: prose
+  dialogue_tactics_and_speech_functions: prose
+  address_terms_and_naming: prose
+  silence_interruption_and_turntaking: prose
+  under_pressure_voice: prose
   suppression_or_evasion_rule: prose
   must_preserve: prose list
   must_avoid: prose list
@@ -362,6 +379,8 @@ agency_core:
   risk_style: prose
 ```
 
+Core fields are required for materially involved active/onstage person-like cast. They are not all universal blockers for every background mention. A field may be filled with a concise “none / not distinctive” value only when that absence is itself truthful and useful.
+
 ### 5.2 Optional extended fields
 
 ```yaml
@@ -377,8 +396,8 @@ voice_extended:
   anger: prose
   lying: prose
   register_switching: prose
-  address_terms_and_naming: prose
-  silence_and_interruption_behavior: prose
+  humor_or_irony_style: prose
+  idiom_or_sociolect_notes: prose
   anti_generic_warnings: prose list
 body_and_presence_extended:
   body_limits: prose
@@ -399,9 +418,9 @@ agency_and_planning_extended:
 sample_utterances:
   - text: string
     situation: prose
-    speech_function: prose
+    speech_function: refusal | bargaining | evasion | intimacy | anger | politeness | threat | lie | confession | performance | other
     pressure_tags: prose list
-    copy_policy: never_copy_verbatim | may_echo_lightly | canonical_phrase
+    copy_policy: never_copy_verbatim | may_reuse_cadence_not_text | canonical_phrase
 ```
 
 Removed field:
@@ -417,9 +436,13 @@ Compiled shape:
 ```yaml
 active_cast_voice_pressure_pin:
   cast_member_id: id
-  core_voice: from CAST MEMBER.voice_anchor.core_voice_in_one_sentence
-  current_speech_pressure: from CURRENT CAST VOICE PRESSURE or explicit generation-time pressure
-  rhythm_register_and_diction: from CAST MEMBER.voice_anchor
+  local_function: from ACTIVE WORKING SET.local_function
+  core_voice: from CAST MEMBER.voice_anchor.core_voice
+  current_voice_pressure: from CURRENT CAST VOICE PRESSURE or explicit generation-time pressure
+  dialogue_pressure: from CURRENT CAST VOICE PRESSURE | none
+  pov_narration_pressure: from CURRENT CAST VOICE PRESSURE | none
+  nonverbal_or_silence_pressure: from CURRENT CAST VOICE PRESSURE | none
+  rhythm_register_and_diction: from CAST MEMBER.voice_anchor rhythm/register fields
   current_must_preserve: merged durable + generation-time entries
   current_must_avoid: merged durable + generation-time entries
   temporary_override: from CAST VOICE OVERRIDES | none
@@ -428,6 +451,7 @@ active_cast_voice_pressure_pin:
 Rules:
 
 - Required for active/onstage person-like cast when dialogue or close POV voice matters.
+- Required for active silent cast when their visible presence, body, gesture, silence, or social pressure materially matters.
 - The compiler may merge fields deterministically; it must not use an LLM to summarize them.
 - The pin is a salience duplicate. It does not replace full dossiers.
 
@@ -440,6 +464,7 @@ Requirements:
 - At most three per active/onstage character may compile.
 - Compile only when user-selected or deterministically selected by explicit `speech_function`/`pressure_tags` metadata matching current generation-time pressure.
 - Default copy policy is `never_copy_verbatim`.
+- `may_reuse_cadence_not_text` permits transfer of rhythm, speech function, register, or tactical pattern; it does not permit close wording reuse.
 - `canonical_phrase` must be rare and should still compile with anti-repetition warning.
 - Samples must not reveal secrets, future-state material, or knowledge unavailable to the speaking character.
 
@@ -447,7 +472,7 @@ Requirements:
 
 ```yaml
 active_onstage_full:
-  include: all populated dossier fields + compiled voice pressure pin + current knowledge constraints + temporary voice override when present
+  include: all populated dossier fields + local_function + compiled voice/body pressure pin + current knowledge constraints + temporary voice override when present
 present_minor_compressed:
   include: identity, current physical state, immediate behavior, voice warning, allowed actions, temporary override if any
 offstage_relevance:
@@ -455,6 +480,8 @@ offstage_relevance:
 background:
   include: omit or one line only
 ```
+
+Local-function sub-bands determine minimum completeness and pin requirements. They must not become a back door for silently compressing active/onstage cast. A materially active cast member with a full dossier remains full.
 
 ## 6. Knowledge, truth, and concealment records
 
@@ -824,7 +851,7 @@ Minimum prompt completeness for v1:
 3. Non-omniscient POV requires a populated POV knowledge profile.
 4. Active secrets require holders, protected non-holders, allowed cues, forbidden reveals, and reveal permission.
 5. Active physical interaction requires current location, onstage entities, positions/distance, object possession, visibility/line of sight, routes/exits, available time, and unavailable/impossible actions where omission would invite error.
-6. Active/onstage person-like cast requires a core cast dossier. Dialogue or close POV voice requires a compiled voice pressure pin.
+6. Active/onstage person-like cast requires a core cast dossier and local function. Dialogue, close POV voice, ensemble speech, or active silent presence requires a compiled voice/body pressure pin sufficient for the local function.
 7. Generation validation focus tags must identify first segment vs continuation and activate context-dependent blockers.
 8. Optional sections render explicit empty states; constitutional sections are not omitted.
 9. Unresolved contradictions, impossible conditions, missing mandatory fields, secret leakage, and accepted-prose inclusion are blockers.
@@ -848,6 +875,10 @@ Blockers include:
 - active physical interaction without bodies, positions, objects, routes, visibility, time, and consent/force conditions where relevant;
 - active/onstage person-like cast missing required core dossier when materially involved;
 - dialogue or close POV expected while active speaker lacks enough voice anchor/current voice pressure;
+- ensemble dialogue expected while likely speakers lack distinct voice pressure pins or relationship/status context;
+- active silent presence expected while body presence, visibility, or nonverbal/silence pressure is missing;
+- ambiguous perception expected while line of sight, sound, obstruction, or POV uncertainty is unspecified;
+- nonhuman/institutional pressure expected while entity operating rules, authority/route, or action mechanism is missing;
 - selected validation focus tag missing matrix-required state;
 - accepted prose text, rejected candidate text, or automatic prose-derived summary appearing in prompt-facing fields;
 - required constitutional prompt section missing or structurally empty.
