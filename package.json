@@ -15,7 +15,7 @@
     "start": "npm run build && node packages/server/dist/launch.js",
     "typecheck": "node scripts/run-workspaces-if-present.mjs typecheck",
     "lint": "eslint . && node scripts/run-workspaces-if-present.mjs lint",
-    "test": "vitest run && node scripts/run-workspaces-if-present.mjs test"
+    "test": "npm run build --workspace @loom/core && vitest run && node scripts/run-workspaces-if-present.mjs test"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

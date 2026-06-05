@@ -46,6 +46,7 @@ When the request is a diagnostic question or exploration prompt rather than a fo
 - **Omit the verdict-bucket section entirely** — the verdicts are defined against source-report items.
 - **Route all findings to the out-of-report sub-section**, keyed `O<N>`. The answers to the user's questions ARE the findings — emit them as `O1`, `O2`, …, not as synthetic `R<N>` items restating the questions.
 - **The closing structure still applies.**
+- **When the diagnostic resolves to a recommended *action* (not a set of independent work items)** — i.e. the question is "what should we do about X?" and the answer is one course of action weighed against alternatives — the `O<N>` findings carry the *answer* (the diagnosis), and the close borrows Step 3's recommendation shape in place of (or alongside) the deliverable-shape recommendation: name the recommended action upfront, then the rejected alternatives with their grounds, then any optional add-ons. This is the sanctioned blend for action-shaped diagnostics; don't force an action choice into the flat `O<N>` finding list.
 
 ### Closing structure
 
@@ -103,6 +104,8 @@ The full per-type rules behind SKILL.md Step 5's quick-triage table.
 - **Modify existing skill file(s)** — the edits ARE the design; skip the design doc. For a merge, include the new unified file, deletion of superseded directories, and updates to any cross-references.
 
 - **Project documentation** — edits to `README.md` or `docs/*.md` where the doc edit IS the deliverable; the edits ARE the design. The Step 6 menu may be omitted when the edit completes inline in the same turn.
+
+- **New dev-tooling/CI/config file** — a created tooling/CI/config file (`.github/workflows/*`, lint/format/build config) where the file IS the deliverable; the file content IS the design. Created in place; the Step 6 menu may be omitted when it completes inline in the same turn. Verify the commands/actions the file invokes (build/test/lint scripts, action versions) before writing, as for any operator-introduced premise.
 
 - **Amend `docs/FOUNDATIONS.md`** — a constitutional change. Per FOUNDATIONS §1, the constitution is amended deliberately and on purpose. Present the amendment explicitly as a constitution change, name the principle(s) affected and the downstream specs/features the change unblocks or invalidates, and require explicit user sign-off before writing. Skip the design doc — the amendment IS the deliverable.
 
