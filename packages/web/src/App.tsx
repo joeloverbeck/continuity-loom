@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { fetchRuntimeStatus, type RuntimeStatus } from "./api.js";
+import { ProjectPicker } from "./ProjectPicker.js";
 import "./styles.css";
 
 type LoadState =
@@ -63,6 +64,7 @@ export function App(): React.JSX.Element {
           </dl>
         ) : null}
       </section>
+      <ProjectPicker />
     </main>
   );
 }

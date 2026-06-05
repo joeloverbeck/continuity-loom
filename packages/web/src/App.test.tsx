@@ -46,6 +46,10 @@ describe("App", () => {
           return Promise.resolve(jsonResponse(versionPayload));
         }
 
+        if (url === "/api/project") {
+          return Promise.resolve(jsonResponse({ open: false }));
+        }
+
         return Promise.reject(new Error(`Unexpected URL: ${url}`));
       })
     );
@@ -63,6 +67,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect((await screen.findByRole("alert")).textContent).toBe("Cannot reach local server.");
+    const alerts = await screen.findAllByRole("alert");
+    expect(alerts.some((alert) => alert.textContent === "Cannot reach local server.")).toBe(true);
   });
 });
