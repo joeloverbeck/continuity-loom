@@ -236,6 +236,10 @@ Prompt, candidate, and story record content may be sensitive. The browser app sh
 
 Validation diagnostics should be field-linked where possible. Prompt preview and send buttons must subscribe to current blocker state, not stale success state. Validation focus tags must remain clearly labeled as completeness checks, not story structure.
 
+## Phase 4 implementation note
+
+The Phase 4 subset is realized in code via SPEC-004 (2026-06-05): the local app shell, dense record browser, type/status/search/reference filtering, generic typed record editors including a complete generic CAST MEMBER editor, three global configuration editors, minimal manual active-working-set membership toggling, and reference-protected delete/archive are implemented without raw-JSON ordinary editors or LLM assistance. The custom rich CAST MEMBER and generation-time brief workflows remain Phase 5 work; validation and prompt preview remain later-phase work.
+
 ## Failure modes
 
 UI failure modes include:
