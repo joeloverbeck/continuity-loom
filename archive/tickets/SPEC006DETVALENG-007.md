@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-007: Context-dependent matrix — durable-change rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/matrix-durable.ts`; appends to the `validation/rules` barrel.
@@ -83,3 +83,24 @@ Rule family 3 (one of four matrix clusters): the durable-change rows of the cont
 
 1. `npm test -- validation-matrix-durable`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the durable-change context-dependent matrix cluster:
+
+- Added `validation/rules/matrix-durable.ts` with tag-gated blockers for `object_use_possible`, `object_transfer_possible`, `location_change_possible`, `restraint_or_coercion_possible`, `intimacy_or_sex_possible`, `violence_or_injury_possible`, `institutional_involvement_possible`, `clock_tick_possible`, and `obligation_breach_possible`.
+- Registered the durable-change matrix rule family in the validation rule barrel.
+- Added stable diagnostic codes for each durable-change matrix row.
+- Added `packages/core/test/validation-matrix-durable.test.ts` covering tag-absent silence, tag-present clean silence, and tag-present missing-state blockers for all nine rows.
+
+Deviation from original plan: several route/opportunity/resulting-state details are represented through deterministic current-lock markers until dedicated structured fields exist; the rules remain named-field and marker based, never LLM-based and never instructions to force an event.
+
+Verification:
+
+- `npm test -- validation-matrix-durable` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
