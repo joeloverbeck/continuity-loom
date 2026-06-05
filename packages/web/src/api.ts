@@ -1,4 +1,4 @@
-import type { OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
+import type { CompileResult, OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
 
 export interface HealthResponse {
   status: "ok";
@@ -44,6 +44,14 @@ export type ApiFailure = {
   issues?: unknown[];
   referrers?: unknown[];
 };
+
+export type CompileBlocked = {
+  ok: false;
+  kind: "validation-blocked";
+  validation: ValidationResult;
+};
+
+export type CompileResponse = CompileResult | CompileBlocked | ApiFailure;
 
 export type RecordSummary = {
   id: string;
@@ -114,12 +122,15 @@ async function requestJson<T>(url: string, method: "GET" | "POST" | "PUT" | "DEL
   const requestInit: RequestInit = {
     method,
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
+      Accept: "application/json"
     }
   };
 
   if (body !== undefined) {
+    requestInit.headers = {
+      ...requestInit.headers,
+      "Content-Type": "application/json"
+    };
     requestInit.body = JSON.stringify(body);
   }
 
@@ -238,4 +249,9 @@ export async function setGenerationBrief(surfaces: Record<string, unknown>): Pro
 
 export async function validate(): Promise<ValidationResult> {
   return postJson<ValidationResult>("/api/validate");
+}
+
+export async function compile(): Promise<CompileResponse> {
+  // A body with ok === false is blocked-or-error; any other body is the bare CompileResult.
+  return postJson<CompileResponse>("/api/compile");
 }

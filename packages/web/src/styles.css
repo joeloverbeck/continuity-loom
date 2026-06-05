@@ -444,6 +444,78 @@ button:disabled:hover {
   border-color: #c99a2e;
 }
 
+.previewSurface {
+  max-width: 1120px;
+}
+
+.previewStack {
+  display: grid;
+  gap: 16px;
+}
+
+.previewToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.promptSearch {
+  max-width: 420px;
+}
+
+.promptPreviewLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: 16px;
+  align-items: start;
+}
+
+.promptBody {
+  box-sizing: border-box;
+  max-height: 68vh;
+  min-height: 420px;
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  color: #202124;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.promptBody mark {
+  background: #fff2a8;
+  color: #202124;
+}
+
+.metadataPanel {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.metadataGrid {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.metadataGrid div {
+  border-top: 1px solid #e0e5ee;
+  padding-top: 10px;
+}
+
+.metadataGrid dd {
+  overflow-wrap: anywhere;
+  font-size: 0.95rem;
+}
+
 @media (max-width: 760px) {
   .appFrame {
     grid-template-columns: 1fr;
@@ -459,6 +531,10 @@ button:disabled:hover {
   }
 
   .browserLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .promptPreviewLayout {
     grid-template-columns: 1fr;
   }
 }

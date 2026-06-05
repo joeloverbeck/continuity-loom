@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   archiveRecord,
+  compile,
   createRecord,
   deleteRecord,
   getGenerationBrief,
@@ -130,6 +131,77 @@ describe("api client", () => {
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
       ["/api/validate", "POST"]
     ]);
+  });
+
+  it("returns a successful compile result from the bare success body", async () => {
+    const resultBody = {
+      prompt: "<role>\nWrite the next local prose segment.",
+      metadata: {
+        versions: {
+          template: "prompt-template@1",
+          compiler: "compiler@1",
+          contract: "compiler-contract@1"
+        },
+        fingerprint: "7b9d",
+        lengthEstimate: 42,
+        tokenEstimate: 11
+      }
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(resultBody));
+      })
+    );
+
+    const result = await compile();
+
+    expect(result).toEqual(resultBody);
+    expect("prompt" in result).toBe(true);
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/compile", "POST"]
+    ]);
+    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+  });
+
+  it("returns validation-blocked compile responses without a prompt branch", async () => {
+    const blockedBody = {
+      ok: false,
+      kind: "validation-blocked",
+      validation: {
+        blockers: [{ code: "missing-current-state", message: "Current state is required.", severity: "blocker" }],
+        warnings: [],
+        isBlocked: true
+      }
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(blockedBody, 409))));
+
+    const result = await compile();
+
+    expect(result).toEqual(blockedBody);
+    expect("ok" in result).toBe(true);
+    if ("ok" in result && result.ok === false) {
+      expect(result.kind).toBe("validation-blocked");
+      expect("prompt" in result).toBe(false);
+      expect("validation" in result).toBe(true);
+    }
+  });
+
+  it.each([
+    ["no-open-project", "Open a project before compiling."],
+    ["malformed-validation-source", "The validation source is malformed."]
+  ])("returns structured compile failures for %s", async (kind, message) => {
+    const failure = {
+      ok: false,
+      kind,
+      message
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 400))));
+
+    await expect(compile()).resolves.toEqual(failure);
   });
 
   it("returns structured error envelopes from failed route responses", async () => {
