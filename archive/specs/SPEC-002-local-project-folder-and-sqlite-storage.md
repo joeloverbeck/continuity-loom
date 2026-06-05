@@ -1,6 +1,6 @@
 # SPEC-002 — Local Project Folder and SQLite Storage Foundation
 
-Status: DRAFT
+Status: ✅ COMPLETED
 Phase: Implementation Order Phase 2
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -258,6 +258,16 @@ leakage.
   explicitly non-goals in `LOCAL-FIRST-STORAGE.md`.
 
 ## Risks & Open Questions
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Implemented the Phase 2 local project folder and SQLite storage foundation across `@loom/core`, `@loom/server`, and `@loom/web`.
+- Added the pure storage contract, metadata schema, application/store version gates, server-side SQLite project lifecycle, structured open-failure taxonomy, backup creation through `VACUUM INTO`, localhost project API routes, and a minimal project picker UI.
+- Updated requirements docs to mark Phase 2 implemented via SPEC-002 while leaving the deferred migration runner, story records, and accepted-prose archive separation to later phases.
+- Deviations from the original plan: the manual browser dry-run was not performed during ticket 005 archival; automated route, storage, and web coverage proves the implemented surfaces. Root lint also required raising the explicit typescript-eslint default-project file-count guard after the new test files increased the analyzed test set.
+- Verification: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` passed on 2026-06-05 before spec archival.
 
 - **`node:sqlite` maturity:** the module is the committed v1 default
   (`TECHNOLOGY-DECISIONS.md`) but is comparatively new; if a needed primitive

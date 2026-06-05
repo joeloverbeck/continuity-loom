@@ -1,6 +1,6 @@
 # SPEC002LOCPROFOL-003: Open-failure taxonomy, defensive parse, version gate + secret-boundary test
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — hardens `@loom/server` `openProject` to classify every open-failure kind; adds the FOUNDATIONS §29.9 secret-boundary test
@@ -148,3 +148,12 @@ metadata JSON and a full dump of the store contain no `openRouterApiKey` /
 
 1. `npm run test --workspace @loom/server`
 2. `npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Hardened `openProject()` to resolve structured failure kinds for missing/invalid metadata, invalid SQLite, foreign stores, version incompatibility, migration-required stores, and unreadable paths.
+- Added taxonomy coverage plus a secret-boundary test proving API-key-shaped fields cannot persist through normal create paths.
+- Deviation from plan: unreadable coverage uses an untraversable file path, which is stable under the test runner without relying on chmod behavior.
+- Verification: `npm run test --workspace @loom/server`, `npm run lint --workspace @loom/server`, `npm run typecheck --workspace @loom/server`, and `npm run build --workspace @loom/server` passed before archival.

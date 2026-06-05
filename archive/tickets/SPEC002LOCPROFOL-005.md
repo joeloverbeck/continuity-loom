@@ -1,6 +1,6 @@
 # SPEC002LOCPROFOL-005: `@loom/web` minimal project picker
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/web` project-picker UI + API client functions for `/api/project/*`
@@ -115,3 +115,11 @@ the resulting `backupPath`, and inline rendering of an open/create failure's
 2. `npm run typecheck && npm test && npm run build`
 3. Manual dry-run (SPEC-002 §Verification "Manual"): `npm start`, then create /
    reopen / back up / open-a-bad-folder against an explicit project folder.
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Added project API client functions, a minimal create/open/status/backup picker, App integration, styles, and jsdom tests for create status, open diagnostics, and backup path display.
+- Deviation from plan: the manual dry-run was not performed before ticket archival; automated web test/typecheck/lint/build coverage passed.
+- Verification: `npm run test --workspace @loom/web`, `npm run lint --workspace @loom/web`, `npm run typecheck --workspace @loom/web`, and `npm run build --workspace @loom/web` passed before archival.

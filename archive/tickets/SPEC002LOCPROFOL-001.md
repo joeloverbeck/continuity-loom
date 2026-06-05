@@ -1,6 +1,6 @@
 # SPEC002LOCPROFOL-001: `@loom/core` storage contract (pure)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` storage-contract surface (`projectMetadataSchema`, taxonomy types, version-compatibility decision functions, identity constants); adds `zod` as a `@loom/core` dependency
@@ -153,3 +153,11 @@ and functions.
 
 1. `npm run test --workspace @loom/core`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Added the pure `@loom/core` storage contract, metadata Zod schema, identity/version constants, compatibility helpers, exported types, and focused unit tests.
+- Deviation from plan: none; `zod` was already present in the root lockfile, so no lockfile update was needed.
+- Verification: `npm run test --workspace @loom/core`, `npm run lint --workspace @loom/core`, and `npm run typecheck --workspace @loom/core` passed before archival.

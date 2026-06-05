@@ -1,6 +1,6 @@
 # SPEC002LOCPROFOL-002: `@loom/server` project storage module — create/open/close/status/backup
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/server` `node:sqlite`-backed project storage module with a per-instance active-project handle; integration tests against temp dirs
@@ -148,3 +148,11 @@ Opening a project while one is open cleanly closes the prior handle first.
 
 1. `npm run test --workspace @loom/server`
 2. `npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Added `createProjectStoreManager()` with per-instance active project state, project create/open/status/close, SQLite PRAGMA initialization, and `VACUUM INTO` backups.
+- Deviation from plan: the manager validates create input with a strict schema from the start so the later secret-boundary test uses the real write path.
+- Verification: `npm run test --workspace @loom/server`, `npm run lint --workspace @loom/server`, `npm run typecheck --workspace @loom/server`, and `npm run build --workspace @loom/server` passed before archival.

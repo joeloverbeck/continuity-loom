@@ -1,6 +1,6 @@
 # SPEC002LOCPROFOL-004: Local API routes for project create/open/status/backup/close
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new Fastify loopback routes under `/api/project/*` wired to the storage manager; per-instance manager constructed in `createServer`
@@ -123,3 +123,12 @@ request bodies or store contents.
 
 1. `npm run test --workspace @loom/server`
 2. `npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+- Added `/api/project/*` Fastify routes for create, open, status, backup, and close, with one project-store manager per server instance.
+- Added route tests for the happy path, structured open-failure passthrough, and malformed create request validation.
+- Deviation from plan: create/backup operational failures are returned as structured `ok: false` responses with HTTP conflict status where appropriate.
+- Verification: `npm run test --workspace @loom/server`, `npm run lint --workspace @loom/server`, `npm run typecheck --workspace @loom/server`, and `npm run build --workspace @loom/server` passed before archival.
