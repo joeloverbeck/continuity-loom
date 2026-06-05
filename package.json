@@ -1,0 +1,26 @@
+{
+  "name": "continuity-loom",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "typecheck": "node scripts/run-workspaces-if-present.mjs typecheck",
+    "lint": "eslint . && node scripts/run-workspaces-if-present.mjs lint",
+    "test": "vitest run && node scripts/run-workspaces-if-present.mjs test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.1",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3",
+    "vitest": "^4.0.14"
+  }
+}

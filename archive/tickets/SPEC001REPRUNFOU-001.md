@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-001: Workspace root, baseline tooling, and Node pin
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — introduces the monorepo root: `package.json` (npm workspaces), `tsconfig.base.json`, ESLint flat config, Prettier, Vitest, `.nvmrc`
@@ -87,3 +87,10 @@ ESLint flat config (`eslint.config.js`) + Prettier config at root with TypeScrip
 
 1. `npm install && npm run typecheck --if-present`
 2. `cat .nvmrc && npm pkg get engines.node workspaces`
+
+## Outcome
+
+Implemented the npm workspace root, Node 24 engine pin, shared strict TypeScript
+base config, ESLint/Prettier/Vitest baseline, and root no-op workspace script
+runner. Verified with `npm run lint --if-present`, `npm run test --if-present`,
+`npm run typecheck --if-present`, and `npm pkg get engines.node workspaces`.
