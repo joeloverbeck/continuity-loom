@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-import { nonemptyString, recordId } from "./common.js";
+import { nonemptyString, recordId, referenceIfId } from "./common.js";
 import type { RecordTypeDefinition } from "./registry.js";
+import { compactReferences } from "./references.js";
 
 export const entitySchema = z
   .object({
@@ -62,9 +63,10 @@ export const entityDefinitions = [
   {
     recordType: "ENTITY STATUS",
     payloadSchema: entityStatusSchema,
-    extractReferences: (payload: EntityStatus) => [
-      { refRole: "entity_id", targetId: payload.entity_id },
-      ...(payload.location ? [{ refRole: "current_location", targetId: payload.location }] : [])
-    ]
+    extractReferences: (payload: EntityStatus) =>
+      compactReferences([
+        { refRole: "entity_id", targetId: payload.entity_id },
+        referenceIfId("current_location", payload.location)
+      ])
   }
 ] satisfies RecordTypeDefinition[];

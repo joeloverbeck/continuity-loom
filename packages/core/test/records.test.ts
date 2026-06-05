@@ -319,6 +319,35 @@ describe("record data model", () => {
     ]);
   });
 
+  it("extracts ENTITY STATUS current_location references only from full UUID values", () => {
+    for (const location of ["unknown", "concealed", "offstage", "not_applicable"] as const) {
+      expect(
+        extractRecordReferences("ENTITY STATUS", {
+          entity_id: idA,
+          life: "alive",
+          agency: "free",
+          location,
+          visibility_to_pov: "visible",
+          current_activity: "Watching the door."
+        })
+      ).toEqual([{ refRole: "entity_id", targetId: idA }]);
+    }
+
+    expect(
+      extractRecordReferences("ENTITY STATUS", {
+        entity_id: idA,
+        life: "alive",
+        agency: "free",
+        location: idB,
+        visibility_to_pov: "visible",
+        current_activity: "Watching the door."
+      })
+    ).toEqual([
+      { refRole: "entity_id", targetId: idA },
+      { refRole: "current_location", targetId: idB }
+    ]);
+  });
+
   it("validates global story config field fidelity", () => {
     expect(storyContractSchema.parse(storyContractPayload).tone).toBe("tense and intimate");
     expect(
