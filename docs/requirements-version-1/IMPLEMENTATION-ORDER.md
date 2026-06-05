@@ -53,17 +53,19 @@ Phase gate:
 
 ## Phase 3 — Typed data model and record identity/reference layer
 
+Status: ✅ Implemented via SPEC-003 (2026-06-05).
+
 Define runtime schemas for all record payloads, stable IDs, common metadata, reference projections, and repository interfaces.
 
 Why before CRUD: editors should not invent ad hoc record shapes. Validation and compiler later depend on stable IDs and references.
 
 Phase gate:
 
-- every required record type has a runtime schema;
-- records have stable IDs and common metadata;
-- reference projections exist for entity/location/object/record relationships;
-- load/save rejects malformed payloads;
-- accepted segment storage is physically distinct from records even if not fully used yet.
+- [x] every required record type has a runtime schema;
+- [x] records have stable IDs and common metadata;
+- [x] reference projections exist for entity/location/object/record relationships;
+- [x] load/save rejects malformed payloads;
+- [x] accepted segment storage is physically distinct from records even if not fully used yet.
 
 ## Phase 4 — CRUD for all schema record types with basic complete editors
 
@@ -111,7 +113,7 @@ Phase gate:
 
 ## Phase 7 — Deterministic prompt compiler
 
-Implement the universal prompt renderer from validated snapshots using `prompt-template(17).md` and `compiler-contract(8).md`.
+Implement the universal prompt renderer from validated snapshots using `prompt-template.md` and `compiler-contract.md`.
 
 Why after validation: compiler can rely on required state and focus tags having already been checked. Why before OpenRouter: prompt preview must exist before transport.
 
