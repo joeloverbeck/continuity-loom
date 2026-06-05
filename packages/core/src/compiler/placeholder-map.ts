@@ -4,6 +4,7 @@ import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
 import { CAST_PLACEHOLDER_RESOLVERS } from "./sections/cast.js";
 import { FRONT_PLACEHOLDER_RESOLVERS } from "./sections/front.js";
 import { PRESSURE_PLACEHOLDER_RESOLVERS } from "./sections/pressure.js";
+import { TAIL_PLACEHOLDER_RESOLVERS } from "./sections/records-tail.js";
 import type { PlaceholderResolver } from "./types.js";
 
 export type PlaceholderName =
@@ -113,7 +114,8 @@ export const PLACEHOLDER_MAP: Readonly<Record<PlaceholderName, PlaceholderResolv
     ) as Record<PlaceholderName, PlaceholderResolver>),
     ...FRONT_PLACEHOLDER_RESOLVERS,
     ...PRESSURE_PLACEHOLDER_RESOLVERS,
-    ...CAST_PLACEHOLDER_RESOLVERS
+    ...CAST_PLACEHOLDER_RESOLVERS,
+    ...TAIL_PLACEHOLDER_RESOLVERS
   }
 );
 

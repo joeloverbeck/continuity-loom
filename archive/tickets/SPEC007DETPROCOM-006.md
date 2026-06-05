@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-006: Tail record resolvers (facts/beliefs/events, locations/objects/affordances, physical continuity) + golden full-prompt test
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds the final record resolvers (`compiler-contract.md` §3 sections 21–23) and a golden full-prompt determinism test that exercises the whole compiler.
@@ -134,3 +134,27 @@ byte-identical determinism, fingerprint stability, and the stress-suite subset.
 
 1. `npm test --workspace @loom/core` — targeted tail + golden tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Added tail record resolvers for facts, beliefs, events, locations, objects,
+  affordances, unavailable/impossible actions, and physical continuity.
+- Kept POV-accessible facts separate from writer-visible/non-POV facts and withheld
+  events.
+- Derived unavailable/impossible actions from current locks and unavailable/blocked
+  affordance records.
+- Added tail-section tests plus a golden full-prompt determinism test across all 28
+  sections and the version/fingerprint metadata.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 21 files, 132 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 46 files, 241 tests.
+- `npm run lint` passed.
+- `npm run build` passed, with Vite's large-chunk warning only.
