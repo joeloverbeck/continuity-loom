@@ -31,7 +31,7 @@ The seven-bucket vocabulary is closed — don't coin new verdicts. A user-electe
 
 ### Per-item identifiers
 
-Derive from the source report's own numbering when present (`P1`, `R10`, `F-01`). When unnumbered, use `R<N>` for source-report items. Use `O<N>` for **out-of-report** findings (auditor-discovered, no presence in the source report) — always the literal `O<N>` prefix so they're unambiguous in cross-references. IDs must be stable so the user can reference them by number.
+Derive from the source report's own numbering when present (`P1`, `R10`, `F-01`). When unnumbered, use `R<N>` for source-report items. Use `O<N>` for **out-of-report** findings (auditor-discovered, no presence in the source report) — always the literal `O<N>` prefix so they're unambiguous in cross-references. IDs must be stable so the user can reference them by number. When a prior triage on the same surface already used `O<N>` keys, continue the numbering (start at the next free integer, e.g. `O5`) or round-prefix (`R3-O1`) so cross-round cross-references stay unambiguous.
 
 ### Grouping & out-of-report findings
 
@@ -43,6 +43,7 @@ Findings discovered during exploration that are NOT in the source report (adjace
 
 When the request is a diagnostic question or exploration prompt rather than a formal report ("figure out why X", "what's happening with Z"), there's no source report to evaluate verdicts against:
 
+- **Check for a prior triage of this surface first.** A no-source-report conformance/diagnostic *re-audit* is the common case where an earlier `docs/triage/` record already exists; glob/grep `docs/triage/` (and existing `tickets/`/`specs/`) for the same spec or surface **before** forming findings, and frame the pass as a delta — don't re-propose a deliberately-deferred or already-rejected item as fresh. This discovery is also the precondition for the §User-pre-authorization reversal-check (surface a prior-decision reversal before the scope `AskUserQuestion`).
 - **Omit the verdict-bucket section entirely** — the verdicts are defined against source-report items.
 - **Route all findings to the out-of-report sub-section**, keyed `O<N>`. The answers to the user's questions ARE the findings — emit them as `O1`, `O2`, …, not as synthetic `R<N>` items restating the questions.
 - **The closing structure still applies.**
@@ -121,6 +122,8 @@ The full per-type rules behind SKILL.md Step 5's quick-triage table.
 - **Implementation tickets** — deliverable is the ticket file(s) in `tickets/`; the tickets ARE the design. If a ticket template exists, follow it; otherwise use a minimal Title / Context / Acceptance Criteria / Verification shape and note the template's absence. **Namespace**: tickets use per-initiative prefixes (e.g. `COMPILER-NNN`, `VALIDATE-NNN`), not one global sequence. Scan `tickets/` for existing prefixes and reuse an established one; for a fresh namespace, derive a short uppercase initialism from the deliverable's primary subject and start at `<PREFIX>-001`. Cite the namespace choice in the deliverable lead so the user can redirect. Ticket *creation* presents the Step 6 menu; ticket *update in place* is inline-completed — skip the menu and summarize the delta.
 
 - **Triage producing ≥2 specs or ≥3 tickets** — additionally write `docs/triage/YYYY-MM-DD-<topic>-triage.md` summarizing the source report, accepted items (with the full path to each spec/ticket + a one-line rationale), dismissed items (one-line reason each), and identified-but-unactioned follow-ups. Keep it under ~80 lines; reference deliverables by path rather than duplicating their content. This makes the brainstorm's decisions durable without re-running it. For a single spec or fewer than 3 tickets, skip this file by default — the deliverables are sufficient history.
+
+- **Re-audit delta against an existing triage record** — when a re-audit changes the disposition of items in an existing `docs/triage/YYYY-MM-DD-<topic>-triage.md` (a deferral now actioned, a "not ticketed" item now ticketed, a prior finding now refuted), update that record in place with a dated delta/addendum — even when the ≥2-spec/≥3-ticket new-companion threshold isn't met — so the durable decision trail stays truthful. Cite the new ticket/spec paths; don't silently leave a stale "deferred, not ticketed" note.
 
 - **Triage analysis, all deliverables deferred** — when the brainstorm emits verdicts but produces no spec/ticket now (everything deferred) yet the user wants the verdicts persisted, write the decision record to `docs/triage/YYYY-MM-DD-<topic>-triage.md` with the full triage (source, per-item verdicts + rationale, recommended shape, named assumptions). The file IS the deliverable, so it carries full verdict content (the ≤80-line companion budget does not apply). Step 6 offers: re-invoke `brainstorm` on this file to produce the deferred deliverables / adjust a named assumption / done.
 
