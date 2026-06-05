@@ -8,9 +8,11 @@ import {
   generationSessionSchema,
   getRecordTypeDefinition,
   planSchema,
+  proseModeSchema,
   recordMetadataSchema,
   recordTypes,
-  secretSchema
+  secretSchema,
+  storyContractSchema
 } from "../src/index.js";
 
 const idA = "019b0298-5c00-7000-8000-000000000001";
@@ -62,6 +64,36 @@ const consequencePayload = {
   current_effect: "The wing is unsafe.",
   possible_next_effect: "The exit may close.",
   visibility: "public"
+} as const;
+
+const storyContractPayload = {
+  title: "Continuity Test",
+  premise: "A city keeps its promises badly.",
+  genre_mode: "urban fantasy",
+  tone: "tense and intimate",
+  continuity_philosophy: "continuity_first",
+  setting_baseline: "Rainy districts under old bargains.",
+  content_intensity: "mature",
+  explicitness: "Render mature material only when earned.",
+  language_register: "controlled contemporary prose",
+  prose_preferences: {
+    psychic_distance: "close",
+    dialogue_density: "moment_led",
+    interiority: "filtered",
+    paragraphing: "mixed"
+  }
+} as const;
+
+const proseModePayload = {
+  pov_character: "omniscient",
+  person: "third",
+  tense: "past",
+  psychic_distance: "close",
+  interiority_mode: "filtered",
+  dialogue_density: "balanced",
+  paragraphing: "mixed",
+  language_output: "English",
+  special_style_constraints: ["avoid summary"]
 } as const;
 
 describe("record data model", () => {
@@ -284,5 +316,43 @@ describe("record data model", () => {
       { refRole: "holder_or_target", targetId: idA },
       { refRole: "record_link", targetId: idB }
     ]);
+  });
+
+  it("validates global story config field fidelity", () => {
+    expect(storyContractSchema.parse(storyContractPayload).tone).toBe("tense and intimate");
+    expect(
+      storyContractSchema.parse({
+        ...storyContractPayload,
+        tone: ["tense", "intimate"]
+      }).tone
+    ).toEqual(["tense", "intimate"]);
+
+    expect(() =>
+      proseModeSchema.parse({
+        person: "third",
+        tense: "past",
+        psychic_distance: "close",
+        interiority_mode: "filtered",
+        dialogue_density: "balanced",
+        paragraphing: "mixed",
+        language_output: "English",
+        special_style_constraints: ["avoid summary"]
+      })
+    ).toThrow();
+
+    expect(
+      extractRecordReferences("PROSE MODE", {
+        ...proseModePayload,
+        pov_character: idA
+      })
+    ).toEqual([{ refRole: "pov_character", targetId: idA }]);
+
+    expect(extractRecordReferences("PROSE MODE", proseModePayload)).toEqual([]);
+    expect(
+      extractRecordReferences("PROSE MODE", {
+        ...proseModePayload,
+        pov_character: "variable"
+      })
+    ).toEqual([]);
   });
 });

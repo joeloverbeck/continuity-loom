@@ -1,6 +1,6 @@
 # SPEC003SCHEMAFIX-003: Restore global story-config field fidelity (tone, pov_character)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` `packages/core/src/records/global-config.ts` STORY CONTRACT `tone`, PROSE MODE `pov_character`.
@@ -76,3 +76,23 @@ Two global story-config fields drifted from `docs/story-record-schema.md` §2:
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Widened STORY CONTRACT `tone` to accept either prose or a non-empty string tag list, matching `docs/story-record-schema.md` §2.1.
+- Tightened PROSE MODE `pov_character` so it is required and accepts only an entity UUID, `omniscient`, or `variable`, matching §2.3.
+- Added tests proving `tone` accepts both authored forms, missing `pov_character` is rejected, and PROSE MODE reference extraction emits only for UUID POV characters.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test --workspace @loom/core` passed: 3 test files, 16 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 14 test files, 65 tests.
+- `npm run build` passed.
+- `rg -n "tone:|pov_character: z\\.union|optionalRecordId" packages/core/src/records/global-config.ts` confirmed `tone` uses `string | string[]`, `pov_character` uses `recordId | omniscient | variable`, and `optionalRecordId` is absent.

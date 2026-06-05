@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { nonemptyString, optionalRecordId } from "./common.js";
+import { nonemptyString, recordId } from "./common.js";
 import type { RecordTypeDefinition } from "./registry.js";
 import { compactReferences } from "./references.js";
 
@@ -9,7 +9,7 @@ export const storyContractSchema = z
     title: nonemptyString,
     premise: nonemptyString,
     genre_mode: z.union([nonemptyString, z.array(nonemptyString)]),
-    tone: nonemptyString,
+    tone: z.union([nonemptyString, z.array(nonemptyString)]),
     continuity_philosophy: z.literal("continuity_first"),
     setting_baseline: nonemptyString,
     content_intensity: z.enum(["general", "mature", "explicit", "graphic", "variable"]),
@@ -38,7 +38,7 @@ export const universalContentPolicySchema = z
 
 export const proseModeSchema = z
   .object({
-    pov_character: z.union([optionalRecordId, z.enum(["omniscient", "variable"])]),
+    pov_character: z.union([recordId, z.enum(["omniscient", "variable"])]),
     person: z.enum(["first", "second", "third", "omniscient"]),
     tense: z.enum(["past", "present", "future", "variable"]),
     psychic_distance: z.enum(["close", "medium", "distant", "variable"]),
