@@ -23,6 +23,13 @@ export {
   planSchema
 } from "./records/causal-pressure.js";
 export {
+  castMemberSectionModel
+} from "./records/cast-member-sections.js";
+export type {
+  CastMemberSection,
+  CastMemberSectionId
+} from "./records/cast-member-sections.js";
+export {
   castMemberSchema,
   sampleUtteranceSchema
 } from "./records/cast-member.js";
