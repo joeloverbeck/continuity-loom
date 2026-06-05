@@ -122,12 +122,15 @@ async function requestJson<T>(url: string, method: "GET" | "POST" | "PUT" | "DEL
   const requestInit: RequestInit = {
     method,
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
+      Accept: "application/json"
     }
   };
 
   if (body !== undefined) {
+    requestInit.headers = {
+      ...requestInit.headers,
+      "Content-Type": "application/json"
+    };
     requestInit.body = JSON.stringify(body);
   }
 

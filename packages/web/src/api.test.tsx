@@ -163,6 +163,8 @@ describe("api client", () => {
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
       ["/api/compile", "POST"]
     ]);
+    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
   });
 
   it("returns validation-blocked compile responses without a prompt branch", async () => {

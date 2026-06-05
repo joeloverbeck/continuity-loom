@@ -1,6 +1,6 @@
 # SPEC-008 — Prompt Preview Gated by Validation
 
-Status: 🚧 NOT STARTED
+Status: ✅ COMPLETED
 Phase: Implementation Order Phase 8
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED), SPEC-007 (Deterministic Prompt Compiler, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -380,3 +380,37 @@ surfaces no API key or secret; it introduces no provider-specific or plot-rail s
   `/preview` route, promoted from the disabled placeholder); feature set (copy, in-prompt
   search, clear, not-canon notice, external version metadata); section expand/collapse
   deferred per the gate's "if feasible".
+
+## Outcome
+
+Completed: 2026-06-05
+
+SPEC-008 implemented the Phase 8 validation-gated prompt preview in `@loom/web`:
+
+- added a typed `compile()` client for `POST /api/compile`;
+- extracted reusable `ValidationResultView` presentation for blocker/warning rendering;
+- promoted "Validation / Prompt Preview" to a primary `/preview` route;
+- rendered no prompt element when compile is validation-blocked or errors;
+- rendered the successful prompt in an ephemeral, clearable, searchable, copyable preview;
+- displayed template/compiler/contract versions, fingerprint, and length/token estimates
+  outside the prompt body;
+- left OpenRouter transport, candidate lifecycle, accepted segments, server behavior, core
+  compiler behavior, and storage schema out of scope.
+
+Deviation from original plan: runtime smoke found that the web request helper sent
+`Content-Type: application/json` on bodyless `POST /api/compile`, which Fastify rejected
+in the production app. The helper now only sends `Content-Type` when a JSON body is
+present, and the API client test covers that bodyless compile request.
+
+Verification:
+
+- `npm test -- packages/web/src/api.test.tsx packages/web/src/preview/PromptPreviewView.test.tsx packages/web/src/App.test.tsx`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- Production smoke on `127.0.0.1`: blocked compile showed the blocker list and no prompt;
+  ready compile showed the complete prompt with version metadata/fingerprint outside the
+  prompt body; **Copy prompt** reported success; **Clear** removed prompt and metadata;
+  the successful browser run produced no console log artifact containing prompt text or
+  API-key-like data.

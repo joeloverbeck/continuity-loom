@@ -1,6 +1,6 @@
 # SPEC008PROPREGAT-004: Phase-8 completion — manual smoke, governing-doc updates, spec archival
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — governing docs (`IMPLEMENTATION-ORDER.md` Phase-8 status, `UI-WORKFLOWS.md` Phase-8 note) + archival move of the spec to `archive/specs/`. No product code.
@@ -128,3 +128,21 @@ Move `specs/SPEC-008-prompt-preview-gated-by-validation.md` to `archive/specs/` 
 1. `grep -n "Implemented via SPEC-008" docs/requirements-version-1/IMPLEMENTATION-ORDER.md && grep -ni "Phase 8" docs/requirements-version-1/UI-WORKFLOWS.md`
 2. `test -f archive/specs/SPEC-008-prompt-preview-gated-by-validation.md && test ! -f specs/SPEC-008-prompt-preview-gated-by-validation.md`
 3. The runtime gate is a manual smoke (no browser-automation harness in the project), so the CI-runnable boundary is the grep/`test` proofs above plus the existing `npm test` suite from 001-003; the §Verification behavior is the implementer runbook in What to Change §1.
+
+## Outcome
+
+Completed: 2026-06-05
+
+Phase 8 is recorded as implemented in `docs/requirements-version-1/IMPLEMENTATION-ORDER.md`;
+`docs/requirements-version-1/UI-WORKFLOWS.md` has a Phase 8 implementation note; and
+`SPEC-008-prompt-preview-gated-by-validation.md` is archived under `archive/specs/`.
+
+Runtime smoke was performed against the production app on `127.0.0.1`: blocked preview
+showed validation blockers and no prompt; ready preview showed the complete prompt with
+version metadata and fingerprint outside the prompt body; **Copy prompt** reported success;
+**Clear** removed the prompt and metadata; and the successful browser run produced no
+console log artifact containing prompt text or API-key-like data.
+
+Deviation: the smoke found and fixed a bodyless `POST /api/compile` request bug in the
+web API helper. Verification included the updated API client test, focused preview/app
+tests, typecheck, lint, full test suite, and build.

@@ -244,6 +244,10 @@ The Phase 4 subset is realized in code via SPEC-004 (2026-06-05): the local app 
 
 The Phase 5 subset is realized in code via SPEC-005 (2026-06-05): CAST MEMBER now has a custom sectioned dossier editor driven by a core section model; the generation-time brief has a dedicated workflow over all eight brief surfaces; generation-brief routes persist partial full-session surfaces; active-working-set curation exposes active/onstage, present-minor, and offstage cast bands with `local_function`; and the working-set view shows a deterministic "what will compile" conceptual destination preview. The paste-guard and non-local stop guidance flag are non-blocking editor warnings only. The deterministic validation engine, prompt compiler, and prompt preview remain Phase 6, Phase 7, and Phase 8 work.
 
+## Phase 8 implementation note
+
+The Phase 8 prompt-preview surface is realized in code via SPEC-008 (2026-06-05): "Validation / Prompt Preview" is a primary route backed by the validation-gated compile endpoint, renders no prompt when blockers exist, keeps warnings visible, provides copy/search/clear controls, displays template/compiler/contract metadata and the fingerprint outside the prompt body, and treats the prompt as temporary, inspectable, and not canon. OpenRouter transport and the candidate lifecycle remain Phase 9 and Phase 10 work.
+
 ## Failure modes
 
 UI failure modes include:

@@ -137,18 +137,20 @@ Phase gate:
 
 ## Phase 8 — Prompt preview gated by validation
 
+Status: ✅ Implemented via SPEC-008 (2026-06-05).
+
 Build the UI surface that displays the compiled prompt only when blockers are absent.
 
 Why before OpenRouter: the user must inspect the prompt before sending. This is a constitutional workflow boundary.
 
 Phase gate:
 
-- prompt preview appears only with zero blockers;
-- no partial prompt preview exists;
-- prompt preview is readable/searchable enough for large prompts;
-- warnings remain visible but do not compile;
-- prompt text is not permanently archived by default;
-- template/compiler/contract version metadata is visible outside the prompt body.
+- [x] prompt preview appears only with zero blockers;
+- [x] no partial prompt preview exists;
+- [x] prompt preview is readable/searchable enough for large prompts;
+- [x] warnings remain visible but do not compile;
+- [x] prompt text is not permanently archived by default;
+- [x] template/compiler/contract version metadata is visible outside the prompt body.
 
 ## Phase 9 — OpenRouter global settings and non-streaming send
 
