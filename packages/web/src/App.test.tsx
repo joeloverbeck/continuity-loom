@@ -29,6 +29,30 @@ function jsonResponse(payload: unknown): Response {
   });
 }
 
+function runtimeFetch(url: string): Promise<Response> {
+  if (url === "/api/health") {
+    return Promise.resolve(jsonResponse({ status: "ok" }));
+  }
+
+  if (url === "/api/version") {
+    return Promise.resolve(jsonResponse(versionPayload));
+  }
+
+  if (url === "/api/project") {
+    return Promise.resolve(jsonResponse({ open: false }));
+  }
+
+  if (url === "/api/records" || url === "/api/records?type=ENTITY") {
+    return Promise.resolve(jsonResponse({ ok: true, records: [] }));
+  }
+
+  if (url.startsWith("/api/story-config/")) {
+    return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
+  }
+
+  return Promise.reject(new Error(`Unexpected URL: ${url}`));
+}
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -42,21 +66,7 @@ describe("App", () => {
   it("renders app name and fetched runtime status", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn((url: string) => {
-        if (url === "/api/health") {
-          return Promise.resolve(jsonResponse({ status: "ok" }));
-        }
-
-        if (url === "/api/version") {
-          return Promise.resolve(jsonResponse(versionPayload));
-        }
-
-        if (url === "/api/project") {
-          return Promise.resolve(jsonResponse({ open: false }));
-        }
-
-        return Promise.reject(new Error(`Unexpected URL: ${url}`));
-      })
+      vi.fn(runtimeFetch)
     );
 
     render(<App />);
@@ -71,21 +81,7 @@ describe("App", () => {
   it("navigates the primary shell surfaces and keeps later-phase surfaces disabled", () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn((url: string) => {
-        if (url === "/api/health") {
-          return Promise.resolve(jsonResponse({ status: "ok" }));
-        }
-
-        if (url === "/api/version") {
-          return Promise.resolve(jsonResponse(versionPayload));
-        }
-
-        if (url === "/api/project") {
-          return Promise.resolve(jsonResponse({ open: false }));
-        }
-
-        return Promise.reject(new Error(`Unexpected URL: ${url}`));
-      })
+      vi.fn(runtimeFetch)
     );
 
     render(<App />);
@@ -107,21 +103,7 @@ describe("App", () => {
   it("renders settings without exposing a key value", () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn((url: string) => {
-        if (url === "/api/health") {
-          return Promise.resolve(jsonResponse({ status: "ok" }));
-        }
-
-        if (url === "/api/version") {
-          return Promise.resolve(jsonResponse(versionPayload));
-        }
-
-        if (url === "/api/project") {
-          return Promise.resolve(jsonResponse({ open: false }));
-        }
-
-        return Promise.reject(new Error(`Unexpected URL: ${url}`));
-      })
+      vi.fn(runtimeFetch)
     );
 
     render(<App />);

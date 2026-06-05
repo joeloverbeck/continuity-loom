@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from "react-router-dom";
 
 import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
+import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 
 interface AppShellProps {
@@ -110,7 +111,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
           <Route path="/" element={<ProjectPicker />} />
           <Route path="/records" element={<RecordBrowser />} />
           <Route path="/working-set" element={<PlaceholderSurface title="Active Working Set" />} />
-          <Route path="/story-config" element={<PlaceholderSurface title="Story Configuration" />} />
+          <Route path="/story-config" element={<StoryConfigEditor />} />
           <Route path="/settings" element={<SettingsSurface />} />
         </Routes>
       </div>

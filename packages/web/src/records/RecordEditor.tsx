@@ -28,7 +28,11 @@ import {
 export interface RecordEditorProps {
   recordType: string;
   record?: RecordDetail;
+  payload?: unknown;
   referenceRecords?: readonly RecordSummary[];
+  submitLabel?: string;
+  headingEyebrow?: string;
+  onSubmitPayload?: (payload: FormValues) => Promise<{ ok: true } | ApiFailure>;
   onSaved?: (record: RecordDetail) => void;
 }
 
@@ -374,7 +378,11 @@ function FieldRenderer({
 export function RecordEditor({
   recordType,
   record,
+  payload,
   referenceRecords = [],
+  submitLabel,
+  headingEyebrow,
+  onSubmitPayload,
   onSaved
 }: RecordEditorProps): React.JSX.Element {
   const descriptor = getEditorDescriptor(recordType);
@@ -385,7 +393,7 @@ export function RecordEditor({
     ? (zodResolver(z.preprocess((values) => prunePayload(values, descriptor?.fields ?? []), definition.payloadSchema) as never) as Resolver<FormValues>)
     : undefined;
   const formOptions = {
-    defaultValues: descriptor ? defaultValues(descriptor.fields, record?.payload) : {},
+    defaultValues: descriptor ? defaultValues(descriptor.fields, record?.payload ?? payload) : {},
     ...(resolver ? { resolver } : {})
   };
   const form = useForm<FormValues>(formOptions);
@@ -400,6 +408,15 @@ export function RecordEditor({
 
   async function onSubmit(values: FormValues): Promise<void> {
     setServerError(null);
+    if (onSubmitPayload) {
+      const response = await onSubmitPayload(values);
+
+      if (!response.ok) {
+        setServerError(response);
+      }
+      return;
+    }
+
     const response = record
       ? await updateRecord(record.id, { displayLabel: deriveDisplayLabel(recordType, values), payload: values })
       : await createRecord({ type: recordType, displayLabel: deriveDisplayLabel(recordType, values), payload: values });
@@ -415,7 +432,7 @@ export function RecordEditor({
   return (
     <form className="recordEditor" onSubmit={(event) => void form.handleSubmit(onSubmit)(event)}>
       <div className="projectHeader">
-        <p className="eyebrow">{record ? "Edit record" : "Create record"}</p>
+        <p className="eyebrow">{headingEyebrow ?? (record ? "Edit record" : "Create record")}</p>
         <h2>{recordType}</h2>
       </div>
 
@@ -438,7 +455,7 @@ export function RecordEditor({
         ))}
       </div>
 
-      <button type="submit">{record ? "Save Record" : "Create Record"}</button>
+      <button type="submit">{submitLabel ?? (record ? "Save Record" : "Create Record")}</button>
     </form>
   );
 }
