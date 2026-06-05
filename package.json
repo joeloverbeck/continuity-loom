@@ -10,6 +10,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build --workspaces --if-present",
+    "start": "npm run build && node packages/server/dist/launch.js",
     "typecheck": "node scripts/run-workspaces-if-present.mjs typecheck",
     "lint": "eslint . && node scripts/run-workspaces-if-present.mjs lint",
     "test": "vitest run && node scripts/run-workspaces-if-present.mjs test"
@@ -19,6 +22,7 @@
     "@types/node": "^24.10.1",
     "eslint": "^9.39.1",
     "prettier": "^3.6.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.3",
     "vitest": "^4.0.14"

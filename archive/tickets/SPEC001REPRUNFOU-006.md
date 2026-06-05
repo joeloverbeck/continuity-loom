@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-006: Single-port production launch and dev orchestration
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — root `dev`/`build`/`start` scripts; single-port production launch (Node serves built web + opens browser); port-in-use handling
@@ -78,3 +78,15 @@ On `EADDRINUSE`, fail with a clear message naming the port; never silently bind 
 
 1. `npm run build && npm start` (manual: confirm the placeholder shows health/version; confirm the printed URL)
 2. `npm run dev` (manual: confirm HMR + `/api` proxy)
+
+## Outcome
+
+Implemented root `dev`, `build`, and `start` scripts; a two-process dev helper;
+and a production launch path in `@loom/server` that serves built web assets and
+the stub API on one loopback origin. The launcher prints the localhost URL,
+best-effort opens the browser unless `--no-open` is supplied, and fails clearly
+when the requested port is occupied. Verified with `npm run test --workspace
+@loom/server`, `npm run typecheck --workspace @loom/server`, `npm run lint
+--workspace @loom/server`, `npm run build`, `npm audit --omit=dev`, root script
+inspection, and an escalated localhost smoke of `node packages/server/dist/launch.js
+--port 0 --no-open` showing the built page and `/api/health` on the same origin.
