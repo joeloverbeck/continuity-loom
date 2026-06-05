@@ -2,6 +2,8 @@ import { versionInfo } from "@loom/core";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
+import { registerProjectRoutes } from "./project-routes.js";
+import { createProjectStoreManager } from "./project-store.js";
 import { healthResponseSchema, versionInfoSchema } from "./version-schema.js";
 
 export const LOOPBACK_HOST = "127.0.0.1";
@@ -48,8 +50,14 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
       : false
   });
 
+  const projectStoreManager = createProjectStoreManager();
+
   app.get("/api/health", () => healthResponseSchema.parse({ status: "ok" }));
   app.get("/api/version", () => versionInfoSchema.parse(versionInfo));
+  registerProjectRoutes(app, projectStoreManager);
+  app.addHook("onClose", async () => {
+    await projectStoreManager.closeProject();
+  });
 
   return app;
 }
