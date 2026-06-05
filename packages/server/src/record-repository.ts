@@ -60,6 +60,11 @@ export interface UpdateRecordInput {
   userOrder?: number | null;
 }
 
+export interface IncomingRecordReference {
+  fromRecordId: string;
+  refRole: string;
+}
+
 const storyConfigSchemas: Record<StoryConfigKind, ZodType> = {
   "STORY CONTRACT": storyContractSchema,
   "UNIVERSAL CONTENT POLICY": universalContentPolicySchema,
@@ -369,6 +374,19 @@ export class RecordRepository {
       .all(id) as unknown as RecordReference[];
   }
 
+  incomingReferencesForRecord(id: string): IncomingRecordReference[] {
+    return this.database
+      .prepare(
+        `SELECT rr.from_record_id AS fromRecordId, rr.ref_role AS refRole
+           FROM record_references rr
+           JOIN records r ON r.id = rr.from_record_id
+          WHERE rr.target_id = ?
+            AND r.archived = 0
+          ORDER BY rr.from_record_id, rr.ref_role`
+      )
+      .all(id) as unknown as IncomingRecordReference[];
+  }
+
   private getExistingRecordRow(id: string): Record<string, unknown> {
     const row = this.database.prepare("SELECT * FROM records WHERE id = ?").get(id) as
       | Record<string, unknown>
@@ -393,19 +411,11 @@ export class RecordRepository {
   }
 
   private assertNoActiveInboundReferences(targetId: string): void {
-    const row = this.database
-      .prepare(
-        `SELECT r.id
-           FROM record_references rr
-           JOIN records r ON r.id = rr.from_record_id
-          WHERE rr.target_id = ?
-            AND r.archived = 0
-          LIMIT 1`
-      )
-      .get(targetId) as { id: string } | undefined;
+    const incoming = this.incomingReferencesForRecord(targetId);
 
-    if (row) {
-      throw new RecordIntegrityError(`Record ${targetId} is referenced by active record ${row.id}.`);
+    if (incoming.length > 0) {
+      const referrers = incoming.map((reference) => `${reference.fromRecordId}:${reference.refRole}`).join(", ");
+      throw new RecordIntegrityError(`Record ${targetId} is referenced by active records: ${referrers}.`);
     }
   }
 
