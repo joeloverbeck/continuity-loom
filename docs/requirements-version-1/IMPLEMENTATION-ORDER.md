@@ -69,18 +69,20 @@ Phase gate:
 
 ## Phase 4 — CRUD for all schema record types with basic complete editors
 
+Status: ✅ Implemented via SPEC-004 (2026-06-05).
+
 Build generic/semi-generic typed editors and dense browsing so every record type can be created, viewed, edited, deleted/archived, filtered, and selected.
 
 Why before custom polish: v1 requires full record coverage. Deterministic validation cannot be meaningful if some required record types cannot be authored.
 
 Phase gate:
 
-- full CRUD exists for every schema record type;
-- record browser supports type/status/search/reference filtering;
-- active working set inclusion can be toggled manually;
-- delete/archive behavior protects references;
-- no editor uses raw arbitrary JSON as ordinary UI;
-- no LLM assistance exists.
+- [x] full CRUD exists for every schema record type;
+- [x] record browser supports type/status/search/reference filtering;
+- [x] active working set inclusion can be toggled manually;
+- [x] delete/archive behavior protects references;
+- [x] no editor uses raw arbitrary JSON as ordinary UI;
+- [x] no LLM assistance exists.
 
 ## Phase 5 — Custom rich editors for CAST MEMBER and generation-time brief
 

@@ -208,6 +208,10 @@ Malformed payloads block use until repaired. Selected contradictory records bloc
 
 The Phase 3 subset is realized in code via SPEC-003 (2026-06-05): runtime schemas for required durable record types and generation-time brief surfaces, stable UUIDv7 record identity, common metadata projections, reference extraction, a typed repository, and physically distinct `generation_session` and `accepted_segments` tables. CRUD UI, custom rich editors, deterministic validation, and prompt compilation remain later-phase work.
 
+## Phase 4 implementation note
+
+The Phase 4 subset is realized in code via SPEC-004 (2026-06-05): full record CRUD routes and repository operations, dense browsing with type/status/search/reference filters, generic typed editors including a complete generic CAST MEMBER editor, the three global story-configuration editors, minimal manual active-working-set membership toggling, and reference-protected delete/archive. Custom rich CAST MEMBER and generation-time brief editors remain Phase 5 work; deterministic validation remains Phase 6 work; prompt compilation remains Phase 7 work.
+
 ## Failure modes
 
 Data model failure modes include:

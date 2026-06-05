@@ -4,7 +4,10 @@ import type { AddressInfo } from "node:net";
 
 import { registerProjectRoutes } from "./project-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
+import { registerRecordRoutes } from "./record-routes.js";
+import { registerStoryConfigRoutes } from "./story-config-routes.js";
 import { healthResponseSchema, versionInfoSchema } from "./version-schema.js";
+import { registerWorkingSetRoutes } from "./working-set-routes.js";
 
 export const LOOPBACK_HOST = "127.0.0.1";
 
@@ -55,6 +58,9 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   app.get("/api/health", () => healthResponseSchema.parse({ status: "ok" }));
   app.get("/api/version", () => versionInfoSchema.parse(versionInfo));
   registerProjectRoutes(app, projectStoreManager);
+  registerRecordRoutes(app, projectStoreManager);
+  registerStoryConfigRoutes(app, projectStoreManager);
+  registerWorkingSetRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
   });

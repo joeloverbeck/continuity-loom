@@ -9,27 +9,56 @@ body {
   margin: 0;
 }
 
-.shell {
+.appFrame {
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 20px;
-  padding: 32px;
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
 }
 
-.panel {
-  width: min(720px, 100%);
-  border: 1px solid #d8dee8;
-  border-radius: 8px;
+.sidebar {
+  border-right: 1px solid #d8dee8;
   background: #ffffff;
-  padding: 32px;
-  box-shadow: 0 8px 24px rgb(25 33 61 / 8%);
+  padding: 24px;
 }
 
+.contentPane {
+  padding: 32px;
+}
+
+.runtimePanel {
+  margin-bottom: 24px;
+}
+
+.primaryNav,
+.laterPhaseList {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.primaryNav a {
+  border-radius: 6px;
+  color: #202124;
+  font-weight: 700;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.primaryNav a:hover,
+.primaryNav a.active {
+  background: #e9f1f8;
+  color: #17466d;
+}
+
+.laterPhaseList button {
+  background: #eef1f5;
+  color: #68758a;
+  cursor: not-allowed;
+}
+
+.surface,
 .projectSurface {
-  width: min(720px, 100%);
+  max-width: 960px;
 }
 
 .projectHeader {
@@ -57,7 +86,7 @@ h3 {
 
 h1 {
   margin: 0 0 24px;
-  font-size: clamp(2rem, 4vw, 3.2rem);
+  font-size: 2.4rem;
   line-height: 1.05;
 }
 
@@ -136,7 +165,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   box-sizing: border-box;
   width: 100%;
   border: 1px solid #c9d2df;
@@ -166,6 +196,12 @@ button:hover {
   background: #1f4d78;
 }
 
+button:disabled,
+button:disabled:hover {
+  background: #d8dee8;
+  color: #68758a;
+}
+
 .statusPanel {
   display: grid;
   gap: 14px;
@@ -177,4 +213,165 @@ button:hover {
   color: #39445a;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 0.9rem;
+}
+
+.browserLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 20px;
+}
+
+.browserMain {
+  min-width: 0;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.createRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.createRail button {
+  background: #39445a;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+}
+
+.recordTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.recordTable th,
+.recordTable td {
+  border-bottom: 1px solid #d8dee8;
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.recordTable th {
+  color: #5c677d;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.linkButton {
+  border-radius: 0;
+  background: transparent;
+  color: #17466d;
+  padding: 0;
+  text-align: left;
+}
+
+.linkButton:hover {
+  background: transparent;
+  color: #245a8d;
+  text-decoration: underline;
+}
+
+.detailPane {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.payloadPreview {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #e0e5ee;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
+.recordEditor {
+  display: grid;
+  gap: 16px;
+  max-width: 920px;
+}
+
+.editorGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.editorField {
+  border-left: 3px solid #d8dee8;
+  padding-left: 12px;
+}
+
+.editorField.validationField {
+  border-left-color: #8b95a5;
+}
+
+.fieldError {
+  margin: -6px 0 10px;
+  color: #8d1f17;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.nestedGroup {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.nestedGroup legend {
+  color: #39445a;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.listField {
+  display: grid;
+  gap: 10px;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.configStack {
+  display: grid;
+  gap: 28px;
+}
+
+.configPanel {
+  border-top: 1px solid #d8dee8;
+  padding-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .appFrame {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    border-right: 0;
+    border-bottom: 1px solid #d8dee8;
+  }
+
+  .contentPane {
+    padding: 20px;
+  }
+
+  .browserLayout {
+    grid-template-columns: 1fr;
+  }
 }
