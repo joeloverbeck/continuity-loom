@@ -16,6 +16,7 @@ import {
   type RecordSummary
 } from "../api.js";
 import { CastMemberEditor } from "./CastMemberEditor.js";
+import { RecordEditor } from "./RecordEditor.js";
 
 const columns: Array<ColumnDef<RecordSummary>> = [
   { accessorKey: "type", header: "Type" },
@@ -63,6 +64,7 @@ export function RecordBrowser(): React.JSX.Element {
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
+  const [genericEditorRecord, setGenericEditorRecord] = useState<{ recordType: string; record?: RecordDetail } | null>(null);
   const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
@@ -179,7 +181,51 @@ export function RecordBrowser(): React.JSX.Element {
     setWorkingSetIds(response.selectedRecordIds);
   }
 
+  function handleSavedRecord(savedRecord: RecordDetail): void {
+    setSelectedRecord(savedRecord);
+    setRecords((current) => {
+      const existingIndex = current.findIndex((record) => record.id === savedRecord.id);
+      const savedSummary: RecordSummary = {
+        id: savedRecord.id,
+        type: savedRecord.type,
+        displayLabel: savedRecord.displayLabel,
+        status: savedRecord.status,
+        salience: savedRecord.salience,
+        urgency: savedRecord.urgency,
+        archived: savedRecord.archived,
+        userOrder: savedRecord.userOrder,
+        createdAt: savedRecord.createdAt,
+        updatedAt: savedRecord.updatedAt
+      };
+
+      if (existingIndex === -1) {
+        return [savedSummary, ...current];
+      }
+
+      return current.map((record) => (record.id === savedRecord.id ? savedSummary : record));
+    });
+  }
+
   const availableGroupingOptions = groupingOptions(filters.type);
+
+  if (genericEditorRecord) {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="records-title">
+        <button type="button" className="linkButton" onClick={() => setGenericEditorRecord(null)}>
+          Back to records
+        </button>
+        <RecordEditor
+          recordType={genericEditorRecord.recordType}
+          {...(genericEditorRecord.record ? { record: genericEditorRecord.record } : {})}
+          referenceRecords={records}
+          onSaved={(savedRecord) => {
+            handleSavedRecord(savedRecord);
+            setGenericEditorRecord(null);
+          }}
+        />
+      </section>
+    );
+  }
 
   if (castEditorRecord !== undefined) {
     return (
@@ -191,7 +237,7 @@ export function RecordBrowser(): React.JSX.Element {
           {...(castEditorRecord ? { record: castEditorRecord } : {})}
           referenceRecords={records}
           onSaved={(savedRecord) => {
-            setSelectedRecord(savedRecord);
+            handleSavedRecord(savedRecord);
             setCastEditorRecord(undefined);
           }}
         />
@@ -285,7 +331,10 @@ export function RecordBrowser(): React.JSX.Element {
                 onClick={() => {
                   if (recordType === "CAST MEMBER") {
                     setCastEditorRecord(null);
+                    return;
                   }
+
+                  setGenericEditorRecord({ recordType });
                 }}
               >
                 Create {recordType}
@@ -362,6 +411,14 @@ export function RecordBrowser(): React.JSX.Element {
               {selectedRecord.type === "CAST MEMBER" && "payload" in selectedRecord ? (
                 <button type="button" onClick={() => setCastEditorRecord(selectedRecord)}>
                   Edit CAST MEMBER
+                </button>
+              ) : null}
+              {selectedRecord.type !== "CAST MEMBER" && "payload" in selectedRecord ? (
+                <button
+                  type="button"
+                  onClick={() => setGenericEditorRecord({ recordType: selectedRecord.type, record: selectedRecord })}
+                >
+                  Edit Record
                 </button>
               ) : null}
             </>

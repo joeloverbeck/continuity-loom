@@ -5,13 +5,24 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RecordBrowser } from "./RecordBrowser.js";
-import { getRecord, getWorkingSet, listRecords, setWorkingSet, type ListRecordsFilters, type RecordSummary } from "../api.js";
+import {
+  createRecord,
+  getRecord,
+  getWorkingSet,
+  listRecords,
+  setWorkingSet,
+  updateRecord,
+  type ListRecordsFilters,
+  type RecordSummary
+} from "../api.js";
 
 vi.mock("../api.js", () => ({
+  createRecord: vi.fn(),
   getRecord: vi.fn(),
   getWorkingSet: vi.fn(),
   listRecords: vi.fn(),
-  setWorkingSet: vi.fn()
+  setWorkingSet: vi.fn(),
+  updateRecord: vi.fn()
 }));
 
 const fixtures: RecordSummary[] = [
@@ -170,6 +181,30 @@ describe("RecordBrowser", () => {
     for (const recordType of recordTypes) {
       expect(screen.getByRole("button", { name: `Create ${recordType}` })).toBeTruthy();
     }
+  });
+
+  it("opens typed editors from create actions instead of leaving inert buttons", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+    vi.mocked(createRecord).mockResolvedValue({ ok: true, record: { ...fixtures[0]!, payload: { inspected: "create" } } });
+    vi.mocked(updateRecord).mockResolvedValue({ ok: true, record: { ...fixtures[0]!, payload: { inspected: "update" } } });
+
+    render(<RecordBrowser />);
+    await screen.findByRole("button", { name: "Aster" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create ENTITY" }));
+
+    expect(await screen.findByRole("heading", { name: "ENTITY" })).toBeTruthy();
+    expect(screen.getByText("Create record")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create Record" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to records" }));
+    await screen.findByRole("button", { name: "Aster" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create CAST MEMBER" }));
+
+    expect(await screen.findByRole("heading", { name: "CAST MEMBER" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Aster" })).toBeTruthy();
   });
 
   it("toggles working-set membership and filters to selected records without implicit writes", async () => {
