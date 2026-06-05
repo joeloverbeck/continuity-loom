@@ -93,6 +93,29 @@ describe("ProjectPicker", () => {
     } satisfies OpenProjectRequest);
   });
 
+  it("gives create inputs stable name attributes for autofill", () => {
+    render(<ProjectPicker />);
+
+    expect(screen.getByLabelText("Parent path").getAttribute("name")).toBe("parentPath");
+    expect(screen.getByLabelText("Folder name").getAttribute("name")).toBe("folderName");
+    expect(screen.getByLabelText("Title").getAttribute("name")).toBe("title");
+    expect(screen.getByLabelText("Description").getAttribute("name")).toBe("description");
+    expect(screen.getByLabelText("Folder path").getAttribute("name")).toBe("folderPath");
+  });
+
+  it("disables Create until the required fields are filled", () => {
+    render(<ProjectPicker />);
+
+    const button = screen.getByRole("button", { name: "Create Project" });
+    expect(button.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
+    fireEvent.change(screen.getByLabelText("Folder name"), { target: { value: "alpha" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Alpha" } });
+
+    expect(button.hasAttribute("disabled")).toBe(false);
+  });
+
   it("renders request validation diagnostics", async () => {
     createProjectMock.mockResolvedValue({
       ok: false,
@@ -102,10 +125,32 @@ describe("ProjectPicker", () => {
 
     render(<ProjectPicker />);
 
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
+    fireEvent.change(screen.getByLabelText("Folder name"), { target: { value: "alpha" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Alpha" } });
     fireEvent.click(screen.getByRole("button", { name: "Create Project" }));
 
     expect((await screen.findByRole("alert")).textContent).toBe(
       "invalid-request: Project create request is invalid."
+    );
+  });
+
+  it("renders an actionable create-failure diagnostic", async () => {
+    createProjectMock.mockResolvedValue({
+      ok: false,
+      kind: "parent-missing",
+      message: "The parent path does not exist: /tmp/nope"
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/nope" } });
+    fireEvent.change(screen.getByLabelText("Folder name"), { target: { value: "alpha" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Alpha" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Project" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "parent-missing: The parent path does not exist: /tmp/nope"
     );
   });
 

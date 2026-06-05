@@ -39,6 +39,12 @@ export function ProjectPicker(): React.JSX.Element {
   });
   const [openFolderPath, setOpenFolderPath] = useState("");
 
+  const canCreate =
+    createFields.parentPath.trim() !== "" &&
+    createFields.folderName.trim() !== "" &&
+    createFields.title.trim() !== "";
+  const canOpen = openFolderPath.trim() !== "";
+
   useEffect(() => {
     let active = true;
 
@@ -128,6 +134,9 @@ export function ProjectPicker(): React.JSX.Element {
           <label>
             Parent path
             <input
+              id="project-parent-path"
+              name="parentPath"
+              required
               value={createFields.parentPath}
               onChange={(event) =>
                 setCreateFields((fields) => ({ ...fields, parentPath: event.target.value }))
@@ -137,6 +146,9 @@ export function ProjectPicker(): React.JSX.Element {
           <label>
             Folder name
             <input
+              id="project-folder-name"
+              name="folderName"
+              required
               value={createFields.folderName}
               onChange={(event) =>
                 setCreateFields((fields) => ({ ...fields, folderName: event.target.value }))
@@ -146,6 +158,9 @@ export function ProjectPicker(): React.JSX.Element {
           <label>
             Title
             <input
+              id="project-title-input"
+              name="title"
+              required
               value={createFields.title}
               onChange={(event) =>
                 setCreateFields((fields) => ({ ...fields, title: event.target.value }))
@@ -155,13 +170,17 @@ export function ProjectPicker(): React.JSX.Element {
           <label>
             Description
             <textarea
+              id="project-description"
+              name="description"
               value={createFields.description}
               onChange={(event) =>
                 setCreateFields((fields) => ({ ...fields, description: event.target.value }))
               }
             />
           </label>
-          <button type="submit">Create Project</button>
+          <button type="submit" disabled={!canCreate}>
+            Create Project
+          </button>
         </form>
 
         <form className="projectForm" onSubmit={(event) => void onOpen(event)}>
@@ -169,11 +188,16 @@ export function ProjectPicker(): React.JSX.Element {
           <label>
             Folder path
             <input
+              id="project-open-folder-path"
+              name="folderPath"
+              required
               value={openFolderPath}
               onChange={(event) => setOpenFolderPath(event.target.value)}
             />
           </label>
-          <button type="submit">Open Project</button>
+          <button type="submit" disabled={!canOpen}>
+            Open Project
+          </button>
         </form>
       </div>
 

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
-import type { ProjectStoreManager } from "./project-store.js";
+import { ProjectCreateError, type ProjectStoreManager } from "./project-store.js";
 
 const createProjectBodySchema = z
   .object({
@@ -35,6 +35,10 @@ export function registerProjectRoutes(app: FastifyInstance, manager: ProjectStor
     } catch (error) {
       if (error instanceof ZodError) {
         return reply.code(400).send(badRequest("Project create request is invalid."));
+      }
+
+      if (error instanceof ProjectCreateError) {
+        return reply.code(409).send({ ok: false, kind: error.kind, message: error.message });
       }
 
       return reply.code(409).send(operationFailure("Project could not be created."));

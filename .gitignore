@@ -71,6 +71,13 @@ tsconfig.tsbuildinfo
 .env.*
 !.env.example
 
+# Continuity Loom project stores — user story data must never be committed.
+# The app rejects creating projects inside this folder; these are a backstop.
+continuity-loom.project.json
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache

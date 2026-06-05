@@ -30,6 +30,13 @@ export type OpenFailureKind =
   | "invalid-sqlite"
   | "unreadable";
 
+export type CreateFailureKind =
+  | "parent-not-absolute"
+  | "parent-inside-app"
+  | "parent-missing"
+  | "folder-exists"
+  | "unwritable";
+
 export interface ProjectStatus {
   folderPath: string;
   title: string;

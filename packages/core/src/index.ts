@@ -6,6 +6,7 @@ export {
   projectMetadataSchema
 } from "./project-storage.js";
 export type {
+  CreateFailureKind,
   OpenFailureKind,
   OpenProjectResult,
   ProjectMetadata,
