@@ -212,6 +212,10 @@ The Phase 3 subset is realized in code via SPEC-003 (2026-06-05): runtime schema
 
 The Phase 4 subset is realized in code via SPEC-004 (2026-06-05): full record CRUD routes and repository operations, dense browsing with type/status/search/reference filters, generic typed editors including a complete generic CAST MEMBER editor, the three global story-configuration editors, minimal manual active-working-set membership toggling, and reference-protected delete/archive. Custom rich CAST MEMBER and generation-time brief editors remain Phase 5 work; deterministic validation remains Phase 6 work; prompt compilation remains Phase 7 work.
 
+## Phase 5 implementation note
+
+The Phase 5 subset is realized in code via SPEC-005 (2026-06-05): the existing schemas and `generation_session` table now have full editing and HTTP persistence for generation-brief surfaces without a schema or `user_version` bump. CAST MEMBER durable dossier editing is sectioned but still uses the same schema fields; current cast voice pressure and cast voice overrides remain generation-time data and are not written back to durable CAST MEMBER records. Active-working-set cast bands and `local_function` are explicit user-authored data, and the "what will compile" preview is a coarse deterministic destination grouping rather than the Phase 7 compiler.
+
 ## Failure modes
 
 Data model failure modes include:

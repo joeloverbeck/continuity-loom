@@ -240,6 +240,10 @@ Validation diagnostics should be field-linked where possible. Prompt preview and
 
 The Phase 4 subset is realized in code via SPEC-004 (2026-06-05): the local app shell, dense record browser, type/status/search/reference filtering, generic typed record editors including a complete generic CAST MEMBER editor, three global configuration editors, minimal manual active-working-set membership toggling, and reference-protected delete/archive are implemented without raw-JSON ordinary editors or LLM assistance. The custom rich CAST MEMBER and generation-time brief workflows remain Phase 5 work; validation and prompt preview remain later-phase work.
 
+## Phase 5 implementation note
+
+The Phase 5 subset is realized in code via SPEC-005 (2026-06-05): CAST MEMBER now has a custom sectioned dossier editor driven by a core section model; the generation-time brief has a dedicated workflow over all eight brief surfaces; generation-brief routes persist partial full-session surfaces; active-working-set curation exposes active/onstage, present-minor, and offstage cast bands with `local_function`; and the working-set view shows a deterministic "what will compile" conceptual destination preview. The paste-guard and non-local stop guidance flag are non-blocking editor warnings only. The deterministic validation engine, prompt compiler, and prompt preview remain Phase 6, Phase 7, and Phase 8 work.
+
 ## Failure modes
 
 UI failure modes include:

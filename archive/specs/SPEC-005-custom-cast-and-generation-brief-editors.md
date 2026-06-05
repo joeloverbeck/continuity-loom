@@ -1,6 +1,6 @@
 # SPEC-005 — Custom Rich Editors for CAST MEMBER and the Generation-Time Brief
 
-Status: DRAFT
+Status: COMPLETED
 Phase: Implementation Order Phase 5
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -435,3 +435,28 @@ secret/key leakage, no validation override (no validation engine exists yet).
 - **Resolved during brainstorm:** which spec (Phase 5), packaging (one SPEC-005),
   and curation depth (bands + conceptual preview; helper panels deferred to
   Phase 6).
+
+## Outcome
+
+Completed: 2026-06-05.
+
+What changed:
+
+- Added pure `@loom/core` helpers for CAST MEMBER section grouping and conceptual "what will compile" destination buckets.
+- Added server `GET/PUT /api/generation-brief` routes over the existing `generation_session` repository methods, preserving `/api/working-set` membership behavior.
+- Added web generation-brief API wrappers, a sectioned CAST MEMBER editor, a generation-time brief workflow route, and active-working-set cast-band / `local_function` curation with destination preview.
+- Updated governing Phase 5 documentation in `IMPLEMENTATION-ORDER.md`, `UI-WORKFLOWS.md`, and `DATA-MODEL-AND-RECORDS.md`.
+
+Deviations from original plan:
+
+- Extended `active_working_set` writes landed through `PUT /api/generation-brief`; the existing `/api/working-set` membership route remains unchanged for SPEC-004 compatibility.
+- The "anti-generic and anti-repetition warnings" CAST MEMBER item is represented as a navigation/emphasis cue while the actual fields stay nested under `voice_anchor` and `voice_extended`.
+
+Verification:
+
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- Focused unit/integration tests for the core helpers, generation-brief routes, API client wrappers, CAST MEMBER editor, generation-brief workflow, and working-set curation.
+- Final smoke included `npm start` and confirmed the production server bound to `127.0.0.1` only.
