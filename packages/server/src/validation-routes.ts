@@ -52,7 +52,8 @@ export function registerValidationRoutes(app: FastifyInstance, manager: ProjectS
       storyConfig,
       versions: {
         template: versionInfo.templates.version,
-        compiler: versionInfo.compiler.version
+        compiler: versionInfo.compiler.version,
+        contract: versionInfo.contract.version
       }
     });
 

@@ -74,7 +74,7 @@ function baseInput(): BuildValidationSnapshotInput {
       cast_voice_overrides: []
     },
     storyConfig: {},
-    versions: { template: "0.0.0", compiler: "0.0.0" }
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
   };
 }
 

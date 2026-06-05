@@ -12,11 +12,15 @@ const versionPayload = {
   },
   templates: {
     version: "0.0.0",
-    status: "placeholder"
+    status: "stable"
   },
   compiler: {
     version: "0.0.0",
-    status: "placeholder"
+    status: "stable"
+  },
+  contract: {
+    version: "1.0.0",
+    status: "stable"
   }
 };
 
@@ -82,7 +86,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Continuity Loom" })).toBeTruthy();
     expect(await screen.findByText("ok")).toBeTruthy();
     expect(screen.getByText("0.0.0")).toBeTruthy();
-    expect(screen.getAllByText("placeholder")).toHaveLength(2);
+    expect(screen.getAllByText("stable")).toHaveLength(2);
     expect(screen.getByRole("heading", { name: "Local Project" })).toBeTruthy();
   });
 

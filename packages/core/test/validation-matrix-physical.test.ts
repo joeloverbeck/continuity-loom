@@ -222,7 +222,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         special_style_constraints: []
       }
     },
-    versions: { template: "0.0.0", compiler: "0.0.0" }
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
   };
 }
 

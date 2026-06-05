@@ -221,7 +221,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         character_bias_handling: "Render bias as character belief, not endorsement."
       }
     },
-    versions: { template: "0.0.0", compiler: "0.0.0" }
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
   };
 }
 

@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-001: Retire version placeholders; add the contract version
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` `VersionInfo`/`versionInfo` (`version.ts`), the `ValidationVersions` schema (`validation/snapshot.ts`), the server `/api/version` Zod schema (`version-schema.ts`), and the `/api/validate` snapshot pass-through (`validation-routes.ts`).
@@ -200,3 +200,27 @@ In `packages/core/src/validation/snapshot.ts`: extend `ValidationVersions` from
 1. `grep -rn '"placeholder"' packages/ --include=*.ts --include=*.tsx | grep -v dist`
    — no version-status matches remain.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Retired the `templates` and `compiler` placeholder version statuses in
+  `@loom/core` and set them to stable `1.0.0` values.
+- Added the required `contract` version to `VersionInfo`,
+  `ValidationVersions`, the server `/api/version` schema, and the
+  `/api/validate` snapshot construction path.
+- Updated core validation fixtures and server/web tests for the stable
+  version surface and required reproducibility triple.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `grep -rn '"placeholder"' packages/ --include=*.ts --include=*.tsx | grep -v dist`
+  returned no matches.
+- `npm run typecheck` passed.
+- `npm test` passed: 40 files, 219 tests.
+- `npm run lint` passed.
+- `npm run build` passed.

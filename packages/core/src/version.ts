@@ -5,11 +5,15 @@ export interface VersionInfo {
   };
   templates: {
     version: string;
-    status: "placeholder";
+    status: "stable";
   };
   compiler: {
     version: string;
-    status: "placeholder";
+    status: "stable";
+  };
+  contract: {
+    version: string;
+    status: "stable";
   };
 }
 
@@ -19,11 +23,15 @@ export const versionInfo: VersionInfo = {
     version: "0.0.0"
   },
   templates: {
-    version: "0.0.0",
-    status: "placeholder"
+    version: "1.0.0",
+    status: "stable"
   },
   compiler: {
-    version: "0.0.0",
-    status: "placeholder"
+    version: "1.0.0",
+    status: "stable"
+  },
+  contract: {
+    version: "1.0.0",
+    status: "stable"
   }
 };
