@@ -147,9 +147,9 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `{visible_affordances}` | Selected VISIBLE AFFORDANCE records + current state | Required for physical interaction/action choices | Block if directive requires action without affordance | `None specified` | Possible actions. |
 | `{unavailable_or_impossible_actions}` | CURRENT STATE locks + AFFORDANCE unavailable/blocked + validation-derived impossibilities | Required when omission would invite errors | Block if physical scene risky and absent | `None specified` | Must not be invented by an LLM. |
 | `{physical_continuity}` | CURRENT STATE + ENTITY STATUS + LOCATION/OBJECT/AFFORDANCE | Yes for active physical interaction | Block if missing required physical fields | N/A only for nonphysical abstract prose | Concrete and current. |
-| `<invention_permissions>` | Template constant + configured durable-change permissions | Yes | Block if absent | N/A | Human gatekeeping. |
-| `<contradiction_prohibitions>` | Template constant + selected current locks | Yes | Block if absent | N/A | Cannot be weakened by directive. |
-| `<prose_craft>` | Template constant + story/prose preferences + cast voice fields | Yes | Warn if style conflicts with prose mode | N/A | Craft cannot alter continuity. |
+| `<invention_permissions>` | Template constant | Yes | Block if absent | N/A | Human gatekeeping. Dynamic durable-change pressure renders in its own records and placeholders, not as a second render site here. |
+| `<contradiction_prohibitions>` | Template constant | Yes | Block if absent | N/A | Cannot be weakened by directive. Selected current locks render in `{current_locks}` and physical-continuity placeholders. |
+| `<prose_craft>` | Template constant | Yes | Warn if style conflicts with prose mode | N/A | Craft cannot alter continuity. Story/prose preferences and cast voice fields render in their own placeholders. |
 | `{soft_unit_guidance}` | STOP GUIDANCE.soft_unit_guidance generation-time field | Yes | Block if blank, non-local, or contradictory with manual directive | N/A | Replaces beat count; must describe the next local unit, not a chapter/arc/future summary. |
 | `<final_output_instruction>` | Template constant | Yes | Block if absent | N/A | Final prompt edge. |
 | `validation_focus_tags` | GENERATION VALIDATION FOCUS | Yes, validation-only | Block if generation context absent | Not prompt-facing | Activates matrix rows only. |

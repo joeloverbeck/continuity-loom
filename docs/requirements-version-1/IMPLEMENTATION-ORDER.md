@@ -119,19 +119,21 @@ Phase gate:
 
 ## Phase 7 — Deterministic prompt compiler
 
+Status: ✅ Implemented via SPEC-007 (2026-06-05).
+
 Implement the universal prompt renderer from validated snapshots using `prompt-template.md` and `compiler-contract.md`.
 
 Why after validation: compiler can rely on required state and focus tags having already been checked. Why before OpenRouter: prompt preview must exist before transport.
 
 Phase gate:
 
-- exact section order is implemented;
-- every placeholder maps to deterministic sources;
-- empty-state rendering is deterministic;
-- active/onstage CAST MEMBER dossiers render all populated fields without silent compression;
-- selected records compile only when selected;
-- no accepted prose, rejected candidate, superseded candidate, or auto prose-derived summary compiles;
-- identical inputs produce identical prompt text.
+- [x] exact section order is implemented;
+- [x] every placeholder maps to deterministic sources;
+- [x] empty-state rendering is deterministic;
+- [x] active/onstage CAST MEMBER dossiers render all populated fields without silent compression;
+- [x] selected records compile only when selected;
+- [x] no accepted prose, rejected candidate, superseded candidate, or auto prose-derived summary compiles;
+- [x] identical inputs produce identical prompt text.
 
 ## Phase 8 — Prompt preview gated by validation
 

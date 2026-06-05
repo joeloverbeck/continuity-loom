@@ -1,6 +1,6 @@
 # SPEC-007 — Deterministic Prompt Compiler
 
-Status: DRAFT
+Status: ✅ COMPLETED
 Phase: Implementation Order Phase 7
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -503,3 +503,34 @@ prompt or metadata or logs.
   the contract) rather than forking a parallel snapshot.
 - **Resolved during brainstorm:** which spec (Phase 7); scope lever (core compiler
   + `/api/compile` endpoint; web preview deferred to Phase 8).
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Implemented the pure `@loom/core` deterministic prompt compiler, including the
+  version triple, 28-section renderer, placeholder registry, empty-state constants,
+  deterministic fingerprint/length metadata, and resolver groups for front sections,
+  pressure/causal sections, cast sections, and tail record sections.
+- Added the validation-gated `POST /api/compile` route in `@loom/server` through a
+  shared snapshot builder used by both `/api/validate` and `/api/compile`.
+- Added compiler and server coverage for section order, placeholder rendering,
+  determinism, no accepted-prose inclusion, no cast compression, secret/firewall
+  separation, blocked compile refusal, no mutation, and no prompt-facing log leakage.
+- Reconciled governing docs for Phase 7 completion and the known constant-section
+  contract wording drift.
+
+Deviations from original plan:
+- The end-to-end smoke was performed through direct local HTTP requests to the
+  production `npm start` server rather than browser clicks; the endpoint behavior was
+  the required Phase 7 surface.
+
+Verification:
+- Per-ticket proof was recorded in archived tickets `SPEC007DETPROCOM-001` through
+  `SPEC007DETPROCOM-008`.
+- Final manual smoke passed against `http://127.0.0.1:4173`: complete prompt,
+  stable prompt/fingerprint, version triple present, blocked response with no prompt,
+  and no prompt/brief/directive/key text in server console output.
+- Final full pipeline passed: `npm run typecheck`, `npm test`, `npm run lint`, and
+  `npm run build` (Vite large-chunk warning only).

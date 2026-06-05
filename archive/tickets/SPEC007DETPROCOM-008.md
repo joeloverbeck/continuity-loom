@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-008: Phase-7 capstone — manual smoke, governing-doc updates, §4 contract reconciliation, archival
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes (docs only) — reconciles `docs/compiler-contract.md` §4 wording, flips the Phase-7 status in `IMPLEMENTATION-ORDER.md`, adds a Phase-7 note to `PROMPT-COMPILER.md`, and archives the spec. No production code.
@@ -152,3 +152,35 @@ Move `specs/SPEC-007-deterministic-prompt-compiler.md` →
 3. A narrower CI command is not the verification boundary here: the end-to-end behavior is a
    manual smoke (no browser/transport automation harness in v1), so steps 1–4 of the runbook
    are an implementer checklist rather than a CI assertion.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Reconciled `docs/compiler-contract.md` §4 so `<invention_permissions>`,
+  `<contradiction_prohibitions>`, and `<prose_craft>` are documented as template
+  constants, with dynamic content rendered in its own placeholders.
+- Marked Phase 7 implemented in `docs/requirements-version-1/IMPLEMENTATION-ORDER.md`.
+- Added a Phase 7 implementation note to
+  `docs/requirements-version-1/PROMPT-COMPILER.md`.
+- Ran the local HTTP smoke against `npm start` and archived SPEC-007.
+
+Deviations from original plan:
+- The smoke was run through direct local HTTP requests rather than browser clicks,
+  because the ticket's behavior under test is the `/api/compile` endpoint.
+
+Verification:
+- Manual smoke via `npm start` and `POST /api/compile` passed: complete prompt edges
+  present, accepted-prose contamination absent from the clean prompt, prompt and
+  fingerprint stable across two calls, version triple `1.0.0` present, blocked state
+  returned `validation-blocked` with no prompt, and server console output contained no
+  prompt/brief/directive/key text.
+- `grep -n "Status: ✅ Implemented via SPEC-007" docs/requirements-version-1/IMPLEMENTATION-ORDER.md`
+  passed.
+- `grep -niF "Phase 7 implementation note" docs/requirements-version-1/PROMPT-COMPILER.md`
+  passed.
+- `test -f archive/specs/SPEC-007-deterministic-prompt-compiler.md && test ! -f specs/SPEC-007-deterministic-prompt-compiler.md`
+  passed after archival.
+- `npm run typecheck`, `npm test`, `npm run lint`, and `npm run build` passed, with
+  Vite's large-chunk warning only.
