@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { BrowserRouter } from "react-router-dom";
 
 import { fetchRuntimeStatus, type RuntimeStatus } from "./api.js";
-import { ProjectPicker } from "./ProjectPicker.js";
+import { AppShell } from "./shell/AppShell.js";
 import "./styles.css";
 
 type LoadState =
@@ -33,38 +34,8 @@ export function App(): React.JSX.Element {
   }, []);
 
   return (
-    <main className="shell">
-      <section className="panel" aria-labelledby="app-title">
-        <p className="eyebrow">Local runtime</p>
-        <h1 id="app-title">Continuity Loom</h1>
-        {state.status === "loading" ? <p className="muted">Connecting to local server...</p> : null}
-        {state.status === "error" ? (
-          <p role="alert" className="status statusError">
-            Cannot reach local server.
-          </p>
-        ) : null}
-        {state.status === "ready" ? (
-          <dl className="runtimeGrid" aria-label="Runtime status">
-            <div>
-              <dt>Health</dt>
-              <dd>{state.runtime.health.status}</dd>
-            </div>
-            <div>
-              <dt>App version</dt>
-              <dd>{state.runtime.version.app.version}</dd>
-            </div>
-            <div>
-              <dt>Templates</dt>
-              <dd>{state.runtime.version.templates.status}</dd>
-            </div>
-            <div>
-              <dt>Compiler</dt>
-              <dd>{state.runtime.version.compiler.status}</dd>
-            </div>
-          </dl>
-        ) : null}
-      </section>
-      <ProjectPicker />
-    </main>
+    <BrowserRouter>
+      <AppShell loadState={state} />
+    </BrowserRouter>
   );
 }

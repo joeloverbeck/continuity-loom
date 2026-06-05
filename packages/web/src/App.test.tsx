@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { App } from "./App.js";
 
@@ -30,7 +30,12 @@ function jsonResponse(payload: unknown): Response {
 }
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
+});
+
+beforeEach(() => {
+  window.history.pushState({}, "", "/");
 });
 
 describe("App", () => {
@@ -60,6 +65,72 @@ describe("App", () => {
     expect(await screen.findByText("ok")).toBeTruthy();
     expect(screen.getByText("0.0.0")).toBeTruthy();
     expect(screen.getAllByText("placeholder")).toHaveLength(2);
+    expect(screen.getByRole("heading", { name: "Local Project" })).toBeTruthy();
+  });
+
+  it("navigates the primary shell surfaces and keeps later-phase surfaces disabled", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/health") {
+          return Promise.resolve(jsonResponse({ status: "ok" }));
+        }
+
+        if (url === "/api/version") {
+          return Promise.resolve(jsonResponse(versionPayload));
+        }
+
+        if (url === "/api/project") {
+          return Promise.resolve(jsonResponse({ open: false }));
+        }
+
+        return Promise.reject(new Error(`Unexpected URL: ${url}`));
+      })
+    );
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("link", { name: "Records" }));
+    expect(screen.getByRole("heading", { name: "Records" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "Active Working Set" }));
+    expect(screen.getByRole("heading", { name: "Active Working Set" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "Story Configuration" }));
+    expect(screen.getByRole("heading", { name: "Story Configuration" })).toBeTruthy();
+
+    for (const name of ["Generation Brief", "Validation/Preview", "Generate/Candidate", "Accepted Segments"]) {
+      expect(screen.getByRole<HTMLButtonElement>("button", { name }).disabled).toBe(true);
+    }
+  });
+
+  it("renders settings without exposing a key value", () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (url === "/api/health") {
+          return Promise.resolve(jsonResponse({ status: "ok" }));
+        }
+
+        if (url === "/api/version") {
+          return Promise.resolve(jsonResponse(versionPayload));
+        }
+
+        if (url === "/api/project") {
+          return Promise.resolve(jsonResponse({ open: false }));
+        }
+
+        return Promise.reject(new Error(`Unexpected URL: ${url}`));
+      })
+    );
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("link", { name: "Settings" }));
+    expect(screen.getByRole("heading", { name: "Settings" })).toBeTruthy();
+    expect(screen.getByText("OpenRouter key")).toBeTruthy();
+    expect(screen.getByText("Not configured")).toBeTruthy();
+    expect(screen.queryByText(/sk-or-/i)).toBeNull();
   });
 
   it("renders a clear local-server error state", async () => {
