@@ -113,7 +113,7 @@ Phase gate:
 
 ## Phase 7 — Deterministic prompt compiler
 
-Implement the universal prompt renderer from validated snapshots using `prompt-template(17).md` and `compiler-contract(8).md`.
+Implement the universal prompt renderer from validated snapshots using `prompt-template.md` and `compiler-contract.md`.
 
 Why after validation: compiler can rely on required state and focus tags having already been checked. Why before OpenRouter: prompt preview must exist before transport.
 
