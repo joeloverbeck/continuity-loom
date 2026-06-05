@@ -3,6 +3,7 @@ import { NavLink, Route, Routes } from "react-router-dom";
 import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
+import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
 
@@ -17,11 +18,12 @@ const primaryRoutes = [
   { to: "/", label: "Project Library" },
   { to: "/records", label: "Records" },
   { to: "/working-set", label: "Active Working Set" },
+  { to: "/generation-brief", label: "Generation Brief" },
   { to: "/story-config", label: "Story Configuration" },
   { to: "/settings", label: "Settings" }
 ] as const;
 
-const laterPhaseSurfaces = ["Generation Brief", "Validation/Preview", "Generate/Candidate", "Accepted Segments"] as const;
+const laterPhaseSurfaces = ["Validation/Preview", "Generate/Candidate", "Accepted Segments"] as const;
 
 function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
   return (
@@ -100,6 +102,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
           <Route path="/" element={<ProjectPicker />} />
           <Route path="/records" element={<RecordBrowser />} />
           <Route path="/working-set" element={<WorkingSetView />} />
+          <Route path="/generation-brief" element={<GenerationBriefView />} />
           <Route path="/story-config" element={<StoryConfigEditor />} />
           <Route path="/settings" element={<SettingsSurface />} />
         </Routes>

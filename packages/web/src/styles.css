@@ -429,9 +429,19 @@ button:disabled:hover {
   gap: 28px;
 }
 
+.briefStack {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .configPanel {
   border-top: 1px solid #d8dee8;
   padding-top: 20px;
+}
+
+.stopGuidancePanel {
+  border-color: #c99a2e;
 }
 
 @media (max-width: 760px) {
