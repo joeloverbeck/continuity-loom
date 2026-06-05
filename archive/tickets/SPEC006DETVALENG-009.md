@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-009: Server `POST /api/validate` route
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/validation-routes.ts`; registered in `packages/server/src/server.ts`. No new tables, no DDL, no `user_version` bump.
@@ -80,3 +80,25 @@ Deliverable 2: a localhost `POST /api/validate` endpoint that owns I/O resolutio
 
 1. `npm test -- validation-routes`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the server validation endpoint:
+
+- Added `packages/server/src/validation-routes.ts` with `POST /api/validate`.
+- Registered the route in `packages/server/src/server.ts`.
+- The route requires an open project, loads generation session and story-config singletons, resolves selected records to validation records with metadata/cast-band assignments, builds a core validation snapshot, runs the engine, and returns `ValidationResult`.
+- The route performs no project writes and does not log request/response payloads.
+- Added `packages/server/src/validation-routes.test.ts` covering no-open-project, clean/warning validation response, blocker response, no mutation, and no payload-text logging.
+
+Deviation from original plan: integration tests assert prompt-facing blocker behavior rather than every core contradiction shape; exhaustive rule behavior remains covered by the core rule tests from tickets 002–008.
+
+Verification:
+
+- `npm test -- validation-routes` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
