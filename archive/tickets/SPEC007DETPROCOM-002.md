@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-002: Core compiler scaffold — types, template constants, 28-section skeleton, fingerprint/determinism harness
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/core` `compiler/` module (`compilePrompt`, compile-result/metadata types, placeholder-map registry, frozen template constants, pure-JS fingerprint), new exports in `packages/core/src/index.ts`.
@@ -181,3 +181,29 @@ table to `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core` — targeted core compiler + boundary tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Added the `@loom/core` compiler scaffold with `compilePrompt`, compile metadata
+  types, fixed 28-section rendering order, frozen template section constants, and
+  a placeholder registry with deterministic empty-state resolvers.
+- Added a pure-JS FNV-1a prompt fingerprint and deterministic character-based token
+  estimate for compile metadata.
+- Exported the compiler entry point, metadata types, section order, placeholder map,
+  and empty-state constants from `packages/core/src/index.ts`.
+- Added `compiler-scaffold.test.ts` coverage for section order, pinned empty states,
+  placeholder exhaustion, deterministic output/fingerprint stability, and metadata
+  version triple propagation.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 16 files, 113 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 41 files, 222 tests.
+- `npm run lint` passed.
+- `npm run build` passed.

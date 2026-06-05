@@ -13,6 +13,13 @@ export type {
   ProjectStatus,
   StoreCompatibility
 } from "./project-storage.js";
+export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
+export { EMPTY_STATE_CONSTANTS, PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
+export type {
+  CompileMetadata,
+  CompileResult,
+  PlaceholderResolver
+} from "./compiler/types.js";
 export {
   clockSchema,
   consequenceSchema,
