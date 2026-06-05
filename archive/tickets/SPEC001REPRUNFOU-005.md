@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-005: Inert placeholder settings boundary
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — new inert settings module in `@loom/server`
@@ -65,3 +65,13 @@ The Phase-1 gate requires a placeholder settings boundary that handles no secret
 
 1. `npm run test --workspace @loom/server`
 2. `grep -rnE "process\.env|apiKey|api_key" packages/server/src/settings.ts || echo "clean"`
+
+## Outcome
+
+Implemented an inert `settings` boundary in `@loom/server` with static defaults
+for the future OpenRouter model and credential-presence state. The module reads
+no environment variables, returns no key value, and exposes only
+`hasOpenRouterCredential: false`. Verified with `npm run test --workspace
+@loom/server`, `npm run typecheck --workspace @loom/server`, `npm run lint
+--workspace @loom/server`, and `rg -n "process\\.env|apiKey|api_key"
+packages/server/src/settings.ts || true`.
