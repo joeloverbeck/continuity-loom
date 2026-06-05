@@ -12,6 +12,7 @@ import {
   recordMetadataSchema,
   recordTypes,
   secretSchema,
+  stopGuidanceSchema,
   storyContractSchema
 } from "../src/index.js";
 
@@ -354,5 +355,22 @@ describe("record data model", () => {
         pov_character: "variable"
       })
     ).toEqual([]);
+  });
+
+  it("validates STOP GUIDANCE as the single-field generation brief surface", () => {
+    expect(
+      stopGuidanceSchema.parse({
+        soft_unit_guidance: "Render one short exchange and stop at the response point."
+      })
+    ).toEqual({
+      soft_unit_guidance: "Render one short exchange and stop at the response point."
+    });
+
+    expect(() =>
+      stopGuidanceSchema.parse({
+        soft_unit_guidance: "Render one short exchange.",
+        stop_before: ["the next chapter"]
+      })
+    ).toThrow();
   });
 });

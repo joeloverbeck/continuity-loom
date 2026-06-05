@@ -151,8 +151,7 @@ export const generationValidationFocusSchema = z
 
 export const stopGuidanceSchema = z
   .object({
-    soft_unit_guidance: nonemptyString,
-    stop_before: z.array(nonemptyString).default([])
+    soft_unit_guidance: nonemptyString
   })
   .strict();
 

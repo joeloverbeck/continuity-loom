@@ -1,6 +1,6 @@
 # SPEC003SCHEMAFIX-004: Remove invented STOP GUIDANCE `stop_before` field
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` `packages/core/src/records/generation-brief.ts` `stopGuidanceSchema`.
@@ -77,3 +77,22 @@ In `generation-brief.ts`, reduce `stopGuidanceSchema` to `{ soft_unit_guidance: 
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Removed the undocumented `stop_before` field from `stopGuidanceSchema`, leaving STOP GUIDANCE as the single strict `soft_unit_guidance` field defined by `docs/story-record-schema.md` §3.8.
+- Added tests proving STOP GUIDANCE accepts the one-field shape and rejects a payload containing `stop_before`.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test --workspace @loom/core` passed: 3 test files, 17 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 14 test files, 66 tests.
+- `npm run build` passed.
+- `rg -n "stop_before" packages/core/src` returned no matches.
