@@ -52,7 +52,7 @@ function diagnostic(input: Pick<Diagnostic, "severity" | "code" | "affected">): 
 
 describe("validation engine foundation", () => {
   it("returns an unblocked empty result with no registered rules", () => {
-    expect(runValidation(minimalSnapshot())).toEqual({
+    expect(runValidation(minimalSnapshot(), [])).toEqual({
       blockers: [],
       warnings: [],
       isBlocked: false

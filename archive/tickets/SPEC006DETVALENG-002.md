@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-002: Universal minimum completeness checks
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/universal-completeness.ts`; appends to the `validation/rules` barrel.
@@ -83,3 +83,25 @@ Rule family 1 of the engine: universal minimum completeness (`docs/compiler-cont
 
 1. `npm test -- validation-completeness`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented universal minimum completeness validation in `@loom/core`:
+
+- Added `validation/rules/universal-completeness.ts` with deterministic blocker predicates for story config, generation brief surfaces, POV knowledge profile presence, active secret reveal-boundary presence, active physical context presence, active/onstage cast dossier/local-function presence, and exactly one generation-context focus tag.
+- Registered the rule family in the validation rule barrel.
+- Extended the diagnostic-code catalogue with completeness-specific stable codes.
+- Added `packages/core/test/validation-completeness.test.ts` covering clean-snapshot silence and each completeness blocker category.
+- Adjusted the ticket-001 engine-shell test to pass an explicit empty rule list now that the real default registry is no longer empty.
+
+Deviation from original plan: accepted-prose contamination and non-local directive/stop-guidance validation remain out of scope for this ticket as ticket 003 contradiction/local-scope blockers own those checks.
+
+Verification:
+
+- `npm test -- validation-completeness` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
