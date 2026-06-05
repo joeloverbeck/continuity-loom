@@ -49,6 +49,10 @@ export default tseslint.config(
     }
   },
   {
+    files: ["packages/server/src/*.test.ts"],
+    rules: tseslint.configs.disableTypeChecked.rules
+  },
+  {
     files: ["packages/core/src/**/*.{ts,tsx}"],
     rules: {
       "no-restricted-imports": [
