@@ -1,0 +1,389 @@
+import {
+  deriveDisplayLabel,
+  eligibleReferenceTargets,
+  getEditorDescriptor,
+  recordTypeRegistry,
+  type FieldDescriptor
+} from "@loom/core";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo, useState } from "react";
+import {
+  useFieldArray,
+  useForm,
+  type FieldErrors,
+  type FieldValues,
+  type Resolver,
+  type UseFormRegister,
+  type UseFormReturn
+} from "react-hook-form";
+
+import {
+  createRecord,
+  updateRecord,
+  type ApiFailure,
+  type RecordDetail,
+  type RecordSummary
+} from "../api.js";
+
+interface RecordEditorProps {
+  recordType: string;
+  record?: RecordDetail;
+  referenceRecords?: readonly RecordSummary[];
+  onSaved?: (record: RecordDetail) => void;
+}
+
+type FormValues = FieldValues;
+
+function valueAtPath(value: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((current, segment) => {
+    if (!current || typeof current !== "object") {
+      return undefined;
+    }
+
+    return (current as Record<string, unknown>)[segment];
+  }, value);
+}
+
+function fieldDefault(field: FieldDescriptor): unknown {
+  if (!field.required) {
+    if (field.kind === "list") {
+      return [];
+    }
+
+    if (field.kind === "nested_group") {
+      return Object.fromEntries((field.fields ?? []).map((child) => [child.name, fieldDefault(child)]));
+    }
+
+    return undefined;
+  }
+
+  switch (field.kind) {
+    case "boolean":
+      return false;
+    case "enum":
+      return field.enumValues?.[0] ?? "";
+    case "list":
+      return [];
+    case "nested_group":
+      return Object.fromEntries((field.fields ?? []).map((child) => [child.name, fieldDefault(child)]));
+    case "number":
+      return 0;
+    default:
+      return "";
+  }
+}
+
+function defaultValues(fields: readonly FieldDescriptor[], payload: unknown): FormValues {
+  return Object.fromEntries(
+    fields.map((field) => [field.name, valueAtPath(payload, field.name) ?? fieldDefault(field)])
+  );
+}
+
+function issueKey(path: unknown): string {
+  return Array.isArray(path) ? path.join(".") : "";
+}
+
+function issueText(issue: unknown): string {
+  if (typeof issue === "object" && issue !== null && "message" in issue) {
+    return String(issue.message);
+  }
+
+  return "Invalid value.";
+}
+
+function serverIssuesByPath(failure: ApiFailure | null): Map<string, string> {
+  const issues = failure?.issues ?? [];
+  return new Map(
+    issues.map((issue) => {
+      const path = typeof issue === "object" && issue !== null && "path" in issue
+        ? issue.path
+        : [];
+      return [issueKey(path), issueText(issue)];
+    })
+  );
+}
+
+function errorMessage(errors: FieldErrors<FormValues>, path: string): string | undefined {
+  const error = valueAtPath(errors, path);
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    return String((error as { message?: unknown }).message);
+  }
+
+  return undefined;
+}
+
+function inputOptions(field: FieldDescriptor) {
+  return {
+    setValueAs: (value: unknown) => {
+      if (field.kind === "number") {
+        return value === "" || value === undefined ? undefined : Number(value);
+      }
+
+      if (!field.required && value === "") {
+        return undefined;
+      }
+
+      return value;
+    }
+  };
+}
+
+function FieldShell({
+  field,
+  path,
+  children,
+  form,
+  serverIssues
+}: {
+  field: FieldDescriptor;
+  path: string;
+  children: React.ReactNode;
+  form: UseFormReturn<FormValues>;
+  serverIssues: Map<string, string>;
+}): React.JSX.Element {
+  const clientError = errorMessage(form.formState.errors, path);
+  const serverError = serverIssues.get(path);
+
+  return (
+    <div className={`editorField ${field.promptFacing ? "promptFacing" : "validationField"}`}>
+      <label>
+        <span>
+          {field.name}
+          {field.required ? <strong aria-label="required"> *</strong> : null}
+        </span>
+        {children}
+      </label>
+      {clientError || serverError ? (
+        <p className="fieldError" role="alert">
+          {clientError ?? serverError}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ReferencePicker({
+  field,
+  path,
+  form,
+  referenceRecords
+}: {
+  field: FieldDescriptor;
+  path: string;
+  form: UseFormReturn<FormValues>;
+  referenceRecords: readonly RecordSummary[];
+}): React.JSX.Element {
+  const options = eligibleReferenceTargets(field.referenceRole ?? "", referenceRecords);
+
+  return (
+    <select {...form.register(path, inputOptions(field))}>
+      <option value="">Select record</option>
+      {options.map((record) => (
+        <option key={record.id} value={record.id}>
+          {record.displayLabel}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function ListField({
+  field,
+  path,
+  form,
+  referenceRecords,
+  serverIssues
+}: {
+  field: FieldDescriptor;
+  path: string;
+  form: UseFormReturn<FormValues>;
+  referenceRecords: readonly RecordSummary[];
+  serverIssues: Map<string, string>;
+}): React.JSX.Element {
+  const { fields, append, remove } = useFieldArray({ control: form.control, name: path as never });
+  const item = field.itemDescriptor;
+
+  return (
+    <div className="listField">
+      {fields.map((row, index) => (
+        <div className="listRow" key={row.id}>
+          {item ? (
+            <FieldRenderer
+              field={{ ...item, name: String(index), required: true }}
+              path={`${path}.${index}`}
+              form={form}
+              referenceRecords={referenceRecords}
+              serverIssues={serverIssues}
+              listItem
+            />
+          ) : null}
+          <button type="button" aria-label={`Remove ${field.name} ${index + 1}`} onClick={() => remove(index)}>
+            Remove
+          </button>
+        </div>
+      ))}
+      <button type="button" aria-label={`Add ${field.name}`} onClick={() => append(fieldDefault(item ?? field))}>
+        Add {field.name}
+      </button>
+    </div>
+  );
+}
+
+function registerText(
+  register: UseFormRegister<FormValues>,
+  path: string,
+  field: FieldDescriptor
+) {
+  return register(path, inputOptions(field));
+}
+
+function FieldRenderer({
+  field,
+  path,
+  form,
+  referenceRecords,
+  serverIssues,
+  listItem = false
+}: {
+  field: FieldDescriptor;
+  path: string;
+  form: UseFormReturn<FormValues>;
+  referenceRecords: readonly RecordSummary[];
+  serverIssues: Map<string, string>;
+  listItem?: boolean;
+}): React.JSX.Element {
+  const control = (() => {
+    switch (field.kind) {
+      case "boolean":
+        return <input type="checkbox" {...form.register(path)} />;
+      case "enum":
+        return (
+          <select {...form.register(path, inputOptions(field))}>
+            {!field.required ? <option value="">Unset</option> : null}
+            {(field.enumValues ?? []).map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        );
+      case "list":
+        return (
+          <ListField
+            field={field}
+            path={path}
+            form={form}
+            referenceRecords={referenceRecords}
+            serverIssues={serverIssues}
+          />
+        );
+      case "nested_group":
+        return (
+          <fieldset className="nestedGroup">
+            <legend>{field.name}</legend>
+            {(field.fields ?? []).map((child) => (
+              <FieldRenderer
+                key={child.name}
+                field={child}
+                path={`${path}.${child.name}`}
+                form={form}
+                referenceRecords={referenceRecords}
+                serverIssues={serverIssues}
+              />
+            ))}
+          </fieldset>
+        );
+      case "number":
+        return <input type="number" {...form.register(path, inputOptions(field))} />;
+      case "prose":
+        return <textarea {...registerText(form.register, path, field)} />;
+      case "reference":
+        return <ReferencePicker field={field} path={path} form={form} referenceRecords={referenceRecords} />;
+      case "short_string":
+        return <input type="text" {...registerText(form.register, path, field)} />;
+    }
+  })();
+
+  if (listItem && field.kind === "nested_group") {
+    return control;
+  }
+
+  return (
+    <FieldShell field={field} path={path} form={form} serverIssues={serverIssues}>
+      {control}
+    </FieldShell>
+  );
+}
+
+export function RecordEditor({
+  recordType,
+  record,
+  referenceRecords = [],
+  onSaved
+}: RecordEditorProps): React.JSX.Element {
+  const descriptor = getEditorDescriptor(recordType);
+  const definition = recordTypeRegistry[recordType];
+  const [serverError, setServerError] = useState<ApiFailure | null>(null);
+  const serverIssues = useMemo(() => serverIssuesByPath(serverError), [serverError]);
+  const resolver = definition
+    ? (zodResolver(definition.payloadSchema as never) as Resolver<FormValues>)
+    : undefined;
+  const formOptions = {
+    defaultValues: descriptor ? defaultValues(descriptor.fields, record?.payload) : {},
+    ...(resolver ? { resolver } : {})
+  };
+  const form = useForm<FormValues>(formOptions);
+
+  if (!descriptor || !definition) {
+    return (
+      <p role="alert" className="status statusError">
+        Unsupported record type.
+      </p>
+    );
+  }
+
+  async function onSubmit(values: FormValues): Promise<void> {
+    setServerError(null);
+    const response = record
+      ? await updateRecord(record.id, { displayLabel: deriveDisplayLabel(recordType, values), payload: values })
+      : await createRecord({ type: recordType, displayLabel: deriveDisplayLabel(recordType, values), payload: values });
+
+    if (!response.ok) {
+      setServerError(response);
+      return;
+    }
+
+    onSaved?.(response.record);
+  }
+
+  return (
+    <form className="recordEditor" onSubmit={(event) => void form.handleSubmit(onSubmit)(event)}>
+      <div className="projectHeader">
+        <p className="eyebrow">{record ? "Edit record" : "Create record"}</p>
+        <h2>{recordType}</h2>
+      </div>
+
+      {serverError && serverIssues.size === 0 ? (
+        <p role="alert" className="status statusError">
+          {serverError.message}
+        </p>
+      ) : null}
+
+      <div className="editorGrid">
+        {descriptor.fields.map((field) => (
+          <FieldRenderer
+            key={field.name}
+            field={field}
+            path={field.name}
+            form={form}
+            referenceRecords={referenceRecords}
+            serverIssues={serverIssues}
+          />
+        ))}
+      </div>
+
+      <button type="submit">{record ? "Save Record" : "Create Record"}</button>
+    </form>
+  );
+}

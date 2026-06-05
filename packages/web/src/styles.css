@@ -296,6 +296,57 @@ button:disabled:hover {
   white-space: pre-wrap;
 }
 
+.recordEditor {
+  display: grid;
+  gap: 16px;
+  max-width: 920px;
+}
+
+.editorGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.editorField {
+  border-left: 3px solid #d8dee8;
+  padding-left: 12px;
+}
+
+.editorField.validationField {
+  border-left-color: #8b95a5;
+}
+
+.fieldError {
+  margin: -6px 0 10px;
+  color: #8d1f17;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.nestedGroup {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.nestedGroup legend {
+  color: #39445a;
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.listField {
+  display: grid;
+  gap: 10px;
+}
+
+.listRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
 @media (max-width: 760px) {
   .appFrame {
     grid-template-columns: 1fr;
