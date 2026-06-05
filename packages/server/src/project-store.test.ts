@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { createProjectStoreManager, type ProjectStoreManager } from "./project-store.js";
+import {
+  createProjectStoreManager,
+  ProjectCreateError,
+  type ProjectStoreManager
+} from "./project-store.js";
 
 const EXPECTED_APPLICATION_ID = 0x4c4f4f4d;
 const EXPECTED_SCHEMA_VERSION = 1;
@@ -67,6 +71,58 @@ describe("createProjectStoreManager", () => {
     expect(readPragmaNumber(join(status.folderPath, "loom.sqlite"), "user_version")).toBe(
       EXPECTED_SCHEMA_VERSION
     );
+  });
+
+  it("rejects relative parent paths with parent-not-absolute", async () => {
+    const storeManager = manager();
+
+    await expect(
+      storeManager.createProject({
+        parentPath: "relative/projects",
+        folderName: "alpha",
+        title: "Alpha"
+      })
+    ).rejects.toMatchObject({ kind: "parent-not-absolute" });
+  });
+
+  it("rejects parent paths inside the application folder", async () => {
+    const applicationRoot = await tempParent();
+    const storeManager = createProjectStoreManager({ applicationRoot });
+    managers.push(storeManager);
+
+    await expect(
+      storeManager.createProject({
+        parentPath: applicationRoot,
+        folderName: "alpha",
+        title: "Alpha"
+      })
+    ).rejects.toMatchObject({ kind: "parent-inside-app" });
+  });
+
+  it("rejects with parent-missing when the parent path does not exist", async () => {
+    const parentPath = join(await tempParent(), "does-not-exist");
+    const storeManager = manager();
+
+    await expect(
+      storeManager.createProject({ parentPath, folderName: "alpha", title: "Alpha" })
+    ).rejects.toMatchObject({ kind: "parent-missing" });
+  });
+
+  it("rejects with folder-exists when the target folder already exists", async () => {
+    const parentPath = await tempParent();
+    const storeManager = manager();
+    await storeManager.createProject({ parentPath, folderName: "alpha", title: "Alpha" });
+
+    const retry = storeManager.createProject({
+      parentPath,
+      folderName: "alpha",
+      title: "Alpha Again"
+    });
+
+    await expect(retry).rejects.toBeInstanceOf(ProjectCreateError);
+    await expect(
+      storeManager.createProject({ parentPath, folderName: "alpha", title: "Alpha Again" })
+    ).rejects.toMatchObject({ kind: "folder-exists" });
   });
 
   it("opens an existing project with a fresh manager", async () => {

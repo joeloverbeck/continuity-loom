@@ -86,6 +86,45 @@ describe("project routes", () => {
     });
   });
 
+  it("rejects relative parent paths so projects never land in the app folder", async () => {
+    const fastify = app();
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/project/create",
+      payload: { parentPath: "relative/projects", folderName: "alpha", title: "Alpha" }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ ok: false, kind: "parent-not-absolute" });
+  });
+
+  it("returns an actionable diagnostic when the parent path is missing", async () => {
+    const fastify = app();
+    const parentPath = join(await tempParent(), "missing-parent");
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/project/create",
+      payload: { parentPath, folderName: "alpha", title: "Alpha" }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ ok: false, kind: "parent-missing" });
+  });
+
+  it("returns an actionable diagnostic when the folder already exists", async () => {
+    const fastify = app();
+    const parentPath = await tempParent();
+    const payload = { parentPath, folderName: "alpha", title: "Alpha" };
+
+    await fastify.inject({ method: "POST", url: "/api/project/create", payload });
+    const response = await fastify.inject({ method: "POST", url: "/api/project/create", payload });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toMatchObject({ ok: false, kind: "folder-exists" });
+  });
+
   it("rejects malformed create requests", async () => {
     const fastify = app();
     const parentPath = await tempParent();
