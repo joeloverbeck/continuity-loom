@@ -1,6 +1,6 @@
 # SPEC-006 — Deterministic Validation Engine
 
-Status: DRAFT
+Status: COMPLETED
 Phase: Implementation Order Phase 6
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -413,3 +413,28 @@ blocker, no payload logging); no remote sole-source-of-truth.
   separately.
 - **Resolved during brainstorm:** which spec (Phase 6); scope lever (Full stack —
   core engine + `/api/validate` + web panel).
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the full SPEC-006 validation stack:
+
+- Pure `@loom/core` validation snapshot, diagnostic/result model, stable rule registry, deterministic engine, universal completeness rules, universal blockers, v1 focus-tag matrix clusters, warnings, and prompt-facing API-key safety.
+- Read-only `POST /api/validate` route in `@loom/server`, including selected-record resolution, story-config/session snapshot construction, no-open-project handling, no mutation, and no payload logging.
+- Web `validate()` wrapper and generation-brief validation panel with blocker/warning grouping, collapsible warnings, field focus, record deep-linking, and no override/bypass control.
+- Stress-suite mapping fixtures for representative Phase-6 hard fails: two-location, two-holder, secret leakage, impossible physical action, non-local directive, and accepted-prose contamination.
+- Governing docs updated to mark Phase 6 implemented and record the Phase-6 implementation note.
+
+Deviation from original plan: several validation details that lack dedicated structured schema fields use deterministic marker checks in existing current-state/brief fields; no rule uses LLM evaluation, mutation, or free-form repair. Browser-level smoke remains represented by component/integration tests rather than a separate manual browser transcript.
+
+Verification:
+
+- `npm test -- validation-stress-mapping` — passed.
+- `npm test -- ValidationPanel` — passed during ticket 010.
+- `npm test -- api` — passed during ticket 010.
+- `npm test -- validation-routes` — passed during ticket 009.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.

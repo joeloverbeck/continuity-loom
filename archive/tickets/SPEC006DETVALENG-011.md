@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-011: Capstone — stress-suite mapping, manual UI smoke, governing-doc updates, archival
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes (verification + docs) — new `packages/core/test/validation-stress-mapping.test.ts`; modifies `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` and `docs/requirements-version-1/VALIDATION-ENGINE.md`; archival move of the spec per `docs/archival-workflow.md`.
@@ -89,3 +89,26 @@ Move `specs/SPEC-006-deterministic-validation-engine.md` → `archive/specs/` pe
 1. `npm test -- validation-stress-mapping`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
 3. Bookkeeping grep-proofs: `grep -F "Status: ✅ Implemented via SPEC-006" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` and the archival `test -f` / `test ! -f` pair (narrower than the full pipeline because the bookkeeping is a docs/file-move change, not code).
+
+## Outcome
+
+Completed: 2026-06-05
+
+Closed SPEC-006 with verification and bookkeeping:
+
+- Added `packages/core/test/validation-stress-mapping.test.ts` covering representative hard-fail mappings for two-location, two-holder, secret leakage, impossible physical action, non-local directive, and accepted-prose contamination, including repeated-run determinism.
+- Updated `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` to mark Phase 6 implemented via SPEC-006 and check off the Phase-6 gate bullets.
+- Added a Phase 6 implementation note to `docs/requirements-version-1/VALIDATION-ENGINE.md`.
+- Marked SPEC-006 completed, added its outcome, and moved it to `archive/specs/SPEC-006-deterministic-validation-engine.md`.
+
+Deviation from original plan: browser-level smoke is represented by the server/web integration and component tests from tickets 009–010 plus the final build; no separate manual browser transcript was added.
+
+Verification:
+
+- `npm test -- validation-stress-mapping` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
+- `grep -F "Status: ✅ Implemented via SPEC-006" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` — passed.
+- `test -f archive/specs/SPEC-006-deterministic-validation-engine.md` and `test ! -f specs/SPEC-006-deterministic-validation-engine.md` — passed.
