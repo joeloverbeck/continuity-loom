@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-001: Core validation foundation — snapshot, Diagnostic/ValidationResult, code catalogue, engine shell
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` `validation/` module (snapshot type + constructor, `Diagnostic`/`ValidationResult` types, stable diagnostic-code catalogue, rule-dispatch engine, rule barrel); new public exports in `packages/core/src/index.ts`.
@@ -86,3 +86,26 @@ SPEC-006 requires a pure, deterministic, fail-closed validation engine in `@loom
 1. `npm test -- validation`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
 3. Targeted boundary re-check: `npm test -- boundary` (confirms the new module imports no `node:*`/framework).
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the pure `@loom/core` validation foundation:
+
+- Added the validation diagnostic/result contract, suggested-action union, affected references, and seeded diagnostic-code catalogue.
+- Added immutable snapshot construction over resolved records, generation session, story config, and template/compiler versions, including deterministic record ordering.
+- Added the rule contract, empty append-only rule barrel, and `runValidation` orchestration with deterministic blocker/warning partitioning, stable sorting, and `isBlocked` derivation.
+- Exported the validation public surface from `packages/core/src/index.ts`.
+- Added `packages/core/test/validation.test.ts` covering empty output, snapshot normalization/freeze behavior, stable sorting, warning-vs-blocker behavior, and repeated-run determinism.
+
+Deviation from original plan: `runValidation` accepts an optional rule list for tests and future controlled orchestration while retaining the documented default `runValidation(snapshot)` behavior over the registered rule barrel.
+
+Verification:
+
+- `npm test -- validation` — passed.
+- `npm test -- boundary` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
