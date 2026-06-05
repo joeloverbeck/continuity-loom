@@ -64,8 +64,23 @@ findings were re-verified first-hand before ticketing.
 
 - **LOW** — `record-tables.ts:10–11` declares `salience`/`urgency` columns as `REAL`,
   but the domain is enum strings. Harmless today (SQLite TEXT affinity round-trips,
-  verified) and free to change since no released stores exist. Left unticketed by user
-  decision (scope = O1–O4); revisit if the column type later causes confusion.
+  verified) and free to change since no released stores exist. Originally left
+  unticketed by user decision (scope = O1–O4). **Update 2026-06-05 (round-3 audit):**
+  now ticketed as `SPEC003SCHEMAFIX-009` (REAL→TEXT + narrow the metadata Zod union
+  to a string enum), realizing Decision of record #3's "deferred, not rejected."
+
+## Round-3 audit addendum (2026-06-05)
+
+A follow-up audit re-confirmed the round-2 findings are all implemented in current code
+(`SPEC003SCHEMAFIX-005..008` landed via commits `Fix entity status location references`,
+`Project event location references`, `Project belief and secret salience`,
+`Require offstage pressuring entities`) and surfaced one **new** finding beyond the
+round-2 scope:
+
+- **LOW** — `record-repository.ts` `updateRecord` does not check that the parsed
+  payload's `id` equals the row PK (`input.id`), so an id-bearing record could persist a
+  row whose PK and `payload_json.id` disagree. No live route exposes it yet (Phase 4), but
+  it is a record-identity integrity edge. Ticketed as `SPEC003SCHEMAFIX-010`.
 
 ## FOUNDATIONS alignment
 
@@ -81,4 +96,4 @@ O4 honors the §3.2 "always included / explicit" rule. No amendment required.
 2. **§3.1 defaulted lists and CONSEQUENCE `holder_or_target` are faithful** — no future
    re-triage should re-propose them as deviations.
 3. **Column affinity (REAL→TEXT) deferred**, not rejected — eligible for a future LOW
-   cleanup ticket if desired.
+   cleanup ticket if desired. **Resolved 2026-06-05: ticketed as `SPEC003SCHEMAFIX-009`.**
