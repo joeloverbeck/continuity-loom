@@ -55,7 +55,7 @@ Next-steps menu (user chooses)
    - **`reference_path` argument**: read the entire file. Extract its key claims, proposals, and open questions.
    - **Inline file references**: if the user names files inline in the request, read them with the same treatment. Read all of them.
    - **Inline-pasted prose**: if the user pastes reference content (external research output, a report excerpt, a finding-set) directly into the request body, that prose IS the reference — there's no file to read.
-   - **Not reference material**: the user's own first-hand problem description (bug report, symptoms, repro steps, pasted error/program output as evidence of the defect) is the request itself, not externally-authored reference content. A file named only as the alignment authority (`docs/FOUNDATIONS.md`) is also not reference material — it's governed by sub-step 3.
+   - **Not reference material**: the user's own first-hand problem description (bug report, symptoms, repro steps, pasted error/program output as evidence of the defect) is the request itself, not externally-authored reference content. A file named only as the alignment authority (`docs/FOUNDATIONS.md`) is also not reference material — it's governed by sub-step 3. Inline-named **internal codebase files read for orientation** (`README.md`, CI/config, source files the user points at to ground the design) are likewise not reference material — they're covered by exploration (sub-steps 6–7) and get no reference summary; reserve the 2-3 sentence summary for inline-named **authored artifacts** (a report, research doc, external spec). The discriminator is authored-reference-content vs. repo-state-for-context, not merely whether a filename was mentioned.
    - **Oversized files**: if a reference exceeds the Read token limit, read in sequential offset/limit chunks until fully covered, and say so in the summary. Run a quick `wc -l <path>` first when you suspect a file is large.
    - **Path resolution**: if an inline filename doesn't resolve, glob the parent directory for the closest match (pluralization, hyphen drift, capitalization) before asking the user to re-specify; announce any correction inline.
 
@@ -195,7 +195,7 @@ After design approval, do NOT implement until the user picks an implementation o
 | Inline ops/setup task or mechanical-fix batch | execute inline + summary; no file persisted |
 | New skill design | `.claude/skills/<name>/SKILL.md` |
 | Modify existing skill file(s) | edit in place |
-| Project documentation (`README.md`, `docs/*.md`) | edit/create in place |
+| Project documentation & root instruction/config files (`README.md`, `docs/*.md`, `CLAUDE.md`, `AGENTS.md`) | edit/create in place |
 | New dev-tooling/CI/config file (`.github/workflows/*`, lint/format/build config) | create in place |
 | Amend `docs/FOUNDATIONS.md` (constitutional change) | edit in place — flag as a constitution amendment, require explicit sign-off |
 | Port external skill into repo | new skill file(s) (`SKILL.md` + any `references/`) + delete source + a transformations table itemizing per-element strip/replace/preserve (see the Step 3 Port-external-skill note + `references/triage-and-deliverables.md` §Deliverable classification) |
@@ -219,7 +219,7 @@ Do NOT commit the file. Leave it for user review.
 |---|---|
 | Plan mode active (any category) | Call `ExitPlanMode` — skip the menu |
 | Spec / ticket / triage / proposal — or any deliverable whose options describe NEXT phases (reassess / decompose / implement / done) | **Menu MANDATORY**, even when written this same turn — writing the file is pre-implementation, and skipping the menu strips the user's named next-phase options |
-| Inline-completion (skill design; port external skill; small inline ops/setup; new dev-tooling/CI/config files; in-place edits to existing spec/ticket/docs where the edit IS the completed work) | Skip the menu; summarize what was done |
+| Inline-completion (skill design; port external skill; small inline ops/setup; new dev-tooling/CI/config files; new or in-place-edited project-doc / root-instruction files — `README.md`, `docs/*.md`, `CLAUDE.md`, `AGENTS.md`; in-place edits to existing spec/ticket/docs where the edit IS the completed work) | Skip the menu; summarize what was done |
 
 Categorize by the middle row first; the inline-completion skip fires only when the deliverable falls outside it. For a mandatory menu, present options like:
 

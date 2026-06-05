@@ -103,7 +103,7 @@ The full per-type rules behind SKILL.md Step 5's quick-triage table.
 
 - **Modify existing skill file(s)** — the edits ARE the design; skip the design doc. For a merge, include the new unified file, deletion of superseded directories, and updates to any cross-references.
 
-- **Project documentation** — edits to `README.md` or `docs/*.md` where the doc edit IS the deliverable; the edits ARE the design. The Step 6 menu may be omitted when the edit completes inline in the same turn.
+- **Project documentation & root instruction/config files** — edits to (or creation of) `README.md`, `docs/*.md`, or root agent-instruction/config files (`CLAUDE.md`, `AGENTS.md`) where the doc IS the deliverable; the content IS the design. The Step 6 menu may be omitted when it completes inline in the same turn. (A root instruction file matches neither the `README.md` nor `docs/*.md` glob literally but is handled identically — inline-completion, menu-skip.)
 
 - **New dev-tooling/CI/config file** — a created tooling/CI/config file (`.github/workflows/*`, lint/format/build config) where the file IS the deliverable; the file content IS the design. Created in place; the Step 6 menu may be omitted when it completes inline in the same turn. Verify the commands/actions the file invokes (build/test/lint scripts, action versions) before writing, as for any operator-introduced premise.
 
