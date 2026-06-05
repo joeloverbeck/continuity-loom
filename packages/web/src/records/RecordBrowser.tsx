@@ -9,7 +9,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import {
   getRecord,
+  getWorkingSet,
   listRecords,
+  setWorkingSet,
   type RecordDetail,
   type RecordSummary
 } from "../api.js";
@@ -34,7 +36,8 @@ function descriptorHasField(recordType: string, fieldName: "salience" | "urgency
 
 function filterLocally(
   records: readonly RecordSummary[],
-  filters: { type: string; status: string; q: string }
+  filters: { type: string; status: string; q: string; workingSetOnly: boolean },
+  workingSetIds: ReadonlySet<string>
 ): RecordSummary[] {
   const q = filters.q.trim().toLowerCase();
 
@@ -42,8 +45,9 @@ function filterLocally(
     const typeMatches = filters.type ? record.type === filters.type : true;
     const statusMatches = filters.status ? record.status === filters.status : true;
     const textMatches = q ? record.displayLabel.toLowerCase().includes(q) || record.id.toLowerCase().includes(q) : true;
+    const workingSetMatches = filters.workingSetOnly ? workingSetIds.has(record.id) : true;
 
-    return typeMatches && statusMatches && textMatches;
+    return typeMatches && statusMatches && textMatches && workingSetMatches;
   });
 }
 
@@ -57,6 +61,7 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
 
 export function RecordBrowser(): React.JSX.Element {
   const [records, setRecords] = useState<RecordSummary[]>([]);
+  const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
   const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
@@ -66,8 +71,29 @@ export function RecordBrowser(): React.JSX.Element {
     q: "",
     refRole: "",
     targetId: "",
-    groupBy: ""
+    groupBy: "",
+    workingSetOnly: false
   });
+
+  useEffect(() => {
+    let active = true;
+
+    void getWorkingSet()
+      .then((response) => {
+        if (active && response.ok) {
+          setWorkingSetIds(response.selectedRecordIds);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setWorkingSetIds([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -108,7 +134,8 @@ export function RecordBrowser(): React.JSX.Element {
     };
   }, [filters.type, filters.status, filters.q, filters.refRole, filters.targetId]);
 
-  const filteredRecords = useMemo(() => filterLocally(records, filters), [records, filters]);
+  const workingSetIdSet = useMemo(() => new Set(workingSetIds), [workingSetIds]);
+  const filteredRecords = useMemo(() => filterLocally(records, filters, workingSetIdSet), [records, filters, workingSetIdSet]);
   const groupedRecords = useMemo(() => {
     if (!filters.groupBy) {
       return filteredRecords;
@@ -134,6 +161,22 @@ export function RecordBrowser(): React.JSX.Element {
     if (response.ok) {
       setSelectedRecord(response.record);
     }
+  }
+
+  async function toggleWorkingSet(recordId: string): Promise<void> {
+    const nextIds = workingSetIdSet.has(recordId)
+      ? workingSetIds.filter((id) => id !== recordId)
+      : [...workingSetIds, recordId];
+    setWorkingSetIds(nextIds);
+    const response = await setWorkingSet(nextIds);
+
+    if (!response.ok) {
+      setNotice(response.message);
+      setWorkingSetIds(workingSetIds);
+      return;
+    }
+
+    setWorkingSetIds(response.selectedRecordIds);
   }
 
   const availableGroupingOptions = groupingOptions(filters.type);
@@ -209,6 +252,16 @@ export function RecordBrowser(): React.JSX.Element {
               />
             </label>
             <label>
+              Working set
+              <select
+                value={filters.workingSetOnly ? "selected" : "all"}
+                onChange={(event) => setFilters((current) => ({ ...current, workingSetOnly: event.target.value === "selected" }))}
+              >
+                <option value="all">All records</option>
+                <option value="selected">Selected only</option>
+              </select>
+            </label>
+            <label>
               Group by
               <select
                 value={filters.groupBy}
@@ -250,6 +303,7 @@ export function RecordBrowser(): React.JSX.Element {
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
+                  <th>Working Set</th>
                   {headerGroup.headers.map((header) => (
                     <th key={header.id}>
                       {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
@@ -261,6 +315,11 @@ export function RecordBrowser(): React.JSX.Element {
             <tbody>
               {table.getRowModel().rows.map((row) => (
                 <tr key={row.id}>
+                  <td>
+                    <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
+                      {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
+                    </button>
+                  </td>
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id}>
                       {cell.column.id === "displayLabel" ? (

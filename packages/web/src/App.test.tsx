@@ -42,8 +42,12 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ open: false }));
   }
 
-  if (url === "/api/records" || url === "/api/records?type=ENTITY") {
+  if (url === "/api/records" || url === "/api/records?type=ENTITY" || url === "/api/records?includeArchived=true") {
     return Promise.resolve(jsonResponse({ ok: true, records: [] }));
+  }
+
+  if (url === "/api/working-set") {
+    return Promise.resolve(jsonResponse({ ok: true, selectedRecordIds: [] }));
   }
 
   if (url.startsWith("/api/story-config/")) {

@@ -4,6 +4,7 @@ import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
+import { WorkingSetView } from "../working-set/WorkingSetView.js";
 
 interface AppShellProps {
   loadState:
@@ -57,18 +58,6 @@ function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
   );
 }
 
-function PlaceholderSurface({ title }: { title: string }): React.JSX.Element {
-  return (
-    <section className="surface" aria-labelledby={`${title.replace(/\W+/g, "-").toLowerCase()}-title`}>
-      <div className="projectHeader">
-        <p className="eyebrow">Phase 4 surface</p>
-        <h2 id={`${title.replace(/\W+/g, "-").toLowerCase()}-title`}>{title}</h2>
-      </div>
-      <p className="muted">Foundation route ready.</p>
-    </section>
-  );
-}
-
 function SettingsSurface(): React.JSX.Element {
   return (
     <section className="surface" aria-labelledby="settings-title">
@@ -110,7 +99,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
         <Routes>
           <Route path="/" element={<ProjectPicker />} />
           <Route path="/records" element={<RecordBrowser />} />
-          <Route path="/working-set" element={<PlaceholderSurface title="Active Working Set" />} />
+          <Route path="/working-set" element={<WorkingSetView />} />
           <Route path="/story-config" element={<StoryConfigEditor />} />
           <Route path="/settings" element={<SettingsSurface />} />
         </Routes>

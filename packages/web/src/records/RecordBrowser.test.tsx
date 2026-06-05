@@ -5,11 +5,13 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RecordBrowser } from "./RecordBrowser.js";
-import { getRecord, listRecords, type ListRecordsFilters, type RecordSummary } from "../api.js";
+import { getRecord, getWorkingSet, listRecords, setWorkingSet, type ListRecordsFilters, type RecordSummary } from "../api.js";
 
 vi.mock("../api.js", () => ({
   getRecord: vi.fn(),
-  listRecords: vi.fn()
+  getWorkingSet: vi.fn(),
+  listRecords: vi.fn(),
+  setWorkingSet: vi.fn()
 }));
 
 const fixtures: RecordSummary[] = [
@@ -81,8 +83,16 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+function mockWorkingSet(ids: string[] = []): void {
+  vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: ids });
+  vi.mocked(setWorkingSet).mockImplementation((selectedRecordIds: string[]) =>
+    Promise.resolve({ ok: true, selectedRecordIds })
+  );
+}
+
 describe("RecordBrowser", () => {
   it("renders a dense list and filters by type, status, search, and reference", async () => {
+    mockWorkingSet();
     vi.mocked(listRecords).mockImplementation((filters = {}) =>
       Promise.resolve({
         ok: true,
@@ -131,6 +141,7 @@ describe("RecordBrowser", () => {
   });
 
   it("offers salience and urgency grouping only when descriptors expose those fields", async () => {
+    mockWorkingSet();
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
 
     render(<RecordBrowser />);
@@ -150,6 +161,7 @@ describe("RecordBrowser", () => {
   });
 
   it("renders one create-from-template action for every registered record type", async () => {
+    mockWorkingSet();
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
 
     render(<RecordBrowser />);
@@ -158,5 +170,32 @@ describe("RecordBrowser", () => {
     for (const recordType of recordTypes) {
       expect(screen.getByRole("button", { name: `Create ${recordType}` })).toBeTruthy();
     }
+  });
+
+  it("toggles working-set membership and filters to selected records without implicit writes", async () => {
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+    mockWorkingSet(["fact-1"]);
+
+    render(<RecordBrowser />);
+
+    expect(await screen.findByText("Door code")).toBeTruthy();
+    expect(setWorkingSet).not.toHaveBeenCalled();
+    expect(screen.getAllByRole("button", { name: "Selected" })).toHaveLength(1);
+
+    fireEvent.change(screen.getByLabelText("Working set"), { target: { value: "selected" } });
+    const table = screen.getByRole("table");
+    await waitFor(() => expect(within(table).queryByText("Aster")).toBeNull());
+    expect(within(table).getByText("Door code")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Selected" }));
+    await waitFor(() => expect(setWorkingSet).toHaveBeenCalledWith([]));
+    expect(within(table).queryByText("Door code")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Working set"), { target: { value: "all" } });
+    await waitFor(() => expect(within(table).getByText("Aster")).toBeTruthy());
+    const addButtons = screen.getAllByRole("button", { name: "Add" });
+    expect(addButtons.length).toBeGreaterThan(0);
+    fireEvent.click(addButtons[0]!);
+    await waitFor(() => expect(setWorkingSet).toHaveBeenLastCalledWith(["entity-1"]));
   });
 });
