@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-004: Active-set pressure + causal-pressure renderers + deterministic intra-section ordering
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds resolvers for `compiler-contract.md` §3 sections 13–17 and the deterministic intra-section ordering helper into the `@loom/core` compiler.
@@ -129,3 +129,27 @@ Wire the section-13–17 resolvers into the map (overriding scaffold defaults).
 
 1. `npm test --workspace @loom/core` — targeted pressure-section + ordering tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Added a reusable compiler ordering helper that sorts records by structured
+  metadata: user order, compile family, salience, urgency, display label, and ID.
+- Added pressure-section resolvers for active action, knowledge, relationship/emotion,
+  material, and generation-time voice pressure.
+- Added causal-pressure resolvers for active intentions, plans, clocks, obligations,
+  consequences, and open threads.
+- Added pressure-section tests for populated rendering, exact empty states,
+  input-order-independent ordering, and plot-rail term exclusion.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 18 files, 122 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 43 files, 231 tests.
+- `npm run lint` passed.
+- `npm run build` passed, with Vite's large-chunk warning only.
