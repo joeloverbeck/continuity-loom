@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-008: Requirements-doc completion updates
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — docs only: `IMPLEMENTATION-ORDER.md` Phase 1 status/gate, `TECHNOLOGY-DECISIONS.md` Phase-1-realized note
@@ -70,3 +70,12 @@ Add a one-line note (near "Recommended v1 stack" / "Done Means") that the Phase-
 
 1. `grep -n "SPEC-001" docs/requirements-version-1/IMPLEMENTATION-ORDER.md docs/requirements-version-1/TECHNOLOGY-DECISIONS.md`
 2. `git diff --stat docs/requirements-version-1/`
+
+## Outcome
+
+Updated the requirements ledger after the Phase 1 gate passed. Added the
+SPEC-001 completion status and checked Phase 1 gate bullets in
+`IMPLEMENTATION-ORDER.md`, and added one Phase-1-realized stack note in
+`TECHNOLOGY-DECISIONS.md`. Verified with the requested `grep -n "SPEC-001" ...`
+and `git diff --stat docs/requirements-version-1/`, which showed only those two
+requirements docs changed.

@@ -20,17 +20,19 @@ Build the deterministic substrate before model transport. The app should be able
 
 ## Phase 1 — Repository and runtime foundation
 
+Status: ✅ Implemented via SPEC-001 (2026-06-05).
+
 Establish the TypeScript/Node/React/Vite local web app shape and the separation between frontend UI, local server, and domain core.
 
 Why first: every later phase needs a stable place to put domain logic, local HTTP boundaries, runtime schemas, and UI workflows. This phase must not spend effort on desktop packaging.
 
 Phase gate:
 
-- app launches locally from Node and opens in browser;
-- local server binds to localhost;
-- TypeScript project boundaries are clear enough to keep validation/compiler independent of HTTP/UI;
-- no cloud account, sync, or collaboration scaffolding exists;
-- no API key handling is added yet except a placeholder settings boundary.
+- [x] app launches locally from Node and opens in browser;
+- [x] local server binds to localhost;
+- [x] TypeScript project boundaries are clear enough to keep validation/compiler independent of HTTP/UI;
+- [x] no cloud account, sync, or collaboration scaffolding exists;
+- [x] no API key handling is added yet except a placeholder settings boundary.
 
 ## Phase 2 — Local project folder and SQLite storage foundation
 
