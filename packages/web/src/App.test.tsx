@@ -50,6 +50,10 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ ok: true, selectedRecordIds: [] }));
   }
 
+  if (url === "/api/generation-brief") {
+    return Promise.resolve(jsonResponse({ ok: true, session: {} }));
+  }
+
   if (url.startsWith("/api/story-config/")) {
     return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
   }
@@ -96,10 +100,13 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("link", { name: "Active Working Set" }));
     expect(screen.getByRole("heading", { name: "Active Working Set" })).toBeTruthy();
 
+    fireEvent.click(screen.getByRole("link", { name: "Generation Brief" }));
+    expect(screen.getByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+
     fireEvent.click(screen.getByRole("link", { name: "Story Configuration" }));
     expect(screen.getByRole("heading", { name: "Story Configuration" })).toBeTruthy();
 
-    for (const name of ["Generation Brief", "Validation/Preview", "Generate/Candidate", "Accepted Segments"]) {
+    for (const name of ["Validation/Preview", "Generate/Candidate", "Accepted Segments"]) {
       expect(screen.getByRole<HTMLButtonElement>("button", { name }).disabled).toBe(true);
     }
   });

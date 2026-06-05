@@ -185,6 +185,22 @@ describe("CastMemberEditor", () => {
     expect(screen.queryByLabelText(/payload/i)).toBeNull();
   });
 
+  it("renders section navigation, durable/current distinction, and warning-only long-dossier guidance", () => {
+    render(<CastMemberEditor record={castRecord} referenceRecords={referenceRecords} />);
+
+    const nav = screen.getByRole("navigation", { name: "CAST MEMBER sections" });
+    expect(within(nav).getByRole("link", { name: /Identity\s*Required core/ })).toBeTruthy();
+    expect(within(nav).getByRole("link", { name: /Sample utterances\s*Optional/ })).toBeTruthy();
+    expect(screen.getByText(/persistent cast dossier/i)).toBeTruthy();
+    expect(screen.getAllByText(/generation-time brief/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/instead of automatic compression/i)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /compress/i })).toBeNull();
+    expect(screen.queryByLabelText(/^current_voice_pressure/)).toBeNull();
+    expect(screen.queryByLabelText(/^override_text/)).toBeNull();
+    expect(screen.getByText("voice_anchor.anti_repetition_warnings")).toBeTruthy();
+    expect(screen.getByText("voice_extended.anti_generic_warnings")).toBeTruthy();
+  });
+
   it("creates and edits CAST MEMBER payloads with populated extended fields and sample utterances", async () => {
     vi.mocked(createRecord).mockResolvedValue({ ok: true, record: castRecord });
     vi.mocked(updateRecord).mockResolvedValue({ ok: true, record: castRecord });

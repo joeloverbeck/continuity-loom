@@ -36,7 +36,7 @@ export interface RecordEditorProps {
   onSaved?: (record: RecordDetail) => void;
 }
 
-type FormValues = FieldValues;
+export type FormValues = FieldValues;
 
 function valueAtPath(value: unknown, path: string): unknown {
   return path.split(".").reduce<unknown>((current, segment) => {
@@ -48,7 +48,7 @@ function valueAtPath(value: unknown, path: string): unknown {
   }, value);
 }
 
-function fieldDefault(field: FieldDescriptor): unknown {
+export function fieldDefault(field: FieldDescriptor): unknown {
   if (!field.required) {
     if (field.kind === "list") {
       return [];
@@ -77,7 +77,7 @@ function fieldDefault(field: FieldDescriptor): unknown {
   }
 }
 
-function defaultValues(fields: readonly FieldDescriptor[], payload: unknown): FormValues {
+export function defaultValues(fields: readonly FieldDescriptor[], payload: unknown): FormValues {
   return Object.fromEntries(
     fields.map((field) => [field.name, valueAtPath(payload, field.name) ?? fieldDefault(field)])
   );
@@ -119,7 +119,7 @@ function pruneFieldValue(field: FieldDescriptor, value: unknown): unknown {
   return value;
 }
 
-function prunePayload(values: unknown, fields: readonly FieldDescriptor[]): FormValues {
+export function prunePayload(values: unknown, fields: readonly FieldDescriptor[]): FormValues {
   const source = typeof values === "object" && values !== null ? values as Record<string, unknown> : {};
 
   return Object.fromEntries(
@@ -141,7 +141,7 @@ function issueText(issue: unknown): string {
   return "Invalid value.";
 }
 
-function serverIssuesByPath(failure: ApiFailure | null): Map<string, string> {
+export function serverIssuesByPath(failure: ApiFailure | null): Map<string, string> {
   const issues = failure?.issues ?? [];
   return new Map(
     issues.map((issue) => {
@@ -297,7 +297,7 @@ function registerText(
   return register(path, inputOptions(field));
 }
 
-function FieldRenderer({
+export function FieldRenderer({
   field,
   path,
   form,

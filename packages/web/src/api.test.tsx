@@ -4,11 +4,13 @@ import {
   archiveRecord,
   createRecord,
   deleteRecord,
+  getGenerationBrief,
   getRecord,
   getRecordReferences,
   getStoryConfig,
   getWorkingSet,
   listRecords,
+  setGenerationBrief,
   setStoryConfig,
   setWorkingSet,
   updateRecord
@@ -86,6 +88,32 @@ describe("api client", () => {
     );
   });
 
+  it("issues generation-brief route requests", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse({ ok: true, session: {} }));
+      })
+    );
+    const partialSurface = {
+      active_working_set: {
+        selected_records: ["019b0298-5c00-7000-8000-000000000001"],
+        selected_pov: "omniscient"
+      }
+    };
+
+    await getGenerationBrief();
+    await setGenerationBrief(partialSurface);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/generation-brief", "GET"],
+      ["/api/generation-brief", "PUT"]
+    ]);
+    expect(calls[1]?.init?.body).toBe(JSON.stringify(partialSurface));
+  });
+
   it("returns structured error envelopes from failed route responses", async () => {
     vi.stubGlobal(
       "fetch",
@@ -110,5 +138,19 @@ describe("api client", () => {
       message: "Record payload is invalid.",
       issues: [{ path: ["status"] }]
     });
+  });
+
+  it("returns structured generation-brief failures unchanged", async () => {
+    const failure = {
+      ok: false,
+      kind: "invalid-request",
+      message: "Generation brief request is invalid.",
+      issues: [{ path: ["active_working_set", "selected_records", 0] }]
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 400))));
+
+    await expect(setGenerationBrief({ active_working_set: { selected_records: ["not-a-uuid"] } })).resolves.toEqual(
+      failure
+    );
   });
 });

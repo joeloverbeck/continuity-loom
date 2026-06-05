@@ -86,16 +86,18 @@ Phase gate:
 
 ## Phase 5 — Custom rich editors for CAST MEMBER and generation-time brief
 
+Status: ✅ Implemented via SPEC-005 (2026-06-05).
+
 Replace generic surfaces where generic editing would be hostile or unsafe: CAST MEMBER dossiers and generation-time brief workflows.
 
 Why after basic CRUD: custom editors need the underlying record model stable. Why before validation/compiler: CAST MEMBER and generation-time brief fields are central to prompt completeness.
 
 Phase gate:
 
-- CAST MEMBER editor exposes durable identity, voice anchor, pressure behavior, body presence, agency, extended fields, samples, and anti-generic warnings;
-- generation-time brief editor covers current authoritative state, immediate handoff, manual directive, prose mode/POV, current cast voice pressure, temporary voice overrides, validation focus tags, and stop guidance;
-- durable cast identity and temporary current voice pressure are visibly distinct;
-- active/onstage, present-minor, and offstage cast bands are explicit.
+- [x] CAST MEMBER editor exposes durable identity, voice anchor, pressure behavior, body presence, agency, extended fields, samples, and anti-generic warnings;
+- [x] generation-time brief editor covers current authoritative state, immediate handoff, manual directive, prose mode/POV, current cast voice pressure, temporary voice overrides, validation focus tags, and stop guidance;
+- [x] durable cast identity and temporary current voice pressure are visibly distinct;
+- [x] active/onstage, present-minor, and offstage cast bands are explicit.
 
 ## Phase 6 — Deterministic validation engine
 

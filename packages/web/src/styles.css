@@ -113,6 +113,12 @@ h1 {
   background: #eefaf1;
 }
 
+.statusWarning {
+  border: 1px solid #c99a2e;
+  color: #6d4a00;
+  background: #fff8e7;
+}
+
 .runtimeGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -223,6 +229,77 @@ button:disabled:hover {
 
 .browserMain {
   min-width: 0;
+}
+
+.castEditorNotice,
+.castSection {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.castEditorNotice {
+  margin-bottom: 16px;
+}
+
+.castEditorNotice p,
+.castSection p {
+  margin: 0 0 12px;
+}
+
+.castEditorLayout {
+  display: grid;
+  grid-template-columns: minmax(190px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.castSectionNav {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.castSectionNav a {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #202124;
+  padding: 9px 10px;
+  text-decoration: none;
+}
+
+.castSectionNav a:hover {
+  border-color: #8aa9c5;
+  background: #f2f7fb;
+}
+
+.castSectionNav small {
+  color: #68758a;
+  font-weight: 700;
+}
+
+.castSectionStack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.castSectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.castWarningPaths {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: #6d4a00;
+  font-weight: 700;
 }
 
 .toolbar {
@@ -352,9 +429,19 @@ button:disabled:hover {
   gap: 28px;
 }
 
+.briefStack {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .configPanel {
   border-top: 1px solid #d8dee8;
   padding-top: 20px;
+}
+
+.stopGuidancePanel {
+  border-color: #c99a2e;
 }
 
 @media (max-width: 760px) {
