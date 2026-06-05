@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { nonemptyString, recordId } from "./common.js";
+import { nonemptyString, recordId, referenceIfId } from "./common.js";
 import type { RecordTypeDefinition } from "./registry.js";
-import { refsFromStrings } from "./references.js";
+import { compactReferences, refsFromStrings } from "./references.js";
 
 export const eventStatusValues = ["active", "resolved", "background", "abandoned"] as const;
 export const intentionStatusValues = ["active", "satisfied", "abandoned", "blocked"] as const;
@@ -204,10 +204,8 @@ export const causalPressureDefinitions = [
     extractReferences: (payload: Consequence) => [
       ...(Array.isArray(payload.holder_or_target)
         ? refsFromStrings("holder_or_target", payload.holder_or_target)
-        : /^[0-9a-f]/i.test(payload.holder_or_target)
-          ? [{ refRole: "holder_or_target", targetId: payload.holder_or_target }]
-          : []),
-      ...(/^[0-9a-f]/i.test(payload.cause) ? [{ refRole: "record_link", targetId: payload.cause }] : [])
+        : compactReferences([referenceIfId("holder_or_target", payload.holder_or_target)])),
+      ...compactReferences([referenceIfId("record_link", payload.cause)])
     ]
   },
   {

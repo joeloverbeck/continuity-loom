@@ -1,6 +1,6 @@
 # SPEC003SCHEMAFIX-002: Fix CONSEQUENCE reference extractor UUID guard
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` `packages/core/src/records/causal-pressure.ts` CONSEQUENCE `extractReferences`.
@@ -73,3 +73,23 @@ In `causal-pressure.ts` CONSEQUENCE `extractReferences`, build references via `c
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Replaced CONSEQUENCE's scalar `holder_or_target` and `cause` one-character hex prefix tests with the shared full-UUID `referenceIfId` guard.
+- Kept array-form `holder_or_target` extraction on `refsFromStrings`, which already filters for full UUID values.
+- Added record extractor tests proving prose causes beginning with a hex character emit no reference while UUID `cause` and UUID `holder_or_target` still emit the expected references.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test --workspace @loom/core` passed: 3 test files, 15 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 14 test files, 64 tests.
+- `npm run build` passed.
+- `rg -n "0-9a-f\\]/i|/\\^\\[0-9a-f\\]" packages/core/src` found only the full UUID regex helpers in `common.ts` and `references.ts`.

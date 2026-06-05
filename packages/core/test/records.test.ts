@@ -52,6 +52,18 @@ const fullCastMemberPayload = {
   agency_core: { default_strategy: "delay", risk_style: "calculated" }
 };
 
+const consequencePayload = {
+  id: idA,
+  status: "active",
+  consequence_kind: "physical",
+  holder_or_target: "unknown",
+  cause: "initial cause",
+  urgency: "medium",
+  current_effect: "The wing is unsafe.",
+  possible_next_effect: "The exit may close.",
+  visibility: "public"
+} as const;
+
 describe("record data model", () => {
   it("validates common metadata and rejects unknown keys", () => {
     expect(
@@ -252,5 +264,25 @@ describe("record data model", () => {
         relational_charge: ""
       })
     ).toThrow();
+  });
+
+  it("extracts CONSEQUENCE references only from full UUID values", () => {
+    expect(
+      extractRecordReferences("CONSEQUENCE", {
+        ...consequencePayload,
+        cause: "fire spread to the east wing"
+      })
+    ).toEqual([]);
+
+    expect(
+      extractRecordReferences("CONSEQUENCE", {
+        ...consequencePayload,
+        holder_or_target: idA,
+        cause: idB
+      })
+    ).toEqual([
+      { refRole: "holder_or_target", targetId: idA },
+      { refRole: "record_link", targetId: idB }
+    ]);
   });
 });
