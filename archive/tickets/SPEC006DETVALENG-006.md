@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-006: Context-dependent matrix — voice/dialogue/presence rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/matrix-voice.ts`; appends to the `validation/rules` barrel.
@@ -79,3 +79,24 @@ Rule family 3 (one of four matrix clusters): the voice/dialogue/presence rows of
 
 1. `npm test -- validation-matrix-voice`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the voice/dialogue/presence context-dependent matrix cluster:
+
+- Added `validation/rules/matrix-voice.ts` with tag-gated blockers for `dialogue_expected`, `ensemble_dialogue_expected`, `active_silent_presence_expected`, and `present_minor_speech_possible`.
+- Registered the voice matrix rule family in the validation rule barrel.
+- Added stable matrix diagnostic codes for incomplete dialogue, ensemble dialogue, active silent presence, and present minor speech rows.
+- Added `packages/core/test/validation-matrix-voice.test.ts` covering tag-absent silence, tag-present clean silence, and tag-present missing-state blockers for each row.
+
+Deviation from original plan: voice sufficiency is deliberately implemented as named-field presence and distinct current-pressure text for ensemble speakers, not a prose-quality heuristic or compression step.
+
+Verification:
+
+- `npm test -- validation-matrix-voice` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
