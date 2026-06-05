@@ -85,7 +85,7 @@ describe("SPEC-003 record tables and repository", () => {
 
   it("round-trips records, refreshes projections, and blocks dangling references", async () => {
     const storeManager = manager();
-    await storeManager.createProject({
+    const status = await storeManager.createProject({
       parentPath: await tempParent(),
       folderName: "records",
       title: "Records"
@@ -140,6 +140,38 @@ describe("SPEC-003 record tables and repository", () => {
     expect(repository.referencesForRecord(secret.id)).toHaveLength(2);
     expect(repository.getRecord(secret.id)).toMatchObject({ ok: true });
     expect(() => repository.deleteRecord(idA)).toThrow(RecordIntegrityError);
+
+    const belief = repository.createRecord({
+      type: "BELIEF",
+      displayLabel: "Belief",
+      payload: {
+        id: idB,
+        status: "active",
+        holder: idB,
+        claim: "B believes the door code still works.",
+        belief_mode: "believes",
+        truth_relation: "unknown",
+        confidence: "medium",
+        visibility: "private",
+        access_route: "inference",
+        behavioral_effect: "B keeps testing old locks.",
+        salience: "high"
+      }
+    });
+
+    expect(belief.salience).toBe("high");
+    expect(secret.salience).toBe("critical");
+    const database = new DatabaseSync(join(status.folderPath, "loom.sqlite"));
+    try {
+      expect(
+        database.prepare("SELECT salience FROM records WHERE id = ?").get(belief.id)
+      ).toEqual({ salience: "high" });
+      expect(
+        database.prepare("SELECT salience FROM records WHERE id = ?").get(secret.id)
+      ).toEqual({ salience: "critical" });
+    } finally {
+      database.close();
+    }
 
     repository.updateRecord({
       id: secret.id,

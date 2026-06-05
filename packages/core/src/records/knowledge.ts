@@ -97,6 +97,7 @@ export const knowledgeDefinitions = [
     payloadSchema: beliefSchema,
     statusValues: beliefStatusValues,
     projectStatus: (payload: Belief) => payload.status,
+    projectSalience: (payload: Belief) => payload.salience,
     extractReferences: (payload: Belief) => [{ refRole: "holder", targetId: payload.holder }]
   },
   {
@@ -104,6 +105,7 @@ export const knowledgeDefinitions = [
     payloadSchema: secretSchema,
     statusValues: secretStatusValues,
     projectStatus: (payload: Secret) => payload.status,
+    projectSalience: (payload: Secret) => payload.salience,
     extractReferences: (payload: Secret) => [
       ...refsFromStrings("secret_holder", payload.holders),
       ...(Array.isArray(payload.non_holders_to_protect)

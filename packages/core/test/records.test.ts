@@ -9,6 +9,7 @@ import {
   getRecordTypeDefinition,
   planSchema,
   proseModeSchema,
+  projectRecordSalience,
   recordMetadataSchema,
   recordTypes,
   secretSchema,
@@ -379,6 +380,45 @@ describe("record data model", () => {
         { refRole: "known_by", targetId: idB }
       ]);
     }
+  });
+
+  it("projects BELIEF and SECRET salience from payloads", () => {
+    expect(
+      projectRecordSalience("BELIEF", {
+        id: idA,
+        status: "active",
+        holder: idB,
+        claim: "B believes the gate is locked.",
+        belief_mode: "believes",
+        truth_relation: "unknown",
+        confidence: "medium",
+        visibility: "private",
+        access_route: "inference",
+        behavioral_effect: "B hesitates before the gate.",
+        salience: "high"
+      })
+    ).toBe("high");
+
+    expect(
+      projectRecordSalience("SECRET", {
+        id: idB,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "B is using a borrowed name.",
+        holders: [idA],
+        non_holders_to_protect: "all_except_holders",
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        allowed_surface_cues: [],
+        forbidden_reveals: [],
+        reveal_permission: "locked",
+        reveal_triggers: [],
+        clue_carriers: []
+      })
+    ).toBe("critical");
+
+    expect(projectRecordSalience("ENTITY", { id: idA })).toBeNull();
   });
 
   it("validates global story config field fidelity", () => {
