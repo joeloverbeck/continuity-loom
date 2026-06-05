@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-008: Warnings + secret/API-key safety blocker
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule modules `validation/rules/warnings.ts` and `validation/rules/security.ts`; appends to the `validation/rules` barrel.
@@ -80,3 +80,26 @@ Rule families 4 and 5 of the engine. Family 4 — **warnings** (`docs/compiler-c
 
 1. `npm test -- validation-warnings-security`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented warnings and prompt-facing key safety in `@loom/core`:
+
+- Added `validation/rules/warnings.ts` with deterministic warning diagnostics for prompt length risk, many high-salience records, missing sample utterances, sparse setting texture, missing active pressure records, long cast dossier without a current pin, low-drama scene pressure, and stale/resolved selected records.
+- Added `validation/rules/security.ts` with deterministic API-key-like detection across prompt-facing snapshot strings; the blocker diagnostic names the field and does not echo matched key text.
+- Registered security and warning rules in the validation rule barrel.
+- Added stable diagnostic codes for the warning family.
+- Added `packages/core/test/validation-warnings-security.test.ts` covering each warning as non-blocking and key-like text as a blocker with no key echo.
+- Updated the universal completeness clean assertion to allow non-blocking warnings in the default registry while still requiring zero blockers.
+
+Deviation from original plan: warning tests exercise `warningRules` directly to prove warning-only `isBlocked === false` without unrelated default-registry blockers; the default registry integration is covered by full `npm test`.
+
+Verification:
+
+- `npm test -- validation-warnings-security` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.

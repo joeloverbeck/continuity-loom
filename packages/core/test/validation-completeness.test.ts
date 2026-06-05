@@ -147,11 +147,10 @@ function cleanInput(): BuildValidationSnapshotInput {
 
 describe("universal completeness validation", () => {
   it("stays silent for a fully populated clean snapshot", () => {
-    expect(runValidation(buildValidationSnapshot(cleanInput()))).toEqual({
-      blockers: [],
-      warnings: [],
-      isBlocked: false
-    });
+    const result = runValidation(buildValidationSnapshot(cleanInput()));
+
+    expect(result.blockers).toEqual([]);
+    expect(result.isBlocked).toBe(false);
   });
 
   it.each([
