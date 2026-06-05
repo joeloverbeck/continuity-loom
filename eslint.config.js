@@ -36,7 +36,13 @@ export default tseslint.config(
       globals: nodeGlobals,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.js", "*.ts", "scripts/*.mjs", "packages/*/test/*.ts"]
+          allowDefaultProject: [
+            "*.js",
+            "*.ts",
+            "scripts/*.mjs",
+            "packages/*/test/*.ts",
+            "packages/*/src/*.test.ts"
+          ]
         },
         tsconfigRootDir: import.meta.dirname
       }

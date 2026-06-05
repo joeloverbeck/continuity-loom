@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-003: `@loom/server` localhost Fastify server and stub API
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server` (`@loom/server`) depending on `@loom/core` and `fastify`; stub `/api/health` + `/api/version`; server smoke test
@@ -86,3 +86,13 @@ Configure the logger so API keys, prompts, candidate/accepted prose, and full re
 
 1. `npm run test --workspace @loom/server`
 2. `npm run typecheck --workspace @loom/server && npm run lint --workspace @loom/server`
+
+## Outcome
+
+Implemented `@loom/server` with a Fastify app factory, loopback-only listen
+helper, `/api/health`, and `/api/version` sourced from `@loom/core` and parsed
+through Zod schemas. Configured the server logger to omit request bodies and
+redact future secret/prose/payload paths by default. Verified with
+`npm run test --workspace @loom/server`, `npm run typecheck --workspace
+@loom/server`, `npm run lint --workspace @loom/server`, and grep checks showing
+no LAN bind literal and no secret handling beyond redaction path names.
