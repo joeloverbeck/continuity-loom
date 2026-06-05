@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-002: `@loom/core` pure domain layer and boundary enforcement
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/core` (`@loom/core`); ESLint `no-restricted-imports` boundary rule; Vitest boundary test
@@ -82,3 +82,14 @@ ESLint override scoped to `packages/core/**` using `no-restricted-imports` with 
 
 1. `npm run lint --workspace @loom/core && npm run test --workspace @loom/core`
 2. `npm run typecheck --workspace @loom/core`
+
+## Outcome
+
+Implemented `@loom/core` with pure version metadata exports and no internal
+dependencies. Added a core-scoped ESLint boundary rule for `node:*`, `fastify`,
+`react`, and `vite`, plus a Vitest scanner that checks production core source
+for forbidden imports by namespace/pattern. Verified the positive gates with
+`npm run lint --workspace @loom/core`, `npm run test --workspace @loom/core`,
+and `npm run typecheck --workspace @loom/core`; verified the negative case by
+temporarily adding `import "node:fs"` under `packages/core/src/` and confirming
+both lint and the boundary test failed before removing the fixture.

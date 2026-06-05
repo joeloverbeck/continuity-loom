@@ -36,10 +36,40 @@ export default tseslint.config(
       globals: nodeGlobals,
       parserOptions: {
         projectService: {
-          allowDefaultProject: ["*.js", "*.ts", "scripts/*.mjs"]
+          allowDefaultProject: ["*.js", "*.ts", "scripts/*.mjs", "packages/*/test/*.ts"]
         },
         tsconfigRootDir: import.meta.dirname
       }
+    }
+  },
+  {
+    files: ["packages/core/src/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "fastify",
+              message: "@loom/core must stay independent of HTTP frameworks."
+            },
+            {
+              name: "react",
+              message: "@loom/core must stay independent of UI frameworks."
+            },
+            {
+              name: "vite",
+              message: "@loom/core must stay independent of build frameworks."
+            }
+          ],
+          patterns: [
+            {
+              group: ["node:*"],
+              message: "@loom/core must not import Node builtins."
+            }
+          ]
+        }
+      ]
     }
   }
 );
