@@ -9,10 +9,10 @@ import {
   type ProjectStatus
 } from "@loom/core";
 import { randomUUID } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { join, resolve } from "node:path";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 
 const METADATA_FILENAME = "continuity-loom.project.json";
 const DATABASE_FILENAME = "loom.sqlite";
@@ -90,6 +90,19 @@ function sqliteStringLiteral(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
 }
 
+function failure(kind: Exclude<OpenProjectResult, { ok: true }>["kind"], message: string): OpenProjectResult {
+  return { ok: false, kind, message };
+}
+
+function isFileNotFound(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === "ENOENT"
+  );
+}
+
 function timestampForFilename(date = new Date()): string {
   return date.toISOString().replaceAll(":", "-").replaceAll(".", "-");
 }
@@ -144,9 +157,48 @@ export function createProjectStoreManager(): ProjectStoreManager {
 
     async openProject(folderPathInput) {
       const folderPath = resolve(folderPathInput);
-      const metadataJson = await readFile(metadataPath(folderPath), "utf8");
-      const metadata = projectMetadataSchema.parse(JSON.parse(metadataJson));
-      const database = new DatabaseSync(databasePath(folderPath, metadata));
+      let metadata: ProjectMetadata;
+
+      try {
+        const metadataJson = await readFile(metadataPath(folderPath), "utf8");
+        metadata = projectMetadataSchema.parse(JSON.parse(metadataJson));
+      } catch (error) {
+        if (isFileNotFound(error)) {
+          return failure(
+            "missing-metadata",
+            "The selected folder does not contain continuity-loom.project.json."
+          );
+        }
+
+        if (error instanceof SyntaxError || error instanceof ZodError) {
+          return failure(
+            "invalid-metadata",
+            "The project metadata file is not valid Continuity Loom metadata."
+          );
+        }
+
+        return failure("unreadable", "The selected project folder could not be read.");
+      }
+
+      const storePath = databasePath(folderPath, metadata);
+
+      try {
+        await access(storePath);
+      } catch (error) {
+        if (isFileNotFound(error)) {
+          return failure("invalid-sqlite", "The project store loom.sqlite is missing.");
+        }
+
+        return failure("unreadable", "The project store could not be read.");
+      }
+
+      let database: DatabaseSync;
+
+      try {
+        database = new DatabaseSync(storePath);
+      } catch {
+        return failure("invalid-sqlite", "The project store is not a readable SQLite database.");
+      }
 
       try {
         const applicationId = readPragmaNumber(database, "application_id");
@@ -155,25 +207,30 @@ export function createProjectStoreManager(): ProjectStoreManager {
 
         if (applicationIdClassification !== "ok") {
           database.close();
-          return {
-            ok: false,
-            kind: applicationIdClassification,
-            message: "The selected SQLite file is not a Continuity Loom project store."
-          };
+          return failure(
+            applicationIdClassification,
+            "The selected SQLite file is not a Continuity Loom project store."
+          );
+        }
+
+        if (metadata.schemaMinVersion !== storeUserVersion) {
+          database.close();
+          return failure(
+            "invalid-metadata",
+            "The project metadata schema version does not match the SQLite store version."
+          );
         }
 
         const compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
 
         if (compatibility !== "ok") {
           database.close();
-          return {
-            ok: false,
-            kind: compatibility,
-            message:
-              compatibility === "incompatible-version"
-                ? "The project store was created by a newer schema version."
-                : "The project store requires a migration before it can be opened."
-          };
+          return failure(
+            compatibility,
+            compatibility === "incompatible-version"
+              ? "The project store was created by a newer schema version."
+              : "The project store requires a migration before it can be opened."
+          );
         }
 
         closeActive();
@@ -185,9 +242,9 @@ export function createProjectStoreManager(): ProjectStoreManager {
         };
 
         return { ok: true, status: statusFromActive(active) };
-      } catch (error) {
+      } catch {
         database.close();
-        throw error;
+        return failure("invalid-sqlite", "The project store is not a readable SQLite database.");
       }
     },
 
