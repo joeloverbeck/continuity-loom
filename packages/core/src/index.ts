@@ -28,6 +28,19 @@ export {
 } from "./records/cast-member.js";
 export { entitySchema, entityStatusSchema } from "./records/entity.js";
 export {
+  deriveDisplayLabel,
+  eligibleReferenceTargets,
+  getEditorDescriptor,
+  recordEditorDescriptors,
+  referenceTargetTypes
+} from "./records/editor-descriptors.js";
+export type {
+  FieldDescriptor,
+  FieldKind,
+  RecordEditorDescriptor,
+  RecordSummary
+} from "./records/editor-descriptors.js";
+export {
   activeWorkingSetSchema,
   castVoiceOverridesSchema,
   currentAuthoritativeStateSchema,
