@@ -94,6 +94,7 @@ export type RecordReferencesResponse =
 export type OkResponse = { ok: true } | ApiFailure;
 export type StoryConfigResponse = { ok: true; payload: unknown } | ApiFailure;
 export type WorkingSetResponse = { ok: true; selectedRecordIds: string[] } | ApiFailure;
+export type GenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -225,4 +226,12 @@ export async function getWorkingSet(): Promise<WorkingSetResponse> {
 
 export async function setWorkingSet(selectedRecordIds: string[]): Promise<WorkingSetResponse> {
   return requestJson<WorkingSetResponse>("/api/working-set", "PUT", { selectedRecordIds });
+}
+
+export async function getGenerationBrief(): Promise<GenerationBriefResponse> {
+  return requestJson<GenerationBriefResponse>("/api/generation-brief", "GET");
+}
+
+export async function setGenerationBrief(surfaces: Record<string, unknown>): Promise<OkResponse> {
+  return requestJson<OkResponse>("/api/generation-brief", "PUT", surfaces);
 }
