@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-005: Context-dependent matrix — physical/perception/offstage rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/matrix-physical.ts`; appends to the `validation/rules` barrel.
@@ -78,3 +78,24 @@ Rule family 3 (one of four matrix clusters): the physical/perception/offstage ro
 
 1. `npm test -- validation-matrix-physical`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the physical/perception/offstage context-dependent matrix cluster:
+
+- Added `validation/rules/matrix-physical.ts` with tag-gated blockers for `physical_interaction_expected`, `offstage_interruption_possible`, and `nonhuman_or_institutional_pressure_expected`.
+- Registered the physical matrix rule family in the validation rule barrel.
+- Added stable matrix diagnostic codes for incomplete physical interaction, offstage interruption, and nonhuman/institutional pressure rows.
+- Added `packages/core/test/validation-matrix-physical.test.ts` covering tag-absent silence, tag-present clean silence, and tag-present missing-state blockers for each row.
+
+Deviation from original plan: offstage awareness/interruption route and nonhuman pressure mechanism are represented through deterministic current-lock markers until dedicated structured fields exist; the rules do not infer physical possibility through NLP or LLM evaluation.
+
+Verification:
+
+- `npm test -- validation-matrix-physical` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
