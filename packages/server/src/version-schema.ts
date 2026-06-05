@@ -11,11 +11,15 @@ export const versionInfoSchema = z.object({
   }),
   templates: z.object({
     version: z.string().min(1),
-    status: z.literal("placeholder")
+    status: z.literal("stable")
   }),
   compiler: z.object({
     version: z.string().min(1),
-    status: z.literal("placeholder")
+    status: z.literal("stable")
+  }),
+  contract: z.object({
+    version: z.string().min(1),
+    status: z.literal("stable")
   })
 });
 

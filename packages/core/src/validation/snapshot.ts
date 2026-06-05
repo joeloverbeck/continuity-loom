@@ -23,6 +23,7 @@ export interface ValidationRecord {
 export interface ValidationVersions {
   template: string;
   compiler: string;
+  contract: string;
 }
 
 export interface ValidationStoryConfig {

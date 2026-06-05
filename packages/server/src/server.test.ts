@@ -21,8 +21,9 @@ describe("@loom/server stub API", () => {
 
     expect(response.statusCode).toBe(200);
     expect(payload.app.name).toBe("Continuity Loom");
-    expect(payload.templates.status).toBe("placeholder");
-    expect(payload.compiler.status).toBe("placeholder");
+    expect(payload.templates.status).toBe("stable");
+    expect(payload.compiler.status).toBe("stable");
+    expect(payload.contract.status).toBe("stable");
   });
 
   it("binds only to the loopback host", async () => {

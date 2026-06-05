@@ -36,7 +36,8 @@ function minimalSnapshot() {
     storyConfig: {},
     versions: {
       template: "0.0.0",
-      compiler: "0.0.0"
+      compiler: "0.0.0",
+      contract: "1.0.0"
     }
   });
 }
@@ -70,7 +71,8 @@ describe("validation engine foundation", () => {
       storyConfig: {},
       versions: {
         template: "template-a",
-        compiler: "compiler-a"
+        compiler: "compiler-a",
+        contract: "contract-a"
       }
     });
 
@@ -79,6 +81,7 @@ describe("validation engine foundation", () => {
     expect(Object.isFrozen(snapshot)).toBe(true);
     expect(Object.isFrozen(snapshot.records)).toBe(true);
     expect(Object.isFrozen(snapshot.records[0])).toBe(true);
+    expect(snapshot.versions.contract).toBe("contract-a");
   });
 
   it("derives isBlocked from blockers only and stable-sorts diagnostics", () => {

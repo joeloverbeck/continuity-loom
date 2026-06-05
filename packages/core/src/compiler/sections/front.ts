@@ -1,0 +1,317 @@
+import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
+import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
+import type { PlaceholderName } from "../placeholder-map.js";
+import type { PlaceholderResolver } from "../types.js";
+
+type JsonRecord = Record<string, unknown>;
+
+type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+
+const frontResolvers: ResolverMap = {
+  rating_label: (snapshot) => valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.rating_label, "rating_label"),
+  allowed_content_scope: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.allowed_content_scope, "allowed_content_scope"),
+  tonal_handling: (snapshot) => valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.tonal_handling, "tonal_handling"),
+  governing_policy_note: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.governing_policy_note, "governing_policy_note"),
+  character_bias_handling: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.character_bias_handling, "character_bias_handling"),
+
+  title: (snapshot) => valueOrEmpty(snapshot.storyConfig.storyContract?.title, "title"),
+  premise: (snapshot) => valueOrEmpty(snapshot.storyConfig.storyContract?.premise, "premise"),
+  genre_mode: (snapshot) => valueOrEmpty(snapshot.storyConfig.storyContract?.genre_mode, "genre_mode"),
+  tone: (snapshot) => valueOrEmpty(snapshot.storyConfig.storyContract?.tone, "tone"),
+  content_intensity: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.storyContract?.content_intensity, "content_intensity"),
+  explicitness: (snapshot) => valueOrEmpty(snapshot.storyConfig.storyContract?.explicitness, "explicitness"),
+  language_register: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.storyContract?.language_register, "language_register"),
+  setting_baseline: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.storyContract?.setting_baseline, "setting_baseline"),
+
+  pov_character: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.pov_character, "pov_character"),
+  person: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.person, "person"),
+  tense: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.tense, "tense"),
+  psychic_distance: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.psychic_distance, "psychic_distance"),
+  interiority_mode: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.interiority_mode, "interiority_mode"),
+  dialogue_density: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.dialogue_density, "dialogue_density"),
+  paragraphing: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.paragraphing, "paragraphing"),
+  language_output: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.language_output, "language_output"),
+  special_style_constraints: (snapshot) =>
+    valueOrEmpty(snapshot.storyConfig.proseMode?.special_style_constraints, "special_style_constraints"),
+
+  hard_canon_bullets: (snapshot) =>
+    bulletRecords(snapshot, "FACT", (payload) => payload.fact_kind === "hard_canon", (payload) =>
+      asString(payload.statement)
+    ).join("\n") || EMPTY_STATE_CONSTANTS.hard_canon_bullets,
+
+  current_time: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_time, "current_time"),
+  current_location: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_location, "current_location"),
+  onstage_entities: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.onstage_entities, "onstage_entities"),
+  offstage_pressuring_entities: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities,
+      "offstage_pressuring_entities"
+    ),
+  positions: (snapshot) => valueOrEmpty(snapshot.generationSession.current_authoritative_state?.positions, "positions"),
+  entity_statuses: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.entity_statuses, "entity_statuses"),
+  possessions: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.possessions, "possessions"),
+  visible_conditions: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.visible_conditions, "visible_conditions"),
+  environmental_conditions: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.environmental_conditions,
+      "environmental_conditions"
+    ),
+  line_of_sight_and_visibility: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.line_of_sight_and_visibility,
+      "line_of_sight_and_visibility"
+    ),
+  routes_and_exits: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.routes_and_exits, "routes_and_exits"),
+  available_time: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.available_time, "available_time"),
+  consent_or_force_conditions: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.consent_or_force_conditions,
+      "consent_or_force_conditions"
+    ),
+  current_locks: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_locks, "current_locks"),
+
+  recent_causal_context: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.immediate_handoff?.recent_causal_context, "recent_causal_context"),
+  last_visible_moment: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.immediate_handoff?.last_visible_moment, "last_visible_moment"),
+  prior_accepted_prose_status_or_handoff_note: (snapshot) => {
+    const handoffNote = snapshot.generationSession.immediate_handoff?.prior_accepted_prose_status_or_handoff_note;
+    return handoffNote && handoffNote !== "none"
+      ? handoffNote
+      : EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note;
+  },
+  begin_after: (snapshot) => valueOrEmpty(snapshot.generationSession.immediate_handoff?.begin_after, "begin_after"),
+
+  manual_must_render: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.manual_moment_directive?.must_render, "manual_must_render"),
+  manual_may_render_if_naturally_caused: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.manual_moment_directive?.may_render_if_naturally_caused,
+      "manual_may_render_if_naturally_caused"
+    ),
+  manual_do_not_force: (snapshot) =>
+    valueOrEmpty(snapshot.generationSession.manual_moment_directive?.do_not_force, "manual_do_not_force"),
+
+  pov_knows: (snapshot) => renderPovKnows(snapshot),
+  pov_believes_suspects_misreads: (snapshot) => renderPovBeliefs(snapshot),
+  pov_does_not_know: (snapshot) => renderPovDoesNotKnow(snapshot),
+  pov_cannot_perceive_now: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.line_of_sight_and_visibility,
+      "pov_cannot_perceive_now"
+    ),
+  audience_knows: (snapshot) => renderAudienceKnows(snapshot),
+  audience_does_not_know: (snapshot) => renderAudienceDoesNotKnow(snapshot),
+  dramatic_irony_permissions: (snapshot) => renderDramaticIrony(snapshot),
+
+  writer_visible_hidden_truths: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => asString(payload.secret_claim)).join("\n") ||
+    EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths,
+  secret_holders: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.holders)).join("\n") ||
+    EMPTY_STATE_CONSTANTS.secret_holders,
+  secret_non_holders_to_protect: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.non_holders_to_protect)).join(
+      "\n"
+    ) || EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
+  allowed_clues_and_surface_cues: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.allowed_surface_cues)).join("\n") ||
+    EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues,
+  forbidden_reveals: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.forbidden_reveals)).join("\n") ||
+    EMPTY_STATE_CONSTANTS.forbidden_reveals,
+  reveal_permissions: (snapshot) =>
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
+      [asString(payload.reveal_permission), listLine(payload.reveal_triggers)].filter(Boolean).join("; triggers: ")
+    ).join("\n") || EMPTY_STATE_CONSTANTS.reveal_permissions
+};
+
+export const FRONT_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<PlaceholderName, PlaceholderResolver>>> =
+  Object.freeze(
+    Object.fromEntries(
+      Object.entries(frontResolvers).map(([placeholder, resolve]) => [
+        placeholder,
+        {
+          placeholder,
+          required: true,
+          missingBehavior: "block",
+          emptyState: EMPTY_STATE_CONSTANTS[placeholder as PlaceholderName],
+          resolve
+        }
+      ])
+    ) as Partial<Record<PlaceholderName, PlaceholderResolver>>
+  );
+
+function valueOrEmpty(value: unknown, placeholder: PlaceholderName): string {
+  const rendered = renderValue(value);
+  return rendered || EMPTY_STATE_CONSTANTS[placeholder];
+}
+
+function renderValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((item) => renderValue(item)).filter(Boolean).join("\n");
+  }
+
+  if (typeof value === "string") {
+    return value.trim();
+  }
+
+  return "";
+}
+
+function bulletRecords(
+  snapshot: ValidationSnapshot,
+  type: string,
+  predicate: (payload: JsonRecord, record: ValidationRecord) => boolean,
+  project: (payload: JsonRecord, record: ValidationRecord) => string
+): string[] {
+  return snapshot.records
+    .filter((record) => record.type === type)
+    .map((record) => ({ record, payload: payloadOf(record) }))
+    .filter(({ record, payload }) => predicate(payload, record))
+    .map(({ record, payload }) => project(payload, record))
+    .filter(Boolean)
+    .map((line) => `- ${line}`);
+}
+
+function payloadOf(record: ValidationRecord): JsonRecord {
+  return record.payload && typeof record.payload === "object" ? (record.payload as JsonRecord) : {};
+}
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function listLine(value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map(asString).filter(Boolean).join(", ");
+  }
+
+  return asString(value);
+}
+
+function selectedPov(snapshot: ValidationSnapshot): string | undefined {
+  const pov = snapshot.generationSession.active_working_set?.selected_pov;
+  return pov && pov !== "omniscient" ? pov : undefined;
+}
+
+function isActiveSecret(payload: JsonRecord): boolean {
+  return payload.status === "hidden" || payload.status === "partially_revealed";
+}
+
+function renderPovKnows(snapshot: ValidationSnapshot): string {
+  const pov = selectedPov(snapshot);
+  const lines = [
+    ...bulletRecords(
+      snapshot,
+      "FACT",
+      (payload) => knownBy(payload.known_by, pov),
+      (payload) => asString(payload.statement)
+    ),
+    ...bulletRecords(
+      snapshot,
+      "BELIEF",
+      (payload) => payload.holder === pov && payload.belief_mode === "knows",
+      (payload) => asString(payload.claim)
+    ),
+    ...bulletRecords(
+      snapshot,
+      "SECRET",
+      (payload) => isActiveSecret(payload) && payload.pov_access === "knows",
+      (payload) => asString(payload.secret_claim)
+    )
+  ];
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.pov_knows;
+}
+
+function renderPovBeliefs(snapshot: ValidationSnapshot): string {
+  const pov = selectedPov(snapshot);
+  const lines = bulletRecords(
+    snapshot,
+    "BELIEF",
+    (payload) => payload.holder === pov && payload.belief_mode !== "knows",
+    (payload) => asString(payload.claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.pov_believes_suspects_misreads;
+}
+
+function renderPovDoesNotKnow(snapshot: ValidationSnapshot): string {
+  const pov = selectedPov(snapshot);
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) =>
+      isActiveSecret(payload) &&
+      payload.pov_access !== "knows" &&
+      (!pov || protectedFrom(payload.non_holders_to_protect, pov)),
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.pov_does_not_know;
+}
+
+function renderAudienceKnows(snapshot: ValidationSnapshot): string {
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) => isActiveSecret(payload) && ["explicit", "implied"].includes(asString(payload.audience_visibility)),
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.audience_knows;
+}
+
+function renderAudienceDoesNotKnow(snapshot: ValidationSnapshot): string {
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) => isActiveSecret(payload) && payload.audience_visibility === "hidden",
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.audience_does_not_know;
+}
+
+function renderDramaticIrony(snapshot: ValidationSnapshot): string {
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) => isActiveSecret(payload) && payload.audience_visibility === "explicit" && payload.pov_access !== "knows",
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.dramatic_irony_permissions;
+}
+
+function knownBy(knownByValue: unknown, pov: string | undefined): boolean {
+  if (knownByValue === "public") {
+    return true;
+  }
+
+  return Boolean(pov && Array.isArray(knownByValue) && knownByValue.includes(pov));
+}
+
+function protectedFrom(nonHolders: unknown, pov: string): boolean {
+  if (nonHolders === "all_except_holders") {
+    return true;
+  }
+
+  return Array.isArray(nonHolders) && nonHolders.includes(pov);
+}

@@ -4,6 +4,16 @@
 
 The prompt compiler renders the deterministic, inspectable prompt sent to the external prose writer. It is a renderer, not an intelligence layer. Its obligation is to preserve the selected story state, generation-time brief, prompt template, and compiler contract exactly enough that the same inputs produce the same prompt.
 
+## Phase 7 implementation note
+
+SPEC-007 implemented the v1 deterministic prompt compiler on 2026-06-05: `@loom/core`
+now renders the 28-section universal prompt from immutable validation snapshots,
+threads the template/compiler/compiler-contract version triple through compile
+metadata, maps every template placeholder through deterministic resolvers or exact
+empty-state constants, and exposes the blocker-gated `POST /api/compile` route in
+`@loom/server`. Prompt preview remains Phase 8, and OpenRouter transport remains
+Phase 9.
+
 ## Scope
 
 This spec covers compiler inputs, section order, placeholder mapping obligations, deterministic ordering, empty-state rendering, active cast dossier handling, prompt-facing vs validation-only fields, accepted prose exclusion, prompt preview, versioning, change control, and failure modes.
