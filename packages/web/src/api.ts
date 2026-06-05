@@ -24,10 +24,13 @@ export type ProjectOperationFailure = {
 };
 
 export type CreateProjectResponse = ProjectStatus | ProjectOperationFailure;
+export type OpenProjectResponse = OpenProjectResult | ProjectOperationFailure;
 
 export interface BackupResponse {
   backupPath: string;
 }
+
+export type BackupProjectResponse = BackupResponse | ProjectOperationFailure;
 
 export interface RuntimeStatus {
   health: HealthResponse;
@@ -63,10 +66,6 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
 
   const response = await fetch(url, requestInit);
 
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
-
   return (await response.json()) as T;
 }
 
@@ -83,16 +82,16 @@ export async function createProject(request: CreateProjectRequest): Promise<Crea
   return postJson<CreateProjectResponse>("/api/project/create", request);
 }
 
-export async function openProject(request: OpenProjectRequest): Promise<OpenProjectResult> {
-  return postJson<OpenProjectResult>("/api/project/open", request);
+export async function openProject(request: OpenProjectRequest): Promise<OpenProjectResponse> {
+  return postJson<OpenProjectResponse>("/api/project/open", request);
 }
 
 export async function getProject(): Promise<ProjectOpenState> {
   return fetchJson<ProjectOpenState>("/api/project");
 }
 
-export async function createBackup(): Promise<BackupResponse> {
-  return postJson<BackupResponse>("/api/project/backup");
+export async function createBackup(): Promise<BackupProjectResponse> {
+  return postJson<BackupProjectResponse>("/api/project/backup");
 }
 
 export async function closeProject(): Promise<{ open: false }> {

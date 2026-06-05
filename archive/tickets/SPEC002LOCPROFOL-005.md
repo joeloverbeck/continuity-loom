@@ -119,7 +119,9 @@ the resulting `backupPath`, and inline rendering of an open/create failure's
 ## Outcome
 
 Completed: 2026-06-05.
+Outcome amended: 2026-06-05.
 
 - Added project API client functions, a minimal create/open/status/backup picker, App integration, styles, and jsdom tests for create status, open diagnostics, and backup path display.
+- Amended after dev-server smoke: project POST error bodies now render as structured picker diagnostics instead of unhandled rejected promises on request validation failures.
 - Deviation from plan: the manual dry-run was not performed before ticket archival; automated web test/typecheck/lint/build coverage passed.
 - Verification: `npm run test --workspace @loom/web`, `npm run lint --workspace @loom/web`, `npm run typecheck --workspace @loom/web`, and `npm run build --workspace @loom/web` passed before archival.

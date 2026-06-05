@@ -262,9 +262,11 @@ leakage.
 ## Outcome
 
 Completed: 2026-06-05.
+Outcome amended: 2026-06-05.
 
 - Implemented the Phase 2 local project folder and SQLite storage foundation across `@loom/core`, `@loom/server`, and `@loom/web`.
 - Added the pure storage contract, metadata schema, application/store version gates, server-side SQLite project lifecycle, structured open-failure taxonomy, backup creation through `VACUUM INTO`, localhost project API routes, and a minimal project picker UI.
+- Amended after dev-server smoke: the web project client now returns structured project-route error bodies so request validation failures render inline instead of becoming unhandled rejected promises.
 - Updated requirements docs to mark Phase 2 implemented via SPEC-002 while leaving the deferred migration runner, story records, and accepted-prose archive separation to later phases.
 - Deviations from the original plan: the manual browser dry-run was not performed during ticket 005 archival; automated route, storage, and web coverage proves the implemented surfaces. Root lint also required raising the explicit typescript-eslint default-project file-count guard after the new test files increased the analyzed test set.
 - Verification: `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` passed on 2026-06-05 before spec archival.

@@ -93,6 +93,22 @@ describe("ProjectPicker", () => {
     } satisfies OpenProjectRequest);
   });
 
+  it("renders request validation diagnostics", async () => {
+    createProjectMock.mockResolvedValue({
+      ok: false,
+      kind: "invalid-request",
+      message: "Project create request is invalid."
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Project" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "invalid-request: Project create request is invalid."
+    );
+  });
+
   it("creates a backup and surfaces the backup path", async () => {
     getProjectMock.mockResolvedValue(projectStatus satisfies ProjectOpenState);
     createBackupMock.mockResolvedValue({

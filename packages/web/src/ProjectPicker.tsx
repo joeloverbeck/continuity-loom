@@ -101,6 +101,12 @@ export function ProjectPicker(): React.JSX.Element {
   async function onBackup(): Promise<void> {
     setNotice(null);
     const result = await createBackup();
+
+    if (isFailure(result)) {
+      setNotice({ tone: "error", title: result.kind, message: result.message });
+      return;
+    }
+
     setBackupPath(result.backupPath);
     setNotice({
       tone: "success",
