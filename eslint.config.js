@@ -42,11 +42,16 @@ export default tseslint.config(
             "scripts/*.mjs",
             "packages/*/test/*.ts",
             "packages/*/src/*.test.ts"
-          ]
+          ],
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 32
         },
         tsconfigRootDir: import.meta.dirname
       }
     }
+  },
+  {
+    files: ["packages/server/src/*.test.ts"],
+    rules: tseslint.configs.disableTypeChecked.rules
   },
   {
     files: ["packages/core/src/**/*.{ts,tsx}"],

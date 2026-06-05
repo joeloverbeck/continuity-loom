@@ -90,6 +90,8 @@ The simplest supported backup story is:
 
 Because SQLite may use journal or WAL sidecar files while open, the app should also provide a simple “Create Backup Copy” workflow that uses SQLite’s backup/VACUUM-style mechanisms or otherwise guarantees a consistent copy without requiring the user to understand WAL files.
 
+SPEC-002 realizes the Phase 2 storage subset in code: explicit project folders, `continuity-loom.project.json`, canonical `loom.sqlite`, the app/schema version gate, and a timestamped `VACUUM INTO` backup workflow. The migration runner and accepted-prose archive separation remain later-phase work.
+
 V1 does not need a complex whole-project export system. It should provide enough backup/portability that a user can copy a project folder, move it to another machine with the app installed, and open it.
 
 Accepted prose export may exist as a simple reading/export affordance, but exported prose is not canonical continuity.

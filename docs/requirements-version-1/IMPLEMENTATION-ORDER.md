@@ -36,18 +36,20 @@ Phase gate:
 
 ## Phase 2 — Local project folder and SQLite storage foundation
 
+Status: ✅ Implemented via SPEC-002 (2026-06-05).
+
 Implement explicit create/open project folder behavior, project metadata parsing, canonical SQLite store open/create, version metadata, and basic backup/copy assumptions.
 
 Why before records: records need a stable project identity, canonical store, schema/version gate, and safe open/close lifecycle.
 
 Phase gate:
 
-- user can create/open a local project folder;
-- metadata and SQLite store are created/read;
-- invalid/missing project files produce clear diagnostics;
-- app knows project path/title/version;
-- API keys are not stored in the project;
-- no story records are required yet beyond minimal project metadata.
+- [x] user can create/open a local project folder;
+- [x] metadata and SQLite store are created/read;
+- [x] invalid/missing project files produce clear diagnostics;
+- [x] app knows project path/title/version;
+- [x] API keys are not stored in the project;
+- [x] no story records are required yet beyond minimal project metadata.
 
 ## Phase 3 — Typed data model and record identity/reference layer
 
