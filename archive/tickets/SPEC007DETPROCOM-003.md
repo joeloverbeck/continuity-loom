@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-003: Front-section resolvers (content_policy → secrets_and_reveal_constraints)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds dynamic resolvers for `compiler-contract.md` §3 sections 3–12 into the `@loom/core` compiler placeholder map.
@@ -134,3 +134,30 @@ scaffold's empty-state defaults).
 
 1. `npm test --workspace @loom/core` — targeted front-section tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Added front-section compiler resolvers for content policy, story contract, prose
+  mode, hard canon, current authoritative state, immediate handoff, manual
+  directive, POV/audience knowledge, and secret/reveal lanes.
+- Split empty-state constants into a standalone compiler module so resolver
+  registration stays acyclic.
+- Added front-section tests for populated source rendering, exact empty-state
+  fallback, accepted-prose handoff behavior, secret firewall behavior, and
+  deterministic output.
+- Raised the ESLint project-service default-project file cap from 32 to 64 because
+  this additional compiler test file crossed the previous repository threshold.
+
+Deviations from original plan:
+- `eslint.config.js` was updated to keep the root lint gate usable as the compiler
+  test suite grows.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 17 files, 118 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 42 files, 227 tests.
+- `npm run lint` passed.
+- `npm run build` passed, with Vite's large-chunk warning only.

@@ -1,7 +1,10 @@
 import type { ValidationSnapshot } from "../validation/snapshot.js";
+export { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
+import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
+import { FRONT_PLACEHOLDER_RESOLVERS } from "./sections/front.js";
 import type { PlaceholderResolver } from "./types.js";
 
-type PlaceholderName =
+export type PlaceholderName =
   | "active_action_pressure"
   | "active_cast_voice_pressure_pins"
   | "active_clocks"
@@ -88,111 +91,26 @@ type PlaceholderName =
   | "writer_visible_hidden_truths"
   | "writer_visible_or_non_pov_facts";
 
-export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = Object.freeze({
-  active_action_pressure: "None beyond detailed records below",
-  active_cast_voice_pressure_pins: "None active",
-  active_clocks: "None active",
-  active_consequences: "None active",
-  active_intentions: "None active",
-  active_knowledge_pressure: "None beyond detailed records below",
-  active_obligations: "None active",
-  active_onstage_full_cast_dossiers: "None active",
-  active_open_threads: "None active",
-  active_plans: "None active",
-  allowed_clues_and_surface_cues: "None specified",
-  allowed_content_scope: "None specified",
-  audience_does_not_know: "None specified",
-  audience_knows: "No audience knowledge distinct from POV specified",
-  available_time: "None currently specified",
-  begin_after: "None specified",
-  character_bias_handling: "None specified",
-  consent_or_force_conditions: "None currently specified",
-  content_intensity: "None specified",
-  current_location: "None currently specified",
-  current_locks: "None currently specified",
-  current_time: "None currently specified",
-  dialogue_density: "None specified",
-  dramatic_irony_permissions: "None specified",
-  entity_statuses: "None currently specified",
-  environmental_conditions: "None currently specified",
-  explicitness: "None specified",
-  forbidden_reveals: "None specified",
-  genre_mode: "None specified",
-  governing_policy_note: "None specified",
-  hard_canon_bullets: "None selected for this generation",
-  interiority_mode: "None specified",
-  language_output: "None specified",
-  language_register: "None specified",
-  last_visible_moment: "None specified",
-  line_of_sight_and_visibility: "None currently specified",
-  locations: "None specified",
-  manual_do_not_force: "None specified",
-  manual_may_render_if_naturally_caused: "None specified",
-  manual_must_render: "None specified",
-  material_pressure: "None beyond detailed records below",
-  non_pov_behavior_shaping_beliefs: "None specified",
-  objects: "None specified",
-  offstage_or_withheld_events: "None selected",
-  offstage_pressuring_entities: "None specified",
-  offstage_relevance_notes: "None",
-  onstage_entities: "None onstage",
-  paragraphing: "None specified",
-  person: "None specified",
-  physical_continuity: "None currently specified",
-  positions: "None currently specified",
-  possessions: "None currently specified",
-  pov_accessible_facts: "None beyond current state and hard canon",
-  pov_believes_suspects_misreads: "None specified",
-  pov_cannot_perceive_now: "None specified",
-  pov_character: "None specified",
-  pov_does_not_know: "None specified",
-  pov_knows: "None specified",
-  pov_relevant_beliefs: "None specified",
-  premise: "None specified",
-  present_minor_cast_notes: "None",
-  prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
-  psychic_distance: "None specified",
-  rating_label: "None specified",
-  recent_causal_context: "None; first local unit begins from current state",
-  recent_events: "None selected",
-  relationship_emotion_pressure: "None beyond detailed records below",
-  relevant_backstory: "None selected",
-  reveal_permissions: "No active secrets or reveal locks selected",
-  routes_and_exits: "None currently specified",
-  secret_holders: "No active secrets or reveal locks selected",
-  secret_non_holders_to_protect: "No active secrets or reveal locks selected",
-  setting_baseline: "None specified",
-  soft_unit_guidance: "None specified",
-  special_style_constraints: "None specified",
-  tense: "None specified",
-  title: "None specified",
-  tonal_handling: "None specified",
-  tone: "None specified",
-  unavailable_or_impossible_actions: "None specified",
-  visible_affordances: "None specified",
-  visible_conditions: "None currently specified",
-  voice_pressure: "None beyond detailed records below",
-  writer_visible_hidden_truths: "No active secrets or reveal locks selected",
-  writer_visible_or_non_pov_facts: "None"
-});
-
 function emptyResolver(placeholder: PlaceholderName): (snapshot: ValidationSnapshot) => string {
   return () => EMPTY_STATE_CONSTANTS[placeholder];
 }
 
 export const PLACEHOLDER_MAP: Readonly<Record<PlaceholderName, PlaceholderResolver>> = Object.freeze(
-  Object.fromEntries(
-    (Object.keys(EMPTY_STATE_CONSTANTS) as PlaceholderName[]).map((placeholder) => [
-      placeholder,
-      {
+  {
+    ...(Object.fromEntries(
+      (Object.keys(EMPTY_STATE_CONSTANTS) as PlaceholderName[]).map((placeholder) => [
         placeholder,
-        required: true,
-        missingBehavior: "block",
-        emptyState: EMPTY_STATE_CONSTANTS[placeholder],
-        resolve: emptyResolver(placeholder)
-      }
-    ])
-  ) as Record<PlaceholderName, PlaceholderResolver>
+        {
+          placeholder,
+          required: true,
+          missingBehavior: "block",
+          emptyState: EMPTY_STATE_CONSTANTS[placeholder],
+          resolve: emptyResolver(placeholder)
+        }
+      ])
+    ) as Record<PlaceholderName, PlaceholderResolver>),
+    ...FRONT_PLACEHOLDER_RESOLVERS
+  }
 );
 
 export function resolvePlaceholder(placeholder: string, snapshot: ValidationSnapshot): string {

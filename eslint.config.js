@@ -43,7 +43,7 @@ export default tseslint.config(
             "packages/*/test/*.ts",
             "packages/*/src/*.test.ts"
           ],
-          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 32
+          maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 64
         },
         tsconfigRootDir: import.meta.dirname
       }

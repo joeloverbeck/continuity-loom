@@ -14,7 +14,8 @@ export type {
   StoreCompatibility
 } from "./project-storage.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
-export { EMPTY_STATE_CONSTANTS, PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
+export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export { PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
 export type {
   CompileMetadata,
   CompileResult,
