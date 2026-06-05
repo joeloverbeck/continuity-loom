@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-004: Context-dependent matrix — knowledge/secret/POV rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/matrix-knowledge.ts`; appends to the `validation/rules` barrel.
@@ -79,3 +79,24 @@ Rule family 3 (one of four matrix clusters): the knowledge/secret/POV rows of th
 
 1. `npm test -- validation-matrix-knowledge`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the knowledge/secret/POV context-dependent matrix cluster:
+
+- Added `validation/rules/matrix-knowledge.ts` with tag-gated blockers for `introspection_expected`, `ambiguous_perception_expected`, `secret_or_clue_pressure`, and `non_pov_hidden_plan_behavior`.
+- Registered the knowledge matrix rule family in the validation rule barrel.
+- Added stable matrix diagnostic codes for incomplete introspection, ambiguous perception, secret/clue, and hidden-plan rows.
+- Added `packages/core/test/validation-matrix-knowledge.test.ts` covering tag-absent silence, tag-present clean silence, and tag-present missing-state blockers for each row.
+
+Deviation from original plan: non-POV interiority and ambiguous-perception limits are represented as deterministic current-lock text markers until a more structured dedicated field exists; no free-text inference or LLM evaluation is used.
+
+Verification:
+
+- `npm test -- validation-matrix-knowledge` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
