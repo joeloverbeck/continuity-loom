@@ -12,6 +12,7 @@ import { RecordIntegrityError } from "./record-repository.js";
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
+const idD = "019b0298-5c00-7000-8000-000000000004";
 const managers: ProjectStoreManager[] = [];
 
 async function tempParent(): Promise<string> {
@@ -32,6 +33,16 @@ function tableNames(databasePath: string): string[] {
         .prepare("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
         .all() as Array<{ name: string }>
     ).map((row) => row.name);
+  } finally {
+    database.close();
+  }
+}
+
+function recordsColumnTypes(databasePath: string): Record<string, string> {
+  const database = new DatabaseSync(databasePath);
+  try {
+    const rows = database.prepare("PRAGMA table_info(records)").all() as Array<{ name: string; type: string }>;
+    return Object.fromEntries(rows.map((row) => [row.name, row.type]));
   } finally {
     database.close();
   }
@@ -60,6 +71,7 @@ describe("SPEC-003 record tables and repository", () => {
         "story_config"
       ])
     );
+    expect(recordsColumnTypes(databasePath)).toMatchObject({ salience: "TEXT", urgency: "TEXT" });
 
     await storeManager.closeProject();
     const database = new DatabaseSync(databasePath);
@@ -161,6 +173,22 @@ describe("SPEC-003 record tables and repository", () => {
 
     expect(belief.salience).toBe("high");
     expect(secret.salience).toBe("critical");
+    const obligation = repository.createRecord({
+      type: "OBLIGATION",
+      displayLabel: "Obligation",
+      payload: {
+        id: idD,
+        status: "open",
+        obligation_kind: "promise",
+        owed_by: [idD],
+        owed_to: [idB],
+        urgency: "high",
+        terms: "A must keep the signal lit.",
+        consequence_if_broken: "B loses the route.",
+        visibility: "shared"
+      }
+    });
+    expect(obligation.urgency).toBe("high");
     const database = new DatabaseSync(join(status.folderPath, "loom.sqlite"));
     try {
       expect(
@@ -169,6 +197,9 @@ describe("SPEC-003 record tables and repository", () => {
       expect(
         database.prepare("SELECT salience FROM records WHERE id = ?").get(secret.id)
       ).toEqual({ salience: "critical" });
+      expect(
+        database.prepare("SELECT urgency FROM records WHERE id = ?").get(obligation.id)
+      ).toEqual({ urgency: "high" });
     } finally {
       database.close();
     }

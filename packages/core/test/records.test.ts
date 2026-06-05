@@ -107,13 +107,37 @@ describe("record data model", () => {
         type: "FACT",
         displayLabel: "Known fact",
         status: "active",
-        salience: 3,
-        urgency: null,
+        salience: "high",
+        urgency: "medium",
         createdAt: "2026-06-05T00:00:00.000Z",
         updatedAt: "2026-06-05T00:00:00.000Z",
         archived: false
       })
     ).toMatchObject({ id: idA });
+
+    expect(() =>
+      recordMetadataSchema.parse({
+        id: idA,
+        type: "FACT",
+        displayLabel: "Known fact",
+        salience: 3,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        archived: false
+      })
+    ).toThrow();
+
+    expect(() =>
+      recordMetadataSchema.parse({
+        id: idA,
+        type: "OBLIGATION",
+        displayLabel: "Known obligation",
+        urgency: 2,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        archived: false
+      })
+    ).toThrow();
 
     expect(() =>
       recordMetadataSchema.parse({

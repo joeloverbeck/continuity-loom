@@ -19,8 +19,8 @@ export interface RecordRepositoryRecord {
   type: string;
   displayLabel: string;
   status: string | null;
-  salience: string | number | null;
-  urgency: string | number | null;
+  salience: string | null;
+  urgency: string | null;
   archived: boolean;
   userOrder: number | null;
   createdAt: string;
@@ -95,8 +95,8 @@ function boolFromInteger(value: unknown): boolean {
   return value === 1;
 }
 
-function normalizeProjection(value: unknown): string | number | null {
-  return typeof value === "number" || typeof value === "string" ? value : null;
+function normalizeProjection(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
 }
 
 function rowToRecord(row: Record<string, unknown>, payload: unknown): RecordRepositoryRecord {
@@ -135,8 +135,8 @@ export class RecordRepository {
     const id = recordIdFromPayload(input.type, payload);
     const timestamp = nowIso();
     const status = projectRecordStatus(input.type, payload);
-    const salience = projectRecordSalience(input.type, payload);
-    const urgency = projectRecordUrgency(input.type, payload);
+    const salience = normalizeProjection(projectRecordSalience(input.type, payload));
+    const urgency = normalizeProjection(projectRecordUrgency(input.type, payload));
 
     this.database.exec("BEGIN IMMEDIATE");
     try {
@@ -194,8 +194,8 @@ export class RecordRepository {
     const displayLabel = input.displayLabel ?? String(existing.display_label);
     const userOrder = input.userOrder ?? (typeof existing.user_order === "number" ? existing.user_order : null);
     const status = projectRecordStatus(type, payload);
-    const salience = projectRecordSalience(type, payload);
-    const urgency = projectRecordUrgency(type, payload);
+    const salience = normalizeProjection(projectRecordSalience(type, payload));
+    const urgency = normalizeProjection(projectRecordUrgency(type, payload));
 
     this.database.exec("BEGIN IMMEDIATE");
     try {
