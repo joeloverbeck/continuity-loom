@@ -1,6 +1,6 @@
 # SPEC-001 — Repository and Runtime Foundation
 
-Status: Proposed
+Status: COMPLETED
 Phase: Implementation Order Phase 1
 Date: 2026-06-05
 Governing authority: `docs/FOUNDATIONS.md`
@@ -266,3 +266,28 @@ The stack premises in this spec derive from the already-researched `docs/require
 - Vitest: https://vitest.dev/
 
 Per `README-SPEC-INDEX.md`, the uploaded source hierarchy (FOUNDATIONS → compiler-contract → prompt-template → rationale → schema → stress-suite) wins over research; research selects tools, not continuity authority.
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the Phase 1 repository/runtime foundation through archived tickets
+`SPEC001REPRUNFOU-001` through `SPEC001REPRUNFOU-008`: npm workspace root,
+Node 24 engine pin, strict TypeScript/ESM baseline, ESLint/Prettier/Vitest
+tooling, pure `@loom/core` with enforced no-Node/no-framework boundary,
+Fastify loopback `@loom/server` with `/api/health` and `/api/version`, inert
+settings boundary, React + Vite `@loom/web` placeholder cockpit, dev proxy,
+single-port production launch, best-effort browser open, and requirements-doc
+completion annotations.
+
+Deviation from the original plan: the core boundary scanner lives under
+`packages/core/test/` instead of `packages/core/src/` so production core source
+can remain genuinely free of `node:*` imports while the scanner itself uses
+Node filesystem APIs.
+
+Verification results: `npm run typecheck`, `npm run lint`, `npm test`, `npm run
+build`, `npm audit --omit=dev`, `git diff --check`, package-local core/server/web
+tests, a negative core-boundary import check, and a localhost production launch
+smoke all passed. The local shell used Node 22.17.0, so `npm install` correctly
+reported the expected `engines.node >=24` warning while still allowing
+verification commands to run.

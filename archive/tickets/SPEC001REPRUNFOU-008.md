@@ -13,7 +13,7 @@ When Phase 1's gate passes, the requirements docs must record the work as done s
 ## Assumption Reassessment (2026-06-05)
 
 1. `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` exists with a "## Phase 1 — Repository and runtime foundation" heading and a five-bullet "Phase gate:" block (verified this session). `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` exists with "Recommended v1 stack" / "Done Means" sections.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §"Requirements-doc updates on completion" specifies exactly these two edits and explicitly states no other `docs/requirements-version-1/*` file is marked done by this spec.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §"Requirements-doc updates on completion" specifies exactly these two edits and explicitly states no other `docs/requirements-version-1/*` file is marked done by this spec.
 3. Shared boundary under audit: the requirements-doc ledger. This ticket annotates completion; it must not alter the ordering rationale, later phases, or the deferred (storage/OpenRouter/packaging) decisions.
 4. §20 (durable change & human gatekeeping / no silent retcon): the edits are *additive completion annotations* (a status line + checked gate bullets + a realized-in-code note), not a rewrite of the original decisions — the causal narrative of the docs is preserved. This is the change rationale required for modifying existing committed docs.
 

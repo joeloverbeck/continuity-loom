@@ -13,7 +13,7 @@ Phase 1 is defined by its gate. This capstone ticket exercises the §Verificatio
 ## Assumption Reassessment (2026-06-05)
 
 1. By this point 001–006 have landed: boundary test (002), server smoke test (003), web component test (004), settings test (005), launch path (006). This ticket only aggregates and adds the manual launch check; it grep-verifies the prior surfaces exist rather than re-implementing them. `Deps: 005, 006` is the leaf set whose transitive `Deps` cover the full chain (005→003→002→001; 006→001,003,004→002).
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §Verification / §Done Means enumerate the gate: boundary test, server smoke test, build/typecheck/lint green, manual launch check showing health/version; `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` Phase 1 gate lists the five gate bullets.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §Verification / §Done Means enumerate the gate: boundary test, server smoke test, build/typecheck/lint green, manual launch check showing health/version; `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` Phase 1 gate lists the five gate bullets.
 3. Shared boundary under audit: the full Phase-1 pipeline (core boundary → server API → web shell → launch). Each gate bullet maps to a distinct proof surface; they are not collapsed into one generic "it works" check.
 
 ## Architecture Check
