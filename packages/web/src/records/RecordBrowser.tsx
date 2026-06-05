@@ -13,6 +13,7 @@ import {
   type RecordDetail,
   type RecordSummary
 } from "../api.js";
+import { CastMemberEditor } from "./CastMemberEditor.js";
 
 const columns: Array<ColumnDef<RecordSummary>> = [
   { accessorKey: "type", header: "Type" },
@@ -57,6 +58,7 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
 export function RecordBrowser(): React.JSX.Element {
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
+  const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: "",
@@ -136,6 +138,24 @@ export function RecordBrowser(): React.JSX.Element {
 
   const availableGroupingOptions = groupingOptions(filters.type);
 
+  if (castEditorRecord !== undefined) {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="records-title">
+        <button type="button" className="linkButton" onClick={() => setCastEditorRecord(undefined)}>
+          Back to records
+        </button>
+        <CastMemberEditor
+          {...(castEditorRecord ? { record: castEditorRecord } : {})}
+          referenceRecords={records}
+          onSaved={(savedRecord) => {
+            setSelectedRecord(savedRecord);
+            setCastEditorRecord(undefined);
+          }}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="surface recordBrowser" aria-labelledby="records-title">
       <div className="projectHeader">
@@ -206,7 +226,15 @@ export function RecordBrowser(): React.JSX.Element {
 
           <div className="createRail" aria-label="Create from template">
             {recordTypes.map((recordType) => (
-              <button key={recordType} type="button">
+              <button
+                key={recordType}
+                type="button"
+                onClick={() => {
+                  if (recordType === "CAST MEMBER") {
+                    setCastEditorRecord(null);
+                  }
+                }}
+              >
                 Create {recordType}
               </button>
             ))}
@@ -271,6 +299,11 @@ export function RecordBrowser(): React.JSX.Element {
               </dl>
               {"payload" in selectedRecord ? (
                 <pre className="payloadPreview">{JSON.stringify(selectedRecord.payload, null, 2)}</pre>
+              ) : null}
+              {selectedRecord.type === "CAST MEMBER" && "payload" in selectedRecord ? (
+                <button type="button" onClick={() => setCastEditorRecord(selectedRecord)}>
+                  Edit CAST MEMBER
+                </button>
               ) : null}
             </>
           ) : (

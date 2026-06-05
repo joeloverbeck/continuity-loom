@@ -8,7 +8,6 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
 import {
-  useFieldArray,
   useForm,
   type FieldErrors,
   type FieldValues,
@@ -16,6 +15,7 @@ import {
   type UseFormRegister,
   type UseFormReturn
 } from "react-hook-form";
+import { z } from "zod";
 
 import {
   createRecord,
@@ -25,7 +25,7 @@ import {
   type RecordSummary
 } from "../api.js";
 
-interface RecordEditorProps {
+export interface RecordEditorProps {
   recordType: string;
   record?: RecordDetail;
   referenceRecords?: readonly RecordSummary[];
@@ -76,6 +76,52 @@ function fieldDefault(field: FieldDescriptor): unknown {
 function defaultValues(fields: readonly FieldDescriptor[], payload: unknown): FormValues {
   return Object.fromEntries(
     fields.map((field) => [field.name, valueAtPath(payload, field.name) ?? fieldDefault(field)])
+  );
+}
+
+function isBlank(value: unknown): boolean {
+  return value === undefined || value === "";
+}
+
+function pruneFieldValue(field: FieldDescriptor, value: unknown): unknown {
+  if (field.kind === "list") {
+    const items: unknown[] = Array.isArray(value) ? value as unknown[] : [];
+    return items.length > 0
+      ? items
+          .map((item: unknown) => (field.itemDescriptor ? pruneFieldValue(field.itemDescriptor, item) : item))
+          .filter((item) => !isBlank(item))
+      : [];
+  }
+
+  if (field.kind === "nested_group") {
+    const source = typeof value === "object" && value !== null ? value as Record<string, unknown> : {};
+    const pruned = Object.fromEntries(
+      (field.fields ?? [])
+        .map((child) => [child.name, pruneFieldValue(child, source[child.name])] as const)
+        .filter(([, childValue]) => !isBlank(childValue))
+    );
+
+    if (!field.required && Object.keys(pruned).length === 0) {
+      return undefined;
+    }
+
+    return pruned;
+  }
+
+  if (!field.required && value === "") {
+    return undefined;
+  }
+
+  return value;
+}
+
+function prunePayload(values: unknown, fields: readonly FieldDescriptor[]): FormValues {
+  const source = typeof values === "object" && values !== null ? values as Record<string, unknown> : {};
+
+  return Object.fromEntries(
+    fields
+      .map((field) => [field.name, pruneFieldValue(field, source[field.name])] as const)
+      .filter(([, value]) => !isBlank(value))
   );
 }
 
@@ -201,16 +247,25 @@ function ListField({
   referenceRecords: readonly RecordSummary[];
   serverIssues: Map<string, string>;
 }): React.JSX.Element {
-  const { fields, append, remove } = useFieldArray({ control: form.control, name: path as never });
   const item = field.itemDescriptor;
+  const value = form.watch(path) as unknown;
+  const items: unknown[] = Array.isArray(value) ? value as unknown[] : [];
+
+  function appendItem(): void {
+    form.setValue(path, [...items, fieldDefault(item ?? field)], { shouldDirty: true });
+  }
+
+  function removeItem(index: number): void {
+    form.setValue(path, items.filter((_, itemIndex) => itemIndex !== index), { shouldDirty: true });
+  }
 
   return (
     <div className="listField">
-      {fields.map((row, index) => (
-        <div className="listRow" key={row.id}>
+      {items.map((_, index) => (
+        <div className="listRow" key={`${path}.${index}`}>
           {item ? (
             <FieldRenderer
-              field={{ ...item, name: String(index), required: true }}
+              field={{ ...item, name: `${field.name} ${index + 1}`, required: true }}
               path={`${path}.${index}`}
               form={form}
               referenceRecords={referenceRecords}
@@ -218,12 +273,12 @@ function ListField({
               listItem
             />
           ) : null}
-          <button type="button" aria-label={`Remove ${field.name} ${index + 1}`} onClick={() => remove(index)}>
+          <button type="button" aria-label={`Remove ${field.name} ${index + 1}`} onClick={() => removeItem(index)}>
             Remove
           </button>
         </div>
       ))}
-      <button type="button" aria-label={`Add ${field.name}`} onClick={() => append(fieldDefault(item ?? field))}>
+      <button type="button" aria-label={`Add ${field.name}`} onClick={appendItem}>
         Add {field.name}
       </button>
     </div>
@@ -327,7 +382,7 @@ export function RecordEditor({
   const [serverError, setServerError] = useState<ApiFailure | null>(null);
   const serverIssues = useMemo(() => serverIssuesByPath(serverError), [serverError]);
   const resolver = definition
-    ? (zodResolver(definition.payloadSchema as never) as Resolver<FormValues>)
+    ? (zodResolver(z.preprocess((values) => prunePayload(values, descriptor?.fields ?? []), definition.payloadSchema) as never) as Resolver<FormValues>)
     : undefined;
   const formOptions = {
     defaultValues: descriptor ? defaultValues(descriptor.fields, record?.payload) : {},
