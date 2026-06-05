@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-004: `@loom/web` React + Vite UI shell and dev proxy
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/web` (`@loom/web`) React + Vite app depending on `@loom/core` for types; Vite `/api` dev proxy
@@ -13,7 +13,7 @@ Phase 1 needs a minimal browser cockpit so the launch gate is observably pass/fa
 ## Assumption Reassessment (2026-06-05)
 
 1. `packages/web` does not exist; `@loom/core` (002) provides shared types. `react`, `react-dom`, `vite` are net-new deps of this package only.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/web` requires: React + Vite TS, a placeholder screen (app name + health/version), no routing/state/design-system libraries, depends on `core` for types only, and must not import `server`; §Edge cases require a "cannot reach local server" state, not a blank page. `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` confirms React + Vite and that TanStack Table/Form are deferred to later phases.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/web` requires: React + Vite TS, a placeholder screen (app name + health/version), no routing/state/design-system libraries, depends on `core` for types only, and must not import `server`; §Edge cases require a "cannot reach local server" state, not a blank page. `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` confirms React + Vite and that TanStack Table/Form are deferred to later phases.
 3. Shared boundary under audit: `web → core` (types only) and `web ↛ server`. Confirm `web` imports no `server` symbol (it talks to the server only over HTTP `/api`).
 4. The Phase-1 UI is intentionally pre-`UI-WORKFLOWS.md` (per the spec's §Non-goals note) — placeholder only; none of the record-editing/working-set workflows are realized here.
 
@@ -78,3 +78,13 @@ Phase 1 needs a minimal browser cockpit so the launch gate is observably pass/fa
 
 1. `npm run test --workspace @loom/web`
 2. `npm run build --workspace @loom/web && npm run typecheck --workspace @loom/web`
+
+## Outcome
+
+Implemented `@loom/web` as a React + Vite placeholder cockpit with a `/api`
+dev proxy to the loopback server, health/version fetching, and a clear
+unreachable-server state. Added component tests for the success and failure
+paths. Verified with `npm run test --workspace @loom/web`, `npm run build
+--workspace @loom/web`, `npm run typecheck --workspace @loom/web`, `npm run
+lint --workspace @loom/web`, and a grep check confirming no `@loom/server`
+imports or deferred routing/state/design-system dependencies.

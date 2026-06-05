@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-003: `@loom/server` localhost Fastify server and stub API
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server` (`@loom/server`) depending on `@loom/core` and `fastify`; stub `/api/health` + `/api/version`; server smoke test
@@ -13,7 +13,7 @@ Phase 1 needs a localhost-only transport boundary that serves the built UI and a
 ## Assumption Reassessment (2026-06-05)
 
 1. `packages/server` does not exist; `@loom/core` (from 002) provides the `versionInfo` type the `/api/version` payload renders. `fastify` and `zod` are net-new dependencies of this package only (not of `core`).
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/server` fixes Fastify (encapsulated in `server`, not leaked into `core`), loopback-only bind (`127.0.0.1`, never `0.0.0.0`/LAN), the two stub endpoints, and the no-secret logging default; `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` §Security confirms localhost-only + no logging of keys/prompts/prose/record payloads. Zod is the project standard for transport-edge payload validation in Phase 1.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/server` fixes Fastify (encapsulated in `server`, not leaked into `core`), loopback-only bind (`127.0.0.1`, never `0.0.0.0`/LAN), the two stub endpoints, and the no-secret logging default; `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` §Security confirms localhost-only + no logging of keys/prompts/prose/record payloads. Zod is the project standard for transport-edge payload validation in Phase 1.
 3. Shared boundary under audit: the `server → core` edge (one-way) and the HTTP boundary the core must never depend on. Confirm `core` does not import `server`.
 4. FOUNDATIONS principles motivating: §23 / §29.9 (OpenRouter & secrets — logging must never emit keys/prompts/prose/payloads) and §29.10 (local-first — localhost-only, no LAN exposure). Restated before implementation.
 5. Secret-firewall surface (§15/§23): no secret is *handled* in Phase 1, but the logging configuration is the firewall's first brick. Confirm the default log serializer omits request bodies / would-be-secret fields, so the firewall is not weakened the moment secrets arrive in Phase 9.
@@ -86,3 +86,13 @@ Configure the logger so API keys, prompts, candidate/accepted prose, and full re
 
 1. `npm run test --workspace @loom/server`
 2. `npm run typecheck --workspace @loom/server && npm run lint --workspace @loom/server`
+
+## Outcome
+
+Implemented `@loom/server` with a Fastify app factory, loopback-only listen
+helper, `/api/health`, and `/api/version` sourced from `@loom/core` and parsed
+through Zod schemas. Configured the server logger to omit request bodies and
+redact future secret/prose/payload paths by default. Verified with
+`npm run test --workspace @loom/server`, `npm run typecheck --workspace
+@loom/server`, `npm run lint --workspace @loom/server`, and grep checks showing
+no LAN bind literal and no secret handling beyond redaction path names.

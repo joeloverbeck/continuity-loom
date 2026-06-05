@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-008: Requirements-doc completion updates
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — docs only: `IMPLEMENTATION-ORDER.md` Phase 1 status/gate, `TECHNOLOGY-DECISIONS.md` Phase-1-realized note
@@ -13,7 +13,7 @@ When Phase 1's gate passes, the requirements docs must record the work as done s
 ## Assumption Reassessment (2026-06-05)
 
 1. `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` exists with a "## Phase 1 — Repository and runtime foundation" heading and a five-bullet "Phase gate:" block (verified this session). `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` exists with "Recommended v1 stack" / "Done Means" sections.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §"Requirements-doc updates on completion" specifies exactly these two edits and explicitly states no other `docs/requirements-version-1/*` file is marked done by this spec.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §"Requirements-doc updates on completion" specifies exactly these two edits and explicitly states no other `docs/requirements-version-1/*` file is marked done by this spec.
 3. Shared boundary under audit: the requirements-doc ledger. This ticket annotates completion; it must not alter the ordering rationale, later phases, or the deferred (storage/OpenRouter/packaging) decisions.
 4. §20 (durable change & human gatekeeping / no silent retcon): the edits are *additive completion annotations* (a status line + checked gate bullets + a realized-in-code note), not a rewrite of the original decisions — the causal narrative of the docs is preserved. This is the change rationale required for modifying existing committed docs.
 
@@ -70,3 +70,12 @@ Add a one-line note (near "Recommended v1 stack" / "Done Means") that the Phase-
 
 1. `grep -n "SPEC-001" docs/requirements-version-1/IMPLEMENTATION-ORDER.md docs/requirements-version-1/TECHNOLOGY-DECISIONS.md`
 2. `git diff --stat docs/requirements-version-1/`
+
+## Outcome
+
+Updated the requirements ledger after the Phase 1 gate passed. Added the
+SPEC-001 completion status and checked Phase 1 gate bullets in
+`IMPLEMENTATION-ORDER.md`, and added one Phase-1-realized stack note in
+`TECHNOLOGY-DECISIONS.md`. Verified with the requested `grep -n "SPEC-001" ...`
+and `git diff --stat docs/requirements-version-1/`, which showed only those two
+requirements docs changed.

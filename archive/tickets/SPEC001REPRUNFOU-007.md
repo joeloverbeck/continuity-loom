@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-007: Phase-1 gate verification (capstone)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: None — verification-only; exercises 001–006 end-to-end and adds no production logic
@@ -13,7 +13,7 @@ Phase 1 is defined by its gate. This capstone ticket exercises the §Verificatio
 ## Assumption Reassessment (2026-06-05)
 
 1. By this point 001–006 have landed: boundary test (002), server smoke test (003), web component test (004), settings test (005), launch path (006). This ticket only aggregates and adds the manual launch check; it grep-verifies the prior surfaces exist rather than re-implementing them. `Deps: 005, 006` is the leaf set whose transitive `Deps` cover the full chain (005→003→002→001; 006→001,003,004→002).
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §Verification / §Done Means enumerate the gate: boundary test, server smoke test, build/typecheck/lint green, manual launch check showing health/version; `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` Phase 1 gate lists the five gate bullets.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §Verification / §Done Means enumerate the gate: boundary test, server smoke test, build/typecheck/lint green, manual launch check showing health/version; `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` Phase 1 gate lists the five gate bullets.
 3. Shared boundary under audit: the full Phase-1 pipeline (core boundary → server API → web shell → launch). Each gate bullet maps to a distinct proof surface; they are not collapsed into one generic "it works" check.
 
 ## Architecture Check
@@ -70,3 +70,13 @@ Add an optional end-to-end smoke that boots the launch and hits `/api/health` + 
 
 1. `npm run typecheck && npm run lint && npm test && npm run build`
 2. `npm start` (manual runbook per What to Change)
+
+## Outcome
+
+Added `packages/server/src/gate.e2e.test.ts` to verify the required root
+scripts and the one-origin launch path for built assets, `/api/health`, and
+`/api/version`. Verified the Phase 1 gate with `npm run test --workspace
+@loom/server`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`,
+and `git diff --check`. The production launch path was also smoke-tested during
+SPEC001REPRUNFOU-006 with `node packages/server/dist/launch.js --port 0
+--no-open`, confirming the printed loopback URL served the built page and API.

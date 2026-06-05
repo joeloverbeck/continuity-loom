@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-002: `@loom/core` pure domain layer and boundary enforcement
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/core` (`@loom/core`); ESLint `no-restricted-imports` boundary rule; Vitest boundary test
@@ -13,7 +13,7 @@ The constitutional payoff of Phase 1 is a deterministic domain core that is *pro
 ## Assumption Reassessment (2026-06-05)
 
 1. `packages/core` does not exist yet (001 creates only the workspace root). `@loom/core` is net-new. This ticket modifies `eslint.config.js` (created `(new)` by 001 in this batch) to add the core-scoped boundary override — hence the explicit `Deps: 001`.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/core` requires the boundary to forbid the **entire `node:*` namespace** (not a partial blocklist) plus `fastify`, `react`, `vite`; §Boundary enforcement lists the three layers (workspace graph, lint rule, boundary test). `docs/requirements-version-1/TESTING-STRATEGY.md` ("the domain core should be testable without the UI and without network") is the testability authority.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §`packages/core` requires the boundary to forbid the **entire `node:*` namespace** (not a partial blocklist) plus `fastify`, `react`, `vite`; §Boundary enforcement lists the three layers (workspace graph, lint rule, boundary test). `docs/requirements-version-1/TESTING-STRATEGY.md` ("the domain core should be testable without the UI and without network") is the testability authority.
 3. Shared boundary under audit: the `core → (nothing internal; no I/O)` edge. This ticket owns layers 2–3 of its enforcement; layer 1 (workspace graph) is 001.
 4. FOUNDATIONS principle motivating: §4.4 / §8 deterministic compilation — the compiler must be a deterministic renderer with no I/O and no LLM intermediary. A pure core is the structural precondition. Restated before trusting the spec narrative.
 5. Deterministic-compilation enforcement surface: the boundary test is the gate. It must match `node:*` by **namespace prefix**, not an enumerated list, so an I/O module nobody blocklisted (`node:fs/promises`, `node:child_process`) cannot silently re-enter. No secret-firewall surface is touched yet (§15 N/A — no POV/secret handling in Phase 1); determinism is *enabled*, not weakened.
@@ -82,3 +82,14 @@ ESLint override scoped to `packages/core/**` using `no-restricted-imports` with 
 
 1. `npm run lint --workspace @loom/core && npm run test --workspace @loom/core`
 2. `npm run typecheck --workspace @loom/core`
+
+## Outcome
+
+Implemented `@loom/core` with pure version metadata exports and no internal
+dependencies. Added a core-scoped ESLint boundary rule for `node:*`, `fastify`,
+`react`, and `vite`, plus a Vitest scanner that checks production core source
+for forbidden imports by namespace/pattern. Verified the positive gates with
+`npm run lint --workspace @loom/core`, `npm run test --workspace @loom/core`,
+and `npm run typecheck --workspace @loom/core`; verified the negative case by
+temporarily adding `import "node:fs"` under `packages/core/src/` and confirming
+both lint and the boundary test failed before removing the fixture.

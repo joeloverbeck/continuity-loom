@@ -14,6 +14,10 @@ This spec does not mandate a desktop package, cloud backend, collaboration servi
 
 ## Recommended v1 stack
 
+SPEC-001 realizes the Phase 1 stack in code: Node 24 LTS + TypeScript baseline,
+React + Vite local UI, WSL2-oriented Node launch path, npm workspaces, Fastify
+localhost server, and Vitest verification.
+
 ### Runtime and language
 
 Use **TypeScript on Node.js 24 LTS** as the v1 runtime foundation.

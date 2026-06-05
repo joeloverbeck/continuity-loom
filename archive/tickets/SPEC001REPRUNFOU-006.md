@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-006: Single-port production launch and dev orchestration
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — root `dev`/`build`/`start` scripts; single-port production launch (Node serves built web + opens browser); port-in-use handling
@@ -13,7 +13,7 @@ Phase 1's gate is "app launches locally from Node and opens in browser." This ti
 ## Assumption Reassessment (2026-06-05)
 
 1. Root `package.json` exists (created `(new)` by 001) with `typecheck`/`lint`/`test`; this ticket adds `dev`/`build`/`start` to it — a create-then-modify chain, hence the explicit `Deps: 001`. `@loom/server` (003) serves assets; `@loom/web` (004) provides the built `dist/`. `.gitignore` already ignores `dist/` (added by 001), so this ticket does not re-touch it.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §Key decisions #3 (single-port production, dual-port dev), §Edge cases, and §Done Means require: print the localhost URL prominently; **best-effort** browser auto-open (on WSL2 without a default browser, opening the printed URL manually still satisfies the gate); port-in-use fails with a clear, actionable message naming the port and must not silently bind elsewhere.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §Key decisions #3 (single-port production, dual-port dev), §Edge cases, and §Done Means require: print the localhost URL prominently; **best-effort** browser auto-open (on WSL2 without a default browser, opening the printed URL manually still satisfies the gate); port-in-use fails with a clear, actionable message naming the port and must not silently bind elsewhere.
 3. Shared boundary under audit: the launch couples `server` (serves `web/dist` + `/api`) and `web` (built assets). Confirm the server's static root points at `@loom/web`'s build output and the dev proxy target matches the server's loopback port.
 4. FOUNDATIONS principle motivating: §29.10 / §24 local-first — the launch binds localhost only and opens a local browser; no cloud, account, or remote authority. Restated before implementation.
 
@@ -78,3 +78,15 @@ On `EADDRINUSE`, fail with a clear message naming the port; never silently bind 
 
 1. `npm run build && npm start` (manual: confirm the placeholder shows health/version; confirm the printed URL)
 2. `npm run dev` (manual: confirm HMR + `/api` proxy)
+
+## Outcome
+
+Implemented root `dev`, `build`, and `start` scripts; a two-process dev helper;
+and a production launch path in `@loom/server` that serves built web assets and
+the stub API on one loopback origin. The launcher prints the localhost URL,
+best-effort opens the browser unless `--no-open` is supplied, and fails clearly
+when the requested port is occupied. Verified with `npm run test --workspace
+@loom/server`, `npm run typecheck --workspace @loom/server`, `npm run lint
+--workspace @loom/server`, `npm run build`, `npm audit --omit=dev`, root script
+inspection, and an escalated localhost smoke of `node packages/server/dist/launch.js
+--port 0 --no-open` showing the built page and `/api/health` on the same origin.

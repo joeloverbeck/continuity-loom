@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-001: Workspace root, baseline tooling, and Node pin
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — introduces the monorepo root: `package.json` (npm workspaces), `tsconfig.base.json`, ESLint flat config, Prettier, Vitest, `.nvmrc`
@@ -13,7 +13,7 @@ Continuity Loom has no runtime skeleton yet. Every later phase (storage, data mo
 ## Assumption Reassessment (2026-06-05)
 
 1. The repo currently has no root `package.json`, `tsconfig.base.json`, `.nvmrc`, or `packages/` directory (repo root holds only `.claude`, `docs`, `specs`, `tickets`, `reports`, `archive`, `README.md`, `LICENSE`, `.gitignore`). All paths in this ticket are net-new; none collide.
-2. `specs/SPEC-001-repository-and-runtime-foundation.md` §Architecture and §Recommended stack fix the Phase-1 sub-tooling: npm workspaces, TypeScript strict + ESM, Vitest, ESLint flat config + Prettier; §Scope and §Done Means require `engines.node >= 24` + `.nvmrc`. `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` confirms Node 24 LTS + TypeScript baseline.
+2. `archive/specs/SPEC-001-repository-and-runtime-foundation.md` §Architecture and §Recommended stack fix the Phase-1 sub-tooling: npm workspaces, TypeScript strict + ESM, Vitest, ESLint flat config + Prettier; §Scope and §Done Means require `engines.node >= 24` + `.nvmrc`. `docs/requirements-version-1/TECHNOLOGY-DECISIONS.md` confirms Node 24 LTS + TypeScript baseline.
 3. Shared boundary under audit: the **one-way dependency direction** (`web→core`, `server→core`, `core→nothing internal`). The root workspace graph is layer 1 of the three-layer boundary enforcement; this ticket sets up the workspace glob so the package manager can enforce it, but the lint rule + boundary test (layers 2–3) land in SPEC001REPRUNFOU-002 against `core`.
 4. FOUNDATIONS principle motivating the multi-package split: §4.4 / §8 deterministic compilation — hard module boundaries make the future deterministic core *structurally* unable to import I/O, not merely advised to avoid it. This ticket creates the structural substrate; it adds no enforcement logic itself.
 
@@ -87,3 +87,10 @@ ESLint flat config (`eslint.config.js`) + Prettier config at root with TypeScrip
 
 1. `npm install && npm run typecheck --if-present`
 2. `cat .nvmrc && npm pkg get engines.node workspaces`
+
+## Outcome
+
+Implemented the npm workspace root, Node 24 engine pin, shared strict TypeScript
+base config, ESLint/Prettier/Vitest baseline, and root no-op workspace script
+runner. Verified with `npm run lint --if-present`, `npm run test --if-present`,
+`npm run typecheck --if-present`, and `npm pkg get engines.node workspaces`.

@@ -1,0 +1,74 @@
+import { versionInfo } from "@loom/core";
+import Fastify, { type FastifyInstance } from "fastify";
+import type { AddressInfo } from "node:net";
+
+import { healthResponseSchema, versionInfoSchema } from "./version-schema.js";
+
+export const LOOPBACK_HOST = "127.0.0.1";
+
+export interface ServerOptions {
+  logger?: boolean;
+}
+
+export interface StartedServer {
+  app: FastifyInstance;
+  address: AddressInfo;
+  close: () => Promise<void>;
+}
+
+export function createServer(options: ServerOptions = {}): FastifyInstance {
+  const app = Fastify({
+    logger: options.logger
+      ? {
+          level: "warn",
+          redact: {
+            paths: [
+              "req.headers.authorization",
+              "req.headers.cookie",
+              "apiKey",
+              "api_key",
+              "prompt",
+              "candidateProse",
+              "acceptedProse",
+              "recordPayload"
+            ],
+            censor: "[redacted]"
+          },
+          serializers: {
+            req(request) {
+              return {
+                method: request.method,
+                url: request.url,
+                hostname: request.hostname,
+                remoteAddress: request.ip
+              };
+            }
+          }
+        }
+      : false
+  });
+
+  app.get("/api/health", () => healthResponseSchema.parse({ status: "ok" }));
+  app.get("/api/version", () => versionInfoSchema.parse(versionInfo));
+
+  return app;
+}
+
+export async function startServer(port: number, options: ServerOptions = {}): Promise<StartedServer> {
+  const app = createServer(options);
+
+  await app.listen({ host: LOOPBACK_HOST, port });
+
+  const address = app.server.address();
+
+  if (!address || typeof address === "string") {
+    await app.close();
+    throw new Error("Server did not bind to a TCP address.");
+  }
+
+  return {
+    app,
+    address,
+    close: () => app.close()
+  };
+}
