@@ -32,7 +32,7 @@ export const currentAuthoritativeStateSchema = z
     current_time: nonemptyString,
     current_location: z.union([recordId, nonemptyString]),
     onstage_entities: z.array(recordId),
-    offstage_pressuring_entities: z.array(recordId).default([]),
+    offstage_pressuring_entities: z.array(recordId),
     positions: z.union([nonemptyString, z.array(nonemptyString)]),
     possessions: z.union([nonemptyString, z.array(nonemptyString)]),
     visible_conditions: z.array(nonemptyString),

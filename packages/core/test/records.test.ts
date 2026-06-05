@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   castMemberSchema,
+  currentAuthoritativeStateSchema,
   extractRecordReferences,
   factSchema,
   generateRecordId,
@@ -235,6 +236,37 @@ describe("record data model", () => {
     });
 
     expect(session.immediate_handoff?.last_visible_moment).toBe("At the door");
+  });
+
+  it("requires explicit offstage pressuring entities in current authoritative state", () => {
+    const currentStatePayload = {
+      current_time: "Night",
+      current_location: idA,
+      onstage_entities: [idA],
+      offstage_pressuring_entities: [],
+      positions: "A stands at the door.",
+      possessions: "A has the key.",
+      visible_conditions: ["Rain on the glass."],
+      environmental_conditions: "The hallway is cold.",
+      entity_statuses: [idA],
+      line_of_sight_and_visibility: "A can see the stairwell.",
+      routes_and_exits: ["stairs", "service door"],
+      available_time: "A few minutes.",
+      consent_or_force_conditions: "none",
+      current_locks: []
+    } as const;
+
+    expect(currentAuthoritativeStateSchema.parse(currentStatePayload).offstage_pressuring_entities).toEqual([]);
+    expect(
+      currentAuthoritativeStateSchema.parse({
+        ...currentStatePayload,
+        offstage_pressuring_entities: [idB]
+      }).offstage_pressuring_entities
+    ).toEqual([idB]);
+
+    const omitted: Partial<typeof currentStatePayload> = { ...currentStatePayload };
+    delete omitted.offstage_pressuring_entities;
+    expect(() => currentAuthoritativeStateSchema.parse(omitted)).toThrow();
   });
 
   it("validates CAST MEMBER extended-field schemas from story schema section 5.2", () => {
