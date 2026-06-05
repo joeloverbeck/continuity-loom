@@ -1,21 +1,31 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
-import { getGenerationBrief, getStoryConfig, setGenerationBrief } from "../api.js";
+import { getGenerationBrief, getStoryConfig, setGenerationBrief, validate } from "../api.js";
 
 vi.mock("../api.js", () => ({
   getGenerationBrief: vi.fn(),
   getStoryConfig: vi.fn(),
-  setGenerationBrief: vi.fn()
+  setGenerationBrief: vi.fn(),
+  validate: vi.fn()
 }));
 
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
+
+function renderView(): void {
+  render(
+    <MemoryRouter>
+      <GenerationBriefView />
+    </MemoryRouter>
+  );
+}
 
 describe("GenerationBriefView", () => {
   it("edits all eight surfaces and persists them through the brief client", async () => {
@@ -25,8 +35,9 @@ describe("GenerationBriefView", () => {
       payload: { pov_character: "omniscient", person: "third", tense: "past" }
     });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true });
+    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
 
-    render(<GenerationBriefView />);
+    renderView();
 
     expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^selected_pov/), { target: { value: "omniscient" } });
@@ -72,8 +83,9 @@ describe("GenerationBriefView", () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(getStoryConfig).mockResolvedValue({ ok: false, kind: "not-found", message: "Missing config." });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true });
+    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
 
-    render(<GenerationBriefView />);
+    renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
     fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), {
@@ -92,8 +104,9 @@ describe("GenerationBriefView", () => {
   it("offers all current-cast local functions including present_minor_speaker", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(getStoryConfig).mockResolvedValue({ ok: false, kind: "not-found", message: "Missing config." });
+    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
 
-    render(<GenerationBriefView />);
+    renderView();
 
     const selector = await screen.findByLabelText(/^local_function/);
     expect(within(selector).getByRole("option", { name: "present_minor_speaker" })).toBeTruthy();

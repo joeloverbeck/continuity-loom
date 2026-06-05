@@ -10,6 +10,7 @@ import {
   getStoryConfig,
   setGenerationBrief
 } from "../api.js";
+import { ValidationPanel } from "./ValidationPanel.js";
 
 type GenerationSession = z.infer<typeof generationSessionSchema>;
 type ActiveWorkingSet = z.infer<typeof activeWorkingSetSchema>;
@@ -43,6 +44,7 @@ export function GenerationBriefView(): React.JSX.Element {
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
   const [proseModeSummary, setProseModeSummary] = useState("Not configured");
   const [notice, setNotice] = useState<string | null>(null);
+  const [validationKey, setValidationKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -55,6 +57,7 @@ export function GenerationBriefView(): React.JSX.Element {
 
         if (briefResponse.ok) {
           setSession(parseSession(briefResponse.session));
+          setValidationKey((current) => current + 1);
         } else {
           setNotice(briefResponse.message);
         }
@@ -131,6 +134,7 @@ export function GenerationBriefView(): React.JSX.Element {
 
   function updateSurface<K extends keyof GenerationSession>(key: K, value: GenerationSession[K]): void {
     setSession((current) => ({ ...current, [key]: value }));
+    setValidationKey((current) => current + 1);
   }
 
   function updateActiveWorkingSet(value: Partial<ActiveWorkingSet>): void {
@@ -155,6 +159,15 @@ export function GenerationBriefView(): React.JSX.Element {
     const response = await setGenerationBrief(payload);
 
     setNotice(response.ok ? "Generation brief saved." : response.message);
+    setValidationKey((current) => current + 1);
+  }
+
+  function focusBriefField(field: string): void {
+    const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
+      `[name="${CSS.escape(field)}"], [data-field="${CSS.escape(field)}"]`
+    );
+
+    input?.focus();
   }
 
   return (
@@ -171,12 +184,15 @@ export function GenerationBriefView(): React.JSX.Element {
       ) : null}
 
       <div className="briefStack">
+        <ValidationPanel validationKey={validationKey} onFocusField={focusBriefField} />
+
         <section className="configPanel" aria-labelledby="active-working-set-brief">
           <h3 id="active-working-set-brief">ACTIVE WORKING SET</h3>
           <p className="muted">PROSE MODE source: {proseModeSummary}</p>
           <label>
             selected_pov
             <input
+              name="generationSession.active_working_set.selected_pov"
               value={activeWorkingSet.selected_pov ?? ""}
               onChange={(event) => updateActiveWorkingSet({ selected_pov: event.target.value || undefined })}
             />
@@ -188,6 +204,7 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             current_time
             <input
+              name="generationSession.current_authoritative_state.current_time"
               value={session.current_authoritative_state?.current_time ?? ""}
               onChange={(event) =>
                 updateSurface("current_authoritative_state", {
@@ -216,6 +233,7 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             recent_causal_context
             <textarea
+              name="generationSession.immediate_handoff.recent_causal_context"
               value={immediateHandoff.recent_causal_context}
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, recent_causal_context: event.target.value })}
             />
@@ -223,6 +241,7 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             prior_accepted_prose_status_or_handoff_note
             <textarea
+              name="generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note"
               value={immediateHandoff.prior_accepted_prose_status_or_handoff_note}
               onChange={(event) =>
                 updateSurface("immediate_handoff", {
@@ -240,6 +259,7 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             must_render
             <textarea
+              name="generationSession.manual_moment_directive.must_render"
               value={manualDirective.must_render.join("\n")}
               onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: lines(event.target.value) })}
             />
@@ -322,6 +342,7 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             soft_unit_guidance
             <textarea
+              name="generationSession.stop_guidance.soft_unit_guidance"
               value={stopGuidance.soft_unit_guidance}
               onChange={(event) => updateSurface("stop_guidance", { soft_unit_guidance: event.target.value })}
             />

@@ -2,6 +2,7 @@
 
 import { recordTypes } from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { RecordBrowser } from "./RecordBrowser.js";
@@ -94,6 +95,14 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+function renderBrowser(): void {
+  render(
+    <MemoryRouter>
+      <RecordBrowser />
+    </MemoryRouter>
+  );
+}
+
 function mockWorkingSet(ids: string[] = []): void {
   vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: ids });
   vi.mocked(setWorkingSet).mockImplementation((selectedRecordIds: string[]) =>
@@ -120,7 +129,7 @@ describe("RecordBrowser", () => {
       })
     );
 
-    render(<RecordBrowser />);
+    renderBrowser();
 
     expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
     expect(await screen.findByText("Door code")).toBeTruthy();
@@ -155,7 +164,7 @@ describe("RecordBrowser", () => {
     mockWorkingSet();
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
 
-    render(<RecordBrowser />);
+    renderBrowser();
     await screen.findByText("Door code");
 
     const groupSelect = screen.getByLabelText("Group by");
@@ -175,7 +184,7 @@ describe("RecordBrowser", () => {
     mockWorkingSet();
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
 
-    render(<RecordBrowser />);
+    renderBrowser();
     await screen.findByText("No record selected.");
 
     for (const recordType of recordTypes) {
@@ -189,7 +198,7 @@ describe("RecordBrowser", () => {
     vi.mocked(createRecord).mockResolvedValue({ ok: true, record: { ...fixtures[0]!, payload: { inspected: "create" } } });
     vi.mocked(updateRecord).mockResolvedValue({ ok: true, record: { ...fixtures[0]!, payload: { inspected: "update" } } });
 
-    render(<RecordBrowser />);
+    renderBrowser();
     await screen.findByRole("button", { name: "Aster" });
 
     fireEvent.click(screen.getByRole("button", { name: "Create ENTITY" }));
@@ -211,7 +220,7 @@ describe("RecordBrowser", () => {
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
     mockWorkingSet(["fact-1"]);
 
-    render(<RecordBrowser />);
+    renderBrowser();
 
     expect(await screen.findByText("Door code")).toBeTruthy();
     expect(setWorkingSet).not.toHaveBeenCalled();

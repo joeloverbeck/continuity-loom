@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-010: Web validation panel + typed `api.ts` wrapper
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new `packages/web/src/generation-brief/ValidationPanel.tsx`; modifies `packages/web/src/api.ts`, `packages/web/src/generation-brief/GenerationBriefView.tsx`, and `packages/web/src/records/RecordBrowser.tsx` (deep-link target).
@@ -90,3 +90,26 @@ Deliverable 3: the validation panel surfaced in the SPEC-005 generation-brief wo
 1. `npm test -- ValidationPanel`
 2. `npm test -- api`
 3. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented the web validation panel and typed API wrapper:
+
+- Added `validate()` to `packages/web/src/api.ts` for `POST /api/validate`.
+- Added `packages/web/src/generation-brief/ValidationPanel.tsx` rendering blockers and warnings separately, with warnings collapsible and no override/bypass control.
+- Mounted the panel in `GenerationBriefView`, revalidating on load, edit, and save; field diagnostics focus matching brief inputs.
+- Added record diagnostic navigation to `/records?recordId=...` and updated `RecordBrowser` to preselect that target.
+- Added `ValidationPanel` tests and extended API/brief/record tests for the new routing and validation behavior.
+
+Deviation from original plan: field focus is implemented through named brief inputs for currently rendered fields; record diagnostics deep-link through a query parameter because there is no record detail route yet.
+
+Verification:
+
+- `npm test -- ValidationPanel` — passed.
+- `npm test -- api` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
