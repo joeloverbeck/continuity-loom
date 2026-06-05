@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-009: Generation-time brief surface schemas (schemas only)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` Zod schemas for the eight generation-time brief surfaces; exports from `packages/core/src/index.ts`. No durable-record registration (brief surfaces are session state, not durable records).
@@ -74,3 +74,13 @@ Re-export the eight schemas from `packages/core/src/index.ts`. Do not register t
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented generation-time brief schemas and the aggregate generation-session schema without registering brief surfaces as durable record types.
+
+Deviation: workflow editing, validation focus behavior, and prompt compilation remain deferred.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

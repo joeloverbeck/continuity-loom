@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-002: Global story-config singleton schemas
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` payload schemas for STORY CONTRACT, UNIVERSAL CONTENT POLICY, PROSE MODE; registered in the record-type registry; exported from `packages/core/src/index.ts`.
@@ -78,3 +78,13 @@ Re-export the three schemas from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented STORY CONTRACT, UNIVERSAL CONTENT POLICY, and PROSE MODE schemas with registry definitions and exports.
+
+Deviation: no server HTTP route was added; the schemas are consumed by the lifecycle-bound repository accessor.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

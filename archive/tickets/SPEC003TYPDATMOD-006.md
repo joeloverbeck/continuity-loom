@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-006: Space & material schemas (LOCATION, OBJECT, VISIBLE AFFORDANCE)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` payload schemas for LOCATION, OBJECT, VISIBLE AFFORDANCE; status enums; reference extractors; registry registration; exports.
@@ -78,3 +78,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented LOCATION, OBJECT, and VISIBLE AFFORDANCE schemas with status semantics and material reference projections.
+
+Deviation: physical contradiction validation remains deferred to Phase 6.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

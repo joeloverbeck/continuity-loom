@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-003: Entity & entity-status schemas
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` payload schemas for ENTITY and ENTITY STATUS; registry registration; reference extractors; exports from `packages/core/src/index.ts`.
@@ -78,3 +78,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented ENTITY and ENTITY STATUS schemas, registry entries, and reference projections for subject and location links.
+
+Deviation: ENTITY creation uses the payload `id` as the durable row ID so `entity_id` references and integrity checks target the same stable identity.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

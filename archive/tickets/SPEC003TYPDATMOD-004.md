@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-004: CAST MEMBER rich dossier schema
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` CAST MEMBER payload schema (required core + all optional extended fields); registry registration; reference extractor; exports from `packages/core/src/index.ts`.
@@ -79,3 +79,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented the CAST MEMBER rich dossier schema with required core sections, optional extended fields, sample utterance copy policy, registry entry, and entity reference projection.
+
+Deviation: optional extended sections are preserved as strict top-level fields containing structured JSON objects; richer internal validation remains later-editor work.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

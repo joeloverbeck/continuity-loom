@@ -15,6 +15,9 @@ import { DatabaseSync } from "node:sqlite";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
+import { RecordRepository } from "./record-repository.js";
+import { ensureRecordTables } from "./record-tables.js";
+
 const METADATA_FILENAME = "continuity-loom.project.json";
 const DATABASE_FILENAME = "loom.sqlite";
 
@@ -97,6 +100,7 @@ export interface ProjectStoreManager {
   createProject(input: CreateProjectInput): Promise<ProjectStatus>;
   openProject(folderPath: string): Promise<OpenProjectResult>;
   getActiveProjectStatus(): ProjectOpenState;
+  getRecordRepository(): RecordRepository | null;
   closeProject(): Promise<{ open: false }>;
   createBackup(): Promise<{ backupPath: string }>;
 }
@@ -105,6 +109,7 @@ interface ActiveProject {
   folderPath: string;
   metadata: ProjectMetadata;
   database: DatabaseSync;
+  recordRepository: RecordRepository;
   storeUserVersion: number;
 }
 
@@ -233,11 +238,13 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
       try {
         configureDatabase(database);
+        ensureRecordTables(database);
         closeActive();
         active = {
           folderPath,
           metadata,
           database,
+          recordRepository: new RecordRepository(database),
           storeUserVersion: readPragmaNumber(database, "user_version")
         };
 
@@ -327,10 +334,12 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         }
 
         closeActive();
+        ensureRecordTables(database);
         active = {
           folderPath,
           metadata,
           database,
+          recordRepository: new RecordRepository(database),
           storeUserVersion
         };
 
@@ -343,6 +352,10 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
     getActiveProjectStatus() {
       return active ? statusFromActive(active) : { open: false };
+    },
+
+    getRecordRepository() {
+      return active?.recordRepository ?? null;
     },
 
     closeProject() {

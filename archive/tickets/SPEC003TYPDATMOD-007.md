@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-007: Causal-pressure schemas (EVENT, INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` payload schemas for the seven causal-pressure record types; per-type status enums (incl. PLAN's `plan_status`); reference extractors; registry registration; exports.
@@ -78,3 +78,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented EVENT, INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, and OPEN THREAD schemas, including PLAN `plan_status` projection and reference extraction for holders, participants, owed parties, and record links.
+
+Deviation: causal contradiction checks remain deferred to deterministic validation.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

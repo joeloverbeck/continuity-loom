@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-005: Knowledge & concealment schemas (FACT, BELIEF, SECRET)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` payload schemas for FACT, BELIEF, SECRET; status enums; reference extractors; registry registration; exports.
@@ -78,3 +78,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented FACT, BELIEF, and SECRET schemas with status semantics, salience projection for FACT, and holder/non-holder reference projections.
+
+Deviation: POV/AUDIENCE knowledge profiles remained absent from durable schemas as planned.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

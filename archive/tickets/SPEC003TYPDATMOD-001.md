@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-001: Core data-model substrate — common metadata, registry, UUIDv7, reference extractors
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` data-model surface: `packages/core/src/records/` (common record-metadata Zod schema, record-type registry framework, pure UUIDv7 generator, reference-projection extractor framework); new exports in `packages/core/src/index.ts`.
@@ -94,3 +94,13 @@ Extend `packages/core/src/index.ts` with the new records surface (schemas, regis
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented the pure `@loom/core` record substrate: common metadata schema, UUIDv7 generator, registry, projection helpers, and public exports.
+
+Deviation: the concrete schemas landed in the same implementation pass as the substrate rather than as isolated commits.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

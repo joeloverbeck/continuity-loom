@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-013: Phase-3 capstone verification
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: None — verification-only; adds one end-to-end test plus a manual SQLite-inspection runbook. Introduces no production logic.
@@ -73,3 +73,13 @@ Implementer runbook: (a) `npm start` or create a temp project via the manager; (
 1. `npm test --workspace @loom/server`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
 3. Manual: `sqlite3 <project>/loom.sqlite '.tables'` and `PRAGMA user_version;` — runbook confirmation (not CI-gated; the narrower automated boundary is the e2e test, since "ordinary SQLite tooling" inspection is a human dry-run).
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Added aggregate SPEC-003 coverage through core and server tests that exercise schema registration, lifecycle table creation, repository round-trips, projection refresh, integrity protection, singletons/session, and accepted-segment separation.
+
+Deviation: SQLite inspection was automated through `node:sqlite` integration tests rather than a manual GUI/sqlite3 transcript.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

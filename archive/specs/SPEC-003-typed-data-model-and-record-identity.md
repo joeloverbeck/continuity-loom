@@ -1,6 +1,6 @@
 # SPEC-003 — Typed Data Model and Record Identity/Reference Layer
 
-Status: 🟡 DRAFT
+Status: ✅ COMPLETED
 Phase: Implementation Order Phase 3
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -256,7 +256,17 @@ until Phase 4 needs CRUD endpoints.)
      schema→placeholder mapping (which *will* update `compiler-contract.md` in the
      same change, per FOUNDATIONS §8) is mechanical. If during implementation a
      schema field is found to diverge from `story-record-schema.md`, reconcile the
-     schema doc in the same change rather than forking a new field name.
+   schema doc in the same change rather than forking a new field name.
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented the Phase 3 typed data model in `@loom/core` and `@loom/server`: closed runtime schemas, registry iteration, UUIDv7 record IDs, reference projection, idempotent record tables on create/open, lifecycle-bound repository CRUD, singleton/session accessors, and physically distinct accepted-segment storage.
+
+Deviation: richer editor behavior, deterministic cross-record validation, compiler mapping, transport, and prompt-surface changes remain deferred to later phases. No CRUD UI or LLM surface was added.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.
 
 ## FOUNDATIONS Alignment
 

@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-010: Record-table DDL initializer + create/open lifecycle wiring
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/server` module `ensureRecordTables` (5 tables); `packages/server/src/project-store.ts` modified to invoke it on both the create and open lifecycle paths.
@@ -75,3 +75,13 @@ Modify `packages/server/src/project-store.ts`: call `ensureRecordTables(database
 
 1. `npm test --workspace @loom/server`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented `ensureRecordTables` for `records`, `record_references`, `story_config`, `generation_session`, and `accepted_segments`, and wired it into create and open lifecycle paths without changing `user_version`.
+
+Deviation: `record_references.from_record_id` uses a foreign key to support cleanup; `target_id` remains a plain denormalized column as required.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.

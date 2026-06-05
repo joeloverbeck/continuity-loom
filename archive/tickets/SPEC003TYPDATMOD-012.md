@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-012: Singleton, session & accepted-segment accessors
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends `packages/server/src/record-repository.ts` with story-config / generation-session singleton accessors and minimal accepted-segment append/list.
@@ -56,6 +56,16 @@ Add `listAcceptedSegments`/`appendAcceptedSegment` (minimal, ordered, append-onl
 
 1. `npm test --workspace @loom/server` — story-config + generation-session round-trips; Zod rejection on invalid config/session; `accepted_segments` reachable only via its API; malformed-JSON read diagnostics.
 2. `npm run typecheck && npm run lint && npm test && npm run build` — all green.
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented story-config upserts, generation-session upsert/read, and append/list accepted-segment accessors on the lifecycle-bound repository.
+
+Deviation: accepted segments are intentionally excluded from record list/read APIs; the implementation keeps only three SQL touchpoints for the table.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.
 
 ### Invariants
 

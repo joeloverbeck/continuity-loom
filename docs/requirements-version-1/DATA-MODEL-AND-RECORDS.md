@@ -204,6 +204,10 @@ The model must support deterministic validation across typed payloads and refere
 
 Malformed payloads block use until repaired. Selected contradictory records block generation. Warnings surface risky omissions or length/salience issues but do not compile into prompts.
 
+## Phase 3 implementation note
+
+The Phase 3 subset is realized in code via SPEC-003 (2026-06-05): runtime schemas for required durable record types and generation-time brief surfaces, stable UUIDv7 record identity, common metadata projections, reference extraction, a typed repository, and physically distinct `generation_session` and `accepted_segments` tables. CRUD UI, custom rich editors, deterministic validation, and prompt compilation remain later-phase work.
+
 ## Failure modes
 
 Data model failure modes include:

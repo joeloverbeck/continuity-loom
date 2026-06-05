@@ -1,6 +1,6 @@
 # SPEC003TYPDATMOD-008: Relationship & emotion schemas
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core` payload schemas for RELATIONSHIP and EMOTION; status enums; reference extractors; registry registration; exports.
@@ -78,3 +78,13 @@ Re-export from `packages/core/src/index.ts`.
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05.
+
+Implemented RELATIONSHIP and EMOTION schemas with status semantics, prose pressure fields, and from/to/holder reference projections.
+
+Deviation: social/affective validation remains deferred to Phase 6.
+
+Verification: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` passed.
