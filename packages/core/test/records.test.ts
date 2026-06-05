@@ -348,6 +348,39 @@ describe("record data model", () => {
     ]);
   });
 
+  it("extracts EVENT location references only from full UUID values", () => {
+    const eventPayload = {
+      id: idA,
+      status: "active",
+      event_kind: "recent_causal",
+      sequence_order: 1,
+      description: "A found B at the locked station.",
+      participants: [idA],
+      location: idB,
+      pov_visibility: "perceived_directly",
+      audience_visibility: "explicit",
+      known_by: [idB],
+      causes: [idA],
+      effects: ["not a uuid"],
+      current_relevance: "high"
+    } as const;
+
+    expect(extractRecordReferences("EVENT", eventPayload)).toEqual([
+      { refRole: "participant", targetId: idA },
+      { refRole: "record_link", targetId: idA },
+      { refRole: "known_by", targetId: idB },
+      { refRole: "location", targetId: idB }
+    ]);
+
+    for (const location of ["unknown", "offstage"] as const) {
+      expect(extractRecordReferences("EVENT", { ...eventPayload, location })).toEqual([
+        { refRole: "participant", targetId: idA },
+        { refRole: "record_link", targetId: idA },
+        { refRole: "known_by", targetId: idB }
+      ]);
+    }
+  });
+
   it("validates global story config field fidelity", () => {
     expect(storyContractSchema.parse(storyContractPayload).tone).toBe("tense and intimate");
     expect(

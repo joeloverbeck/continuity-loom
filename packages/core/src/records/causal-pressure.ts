@@ -157,7 +157,8 @@ export const causalPressureDefinitions = [
     extractReferences: (payload: EventRecord) => [
       ...refsFromStrings("participant", payload.participants),
       ...refsFromStrings("record_link", [...payload.causes, ...payload.effects]),
-      ...(Array.isArray(payload.known_by) ? refsFromStrings("known_by", payload.known_by) : [])
+      ...(Array.isArray(payload.known_by) ? refsFromStrings("known_by", payload.known_by) : []),
+      ...compactReferences([referenceIfId("location", payload.location)])
     ]
   },
   {
