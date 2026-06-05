@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-005: Cast renderers — core-first dossiers, voice pins, present-minor, offstage, overrides, samples
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds the cast-band renderers (`compiler-contract.md` §3 sections 18–20 + the voice-pressure pins) into the `@loom/core` compiler.
@@ -134,3 +134,28 @@ pins adjacent to 004's `<active_working_set>` block.
 
 1. `npm test --workspace @loom/core` — targeted cast-section tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Added cast compiler resolvers for active/onstage full dossiers, active cast voice
+  pressure pins, present-minor compressed notes, and offstage relevance notes.
+- Rendered active/onstage CAST MEMBER dossiers in explicit core-first field order
+  with all populated fields preserved and sample utterances capped at three.
+- Rendered current-generation voice overrides in prompt output without mutating
+  source records.
+- Added cast-section tests for no-compression dossier rendering, core-first order,
+  sample policy/limit, voice pin duplication, override scoping, no mutation, and
+  cast-band empty states.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 19 files, 127 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 44 files, 236 tests.
+- `npm run lint` passed.
+- `npm run build` passed, with Vite's large-chunk warning only.
