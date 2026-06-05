@@ -33,7 +33,7 @@ This spec covers:
 - the React + Vite UI shell with a minimal placeholder screen;
 - the development experience (Vite dev server + API proxy) and the single-port production launch (Node serves built assets, opens browser);
 - a placeholder settings boundary that handles no secrets;
-- baseline tooling: TypeScript strict, ESM, Vitest, ESLint, Prettier, and the `dev` / `build` / `typecheck` / `lint` / `test` scripts;
+- baseline tooling: TypeScript strict, ESM, Vitest, ESLint, Prettier, the `dev` / `build` / `typecheck` / `lint` / `test` scripts, and a pinned Node runtime (`engines.node >= 24` in the root `package.json` plus an `.nvmrc`) so the named Node-version-mismatch failure mode is guarded rather than only warned about;
 - the smoke/boundary tests that prove the phase gate;
 - the modifications to `docs/requirements-version-1/*` to perform when this spec is implemented.
 
@@ -49,6 +49,8 @@ This spec does **not**:
 - add any cloud account, sync, collaboration, or remote scaffolding;
 - introduce routing, state-management libraries, a design system, or non-placeholder UI;
 - introduce branches, plot-rail machinery, accepted-prose handling, or any LLM call.
+
+The Phase-1 UI is intentionally **pre-`UI-WORKFLOWS.md`**: a placeholder screen only. `IMPLEMENTATION-ORDER.md`'s cross-spec table lists `UI-WORKFLOWS.md` as informing Phase 1, but its record-editing, working-set-curation, and generation workflows belong to Phases 4–12; nothing from it is realized here beyond the bare launch-and-render loop.
 
 ## Recommended stack (from `TECHNOLOGY-DECISIONS.md`)
 
@@ -72,7 +74,8 @@ Three packages with a strict one-way dependency direction:
 
 ```text
 continuity-loom/
-  package.json                 # workspace root; scripts: dev, build, typecheck, lint, test
+  package.json                 # workspace root; scripts: dev, build, typecheck, lint, test; engines.node >= 24
+  .nvmrc                        # pins Node 24 LTS for the dev/launch toolchain
   tsconfig.base.json           # shared strict TS config; project references below
   packages/
     core/                      # pure TypeScript domain layer
@@ -100,9 +103,9 @@ core ─▶ (nothing internal; no fs, no http, no sqlite, no framework)
 
 ### `packages/core` — deterministic domain layer
 
-- Pure TypeScript. **Must not** import `node:fs`, `node:http`, `node:net`, `node:sqlite`, `fastify`, `react`, `vite`, or any other I/O / framework module.
+- Pure TypeScript. **Must not** import any `node:*` builtin (the whole namespace — `node:fs`, `node:fs/promises`, `node:http`, `node:https`, `node:net`, `node:sqlite`, `node:child_process`, `node:tls`, `node:dns`, etc.) or any I/O / framework module (`fastify`, `react`, `vite`). The denial is the entire `node:*` namespace rather than a hand-maintained blocklist; if a genuinely pure builtin is ever needed, it is added back by explicit allowance, so a forgotten I/O module can never silently re-enter `core`.
 - Phase 1 content is intentionally minimal: shared types (e.g. a `versionInfo` type describing app/template/compiler version metadata) and any pure helpers needed by the stub API. It exists primarily to **establish and prove the boundary** that validation and the compiler will later occupy.
-- This is the package that the constitution requires to be testable without a server or network (FOUNDATIONS §28.3; `TECHNOLOGY-DECISIONS.md` "deterministic domain core").
+- This is the package that must be testable without a server or network (`TESTING-STRATEGY.md` "the domain core should be testable without the UI and without network"; `TECHNOLOGY-DECISIONS.md` "pure enough to test with in-memory objects"), so the future validator/compiler can satisfy FOUNDATIONS §4.4 / §8 deterministic compilation in isolation.
 
 ### `packages/server` — localhost transport boundary
 
@@ -123,14 +126,14 @@ core ─▶ (nothing internal; no fs, no http, no sqlite, no framework)
 ### Boundary enforcement (three layers)
 
 1. **Workspace graph:** `core` declares no internal dependencies; `server` and `web` depend on `core`. The package manager prevents `core` from importing the others.
-2. **Lint rule:** an ESLint `no-restricted-imports` (or equivalent boundary) rule in `core` forbids `node:fs`, `node:http`, `node:net`, `node:sqlite`, `fastify`, `react`, and `vite`.
-3. **Boundary test:** a Vitest test asserts the `core` source tree contains none of the forbidden imports, so a violation fails CI rather than only the linter.
+2. **Lint rule:** an ESLint `no-restricted-imports` (with a `patterns` entry matching `node:*`, plus an `paths`/pattern denial of `fastify`, `react`, `vite`) — or an equivalent boundary plugin — rule in `core` forbids the entire `node:*` namespace and the named frameworks, with any pure builtin re-allowed only by explicit exception.
+3. **Boundary test:** a Vitest test asserts the `core` source tree imports no `node:*` builtin (matched by namespace prefix, not an enumerated list) and none of the named frameworks, so a violation — including an I/O module nobody thought to blocklist — fails CI rather than only the linter.
 
 ## Key decisions
 
 1. **Multi-package workspace over a single package with directory conventions.** Hard module boundaries make the deterministic-core isolation structural (it *cannot* import I/O), not merely advisory. This directly serves the constitution's requirement that validation/compilation be deterministic and independently testable.
 2. **Localhost-only binding by default.** Project data is private creative material (often mature fiction); the server must never expose project operations to the LAN (`LOCAL-FIRST-STORAGE.md`, `TECHNOLOGY-DECISIONS.md`).
-3. **Single-port production launch, dual-port dev.** Dev uses the Vite dev server with HMR plus the Node API server, with Vite proxying `/api`. Normal launch builds `core`/`web`, has the Node server serve the static assets and the API on one localhost port, and opens the browser. This satisfies the Phase 1 gate ("launches locally from Node and opens in browser") without a packaged shell.
+3. **Single-port production launch, dual-port dev.** Dev uses the Vite dev server with HMR plus the Node API server, with Vite proxying `/api`. Normal launch builds `core`/`web`, has the Node server serve the static assets and the API on one localhost port, and opens the browser. This satisfies the Phase 1 gate ("launches locally from Node and opens in browser") without a packaged shell. **Browser auto-open is best-effort:** the launch must always print the localhost URL prominently and treat opening as a convenience that may fail — on the default WSL2 Ubuntu target there is frequently no Linux default browser and the URL must be opened in the Windows host. The gate is satisfied by "prints the URL and opens it where the platform supports it," so a WSL2 launch where the user opens the printed URL manually still passes.
 4. **Inert placeholder settings boundary.** A `settings` module defines the *interface* for future global settings (OpenRouter model, key-presence) and returns static defaults. It reads, stores, and logs **no** API key. This satisfies the gate's "placeholder settings boundary" while keeping FOUNDATIONS §23 / §29.9 clean from the first commit.
 5. **ESM + TypeScript strict + project references.** `"type": "module"` across packages; strict TS with project references for correct build ordering and editor performance.
 
@@ -157,6 +160,7 @@ No filesystem writes, no SQLite, no network egress, no secrets.
 - **API unreachable from the UI:** the placeholder screen should show a clear "cannot reach local server" state rather than a blank page, so the launch gate is observably pass/fail.
 - **Accidental non-localhost binding:** treated as a defect; the boundary/smoke tests assert the bind address is loopback.
 - **Core purity violation:** caught by both the lint rule and the boundary test; a forbidden import in `core` fails the build.
+- **Browser cannot be auto-opened (e.g. WSL2 with no default Linux browser):** auto-open is best-effort and must never fail the launch; the server still prints the localhost URL prominently for the user to open manually. A failed auto-open is not a gate failure.
 
 ## Verification / testing
 
@@ -208,8 +212,15 @@ Domain (continuity) validation does not exist yet — it arrives in Phase 6. Pha
 - Letting the dev/launch server listen beyond localhost.
 - Allowing `core` to import filesystem, HTTP, SQLite, or framework modules, eroding the deterministic-core boundary.
 - Introducing storage, key handling, or any model transport prematurely under the banner of "foundation."
-- Using a Node version that mismatches Vite/SQLite assumptions (target Node 24 LTS).
+- Using a Node version that mismatches Vite/SQLite assumptions (target Node 24 LTS) — guarded by `engines.node >= 24` and `.nvmrc`, not left to convention.
 - Adding routing/state/design-system weight before there is any product behavior to justify it.
+
+## Risks & Open Questions
+
+- **Open questions:** none remaining. The only choices left open by `TECHNOLOGY-DECISIONS.md` for this phase — workspace tool, HTTP framework, test runner, lint/format — were resolved in §Key decisions and §Recommended stack (npm workspaces, Fastify, Vitest, ESLint flat config + Prettier). All five `IMPLEMENTATION-ORDER.md` Phase 1 gate items are covered by §Done Means.
+- **Known risk — boundary enforcement scope:** the deterministic-core isolation is only as strong as the `node:*`-namespace denial in the lint rule and boundary test (§Architecture › Boundary enforcement). Decomposition must implement the namespace-prefix match, not a hand-maintained blocklist.
+- **Known risk — WSL2 launch:** the "opens in browser" gate degrades to best-effort on the default WSL2 target; the printed URL is the durable contract (see §Edge cases and §Key decisions #3).
+- **Deferred by design:** storage, SQLite, record schemas, validation, the compiler, OpenRouter transport, and API-key handling are out of scope (§Non-goals) and carried by later-phase specs.
 
 ## Requirements-doc updates on completion
 
@@ -234,10 +245,11 @@ This spec is satisfied when:
 - a TypeScript/Node 24 + React/Vite local web app skeleton exists with `packages/core`, `packages/server`, and `packages/web` and a one-way `web→core`, `server→core`, `core→(nothing internal)` dependency direction;
 - `core` is pure TypeScript with no filesystem, HTTP, SQLite, or framework imports, enforced by both a lint rule and a boundary test;
 - the Node server binds to localhost only, serves the built UI, and exposes `/api/health` and `/api/version` stubs;
-- the app launches from a Node process and opens a minimal placeholder cockpit in the browser showing version/health;
+- the app launches from a Node process, prints the localhost URL prominently, and opens a minimal placeholder cockpit in the browser showing version/health (auto-open is best-effort; on WSL2 without a default browser, opening the printed URL manually still satisfies the gate);
 - development runs via the Vite dev server with an `/api` proxy to the Node server;
 - a placeholder settings boundary exists that handles no API keys and logs no secrets;
 - `dev`, `build`, `typecheck`, `lint`, and `test` scripts exist and pass, including the boundary and server smoke tests;
+- the Node runtime is pinned via `engines.node >= 24` in the root `package.json` and an `.nvmrc`;
 - no cloud account, sync, collaboration, storage, SQLite, API-key handling, model transport, branches, plot rails, or accepted-prose handling has been introduced;
 - `IMPLEMENTATION-ORDER.md` Phase 1 and the Phase-1 notes in `TECHNOLOGY-DECISIONS.md` are updated to mark this work done, per "Requirements-doc updates on completion."
 

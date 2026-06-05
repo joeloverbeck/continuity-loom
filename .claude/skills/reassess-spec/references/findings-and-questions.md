@@ -67,6 +67,7 @@ Redesign count: <N/total> deliverables materially changed (<above | below> 50% t
 - **Initial round**: at most 3 open-ended questions. Confirmation-shape (y/n, binary-with-default) questions interdependent with the open-ended ones may be bundled in the same round; non-interdependent ones count against the cap and defer.
 - **Discrete options (2–4), single question, terse descriptions (≤2 sentences each)**: use `AskUserQuestion` with a recommended default.
 - **Discrete options, rich descriptions OR bundled (2–3 questions)**: prefer plain-text bullets with labeled options `(a)/(b)/…` and a recommendation per question under a single `### Questions` heading; the user answers inline (e.g. "1) a, 2) b").
+- **Single discrete question coexisting with silence-approval dispositions**: when one discrete (2–4 option) question rides alongside other findings being approved-by-silence, inline plain-text under the `### Questions` heading is acceptable — it keeps the discrete answer and the silent dispositions on one approval surface. Reserve `AskUserQuestion` for when the discrete question stands alone with no concurrent silence-approval flow.
 - **Open-ended questions**: present as plain text.
 - **Follow-up rounds**: one question at a time; repeat until resolved.
 - **Delegated resolution**: if the user delegates ("you decide based on FOUNDATIONS"), resolve by reasoning against the referenced constraint; if resolution needs investigation, run a mini Step 3 scoped to the question. If none of the options is ideal, propose a new one with justification.

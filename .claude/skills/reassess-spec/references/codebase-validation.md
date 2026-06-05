@@ -23,6 +23,13 @@ Substep applicability by Pre-Process classification:
 
 For specs with >10 references, consider parallel Explore agents organized by theme (max 3). Spot-check agent claims with direct Grep/Read before including in findings — agent results are leads, not facts; trust a direct tool result over an agent claim.
 
+**Greenfield / foundation specs** (the spec's deliverables ARE the repo's first code — no pre-existing code tree, e.g. a Phase-1 repository/runtime foundation): the substep table still applies, but the consumer-grep substeps have nothing to grep. Handle them explicitly rather than skipping silently:
+
+- **3.6 Downstream Consumers**: record `N/A — greenfield, no code tree` instead of an empty grep. There are no existing import sites because there is no code yet.
+- **3.9 New-Deliverable Consumer Verification**: the deliverables' consumers are **planned**, not present — every later phase named in a sequencing doc (`docs/requirements-version-1/IMPLEMENTATION-ORDER.md`) or the spec's own later-phase plan. That satisfies the "explicitly planned" branch; do NOT fire the zero-consumer HIGH Issue for a foundation spec whose consumers are unbuilt-but-sequenced future work. Record the planned consumers (the sequencing doc's phase list) for the audit trail.
+
+This is distinct from `SKILL.md`'s "no greenfield approach proposals" guardrail, which is about not proposing alternative designs — here "greenfield" means the *repo* is empty.
+
 ## 3.0 Cross-File Scope Establishment
 
 For patterns referenced across multiple files (type imports, schema-field usage, command invocations), run a cross-file count grep first to establish full scope before per-file analysis. Compare the spec's claimed locations against the actual count — this catches files the spec missed and prevents incomplete deliverables.
@@ -101,7 +108,7 @@ For each proposed new deliverable (new command, new validator, new skill output,
 
 **Outcome**:
 - **≥1 consumer found**: deliverable justified — record the consumers in Step 6 for audit-trail visibility.
-- **Zero consumers AND no pending consumer named**: HIGH Issue → present at Step 6 as a Question with three options: (a) drop per YAGNI; (b) keep with explicit rationale naming a near-term consumer; (c) defer to a separate consumer-driven spec. Defer the decision to the user — do not silently drop at Step 3.
+- **Zero consumers AND no pending consumer named**: HIGH Issue → present at Step 6 as a Question with three options: (a) drop per YAGNI; (b) keep with explicit rationale naming a near-term consumer; (c) defer to a separate consumer-driven spec. Defer the decision to the user — do not silently drop at Step 3. (Greenfield/foundation specs are **not** zero-consumer cases — their consumers are the sequenced future phases; see the Greenfield note above the substep sections.)
 
 **Registry-registered deliverables** (e.g. a validator added to a framework registry array) have a structural consumer model — registry insertion *is* the wiring. Confirm the registration site rather than name-grepping for callers; flagging "zero consumers" there is a false positive.
 
@@ -123,9 +130,9 @@ For specs introducing new work (classes (a) and (b)), verify the spec carries th
 
 - **§Deliverables (or §Approach with named targets)** — each deliverable names a concrete target (file path, function signature, command spec) the implementer can grep against. A §Approach that reads as feature description without named targets is incomplete on this axis.
 - **§Verification (or §Acceptance Tests)** — re-runnable confirmation (test commands, validator invocations). Manual-only smoke tests are partial; no Verification section at all is incomplete.
-- **§Risks & Open Questions** (or equivalently named) — known limitations and deferred decisions surfaced explicitly rather than discovered at ticket-time.
+- **§Risks & Open Questions** (or equivalently named) — known limitations and deferred decisions surfaced explicitly rather than discovered at ticket-time. Sections such as `§Edge cases` and `§Failure modes` that surface limitations and deferred decisions count as equivalent coverage even without the literal Risks/Open-Questions title.
 
-**Severity**: a code/tooling spec missing §Deliverables or §Verification entirely is a HIGH Issue (decomposition can't proceed). Missing §Risks & Open Questions is a MEDIUM Improvement. A docs-only or process spec missing these is LOW or N/A depending on whether its content depends on implementer follow-up.
+**Severity**: a code/tooling spec missing §Deliverables or §Verification entirely is a HIGH Issue (decomposition can't proceed). Missing §Risks & Open Questions is a MEDIUM Improvement — but **downgrade to LOW** when the spec surfaces its limitations under equivalent sections (`§Edge cases`, `§Failure modes`), recommending only an explicit "Open questions: none remaining" line; reserve MEDIUM for specs that surface no limitations anywhere. A docs-only or process spec missing these is LOW or N/A depending on whether its content depends on implementer follow-up.
 
 **Skip** for (c) refactor and (d) retroactive (the latter's structural completeness lives in its Outcome section).
 
