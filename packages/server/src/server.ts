@@ -7,6 +7,7 @@ import { registerProjectRoutes } from "./project-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
 import { registerStoryConfigRoutes } from "./story-config-routes.js";
+import { registerValidationRoutes } from "./validation-routes.js";
 import { healthResponseSchema, versionInfoSchema } from "./version-schema.js";
 import { registerWorkingSetRoutes } from "./working-set-routes.js";
 
@@ -63,6 +64,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerStoryConfigRoutes(app, projectStoreManager);
   registerGenerationBriefRoutes(app, projectStoreManager);
   registerWorkingSetRoutes(app, projectStoreManager);
+  registerValidationRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
   });

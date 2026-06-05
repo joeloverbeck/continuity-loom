@@ -1,4 +1,4 @@
-import type { OpenProjectResult, ProjectStatus, VersionInfo } from "@loom/core";
+import type { OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
 
 export interface HealthResponse {
   status: "ok";
@@ -234,4 +234,8 @@ export async function getGenerationBrief(): Promise<GenerationBriefResponse> {
 
 export async function setGenerationBrief(surfaces: Record<string, unknown>): Promise<OkResponse> {
   return requestJson<OkResponse>("/api/generation-brief", "PUT", surfaces);
+}
+
+export async function validate(): Promise<ValidationResult> {
+  return postJson<ValidationResult>("/api/validate");
 }

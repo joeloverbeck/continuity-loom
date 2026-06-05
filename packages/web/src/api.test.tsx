@@ -13,7 +13,8 @@ import {
   setGenerationBrief,
   setStoryConfig,
   setWorkingSet,
-  updateRecord
+  updateRecord,
+  validate
 } from "./api.js";
 
 function jsonResponse(payload: unknown, status = 200): Response {
@@ -112,6 +113,23 @@ describe("api client", () => {
       ["/api/generation-brief", "PUT"]
     ]);
     expect(calls[1]?.init?.body).toBe(JSON.stringify(partialSurface));
+  });
+
+  it("issues validation route requests", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse({ blockers: [], warnings: [], isBlocked: false }));
+      })
+    );
+
+    await expect(validate()).resolves.toEqual({ blockers: [], warnings: [], isBlocked: false });
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/validate", "POST"]
+    ]);
   });
 
   it("returns structured error envelopes from failed route responses", async () => {

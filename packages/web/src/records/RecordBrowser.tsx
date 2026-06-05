@@ -6,6 +6,7 @@ import {
   type ColumnDef
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 import {
   getRecord,
@@ -61,6 +62,7 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
 }
 
 export function RecordBrowser(): React.JSX.Element {
+  const [searchParams] = useSearchParams();
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
@@ -207,6 +209,18 @@ export function RecordBrowser(): React.JSX.Element {
   }
 
   const availableGroupingOptions = groupingOptions(filters.type);
+  const preselectedRecordId = searchParams.get("recordId");
+
+  useEffect(() => {
+    if (!preselectedRecordId) {
+      return;
+    }
+
+    const target = records.find((record) => record.id === preselectedRecordId);
+    if (target) {
+      void selectRecord(target);
+    }
+  }, [preselectedRecordId, records]);
 
   if (genericEditorRecord) {
     return (

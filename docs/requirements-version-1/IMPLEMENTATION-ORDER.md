@@ -101,18 +101,20 @@ Phase gate:
 
 ## Phase 6 — Deterministic validation engine
 
+Status: ✅ Implemented via SPEC-006 (2026-06-05).
+
 Implement fail-closed validation over selected records, active working set, story configuration, and generation-time brief.
 
 Why before compiler: compiler output is only meaningful after blockers are resolved. If prompt rendering comes first, invalid prompts will become design gravity.
 
 Phase gate:
 
-- universal minimum completeness checks exist;
-- compiler-contract validation focus matrix is implemented for v1;
-- blockers and warnings are structured separately;
-- blockers disable prompt preview and send paths;
-- diagnostics are actionable and field-linked where possible;
-- validation does not mutate records and uses no LLM;
+- [x] universal minimum completeness checks exist;
+- [x] compiler-contract validation focus matrix is implemented for v1;
+- [x] blockers and warnings are structured separately;
+- [x] blockers disable prompt preview and send paths;
+- [x] diagnostics are actionable and field-linked where possible;
+- [x] validation does not mutate records and uses no LLM;
 - accepted prose contamination blocks.
 
 ## Phase 7 — Deterministic prompt compiler

@@ -10,6 +10,10 @@ This spec covers deterministic validation doctrine, blocker/warning behavior, un
 
 It does not define test files, production code, UI layouts, or low-level validation functions.
 
+## Phase 6 implementation note
+
+SPEC-006 implemented the deterministic validation engine in `@loom/core`, including immutable snapshots, structured blockers and warnings, universal completeness/blocker rules, the v1 validation-focus matrix, warning diagnostics, and prompt-facing key safety. It also added the read-only `POST /api/validate` endpoint and the generation-brief validation panel. Phase 7 prompt compilation and Phase 8 prompt preview remain separate downstream phases.
+
 ## Non-goals
 
 This spec does not define a prose-quality grader, model critic, auto-repair agent, plot planner, or override system. It does not use validation focus tags as story beats and does not allow warnings to become prompt instructions.

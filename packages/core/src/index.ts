@@ -66,11 +66,18 @@ export {
   manualMomentDirectiveSchema,
   stopGuidanceSchema
 } from "./records/generation-brief.js";
+export type { GenerationSession } from "./records/generation-brief.js";
 export {
   proseModeSchema,
   storyContractSchema,
   universalContentPolicySchema
 } from "./records/global-config.js";
+export type {
+  ProseMode,
+  StoryContract,
+  UniversalContentPolicy
+} from "./records/global-config.js";
+export type { RecordMetadata } from "./records/metadata.js";
 export { beliefSchema, factSchema, secretSchema } from "./records/knowledge.js";
 export { recordMetadataSchema } from "./records/metadata.js";
 export {
@@ -99,5 +106,24 @@ export {
   visibleAffordanceSchema
 } from "./records/space-material.js";
 export { generateRecordId } from "./records/uuidv7.js";
+export { runValidation } from "./validation/engine.js";
+export { buildValidationSnapshot } from "./validation/snapshot.js";
+export type {
+  BuildValidationSnapshotInput,
+  SelectedCastBand,
+  ValidationRecord,
+  ValidationSnapshot,
+  ValidationStoryConfig,
+  ValidationVersions
+} from "./validation/snapshot.js";
+export type { ValidationRule } from "./validation/rules/types.js";
+export { DIAGNOSTIC_CODES } from "./validation/types.js";
+export type {
+  AffectedReference,
+  Diagnostic,
+  Severity,
+  SuggestedAction,
+  ValidationResult
+} from "./validation/types.js";
 export { versionInfo } from "./version.js";
 export type { VersionInfo } from "./version.js";
