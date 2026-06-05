@@ -1,6 +1,6 @@
 # SPEC006DETVALENG-003: Universal blockers + generation-context rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/core` rule module `validation/rules/universal-blockers.ts`; appends to the `validation/rules` barrel.
@@ -92,3 +92,25 @@ In the same module: `first_segment` → `prior_accepted_prose_status_or_handoff_
 
 1. `npm test -- validation-blockers`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+Implemented universal blocker validation in `@loom/core`:
+
+- Added `validation/rules/universal-blockers.ts` with deterministic blockers for local-prose-only violations, directive/stop disagreement, handoff/current-state contradiction markers, entity-location conflicts, object-holder conflicts, inactive plan holders, secret firewall contradictions, offstage interruption route gaps, physical-action context gaps, active-speaker voice-pressure gaps, content-envelope contradictions, prompt-facing prose contamination, generation-context handoff rows, and missing template/compiler section sources.
+- Registered the universal blocker rule family after completeness rules in the rule barrel.
+- Extended the diagnostic-code catalogue with blocker-specific stable codes.
+- Added `packages/core/test/validation-blockers.test.ts` covering each blocker as a `blocker`, including the SPEC-005 deferrals for accepted-prose contamination and non-local directive/stop guidance.
+- Updated completeness fixtures so their clean snapshot remains clean once universal blockers are registered.
+
+Deviation from original plan: state-vs-handoff contradiction and accepted-prose contamination use deterministic marker checks rather than free-text inference; this preserves the no-LLM/no-NLP invariant while giving later tickets room to add stricter structured fields if the contract evolves.
+
+Verification:
+
+- `npm test -- validation-blockers` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.

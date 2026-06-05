@@ -39,9 +39,12 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   castMissingCoreDossier: "cast-missing-core-dossier",
   contentEnvelopeContradiction: "content-envelope-contradiction",
   directiveStopGuidanceDisagreement: "directive-stop-guidance-disagreement",
+  entityCurrentLocationContradiction: "entity-current-location-contradiction",
   focusTagCountInvalid: "focus-tag-count-invalid",
   hiddenTruthInPovKnowledge: "hidden-truth-in-pov-knowledge",
+  handoffCurrentStateContradiction: "handoff-current-state-contradiction",
   impossibleActionPhysicalContext: "impossible-action-physical-context",
+  inactivePlanHolder: "inactive-plan-holder",
   localProseScopeViolation: "local-prose-scope-violation",
   activeCastIncomplete: "active-cast-incomplete",
   activePhysicalContextIncomplete: "active-physical-context-incomplete",
@@ -54,7 +57,10 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   missingStopGuidance: "missing-stop-guidance",
   povKnowledgeMissing: "pov-knowledge-missing",
   promptLengthRisk: "prompt-length-risk",
+  promptFacingProseContamination: "prompt-facing-prose-contamination",
   secretRevealContradiction: "secret-reveal-contradiction",
   sparseVoicePressure: "sparse-voice-pressure",
-  staleSelectedRecord: "stale-selected-record"
+  staleSelectedRecord: "stale-selected-record",
+  objectCurrentHolderContradiction: "object-current-holder-contradiction",
+  offstageInterruptionMissingRoute: "offstage-interruption-missing-route"
 });

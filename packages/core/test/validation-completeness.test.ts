@@ -77,7 +77,18 @@ function cleanInput(): BuildValidationSnapshotInput {
         may_render_if_naturally_caused: [],
         do_not_force: []
       },
-      current_cast_voice_pressure: [],
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: castId,
+          local_function: "active_speaker",
+          current_voice_pressure: "B is clipped and afraid.",
+          dialogue_pressure: "Direct question.",
+          pov_narration_pressure: "none",
+          nonverbal_or_silence_pressure: "none",
+          current_must_preserve: [],
+          current_must_avoid: []
+        }
+      ],
       cast_voice_overrides: [],
       generation_validation_focus: {
         validation_focus_tags: {
