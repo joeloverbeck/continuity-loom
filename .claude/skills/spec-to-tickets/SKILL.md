@@ -1,0 +1,183 @@
+---
+name: spec-to-tickets
+description: "Use when decomposing a Continuity Loom spec into actionable implementation tickets aligned with docs/FOUNDATIONS.md. Reads the spec, validates its assumptions against the codebase, then writes one ticket per reviewable diff to tickets/<PREFIX>-NNN.md. Produces: ticket files. Mutates: only tickets/ (never specs/, docs/, or .claude/skills/)."
+user-invocable: true
+arguments:
+  - name: spec_path
+    description: "Path to the spec file (e.g., specs/SPEC-001-prompt-compiler.md)"
+    required: true
+  - name: namespace
+    description: "Ticket namespace prefix, used as <PREFIX>-<NNN>.md (e.g., SPEC001PROMPT). If omitted, the skill derives one from the spec number and title and asks the user to confirm."
+    required: false
+---
+
+# Spec to Tickets
+
+Break a Continuity Loom spec into small, actionable implementation tickets a reviewer can merge one at a time, each validated against the current codebase and aligned with `docs/FOUNDATIONS.md`.
+
+<HARD-GATE>
+Do NOT Write any ticket file at `tickets/<PREFIX>-<NNN>.md` until ALL of the following hold:
+
+(a) Pre-flight has verified `docs/FOUNDATIONS.md`, `tickets/_TEMPLATE.md`, `tickets/README.md`, and `<spec_path>` are all readable; if any is missing the skill aborts before Step 1.
+
+(b) Step 2 (codebase validation) has completed, and every surfaced Issue has an explicit user disposition — one of: fix-before-decomposition, defer-to-follow-up-ticket (named dependency), reject-with-rationale (route back to `/reassess-spec`), expand-scope-in-place (decompose against the wider surface the codebase requires; the spec text is not edited), or drop-as-moot (named target doesn't exist AND intent is covered by sibling deliverables or is a structural no-op).
+
+(c) Step 4 has emitted the decomposition summary table in chat (numbered tickets with Title, Scope, Effort, Deps, FND, Notes) AND the user has explicitly approved it, OR the auto-mode carve-out has fired (auto mode active AND Step 2 surfaced no Issues AND no `/reassess-spec` findings were deferred by the user).
+
+(d) Every `Deps` reference resolves to a ticket produced in this run, or to a pre-existing `tickets/` / `specs/` / `archive/specs/` path verified at Pre-flight or at Step 4's cross-spec Deps check before approval.
+
+This gate is authoritative under auto mode and any autonomous-execution context. Invoking the skill does not constitute approval of the decomposition.
+</HARD-GATE>
+
+## Process Flow
+
+```
+Pre-flight: verify required files readable; derive + confirm <namespace> if omitted
+       |
+       v
+Step 1: mandatory reads (spec, tickets/_TEMPLATE.md, tickets/README.md, docs/FOUNDATIONS.md)
+       |
+       v
+Step 2: codebase validation (load references/codebase-validation.md); surface Issues; await per-Issue disposition
+       |
+       v
+Step 3: decompose the spec (load references/decomposition-patterns.md)
+       |
+       v
+Step 4: present decomposition summary table; await user approval
+       |
+       +-- [HARD-GATE fires here]
+       |
+       v
+Step 5: batched ticket writes (one or a few messages, parallel Write calls, one per ticket)
+       |
+       v
+Step 6: final summary (cross-ticket Deps check, deliverable coverage, dependency graph, suggested order). Do NOT commit.
+```
+
+## Inputs / Output
+
+**Input**: `spec_path` (required); `namespace` (optional, derived + confirmed if omitted). Plan-mode and worktree-root resolution are auto-detected.
+
+**Output**:
+- **Ticket files at `tickets/<PREFIX>-<NNN>.md`** — one per reviewable diff, each following `tickets/_TEMPLATE.md` exactly.
+- **Decomposition summary table** — emitted in chat at Step 4 before any Write.
+- **Final summary** — emitted at Step 6 (cross-ticket Deps verification, deliverable coverage mapping, dependency graph, suggested implementation order).
+
+This skill emits markdown tickets only — no structured YAML records. It operates at pipeline scope: it produces tickets that feed implementation, so FOUNDATIONS alignment applies even though it writes no story-record content itself.
+
+## Prerequisites
+
+Before acting, this skill MUST read:
+
+- `<spec_path>` — the target spec, entire contents (Step 1).
+- `tickets/_TEMPLATE.md` — the canonical ticket structure; every ticket must follow it exactly (Step 1).
+- `tickets/README.md` — the ticket authoring contract (Step 1).
+- `docs/FOUNDATIONS.md` — the non-negotiable design contract. Skip only if read earlier this session and unmodified (Step 1).
+- Every file path, skill directory, type, schema field, and spec reference extracted from the spec — read on demand at Step 2.
+
+Reading scope: anything under `specs/`, `archive/specs/`, `.claude/skills/`, `docs/`, `reports/`, and `tickets/`. This skill does not author story-record data and does not read story-record files.
+
+## Reference Files
+
+- **Step 2** — `references/codebase-validation.md`
+- **Step 3** — `references/decomposition-patterns.md`
+
+Load each before the corresponding step. Loading both right after Step 1 is the simplest path; on-demand is also fine.
+
+## Worktree & Plan-Mode Awareness
+
+Inside a git worktree, ALL paths (reads, writes, globs, greps) resolve from the worktree root. If plan mode is active, present the decomposition in the plan file and call `ExitPlanMode` in lieu of the Step 4 chat-table approval; write tickets only after approval.
+
+## Pre-flight Check
+
+Before Step 1, verify:
+1. `docs/FOUNDATIONS.md` exists and is readable.
+2. `tickets/_TEMPLATE.md` exists and is readable.
+3. `tickets/README.md` exists and is readable.
+4. `<spec_path>` exists and is readable. If it is a glob (e.g. `specs/SPEC-01*`), resolve first: exactly one match → use it (note the resolution); zero or many → abort or ask to disambiguate.
+5. `<namespace>` is provided, OR derive one from the spec ID and abbreviated title (e.g. `specs/SPEC-001-prompt-compiler.md` → `SPEC001PROMPT`) and ask the user to confirm or override before Step 1.
+
+If any of checks 1–4 fails, abort with a clear missing-file error. If check 5's spec-ID parsing is ambiguous, ask the user for the namespace directly.
+
+## Step 1: Mandatory Reads
+
+Read ALL of: the spec file (entire), `tickets/_TEMPLATE.md`, `tickets/README.md`, and `docs/FOUNDATIONS.md` (skip the last only if read earlier this session and unmodified).
+
+Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` / `Related:`) and its sections (Problem Statement, Approach, Deliverables, FOUNDATIONS Alignment, Verification, Out of Scope, Risks & Open Questions, and any deliverable sections).
+
+**Non-numbered deliverables**: if the spec uses named sections or a numbered `§Scope` / `§In scope` list instead of numbered deliverables, treat each distinct implementation section (or in-scope item) as a deliverable for decomposition.
+
+## Step 2: Codebase Validation
+
+**Load `references/codebase-validation.md`.** Validate the spec's assumptions against the current codebase, surface Issues, and obtain a per-Issue disposition before Step 3. A spec that was reassessed via `/reassess-spec` earlier this session with all findings resolved qualifies for the abbreviated spot-check path documented in the reference.
+
+## Step 3: Decompose the Spec
+
+**Load `references/decomposition-patterns.md`.** Identify discrete work units — each a reviewable diff — map dependencies into each ticket's `Deps`, order by dependency graph and criticality, and ensure every spec deliverable is covered (no silent skipping). The reference documents the deliverable-coverage categories, the merge/split rules, and the recurring ticket-shape patterns (capstone integration ticket, cross-cutting docs ticket).
+
+## Step 4: Present Summary for Approval
+
+Before writing any ticket files, present a numbered summary table:
+
+| # | Ticket ID | Title | Scope | Effort | Deps | FND | Notes |
+|---|-----------|-------|-------|--------|------|-----|-------|
+| 1 | <NS>-001  | …     | <5-10 word scope> | Small  | None | — | — |
+| 2 | <NS>-002  | …     | <5-10 word scope> | Medium | 001  | §11 | shared file set |
+
+Column roles: **Title** matches the ticket's first line; **Scope** is the deliverable mapping (`D1+D6`) or acceptance surface — must not duplicate the Title; **Effort** Small/Medium/Large; **Deps** other tickets in this batch or pre-existing tickets/specs (state once if all independent); **FND** a FOUNDATIONS section only when notable (e.g. §11 validation, §15 secrets), `—` otherwise; **Notes** merged/split deliverables, shared files, multi-dependency validation tickets.
+
+**Cross-spec Deps verification (before HARD-GATE fires)**: run `test -f` (or equivalent) on every cross-spec `Deps` path introduced during Step 3 that was not verified at Pre-flight (typically `specs/<sibling>.md`, `archive/specs/<archived>.md`, or `tickets/<PREFIX>-NNN.md` from a prior batch). Abort with a missing-Deps error if any fails. Cite the result alongside the table (e.g. `Cross-spec Deps verification: N/A — all Deps resolve to tickets produced in this run`).
+
+**Wait for user approval or adjustments.** Do not write files until the user confirms. **Auto-mode / no-stopping carve-out**: when auto mode (or an in-session "work without stopping" directive) is active AND Step 2 surfaced no Issues AND no `/reassess-spec` findings were deferred, auto-approve and proceed; announce it inline and cite the directive. Any open Issue or deferred finding holds the wait-gate per HARD-GATE clause (c). When every Issue carries an explicit recommended disposition under a no-stopping directive, the operator MAY proceed by applying the named dispositions, citing each before the writes; the user can redirect.
+
+## Step 5: Batched Ticket Writes
+
+**Pre-write rehearsal (mandatory)**: in the turn immediately before the writes, state the exact number of Write calls the next response will contain. **Default: ≤3 parallel Writes per batch** unless a larger parallel batch has already succeeded this session (cite the tested ceiling when committing to more). The Write turn that follows must contain exactly that count and nothing else. If the emitted count diverges from the rehearsal, the next turn is a zero-Write acknowledgment that restates the remaining count and re-batches at ≤ the last successfully-emitted count — do not emit a single catch-up Write "to keep momentum."
+
+**Pre-write existence checks** (same rehearsal turn): for every `(modify)` Files-to-Touch entry across the composed tickets, run `test -f` against the working tree; correct or reclassify any path that doesn't resolve. A `(modify)` entry pointing to a file another ticket creates `(new)` in this batch is valid only when the modifying ticket declares `Deps:` on the creator (per `references/decomposition-patterns.md` §Intra-batch create-then-modify chains). For every command in a ticket's Test Plan, confirm it resolves against the repo. Enumerate `(modify)` entries individually, not as a collapsed "all new" claim.
+
+**Flow**: compose every ticket's full content first, then emit all Write calls together in 1-2 batched messages (parallel Write calls, one per ticket; 2-3 batches for 10+ tickets or very large bodies). Do NOT alternate compose → Write per ticket.
+
+For each approved ticket, compose its full content following `tickets/_TEMPLATE.md` exactly — every required section present (Status, Priority, Effort, Engine Changes, Deps, Problem, Assumption Reassessment, Architecture Check, Verification Layers, What to Change, Files to Touch, Out of Scope, Acceptance Criteria, Test Plan). For the **Assumption Reassessment** menu: items 1–3 are always required; for items 4+ **Select** the menu items matching this ticket's scope, **Rewrite** each selected item's number to its position in the surviving list (starting at 4), and **Verify** the final list reads `1, 2, 3, 4, …` with no gaps (a list like `1, 2, 3, 6` means the rewrite step was skipped). Every ticket modifying existing behavior must cite the change rationale in Assumption Reassessment (no silent retcon — §20).
+
+After the batch returns, verify every ticket file exists; retry any failed Write before Step 6. If a system-reminder shows a ticket was externally edited (e.g. a linter hook), treat the edit as authoritative and re-verify sibling references against the edited content before the final summary.
+
+## Step 6: Final Summary
+
+After writing all files:
+
+1. **Cross-ticket dependency consistency**: for each `Deps`, confirm the depended-on ticket actually produces what the dependent needs; `test -f` every `Deps` path at emission time. If a `(modify)` Files-to-Touch entry names a file a sibling creates `(new)` in this batch without a declared `Deps` on the creator, flag it.
+2. **Template fidelity**: confirm every required section is present and that each ticket's Assumption Reassessment uses gapless sequential numbering starting at 1. Numbering check: `awk '/^## Assumption Reassessment/,/^## Architecture Check/' tickets/<PREFIX>-NNN.md | grep -oE '^[0-9]+'` should be strictly sequential. Also confirm each applicable conditional menu item is present — a FOUNDATIONS principle / Validation Rule motivated → item 4; a fail-closed-validation / secret-firewall / deterministic-compilation surface touched → item 5; an existing output schema extended → item 6; a skill/symbol renamed or removed → item 7.
+3. **Deliverable coverage mapping**: list each spec deliverable and the ticket(s) covering it (`D1→001`, `D3→003+004` for a split), including the exempt categories from `references/decomposition-patterns.md`. Flag any uncovered deliverable.
+4. List: all ticket files created, the dependency graph, the suggested implementation order, any **deferred `/reassess-spec` findings** ("may warrant separate tickets"), and any **cross-spec follow-ups** surfaced by the spec's Risks section or discovered during decomposition.
+5. **Shared-file overlaps**: enumerate files that ≥2 independent (`Deps: None`) tickets each modify, so implementers coordinate mechanical merges.
+
+Do NOT commit. Leave files for user review.
+
+## Guardrails
+
+- **FOUNDATIONS is authoritative**: never approve a decomposition that violates a FOUNDATIONS principle or trips a §29 hard-fail — flag it as a CRITICAL Issue at Step 2 and await disposition.
+- **Template fidelity**: every ticket uses `tickets/_TEMPLATE.md` exactly — no ad-hoc sections, no missing fields, no "simplified" variants. Template evolution is a separate spec.
+- **Ticket fidelity**: never silently skip a deliverable. If one seems wrong, use the 1-problem / 3-options / 1-recommendation format and ask.
+- **Codebase truth**: file paths, skill names, types, and schema references in tickets must be validated against the actual codebase, not assumed from the spec. Stale references propagated spec → ticket are a skill failure.
+- **Reviewable size**: each ticket should be reviewable as a single diff. When in doubt, split.
+- **Explicit dependencies**: declare inter-ticket ordering in `Deps`; never leave it implicit. Every `Deps` entry resolves to a ticket produced this run or a verified pre-existing path.
+- **No spec edits**: this skill never edits the source spec. If decomposition reveals a spec defect, flag it as an Issue and route the fix to `/reassess-spec`.
+- **Worktree discipline**: inside a worktree, all paths resolve from the worktree root.
+- **Do not `git commit`**: writes land in the working tree; the user reviews and commits.
+
+## FOUNDATIONS Alignment
+
+| Principle | Step | Mechanism |
+|-----------|------|-----------|
+| §4 Non-negotiable principles | Pre-flight + Step 1 | FOUNDATIONS.md, _TEMPLATE.md, README.md, and the spec are required reads; the skill refuses to decompose without them. |
+| §8 Deterministic prompt compilation | Step 2 | Deliverables touching compilation are flagged if they introduce a nondeterministic input or an LLM intermediary in the compilation path. |
+| §11 Validation and hard fails | Step 2 | Deliverables proposing validation rules must stay deterministic and blocking and distinguish warnings from blockers; deviations are flagged. |
+| §15 POV, knowledge, secrets | Step 2 | Deliverables touching POV/secret handling that would weaken the secret firewall trigger a CRITICAL Issue. |
+| §20 Durable change & human gatekeeping | Step 5 | Every ticket modifying existing behavior must cite the change rationale in Assumption Reassessment (no silent retcon). |
+| §29 Alignment checklist | Step 2 | Any §29 hard-fail answered "yes" is a CRITICAL Issue blocking decomposition. |
+
+## Final Rule
+
+A decomposition is not complete until every spec deliverable maps to a ticket OR to an explicit non-goal OR to a documented exempt category, every `Deps` resolves to a real target, every ticket's Files to Touch matches the current codebase, and every FOUNDATIONS-impacting deliverable has been validated against `docs/FOUNDATIONS.md` before its ticket was written.
