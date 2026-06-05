@@ -1,6 +1,6 @@
 # SPEC007DETPROCOM-007: Server shared snapshot builder + validation-gated `POST /api/compile`
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extracts a shared server-side snapshot builder from `validation-routes.ts`, adds `packages/server/src/compile-routes.ts` (`POST /api/compile`), and registers it in `server.ts`.
@@ -150,3 +150,28 @@ registrations.
 
 1. `npm test --workspace @loom/server` — targeted server route tests.
 2. `npm run typecheck && npm test && npm run lint && npm run build` — full-pipeline gate.
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Extracted server snapshot construction into a shared `snapshot-builder.ts` used by
+  both `/api/validate` and `/api/compile`.
+- Added validation-gated `POST /api/compile`: it builds the snapshot, runs
+  validation first, returns no prompt when blocked, and returns `compilePrompt`
+  output only for blocker-free state.
+- Registered the compile route in the localhost server.
+- Added server tests for no-open-project, successful deterministic compile,
+  validation-blocked fail-closed response, malformed selected-record errors,
+  no mutation, and no prompt-facing log leakage.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm test --workspace @loom/server` passed: 16 files, 69 tests.
+- `npm run typecheck` passed.
+- `npm test` passed: 47 files, 247 tests.
+- `npm run lint` passed.
+- `npm run build` passed, with Vite's large-chunk warning only.
