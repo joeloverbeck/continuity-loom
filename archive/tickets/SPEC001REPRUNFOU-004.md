@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-004: `@loom/web` React + Vite UI shell and dev proxy
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/web` (`@loom/web`) React + Vite app depending on `@loom/core` for types; Vite `/api` dev proxy
@@ -78,3 +78,13 @@ Phase 1 needs a minimal browser cockpit so the launch gate is observably pass/fa
 
 1. `npm run test --workspace @loom/web`
 2. `npm run build --workspace @loom/web && npm run typecheck --workspace @loom/web`
+
+## Outcome
+
+Implemented `@loom/web` as a React + Vite placeholder cockpit with a `/api`
+dev proxy to the loopback server, health/version fetching, and a clear
+unreachable-server state. Added component tests for the success and failure
+paths. Verified with `npm run test --workspace @loom/web`, `npm run build
+--workspace @loom/web`, `npm run typecheck --workspace @loom/web`, `npm run
+lint --workspace @loom/web`, and a grep check confirming no `@loom/server`
+imports or deferred routing/state/design-system dependencies.
