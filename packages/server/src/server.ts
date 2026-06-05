@@ -2,6 +2,7 @@ import { versionInfo } from "@loom/core";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
+import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
@@ -60,6 +61,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerProjectRoutes(app, projectStoreManager);
   registerRecordRoutes(app, projectStoreManager);
   registerStoryConfigRoutes(app, projectStoreManager);
+  registerGenerationBriefRoutes(app, projectStoreManager);
   registerWorkingSetRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
