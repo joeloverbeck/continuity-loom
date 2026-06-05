@@ -74,7 +74,7 @@ function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function recordIdFromPayload(recordType: string, payload: unknown): string {
+function payloadRecordId(payload: unknown): string | null {
   if (
     typeof payload === "object" &&
     payload !== null &&
@@ -84,7 +84,11 @@ function recordIdFromPayload(recordType: string, payload: unknown): string {
     return (payload as { id: string }).id;
   }
 
-  return generateRecordId();
+  return null;
+}
+
+function recordIdFromPayload(recordType: string, payload: unknown): string {
+  return payloadRecordId(payload) ?? generateRecordId();
 }
 
 function parsePayloadJson(json: string): unknown {
@@ -190,6 +194,11 @@ export class RecordRepository {
     }
 
     const payload = parseRecordPayload(type, input.payload);
+    const payloadId = payloadRecordId(payload);
+    if (payloadId !== null && payloadId !== input.id) {
+      throw new RecordIntegrityError(`Record update id mismatch: row ${input.id} vs payload ${payloadId}`);
+    }
+
     const timestamp = nowIso();
     const displayLabel = input.displayLabel ?? String(existing.display_label);
     const userOrder = input.userOrder ?? (typeof existing.user_order === "number" ? existing.user_order : null);

@@ -281,6 +281,162 @@ describe("SPEC-003 record tables and repository", () => {
     expect(repository.getRecord(good.id)).toMatchObject({ ok: false, kind: "malformed-record" });
   });
 
+  it("rejects update payload ids that diverge from the row id", async () => {
+    const storeManager = manager();
+    await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "update-id-mismatch",
+      title: "Update Id Mismatch"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    repository.createRecord({
+      type: "FACT",
+      displayLabel: "Original",
+      payload: {
+        id: idA,
+        status: "active",
+        fact_kind: "current_state",
+        statement: "Original statement",
+        scope: "entity",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "medium"
+      }
+    });
+
+    expect(() =>
+      repository.updateRecord({
+        id: idA,
+        payload: {
+          id: idB,
+          status: "active",
+          fact_kind: "current_state",
+          statement: "Changed statement",
+          scope: "entity",
+          known_by: [],
+          audience_visibility: "explicit",
+          salience: "high"
+        }
+      })
+    ).toThrow(RecordIntegrityError);
+
+    const stored = repository.getRecord(idA);
+    expect(stored).toMatchObject({
+      ok: true,
+      record: {
+        id: idA,
+        displayLabel: "Original",
+        salience: "medium",
+        payload: { id: idA, statement: "Original statement" }
+      }
+    });
+  });
+
+  it("updates id-less record payloads without a payload id guard", async () => {
+    const storeManager = manager();
+    await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "update-idless",
+      title: "Update Idless"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    const castMember = repository.createRecord({
+      type: "CAST MEMBER",
+      displayLabel: "A",
+      payload: {
+        entity_id: idA,
+        identity: {
+          one_line: "A careful operator.",
+          public_face: "Composed",
+          private_pressure: "Fearful"
+        },
+        voice_anchor: {
+          core_voice: "formal",
+          rhythm_and_syntax: "measured",
+          register_and_diction: "precise",
+          vocabulary_and_metaphor_pools: "weather",
+          profanity_and_intensity: "low",
+          taboo_and_avoidance_patterns: "home",
+          dialogue_tactics_and_speech_functions: "deflects",
+          address_terms_and_naming: "titles",
+          silence_interruption_and_turntaking: "strategic",
+          under_pressure_voice: "clipped",
+          suppression_or_evasion_rule: "redirects",
+          must_preserve: ["precision"],
+          must_avoid: ["rambling"],
+          anti_repetition_warnings: ["do not repeat weather metaphors"]
+        },
+        pressure_behavior_core: {
+          cornered: "narrows choices",
+          tempted_or_offered_power: "bargains",
+          protecting_attachment: "deflects"
+        },
+        body_presence_core: {
+          physicality: "still",
+          habitual_gestures_or_presence: "folded hands",
+          social_presentation: "controlled"
+        },
+        agency_core: { default_strategy: "delay", risk_style: "calculated" }
+      }
+    });
+
+    const updated = repository.updateRecord({
+      id: castMember.id,
+      displayLabel: "A updated",
+      payload: {
+        entity_id: idA,
+        identity: {
+          one_line: "A decisive operator.",
+          public_face: "Composed",
+          private_pressure: "Fearful"
+        },
+        voice_anchor: {
+          core_voice: "formal",
+          rhythm_and_syntax: "measured",
+          register_and_diction: "precise",
+          vocabulary_and_metaphor_pools: "weather",
+          profanity_and_intensity: "low",
+          taboo_and_avoidance_patterns: "home",
+          dialogue_tactics_and_speech_functions: "deflects",
+          address_terms_and_naming: "titles",
+          silence_interruption_and_turntaking: "strategic",
+          under_pressure_voice: "clipped",
+          suppression_or_evasion_rule: "redirects",
+          must_preserve: ["precision"],
+          must_avoid: ["rambling"],
+          anti_repetition_warnings: ["do not repeat weather metaphors"]
+        },
+        pressure_behavior_core: {
+          cornered: "narrows choices",
+          tempted_or_offered_power: "bargains",
+          protecting_attachment: "deflects"
+        },
+        body_presence_core: {
+          physicality: "still",
+          habitual_gestures_or_presence: "folded hands",
+          social_presentation: "controlled"
+        },
+        agency_core: { default_strategy: "delay", risk_style: "calculated" }
+      }
+    });
+
+    expect(updated).toMatchObject({
+      id: castMember.id,
+      displayLabel: "A updated",
+      payload: { entity_id: idA, identity: { one_line: "A decisive operator." } }
+    });
+  });
+
   it("round-trips story config, generation session, accepted segments, and keeps accepted prose out of records", async () => {
     const storeManager = manager();
     await storeManager.createProject({
