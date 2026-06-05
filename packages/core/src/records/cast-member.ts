@@ -3,7 +3,54 @@ import { z } from "zod";
 import { nonemptyString, recordId } from "./common.js";
 import type { RecordTypeDefinition } from "./registry.js";
 
-const looseObject = z.record(z.string(), z.unknown()).optional();
+const voiceExtendedSchema = z
+  .object({
+    intimacy: nonemptyString.optional(),
+    anger: nonemptyString.optional(),
+    lying: nonemptyString.optional(),
+    register_switching: nonemptyString.optional(),
+    humor_or_irony_style: nonemptyString.optional(),
+    idiom_or_sociolect_notes: nonemptyString.optional(),
+    anti_generic_warnings: z.array(nonemptyString).optional()
+  })
+  .strict()
+  .optional();
+
+const bodyAndPresenceExtendedSchema = z
+  .object({
+    body_limits: nonemptyString.optional(),
+    clothing_presentation: nonemptyString.optional(),
+    sensory_or_appearance_signatures: nonemptyString.optional()
+  })
+  .strict()
+  .optional();
+
+const perceptionAndEmbodimentSchema = z
+  .object({
+    notices: nonemptyString.optional(),
+    misses: nonemptyString.optional(),
+    misreads: nonemptyString.optional(),
+    sensory_bias: nonemptyString.optional()
+  })
+  .strict()
+  .optional();
+
+const pressureBehaviorExtendedSchema = z
+  .object({
+    humiliated: nonemptyString.optional(),
+    offered_power: nonemptyString.optional(),
+    refused_power: nonemptyString.optional()
+  })
+  .strict()
+  .optional();
+
+const agencyAndPlanningExtendedSchema = z
+  .object({
+    fallback_style: nonemptyString.optional(),
+    planning_blind_spots: nonemptyString.optional()
+  })
+  .strict()
+  .optional();
 
 export const sampleUtteranceSchema = z
   .object({
@@ -86,13 +133,13 @@ export const castMemberSchema = z
       })
       .strict()
       .optional(),
-    relational_charge: z.string().optional(),
-    moral_psychological_edge: z.string().optional(),
-    voice_extended: looseObject,
-    body_and_presence_extended: looseObject,
-    perception_and_embodiment: looseObject,
-    pressure_behavior_extended: looseObject,
-    agency_and_planning_extended: looseObject,
+    relational_charge: nonemptyString.optional(),
+    moral_psychological_edge: nonemptyString.optional(),
+    voice_extended: voiceExtendedSchema,
+    body_and_presence_extended: bodyAndPresenceExtendedSchema,
+    perception_and_embodiment: perceptionAndEmbodimentSchema,
+    pressure_behavior_extended: pressureBehaviorExtendedSchema,
+    agency_and_planning_extended: agencyAndPlanningExtendedSchema,
     sample_utterances: z.array(sampleUtteranceSchema).optional()
   })
   .strict();

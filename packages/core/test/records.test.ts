@@ -16,6 +16,42 @@ import {
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 
+const fullCastMemberPayload = {
+  entity_id: idA,
+  identity: {
+    one_line: "A careful operator.",
+    public_face: "Composed",
+    private_pressure: "Fearful"
+  },
+  voice_anchor: {
+    core_voice: "formal",
+    rhythm_and_syntax: "measured",
+    register_and_diction: "precise",
+    vocabulary_and_metaphor_pools: "weather",
+    profanity_and_intensity: "low",
+    taboo_and_avoidance_patterns: "home",
+    dialogue_tactics_and_speech_functions: "deflects",
+    address_terms_and_naming: "titles",
+    silence_interruption_and_turntaking: "strategic",
+    under_pressure_voice: "clipped",
+    suppression_or_evasion_rule: "redirects",
+    must_preserve: ["precision"],
+    must_avoid: ["rambling"],
+    anti_repetition_warnings: ["do not repeat weather metaphors"]
+  },
+  pressure_behavior_core: {
+    cornered: "narrows choices",
+    tempted_or_offered_power: "bargains",
+    protecting_attachment: "deflects"
+  },
+  body_presence_core: {
+    physicality: "still",
+    habitual_gestures_or_presence: "folded hands",
+    social_presentation: "controlled"
+  },
+  agency_core: { default_strategy: "delay", risk_style: "calculated" }
+};
+
 describe("record data model", () => {
   it("validates common metadata and rejects unknown keys", () => {
     expect(
@@ -125,39 +161,7 @@ describe("record data model", () => {
   it("accepts full cast dossiers and generation sessions", () => {
     expect(
       castMemberSchema.parse({
-        entity_id: idA,
-        identity: {
-          one_line: "A careful operator.",
-          public_face: "Composed",
-          private_pressure: "Fearful"
-        },
-        voice_anchor: {
-          core_voice: "formal",
-          rhythm_and_syntax: "measured",
-          register_and_diction: "precise",
-          vocabulary_and_metaphor_pools: "weather",
-          profanity_and_intensity: "low",
-          taboo_and_avoidance_patterns: "home",
-          dialogue_tactics_and_speech_functions: "deflects",
-          address_terms_and_naming: "titles",
-          silence_interruption_and_turntaking: "strategic",
-          under_pressure_voice: "clipped",
-          suppression_or_evasion_rule: "redirects",
-          must_preserve: ["precision"],
-          must_avoid: ["rambling"],
-          anti_repetition_warnings: ["do not repeat weather metaphors"]
-        },
-        pressure_behavior_core: {
-          cornered: "narrows choices",
-          tempted_or_offered_power: "bargains",
-          protecting_attachment: "deflects"
-        },
-        body_presence_core: {
-          physicality: "still",
-          habitual_gestures_or_presence: "folded hands",
-          social_presentation: "controlled"
-        },
-        agency_core: { default_strategy: "delay", risk_style: "calculated" },
+        ...fullCastMemberPayload,
         relational_charge: "toward B",
         moral_psychological_edge: "pride",
         sample_utterances: [
@@ -185,5 +189,68 @@ describe("record data model", () => {
     });
 
     expect(session.immediate_handoff?.last_visible_moment).toBe("At the door");
+  });
+
+  it("validates CAST MEMBER extended-field schemas from story schema section 5.2", () => {
+    expect(
+      castMemberSchema.parse({
+        ...fullCastMemberPayload,
+        relational_charge: "toward B",
+        moral_psychological_edge: "pride",
+        voice_extended: {
+          intimacy: "softens only in private",
+          anger: "precise and quiet",
+          lying: "over-explains dates",
+          register_switching: "formal under observation",
+          humor_or_irony_style: "dry understatement",
+          idiom_or_sociolect_notes: "legal metaphors",
+          anti_generic_warnings: ["do not make the voice broadly aristocratic"]
+        },
+        body_and_presence_extended: {
+          body_limits: "old knee injury slows stairs",
+          clothing_presentation: "immaculate cuffs",
+          sensory_or_appearance_signatures: "cold mint scent"
+        },
+        perception_and_embodiment: {
+          notices: "locked windows",
+          misses: "warm gestures",
+          misreads: "politeness as leverage",
+          sensory_bias: "tracks temperature shifts"
+        },
+        pressure_behavior_extended: {
+          humiliated: "becomes procedural",
+          offered_power: "asks for terms",
+          refused_power: "records the refusal"
+        },
+        agency_and_planning_extended: {
+          fallback_style: "withdraw and document",
+          planning_blind_spots: "assumes everyone values control"
+        }
+      })
+    ).toMatchObject({
+      voice_extended: { register_switching: "formal under observation" },
+      agency_and_planning_extended: { planning_blind_spots: "assumes everyone values control" }
+    });
+
+    expect(
+      castMemberSchema.parse({
+        ...fullCastMemberPayload,
+        voice_extended: { intimacy: "keeps confidences short" }
+      }).voice_extended
+    ).toEqual({ intimacy: "keeps confidences short" });
+
+    expect(() =>
+      castMemberSchema.parse({
+        ...fullCastMemberPayload,
+        voice_extended: { intimacy: "softens only in private", typo_field: "not allowed" }
+      })
+    ).toThrow();
+
+    expect(() =>
+      castMemberSchema.parse({
+        ...fullCastMemberPayload,
+        relational_charge: ""
+      })
+    ).toThrow();
   });
 });

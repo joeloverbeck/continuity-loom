@@ -1,6 +1,6 @@
 # SPEC003SCHEMAFIX-001: Close CAST MEMBER §5.2 extended-field schemas
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/core` `packages/core/src/records/cast-member.ts` CAST MEMBER payload schema (5 extended-field groups + 2 optional prose fields).
@@ -86,3 +86,23 @@ In `packages/core/src/records/cast-member.ts`, delete the `looseObject` constant
 
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-05
+
+What changed:
+- Replaced the CAST MEMBER §5.2 open extended-field blobs with named `.strict()` Zod object schemas for `voice_extended`, `body_and_presence_extended`, `perception_and_embodiment`, `pressure_behavior_extended`, and `agency_and_planning_extended`.
+- Tightened `relational_charge` and `moral_psychological_edge` from optional bare strings to optional non-empty prose strings.
+- Added core record tests proving a fully populated §5.2 CAST MEMBER fixture parses, a partially populated extended group parses, an unknown extended-group key is rejected, and empty `relational_charge` is rejected.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test --workspace @loom/core` passed: 3 test files, 14 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 14 test files, 63 tests.
+- `npm run build` passed.
+- `rg -n "looseObject|z\\.record" packages/core/src/records` returned no matches.
