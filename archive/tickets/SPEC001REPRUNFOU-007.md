@@ -1,6 +1,6 @@
 # SPEC001REPRUNFOU-007: Phase-1 gate verification (capstone)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: None — verification-only; exercises 001–006 end-to-end and adds no production logic
@@ -70,3 +70,13 @@ Add an optional end-to-end smoke that boots the launch and hits `/api/health` + 
 
 1. `npm run typecheck && npm run lint && npm test && npm run build`
 2. `npm start` (manual runbook per What to Change)
+
+## Outcome
+
+Added `packages/server/src/gate.e2e.test.ts` to verify the required root
+scripts and the one-origin launch path for built assets, `/api/health`, and
+`/api/version`. Verified the Phase 1 gate with `npm run test --workspace
+@loom/server`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`,
+and `git diff --check`. The production launch path was also smoke-tested during
+SPEC001REPRUNFOU-006 with `node packages/server/dist/launch.js --port 0
+--no-open`, confirming the printed loopback URL served the built page and API.
