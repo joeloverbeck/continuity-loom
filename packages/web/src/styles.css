@@ -165,7 +165,8 @@ label {
 }
 
 input,
-textarea {
+textarea,
+select {
   box-sizing: border-box;
   width: 100%;
   border: 1px solid #c9d2df;
@@ -214,6 +215,87 @@ button:disabled:hover {
   font-size: 0.9rem;
 }
 
+.browserLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: 20px;
+}
+
+.browserMain {
+  min-width: 0;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.createRail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.createRail button {
+  background: #39445a;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+}
+
+.recordTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+}
+
+.recordTable th,
+.recordTable td {
+  border-bottom: 1px solid #d8dee8;
+  padding: 9px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.recordTable th {
+  color: #5c677d;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.linkButton {
+  border-radius: 0;
+  background: transparent;
+  color: #17466d;
+  padding: 0;
+  text-align: left;
+}
+
+.linkButton:hover {
+  background: transparent;
+  color: #245a8d;
+  text-decoration: underline;
+}
+
+.detailPane {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.payloadPreview {
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid #e0e5ee;
+  border-radius: 6px;
+  background: #f8fafc;
+  padding: 12px;
+  white-space: pre-wrap;
+}
+
 @media (max-width: 760px) {
   .appFrame {
     grid-template-columns: 1fr;
@@ -226,5 +308,9 @@ button:disabled:hover {
 
   .contentPane {
     padding: 20px;
+  }
+
+  .browserLayout {
+    grid-template-columns: 1fr;
   }
 }
