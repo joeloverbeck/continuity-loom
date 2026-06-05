@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  activeWorkingSetSchema,
   castMemberSchema,
   currentAuthoritativeStateSchema,
   extractRecordReferences,
@@ -260,6 +261,41 @@ describe("record data model", () => {
     });
 
     expect(session.immediate_handoff?.last_visible_moment).toBe("At the door");
+  });
+
+  it("allows membership-only active working set storage while preserving full payloads and strictness", () => {
+    expect(
+      generationSessionSchema.parse({
+        active_working_set: { selected_records: [idA] }
+      }).active_working_set
+    ).toEqual({
+      selected_records: [idA],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: []
+    });
+
+    expect(
+      activeWorkingSetSchema.parse({
+        selected_records: [idA, idB],
+        active_onstage_cast_full: [{ cast_member_id: idA, local_function: "pov_narrator" }],
+        present_minor_cast_compressed: [idB],
+        offstage_relevant_cast: [],
+        selected_pov: idA,
+        manual_directive_id: idB
+      })
+    ).toMatchObject({
+      selected_records: [idA, idB],
+      selected_pov: idA,
+      manual_directive_id: idB
+    });
+
+    expect(() =>
+      activeWorkingSetSchema.parse({
+        selected_records: [],
+        unexpected: true
+      })
+    ).toThrow();
   });
 
   it("requires explicit offstage pressuring entities in current authoritative state", () => {

@@ -108,6 +108,12 @@ selected_pov: entity_id | omniscient
 manual_directive_id: id
 ```
 
+Storage note: as of SPEC004RECCRUBAS-002 Option A, Phase 4 may persist
+membership-only active working sets containing `selected_records` without a POV
+or manual directive. `selected_pov` and `manual_directive_id` remain
+generation-time-required, but that fail-closed check belongs to the Phase-6
+validation engine rather than the storage schema.
+
 Compiler requirements:
 
 - Include selected records in deterministic section order.
