@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-007: Phase-10 capstone — manual smoke, governing-doc updates, archive
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — governing docs (`IMPLEMENTATION-ORDER.md`, `CANDIDATES-AND-ACCEPTED-SEGMENTS.md`); archival move of SPEC-010
@@ -88,3 +88,33 @@ Move `specs/SPEC-010-candidate-editor-and-accept-lifecycle.md` → `archive/spec
 1. `grep -F "Status: ✅ Implemented via SPEC-010" docs/requirements-version-1/IMPLEMENTATION-ORDER.md && grep -iF "Phase 10 implementation note" docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md`
 2. `test -f archive/specs/SPEC-010-candidate-editor-and-accept-lifecycle.md && test ! -f specs/SPEC-010-candidate-editor-and-accept-lifecycle.md`
 3. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Marked Phase 10 implemented in `docs/requirements-version-1/IMPLEMENTATION-ORDER.md`
+  and checked its gate bullets.
+- Added a Phase 10 implementation note to
+  `docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md`, recording the
+  dedicated `/generate` surface, accept route, full metadata snapshot, no rejected/
+  superseded persistence, and Phase 11/12 boundaries.
+- Marked SPEC-010 completed with an outcome and archived it to `archive/specs/`.
+
+Deviations from original plan:
+- The real-provider browser smoke could not be completed in this environment because
+  `OPENROUTER_API_KEY` is absent. The local route, storage, and UI lifecycle were verified
+  through the automated coverage landed in SPEC010CANEDIACC-001 through -006 and the full
+  repo gates.
+
+Verification results:
+- `grep -F "Status: ✅ Implemented via SPEC-010" docs/requirements-version-1/IMPLEMENTATION-ORDER.md`
+  and `grep -iF "Phase 10 implementation note" docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md`
+  — passed.
+- `test -f archive/specs/SPEC-010-candidate-editor-and-accept-lifecycle.md && test ! -f specs/SPEC-010-candidate-editor-and-accept-lifecycle.md`
+  — passed after archive move.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.

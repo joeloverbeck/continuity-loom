@@ -175,18 +175,27 @@ Phase gate:
 
 ## Phase 10 — Candidate editor and regenerate/discard/accept lifecycle
 
+Status: ✅ Implemented via SPEC-010 (2026-06-06).
+
 Implement current-session candidate display/editing, regeneration, discard, and acceptance entry point.
 
 Why after OpenRouter: candidates are the UI result of transport. Why before accepted archive browser: acceptance needs a durable target.
 
+Implementation note: Phase 10 ships the dedicated Generate / Candidate surface, editable
+session-only candidate text, regenerate/discard behavior, and one accepted-segment append
+through `POST /api/accepted-segments` with a full key-free metadata snapshot. The accepted
+segment browser, deletion, and export remain Phase 11. The persistent durable-change
+banner/checklist with acknowledge/snooze remains Phase 12; Phase 10 includes only the
+minimal ephemeral post-accept notice.
+
 Phase gate:
 
-- successful send creates editable candidate only;
-- user can edit candidate before acceptance;
-- regenerate replaces or supersedes current unsaved candidate without permanent storage;
-- discard clears current candidate without durable writes;
-- accept writes one accepted segment through archive logic;
-- no rejected/superseded candidates persist.
+- [x] successful send creates editable candidate only;
+- [x] user can edit candidate before acceptance;
+- [x] regenerate replaces or supersedes current unsaved candidate without permanent storage;
+- [x] discard clears current candidate without durable writes;
+- [x] accept writes one accepted segment through archive logic;
+- [x] no rejected/superseded candidates persist.
 
 ## Phase 11 — Accepted segment archive and browser
 

@@ -1,6 +1,6 @@
 # SPEC-010 — Candidate Editor and Regenerate/Discard/Accept Lifecycle
 
-Status: DRAFT
+Status: COMPLETED
 Phase: Implementation Order Phase 10
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED), SPEC-007 (Deterministic Prompt Compiler, COMPLETED), SPEC-008 (Prompt Preview Gated by Validation, COMPLETED), SPEC-009 (OpenRouter Global Settings and Non-Streaming Send, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -424,3 +424,50 @@ is not silently tripped, and is fully cleared when Phase 12 ships.
   deterministic snapshot, optional usage/finish-reason/fingerprint deferred); storage target
   (existing `accepted_segments` table + `appendAcceptedSegment`, no schema change); post-accept
   UX (minimal ephemeral notice; persistent reminder → Phase 12; browser → Phase 11).
+
+## Outcome
+
+Completed: 2026-06-06
+
+What actually changed:
+- `POST /api/generate` now returns a full key-free generation metadata snapshot:
+  model, provider, temperature, max output tokens, optional top-p, and
+  template/compiler/contract versions.
+- `POST /api/accepted-segments` appends exactly one accepted segment through the existing
+  `accepted_segments` table and stores the edited accepted text plus the generation
+  metadata snapshot. It does not run validation/compilation, mutate records, store full
+  prompts, or store an edited flag.
+- The web API exposes the widened `GenerationMetadata` contract and `acceptCandidate()`.
+- The prompt inspector is shared by `/preview` and `/generate`.
+- `Generate / Candidate` is an enabled route. `/preview` is inspection-only.
+- `/generate` supports prompt inspection before Send, editable session-only candidates,
+  Regenerate with edit-loss warning, Discard, Accept, missing-key disabled Send, and a
+  minimal ephemeral post-accept notice.
+- `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` and
+  `docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md` record Phase 10
+  completion and preserve Phase 11/12 boundaries.
+
+Deviations from original plan:
+- The accept route returns HTTP `201 Created`, matching existing create-route style, while
+  preserving the planned success body shape.
+- The web API tests were added to the existing `api.test.tsx` file instead of creating a
+  duplicate `api.test.ts`.
+- `PromptInspector` owns the search input and metadata panel in addition to the prompt
+  body, because those are part of the reusable prompt-inspection surface.
+- Missing-key disabled Send is driven by `getOpenRouterSettings()` before transport,
+  rather than waiting for `/api/generate` to report `missing-key`.
+- The real-provider manual smoke could not be completed in this environment because
+  `OPENROUTER_API_KEY` is not configured. Automated server and web tests cover the local
+  route, storage, and UI lifecycle seams.
+
+Verification results:
+- `npm test -- generate-routes` — passed.
+- `npm test -- accepted-routes` — passed.
+- `npm test -- api` — passed.
+- `npm test -- PromptInspector PromptPreviewView` — passed.
+- `npm test -- AppShell GenerateView PromptPreviewView App` — passed.
+- `npm test -- GenerateView` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed.
