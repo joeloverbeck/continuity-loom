@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-009: Create `.env.example` naming OPENROUTER_API_KEY
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — adds a new repository-root `.env.example` file.
@@ -68,3 +68,20 @@ Create the file at the repo root containing the OpenRouter key variable name wit
 1. `test -f .env.example && ! git check-ignore -q .env.example && echo tracked`
 2. `grep -n "OPENROUTER_API_KEY=" .env.example`
 3. `grep -nE "sk-[A-Za-z0-9]" .env.example` — must return nothing (no real key).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Created repository-root `.env.example` with a short OpenRouter comment and
+`OPENROUTER_API_KEY=` with no value. No `.gitignore` change was needed because
+`.env.example` was already whitelisted while real `.env` files remain ignored.
+
+Deviations: none from the ticket scope.
+
+Verification:
+
+- `test -f .env.example && ! git check-ignore -q .env.example && echo tracked` — printed `tracked`.
+- `grep -n "OPENROUTER_API_KEY=" .env.example` — found the empty variable.
+- `grep -nE "sk-[A-Za-z0-9]" .env.example` — no matches.
+- `rg -n "OPENROUTER_API_KEY" packages/server/src/openrouter/client.ts packages/server/src/openrouter/models.ts packages/server/src/settings.ts .env.example` — variable name matches the settings and transport consumers.
