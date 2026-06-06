@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-006: Accepted-prose exclusion regression suite
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds `packages/core/test/accepted-prose-exclusion.test.ts` and extends `packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`; no production code changes.
@@ -83,3 +83,24 @@ Extend `packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`: rende
 1. `npm run build --workspace @loom/core && npx vitest run packages/core/test/accepted-prose-exclusion.test.ts`
 2. `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/core/test/accepted-prose-exclusion.test.ts`.
+- The core suite asserts accepted-segment canary text is absent from compiled prompts, compiler source imports no accepted/archive server modules, all prompt-facing handoff fields fail closed on contamination, clean continuation handoff text is allowed, and the immediate handoff schema remains strict with no automatic prose summary field.
+- Extended `packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` with the explicit `include in prompt` negative affordance assertion.
+
+Deviations from original plan:
+- The compiler grep proof targets import specifiers rather than all source text because compiler prompt constants legitimately contain accepted-prose exclusion wording.
+- The clean handoff assertion uses `continuation_after_accepted_segment`; first-segment handoffs intentionally require the special no-accepted-prose status note.
+
+Verification results:
+- `npm run build --workspace @loom/core` passed.
+- `npm exec vitest run packages/core/test/accepted-prose-exclusion.test.ts` passed: 1 file, 7 tests.
+- `npm exec vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` passed: 1 file, 7 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 72 files, 429 tests.

@@ -189,6 +189,7 @@ describe("AcceptedSegmentsView", () => {
 
     expect(await screen.findByText("Readable only.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /use as prompt context/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /include in prompt/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /include.*prompt/i })).toBeNull();
     expect(screen.queryByText(/durable changes/i)).toBeNull();
   });
