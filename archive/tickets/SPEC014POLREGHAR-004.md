@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-004: Dense-record RecordBrowser test
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends `packages/web/src/records/RecordBrowser.test.tsx`; no production component changes (virtualization is deferred-unless-triggered, see Out of Scope).
@@ -73,3 +73,21 @@
 1. `npx vitest run packages/web/src/records/RecordBrowser.test.tsx`
 2. `npm run lint && npm run typecheck && npm test`
 3. The single web-test-file run is the correct boundary — the deliverable is one component smoke; `npm test` confirms no cross-package regression.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Extended `packages/web/src/records/RecordBrowser.test.tsx` with a deterministic 600-record fixture.
+- Added a dense smoke that verifies initial render, type/status filtering, search, salience grouping order, and stable output after a same-route rerender.
+- Kept `RecordBrowser.tsx` unchanged; existing memoization/TanStack rendering handled the dense fixture without requiring virtualization or pagination.
+
+Deviations from original plan:
+- The component's existing `Group by` control sorts rows by the chosen grouping field rather than rendering separate group headers, so the test asserts the current visible grouping contract: sorted row order.
+
+Verification results:
+- `npm exec vitest run packages/web/src/records/RecordBrowser.test.tsx` passed: 1 file, 9 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 70 files, 420 tests.
