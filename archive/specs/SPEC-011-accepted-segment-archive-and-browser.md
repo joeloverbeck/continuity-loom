@@ -1,6 +1,6 @@
 # SPEC-011 — Accepted Segment Archive and Browser
 
-Status: DRAFT
+Status: COMPLETED
 Phase: Implementation Order Phase 11
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED), SPEC-007 (Deterministic Prompt Compiler, COMPLETED), SPEC-008 (Prompt Preview Gated by Validation, COMPLETED), SPEC-009 (OpenRouter Global Settings and Non-Streaming Send, COMPLETED), SPEC-010 (Candidate Editor and Regenerate/Discard/Accept Lifecycle, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -414,3 +414,37 @@ is **out of scope** here — this spec neither regresses that notice nor pre-bui
   storage target (existing `accepted_segments` table + `listAcceptedSegments` + new
   `deleteAcceptedSegment`, no schema change); reminder (persistent banner → Phase 12; this spec
   adds none).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Implemented across SPEC011ACCSEGARC-001 through SPEC011ACCSEGARC-005. Server work added
+`GET /api/accepted-segments`, `DELETE /api/accepted-segments/:id`, and
+`RecordRepository.deleteAcceptedSegment(id)`, with tests for ordered list read-back, structured
+failure cases, sequence-gap preservation, record-table inertness, and accepted-prose log
+exclusion. Web work added typed list/delete clients, a read-only `/accepted-segments` browser,
+metadata rendering, client-side text/metadata filtering, two-step delete confirmation,
+Markdown/plain-text export-all over the full archive, and enabled shell routing.
+
+Governing docs now mark Phase 11 complete while explicitly leaving the persistent durable-change
+reminder in Phase 12 and dashboard latest-segment surfacing deferred. During capstone smoke, a
+fresh-project validation crash was found and fixed by treating missing
+`current_cast_voice_pressure` rows as an empty collection; a regression test now covers that
+case. The browser smoke used a local throwaway project and seeded accepted segments through the
+localhost acceptance API because no real OpenRouter generation setup was available; it verified
+ordered display, metadata, filter, delete confirmation, Markdown/text downloads containing the
+full archive despite an active filter, no prompt-context control, and no key/prompt text in
+observed console output.
+
+Verification:
+
+- `npm test -w @loom/server -- accepted-routes record-layer` — passed
+- `npm test -w @loom/web -- api` — passed
+- `npm test -w @loom/web -- AcceptedSegmentsView` — passed
+- `npm test -w @loom/web -- AppShell App` — passed
+- `npm test -w @loom/core -- validation-blockers` — passed
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (61 files, 355 tests)
+- `npm run build` — passed
