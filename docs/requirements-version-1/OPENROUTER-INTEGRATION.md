@@ -153,6 +153,14 @@ Model settings are global app settings. If cached model metadata is stored, it l
 
 This integration preserves OpenRouter as transport only, global v1 model settings, safe missing-key failure, no API keys in project data/prompts/logs/accepted prose, no model authority over continuity, and no record mutation from external model output.
 
+## Phase 9 implementation note
+
+SPEC-009 implemented the Phase 9 transport slice on 2026-06-06. Non-secret OpenRouter settings are stored globally outside project folders at `CONTINUITY_LOOM_CONFIG_DIR/openrouter.json`, or `$XDG_CONFIG_HOME/continuity-loom/openrouter.json`, or `~/.config/continuity-loom/openrouter.json`. The API key is read only from `OPENROUTER_API_KEY` in the server process environment and is exposed to the UI only as a configured/missing boolean.
+
+`POST /api/generate` builds a fresh project snapshot, re-runs validation fail-closed, compiles the prompt server-side, and sends a non-streaming OpenRouter chat-completion request only when validation has no blockers and a key is present. Transport failures are normalized into the categories above, and success returns current-session candidate text without mutating project records or accepted segments.
+
+The Phase 9 UI displays returned candidate text as a read-only ephemeral draft with a clear action. Editing, regenerate/discard semantics, acceptance, and accepted-segment persistence remain Phase 10 and later; this is the deliberate boundary between Phase 9 transport and the candidate lifecycle.
+
 ## Security/privacy implications
 
 The authorization header is sensitive. It must be redacted at source. Prompt payloads may contain sensitive fiction and private notes; they should not be retained in logs. The local server should prevent browser-origin abuse by binding to localhost and using minimal local endpoints.

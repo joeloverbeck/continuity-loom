@@ -154,20 +154,24 @@ Phase gate:
 
 ## Phase 9 — OpenRouter global settings and non-streaming send
 
+Status: ✅ Implemented via SPEC-009 (2026-06-06).
+
 Add global OpenRouter settings, API-key detection, optional model-list refresh/manual model entry, and non-streaming send.
 
 Why after prompt preview: transport should consume a compiled prompt and settings, not query records directly.
 
+Implementation note: Phase 9 returns read-only ephemeral candidate text from transport. The editable candidate lifecycle, regenerate/discard behavior, and acceptance entry point remain Phase 10.
+
 Phase gate:
 
-- model, temperature, max output tokens, and optional top_p are configurable globally;
-- API key is read from global secret storage only;
-- missing/invalid key fails safely;
-- model-list refresh is optional and manual model entry works;
-- non-streaming send returns candidate text;
-- errors are normalized;
-- no project data mutates on send failure;
-- prompts and keys are not logged.
+- [x] model, temperature, max output tokens, and optional top_p are configurable globally;
+- [x] API key is read from global secret storage only;
+- [x] missing/invalid key fails safely;
+- [x] model-list refresh is optional and manual model entry works;
+- [x] non-streaming send returns candidate text;
+- [x] errors are normalized;
+- [x] no project data mutates on send failure;
+- [x] prompts and keys are not logged.
 
 ## Phase 10 — Candidate editor and regenerate/discard/accept lifecycle
 

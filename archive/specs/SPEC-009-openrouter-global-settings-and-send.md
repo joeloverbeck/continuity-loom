@@ -1,6 +1,6 @@
 # SPEC-009 — OpenRouter Global Settings and Non-Streaming Send
 
-Status: DRAFT
+Status: ✅ COMPLETED
 Phase: Implementation Order Phase 9
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED), SPEC-007 (Deterministic Prompt Compiler, COMPLETED), SPEC-008 (Prompt Preview Gated by Validation, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -477,3 +477,28 @@ provider-specific-core surface is introduced.
   ephemeral display, lifecycle deferred to Phase 10); transport package home (all in
   `@loom/server`, `@loom/core` untouched); key source (env-only); settings storage (global
   config file outside project folders).
+
+## Outcome
+
+Completion date: 2026-06-06.
+
+What changed:
+
+- Implemented global OpenRouter settings backed by a non-secret config file outside project folders, with `OPENROUTER_API_KEY` read only from the server process environment.
+- Added pure request/error transport builders, OpenRouter chat-completion/model-list I/O, settings routes, and validation-gated `POST /api/generate`.
+- Added web settings clients/UI, optional model refresh with manual model entry, and a read-only ephemeral draft candidate panel on the prompt preview surface.
+- Documented the `.env.example` key convention and completed the Phase 9 governing-doc status/note updates.
+
+Deviations:
+
+- Candidate editing, regenerate/discard semantics, acceptance, and accepted-segment persistence intentionally remain out of scope for Phase 9 and are deferred to Phase 10 and later.
+- The live-key smoke used a repo-local ignored `.env` sourced into the server process; the runtime contract remains environment-variable based.
+
+Verification results:
+
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 56 files, 324 tests.
+- `npm run build` passed.
+- Live browser smoke on `127.0.0.1:4173` confirmed configured-key settings, blocker-free preview, live non-streaming generation, read-only draft display, Clear removal, missing-key failure messaging, and empty `localStorage`/`sessionStorage`.
+- Browser console artifact contained only the expected 409 from a preview reload before an active project was selected; it contained no key, prompt, or candidate text.

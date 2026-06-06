@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-010: Phase-9 capstone — manual smoke, governing-doc updates, archival
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes (docs/bookkeeping only) — `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` Phase-9 status, `docs/requirements-version-1/OPENROUTER-INTEGRATION.md` Phase-9 note, and the archival move of `specs/SPEC-009-…md` → `archive/specs/`.
@@ -83,3 +83,29 @@ Move `specs/SPEC-009-openrouter-global-settings-and-send.md` → `archive/specs/
 1. `npm run typecheck && npm run lint && npm test && npm run build`
 2. `grep -n "Implemented via SPEC-009" docs/requirements-version-1/IMPLEMENTATION-ORDER.md && grep -n "Phase 9 implementation note" docs/requirements-version-1/OPENROUTER-INTEGRATION.md`
 3. `test -f archive/specs/SPEC-009-openrouter-global-settings-and-send.md && test ! -f specs/SPEC-009-openrouter-global-settings-and-send.md && echo archived`
+
+## Outcome
+
+Completion date: 2026-06-06.
+
+What changed:
+
+- Completed the Phase 9 capstone smoke with `npm start` on `127.0.0.1:4173`.
+- Updated `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` with the SPEC-009 implemented status, checked Phase 9 gate bullets, and the Phase 10 lifecycle deferral note.
+- Updated `docs/requirements-version-1/OPENROUTER-INTEGRATION.md` with the Phase 9 implementation note covering global config location, env-only key handling, fail-closed `/api/generate`, normalized errors, read-only ephemeral candidate display, and Phase 10 lifecycle deferral.
+- Marked and archived `specs/SPEC-009-openrouter-global-settings-and-send.md` after completion.
+
+Deviations:
+
+- The live-key smoke used `.env` sourced into the `npm start` process environment; `npm start` itself does not load `.env`.
+- The Phase 9 UI remains read-only and ephemeral by design. Editable candidate lifecycle behavior remains Phase 10.
+
+Verification results:
+
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 56 files, 324 tests.
+- `npm run build` passed.
+- Live-key browser smoke confirmed Settings showed the key configured, model refresh populated models, Generate produced a draft candidate, Clear removed it, and `localStorage`/`sessionStorage` stayed empty.
+- No-key browser/API smoke confirmed a blocker-free project compiled, `/api/generate` returned `category: "missing-key"` with no candidate, the UI showed "API key missing. Configure it in Settings.", and browser storage stayed empty.
+- Browser console artifact contained only the expected 409 from a preview reload before an active project was selected; it contained no key, prompt, or candidate text.
