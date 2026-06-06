@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-002: Validation clarity-invariant test
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — adds `packages/core/test/validation-clarity-invariants.test.ts`; no production validation-rule changes (message refinement is deferred-unless-triggered, see Out of Scope).
@@ -76,3 +76,21 @@ Create `packages/core/test/validation-clarity-invariants.test.ts`:
 1. `npm run build --workspace @loom/core && npx vitest run packages/core/test/validation-clarity-invariants.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The single-file vitest run is the correct boundary — the deliverable is one self-contained invariant suite; `npm test` confirms the corpus reuse did not disturb sibling validation tests.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/core/test/validation-clarity-invariants.test.ts`.
+- The suite asserts diagnostic-code uniqueness in `DIAGNOSTIC_CODES`, non-empty `message` and `whyItMatters` on emitted diagnostics, suggested actions on emitted blockers, and the existing warnings/non-gating versus blockers/gating discipline.
+- The test uses a representative production `runValidation` corpus and deliberately does not require every registered code to be emitted, preserving the ticket's scoped treatment of the orphaned `acceptedProseContamination` code.
+
+Deviations from original plan:
+- No production validation message text was changed; no demonstrably unclear message surfaced while implementing the invariant.
+- Did not perform the fake-empty-suggested-actions mutation experiment as a persistent fixture; the test directly asserts the required failure condition over emitted blockers.
+
+Verification results:
+- `npm run build --workspace @loom/core` passed.
+- `npm exec vitest run packages/core/test/validation-clarity-invariants.test.ts` passed: 1 file, 3 tests.
+- `npm test` passed: 69 files, 416 tests.
