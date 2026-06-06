@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   acknowledgeDurableChangeReminder,
   getDurableChangeReminder,
+  getProject,
   type DurableChangeReminder as DurableChangeReminderState
 } from "../api.js";
 import { useReminderRefresh } from "./reminder-refresh.js";
@@ -44,9 +45,21 @@ export function DurableChangeReminder(): React.JSX.Element | null {
   useEffect(() => {
     let active = true;
 
-    void getDurableChangeReminder()
-      .then((response) => {
+    void getProject()
+      .then((project) => {
         if (!active) {
+          return;
+        }
+
+        if ("open" in project && !project.open) {
+          setReminder(null);
+          return null;
+        }
+
+        return getDurableChangeReminder();
+      })
+      .then((response) => {
+        if (!active || !response) {
           return;
         }
 

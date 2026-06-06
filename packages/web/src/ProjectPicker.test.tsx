@@ -17,6 +17,7 @@ import {
   type OpenProjectRequest,
   type ProjectOpenState
 } from "./api.js";
+import { useReminderRefresh } from "./shell/reminder-refresh.js";
 
 vi.mock("./api.js", () => ({
   createBackup: vi.fn(),
@@ -24,6 +25,10 @@ vi.mock("./api.js", () => ({
   createProject: vi.fn(),
   getProject: vi.fn(),
   openProject: vi.fn()
+}));
+
+vi.mock("./shell/reminder-refresh.js", () => ({
+  useReminderRefresh: vi.fn()
 }));
 
 const projectStatus = {
@@ -41,6 +46,7 @@ const createProjectMock = vi.mocked(createProject);
 const createDemoProjectMock = vi.mocked(createDemoProject);
 const openProjectMock = vi.mocked(openProject);
 const createBackupMock = vi.mocked(createBackup);
+const refreshReminderMock = vi.fn();
 
 beforeEach(() => {
   getProjectMock.mockReset();
@@ -49,6 +55,11 @@ beforeEach(() => {
   createDemoProjectMock.mockReset();
   openProjectMock.mockReset();
   createBackupMock.mockReset();
+  refreshReminderMock.mockReset();
+  vi.mocked(useReminderRefresh).mockReturnValue({
+    refreshReminder: refreshReminderMock,
+    refreshSignal: 0
+  });
 });
 
 afterEach(() => {
@@ -96,6 +107,24 @@ describe("ProjectPicker", () => {
     expect(openProjectMock).toHaveBeenCalledWith({
       folderPath: "/tmp/not-project"
     } satisfies OpenProjectRequest);
+    expect(refreshReminderMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshes durable reminders after opening a project", async () => {
+    openProjectMock.mockResolvedValue({
+      ok: true,
+      status: projectStatus
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Folder path"), {
+      target: { value: "/tmp/loom/alpha" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Open Project" }));
+
+    expect(await screen.findByText("/tmp/loom/alpha")).toBeTruthy();
+    expect(refreshReminderMock).toHaveBeenCalledTimes(1);
   });
 
   it("creates the demo project from the parent path and renders it as sample data", async () => {

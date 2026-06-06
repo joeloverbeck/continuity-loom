@@ -10,6 +10,7 @@ import {
   type ProjectOperationFailure,
   type ProjectOpenState
 } from "./api.js";
+import { useReminderRefresh } from "./shell/reminder-refresh.js";
 
 const DEMO_FOLDER_NAME = "letter-under-flour-bin-demo";
 
@@ -41,6 +42,7 @@ export function ProjectPicker(): React.JSX.Element {
     description: ""
   });
   const [openFolderPath, setOpenFolderPath] = useState("");
+  const { refreshReminder } = useReminderRefresh();
 
   const canCreate =
     createFields.parentPath.trim() !== "" &&
@@ -123,6 +125,7 @@ export function ProjectPicker(): React.JSX.Element {
     }
 
     setProject(result.status);
+    refreshReminder();
   }
 
   async function onBackup(): Promise<void> {
