@@ -1,6 +1,6 @@
 # CLEANUP-001: Remove orphaned `acceptedProseContamination` diagnostic code
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — removes one entry from `DIAGNOSTIC_CODES` in `packages/core/src/validation/types.ts`; no behavioral change.
@@ -89,3 +89,18 @@ Leave every other diagnostic entry untouched, including `promptFacingProseContam
 1. `npm run build --workspace @loom/core && npm test`
 2. `grep -rn '"accepted-prose-contamination"' packages --include='*.ts'`
 3. `grep -rn "promptFacingProseContamination" packages/core/src/validation --include='*.ts'`
+
+## Outcome
+
+Completed on 2026-06-06.
+
+Removed the orphaned `DIAGNOSTIC_CODES.acceptedProseContamination` registry entry from `packages/core/src/validation/types.ts`. The live `promptFacingProseContamination` diagnostic and its validation emit sites were left unchanged.
+
+Also updated the active validation-clarity test comment that previously described the removed diagnostic as a registered legacy code. No test helper names, validation severities, gating behavior, prompt compiler behavior, or accepted-segment behavior changed.
+
+Verification passed:
+
+1. `npm run build --workspace @loom/core`
+2. `npm test` (72 test files, 429 tests)
+3. `grep -rn '"accepted-prose-contamination"' packages --include='*.ts'` returned no matches.
+4. `grep -rn "promptFacingProseContamination" packages/core/src/validation --include='*.ts'` still returned the registry entry and the three universal-blocker emit sites.

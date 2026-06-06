@@ -82,11 +82,11 @@ Active implementation tickets live in:
 
 - `tickets/`
 
-At the post-v1 target commit, the only active implementation ticket is:
+There are currently no active implementation tickets.
 
-- `tickets/CLEANUP-001.md`
+The post-v1 cleanup ticket that removed the orphaned validation diagnostic code is complete and archived at:
 
-That ticket is intentionally small. It removes an orphaned validation diagnostic code without changing validation behavior.
+- `archive/tickets/CLEANUP-001.md`
 
 There is no active `specs/` directory at the post-v1 target commit. Create a new active spec only when the change is too broad or risky for a single ticket.
 
@@ -102,7 +102,7 @@ Use a new spec when the change touches one or more of these:
 - local-first project ownership, backup, migration, or storage safety;
 - any feature that could introduce branches, plot rails, autonomous continuity changes, or hidden prompt context.
 
-Use a ticket when the work is narrow, already scoped, and can be verified with direct tests or grep-proof. `tickets/CLEANUP-001.md` is the model for a small cleanup ticket.
+Use a ticket when the work is narrow, already scoped, and can be verified with direct tests or grep-proof. `archive/tickets/CLEANUP-001.md` is the historical model for a small cleanup ticket.
 
 Use a doc correction when an active doc misstates current behavior, points at a stale path, duplicates authority in a confusing way, or could mislead agents into implementing completed v1 planning as new backlog.
 

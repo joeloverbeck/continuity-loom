@@ -21,8 +21,7 @@ describe("validation clarity invariants", () => {
   it("keeps diagnostic code values unique in the registry", () => {
     const registeredCodes = Object.values(DIAGNOSTIC_CODES);
 
-    // This intentionally does not require every registered code to be emitted:
-    // acceptedProseContamination is a registered legacy code with no production emit site.
+    // This intentionally does not require every registered code to be emitted.
     expect(new Set(registeredCodes).size).toBe(registeredCodes.length);
   });
 
