@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-001: Core demo fixture module (The Letter Under the Flour Bin)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/core` `src/demo/` fixture module exporting typed demo data (story config, records, generation session) + public re-export from `packages/core/src/index.ts`
@@ -87,3 +87,21 @@ Add `packages/core/src/demo/demo-fixture.test.ts` asserting per-payload schema v
 1. `npx vitest run packages/core/src/demo/demo-fixture.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. Targeted vitest is the correct inner-loop boundary (single new module); the full `npm test` confirms the new `@loom/core` export does not regress dependent server tests that build core first.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added the pure `@loom/core` demo fixture module for *The Letter Under the Flour Bin*, including story config, ordinary record payloads, and the first-segment generation session.
+- Re-exported the demo fixture from `packages/core/src/demo/index.ts` and the public `packages/core/src/index.ts` barrel.
+- Added focused fixture tests for schema parsing, required record inventory, clean first-segment handoff wording, and the Elin/Niko secret-firewall substrate.
+
+Deviations from original plan:
+- Included both optional pressure records (`CLOCK` and `CONSEQUENCE`) instead of omitting the optional clock, to give later stress and capstone tests concrete deadline/exposure pressure without changing any schema or validation rule.
+
+Verification:
+- `npx vitest run packages/core/src/demo/demo-fixture.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
