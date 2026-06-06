@@ -111,6 +111,19 @@ export type AcceptResponse = { ok: true; segment: AcceptedSegmentRef } | ApiFail
 export type ListAcceptedSegmentsResponse = { ok: true; segments: AcceptedSegment[] } | ApiFailure;
 export type DeleteAcceptedSegmentResponse = { ok: true; deleted: { id: number } } | ApiFailure;
 
+export interface DurableChangeReminderSegment {
+  sequence: number;
+  createdAt: string;
+}
+
+export interface DurableChangeReminder {
+  active: boolean;
+  latestSegment: DurableChangeReminderSegment | null;
+  acknowledgedThroughSequence: number;
+}
+
+export type DurableChangeReminderResponse = { ok: true; reminder: DurableChangeReminder } | ApiFailure;
+
 export type RecordSummary = {
   id: string;
   type: string;
@@ -343,4 +356,12 @@ export async function listAcceptedSegments(): Promise<ListAcceptedSegmentsRespon
 
 export async function deleteAcceptedSegment(id: number): Promise<DeleteAcceptedSegmentResponse> {
   return requestJson<DeleteAcceptedSegmentResponse>(`/api/accepted-segments/${id}`, "DELETE");
+}
+
+export async function getDurableChangeReminder(): Promise<DurableChangeReminderResponse> {
+  return requestJson<DurableChangeReminderResponse>("/api/durable-change-reminder", "GET");
+}
+
+export async function acknowledgeDurableChangeReminder(): Promise<DurableChangeReminderResponse> {
+  return requestJson<DurableChangeReminderResponse>("/api/durable-change-reminder/acknowledge", "POST", {});
 }

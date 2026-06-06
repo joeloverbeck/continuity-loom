@@ -183,6 +183,15 @@ export function RecordBrowser(): React.JSX.Element {
     setWorkingSetIds(response.selectedRecordIds);
   }
 
+  function openCreateForm(recordType: string): void {
+    if (recordType === "CAST MEMBER") {
+      setCastEditorRecord(null);
+      return;
+    }
+
+    setGenericEditorRecord({ recordType });
+  }
+
   function handleSavedRecord(savedRecord: RecordDetail): void {
     setSelectedRecord(savedRecord);
     setRecords((current) => {
@@ -210,6 +219,7 @@ export function RecordBrowser(): React.JSX.Element {
 
   const availableGroupingOptions = groupingOptions(filters.type);
   const preselectedRecordId = searchParams.get("recordId");
+  const createType = searchParams.get("create");
 
   useEffect(() => {
     if (!preselectedRecordId) {
@@ -221,6 +231,14 @@ export function RecordBrowser(): React.JSX.Element {
       void selectRecord(target);
     }
   }, [preselectedRecordId, records]);
+
+  useEffect(() => {
+    if (!createType || !recordTypes.includes(createType)) {
+      return;
+    }
+
+    openCreateForm(createType);
+  }, [createType]);
 
   if (genericEditorRecord) {
     return (
@@ -342,14 +360,7 @@ export function RecordBrowser(): React.JSX.Element {
               <button
                 key={recordType}
                 type="button"
-                onClick={() => {
-                  if (recordType === "CAST MEMBER") {
-                    setCastEditorRecord(null);
-                    return;
-                  }
-
-                  setGenericEditorRecord({ recordType });
-                }}
+                onClick={() => openCreateForm(recordType)}
               >
                 Create {recordType}
               </button>

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  acknowledgeDurableChangeReminder,
   acceptCandidate,
   archiveRecord,
   compile,
@@ -8,6 +9,7 @@ import {
   deleteAcceptedSegment,
   deleteRecord,
   generate,
+  getDurableChangeReminder,
   getGenerationBrief,
   getOpenRouterSettings,
   getRecord,
@@ -454,6 +456,85 @@ describe("api client", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 404))));
 
     await expect(deleteAcceptedSegment(999)).resolves.toEqual(failure);
+  });
+
+  it("reads active and inactive durable-change reminder states", async () => {
+    const active = {
+      ok: true,
+      reminder: {
+        active: true,
+        latestSegment: { sequence: 3, createdAt: "2026-06-06T08:12:00.000Z" },
+        acknowledgedThroughSequence: 2
+      }
+    };
+    const inactive = {
+      ok: true,
+      reminder: {
+        active: false,
+        latestSegment: null,
+        acknowledgedThroughSequence: 0
+      }
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(calls.length === 1 ? active : inactive));
+      })
+    );
+
+    await expect(getDurableChangeReminder()).resolves.toEqual(active);
+    await expect(getDurableChangeReminder()).resolves.toEqual(inactive);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/durable-change-reminder", "GET"],
+      ["/api/durable-change-reminder", "GET"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("acknowledges durable-change reminders with an empty JSON body", async () => {
+    const success = {
+      ok: true,
+      reminder: {
+        active: false,
+        latestSegment: { sequence: 3, createdAt: "2026-06-06T08:12:00.000Z" },
+        acknowledgedThroughSequence: 3
+      }
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success));
+      })
+    );
+
+    await expect(acknowledgeDurableChangeReminder()).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/durable-change-reminder/acknowledge", "POST"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    });
+    expect(calls[0]?.init?.body).toBe(JSON.stringify({}));
+  });
+
+  it("returns durable-change reminder failures unchanged", async () => {
+    const failure = {
+      ok: false,
+      kind: "no-open-project",
+      message: "No project is open."
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 409))));
+
+    await expect(getDurableChangeReminder()).resolves.toEqual(failure);
+    await expect(acknowledgeDurableChangeReminder()).resolves.toEqual(failure);
   });
 
   it("returns validation-blocked generate responses", async () => {

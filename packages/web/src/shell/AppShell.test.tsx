@@ -34,6 +34,9 @@ vi.mock("../config/StoryConfigEditor.js", () => ({
 vi.mock("./SettingsSurface.js", () => ({
   SettingsSurface: () => <h2>Settings</h2>
 }));
+vi.mock("./DurableChangeReminder.js", () => ({
+  DurableChangeReminder: () => <aside aria-label="Durable-change reminder mount" />
+}));
 
 afterEach(() => {
   cleanup();
@@ -61,6 +64,18 @@ describe("AppShell", () => {
     fireEvent.click(acceptedSegmentsLink);
 
     expect(screen.getByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
+  });
+
+  it("mounts the durable-change reminder above routed content", () => {
+    render(
+      <MemoryRouter>
+        <AppShell loadState={{ status: "ready", runtime: runtimeStatus }} />
+      </MemoryRouter>
+    );
+
+    const contentPane = screen.getByRole("heading", { name: "Project Library" }).parentElement;
+    expect(screen.getByLabelText("Durable-change reminder mount")).toBeTruthy();
+    expect(contentPane?.firstElementChild).toBe(screen.getByLabelText("Durable-change reminder mount"));
   });
 });
 

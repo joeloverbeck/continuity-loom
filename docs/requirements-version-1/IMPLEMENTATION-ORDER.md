@@ -223,17 +223,30 @@ Phase gate:
 
 ## Phase 12 — Durable-change reminder workflow
 
+Status: ✅ Implemented via SPEC-012 (2026-06-06).
+
 Add the persistent post-acceptance banner/checklist and quick links for manual record updates.
 
 Why after archive: the reminder should appear only after a real accepted segment exists. It should guide manual updates without extracting canon.
 
+Implementation note: Phase 12 ships a project-local `reminder_state` threshold derived
+from the ordered accepted-segment archive, `GET /api/durable-change-reminder`,
+`POST /api/durable-change-reminder/acknowledge`, typed web clients, an app-wide
+non-modal shell banner, deterministic checklist text, deterministic
+`/records?create=<TYPE>` quick-links, durable Acknowledge, session-only Snooze, and
+post-accept refresh from Generate / Candidate. The Phase-10 ephemeral durable-change
+sentence is superseded by a short acceptance confirmation. The reminder never parses
+accepted prose, creates records, mutates records, or enters compiler inputs.
+Dashboard latest-segment surfacing remains deferred; the app-wide banner stands in for
+the reminder surface. Phase 13 demo/stress and Phase 14 hardening remain.
+
 Phase gate:
 
-- reminder appears after acceptance;
-- reminder can be acknowledged/snoozed without creating records;
-- quick links open relevant record editors or creation forms;
-- no LLM parses accepted prose;
-- next-generation workflow still relies on user-updated records/current state.
+- [x] reminder appears after acceptance;
+- [x] reminder can be acknowledged/snoozed without creating records;
+- [x] quick links open relevant record editors or creation forms;
+- [x] no LLM parses accepted prose;
+- [x] next-generation workflow still relies on user-updated records/current state.
 
 ## Phase 13 — Tame demo project and stress coverage
 

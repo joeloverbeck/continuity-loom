@@ -42,6 +42,12 @@ export function ensureRecordTables(database: DatabaseSync): void {
       updated_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS reminder_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      acknowledged_through_sequence INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS accepted_segments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       sequence INTEGER NOT NULL UNIQUE,

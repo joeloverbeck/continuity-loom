@@ -9,6 +9,7 @@ import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
+import { registerReminderRoutes } from "./reminder-routes.js";
 import { registerSettingsRoutes } from "./settings-routes.js";
 import { registerStoryConfigRoutes } from "./story-config-routes.js";
 import { registerValidationRoutes } from "./validation-routes.js";
@@ -78,6 +79,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerSettingsRoutes(app);
   registerGenerateRoutes(app, projectStoreManager);
   registerAcceptedRoutes(app, projectStoreManager);
+  registerReminderRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
   });

@@ -19,6 +19,7 @@ interface TableCounts {
   generation_session: number;
   record_references: number;
   records: number;
+  reminder_state: number;
   story_config: number;
 }
 
@@ -74,6 +75,7 @@ describe("SPEC-003 record tables and repository", () => {
         "accepted_segments",
         "generation_session",
         "record_references",
+        "reminder_state",
         "records",
         "story_config"
       ])
@@ -86,6 +88,7 @@ describe("SPEC-003 record tables and repository", () => {
       database.exec(`
         DROP TABLE accepted_segments;
         DROP TABLE generation_session;
+        DROP TABLE reminder_state;
         DROP TABLE story_config;
         DROP TABLE record_references;
         DROP TABLE records;
@@ -98,7 +101,14 @@ describe("SPEC-003 record tables and repository", () => {
     const opened = await storeManager.openProject(status.folderPath);
     expect(opened).toMatchObject({ ok: true });
     expect(tableNames(databasePath)).toEqual(
-      expect.arrayContaining(["accepted_segments", "generation_session", "record_references", "records", "story_config"])
+      expect.arrayContaining([
+        "accepted_segments",
+        "generation_session",
+        "record_references",
+        "reminder_state",
+        "records",
+        "story_config"
+      ])
     );
   });
 
@@ -539,6 +549,98 @@ describe("SPEC-003 record tables and repository", () => {
     expect(tableCounts(databasePath)).toEqual(afterDelete);
   });
 
+  it("tracks durable-change reminder acknowledgement without accepted prose or record writes", async () => {
+    const storeManager = manager();
+    const status = await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "reminder-state",
+      title: "Reminder State"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    repository.createRecord({
+      type: "FACT",
+      displayLabel: "Persistent record",
+      payload: {
+        id: idA,
+        status: "active",
+        fact_kind: "current_state",
+        statement: "Records remain untouched.",
+        scope: "global",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "medium"
+      }
+    });
+    repository.setStoryConfig("PROSE MODE", {
+      pov_character: idA,
+      person: "third",
+      tense: "past",
+      psychic_distance: "close",
+      interiority_mode: "filtered",
+      dialogue_density: "balanced",
+      paragraphing: "mixed",
+      language_output: "direct",
+      special_style_constraints: []
+    });
+    repository.setGenerationSession({
+      immediate_handoff: {
+        recent_causal_context: "A arrived.",
+        last_visible_moment: "Doorway",
+        prior_accepted_prose_status_or_handoff_note: "none",
+        begin_after: "A waits"
+      },
+      manual_moment_directive: { must_render: ["A waits"] },
+      generation_validation_focus: {
+        validation_focus_tags: { generation_context: ["first_segment"] }
+      }
+    });
+
+    expect(repository.getReminderAcknowledgedSequence()).toBe(0);
+    expect(repository.getLatestAcceptedSegment()).toBeNull();
+
+    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: { source: "test" } });
+    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: { source: "test" } });
+    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: { source: "test" } });
+    expect(repository.deleteAcceptedSegment(second.id)).toBe(true);
+
+    const latest = repository.getLatestAcceptedSegment();
+    expect(latest).toEqual({ sequence: third.sequence, createdAt: third.createdAt });
+    expect(latest).not.toHaveProperty("text");
+    expect(latest).not.toHaveProperty("metadata");
+
+    const databasePath = join(status.folderPath, "loom.sqlite");
+    const beforeCounts = tableCounts(databasePath);
+    const beforeRows = stableRows(databasePath, [
+      "accepted_segments",
+      "generation_session",
+      "records",
+      "story_config"
+    ]);
+
+    repository.acknowledgeRemindersThrough(first.sequence);
+    expect(repository.getReminderAcknowledgedSequence()).toBe(first.sequence);
+    expect(tableCounts(databasePath)).toEqual({
+      ...beforeCounts,
+      reminder_state: beforeCounts.reminder_state + 1
+    });
+    expect(stableRows(databasePath, ["accepted_segments", "generation_session", "records", "story_config"])).toEqual(
+      beforeRows
+    );
+
+    const afterInsertCounts = tableCounts(databasePath);
+    repository.acknowledgeRemindersThrough(third.sequence);
+    expect(repository.getReminderAcknowledgedSequence()).toBe(third.sequence);
+    expect(tableCounts(databasePath)).toEqual(afterInsertCounts);
+    expect(stableRows(databasePath, ["accepted_segments", "generation_session", "records", "story_config"])).toEqual(
+      beforeRows
+    );
+  });
+
   it("can run the table initializer idempotently", () => {
     const database = new DatabaseSync(":memory:");
     try {
@@ -550,7 +652,14 @@ describe("SPEC-003 record tables and repository", () => {
           .all() as Array<{ name: string }>
       ).map((row) => row.name);
       expect(tables).toEqual(
-        expect.arrayContaining(["accepted_segments", "generation_session", "record_references", "records", "story_config"])
+        expect.arrayContaining([
+          "accepted_segments",
+          "generation_session",
+          "record_references",
+          "reminder_state",
+          "records",
+          "story_config"
+        ])
       );
     } finally {
       database.close();
@@ -566,6 +675,7 @@ function tableCounts(databasePath: string): TableCounts {
       generation_session: countRows(database, "generation_session"),
       record_references: countRows(database, "record_references"),
       records: countRows(database, "records"),
+      reminder_state: countRows(database, "reminder_state"),
       story_config: countRows(database, "story_config")
     };
   } finally {
@@ -576,4 +686,18 @@ function tableCounts(databasePath: string): TableCounts {
 function countRows(database: DatabaseSync, tableName: keyof TableCounts): number {
   const row = database.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get() as { count: number };
   return row.count;
+}
+
+function stableRows(databasePath: string, tableNamesToRead: string[]): Record<string, unknown[]> {
+  const database = new DatabaseSync(databasePath);
+  try {
+    return Object.fromEntries(
+      tableNamesToRead.map((tableName) => [
+        tableName,
+        database.prepare(`SELECT * FROM ${tableName} ORDER BY rowid`).all() as unknown[]
+      ])
+    );
+  } finally {
+    database.close();
+  }
 }

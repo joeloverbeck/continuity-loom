@@ -5,13 +5,25 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { acceptCandidate, compile, generate, getOpenRouterSettings } from "../api.js";
+import {
+  acknowledgeDurableChangeReminder,
+  acceptCandidate,
+  compile,
+  generate,
+  getDurableChangeReminder,
+  getOpenRouterSettings,
+  type DurableChangeReminderResponse
+} from "../api.js";
+import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
+import { ReminderRefreshProvider } from "../shell/reminder-refresh.js";
 import { GenerateView } from "./GenerateView.js";
 
 vi.mock("../api.js", () => ({
+  acknowledgeDurableChangeReminder: vi.fn(),
   acceptCandidate: vi.fn(),
   compile: vi.fn(),
   generate: vi.fn(),
+  getDurableChangeReminder: vi.fn(),
   getOpenRouterSettings: vi.fn()
 }));
 
@@ -20,8 +32,11 @@ beforeEach(() => {
   sessionStorage.clear();
   vi.mocked(acceptCandidate).mockReset();
   vi.mocked(generate).mockReset();
+  vi.mocked(getDurableChangeReminder).mockReset();
   vi.mocked(getOpenRouterSettings).mockReset();
+  vi.mocked(acknowledgeDurableChangeReminder).mockReset();
   vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: true }));
+  vi.mocked(getDurableChangeReminder).mockResolvedValue(inactiveReminder());
 });
 
 afterEach(() => {
@@ -55,7 +70,8 @@ describe("GenerateView", () => {
     fireEvent.change(editor, { target: { value: "Edited accepted prose." } });
     fireEvent.click(screen.getByRole("button", { name: "Accept" }));
 
-    expect(await screen.findByText(/Accepted as segment 4/)).toBeTruthy();
+    expect(await screen.findByText("Accepted as segment 4.")).toBeTruthy();
+    expect(screen.queryByText(/Durable changes likely need manual record updates/i)).toBeNull();
     expect(acceptCandidate).toHaveBeenCalledWith({
       text: "Edited accepted prose.",
       generationMetadata: candidateMetadata()
@@ -69,6 +85,31 @@ describe("GenerateView", () => {
     expect(screen.queryByText("Accepted Segments")).toBeNull();
     expect(screen.queryByRole("button", { name: /acknowledge/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /snooze/i })).toBeNull();
+  });
+
+  it("refreshes the shell durable-change reminder after a successful accept without navigation", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate).mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, metadata: candidateMetadata() });
+    vi.mocked(acceptCandidate).mockResolvedValue({
+      ok: true,
+      segment: { id: 9, sequence: 4, createdAt: "2026-06-06T08:10:00.000Z" }
+    });
+    vi.mocked(getDurableChangeReminder)
+      .mockResolvedValueOnce(inactiveReminder())
+      .mockResolvedValueOnce(activeReminder(4));
+
+    renderGenerateWithReminder();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+    expect(await screen.findByRole("textbox", { name: "Candidate text" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByRole("heading", { name: "Segment 4 was accepted" })).toBeTruthy();
+    expect(screen.getByText("Accepted as segment 4.")).toBeTruthy();
+    expect(screen.queryByText(/Durable changes likely need manual record updates/i)).toBeNull();
+    expect(getDurableChangeReminder).toHaveBeenCalledTimes(2);
   });
 
   it("regenerates with edit-loss warning and never accepts discarded or superseded drafts", async () => {
@@ -195,6 +236,17 @@ function renderGenerate() {
   );
 }
 
+function renderGenerateWithReminder() {
+  return render(
+    <MemoryRouter>
+      <ReminderRefreshProvider>
+        <DurableChangeReminder />
+        <GenerateView />
+      </ReminderRefreshProvider>
+    </MemoryRouter>
+  );
+}
+
 function compileResult(prompt: string): CompileResult {
   return {
     prompt,
@@ -231,6 +283,28 @@ function openRouterSettings({ hasOpenRouterCredential }: { hasOpenRouterCredenti
     temperature: 0.4,
     maxOutputTokens: 2200,
     hasOpenRouterCredential
+  };
+}
+
+function activeReminder(sequence: number): DurableChangeReminderResponse {
+  return {
+    ok: true,
+    reminder: {
+      active: true,
+      latestSegment: { sequence, createdAt: "2026-06-06T08:10:00.000Z" },
+      acknowledgedThroughSequence: sequence - 1
+    }
+  };
+}
+
+function inactiveReminder(): DurableChangeReminderResponse {
+  return {
+    ok: true,
+    reminder: {
+      active: false,
+      latestSegment: null,
+      acknowledgedThroughSequence: 0
+    }
   };
 }
 
