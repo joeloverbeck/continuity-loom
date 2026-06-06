@@ -49,6 +49,10 @@ export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectSto
       candidate: transportResult.candidate,
       metadata: {
         model: settings.model,
+        provider: "openrouter",
+        temperature: settings.temperature,
+        maxOutputTokens: settings.maxOutputTokens,
+        ...(settings.topP !== undefined ? { topP: settings.topP } : {}),
         versions: compileResult.metadata.versions
       }
     };

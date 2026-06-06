@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
 import { registerCompileRoutes } from "./compile-routes.js";
+import { registerAcceptedRoutes } from "./accepted-routes.js";
 import { registerGenerateRoutes } from "./generate-routes.js";
 import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
@@ -76,6 +77,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerCompileRoutes(app, projectStoreManager);
   registerSettingsRoutes(app);
   registerGenerateRoutes(app, projectStoreManager);
+  registerAcceptedRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
   });

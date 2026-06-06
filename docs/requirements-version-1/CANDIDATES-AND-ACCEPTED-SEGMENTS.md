@@ -68,6 +68,20 @@ Accept writes one accepted segment containing the candidate editor’s current t
 
 After acceptance, the app shows the durable-change reminder.
 
+## Phase 10 implementation note
+
+Implemented via SPEC-010 on 2026-06-06. The realized Phase 10 lifecycle uses a dedicated
+`/generate` surface with prompt inspection before Send, editable session-only candidate
+text, Regenerate/Discard/Accept actions, and `POST /api/accepted-segments` over the
+existing `accepted_segments` table. Accepted segments store the edited accepted text plus
+the full key-free generation metadata snapshot: model, provider, temperature, max output
+tokens, optional top-p, and template/compiler/contract versions. Rejected, discarded, and
+superseded candidates are not persisted, and no full prompt is stored with the segment.
+
+The ordered accepted-segment browser, deletion, and export remain Phase 11. The persistent
+durable-change reminder with checklist, quick links, acknowledge, and snooze remains Phase
+12; Phase 10 provides only a minimal ephemeral post-accept notice.
+
 ## Accepted segment archive
 
 Accepted segments are stored in order. They are append-only except deletion/export.
