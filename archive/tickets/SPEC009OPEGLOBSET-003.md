@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-003: OpenRouter transport I/O (client + model refresh)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/openrouter/client.ts` (the `fetch`-based send) and `packages/server/src/openrouter/models.ts` (optional model-list refresh), with mocked-`fetch` tests.
@@ -84,3 +84,31 @@ With the pure builders in place, Phase 9 needs the one module that actually perf
 1. `npm test --workspace @loom/server -- src/openrouter/client.test.ts src/openrouter/models.test.ts`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -nE "sk-|Bearer" packages/server/src/openrouter/*.test.ts` — only seeded-input assertions, never an expected output match (manual review of the proof).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/server/src/openrouter/client.ts` with the call-time API-key boundary,
+pre-network `missing-key` short-circuit, non-streaming chat-completion `fetch`, optional
+abort signal and non-secret OpenRouter app headers, candidate extraction from the first
+choice, and normalized error handling for HTTP, malformed-response, timeout, abort, and
+network failures.
+
+Added `packages/server/src/openrouter/models.ts` with optional model-list refresh against
+OpenRouter's models endpoint. It maps model `id`, `name`, and `context_length` into
+cacheable non-secret entries and returns normalized errors instead of throwing, so manual
+model entry remains usable when refresh fails.
+
+Deviations: test files were placed at `packages/server/src/openrouter-client.test.ts` and
+`packages/server/src/openrouter-models.test.ts` to match the existing typed ESLint
+allowlist, consistent with SPEC009OPEGLOBSET-002.
+
+Verification:
+
+- `npm test --workspace @loom/server -- src/openrouter-client.test.ts src/openrouter-models.test.ts` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 53 files / 298 tests passed.
+- `npm run build` — passed.
+- `rg -n "sk-|Bearer" packages/server/src/openrouter*.test.ts` — matches are seeded mock inputs, expected outbound-header assertions, and negative output assertions only.

@@ -72,6 +72,11 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
     return undefined;
   }
 
+  const explicitCategory = getUnknownProperty(body, "category");
+  if (isTransportErrorCategory(explicitCategory)) {
+    return explicitCategory;
+  }
+
   if (isMalformedChatCompletion(body)) {
     return "malformed-response";
   }
@@ -99,6 +104,22 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
   }
 
   return undefined;
+}
+
+function isTransportErrorCategory(value: unknown): value is TransportErrorCategory {
+  return (
+    value === "missing-key" ||
+    value === "invalid-key" ||
+    value === "insufficient-credits" ||
+    value === "invalid-request" ||
+    value === "provider-unavailable" ||
+    value === "rate-limit" ||
+    value === "timeout" ||
+    value === "moderation-refusal" ||
+    value === "malformed-response" ||
+    value === "network" ||
+    value === "unknown"
+  );
 }
 
 function categoryFromCause(cause: unknown): TransportErrorCategory | undefined {
