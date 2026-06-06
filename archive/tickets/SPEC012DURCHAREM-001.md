@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-001: `reminder_state` table + repository methods
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `reminder_state` single-row storage table (project-local SQLite); 3 new `RecordRepository` methods (`getLatestAcceptedSegment`, `getReminderAcknowledgedSequence`, `acknowledgeRemindersThrough`)
@@ -89,3 +89,19 @@ In `packages/server/src/record-repository.ts`:
 
 1. `npm test -- record-layer` — targeted run of the repository-layer suite.
 2. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline (root `test` builds `@loom/core` first, then runs Vitest).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Implemented the project-local `reminder_state` single-row table in `packages/server/src/record-tables.ts` without a `user_version` bump. Added repository methods in `packages/server/src/record-repository.ts` to read the latest accepted segment without prose, read the acknowledged-through threshold with a default of `0`, and upsert the acknowledgement threshold.
+
+Added repository-layer coverage in `packages/server/src/record-layer.test.ts` for fresh-store defaults, gap-tolerant latest accepted sequence lookup, prose-free latest-segment shape, single-row acknowledgement upsert behavior, and preservation of records, accepted segments, story config, and generation-session rows during acknowledgement writes. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- record-layer` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.

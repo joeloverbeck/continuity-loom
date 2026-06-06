@@ -46,6 +46,11 @@ export interface AcceptedSegment {
   createdAt: string;
 }
 
+export interface AcceptedSegmentReminderRef {
+  sequence: number;
+  createdAt: string;
+}
+
 export interface CreateRecordInput {
   type: string;
   displayLabel: string;
@@ -366,6 +371,38 @@ export class RecordRepository {
       metadata: parsePayloadJson(String(row.metadata_json)),
       createdAt: String(row.created_at)
     }));
+  }
+
+  getLatestAcceptedSegment(): AcceptedSegmentReminderRef | null {
+    const row = this.database
+      .prepare("SELECT sequence, created_at FROM accepted_segments ORDER BY sequence DESC LIMIT 1")
+      .get() as { sequence: number; created_at: string } | undefined;
+
+    if (!row) {
+      return null;
+    }
+
+    return { sequence: Number(row.sequence), createdAt: String(row.created_at) };
+  }
+
+  getReminderAcknowledgedSequence(): number {
+    const row = this.database
+      .prepare("SELECT acknowledged_through_sequence FROM reminder_state WHERE id = 1")
+      .get() as { acknowledged_through_sequence: number } | undefined;
+
+    return row ? Number(row.acknowledged_through_sequence) : 0;
+  }
+
+  acknowledgeRemindersThrough(sequence: number): void {
+    this.database
+      .prepare(
+        `INSERT INTO reminder_state (id, acknowledged_through_sequence, updated_at)
+         VALUES (1, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           acknowledged_through_sequence = excluded.acknowledged_through_sequence,
+           updated_at = excluded.updated_at`
+      )
+      .run(sequence, nowIso());
   }
 
   deleteAcceptedSegment(id: number): boolean {
