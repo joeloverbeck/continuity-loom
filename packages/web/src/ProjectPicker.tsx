@@ -3,12 +3,15 @@ import { FormEvent, useEffect, useState } from "react";
 
 import {
   createBackup,
+  createDemoProject,
   createProject,
   getProject,
   openProject,
   type ProjectOperationFailure,
   type ProjectOpenState
 } from "./api.js";
+
+const DEMO_FOLDER_NAME = "letter-under-flour-bin-demo";
 
 type Notice =
   | { tone: "error"; title: string; message: string }
@@ -43,6 +46,7 @@ export function ProjectPicker(): React.JSX.Element {
     createFields.parentPath.trim() !== "" &&
     createFields.folderName.trim() !== "" &&
     createFields.title.trim() !== "";
+  const canCreateDemo = createFields.parentPath.trim() !== "";
   const canOpen = openFolderPath.trim() !== "";
 
   useEffect(() => {
@@ -79,6 +83,23 @@ export function ProjectPicker(): React.JSX.Element {
       folderName: createFields.folderName,
       title: createFields.title,
       ...(createFields.description ? { description: createFields.description } : {})
+    });
+
+    if (isFailure(result)) {
+      setNotice({ tone: "error", title: result.kind, message: result.message });
+      return;
+    }
+
+    setProject(result);
+  }
+
+  async function onCreateDemo(): Promise<void> {
+    setNotice(null);
+    setBackupPath(null);
+
+    const result = await createDemoProject({
+      parentPath: createFields.parentPath,
+      folderName: DEMO_FOLDER_NAME
     });
 
     if (isFailure(result)) {
@@ -181,6 +202,9 @@ export function ProjectPicker(): React.JSX.Element {
           <button type="submit" disabled={!canCreate}>
             Create Project
           </button>
+          <button type="button" disabled={!canCreateDemo} onClick={() => void onCreateDemo()}>
+            Create Demo Project
+          </button>
         </form>
 
         <form className="projectForm" onSubmit={(event) => void onOpen(event)}>
@@ -222,6 +246,12 @@ export function ProjectPicker(): React.JSX.Element {
                 <dt>Title</dt>
                 <dd>{project.title}</dd>
               </div>
+              {project.isDemoFixture ? (
+                <div>
+                  <dt>Kind</dt>
+                  <dd>Demo sample</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Compatibility</dt>
                 <dd>{project.compatibility}</dd>

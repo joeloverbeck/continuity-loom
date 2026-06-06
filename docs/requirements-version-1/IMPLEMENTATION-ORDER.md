@@ -238,7 +238,7 @@ post-accept refresh from Generate / Candidate. The Phase-10 ephemeral durable-ch
 sentence is superseded by a short acceptance confirmation. The reminder never parses
 accepted prose, creates records, mutates records, or enters compiler inputs.
 Dashboard latest-segment surfacing remains deferred; the app-wide banner stands in for
-the reminder surface. Phase 13 demo/stress and Phase 14 hardening remain.
+the reminder surface. Phase 14 hardening remains.
 
 Phase gate:
 
@@ -249,6 +249,8 @@ Phase gate:
 - [x] next-generation workflow still relies on user-updated records/current state.
 
 ## Phase 13 — Tame demo project and stress coverage
+
+Status: ✅ Implemented via SPEC-013 (2026-06-06).
 
 Create the tame demo fixture and use it to exercise the full loop and validation blocker examples.
 

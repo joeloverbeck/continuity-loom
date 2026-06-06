@@ -6,10 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectPicker } from "./ProjectPicker.js";
 import {
   createBackup,
+  createDemoProject,
   createProject,
   getProject,
   openProject,
   type BackupResponse,
+  type CreateDemoProjectRequest,
   type CreateProjectRequest,
   type CreateProjectResponse,
   type OpenProjectRequest,
@@ -18,6 +20,7 @@ import {
 
 vi.mock("./api.js", () => ({
   createBackup: vi.fn(),
+  createDemoProject: vi.fn(),
   createProject: vi.fn(),
   getProject: vi.fn(),
   openProject: vi.fn()
@@ -35,6 +38,7 @@ const projectStatus = {
 
 const getProjectMock = vi.mocked(getProject);
 const createProjectMock = vi.mocked(createProject);
+const createDemoProjectMock = vi.mocked(createDemoProject);
 const openProjectMock = vi.mocked(openProject);
 const createBackupMock = vi.mocked(createBackup);
 
@@ -42,6 +46,7 @@ beforeEach(() => {
   getProjectMock.mockReset();
   getProjectMock.mockResolvedValue({ open: false } satisfies ProjectOpenState);
   createProjectMock.mockReset();
+  createDemoProjectMock.mockReset();
   openProjectMock.mockReset();
   createBackupMock.mockReset();
 });
@@ -93,6 +98,45 @@ describe("ProjectPicker", () => {
     } satisfies OpenProjectRequest);
   });
 
+  it("creates the demo project from the parent path and renders it as sample data", async () => {
+    createDemoProjectMock.mockResolvedValue({
+      ...projectStatus,
+      title: "The Letter Under the Flour Bin",
+      folderPath: "/tmp/loom/letter-under-flour-bin-demo",
+      isDemoFixture: true
+    } satisfies CreateProjectResponse);
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Demo Project" }));
+
+    expect(await screen.findByText("/tmp/loom/letter-under-flour-bin-demo")).toBeTruthy();
+    expect(screen.getByText("The Letter Under the Flour Bin")).toBeTruthy();
+    expect(screen.getByText("Demo sample")).toBeTruthy();
+    expect(createDemoProjectMock).toHaveBeenCalledWith({
+      parentPath: "/tmp/loom",
+      folderName: "letter-under-flour-bin-demo"
+    } satisfies CreateDemoProjectRequest);
+  });
+
+  it("renders demo create diagnostics through the existing notice path", async () => {
+    createDemoProjectMock.mockResolvedValue({
+      ok: false,
+      kind: "folder-exists",
+      message: "A folder named \"letter-under-flour-bin-demo\" already exists."
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Demo Project" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "folder-exists: A folder named \"letter-under-flour-bin-demo\" already exists."
+    );
+  });
+
   it("gives create inputs stable name attributes for autofill", () => {
     render(<ProjectPicker />);
 
@@ -112,6 +156,17 @@ describe("ProjectPicker", () => {
     fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
     fireEvent.change(screen.getByLabelText("Folder name"), { target: { value: "alpha" } });
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Alpha" } });
+
+    expect(button.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("disables Create Demo Project until the parent path is filled", () => {
+    render(<ProjectPicker />);
+
+    const button = screen.getByRole("button", { name: "Create Demo Project" });
+    expect(button.hasAttribute("disabled")).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/loom" } });
 
     expect(button.hasAttribute("disabled")).toBe(false);
   });

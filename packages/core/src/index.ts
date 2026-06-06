@@ -13,6 +13,14 @@ export type {
   ProjectStatus,
   StoreCompatibility
 } from "./project-storage.js";
+export {
+  LETTER_UNDER_FLOUR_BIN_TITLE,
+  demoGenerationSession,
+  demoRecordIds,
+  demoRecords,
+  demoStoryConfig
+} from "./demo/index.js";
+export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
 export { PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";

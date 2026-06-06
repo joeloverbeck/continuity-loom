@@ -88,7 +88,8 @@ const createProjectInputSchema = z
     parentPath: z.string().min(1),
     folderName: z.string().min(1),
     title: z.string().trim().min(1),
-    description: z.string().optional()
+    description: z.string().optional(),
+    isDemoFixture: z.boolean().optional()
   })
   .strict();
 
@@ -148,6 +149,7 @@ function statusFromActive(active: ActiveProject): ProjectStatus {
     title: active.metadata.title,
     projectUuid: active.metadata.projectUuid,
     databaseFilename: active.metadata.databaseFilename,
+    ...(active.metadata.isDemoFixture === undefined ? {} : { isDemoFixture: active.metadata.isDemoFixture }),
     appSchemaVersion: LOOM_SCHEMA_VERSION,
     storeUserVersion: active.storeUserVersion,
     compatibility: evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, active.storeUserVersion)
@@ -224,7 +226,8 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         updatedAt: now,
         schemaMinVersion: LOOM_SCHEMA_VERSION,
         databaseFilename: DATABASE_FILENAME,
-        ...(parsed.description ? { description: parsed.description } : {})
+        ...(parsed.description ? { description: parsed.description } : {}),
+        ...(parsed.isDemoFixture === undefined ? {} : { isDemoFixture: parsed.isDemoFixture })
       });
 
       try {

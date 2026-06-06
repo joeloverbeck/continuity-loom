@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
+import { createDemoProject } from "./demo-creation.js";
 import { ProjectCreateError, type ProjectStoreManager } from "./project-store.js";
 
 const createProjectBodySchema = z
@@ -15,6 +16,13 @@ const createProjectBodySchema = z
 const openProjectBodySchema = z
   .object({
     folderPath: z.string().min(1)
+  })
+  .strict();
+
+const createDemoProjectBodySchema = z
+  .object({
+    parentPath: z.string().min(1),
+    folderName: z.string().min(1)
   })
   .strict();
 
@@ -42,6 +50,24 @@ export function registerProjectRoutes(app: FastifyInstance, manager: ProjectStor
       }
 
       return reply.code(409).send(operationFailure("Project could not be created."));
+    }
+  });
+
+  app.post("/api/project/create-demo", async (request, reply) => {
+    try {
+      const body = createDemoProjectBodySchema.parse(request.body);
+      const status = await createDemoProject(manager, body);
+      return reply.code(201).send(status);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return reply.code(400).send(badRequest("Demo project create request is invalid."));
+      }
+
+      if (error instanceof ProjectCreateError) {
+        return reply.code(409).send({ ok: false, kind: error.kind, message: error.message });
+      }
+
+      return reply.code(409).send(operationFailure("Demo project could not be created."));
     }
   });
 
