@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-003: Web API clients — widen GenerateResponse + acceptCandidate
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/web/src/api.ts` client surface (`GenerateResponse` metadata widened; new `acceptCandidate()` + `AcceptResponse`)
@@ -106,3 +106,31 @@ Create `packages/web/src/api.test.ts` mocking `fetch` for `acceptCandidate` succ
 
 1. `npm test -- api`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added the shared `GenerationMetadata` web type and widened `GenerateResponse.metadata`
+  to the full SPEC-010 snapshot: model, provider, temperature, max output tokens,
+  optional top-p, and compiler/template/contract versions.
+- Added `AcceptedSegmentRef`, `AcceptResponse`, and `acceptCandidate()` over
+  `POST /api/accepted-segments`.
+- Extended the existing web API client tests for widened generate metadata, accept success,
+  accept no-open-project failure, request shape, and client-side secret firewall.
+- Updated the existing preview test candidate metadata fixture to the widened shape so the
+  repo remains type-correct before the later route-relocation ticket moves those tests.
+
+Deviations from original plan:
+- The repo already had `packages/web/src/api.test.tsx`, so the client tests were added
+  there instead of creating a separate `api.test.ts`.
+- The existing preview test mock needed an immediate metadata-shape update for typecheck;
+  the behavioral relocation remains owned by SPEC010CANEDIACC-005.
+
+Verification results:
+- `npm test -- api` — passed, 1 test file / 18 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 57 test files / 331 tests.
+- `npm run build` — passed.

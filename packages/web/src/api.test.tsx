@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
+  acceptCandidate,
   archiveRecord,
   compile,
   createRecord,
@@ -21,6 +22,7 @@ import {
   updateRecord,
   validate
 } from "./api.js";
+import type { GenerationMetadata } from "./api.js";
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -287,13 +289,18 @@ describe("api client", () => {
   });
 
   it("returns successful generate responses", async () => {
+    const metadata = {
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      topP: 0.9,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    } satisfies GenerationMetadata;
     const success = {
       ok: true,
       candidate: { text: "Candidate prose." },
-      metadata: {
-        model: "openai/gpt-4.1",
-        versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
-      }
+      metadata
     };
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal(
@@ -311,6 +318,58 @@ describe("api client", () => {
     ]);
     expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
     expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("accepts a candidate with the generation metadata snapshot", async () => {
+    const generationMetadata = {
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    } satisfies GenerationMetadata;
+    const success = {
+      ok: true,
+      segment: { id: 7, sequence: 3, createdAt: "2026-06-06T07:56:00.000Z" }
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success, 201));
+      })
+    );
+
+    await expect(acceptCandidate({ text: "Edited accepted prose.", generationMetadata })).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/accepted-segments", "POST"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    });
+    expect(calls[0]?.init?.body).toBe(JSON.stringify({ text: "Edited accepted prose.", generationMetadata }));
+    expect(calls[0]?.init?.body).not.toMatch(/apiKey|api_key|OPENROUTER_API_KEY|sk-or-/);
+  });
+
+  it("returns accepted-segment failures unchanged", async () => {
+    const generationMetadata = {
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    } satisfies GenerationMetadata;
+    const failure = {
+      ok: false,
+      kind: "no-open-project",
+      message: "No project is open."
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 409))));
+
+    await expect(acceptCandidate({ text: "Accepted prose.", generationMetadata })).resolves.toEqual(failure);
   });
 
   it("returns validation-blocked generate responses", async () => {

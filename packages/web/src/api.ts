@@ -80,11 +80,29 @@ export interface OpenRouterSettingsResponse extends OpenRouterSettings {
 
 export type OpenRouterSettingsPatch = Partial<OpenRouterSettings>;
 export type RefreshModelsResponse = { ok: true; models: OpenRouterModelListEntry[] } | TransportFailure;
+
+export interface GenerationMetadata {
+  model: string;
+  provider: "openrouter";
+  temperature: number;
+  maxOutputTokens: number;
+  topP?: number;
+  versions: CompileResult["metadata"]["versions"];
+}
+
 export type GenerateResponse =
-  | { ok: true; candidate: { text: string }; metadata: { model: string; versions: CompileResult["metadata"]["versions"] } }
+  | { ok: true; candidate: { text: string }; metadata: GenerationMetadata }
   | CompileBlocked
   | ApiFailure
   | TransportFailure;
+
+export interface AcceptedSegmentRef {
+  id: number;
+  sequence: number;
+  createdAt: string;
+}
+
+export type AcceptResponse = { ok: true; segment: AcceptedSegmentRef } | ApiFailure;
 
 export type RecordSummary = {
   id: string;
@@ -303,4 +321,11 @@ export async function refreshModels(): Promise<RefreshModelsResponse> {
 
 export async function generate(): Promise<GenerateResponse> {
   return postJson<GenerateResponse>("/api/generate");
+}
+
+export async function acceptCandidate(input: {
+  text: string;
+  generationMetadata: GenerationMetadata;
+}): Promise<AcceptResponse> {
+  return requestJson<AcceptResponse>("/api/accepted-segments", "POST", input);
 }

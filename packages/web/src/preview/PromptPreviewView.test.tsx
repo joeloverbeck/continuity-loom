@@ -225,6 +225,9 @@ function compileResult(prompt: string): CompileResult {
 function candidateMetadata() {
   return {
     model: "openai/gpt-4.1",
+    provider: "openrouter" as const,
+    temperature: 0.4,
+    maxOutputTokens: 2200,
     versions: {
       template: "template-1",
       compiler: "compiler-1",
