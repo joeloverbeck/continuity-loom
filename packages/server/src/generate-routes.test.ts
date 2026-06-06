@@ -113,7 +113,56 @@ describe("generate routes", () => {
     expect(after).toEqual(before);
   });
 
-  it("returns candidate text and metadata on success without mutating project data", async () => {
+  it("returns candidate text and full generation metadata on success without mutating project data", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify, {
+      model: "openai/gpt-4.1",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      topP: 0.9
+    });
+
+    const before = await generationBrief(fastify);
+    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const after = await generationBrief(fastify);
+    const body = response.json() as {
+      metadata: Record<string, unknown>;
+    };
+
+    expect(response.statusCode).toBe(200);
+    expect(body).toEqual({
+      ok: true,
+      candidate: { text: "Candidate prose." },
+      metadata: {
+        model: "openai/gpt-4.1",
+        provider: "openrouter",
+        temperature: 0.4,
+        maxOutputTokens: 2200,
+        topP: 0.9,
+        versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+      }
+    });
+    expect(Object.keys(body.metadata).some((key) => /apiKey|api_key|key|prompt|candidate/i.test(key))).toBe(false);
+    expect(JSON.stringify(body.metadata)).not.toContain(keySecretText);
+    expect(JSON.stringify(body.metadata)).not.toContain("Candidate prose.");
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0]).toMatchObject({
+      settings: expect.objectContaining({
+        model: "openai/gpt-4.1",
+        temperature: 0.4,
+        maxOutputTokens: 2200,
+        topP: 0.9
+      })
+    });
+    expect(after).toEqual(before);
+  });
+
+  it("omits topP from generation metadata when it is not configured", async () => {
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -122,24 +171,18 @@ describe("generate routes", () => {
     await putBrief(fastify);
     await putSettings(fastify, { model: "openai/gpt-4.1" });
 
-    const before = await generationBrief(fastify);
     const response = await fastify.inject({ method: "POST", url: "/api/generate" });
-    const after = await generationBrief(fastify);
+    const body = response.json() as { metadata: Record<string, unknown> };
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      ok: true,
-      candidate: { text: "Candidate prose." },
-      metadata: {
-        model: "openai/gpt-4.1",
-        versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
-      }
+    expect(body.metadata).toEqual({
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.7,
+      maxOutputTokens: 1800,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     });
-    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
-    expect(sendChatCompletionMock.mock.calls[0]?.[0]).toMatchObject({
-      settings: expect.objectContaining({ model: "openai/gpt-4.1" })
-    });
-    expect(after).toEqual(before);
+    expect(body.metadata).not.toHaveProperty("topP");
   });
 
   it("returns normalized transport errors without mutating project data", async () => {

@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-001: Parameter-snapshot generate metadata
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — extends the `POST /api/generate` success-response `metadata` shape (server code surface; consumed later by the accept write path)
@@ -94,3 +94,25 @@ In `packages/server/src/generate-routes.test.ts`, update the success-path assert
 
 1. `npm test -- generate-routes`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- `POST /api/generate` success responses now include the full key-free parameter snapshot:
+  `model`, `provider: "openrouter"`, `temperature`, `maxOutputTokens`, optional `topP`,
+  and the existing compiler/template/contract version triple.
+- `packages/server/src/generate-routes.test.ts` now verifies the widened metadata shape,
+  conditional `topP` behavior, unchanged project data, and that metadata contains no
+  key-shaped, prompt, or candidate-prose fields.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test -- generate-routes` — passed, 1 test file / 8 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 56 test files / 325 tests.
+- `npm run build` — passed.
