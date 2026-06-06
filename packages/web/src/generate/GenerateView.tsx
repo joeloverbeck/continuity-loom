@@ -15,6 +15,7 @@ import {
 } from "../api.js";
 import { ValidationResultView } from "../generation-brief/ValidationResultView.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
+import { useReminderRefresh } from "../shell/reminder-refresh.js";
 
 type GenerateSurfaceState =
   | { status: "loading" }
@@ -41,6 +42,7 @@ export function GenerateView(): React.JSX.Element {
   const [candidateState, setCandidateState] = useState<CandidateState>({ status: "idle" });
   const [searchTerm, setSearchTerm] = useState("");
   const [acceptNotice, setAcceptNotice] = useState<string | null>(null);
+  const { refreshReminder } = useReminderRefresh();
 
   useEffect(() => {
     void refreshPrompt();
@@ -142,9 +144,8 @@ export function GenerateView(): React.JSX.Element {
 
       if (result.ok) {
         setCandidateState({ status: "idle" });
-        setAcceptNotice(
-          `Accepted as segment ${result.segment.sequence}. Durable changes likely need manual record updates before the next generation.`
-        );
+        setAcceptNotice(`Accepted as segment ${result.segment.sequence}.`);
+        refreshReminder();
         return;
       }
 

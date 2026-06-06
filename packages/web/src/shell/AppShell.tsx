@@ -10,6 +10,7 @@ import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
 import { DurableChangeReminder } from "./DurableChangeReminder.js";
+import { ReminderRefreshProvider } from "./reminder-refresh.js";
 import { SettingsSurface } from "./SettingsSurface.js";
 
 interface AppShellProps {
@@ -80,18 +81,20 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
         </nav>
       </aside>
       <div className="contentPane">
-        <DurableChangeReminder />
-        <Routes>
-          <Route path="/" element={<ProjectPicker />} />
-          <Route path="/records" element={<RecordBrowser />} />
-          <Route path="/working-set" element={<WorkingSetView />} />
-          <Route path="/generation-brief" element={<GenerationBriefView />} />
-          <Route path="/preview" element={<PromptPreviewView />} />
-          <Route path="/generate" element={<GenerateView />} />
-          <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
-          <Route path="/story-config" element={<StoryConfigEditor />} />
-          <Route path="/settings" element={<SettingsSurface />} />
-        </Routes>
+        <ReminderRefreshProvider>
+          <DurableChangeReminder />
+          <Routes>
+            <Route path="/" element={<ProjectPicker />} />
+            <Route path="/records" element={<RecordBrowser />} />
+            <Route path="/working-set" element={<WorkingSetView />} />
+            <Route path="/generation-brief" element={<GenerationBriefView />} />
+            <Route path="/preview" element={<PromptPreviewView />} />
+            <Route path="/generate" element={<GenerateView />} />
+            <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
+            <Route path="/story-config" element={<StoryConfigEditor />} />
+            <Route path="/settings" element={<SettingsSurface />} />
+          </Routes>
+        </ReminderRefreshProvider>
       </div>
     </main>
   );

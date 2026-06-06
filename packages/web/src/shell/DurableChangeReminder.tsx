@@ -6,6 +6,7 @@ import {
   getDurableChangeReminder,
   type DurableChangeReminder as DurableChangeReminderState
 } from "../api.js";
+import { useReminderRefresh } from "./reminder-refresh.js";
 
 const checklistQuestions = [
   "Did a secret become known?",
@@ -38,6 +39,7 @@ function createRecordPath(recordType: string): string {
 export function DurableChangeReminder(): React.JSX.Element | null {
   const [reminder, setReminder] = useState<DurableChangeReminderState | null>(null);
   const [snoozed, setSnoozed] = useState(false);
+  const { refreshSignal } = useReminderRefresh();
 
   useEffect(() => {
     let active = true;
@@ -59,7 +61,7 @@ export function DurableChangeReminder(): React.JSX.Element | null {
     return () => {
       active = false;
     };
-  }, []);
+  }, [refreshSignal]);
 
   async function acknowledge(): Promise<void> {
     const response = await acknowledgeDurableChangeReminder();

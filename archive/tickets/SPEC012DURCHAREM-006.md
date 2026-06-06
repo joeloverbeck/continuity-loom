@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-006: Post-accept coordination + ephemeral-notice supersession
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new shared reminder-refresh React context; `GenerateView` triggers a shell reminder refresh on accept; Phase-10 ephemeral `acceptNotice` reduced/removed so the durable-change copy is not duplicated
@@ -84,3 +84,20 @@ New `packages/web/src/shell/reminder-refresh.tsx`: a React context exposing `ref
 1. `npm test -- GenerateView` — targeted run of the generate-view suite.
 2. `npm test -- DurableChangeReminder AppShell` — banner/shell coordination checks.
 3. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/web/src/shell/reminder-refresh.tsx`, a single-purpose React context with a `refreshReminder()` signal and default no-op behavior. `AppShell` now provides that context around the durable reminder and routed content, and `DurableChangeReminder` refetches when the signal changes.
+
+Updated `GenerateView` to call `refreshReminder()` after a successful accept and reduced the local acceptance notice to `Accepted as segment N.` so it no longer duplicates the durable-change reminder copy. Added a provider+banner GenerateView test proving the shell banner appears after accept without navigation, and updated acceptance-path assertions to confirm the old durable-change sentence is gone. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- GenerateView` — passed.
+- `npm test -- DurableChangeReminder AppShell` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
