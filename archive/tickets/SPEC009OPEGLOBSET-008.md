@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-008: Generate action + read-only ephemeral candidate on /preview
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — extends `packages/web/src/preview/PromptPreviewView.tsx` with a Generate action and a read-only ephemeral candidate panel; adds candidate-panel CSS.
@@ -87,3 +87,31 @@ Minimal read-only candidate-panel rules consistent with existing surfaces; no ne
 1. `npm test --workspace @loom/web -- src/preview/PromptPreviewView.test.tsx`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -nE "localStorage|sessionStorage|indexedDB" packages/web/src/preview/PromptPreviewView.tsx` — must return nothing (ephemerality proof).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Extended `packages/web/src/preview/PromptPreviewView.tsx` with a Generate action in the
+ready prompt-preview state. The send state is local to the component and covers sending,
+read-only draft candidate, actionable transport errors, and validation-blocked responses
+that defer back to the existing blocked view. The candidate panel has a Clear action and a
+"Draft candidate; not accepted, not canon." notice, with no edit, regenerate, discard, or
+accept affordance.
+
+Added candidate-panel CSS in `packages/web/src/styles.css`.
+
+Extended `packages/web/src/preview/PromptPreviewView.test.tsx` with mocked `generate()`
+coverage for successful read-only candidate rendering, missing-key and provider errors,
+blocked-on-send handling, Clear behavior, no accept/edit controls, and no storage writes.
+
+Deviations: none from the ticket scope.
+
+Verification:
+
+- `npm test --workspace @loom/web -- src/preview/PromptPreviewView.test.tsx` — passed.
+- `rg -n "localStorage|sessionStorage|indexedDB" packages/web/src/preview/PromptPreviewView.tsx` — no matches.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 56 files / 324 tests passed.
+- `npm run build` — passed.

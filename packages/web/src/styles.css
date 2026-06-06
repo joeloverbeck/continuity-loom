@@ -511,6 +511,42 @@ button:disabled:hover {
   color: #202124;
 }
 
+.candidatePanel {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.candidateHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.candidateHeader p {
+  margin: 0;
+}
+
+.candidateBody {
+  box-sizing: border-box;
+  max-height: 420px;
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #e0e5ee;
+  border-radius: 6px;
+  background: #f9fbfd;
+  padding: 14px;
+  color: #202124;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .metadataPanel {
   border: 1px solid #d8dee8;
   border-radius: 8px;
