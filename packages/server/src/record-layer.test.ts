@@ -1,4 +1,3 @@
-import { readFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +13,14 @@ const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
 const idD = "019b0298-5c00-7000-8000-000000000004";
 const managers: ProjectStoreManager[] = [];
+
+interface TableCounts {
+  accepted_segments: number;
+  generation_session: number;
+  record_references: number;
+  records: number;
+  story_config: number;
+}
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-record-layer-"));
@@ -482,9 +489,54 @@ describe("SPEC-003 record tables and repository", () => {
     repository.appendAcceptedSegment({ text: "Accepted prose.", metadata: { source: "test" } });
     expect(repository.listAcceptedSegments()).toHaveLength(1);
     expect(repository.listRecords({ includeArchived: true })).toEqual([]);
+  });
 
-    const source = await readFile(new URL("./record-repository.ts", import.meta.url), "utf8");
-    expect(source.match(/accepted_segments/g)).toHaveLength(3);
+  it("deletes accepted segments without renumbering or writing record tables", async () => {
+    const storeManager = manager();
+    const status = await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "accepted-delete",
+      title: "Accepted Delete"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    repository.createRecord({
+      type: "FACT",
+      displayLabel: "Persistent record",
+      payload: {
+        id: idA,
+        status: "active",
+        fact_kind: "current_state",
+        statement: "Records remain untouched.",
+        scope: "global",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "medium"
+      }
+    });
+    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: { source: "test" } });
+    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: { source: "test" } });
+    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: { source: "test" } });
+    const databasePath = join(status.folderPath, "loom.sqlite");
+    const before = tableCounts(databasePath);
+
+    expect(repository.deleteAcceptedSegment(second.id)).toBe(true);
+    expect(repository.listAcceptedSegments().map(({ id, sequence, text }) => ({ id, sequence, text }))).toEqual([
+      { id: first.id, sequence: 1, text: "First accepted prose." },
+      { id: third.id, sequence: 3, text: "Third accepted prose." }
+    ]);
+    expect(tableCounts(databasePath)).toEqual({
+      ...before,
+      accepted_segments: before.accepted_segments - 1
+    });
+
+    const afterDelete = tableCounts(databasePath);
+    expect(repository.deleteAcceptedSegment(999)).toBe(false);
+    expect(tableCounts(databasePath)).toEqual(afterDelete);
   });
 
   it("can run the table initializer idempotently", () => {
@@ -505,3 +557,23 @@ describe("SPEC-003 record tables and repository", () => {
     }
   });
 });
+
+function tableCounts(databasePath: string): TableCounts {
+  const database = new DatabaseSync(databasePath);
+  try {
+    return {
+      accepted_segments: countRows(database, "accepted_segments"),
+      generation_session: countRows(database, "generation_session"),
+      record_references: countRows(database, "record_references"),
+      records: countRows(database, "records"),
+      story_config: countRows(database, "story_config")
+    };
+  } finally {
+    database.close();
+  }
+}
+
+function countRows(database: DatabaseSync, tableName: keyof TableCounts): number {
+  const row = database.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get() as { count: number };
+  return row.count;
+}

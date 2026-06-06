@@ -1,6 +1,6 @@
 # SPEC011ACCSEGARC-001: Accepted-segment read + delete server routes
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds `GET`/`DELETE /api/accepted-segments` route handlers to `@loom/server`, a new `RecordRepository.deleteAcceptedSegment` method, and a logging-redaction test
@@ -94,3 +94,19 @@ Parse `:id`; reject non-integer / non-positive with `400` and a structured error
 
 1. `npm test -w @loom/server -- accepted-routes record-layer`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+Implemented `GET /api/accepted-segments` and `DELETE /api/accepted-segments/:id` in the existing accepted-segment route module, plus `RecordRepository.deleteAcceptedSegment(id): boolean`. Listing returns the repository's `sequence ASC` rows with text and metadata; deletion removes only the targeted accepted segment row, leaves sequence gaps intact, and returns structured `invalid-id`, `not-found`, and `no-open-project` failures.
+
+Tests were added for route list/delete behavior, empty/no-open-project cases, invalid ids, not-found deletion, sequence-gap preservation, accepted-prose log exclusion, and repository-level record-table inertness. The prior brittle source-count assertion around `accepted_segments` was removed in favor of behavioral table-count checks.
+
+Verification:
+
+- `npm test -w @loom/server -- accepted-routes record-layer` — passed (2 files, 18 tests)
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (60 files, 343 tests)
+- `npm run build` — passed

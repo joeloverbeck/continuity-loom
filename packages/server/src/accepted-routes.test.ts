@@ -41,6 +41,62 @@ afterEach(async () => {
 });
 
 describe("accepted routes", () => {
+  it("lists accepted segments in sequence order with text and metadata", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    await postAccept(fastify, {
+      text: "First accepted prose.",
+      generationMetadata
+    });
+    await postAccept(fastify, {
+      text: "Second accepted prose.",
+      generationMetadata: {
+        ...generationMetadata,
+        topP: undefined
+      }
+    });
+
+    const response = await getAcceptedSegments(fastify);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: true,
+      segments: [
+        {
+          id: 1,
+          sequence: 1,
+          text: "First accepted prose.",
+          metadata: generationMetadata,
+          createdAt: expect.any(String)
+        },
+        {
+          id: 2,
+          sequence: 2,
+          text: "Second accepted prose.",
+          metadata: {
+            model: "openai/gpt-4.1",
+            provider: "openrouter",
+            temperature: 0.4,
+            maxOutputTokens: 2200,
+            versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+          },
+          createdAt: expect.any(String)
+        }
+      ]
+    });
+  });
+
+  it("lists an empty accepted-segment archive", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const response = await getAcceptedSegments(fastify);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true, segments: [] });
+  });
+
   it("appends accepted segments with full metadata and no record-table writes", async () => {
     const fastify = app();
     const folderPath = await openProject(fastify);
@@ -125,13 +181,94 @@ describe("accepted routes", () => {
   it("returns no-open-project without accepting prose", async () => {
     const fastify = app();
 
-    const response = await postAccept(fastify, {
+    const postResponse = await postAccept(fastify, {
       text: "No project prose.",
       generationMetadata
     });
+    const getResponse = await getAcceptedSegments(fastify);
+    const deleteResponse = await deleteAcceptedSegment(fastify, 1);
 
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ ok: false, kind: "no-open-project", message: "No project is open." });
+    for (const response of [postResponse, getResponse, deleteResponse]) {
+      expect(response.statusCode).toBe(409);
+      expect(response.json()).toEqual({ ok: false, kind: "no-open-project", message: "No project is open." });
+    }
+  });
+
+  it("deletes one accepted segment by id and leaves remaining sequence values unchanged", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const databasePath = join(folderPath, "loom.sqlite");
+
+    await postAccept(fastify, {
+      text: "First accepted prose.",
+      generationMetadata
+    });
+    await postAccept(fastify, {
+      text: "Second accepted prose.",
+      generationMetadata
+    });
+    await postAccept(fastify, {
+      text: "Third accepted prose.",
+      generationMetadata
+    });
+    const before = tableCounts(databasePath);
+
+    const response = await deleteAcceptedSegment(fastify, 2);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true, deleted: { id: 2 } });
+    expect(acceptedSegmentRows(databasePath).map(({ id, sequence, text }) => ({ id, sequence, text }))).toEqual([
+      { id: 1, sequence: 1, text: "First accepted prose." },
+      { id: 3, sequence: 3, text: "Third accepted prose." }
+    ]);
+    expect(tableCounts(databasePath)).toEqual({
+      ...before,
+      accepted_segments: before.accepted_segments - 1
+    });
+  });
+
+  it("returns not-found for a missing accepted segment id without deleting rows", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const databasePath = join(folderPath, "loom.sqlite");
+    await postAccept(fastify, {
+      text: "Existing accepted prose.",
+      generationMetadata
+    });
+    const before = tableCounts(databasePath);
+
+    const response = await deleteAcceptedSegment(fastify, 999);
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "not-found",
+      message: "Accepted segment not found: 999.",
+      id: 999
+    });
+    expect(tableCounts(databasePath)).toEqual(before);
+    expect(acceptedSegmentRows(databasePath)).toHaveLength(1);
+  });
+
+  it("rejects invalid accepted-segment ids without deleting rows", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const databasePath = join(folderPath, "loom.sqlite");
+    await postAccept(fastify, {
+      text: "Existing accepted prose.",
+      generationMetadata
+    });
+    const before = tableCounts(databasePath);
+
+    const nonInteger = await fastify.inject({ method: "DELETE", url: "/api/accepted-segments/not-a-number" });
+    const negative = await fastify.inject({ method: "DELETE", url: "/api/accepted-segments/-1" });
+    const decimal = await fastify.inject({ method: "DELETE", url: "/api/accepted-segments/1.5" });
+
+    for (const response of [nonInteger, negative, decimal]) {
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ ok: false, kind: "invalid-id" });
+    }
+    expect(tableCounts(databasePath)).toEqual(before);
   });
 
   it("does not write accepted prose or key material to logs or responses", async () => {
@@ -148,6 +285,31 @@ describe("accepted routes", () => {
       expect(response.statusCode).toBe(201);
       expect(JSON.stringify(response.json())).not.toContain(acceptedProseSecret);
       expect(JSON.stringify(response.json())).not.toContain(apiKeySecret);
+    } finally {
+      const output = capture.restore();
+      expect(output).not.toContain(acceptedProseSecret);
+      expect(output).not.toContain(apiKeySecret);
+    }
+  });
+
+  it("does not write accepted prose to logs while listing or deleting accepted segments", async () => {
+    const capture = captureProcessWrites();
+    const fastify = app({ logger: true });
+
+    try {
+      await openProject(fastify);
+      await postAccept(fastify, {
+        text: acceptedProseSecret,
+        generationMetadata
+      });
+
+      const getResponse = await getAcceptedSegments(fastify);
+      const deleteResponse = await deleteAcceptedSegment(fastify, 1);
+
+      expect(getResponse.statusCode).toBe(200);
+      expect(JSON.stringify(getResponse.json())).toContain(acceptedProseSecret);
+      expect(deleteResponse.statusCode).toBe(200);
+      expect(JSON.stringify(deleteResponse.json())).not.toContain(acceptedProseSecret);
     } finally {
       const output = capture.restore();
       expect(output).not.toContain(acceptedProseSecret);
@@ -187,6 +349,20 @@ async function postAccept(fastify: ReturnType<typeof createServer>, payload: unk
     method: "POST",
     url: "/api/accepted-segments",
     payload
+  });
+}
+
+async function getAcceptedSegments(fastify: ReturnType<typeof createServer>) {
+  return fastify.inject({
+    method: "GET",
+    url: "/api/accepted-segments"
+  });
+}
+
+async function deleteAcceptedSegment(fastify: ReturnType<typeof createServer>, id: number) {
+  return fastify.inject({
+    method: "DELETE",
+    url: `/api/accepted-segments/${id}`
   });
 }
 
