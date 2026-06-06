@@ -16,7 +16,9 @@ npm ci
 
 ## Documentation
 
-- [User guide](docs/user-guide.md) - the local-first story loop, prompt preview, OpenRouter settings, candidate lifecycle, accepted segments, backup, and FAQ.
+- [User guide](docs/user-guide.md) — the local-first story loop, prompt preview, OpenRouter settings, candidate lifecycle, accepted segments, backup, and FAQ.
+- [Active docs map](docs/ACTIVE-DOCS.md) — where future coding agents should start after v1.
+- [Foundations](docs/FOUNDATIONS.md) — the constitutional design contract for continuity authority, deterministic compilation, validation, accepted-prose boundaries, local-first data, and future work.
 
 ## Run in development (hot reload)
 

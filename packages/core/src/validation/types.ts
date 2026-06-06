@@ -34,7 +34,6 @@ export interface ValidationResult {
 }
 
 export const DIAGNOSTIC_CODES = Object.freeze({
-  acceptedProseContamination: "accepted-prose-contamination",
   apiKeyLikePromptFacingText: "api-key-like-prompt-facing-text",
   castMissingCoreDossier: "cast-missing-core-dossier",
   contentEnvelopeContradiction: "content-envelope-contradiction",
