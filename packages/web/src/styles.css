@@ -598,6 +598,136 @@ button:disabled:hover {
   font-size: 0.95rem;
 }
 
+.acceptedArchiveSurface {
+  max-width: 1040px;
+}
+
+.acceptedArchiveStack {
+  display: grid;
+  gap: 16px;
+}
+
+.acceptedArchiveToolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 420px) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.acceptedFilter {
+  margin: 0;
+}
+
+.acceptedExportActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.acceptedSegmentList {
+  display: grid;
+  gap: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.acceptedSegmentArticle {
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.acceptedSegmentHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.acceptedSegmentHeader p {
+  margin: 0;
+}
+
+.acceptedSegmentText {
+  margin: 0 0 16px;
+  border: 1px solid #e0e5ee;
+  border-radius: 6px;
+  background: #fcfdf9;
+  padding: 18px;
+  color: #202124;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.03rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.acceptedMetadataPanel {
+  border-top: 1px solid #d8dee8;
+  padding-top: 14px;
+}
+
+.acceptedMetadataPanel h4 {
+  margin: 0 0 10px;
+  color: #39445a;
+  font-size: 0.92rem;
+}
+
+.acceptedMetadataGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.acceptedMetadataGrid div {
+  border: 1px solid #e0e5ee;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.acceptedMetadataGrid dd {
+  overflow-wrap: anywhere;
+  font-size: 0.94rem;
+}
+
+.acceptedDeleteConfirm {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  border: 1px solid #c99a2e;
+  border-radius: 6px;
+  background: #fff8e7;
+  padding: 12px;
+}
+
+.acceptedDeleteConfirm p {
+  margin: 0;
+  color: #6d4a00;
+  font-weight: 700;
+}
+
+.acceptedDeleteConfirm div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.secondaryButton {
+  border: 1px solid #c9d2df;
+  background: #ffffff;
+  color: #245a8d;
+}
+
+.secondaryButton:hover {
+  background: #e9f1f8;
+  color: #17466d;
+}
+
 @media (max-width: 760px) {
   .appFrame {
     grid-template-columns: 1fr;
@@ -618,5 +748,13 @@ button:disabled:hover {
 
   .promptPreviewLayout {
     grid-template-columns: 1fr;
+  }
+
+  .acceptedArchiveToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .acceptedExportActions {
+    justify-content: flex-start;
   }
 }

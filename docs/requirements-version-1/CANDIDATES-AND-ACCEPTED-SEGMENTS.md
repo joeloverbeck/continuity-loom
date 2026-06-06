@@ -82,6 +82,21 @@ The ordered accepted-segment browser, deletion, and export remain Phase 11. The 
 durable-change reminder with checklist, quick links, acknowledge, and snooze remains Phase
 12; Phase 10 provides only a minimal ephemeral post-accept notice.
 
+## Phase 11 implementation note
+
+Implemented via SPEC-011 on 2026-06-06. The realized Phase 11 archive browser uses
+`GET /api/accepted-segments` for ordered read-back and `DELETE /api/accepted-segments/:id`
+for confirmed deletion. Deletion removes only the readable output row, leaves stored
+sequence gaps unrenumbered, and does not mutate records or create branches.
+
+The `/accepted-segments` surface is prose-forward and read-only: it shows accepted text in
+stored sequence order, displays the model/provider/settings and template/compiler/contract
+version metadata, supports a simple client-side substring filter over fetched text and
+visible metadata, and exports the complete archive as Markdown or plain text regardless of
+the active filter. The app provides no "include last segment in prompt" or other
+prompt-context affordance from this archive. The persistent durable-change reminder remains
+Phase 12.
+
 ## Accepted segment archive
 
 Accepted segments are stored in order. They are append-only except deletion/export.

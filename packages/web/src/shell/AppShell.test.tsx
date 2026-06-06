@@ -25,6 +25,9 @@ vi.mock("../preview/PromptPreviewView.js", () => ({
 vi.mock("../generate/GenerateView.js", () => ({
   GenerateView: () => <h2>Generate / Candidate</h2>
 }));
+vi.mock("../accepted-segments/AcceptedSegmentsView.js", () => ({
+  AcceptedSegmentsView: () => <h2>Accepted Segments</h2>
+}));
 vi.mock("../config/StoryConfigEditor.js", () => ({
   StoryConfigEditor: () => <h2>Story Configuration</h2>
 }));
@@ -37,7 +40,7 @@ afterEach(() => {
 });
 
 describe("AppShell", () => {
-  it("promotes Generate / Candidate to an enabled route and leaves Accepted Segments disabled", () => {
+  it("promotes Generate / Candidate and Accepted Segments to enabled routes", () => {
     render(
       <MemoryRouter>
         <AppShell loadState={{ status: "ready", runtime: runtimeStatus }} />
@@ -45,13 +48,19 @@ describe("AppShell", () => {
     );
 
     const generateLink = screen.getByRole("link", { name: "Generate / Candidate" });
+    const acceptedSegmentsLink = screen.getByRole("link", { name: "Accepted Segments" });
     expect(generateLink).toBeTruthy();
+    expect(acceptedSegmentsLink).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();
-    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accepted Segments" }).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Accepted Segments" })).toBeNull();
 
     fireEvent.click(generateLink);
 
     expect(screen.getByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
+
+    fireEvent.click(acceptedSegmentsLink);
+
+    expect(screen.getByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
   });
 });
 

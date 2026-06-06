@@ -73,6 +73,10 @@ function runtimeFetch(url: string): Promise<Response> {
     );
   }
 
+  if (url === "/api/accepted-segments") {
+    return Promise.resolve(jsonResponse({ ok: true, segments: [] }));
+  }
+
   if (url.startsWith("/api/story-config/")) {
     return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
   }
@@ -105,7 +109,7 @@ describe("App", () => {
     expect(screen.getByRole("heading", { name: "Local Project" })).toBeTruthy();
   });
 
-  it("navigates the primary shell surfaces and keeps later-phase surfaces disabled", () => {
+  it("navigates the primary shell surfaces", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(runtimeFetch)
@@ -128,12 +132,16 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("link", { name: "Generate / Candidate" }));
     expect(screen.getByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
 
+    fireEvent.click(screen.getByRole("link", { name: "Accepted Segments" }));
+    expect(screen.getByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
+    expect(await screen.findByText("No accepted segments yet.")).toBeTruthy();
+
     fireEvent.click(screen.getByRole("link", { name: "Story Configuration" }));
     expect(screen.getByRole("heading", { name: "Story Configuration" })).toBeTruthy();
 
     expect(screen.queryByRole("button", { name: "Validation/Preview" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();
-    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accepted Segments" }).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Accepted Segments" })).toBeNull();
   });
 
   it("renders settings without exposing a key value", async () => {

@@ -368,6 +368,11 @@ export class RecordRepository {
     }));
   }
 
+  deleteAcceptedSegment(id: number): boolean {
+    const result = this.database.prepare("DELETE FROM accepted_segments WHERE id = ?").run(id);
+    return result.changes > 0;
+  }
+
   referencesForRecord(id: string): RecordReference[] {
     return this.database
       .prepare("SELECT ref_role AS refRole, target_id AS targetId FROM record_references WHERE from_record_id = ?")

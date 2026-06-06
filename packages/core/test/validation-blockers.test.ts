@@ -19,6 +19,21 @@ describe("universal blocker validation", () => {
     expect(runValidation(buildValidationSnapshot(cleanInput())).blockers).toEqual([]);
   });
 
+  it("does not throw when optional voice-pressure rows are absent", () => {
+    const snapshot = buildValidationSnapshot({
+      records: [],
+      generationSession: {},
+      storyConfig: {},
+      versions: {
+        template: "0.0.0",
+        compiler: "0.0.0",
+        contract: "1.0.0"
+      }
+    } as BuildValidationSnapshotInput);
+
+    expect(() => runValidation(snapshot)).not.toThrow();
+  });
+
   it.each([
     [
       "non-local directive",

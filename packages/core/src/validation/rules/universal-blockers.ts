@@ -334,7 +334,7 @@ function validateDialogueVoicePressure(snapshot: ValidationSnapshot): readonly D
       .map((entry) => entry.cast_member_id) ?? []
   );
   const pressuredIds = new Set(
-    snapshot.generationSession.current_cast_voice_pressure
+    (snapshot.generationSession.current_cast_voice_pressure ?? [])
       .filter((entry) => entry.local_function === "active_speaker" || entry.local_function === "pov_narrator")
       .filter((entry) => hasText(entry.current_voice_pressure) || hasText(entry.dialogue_pressure))
       .map((entry) => entry.cast_member_id)
