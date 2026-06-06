@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-002: Pure OpenRouter transport builders (request + errors)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/openrouter/request.ts` and `packages/server/src/openrouter/errors.ts` (both pure, no I/O), with unit tests.
@@ -80,3 +80,31 @@ Phase 9's transport needs two pure, deterministic, fast-to-unit-test pieces befo
 1. `npm test --workspace @loom/server -- src/openrouter/request.test.ts src/openrouter/errors.test.ts`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -nE "node:|fetch\(|from \"zod\"" packages/server/src/openrouter/request.ts packages/server/src/openrouter/errors.ts` — must return nothing (purity proof for these two files).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added pure OpenRouter transport builders in `packages/server/src/openrouter/`:
+`request.ts` builds the non-streaming chat-completion body with one user message,
+`stream: false`, settings-driven `model`/`temperature`, optional `top_p`, and
+`max_completion_tokens` as the centralized max-output field. `errors.ts` defines the
+11-category `TransportErrorCategory` union and normalizes documented OpenRouter HTTP
+statuses, provider policy bodies, timeout/network causes, malformed completion bodies,
+and `Retry-After` metadata into secret-safe user-facing errors.
+
+Added focused tests for request shape, top-p omission, status/cause taxonomy, malformed
+responses, key-safe messages, retry-after metadata, and category-union completeness.
+
+Deviations: test files were placed at `packages/server/src/openrouter-request.test.ts` and
+`packages/server/src/openrouter-errors.test.ts` instead of inside `src/openrouter/`, because
+the current typed ESLint allowlist only includes `packages/*/src/*.test.ts`.
+
+Verification:
+
+- `npm test --workspace @loom/server -- src/openrouter-request.test.ts src/openrouter-errors.test.ts` — passed.
+- `rg -n "node:|fetch\\(|from \\"zod\\"" packages/server/src/openrouter/request.ts packages/server/src/openrouter/errors.ts` — no matches.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 51 files / 282 tests passed.
+- `npm run build` — passed.
