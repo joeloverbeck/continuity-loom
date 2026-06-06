@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-005: Stress coverage matrix doc + per-risk-area capability tests
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `docs/stress-coverage-matrix.md`; new core capability test backing each risk area (no production logic)
@@ -76,3 +76,21 @@ Add `packages/core/src/demo/stress-coverage.test.ts`: for each of the 14 risk ar
 1. `npx vitest run packages/core/src/demo/stress-coverage.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. Core is the correct boundary (the capabilities under audit are validation rules + the deterministic compiler in `@loom/core`); `npm test` confirms no regression in dependent packages.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `docs/stress-coverage-matrix.md`, mapping all 26 conceptual stress-suite cases to implemented v1 validation/compiler/schema capabilities.
+- Added `packages/core/src/demo/stress-coverage.test.ts`, covering matrix/code integrity, a blocker-free deterministic demo compile, and representative behavior for the 14 risk areas.
+
+Deviations from original plan:
+- The core test keeps doc-file checks out of `@loom/core/src` because the package boundary forbids Node built-in imports there. The documented shell grep remains the file-level proof for the matrix document.
+
+Verification:
+- `npx vitest run packages/core/src/demo/stress-coverage.test.ts` passed.
+- `grep -c '^| Case' docs/stress-coverage-matrix.md` returned 26, and every extracted diagnostic code resolved in `packages/core/src/validation/types.ts`.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
