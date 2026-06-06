@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-006: Web API clients for settings + generate
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends `packages/web/src/api.ts` with `getOpenRouterSettings`, `putOpenRouterSettings`, `refreshModels`, and `generate()` (+ their types); extends `packages/web/src/api.test.tsx`.
@@ -80,3 +80,33 @@ The web UI needs typed clients for the new server surfaces before any settings e
 1. `npm test --workspace @loom/web -- src/api.test.tsx`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -nE "OPENROUTER_API_KEY|apiKey|openRouterApiKey" packages/web/src/api.ts` — must return nothing (no key in client types).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Extended `packages/web/src/api.ts` with non-secret OpenRouter settings/model types,
+`getOpenRouterSettings`, `putOpenRouterSettings`, `refreshModels`, and `generate`.
+`generate()` is typed as a closed union covering success candidate metadata,
+`validation-blocked`, existing route failures, and normalized transport failures.
+
+The settings clients were typed against the implemented server contract from
+SPEC009OPEGLOBSET-004: `GET`/`PUT /api/settings/openrouter` return the non-secret settings
+object plus `hasOpenRouterCredential`, not an additional `{ ok: true, settings }` wrapper.
+
+Extended `packages/web/src/api.test.tsx` with mocked-fetch coverage for settings GET/PUT,
+model refresh success/failure, generate success, validation-blocked, and missing-key
+failure branches. The tests also verify the body-gated `Content-Type` behavior: GET and
+no-body POST clients send only `Accept`, while PUT sends JSON `Content-Type`.
+
+Deviations: the `OpenRouterSettingsResponse` shape follows the live server route contract
+landed in SPEC009OPEGLOBSET-004 rather than the stale wrapped shape in this ticket draft.
+
+Verification:
+
+- `npm test --workspace @loom/web -- src/api.test.tsx` — passed.
+- `rg -n "OPENROUTER_API_KEY|apiKey|openRouterApiKey" packages/web/src/api.ts` — no matches.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 55 files / 316 tests passed.
+- `npm run build` — passed.
