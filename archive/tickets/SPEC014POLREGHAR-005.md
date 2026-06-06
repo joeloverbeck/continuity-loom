@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-005: API-key leakage regressions
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds `packages/server/src/generate-routes.secret-leakage.test.ts`; no production code changes.
@@ -80,3 +80,22 @@ Document coverage of every `TESTING-STRATEGY §"Security tests"` surface: **proj
 1. `npx vitest run packages/server/src/generate-routes.secret-leakage.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The server-scoped run is the correct boundary — the key only coexists with the prompt in `@loom/server`; `npm test` confirms no cross-package regression.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/server/src/generate-routes.secret-leakage.test.ts`.
+- The suite configures a fake OpenRouter key through `OPENROUTER_API_KEY`, compiles prompt preview text through `/api/compile`, sends through `/api/generate`, and asserts the key is absent from the preview prompt, prompt passed to `sendChatCompletion`, success response, transport-error response, and captured logs.
+- Added an in-test security surface map covering existing project-store, accepted-segment, demo-fixture, prompt, response, log, candidate-session, and generated-file surfaces.
+
+Deviations from original plan:
+- No separate preview route beyond `/api/compile` was needed; `/api/compile` is the prompt preview surface and is asserted directly.
+- Did not perform the local key-injection mutation experiment; the test searches the fake key across the real observed surfaces.
+
+Verification results:
+- `npm exec vitest run packages/server/src/generate-routes.secret-leakage.test.ts` passed: 1 file, 2 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 71 files, 422 tests.
