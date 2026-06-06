@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
 import { registerCompileRoutes } from "./compile-routes.js";
+import { registerGenerateRoutes } from "./generate-routes.js";
 import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
@@ -37,7 +38,12 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
               "apiKey",
               "api_key",
               "prompt",
+              "messages",
+              "candidate",
+              "candidateText",
               "candidateProse",
+              "choices",
+              "body",
               "acceptedProse",
               "recordPayload"
             ],
@@ -69,6 +75,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerValidationRoutes(app, projectStoreManager);
   registerCompileRoutes(app, projectStoreManager);
   registerSettingsRoutes(app);
+  registerGenerateRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {
     await projectStoreManager.closeProject();
   });

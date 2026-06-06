@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-005: Generate endpoint + log redaction extension
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/generate-routes.ts` (`POST /api/generate`), extended `redact.paths` in `createServer()`, both registered/edited in `packages/server/src/server.ts`.
@@ -85,3 +85,33 @@ In `createServer()` add `messages`, `candidate`, `candidateText`, `choices`, `bo
 1. `npm test --workspace @loom/server -- src/generate-routes.test.ts`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -nE "registerGenerateRoutes|\"messages\"|\"candidate\"|\"choices\"" packages/server/src/server.ts` — registration + redact-path proof.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/server/src/generate-routes.ts` with `POST /api/generate`. The route mirrors
+the compile fail-closed path: it builds the current snapshot, re-runs validation, refuses
+blocked states without calling transport, compiles the current prompt, short-circuits a
+missing OpenRouter key before transport, sends via `sendChatCompletion`, returns read-only
+candidate text plus model/version metadata on success, and writes no project records or
+generation-session data on any branch.
+
+Extended `server.ts` logger redaction paths for `messages`, `candidate`, `candidateText`,
+`choices`, and `body`, and registered `registerGenerateRoutes(app, projectStoreManager)`.
+
+Added `packages/server/src/generate-routes.test.ts` coverage for no-open-project,
+malformed validation source, validation-blocked/no-transport, missing-key/no-transport,
+success metadata, normalized transport errors, generation-session non-mutation, and
+logger redaction for seeded key/prompt/candidate text.
+
+Deviations: none from the ticket scope.
+
+Verification:
+
+- `npm test --workspace @loom/server -- src/generate-routes.test.ts` — passed.
+- `rg -n "registerGenerateRoutes|\\\"messages\\\"|\\\"candidate\\\"|\\\"choices\\\"" packages/server/src/server.ts` — registration and redaction paths present.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 55 files / 310 tests passed.
+- `npm run build` — passed.
