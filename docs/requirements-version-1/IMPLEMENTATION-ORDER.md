@@ -268,19 +268,21 @@ Phase gate:
 
 ## Phase 14 — Polish, regression hardening, and documentation
 
+Status: ✅ Implemented via SPEC-014 (2026-06-06).
+
 Harden the system after the full loop exists.
 
 Why last: polish should not precede core continuity correctness. Regression hardening should focus on authority bugs discovered during full-loop use.
 
 Phase gate:
 
-- compiler golden outputs stabilized;
-- validation diagnostics refined for clarity;
-- storage backup/migration behavior documented and hardened;
-- UI performance acceptable for dense record projects;
-- API-key leakage tests pass;
-- accepted-prose exclusion regressions pass;
-- user-facing documentation explains the loop, project ownership, prompt preview, OpenRouter settings, candidate lifecycle, and manual record updates.
+- [x] compiler golden outputs stabilized;
+- [x] validation diagnostics refined for clarity;
+- [x] storage backup/migration behavior documented and hardened;
+- [x] UI performance acceptable for dense record projects;
+- [x] API-key leakage tests pass;
+- [x] accepted-prose exclusion regressions pass;
+- [x] user-facing documentation explains the loop, project ownership, prompt preview, OpenRouter settings, candidate lifecycle, and manual record updates.
 
 ## Cross-spec dependencies
 
