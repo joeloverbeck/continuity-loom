@@ -1,6 +1,6 @@
 # SPEC011ACCSEGARC-005: Phase-11 verification smoke + governing-doc completion
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: None — manual verification runbook + governing-doc updates + spec archival; no product code
@@ -91,3 +91,25 @@ Move `specs/SPEC-011-accepted-segment-archive-and-browser.md` → `archive/specs
 1. `npm run typecheck && npm run lint && npm test && npm run build`
 2. `grep -n "SPEC-011" docs/requirements-version-1/IMPLEMENTATION-ORDER.md; test -f archive/specs/SPEC-011-accepted-segment-archive-and-browser.md && test ! -f specs/SPEC-011-accepted-segment-archive-and-browser.md && echo ARCHIVED-OK`
 3. A narrower per-package run is insufficient here — the capstone's contract is the cross-package gate plus the manual smoke, so the full pipeline command is the correct verification boundary.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Recorded Phase 11 completion in `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` with the SPEC-011 status line, checked Phase 11 gate bullets, and an implementation note covering list/delete, browser, filter, export-all, no prompt-context affordance, no record mutation, and deferred Phase 12 persistent reminder / dashboard latest-segment surfacing. Added a Phase 11 implementation note to `docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md` with the same boundaries.
+
+During the browser smoke, visiting `/generate` on a fresh project exposed a runtime validation crash: `validateDialogueVoicePressure` assumed `generationSession.current_cast_voice_pressure` existed. Fixed that by treating the optional collection as empty and added a core regression test that an empty generation session does not throw during validation. This was a deviation from the original "no production code" capstone plan, but it was required for the smoke to reach a truthful passing state.
+
+Browser smoke result: `npm start` served `http://127.0.0.1:4173`; a throwaway project under `/tmp/spec011-smoke-20260606-0947` was opened; accepted segments were seeded through the localhost acceptance API because no real OpenRouter generation setup was available; the live `/accepted-segments` browser showed segments in stored sequence order with metadata, substring filtering narrowed/restored the list, delete required confirmation and removed only the selected readable output, clearing the filter showed the remaining segment with its original stored sequence, Markdown and plain-text export downloaded successfully, and the Markdown/text exports contained the full archive in stored sequence order despite an active filter. The browser exposed no "use in prompt" / "include last segment" control. Console output contained only a stale `409 /api/compile` from the no-open-project Generate check and no API key or prompt text.
+
+Per the user-requested sequencing, the SPEC-011 spec archive is handled as the final post-ticket step after this ticket is archived and committed.
+
+Verification:
+
+- `npm test -w @loom/core -- validation-blockers` — passed (1 file, 18 tests)
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (61 files, 355 tests)
+- `npm run build` — passed
+- `grep -n "SPEC-011\\|Phase 11\\|Phase 12\\|persistent" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` — showed Phase 11 implemented via SPEC-011 and persistent reminder in Phase 12
+- `grep -ni "phase 11\\|phase 12\\|persistent\\|prompt-context" docs/requirements-version-1/CANDIDATES-AND-ACCEPTED-SEGMENTS.md` — showed the Phase 11 note and Phase 12 persistent reminder deferral

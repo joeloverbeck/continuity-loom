@@ -199,17 +199,27 @@ Phase gate:
 
 ## Phase 11 — Accepted segment archive and browser
 
+Status: ✅ Implemented via SPEC-011 (2026-06-06).
+
 Implement ordered accepted segment storage, metadata, browsing, deletion, and simple export if included.
 
 Why after candidate lifecycle: accepted segments are created by explicit acceptance. Why before durable-change reminder: reminder references a real acceptance event.
 
+Implementation note: Phase 11 ships `GET /api/accepted-segments`,
+`DELETE /api/accepted-segments/:id`, the enabled `/accepted-segments` browser surface,
+client-side text/metadata filtering, delete-with-confirmation that leaves stored sequence
+gaps unrenumbered, and Markdown/plain-text export-all for readable output. Deletion and
+export do not write records, and the UI offers no prompt-context affordance. The persistent
+durable-change reminder remains Phase 12; dashboard latest-segment surfacing remains
+deferred.
+
 Phase gate:
 
-- accepted segments store text and metadata in order;
-- browser is readable and prose-forward;
-- deletion/export do not affect records automatically;
-- accepted segment text is physically/logically excluded from compiler inputs;
-- no full prompt text is stored with segments by default.
+- [x] accepted segments store text and metadata in order;
+- [x] browser is readable and prose-forward;
+- [x] deletion/export do not affect records automatically;
+- [x] accepted segment text is physically/logically excluded from compiler inputs;
+- [x] no full prompt text is stored with segments by default.
 
 ## Phase 12 — Durable-change reminder workflow
 
