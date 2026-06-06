@@ -5,7 +5,6 @@ import {
   buildValidationSnapshot,
   runValidation,
   type BuildValidationSnapshotInput,
-  type Diagnostic,
   type ValidationRecord
 } from "../src/index.js";
 
@@ -163,7 +162,7 @@ function diagnosticCorpus(): Array<{ label: string; mutate: InputMutator }> {
   ];
 }
 
-function trimmed(value: Diagnostic["message"] | Diagnostic["whyItMatters"]): string {
+function trimmed(value: string): string {
   return value.trim();
 }
 
