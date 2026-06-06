@@ -1,6 +1,6 @@
 # SPEC-014 — Polish, regression hardening, and documentation
 
-Status: DRAFT
+Status: ✅ COMPLETED
 Phase: 14 (Implementation Order — Continuity Loom v1) — the final phase
 Depends on: SPEC-001 … SPEC-013 (all implemented; the full create → validate → compile → preview → send → candidate → accept → archive → reminder loop exists and the tame demo exercises it end-to-end)
 Governing authority: `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` §"Phase 14" (the phase gate), `docs/requirements-version-1/TESTING-STRATEGY.md` (the test doctrine this phase realizes)
@@ -120,3 +120,24 @@ No §29 hard-fail is tripped. Phase 14 is terminal: it adds regression armor *fo
 - **Dense-record test threshold.** The exact record count and what "acceptable" means (no thrown error + correct filtering vs. a render-time budget) is a decompose-time detail. *Resolution direction:* assert correctness + no-error at ~500–1000 records first; only add a timing budget or virtualization if a real problem appears.
 - **Leakage test realism.** Asserting "no key in the compiled prompt" is only meaningful if the test threads a fake key through a realistic path (settings/transport) rather than a trivially key-free snapshot. *Resolution direction:* seed a fake key into the global secret/settings surface and assert it is absent from the prompt and error outputs — not merely absent from an input that never carried it.
 - **Where storage/migration docs live.** User-facing recoverability/backup guidance belongs in `docs/user-guide.md`; deeper rationale already lives in LOCAL-FIRST-STORAGE.md. *Resolution direction:* user guide gets the actionable "how to back up / what a version mismatch means" section; avoid duplicating the requirements doc.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Implemented and archived `SPEC014POLREGHAR-001` through `SPEC014POLREGHAR-008`.
+- Added frozen compiler golden coverage, validation clarity invariants, storage recoverability/backup regression coverage, dense `RecordBrowser` coverage, API-key leakage regressions, accepted-prose exclusion regressions, and `docs/user-guide.md` with a README pointer.
+- Updated `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` to mark Phase 14 implemented via SPEC-014 and check all Phase 14 gate items.
+
+Deviations from original plan:
+- The storage recoverability test updates both project metadata schema version and SQLite `user_version` to reach the live compatibility gate, because mismatched metadata/store versions are rejected earlier as invalid metadata.
+- The dense browser smoke runs at 500 records with an explicit 10s timeout for full-suite stability.
+- The accepted-prose compiler grep proof checks import specifiers rather than all compiler source text because prompt constants legitimately contain accepted-prose exclusion wording.
+
+Verification results:
+- Targeted Phase-14 regression bundle passed: 7 files, 33 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 72 files, 429 tests.
+- Docs/ledger proof passed: `docs/user-guide.md` exists, README links it, and `IMPLEMENTATION-ORDER.md` contains `Implemented via SPEC-014`.
