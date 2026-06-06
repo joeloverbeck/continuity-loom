@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-006: Demo end-to-end capstone + Phase 13 completion bookkeeping
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new server end-to-end test exercising the full demo loop; status update to `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` (no production logic)
@@ -78,3 +78,22 @@ In `docs/requirements-version-1/IMPLEMENTATION-ORDER.md`, add a `Status: ✅ Imp
 1. `npx vitest run packages/server/src/demo-e2e.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The server e2e is the correct boundary (the loop spans create/validate/compile/accept/reminder HTTP surfaces); the bookkeeping edit is verified by the grep assertions in Acceptance Criteria #2.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/server/src/demo-e2e.test.ts`, a full demo capstone that creates the demo, verifies active project status/counts, validates with zero blockers, compiles deterministically, accepts edited candidate text, lists the accepted archive, and verifies the durable-change reminder activates.
+- Updated `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` to mark Phase 13 implemented via SPEC-013 and remove Phase 13 from the remaining-work sentence.
+
+Deviations from original plan:
+- The accepted segment uses mock generation metadata and edited text, as planned by the ticket's OpenRouter-out-of-scope boundary.
+
+Verification:
+- `npx vitest run packages/server/src/demo-e2e.test.ts` passed.
+- `grep -n "Implemented via SPEC-013" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` passed.
+- `grep -n "Phase 13 demo/stress" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` returned no matches.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
