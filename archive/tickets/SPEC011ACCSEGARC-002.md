@@ -1,6 +1,6 @@
 # SPEC011ACCSEGARC-002: Web API clients for accepted-segment list/delete
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — adds `listAcceptedSegments` / `deleteAcceptedSegment` clients and a web `AcceptedSegment` view type to `@loom/web`'s `api.ts`
@@ -84,3 +84,19 @@ Mocked-`fetch` tests: list success (segments with `text`+`metadata`), list `no-o
 
 1. `npm test -w @loom/web -- api`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added the read-path `AcceptedSegment` web type carrying `text` and `metadata`, plus `ListAcceptedSegmentsResponse` and `DeleteAcceptedSegmentResponse`. `AcceptedSegmentRef` and the `acceptCandidate` write response stayed unchanged. Added `listAcceptedSegments()` over `GET /api/accepted-segments` and `deleteAcceptedSegment(id)` over `DELETE /api/accepted-segments/:id`, both using the shared `ApiFailure` union and no prompt-context affordance.
+
+Tests were added in `api.test.tsx` for list success with text and metadata, list `no-open-project`, delete success, and delete `not-found`.
+
+Verification:
+
+- `npm test -w @loom/web -- api` — passed (1 file, 22 tests)
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (60 files, 347 tests)
+- `npm run build` — passed

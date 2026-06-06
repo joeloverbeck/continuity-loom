@@ -102,7 +102,14 @@ export interface AcceptedSegmentRef {
   createdAt: string;
 }
 
+export interface AcceptedSegment extends AcceptedSegmentRef {
+  text: string;
+  metadata: GenerationMetadata;
+}
+
 export type AcceptResponse = { ok: true; segment: AcceptedSegmentRef } | ApiFailure;
+export type ListAcceptedSegmentsResponse = { ok: true; segments: AcceptedSegment[] } | ApiFailure;
+export type DeleteAcceptedSegmentResponse = { ok: true; deleted: { id: number } } | ApiFailure;
 
 export type RecordSummary = {
   id: string;
@@ -328,4 +335,12 @@ export async function acceptCandidate(input: {
   generationMetadata: GenerationMetadata;
 }): Promise<AcceptResponse> {
   return requestJson<AcceptResponse>("/api/accepted-segments", "POST", input);
+}
+
+export async function listAcceptedSegments(): Promise<ListAcceptedSegmentsResponse> {
+  return requestJson<ListAcceptedSegmentsResponse>("/api/accepted-segments", "GET");
+}
+
+export async function deleteAcceptedSegment(id: number): Promise<DeleteAcceptedSegmentResponse> {
+  return requestJson<DeleteAcceptedSegmentResponse>(`/api/accepted-segments/${id}`, "DELETE");
 }

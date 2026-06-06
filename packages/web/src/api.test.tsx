@@ -5,6 +5,7 @@ import {
   archiveRecord,
   compile,
   createRecord,
+  deleteAcceptedSegment,
   deleteRecord,
   generate,
   getGenerationBrief,
@@ -13,6 +14,7 @@ import {
   getRecordReferences,
   getStoryConfig,
   getWorkingSet,
+  listAcceptedSegments,
   listRecords,
   putOpenRouterSettings,
   refreshModels,
@@ -370,6 +372,88 @@ describe("api client", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 409))));
 
     await expect(acceptCandidate({ text: "Accepted prose.", generationMetadata })).resolves.toEqual(failure);
+  });
+
+  it("lists accepted segments with text and metadata", async () => {
+    const metadata = {
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      topP: 0.9,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    } satisfies GenerationMetadata;
+    const success = {
+      ok: true,
+      segments: [
+        {
+          id: 7,
+          sequence: 3,
+          text: "Readable accepted prose.",
+          metadata,
+          createdAt: "2026-06-06T08:12:00.000Z"
+        }
+      ]
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success));
+      })
+    );
+
+    await expect(listAcceptedSegments()).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/accepted-segments", "GET"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("returns accepted-segment list failures unchanged", async () => {
+    const failure = {
+      ok: false,
+      kind: "no-open-project",
+      message: "No project is open."
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 409))));
+
+    await expect(listAcceptedSegments()).resolves.toEqual(failure);
+  });
+
+  it("deletes accepted segments by id", async () => {
+    const success = { ok: true, deleted: { id: 7 } };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success));
+      })
+    );
+
+    await expect(deleteAcceptedSegment(7)).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/accepted-segments/7", "DELETE"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("returns accepted-segment delete failures unchanged", async () => {
+    const failure = {
+      ok: false,
+      kind: "not-found",
+      message: "Accepted segment not found: 999.",
+      id: 999
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 404))));
+
+    await expect(deleteAcceptedSegment(999)).resolves.toEqual(failure);
   });
 
   it("returns validation-blocked generate responses", async () => {
