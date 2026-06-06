@@ -80,7 +80,11 @@ const fixtures: RecordSummary[] = [
 const referencedRecords = new Set(["fact-1"]);
 
 function filterFixtures(filters: ListRecordsFilters): RecordSummary[] {
-  return fixtures.filter((record) => {
+  return filterRecords(fixtures, filters);
+}
+
+function filterRecords(records: readonly RecordSummary[], filters: ListRecordsFilters): RecordSummary[] {
+  return records.filter((record) => {
     const typeMatches = filters.type ? record.type === filters.type : true;
     const statusMatches = filters.status ? record.status === filters.status : true;
     const textMatches = filters.q ? record.displayLabel.toLowerCase().includes(filters.q.toLowerCase()) : true;
@@ -90,13 +94,51 @@ function filterFixtures(filters: ListRecordsFilters): RecordSummary[] {
   });
 }
 
+function expectedLabels(records: readonly RecordSummary[], filters: ListRecordsFilters): string[] {
+  return filterRecords(records, filters).map((record) => record.displayLabel);
+}
+
+function tableLabels(): string[] {
+  return within(screen.getByRole("table"))
+    .getAllByRole("button")
+    .map((button) => button.textContent ?? "")
+    .filter((label) => label !== "Add" && label !== "Selected");
+}
+
+function denseRecordFixtures(count: number): RecordSummary[] {
+  const recordTypeCycle = ["FACT", "INTENTION", "ENTITY"] as const;
+  const salienceCycle = ["critical", "high", "low"] as const;
+
+  return Array.from({ length: count }, (_, index): RecordSummary => {
+    const type = recordTypeCycle[index % recordTypeCycle.length]!;
+    const isNeedle = type === "FACT" && index % 30 === 0;
+
+    return {
+      id: `dense-${String(index).padStart(3, "0")}`,
+      type,
+      displayLabel: `${isNeedle ? "Needle" : titleCase(type)} dense ${String(index).padStart(3, "0")}`,
+      status: index % 2 === 0 ? "active" : "resolved",
+      salience: type === "FACT" ? salienceCycle[index % salienceCycle.length]! : null,
+      urgency: type === "INTENTION" ? (index % 4 === 0 ? "critical" : "steady") : null,
+      archived: false,
+      userOrder: null,
+      createdAt: "2026-06-05T00:00:00.000Z",
+      updatedAt: "2026-06-05T00:00:00.000Z"
+    };
+  });
+}
+
+function titleCase(value: string): string {
+  return value.toLowerCase().replace(/^\w/, (match) => match.toUpperCase());
+}
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
 });
 
-function renderBrowser(initialEntry = "/records"): void {
-  render(
+function renderBrowser(initialEntry = "/records"): ReturnType<typeof render> {
+  return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <RecordBrowser />
     </MemoryRouter>
@@ -111,6 +153,67 @@ function mockWorkingSet(ids: string[] = []): void {
 }
 
 describe("RecordBrowser", () => {
+  it("keeps dense record filtering, search, and grouping correct without throwing", async () => {
+    const denseRecords = denseRecordFixtures(500);
+    const workingSetIds = denseRecords
+      .filter((record) => record.type === "FACT" && record.status === "active")
+      .slice(0, 25)
+      .map((record) => record.id);
+    mockWorkingSet(workingSetIds);
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(denseRecords, filters)
+      })
+    );
+    vi.mocked(getRecord).mockImplementation((id: string) =>
+      Promise.resolve({
+        ok: true,
+        record: {
+          ...denseRecords.find((record) => record.id === id)!,
+          payload: { inspected: id }
+        }
+      })
+    );
+
+    const view = renderBrowser();
+
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
+    await waitFor(() => expect(tableLabels()).toHaveLength(denseRecords.length));
+
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "FACT" } });
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "active" } });
+    const activeFactLabels = expectedLabels(denseRecords, { type: "FACT", status: "active" });
+    await waitFor(() => expect(tableLabels()).toEqual(activeFactLabels));
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "needle" } });
+    const searchedFacts = expectedLabels(denseRecords, { type: "FACT", status: "active", q: "needle" });
+    await waitFor(() => expect(tableLabels()).toEqual(searchedFacts));
+    expect(searchedFacts.length).toBeGreaterThan(0);
+    expect(within(screen.getByRole("table")).queryByText("Intent dense 001")).toBeNull();
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText("Group by"), { target: { value: "salience" } });
+    const groupedFacts = [...activeFactLabels].sort((left, right) => {
+      const leftRecord = denseRecords.find((record) => record.displayLabel === left)!;
+      const rightRecord = denseRecords.find((record) => record.displayLabel === right)!;
+
+      return (
+        String(leftRecord.salience ?? "").localeCompare(String(rightRecord.salience ?? "")) ||
+        leftRecord.displayLabel.localeCompare(rightRecord.displayLabel) ||
+        leftRecord.id.localeCompare(rightRecord.id)
+      );
+    });
+    await waitFor(() => expect(tableLabels()).toEqual(groupedFacts));
+
+    view.rerender(
+      <MemoryRouter initialEntries={["/records"]}>
+        <RecordBrowser />
+      </MemoryRouter>
+    );
+    await waitFor(() => expect(tableLabels()).toEqual(groupedFacts));
+  }, 10_000);
+
   it("renders a dense list and filters by type, status, search, and reference", async () => {
     mockWorkingSet();
     vi.mocked(listRecords).mockImplementation((filters = {}) =>

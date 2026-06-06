@@ -14,6 +14,10 @@ Continuity Loom runs as a local-first web app: a Node process serves a React UI 
 npm ci
 ```
 
+## Documentation
+
+- [User guide](docs/user-guide.md) - the local-first story loop, prompt preview, OpenRouter settings, candidate lifecycle, accepted segments, backup, and FAQ.
+
 ## Run in development (hot reload)
 
 ```bash

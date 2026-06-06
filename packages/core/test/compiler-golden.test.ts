@@ -1,4 +1,13 @@
-import { buildValidationSnapshot, compilePrompt, SECTION_ORDER, type BuildValidationSnapshotInput } from "../src/index.js";
+import {
+  buildValidationSnapshot,
+  compilePrompt,
+  demoGenerationSession,
+  demoRecords,
+  demoStoryConfig,
+  SECTION_ORDER,
+  type BuildValidationSnapshotInput
+} from "../src/index.js";
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 function goldenInput(): BuildValidationSnapshotInput {
@@ -139,6 +148,19 @@ function promptSectionOrder(prompt: string): string[] {
 }
 
 describe("compiler golden prompt", () => {
+  it("matches the frozen demo first-segment prompt baseline byte-for-byte", () => {
+    const snapshot = buildValidationSnapshot({
+      records: demoRecords,
+      generationSession: demoGenerationSession,
+      storyConfig: demoStoryConfig
+    });
+    const result = compilePrompt(snapshot);
+    const frozenGolden = readFileSync(new URL("./golden-first-segment.prompt.txt", import.meta.url), "utf8");
+
+    // Re-baseline this fixture only with a deliberate template/compiler/contract version change.
+    expect(result.prompt).toBe(frozenGolden);
+  });
+
   it("renders a full prompt deterministically with all sections and stable metadata", () => {
     const snapshot = buildValidationSnapshot(goldenInput());
     const first = compilePrompt(snapshot);
