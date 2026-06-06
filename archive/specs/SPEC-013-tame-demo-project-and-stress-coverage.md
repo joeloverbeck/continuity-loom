@@ -1,6 +1,6 @@
 # SPEC-013 — Tame demo project and stress coverage
 
-Status: DRAFT
+Status: ✅ COMPLETED
 Phase: 13 (Implementation Order — Continuity Loom v1)
 Depends on: SPEC-001 … SPEC-012 (all implemented; the full create → validate → compile → preview → send → candidate → accept → archive → reminder loop exists)
 Governing authority: `docs/requirements-version-1/DEMO-PROJECT-AND-STRESS-COVERAGE.md` (primary), `docs/stress-suite.md` (the 26 conceptual cases)
@@ -125,3 +125,33 @@ No hard-fail is tripped and no interim tension exists: Phase 12 already cleared 
 - **Reveal-permission / CLOCK demo variant.** The DEMO spec leaves `reveal_permission` (`clue_only` vs `natural_reveal_allowed`) and the optional CLOCK to "depending on scenario." v1 demo should pick one concrete valid configuration (recommend `clue_only`, no active CLOCK) and document it; alternates belong to blocker recipes / later variants.
 - **Exact valid working-set membership.** The demo brief must select a working set that validates cleanly; the precise inclusion list is a decompose-time detail to be derived from the validation focus tags and the required-records list.
 - **First-segment handoff must stay contamination-free.** Because the valid demo uses `generation_context: first_segment`, `validateGenerationContextRows` (`packages/core/src/validation/rules/universal-blockers.ts:412`) fires the `prompt-facing-prose-contamination` blocker on the *valid* baseline unless `prior_accepted_prose_status_or_handoff_note` passes `isCleanNoAcceptedProseNote` (e.g. the DEMO source's `None. No accepted prose is included.`) **and** no handoff field contains a `CONTINUATION_MARKERS` phrase (`as above`, `as before`, `from the previous segment`, `continue from last time`) or a `CONTAMINATION_MARKERS` phrase. The DEMO source wording already complies; decomposition must preserve this when authoring the fixture brief.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added the pure `@loom/core` demo fixture for *The Letter Under the Flour Bin*, with schema-valid story config, records, generation session, clean first-segment handoff, and matrix-clean validation support.
+- Added server demo creation through ordinary project/store/repository paths, exposed as `POST /api/project/create-demo`, with `isDemoFixture` metadata/status and fail-clean population handling.
+- Added the web `Create Demo Project` picker affordance and API client.
+- Added blocker recipes and tests for all 8 documented failure edits, proving each named blocker fires and `/api/compile` fails closed with no prompt.
+- Added the 26-case stress coverage matrix and core capability test covering the 14 risk areas plus deterministic demo compilation.
+- Added the server capstone test covering create → validate → compile → accept → archive → durable-change reminder, and marked Phase 13 implemented in `IMPLEMENTATION-ORDER.md`.
+
+Deviations from original plan:
+- Demo creation remaps fixture IDs to actual persisted row IDs for record types such as `CAST MEMBER` that do not carry payload IDs, preserving normal repository behavior.
+- The valid demo includes both optional `CLOCK` and `CONSEQUENCE` pressure records to support later validation and capstone coverage.
+- Recipe 2 and recipe 7 use schema-valid edits that match the current validator mechanics: removed physical route context for impossible action, and removed Niko's current voice row rather than deleting the required CAST MEMBER voice anchor.
+
+Verification:
+- Targeted ticket checks passed for all six tickets:
+  - `npx vitest run packages/core/src/demo/demo-fixture.test.ts`
+  - `npx vitest run packages/server/src/demo-creation.test.ts packages/server/src/project-routes.test.ts`
+  - `npx vitest run packages/web/src/api.test.tsx packages/web/src/ProjectPicker.test.tsx`
+  - `npx vitest run packages/core/src/demo/demo-fixture.test.ts packages/server/src/demo-blocker-recipes.test.ts`
+  - `npx vitest run packages/core/src/demo/stress-coverage.test.ts`
+  - `npx vitest run packages/server/src/demo-e2e.test.ts`
+- Documentation grep checks passed for blocker-recipe diagnostic codes, stress matrix 26-case coverage, and Phase 13 implementation-order bookkeeping.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
