@@ -1,6 +1,6 @@
 # SPEC011ACCSEGARC-004: Promote Accepted Segments nav surface + route
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — promotes the disabled `Accepted Segments` placeholder to a live primary route in `@loom/web`'s `AppShell`
@@ -82,3 +82,20 @@ Update the "keeps later-phase surfaces disabled" expectation so it no longer ass
 
 1. `npm test -w @loom/web -- AppShell App`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+Promoted `Accepted Segments` from the disabled later-phase placeholder to a live primary route at `/accepted-segments`. `AppShell` now imports `AcceptedSegmentsView`, includes the route in `primaryRoutes`, registers the `<Route>`, and removes the now-empty `laterPhaseSurfaces` placeholder construct and render block.
+
+Updated `AppShell.test.tsx` to assert enabled `Generate / Candidate` and `Accepted Segments` links, route rendering, and absence of a disabled `Accepted Segments` button. Updated `App.test.tsx` navigation coverage to visit the accepted-segments route and mock `GET /api/accepted-segments`.
+
+Verification:
+
+- `npm test -w @loom/web -- AppShell App` — passed (2 files, 5 tests)
+- `rg -n "laterPhaseSurfaces" packages/web/src/shell/AppShell.tsx` — no matches
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (61 files, 354 tests)
+- `npm run build` — passed

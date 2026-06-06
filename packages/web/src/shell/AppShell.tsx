@@ -2,6 +2,7 @@ import { NavLink, Route, Routes } from "react-router-dom";
 
 import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
+import { AcceptedSegmentsView } from "../accepted-segments/AcceptedSegmentsView.js";
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { GenerateView } from "../generate/GenerateView.js";
@@ -24,11 +25,10 @@ const primaryRoutes = [
   { to: "/generation-brief", label: "Generation Brief" },
   { to: "/preview", label: "Validation / Prompt Preview" },
   { to: "/generate", label: "Generate / Candidate" },
+  { to: "/accepted-segments", label: "Accepted Segments" },
   { to: "/story-config", label: "Story Configuration" },
   { to: "/settings", label: "Settings" }
 ] as const;
-
-const laterPhaseSurfaces = ["Accepted Segments"] as const;
 
 function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
   return (
@@ -77,13 +77,6 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
             </NavLink>
           ))}
         </nav>
-        <div className="laterPhaseList" aria-label="Later phase surfaces">
-          {laterPhaseSurfaces.map((surface) => (
-            <button key={surface} type="button" disabled>
-              {surface}
-            </button>
-          ))}
-        </div>
       </aside>
       <div className="contentPane">
         <Routes>
@@ -93,6 +86,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
           <Route path="/generation-brief" element={<GenerationBriefView />} />
           <Route path="/preview" element={<PromptPreviewView />} />
           <Route path="/generate" element={<GenerateView />} />
+          <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
           <Route path="/story-config" element={<StoryConfigEditor />} />
           <Route path="/settings" element={<SettingsSurface />} />
         </Routes>
