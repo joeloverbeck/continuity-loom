@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-001: Compiler golden frozen baseline
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds a checked-in golden prompt fixture under `packages/core/test/` and extends `packages/core/test/compiler-golden.test.ts`; no production code changes.
@@ -77,3 +77,21 @@ Add a test case that builds the demo first-segment snapshot, calls `compilePromp
 1. `npm run build --workspace @loom/core && npx vitest run packages/core/test/compiler-golden.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. A targeted vitest run on the single golden test file is the correct boundary because the deliverable is a self-contained determinism regression; the full `npm test` confirms no cross-package fallout.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/core/test/golden-first-segment.prompt.txt`, a frozen compiled prompt fixture generated from the exported tame demo records, generation session, and story config.
+- Extended `packages/core/test/compiler-golden.test.ts` with a byte-for-byte comparison against that frozen demo prompt while retaining the existing in-run determinism, section-order, fingerprint, and version assertions.
+
+Deviations from original plan:
+- Used a Vitest-time `node:fs` fixture read from the core test file. This keeps production `@loom/core` platform-free; the existing boundary test only audits production source imports.
+- Did not perform the destructive one-character mutation experiment against the checked-in fixture. The direct equality assertion is covered by the targeted test run.
+
+Verification results:
+- `npm run build --workspace @loom/core` passed.
+- `npm exec vitest run packages/core/test/compiler-golden.test.ts` passed: 1 file, 2 tests.
+- `npm test` passed: 68 files, 413 tests.
+- Fixture spot-check found no API-key pattern; the only "accepted prose" matches are the universal prompt's explicit exclusion instructions, not archived prose text.
