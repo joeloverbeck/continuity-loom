@@ -7,6 +7,7 @@ import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js"
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
+import { SettingsSurface } from "./SettingsSurface.js";
 
 interface AppShellProps {
   loadState:
@@ -58,23 +59,6 @@ function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
           </div>
         </dl>
       ) : null}
-    </section>
-  );
-}
-
-function SettingsSurface(): React.JSX.Element {
-  return (
-    <section className="surface" aria-labelledby="settings-title">
-      <div className="projectHeader">
-        <p className="eyebrow">Local settings</p>
-        <h2 id="settings-title">Settings</h2>
-      </div>
-      <dl className="runtimeGrid" aria-label="Settings status">
-        <div>
-          <dt>OpenRouter key</dt>
-          <dd>Not configured</dd>
-        </div>
-      </dl>
     </section>
   );
 }

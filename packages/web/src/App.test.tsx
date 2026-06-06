@@ -62,6 +62,17 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ ok: false, kind: "no-open-project", message: "No open project." }));
   }
 
+  if (url === "/api/settings/openrouter") {
+    return Promise.resolve(
+      jsonResponse({
+        model: "",
+        temperature: 1,
+        maxOutputTokens: 1024,
+        hasOpenRouterCredential: false
+      })
+    );
+  }
+
   if (url.startsWith("/api/story-config/")) {
     return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
   }
@@ -123,7 +134,7 @@ describe("App", () => {
     }
   });
 
-  it("renders settings without exposing a key value", () => {
+  it("renders settings without exposing a key value", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(runtimeFetch)
@@ -133,8 +144,8 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Settings" }));
     expect(screen.getByRole("heading", { name: "Settings" })).toBeTruthy();
-    expect(screen.getByText("OpenRouter key")).toBeTruthy();
-    expect(screen.getByText("Not configured")).toBeTruthy();
+    expect(await screen.findByText("OpenRouter key")).toBeTruthy();
+    expect(screen.getByText("API key missing")).toBeTruthy();
     expect(screen.queryByText(/sk-or-/i)).toBeNull();
   });
 

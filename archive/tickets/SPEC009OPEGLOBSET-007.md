@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-007: Settings surface — real OpenRouter editor
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — extracts `SettingsSurface` from `packages/web/src/shell/AppShell.tsx` into `packages/web/src/shell/SettingsSurface.tsx` (real editor); updates `App.test.tsx`; adds settings-form CSS.
@@ -92,3 +92,32 @@ Minimal settings-form rules consistent with existing surfaces; no new CSS framew
 1. `npm test --workspace @loom/web -- src/shell/SettingsSurface.test.tsx src/App.test.tsx`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -n "SettingsSurface" packages/web/src/shell/AppShell.tsx` — must show an import, not a `function SettingsSurface` definition (extraction proof).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Extracted the inline placeholder into `packages/web/src/shell/SettingsSurface.tsx` and
+implemented the real OpenRouter editor. The surface loads current non-secret settings,
+shows "API key configured" / "API key missing" from `hasOpenRouterCredential`, edits model
+ID, temperature, max output tokens, and optional Top P, saves through
+`putOpenRouterSettings`, refreshes the model list through `refreshModels`, and keeps manual
+model entry usable when refresh fails. No key input or key value is rendered.
+
+Updated `AppShell.tsx` to import the extracted component, updated `App.test.tsx` for the
+promoted settings status, and added minimal settings form CSS.
+
+Added `packages/web/src/shell/SettingsSurface.test.tsx` coverage for load/edit/save,
+credential status from the boolean, key non-rendering, model-list refresh success, and
+refresh failure resilience with manual entry still enabled.
+
+Deviations: none from the ticket scope.
+
+Verification:
+
+- `npm test --workspace @loom/web -- src/shell/SettingsSurface.test.tsx src/App.test.tsx` — passed.
+- `rg -n "SettingsSurface|function SettingsSurface" packages/web/src/shell/AppShell.tsx` — import and route usage only; no inline function.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 56 files / 320 tests passed.
+- `npm run build` — passed.

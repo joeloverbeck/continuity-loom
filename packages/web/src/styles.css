@@ -154,11 +154,29 @@ dd {
 }
 
 .projectForm,
+.settingsForm,
 .statusPanel {
   border: 1px solid #d8dee8;
   border-radius: 8px;
   background: #ffffff;
   padding: 20px;
+}
+
+.settingsLayout {
+  display: grid;
+  gap: 16px;
+}
+
+.settingsNumberGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.settingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 label {
