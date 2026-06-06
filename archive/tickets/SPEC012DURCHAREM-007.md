@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-007: Phase-12 capstone — manual smoke + governing-doc updates + archival
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: None — verification, governing-doc updates, and archival bookkeeping only (no production code)
@@ -89,3 +89,23 @@ Move `specs/SPEC-012-durable-change-reminder-workflow.md` to `archive/specs/` pe
 1. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline gate.
 2. `grep -n "Implemented via SPEC-012" docs/requirements-version-1/IMPLEMENTATION-ORDER.md` — Phase-12 status proof.
 3. `test ! -f specs/SPEC-012-durable-change-reminder-workflow.md && test -f archive/specs/SPEC-012-durable-change-reminder-workflow.md && echo archived` — archival boundary proof.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Updated the governing docs for Phase 12: `IMPLEMENTATION-ORDER.md` now marks Phase 12 implemented via SPEC-012 with checked gate bullets and notes that Phase 13/14 remain; `CANDIDATES-AND-ACCEPTED-SEGMENTS.md` and `UI-WORKFLOWS.md` now include Phase 12 implementation notes describing the realized app-wide reminder shape, deterministic quick-links, durable Acknowledge, session-only Snooze, no LLM extraction, and no record mutation.
+
+Marked `specs/SPEC-012-durable-change-reminder-workflow.md` completed, added an outcome with implementation and verification evidence, and moved it to `archive/specs/SPEC-012-durable-change-reminder-workflow.md`.
+
+Executed the capstone smoke against a production launch on localhost using the real API and Playwright CLI: created a project, appended accepted segment 1, observed the shell banner/checklist/quick-links, opened the CAST MEMBER create form from the quick-link without creating a record, acknowledged the banner and verified `reminder_state` contains only the threshold/timestamp columns with `acknowledged_through_sequence = 1`, appended segment 2, verified banner reactivation, snoozed it, and confirmed reload shows it again. The Generate / Candidate immediate-refresh path is covered by the SPEC012DURCHAREM-006 provider+banner test.
+
+Verification:
+
+- Production smoke via `node packages/server/dist/launch.js --no-open` + Playwright CLI — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
+- `grep -n "Implemented via SPEC-012\\|Phase 12 implementation note" ...` — passed.
+- `test ! -f specs/SPEC-012-durable-change-reminder-workflow.md && test -f archive/specs/SPEC-012-durable-change-reminder-workflow.md` — passed.

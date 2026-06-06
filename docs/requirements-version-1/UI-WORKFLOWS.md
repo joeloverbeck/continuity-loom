@@ -212,6 +212,17 @@ The reminder should not be a blocking modal by default. It may include quick lin
 
 Any suggested record types are deterministic links, not LLM extraction.
 
+## Phase 12 implementation note
+
+The durable-change reminder is realized via SPEC-012 (2026-06-06) as an app-wide
+shell banner mounted above routed content. It is non-modal, dismissible, and route-safe:
+Acknowledge persists the accepted-sequence threshold, Snooze hides the banner only for
+the current browser session, and a later acceptance reactivates it. Quick links open
+empty record creation forms through `/records?create=<TYPE>`; CAST MEMBER opens the
+custom CAST MEMBER editor. The Generate / Candidate post-accept notice is now only a
+short acceptance confirmation so the durable-change reminder has one persistent
+surface.
+
 ## User-facing behavior
 
 The UI should feel strict but fast: dense where records are dense, spacious where prose is read, and explicit where authority changes. The user should never need to guess whether a piece of prose, record, warning, prompt, or candidate is canonical.

@@ -1,6 +1,6 @@
 # SPEC-012 — Durable-Change Reminder Workflow
 
-Status: DRAFT
+Status: COMPLETED
 Phase: Implementation Order Phase 12
 Depends on: SPEC-001 (Repository and Runtime Foundation, COMPLETED), SPEC-002 (Local Project Folder and SQLite Storage Foundation, COMPLETED), SPEC-003 (Typed Data Model and Record Identity/Reference Layer, COMPLETED), SPEC-004 (Record CRUD and Basic Editors, COMPLETED), SPEC-005 (Custom Rich Editors for CAST MEMBER and the Generation-Time Brief, COMPLETED), SPEC-006 (Deterministic Validation Engine, COMPLETED), SPEC-007 (Deterministic Prompt Compiler, COMPLETED), SPEC-008 (Prompt Preview Gated by Validation, COMPLETED), SPEC-009 (OpenRouter Global Settings and Non-Streaming Send, COMPLETED), SPEC-010 (Candidate Editor and Regenerate/Discard/Accept Lifecycle, COMPLETED), SPEC-011 (Accepted Segment Archive and Browser, COMPLETED)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -476,3 +476,40 @@ fresh interim tension — it closes the loop FOUNDATIONS §3 describes.
   Acknowledge persists); acknowledge granularity (per-acceptance via
   `acknowledged_through_sequence`); storage (idempotent single-row `reminder_state`, no
   version bump); no-LLM/no-record-mutation contract for the checklist and quick-links.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Implemented Phase 12 as a downstream reminder workflow over the existing accepted-segment
+archive. The server now creates an idempotent project-local `reminder_state` table and
+exposes derive-only reminder state plus an acknowledge endpoint. The web client has typed
+reminder API functions, an app-wide non-modal `DurableChangeReminder` banner in `AppShell`,
+deterministic checklist text, deterministic record-create quick-links via
+`/records?create=<TYPE>`, durable Acknowledge, session-only Snooze, and a lightweight
+post-accept refresh signal from `GenerateView`.
+
+The Phase-10 ephemeral durable-change notice was reduced to a short acceptance
+confirmation so the persistent banner is the only durable-change reminder surface. The
+reminder stores no prose, reads no accepted prose, invokes no LLM, creates no records,
+mutates no records, and is not read by the compiler/snapshot path. The dedicated Story
+Dashboard remains deferred; the app-wide shell banner is the realized Phase 12 surface.
+
+Verification:
+
+- `npm test -- record-layer` — passed.
+- `npm test -- reminder-routes` — passed.
+- `npm test -- api.test` — passed.
+- `npm test -- RecordBrowser` — passed.
+- `npm test -- DurableChangeReminder` — passed.
+- `npm test -- AppShell` — passed.
+- `npm test -- GenerateView` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
+- Production smoke via `node packages/server/dist/launch.js --no-open` and Playwright CLI
+  on localhost passed: accepted-segment reminder appeared, CAST MEMBER quick-link opened
+  the create form without creating a record, Acknowledge persisted only
+  `acknowledged_through_sequence`, a second acceptance reactivated the banner, Snooze hid
+  it for the session, and reload showed it again.

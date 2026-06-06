@@ -150,6 +150,19 @@ The reminder should provide quick links to relevant record creation/editing surf
 
 The reminder can be acknowledged or snoozed, but the app should keep it visible enough that the user remembers the manual record update step.
 
+## Phase 12 implementation note
+
+Implemented via SPEC-012 on 2026-06-06. The realized reminder is an app-wide,
+non-modal shell banner derived from the latest accepted segment sequence and the
+project-local acknowledged-through threshold. It shows deterministic checklist text,
+links to `/records?create=<TYPE>` for EVENT, FACT, RELATIONSHIP, EMOTION, OBJECT,
+LOCATION, ENTITY STATUS, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD, and CAST
+MEMBER, and links current authoritative state work to the Generation Brief surface.
+
+Acknowledge persists only the integer threshold in `reminder_state`; Snooze is
+session-only. The reminder reads no accepted prose, parses nothing with an LLM,
+creates no records, mutates no records, and is not read by the compiler path.
+
 ## User-facing behavior
 
 The user should always know whether they are looking at:
