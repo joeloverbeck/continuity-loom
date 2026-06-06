@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-003: Web API clients for reminder endpoints
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — two new web API client functions in `packages/web/src/api.ts` (`getDurableChangeReminder`, `acknowledgeDurableChangeReminder`) plus their response types
@@ -73,3 +73,19 @@ In `packages/web/src/api.ts`:
 
 1. `npm test -- api.test` — targeted run of the web API client suite.
 2. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added typed durable-change reminder client support in `packages/web/src/api.ts`: `DurableChangeReminderResponse`, `getDurableChangeReminder()`, and `acknowledgeDurableChangeReminder()`. The response type matches the server route fields (`active`, `latestSegment`, `acknowledgedThroughSequence`), and the acknowledge client posts an empty JSON body to the acknowledge endpoint.
+
+Extended `packages/web/src/api.test.tsx` with mocked-fetch coverage for active and inactive reminder reads, acknowledge request shape and recomputed response parsing, and unchanged `no-open-project` failures for both clients. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- api.test` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
