@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-004: Demo blocker recipes doc + blocker-recipe tests
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `docs/demo-blocker-recipes.md`; new server test asserting each recipe fires its blocker and disables preview/send (no production logic)
@@ -76,3 +76,24 @@ Add `packages/server/src/demo-blocker-recipes.test.ts`: create the demo, then fo
 1. `npx vitest run packages/server/src/demo-blocker-recipes.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted server test is the correct boundary (it instantiates the demo and drives `/api/validate` + `/api/compile`); a pure core-validation test could not prove "disables preview/send," so the server gate is the right surface.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `docs/demo-blocker-recipes.md` documenting the 8 normal-edit blocker recipes, expected diagnostic codes, and compile-blocked result.
+- Added `packages/server/src/demo-blocker-recipes.test.ts`, which creates a fresh demo through `POST /api/project/create-demo`, applies each recipe through normal record/brief HTTP routes, asserts the named blocker, and asserts `/api/compile` returns `validation-blocked` with no prompt.
+- Refined the demo fixture baseline so it validates cleanly before breakage: added `use` to the visible affordance action families and added the non-POV-interiority current-state lock required by the existing matrix validation rules.
+- Amended the archived SPEC013TAMDEMPRO-001 outcome to record the fixture refinement.
+
+Deviations from original plan:
+- Recipe 2 uses the existing physical-context validator mechanics by pairing the hidden-letter directive with removed route context; the current validator does not semantically infer object access from the directive text alone.
+- Recipe 7 removes Niko's current cast voice row rather than deleting the required CAST MEMBER `voice_anchor`, preserving schema-valid normal edits while still firing `sparse-voice-pressure`.
+
+Verification:
+- `npx vitest run packages/core/src/demo/demo-fixture.test.ts packages/server/src/demo-blocker-recipes.test.ts` passed.
+- The documented grep/code-resolution check passed for all recipe codes.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

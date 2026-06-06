@@ -92,10 +92,13 @@ Add `packages/core/src/demo/demo-fixture.test.ts` asserting per-payload schema v
 
 Completed: 2026-06-06
 
+Outcome amended: 2026-06-06
+
 What changed:
 - Added the pure `@loom/core` demo fixture module for *The Letter Under the Flour Bin*, including story config, ordinary record payloads, and the first-segment generation session.
 - Re-exported the demo fixture from `packages/core/src/demo/index.ts` and the public `packages/core/src/index.ts` barrel.
 - Added focused fixture tests for schema parsing, required record inventory, clean first-segment handoff wording, and the Elin/Niko secret-firewall substrate.
+- Refined the fixture during SPEC013TAMDEMPRO-004 so the valid demo baseline satisfies existing matrix validation gates: the visible affordance includes `use`, and current locks include the non-POV-interiority constraint required by introspection focus.
 
 Deviations from original plan:
 - Included both optional pressure records (`CLOCK` and `CONSEQUENCE`) instead of omitting the optional clock, to give later stress and capstone tests concrete deadline/exposure pressure without changing any schema or validation rule.

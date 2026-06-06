@@ -388,7 +388,7 @@ export const demoRecords = [
       status: "available",
       label: "listen at the stair door",
       available_to: "any_onstage",
-      action_families: ["perceive", "protect", "decide"],
+      action_families: ["perceive", "protect", "decide", "use"],
       requires: ["someone must stand near the latch"],
       risk: "secrecy",
       durability: "local",
@@ -634,7 +634,11 @@ export const demoGenerationSession = {
     routes_and_exits: ["stair to the bakery shop", "delivery hatch too small for entry"],
     available_time: "One short exchange before footsteps or the shop bell may interrupt.",
     consent_or_force_conditions: "No one is restrained; Elin can block access by position and refusal, not force.",
-    current_locks: ["cellar latch is closed but not barred", "letter seal is intact"]
+    current_locks: [
+      "cellar latch is closed but not barred",
+      "letter seal is intact",
+      "non-POV interiority must not be rendered directly"
+    ]
   },
   immediate_handoff: {
     recent_causal_context: "Elin has just closed the bakery early after hearing the market bell. Niko followed flour smears downstairs and knows she is hiding something, but not what.",
@@ -697,4 +701,3 @@ export const demoGenerationSession = {
     soft_unit_guidance: "Stop at the first new response point: a sound above, Niko's unanswered direct question, or Elin's decision to show only the sealed outside."
   }
 } as const satisfies GenerationSession;
-
