@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-002: Accept route + archive write + log redaction
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/accepted-routes.ts` (`POST /api/accepted-segments`), registered in `createServer()`; `server.ts` redaction config
@@ -97,3 +97,31 @@ Create `packages/server/src/accepted-routes.test.ts` covering all Verification L
 
 1. `npm test -- accepted-routes`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `POST /api/accepted-segments` in `packages/server/src/accepted-routes.ts`.
+  The route strictly validates accepted text plus the SPEC-010 generation metadata
+  snapshot, reuses the established no-open-project response, appends exactly one
+  accepted segment, and returns only `id`, `sequence`, and `createdAt`.
+- Registered the accept route in `createServer()`.
+- Added `packages/server/src/accepted-routes.test.ts` covering valid append behavior,
+  second-segment sequence ordering, strict rejection of empty/missing text and
+  prompt/key-shaped metadata fields, no-open-project behavior, unchanged non-archive
+  tables, metadata without prompt/edited fields, and absence of accepted prose/key
+  material in responses and captured logs.
+
+Deviations from original plan:
+- The success response uses HTTP `201 Created`, matching the existing project/record create
+  route style. The response body remains the planned `{ ok:true, segment:{ id, sequence,
+  createdAt } }` shape.
+
+Verification results:
+- `npm test -- accepted-routes` — passed, 1 test file / 4 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 57 test files / 329 tests.
+- `npm run build` — passed.
