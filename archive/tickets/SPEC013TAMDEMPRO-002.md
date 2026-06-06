@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-002: Server demo creation orchestration + `POST /api/project/create-demo`
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends `createProjectInputSchema`/`CreateProjectInput` with optional `isDemoFixture`; new `demo-creation` orchestration module; new `POST /api/project/create-demo` route
@@ -89,3 +89,22 @@ Add `packages/server/src/demo-creation.test.ts` covering layers 1–4.
 1. `npx vitest run packages/server/src/demo-creation.test.ts packages/server/src/project-routes.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted pair is the correct boundary (new module + regressed regular-create test); `npm test` confirms no wider server regression.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `createDemoProject` server orchestration that creates the demo project, marks metadata/status with `isDemoFixture: true`, populates ordinary records/config/session through `RecordRepository`, and cleans up the project folder on population failure.
+- Added `POST /api/project/create-demo` with a strict `{ parentPath, folderName }` body while leaving the regular `/api/project/create` request contract unchanged.
+- Extended `ProjectStatus` and project store status derivation with optional `isDemoFixture` so created/opened demo projects carry the sample marker.
+- Added server tests for route behavior, metadata/status marker, fixture population, failure cleanup, and no logging during demo creation.
+
+Deviations from original plan:
+- The orchestration remaps fixture IDs to actual persisted row IDs before writing the generation session. This is required because normal `CAST MEMBER` records have no payload `id`, so the repository correctly generates their row IDs. The demo still uses ordinary repository paths and no schema changes.
+
+Verification:
+- `npx vitest run packages/server/src/demo-creation.test.ts packages/server/src/project-routes.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

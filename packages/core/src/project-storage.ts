@@ -42,6 +42,7 @@ export interface ProjectStatus {
   title: string;
   projectUuid: string;
   databaseFilename: string;
+  isDemoFixture?: boolean;
   appSchemaVersion: number;
   storeUserVersion: number;
   compatibility: StoreCompatibility;
