@@ -1,6 +1,6 @@
 # SPEC011ACCSEGARC-003: Accepted segment browser view + styling
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds the `AcceptedSegmentsView` React surface (`@loom/web`) and prose-forward browser styling
@@ -88,3 +88,19 @@ Cover the five verification layers above with mocked 002 clients.
 
 1. `npm test -w @loom/web -- AcceptedSegmentsView`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `AcceptedSegmentsView` as a read-only accepted prose browser over the 002 clients. The view loads the archive on mount, sorts by stored `sequence`, renders readable prose with accepted timestamp and metadata, supports a client-side text/metadata filter, performs two-step delete confirmation, surfaces delete failures without removing rows, and exports the full archive in stored sequence order as Markdown or plain text regardless of active filter. No prompt-context, generation, brief-writing, record-editing, or durable-reminder affordance was added.
+
+Added additive CSS for the prose-forward archive layout, metadata grid, filter/export toolbar, and delete confirmation controls. Tests cover ordered rendering, empty state, local filter behavior without refetching, delete confirmation success/failure, full-archive export independent of filter, and absence of prompt-context controls / durable-change reminder copy.
+
+Verification:
+
+- `npm test -w @loom/web -- AcceptedSegmentsView` — passed (1 file, 7 tests)
+- `npm run typecheck` — passed
+- `npm run lint` — passed
+- `npm test` — passed (61 files, 354 tests)
+- `npm run build` — passed
