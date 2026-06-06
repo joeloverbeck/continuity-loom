@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-003: Storage recoverability + backup regression test
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds `packages/server/src/project-store.recoverability.test.ts`; no production storage-code changes.
@@ -77,3 +77,22 @@ Import `LOOM_APPLICATION_ID`, `LOOM_SCHEMA_VERSION` from `@loom/core` and the ma
 1. `npx vitest run packages/server/src/project-store.recoverability.test.ts`
 2. `npm run lint && npm run typecheck && npm test`
 3. The server-scoped vitest run is the correct boundary — the deliverable is a `@loom/server` storage regression needing `node:sqlite`; `npm test` confirms no cross-package fallout.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/server/src/project-store.recoverability.test.ts`.
+- The test creates real project stores, sets matching metadata/schema and SQLite `user_version` drift for ahead/behind stores, asserts `openProject` returns `incompatible-version` or `migration-required`, and verifies the failed open leaves metadata text and `user_version` unchanged.
+- The test also exercises `createBackup()` on a healthy open project and confirms the backup copy preserves the Loom `application_id` and current schema `user_version`.
+
+Deviations from original plan:
+- The drift setup updates both `continuity-loom.project.json` `schemaMinVersion` and SQLite `PRAGMA user_version`; the live open path rejects mismatched metadata/store versions before the app compatibility gate, so matching drift is required to reach the intended recoverability branches.
+- Did not perform the local mutation experiment that forces `openProject` to rewrite `user_version`; the test directly asserts that the drifted version remains unchanged after failed open.
+
+Verification results:
+- `npm exec vitest run packages/server/src/project-store.recoverability.test.ts` passed: 1 file, 3 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 70 files, 419 tests.
