@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-005: Promote Generate/Candidate route + relocate off /preview
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `/generate` route + `GenerateView`; `AppShell` nav promotion; `/preview` loses the Generate button + candidate panel
@@ -98,3 +98,32 @@ Move the four generate/candidate cases (`PromptPreviewView.test.tsx:112-182`) an
 
 1. `npm test -- AppShell GenerateView PromptPreviewView`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Promoted `Generate / Candidate` to an enabled primary route at `/generate` and left
+  `Accepted Segments` disabled for Phase 11.
+- Added `packages/web/src/generate/GenerateView.tsx`, relocating the SPEC-009 read-only
+  generation/candidate behavior onto the dedicated generate surface. The new view renders
+  the shared `PromptInspector`, a Generate button, sending/error states, a read-only draft
+  candidate, and a clear-candidate action.
+- Removed Generate/candidate controls and state from `PromptPreviewView`; `/preview` is now
+  inspection-only with copy, refresh, clear, search, prompt body, and metadata.
+- Added `GenerateView` and `AppShell` tests, updated `PromptPreviewView` and app navigation
+  tests, and verified candidate UI is absent from `/preview`.
+
+Deviations from original plan:
+- No CSS changes were needed; the relocated surface reuses the existing preview and
+  candidate styles without introducing duplicate classes.
+
+Verification results:
+- `npm test -- AppShell GenerateView PromptPreviewView App` — passed, 5 test files / 21 tests.
+- `rg` relocation check confirmed Generate/candidate controls under `packages/web/src/generate`
+  and preview assertions for their absence.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 60 test files / 333 tests.
+- `npm run build` — passed.

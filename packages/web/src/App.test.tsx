@@ -125,13 +125,15 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("link", { name: "Validation / Prompt Preview" }));
     expect(screen.getByRole("heading", { name: "Validation / Prompt Preview" })).toBeTruthy();
 
+    fireEvent.click(screen.getByRole("link", { name: "Generate / Candidate" }));
+    expect(screen.getByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
+
     fireEvent.click(screen.getByRole("link", { name: "Story Configuration" }));
     expect(screen.getByRole("heading", { name: "Story Configuration" })).toBeTruthy();
 
     expect(screen.queryByRole("button", { name: "Validation/Preview" })).toBeNull();
-    for (const name of ["Generate/Candidate", "Accepted Segments"]) {
-      expect(screen.getByRole<HTMLButtonElement>("button", { name }).disabled).toBe(true);
-    }
+    expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accepted Segments" }).disabled).toBe(true);
   });
 
   it("renders settings without exposing a key value", async () => {

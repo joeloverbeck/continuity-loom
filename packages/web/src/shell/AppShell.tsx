@@ -4,6 +4,7 @@ import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
+import { GenerateView } from "../generate/GenerateView.js";
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
@@ -22,11 +23,12 @@ const primaryRoutes = [
   { to: "/working-set", label: "Active Working Set" },
   { to: "/generation-brief", label: "Generation Brief" },
   { to: "/preview", label: "Validation / Prompt Preview" },
+  { to: "/generate", label: "Generate / Candidate" },
   { to: "/story-config", label: "Story Configuration" },
   { to: "/settings", label: "Settings" }
 ] as const;
 
-const laterPhaseSurfaces = ["Generate/Candidate", "Accepted Segments"] as const;
+const laterPhaseSurfaces = ["Accepted Segments"] as const;
 
 function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
   return (
@@ -90,6 +92,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
           <Route path="/working-set" element={<WorkingSetView />} />
           <Route path="/generation-brief" element={<GenerationBriefView />} />
           <Route path="/preview" element={<PromptPreviewView />} />
+          <Route path="/generate" element={<GenerateView />} />
           <Route path="/story-config" element={<StoryConfigEditor />} />
           <Route path="/settings" element={<SettingsSurface />} />
         </Routes>
