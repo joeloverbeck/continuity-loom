@@ -5,18 +5,23 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { compile, generate } from "../api.js";
+import { acceptCandidate, compile, generate, getOpenRouterSettings } from "../api.js";
 import { GenerateView } from "./GenerateView.js";
 
 vi.mock("../api.js", () => ({
+  acceptCandidate: vi.fn(),
   compile: vi.fn(),
-  generate: vi.fn()
+  generate: vi.fn(),
+  getOpenRouterSettings: vi.fn()
 }));
 
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  vi.mocked(acceptCandidate).mockReset();
   vi.mocked(generate).mockReset();
+  vi.mocked(getOpenRouterSettings).mockReset();
+  vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: true }));
 });
 
 afterEach(() => {
@@ -26,10 +31,14 @@ afterEach(() => {
 });
 
 describe("GenerateView", () => {
-  it("renders the prompt inspector and generates a read-only ephemeral draft candidate", async () => {
+  it("edits and accepts the current draft candidate with its generation metadata", async () => {
     const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
     vi.mocked(generate).mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, metadata: candidateMetadata() });
+    vi.mocked(acceptCandidate).mockResolvedValue({
+      ok: true,
+      segment: { id: 9, sequence: 4, createdAt: "2026-06-06T08:10:00.000Z" }
+    });
 
     renderGenerate();
 
@@ -39,16 +48,75 @@ describe("GenerateView", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
-    expect(await screen.findByText("Draft candidate; not accepted, not canon.")).toBeTruthy();
-    expect(screen.getByTestId("candidate-body").textContent).toBe("Candidate prose.");
-    expect(screen.queryByRole("textbox", { name: /candidate/i })).toBeNull();
-    expect(screen.queryByRole("button", { name: /accept/i })).toBeNull();
+    expect(await screen.findByText("Draft candidate - not accepted, not canon.")).toBeTruthy();
+    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    expect(editor.value).toBe("Candidate prose.");
+
+    fireEvent.change(editor, { target: { value: "Edited accepted prose." } });
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByText(/Accepted as segment 4/)).toBeTruthy();
+    expect(acceptCandidate).toHaveBeenCalledWith({
+      text: "Edited accepted prose.",
+      generationMetadata: candidateMetadata()
+    });
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
     expect(storageSetItem).not.toHaveBeenCalled();
     expect(localStorage.getItem("Candidate prose.")).toBeNull();
     expect(sessionStorage.getItem("Candidate prose.")).toBeNull();
+    expect(localStorage.getItem("Edited accepted prose.")).toBeNull();
+    expect(sessionStorage.getItem("Edited accepted prose.")).toBeNull();
+    expect(screen.queryByText("Accepted Segments")).toBeNull();
+    expect(screen.queryByRole("button", { name: /acknowledge/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /snooze/i })).toBeNull();
+  });
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear candidate" }));
-    expect(screen.queryByTestId("candidate-body")).toBeNull();
+  it("regenerates with edit-loss warning and never accepts discarded or superseded drafts", async () => {
+    const confirm = vi.spyOn(window, "confirm");
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate)
+      .mockResolvedValueOnce({ ok: true, candidate: { text: "First candidate." }, metadata: candidateMetadata() })
+      .mockResolvedValueOnce({ ok: true, candidate: { text: "Second candidate." }, metadata: candidateMetadata() });
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+    const editor = await screen.findByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    fireEvent.change(editor, { target: { value: "Edited first candidate." } });
+
+    confirm.mockReturnValueOnce(false);
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("Edited first candidate.");
+
+    confirm.mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+    expect(await screen.findByDisplayValue("Second candidate.")).toBeTruthy();
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(acceptCandidate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(screen.getByTestId("prompt-body")).toBeTruthy();
+    expect(acceptCandidate).not.toHaveBeenCalled();
+  });
+
+  it("discards an unedited candidate without a durable write", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate).mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, metadata: candidateMetadata() });
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+    expect(await screen.findByRole("textbox", { name: "Candidate text" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(screen.getByTestId("prompt-body")).toBeTruthy();
+    expect(acceptCandidate).not.toHaveBeenCalled();
   });
 
   it("renders actionable generate errors without a candidate", async () => {
@@ -65,7 +133,7 @@ describe("GenerateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
     expect(await screen.findByText("API key missing. Configure it in Settings.")).toBeTruthy();
-    expect(screen.queryByTestId("candidate-body")).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 
   it("renders generic transport generate errors without a candidate", async () => {
@@ -82,7 +150,7 @@ describe("GenerateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
     expect(await screen.findByText("Provider or model unavailable.")).toBeTruthy();
-    expect(screen.queryByTestId("candidate-body")).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 
   it("defers to the blocked view when generate returns validation-blocked", async () => {
@@ -99,7 +167,23 @@ describe("GenerateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
     expect(await screen.findByText("Prompt preview is unavailable while blockers exist.")).toBeTruthy();
-    expect(screen.queryByTestId("candidate-body")).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+  });
+
+  it("disables send when the OpenRouter key is missing", async () => {
+    vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: false }));
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    const generateButton = screen.getByRole<HTMLButtonElement>("button", { name: "Generate" });
+    expect(generateButton.disabled).toBe(true);
+    expect(screen.getByText("API key missing. Configure it in Settings.")).toBeTruthy();
+
+    fireEvent.click(generateButton);
+    expect(generate).not.toHaveBeenCalled();
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 });
 
@@ -138,6 +222,15 @@ function candidateMetadata() {
       compiler: "compiler-1",
       contract: "contract-1"
     }
+  };
+}
+
+function openRouterSettings({ hasOpenRouterCredential }: { hasOpenRouterCredential: boolean }) {
+  return {
+    model: "openai/gpt-4.1",
+    temperature: 0.4,
+    maxOutputTokens: 2200,
+    hasOpenRouterCredential
   };
 }
 

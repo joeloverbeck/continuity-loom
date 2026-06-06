@@ -530,6 +530,34 @@ button:disabled:hover {
   margin: 0;
 }
 
+.candidateEditorLabel {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.candidateEditor {
+  box-sizing: border-box;
+  min-height: 300px;
+  resize: vertical;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #ffffff;
+  padding: 14px;
+  color: #202124;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.candidateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .candidateBody {
   box-sizing: border-box;
   max-height: 420px;

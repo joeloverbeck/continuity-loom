@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-006: Candidate lifecycle UI (edit / regenerate / discard / accept)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — `GenerateView` candidate lifecycle (editable candidate, Regenerate/Discard/Accept, post-accept notice); `styles.css` candidate-editor styling
@@ -93,3 +93,34 @@ Extend `packages/web/src/generate/GenerateView.test.tsx` to cover all Verificati
 
 1. `npm test -- GenerateView`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Upgraded `/generate` from a read-only candidate display to an editable candidate lifecycle.
+  Generated candidates are held only in React state with their originating
+  `GenerationMetadata`.
+- Added editable candidate text, Regenerate, Discard, and Accept actions. Regenerate warns
+  before replacing edited text; Discard clears without a durable write; Accept posts the
+  current edited text plus the original metadata snapshot through `acceptCandidate()`.
+- Added a minimal ephemeral post-accept notice and clears the candidate after successful
+  acceptance.
+- Fetched OpenRouter settings alongside prompt compilation so Generate is disabled with
+  actionable missing-key copy before transport.
+- Added candidate editor/action styling in `styles.css`.
+- Expanded `GenerateView` tests for edit+accept, regenerate warning/replacement, discard,
+  missing-key disabled Send, storage non-persistence, and Phase 11/12 boundary absence.
+
+Deviations from original plan:
+- Missing-key disabled state is driven by `getOpenRouterSettings()` in the view, rather
+  than waiting for `/api/generate` to return `missing-key`. This better satisfies the
+  ticket's disabled-Send acceptance criterion.
+
+Verification results:
+- `npm test -- GenerateView` — passed, 1 test file / 7 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 60 test files / 336 tests.
+- `npm run build` — passed.
