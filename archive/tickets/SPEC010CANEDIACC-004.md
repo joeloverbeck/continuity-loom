@@ -1,6 +1,6 @@
 # SPEC010CANEDIACC-004: Extract shared compiled-prompt inspector
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new shared web component `packages/web/src/prompt/PromptInspector.tsx`; `PromptPreviewView` refactored to consume it
@@ -86,3 +86,29 @@ Create `packages/web/src/prompt/PromptInspector.test.tsx`. Leave `PromptPreviewV
 
 1. `npm test -- PromptInspector PromptPreviewView`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `packages/web/src/prompt/PromptInspector.tsx` as the shared presentational
+  compiled-prompt inspector. It owns search, match count, prompt highlighting, prompt body
+  rendering, and metadata display.
+- Rewired `PromptPreviewView` to consume `PromptInspector` while leaving preview loading,
+  refresh, copy, generate, and candidate behavior unchanged for this refactor ticket.
+- Added an isolated `PromptInspector` component test covering prompt rendering, metadata
+  separation, search callback wiring, match count, and highlighting.
+
+Deviations from original plan:
+- The extracted component owns the search input and metadata panel in addition to the
+  prompt `<pre>`, because those elements are part of the reusable prompt-inspection surface.
+
+Verification results:
+- `npm test -- PromptInspector PromptPreviewView` — passed, 2 test files / 11 tests.
+- `rg -n "className=\"promptBody\"|data-testid=\"prompt-body\"" packages/web/src` —
+  confirmed the prompt body render exists only in `PromptInspector.tsx`.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 58 test files / 332 tests.
+- `npm run build` — passed.
