@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-002: Durable-change reminder routes
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/reminder-routes.ts` (`GET /api/durable-change-reminder`, `POST /api/durable-change-reminder/acknowledge`); registered in `createServer()`
@@ -82,3 +82,19 @@ Import and call `registerReminderRoutes(app, projectStoreManager)` in `packages/
 
 1. `npm test -- reminder-routes` — targeted run of the new route suite.
 2. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/server/src/reminder-routes.ts` with `GET /api/durable-change-reminder` and `POST /api/durable-change-reminder/acknowledge`, registered from `createServer()`. The read endpoint derives active state from the latest accepted sequence and the acknowledged-through threshold; the acknowledge endpoint accepts only an empty object body, advances the threshold to the latest accepted sequence when one exists, and returns the recomputed reminder state.
+
+Added `packages/server/src/reminder-routes.test.ts` covering no-segment inactive state, post-accept activation, acknowledgement, second-accept reactivation, no-op acknowledgement without accepted segments, no-open-project handling, strict unknown-body rejection, no mutation of records/config/brief/accepted segments, and no accepted prose or key-shaped metadata in reminder responses/logs. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- reminder-routes` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
