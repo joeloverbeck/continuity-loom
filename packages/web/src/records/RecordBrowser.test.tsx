@@ -95,9 +95,9 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-function renderBrowser(): void {
+function renderBrowser(initialEntry = "/records"): void {
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <RecordBrowser />
     </MemoryRouter>
   );
@@ -214,6 +214,54 @@ describe("RecordBrowser", () => {
 
     expect(await screen.findByRole("heading", { name: "CAST MEMBER" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Aster" })).toBeTruthy();
+  });
+
+  it("opens typed editors from create search params without creating records", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+
+    renderBrowser("/records?create=EVENT");
+
+    expect(await screen.findByRole("heading", { name: "EVENT" })).toBeTruthy();
+    expect(screen.getByText("Create record")).toBeTruthy();
+    expect(createRecord).not.toHaveBeenCalled();
+    expect(updateRecord).not.toHaveBeenCalled();
+    expect(setWorkingSet).not.toHaveBeenCalled();
+  });
+
+  it("opens the CAST MEMBER editor from the create search param", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+
+    renderBrowser("/records?create=CAST%20MEMBER");
+
+    expect(await screen.findByRole("heading", { name: "CAST MEMBER" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Aster" })).toBeTruthy();
+    expect(createRecord).not.toHaveBeenCalled();
+    expect(updateRecord).not.toHaveBeenCalled();
+  });
+
+  it("ignores invalid and absent create search params", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+
+    renderBrowser("/records?create=NOT_A_TYPE");
+
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create EVENT" })).toBeTruthy();
+    expect(screen.queryByText("Create record")).toBeNull();
+    expect(screen.queryByRole("heading", { name: "EVENT" })).toBeNull();
+
+    cleanup();
+    vi.clearAllMocks();
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
+
+    renderBrowser();
+
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create EVENT" })).toBeTruthy();
+    expect(screen.queryByText("Create record")).toBeNull();
   });
 
   it("toggles working-set membership and filters to selected records without implicit writes", async () => {

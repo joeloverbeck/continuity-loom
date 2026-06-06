@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-004: RecordBrowser `?create=<TYPE>` consumer
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — new `?create=<TYPE>` search-param consumer in `packages/web/src/records/RecordBrowser.tsx` that pre-opens a record create form
@@ -74,3 +74,19 @@ In `packages/web/src/records/RecordBrowser.tsx`, alongside the existing `presele
 
 1. `npm test -- RecordBrowser` — targeted run of the records-browser suite.
 2. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `?create=<TYPE>` handling in `packages/web/src/records/RecordBrowser.tsx`. The browser now reads the `create` search param, validates it against registered `recordTypes`, and opens the same create form path used by the existing create rail (`CAST MEMBER` opens the custom editor; all other valid types open the generic editor). The existing `?recordId` edit behavior is unchanged, and navigation alone does not prefill or persist a record.
+
+Extended `packages/web/src/records/RecordBrowser.test.tsx` with coverage for `/records?create=EVENT`, `/records?create=CAST%20MEMBER`, invalid `create` values, absent `create`, and no implicit create/update/working-set writes from deep-link navigation. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- RecordBrowser` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
