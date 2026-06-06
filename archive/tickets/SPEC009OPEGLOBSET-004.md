@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-004: OpenRouter settings routes (GET/PUT + model refresh)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/settings-routes.ts` (`GET`/`PUT /api/settings/openrouter`, `POST /api/settings/openrouter/models`), registered in `createServer()`.
@@ -86,3 +86,32 @@ Add the import and a `registerSettingsRoutes(app, projectStoreManager)` line alo
 1. `npm test --workspace @loom/server -- src/settings-routes.test.ts`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -n "registerSettingsRoutes" packages/server/src/server.ts` — registration proof.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/server/src/settings-routes.ts` with `GET /api/settings/openrouter`,
+`PUT /api/settings/openrouter`, and `POST /api/settings/openrouter/models`. The routes
+return only non-secret settings plus `hasOpenRouterCredential`, persist validated
+non-secret patches, reject key-shaped/unknown payload fields, cache successful model-list
+refreshes, and return normalized refresh failures without blocking settings reads/writes.
+
+Registered `registerSettingsRoutes(app)` in `createServer()`.
+
+Added `packages/server/src/settings-routes.test.ts` coverage for GET shape and key
+absence, PUT round-trip, key-shaped-field rejection with no persistence, successful model
+refresh caching, normalized refresh failure resilience, and response-body secrecy.
+
+Deviations: `registerSettingsRoutes` takes only the `FastifyInstance`; it does not accept
+an unused project manager parameter because these global settings routes do not touch
+project state.
+
+Verification:
+
+- `npm test --workspace @loom/server -- src/settings-routes.test.ts` — passed.
+- `rg -n "registerSettingsRoutes" packages/server/src/server.ts` — import and registration present.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 54 files / 303 tests passed.
+- `npm run build` — passed.
