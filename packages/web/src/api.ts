@@ -45,6 +45,13 @@ export type ApiFailure = {
   referrers?: unknown[];
 };
 
+export type TransportFailure = {
+  ok: false;
+  category: string;
+  message: string;
+  retryAfter?: number;
+};
+
 export type CompileBlocked = {
   ok: false;
   kind: "validation-blocked";
@@ -52,6 +59,32 @@ export type CompileBlocked = {
 };
 
 export type CompileResponse = CompileResult | CompileBlocked | ApiFailure;
+
+export interface OpenRouterModelListEntry {
+  id: string;
+  name: string;
+  contextLength?: number;
+}
+
+export interface OpenRouterSettings {
+  model: string;
+  temperature: number;
+  maxOutputTokens: number;
+  topP?: number;
+  cachedModels?: OpenRouterModelListEntry[];
+}
+
+export interface OpenRouterSettingsResponse extends OpenRouterSettings {
+  hasOpenRouterCredential: boolean;
+}
+
+export type OpenRouterSettingsPatch = Partial<OpenRouterSettings>;
+export type RefreshModelsResponse = { ok: true; models: OpenRouterModelListEntry[] } | TransportFailure;
+export type GenerateResponse =
+  | { ok: true; candidate: { text: string }; metadata: { model: string; versions: CompileResult["metadata"]["versions"] } }
+  | CompileBlocked
+  | ApiFailure
+  | TransportFailure;
 
 export type RecordSummary = {
   id: string;
@@ -254,4 +287,20 @@ export async function validate(): Promise<ValidationResult> {
 export async function compile(): Promise<CompileResponse> {
   // A body with ok === false is blocked-or-error; any other body is the bare CompileResult.
   return postJson<CompileResponse>("/api/compile");
+}
+
+export async function getOpenRouterSettings(): Promise<OpenRouterSettingsResponse> {
+  return requestJson<OpenRouterSettingsResponse>("/api/settings/openrouter", "GET");
+}
+
+export async function putOpenRouterSettings(patch: OpenRouterSettingsPatch): Promise<OpenRouterSettingsResponse | ApiFailure> {
+  return requestJson<OpenRouterSettingsResponse | ApiFailure>("/api/settings/openrouter", "PUT", patch);
+}
+
+export async function refreshModels(): Promise<RefreshModelsResponse> {
+  return postJson<RefreshModelsResponse>("/api/settings/openrouter/models");
+}
+
+export async function generate(): Promise<GenerateResponse> {
+  return postJson<GenerateResponse>("/api/generate");
 }

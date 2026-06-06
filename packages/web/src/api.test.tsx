@@ -5,12 +5,16 @@ import {
   compile,
   createRecord,
   deleteRecord,
+  generate,
   getGenerationBrief,
+  getOpenRouterSettings,
   getRecord,
   getRecordReferences,
   getStoryConfig,
   getWorkingSet,
   listRecords,
+  putOpenRouterSettings,
+  refreshModels,
   setGenerationBrief,
   setStoryConfig,
   setWorkingSet,
@@ -202,6 +206,137 @@ describe("api client", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 400))));
 
     await expect(compile()).resolves.toEqual(failure);
+  });
+
+  it("issues OpenRouter settings client requests without exposing secret fields", async () => {
+    const settingsBody = {
+      model: "openai/gpt-4.1",
+      temperature: 0.2,
+      maxOutputTokens: 2048,
+      topP: 0.8,
+      cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }],
+      hasOpenRouterCredential: true
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(settingsBody));
+      })
+    );
+
+    await expect(getOpenRouterSettings()).resolves.toEqual(settingsBody);
+    await expect(
+      putOpenRouterSettings({
+        model: "openai/gpt-4.1",
+        temperature: 0.2,
+        maxOutputTokens: 2048,
+        topP: 0.8
+      })
+    ).resolves.toEqual(settingsBody);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/settings/openrouter", "GET"],
+      ["/api/settings/openrouter", "PUT"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(calls[1]?.init?.headers).toEqual({
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    });
+    expect(calls[1]?.init?.body).toBe(
+      JSON.stringify({ model: "openai/gpt-4.1", temperature: 0.2, maxOutputTokens: 2048, topP: 0.8 })
+    );
+    expect(JSON.stringify(settingsBody)).not.toMatch(/OPENROUTER_API_KEY|openRouterApiKey|sk-|Bearer/);
+  });
+
+  it("refreshes OpenRouter models through a no-body POST", async () => {
+    const responseBody = {
+      ok: true,
+      models: [{ id: "anthropic/claude-sonnet-4", name: "Claude Sonnet 4", contextLength: 200000 }]
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(responseBody));
+      })
+    );
+
+    await expect(refreshModels()).resolves.toEqual(responseBody);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/settings/openrouter/models", "POST"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("returns normalized model-refresh failures unchanged", async () => {
+    const failure = {
+      ok: false,
+      category: "network",
+      message: "Could not reach OpenRouter."
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 200))));
+
+    await expect(refreshModels()).resolves.toEqual(failure);
+  });
+
+  it("returns successful generate responses", async () => {
+    const success = {
+      ok: true,
+      candidate: { text: "Candidate prose." },
+      metadata: {
+        model: "openai/gpt-4.1",
+        versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+      }
+    };
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success));
+      })
+    );
+
+    await expect(generate()).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/generate", "POST"]
+    ]);
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
+    expect(calls[0]?.init?.body).toBeUndefined();
+  });
+
+  it("returns validation-blocked generate responses", async () => {
+    const blockedBody = {
+      ok: false,
+      kind: "validation-blocked",
+      validation: {
+        blockers: [{ code: "missing-current-state", message: "Current state is required.", severity: "blocker" }],
+        warnings: [],
+        isBlocked: true
+      }
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(blockedBody, 200))));
+
+    await expect(generate()).resolves.toEqual(blockedBody);
+  });
+
+  it("returns generate failures including missing-key unchanged", async () => {
+    const failure = {
+      ok: false,
+      category: "missing-key",
+      message: "OpenRouter API key is missing."
+    };
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 200))));
+
+    await expect(generate()).resolves.toEqual(failure);
   });
 
   it("returns structured error envelopes from failed route responses", async () => {
