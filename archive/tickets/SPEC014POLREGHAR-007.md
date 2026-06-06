@@ -1,6 +1,6 @@
 # SPEC014POLREGHAR-007: User guide + README pointer
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds `docs/user-guide.md` and a pointer in `README.md` (documentation surfaces only); no code changes.
@@ -84,3 +84,22 @@ Add a short line in `README.md` linking to `docs/user-guide.md` (e.g. under a "D
 1. `test -f docs/user-guide.md && grep -nE "Backup|OpenRouter|candidate|active working set|no branches|uploaded" docs/user-guide.md`
 2. `grep -n "user-guide.md" README.md`
 3. `npm run lint && npm run typecheck && npm test` — the full-pipeline check confirms the docs change introduced no accidental code/link breakage.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `docs/user-guide.md` covering the story loop, local ownership, active working set, prompt preview, OpenRouter settings, candidate lifecycle, accepted segments, manual record updates, backup/recoverability, and FAQ.
+- Added a README Documentation pointer to `docs/user-guide.md`.
+
+Deviations from original plan:
+- None. No in-app help UI or product behavior was added.
+
+Verification results:
+- `test -f docs/user-guide.md` passed.
+- `grep -nE "Backup|OpenRouter|candidate|active working set|no branches|uploaded" docs/user-guide.md` found the required coverage.
+- `grep -n "user-guide.md" README.md` found the README link.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 72 files, 429 tests.
