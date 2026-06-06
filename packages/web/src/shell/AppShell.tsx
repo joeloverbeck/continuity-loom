@@ -9,6 +9,7 @@ import { GenerateView } from "../generate/GenerateView.js";
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
+import { DurableChangeReminder } from "./DurableChangeReminder.js";
 import { SettingsSurface } from "./SettingsSurface.js";
 
 interface AppShellProps {
@@ -79,6 +80,7 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
         </nav>
       </aside>
       <div className="contentPane">
+        <DurableChangeReminder />
         <Routes>
           <Route path="/" element={<ProjectPicker />} />
           <Route path="/records" element={<RecordBrowser />} />

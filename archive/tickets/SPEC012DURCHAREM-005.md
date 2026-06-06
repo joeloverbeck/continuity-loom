@@ -1,6 +1,6 @@
 # SPEC012DURCHAREM-005: `DurableChangeReminder` banner + AppShell mount + styling
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `DurableChangeReminder` web component mounted in `packages/web/src/shell/AppShell.tsx`; banner/checklist/quick-link styling in `packages/web/src/styles.css`
@@ -98,3 +98,20 @@ In `packages/web/src/styles.css`, add minimal banner / checklist / quick-link-ro
 1. `npm test -- DurableChangeReminder` — targeted run of the banner suite.
 2. `npm test -- AppShell` — targeted run of the shell mount test.
 3. `npm run typecheck && npm run lint && npm test && npm run build` — full pipeline.
+
+## Outcome
+
+Completed: 2026-06-06
+
+Added `packages/web/src/shell/DurableChangeReminder.tsx`, mounted it in `AppShell` above routed content, and styled the banner/checklist/action/link rows in `packages/web/src/styles.css`. The banner reads the derived reminder state, renders nothing for inactive or no-open-project responses, shows only sequence/timestamp plus static checklist text, provides deterministic `/records?create=<TYPE>` links for the 12 authority record types plus a Generation Brief link, durably acknowledges through the API, and keeps Snooze session-local.
+
+Added `DurableChangeReminder` component tests for active rendering, the six-question checklist, 12 quick-links, non-modal behavior, acknowledge hide behavior, session-only snooze/remount behavior, and inactive/no-project null rendering. Updated `AppShell` tests to prove the banner mount sits above routed content. No deviations from the ticket plan.
+
+Verification:
+
+- `npm test -- DurableChangeReminder` — passed.
+- `npm test -- AppShell` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing chunk-size warning.
