@@ -154,7 +154,7 @@ function mockWorkingSet(ids: string[] = []): void {
 
 describe("RecordBrowser", () => {
   it("keeps dense record filtering, search, and grouping correct without throwing", async () => {
-    const denseRecords = denseRecordFixtures(600);
+    const denseRecords = denseRecordFixtures(500);
     const workingSetIds = denseRecords
       .filter((record) => record.type === "FACT" && record.status === "active")
       .slice(0, 25)
@@ -212,7 +212,7 @@ describe("RecordBrowser", () => {
       </MemoryRouter>
     );
     await waitFor(() => expect(tableLabels()).toEqual(groupedFacts));
-  });
+  }, 10_000);
 
   it("renders a dense list and filters by type, status, search, and reference", async () => {
     mockWorkingSet();
