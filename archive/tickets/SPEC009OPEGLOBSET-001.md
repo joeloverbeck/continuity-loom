@@ -1,6 +1,6 @@
 # SPEC009OPEGLOBSET-001: Global OpenRouter settings module
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — rewrites `packages/server/src/settings.ts` into a read/write surface over a global config file (new `OpenRouterSettings` type, config-location resolver); replaces `packages/server/src/settings.test.ts`.
@@ -88,3 +88,28 @@ Remove the inert-defaults assertion (it imports the now-deleted `getSettings`). 
 1. `npm test --workspace @loom/server -- src/settings.test.ts`
 2. `npm run typecheck && npm run lint && npm test`
 3. `grep -rn "getSettings" packages/server/src/` — must return nothing (removal proof).
+
+## Outcome
+
+Completed: 2026-06-06
+
+Implemented `packages/server/src/settings.ts` as the global OpenRouter settings boundary:
+it now resolves `openrouter.json` via `CONTINUITY_LOOM_CONFIG_DIR`, `XDG_CONFIG_HOME`, or
+`~/.config/continuity-loom`; persists only non-secret settings; derives
+`hasOpenRouterCredential` from `OPENROUTER_API_KEY` at read time; and rejects key-shaped
+fields before writing. The old `getSettings()` placeholder was removed.
+
+Replaced `packages/server/src/settings.test.ts` with coverage for missing-file defaults,
+round-trip persistence, credential boolean derivation without config mutation, key-field
+rejection, and raw-file secrecy.
+
+Deviations: none from the ticket scope.
+
+Verification:
+
+- `npm test --workspace @loom/server -- src/settings.test.ts` — passed.
+- `rg -n "getSettings" packages/server/src` — no matches.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — 49 files / 263 tests passed.
+- `npm run build` — passed.
