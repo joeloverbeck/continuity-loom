@@ -8,34 +8,50 @@
 
 ## Problem
 
-`DIAGNOSTIC_CODES.acceptedProseContamination` (`"accepted-prose-contamination"`, `packages/core/src/validation/types.ts:37`) is registered but emitted by **no production rule** — the verbatim/auto-summary prose-in-handoff path fires `promptFacingProseContamination` (`packages/core/src/validation/rules/universal-blockers.ts:388,415,427`). An orphaned diagnostic code is dead surface that invites confusion (two near-identical contamination codes, only one live) and contradicts FOUNDATIONS §13 field economy ("sophisticated-sounding fields that have no … use should be merged, demoted, renamed, or deleted"). This was surfaced during the SPEC-014 reassessment (2026-06-06) and deliberately scoped out of that hardening phase as a separate cleanup; this ticket performs it.
+`DIAGNOSTIC_CODES.acceptedProseContamination` (`"accepted-prose-contamination"`) is registered in `packages/core/src/validation/types.ts` but is not the production diagnostic used for prompt-facing accepted/candidate prose contamination.
 
-## Assumption Reassessment (2026-06-06)
+The live contamination path uses `DIAGNOSTIC_CODES.promptFacingProseContamination` (`"prompt-facing-prose-contamination"`) from `packages/core/src/validation/types.ts` and emits it from `packages/core/src/validation/rules/universal-blockers.ts`.
 
-1. The orphan is `acceptedProseContamination: "accepted-prose-contamination"` at `packages/core/src/validation/types.ts:37`, inside the `Object.freeze({ … })` `DIAGNOSTIC_CODES` registry (line 36). The live contamination code is `promptFacingProseContamination: "prompt-facing-prose-contamination"` (`types.ts:80`), emitted at `universal-blockers.ts:388,415,427`.
-2. SPEC-014 (active, `specs/SPEC-014-…md`) and its tickets `SPEC014POLREGHAR-002` / `-006` explicitly defer this removal ("separate cleanup, not this hardening phase"); archived `SPEC-006`/`SPEC006DETVALENG-003` reference the *accepted-prose-contamination blocker concept*, which remains implemented as `promptFacingProseContamination` — those archived files are historical and are not edited.
-3. Cross-artifact boundary under audit: the diagnostic-codes registry (`types.ts`) is consumed by validation rules (emit sites), tests that cite specific codes, and `packages/core/src/demo/stress-coverage.test.ts:64` which enumerates `Object.values(DIAGNOSTIC_CODES)`. The audit confirms the enumeration is used only as a **superset** check (`knownDiagnosticCodes` must *contain* each `MATRIX_DIAGNOSTIC_CODES` entry, lines 68-70), so shrinking the registry by one unused entry cannot fail it.
-4. FOUNDATIONS principle under audit: §13 records-and-field-economy — every field/code must earn its place through a concrete function (compilation, validation, continuity, voice, authorial control); a never-emitted code has none and should be deleted. Removal strengthens field economy; it removes no live validation behavior.
-5. Removal blast radius (repo-wide grep on symbol `acceptedProseContamination` and value `accepted-prose-contamination`, excluding `dist/`): the **only** functional site is the `types.ts:37` definition. `validation-stress-mapping.test.ts:20,186` reference a **local fixture-builder function** coincidentally named `acceptedProseContamination` that maps to `DIAGNOSTIC_CODES.promptFacingProseContamination` — it does not touch the registry key and is unaffected. No `.ts/.tsx` file references `DIAGNOSTIC_CODES.acceptedProseContamination` or the string `"accepted-prose-contamination"` outside the definition. Archived specs/tickets and the SPEC-014 spec/tickets reference it only in prose. So Files to Touch is the single definition line.
-6. No mismatch: emit-site absence, the subset nature of the stress-coverage check, and the local-function naming coincidence were all read from the working tree on 2026-06-06.
+The orphaned registry entry creates unnecessary surface area and invites confusion between two near-identical contamination codes. Removing it aligns with `docs/FOUNDATIONS.md` field-economy doctrine without changing validation behavior.
+
+## Assumption Reassessment (2026-06-06; path-status corrected post-v1)
+
+1. The orphan is the `acceptedProseContamination: "accepted-prose-contamination"` entry inside the `DIAGNOSTIC_CODES` registry in `packages/core/src/validation/types.ts`.
+2. The live accepted/candidate prose contamination diagnostic is `promptFacingProseContamination: "prompt-facing-prose-contamination"` in the same registry.
+3. `packages/core/src/validation/rules/universal-blockers.ts` emits `promptFacingProseContamination` from the prompt-facing contamination and generation-context validation paths. This ticket must not change those emit sites or their behavior.
+4. SPEC-014 is not active at the post-v1 target commit. Its archived paths are:
+   - `archive/specs/SPEC-014-polish-regression-hardening-and-documentation.md`
+   - `archive/tickets/SPEC014POLREGHAR-002.md`
+   - `archive/tickets/SPEC014POLREGHAR-006.md`
+5. Archived SPEC-014 materials explicitly treated removal of `acceptedProseContamination` as separate cleanup, not part of Phase 14 hardening. Those archived files are historical records and are not edited by this ticket.
+6. Cross-artifact boundary under audit: the diagnostic-code registry is consumed by validation rules, validation tests, and stress/coverage checks. This cleanup removes only the dead registry entry; it does not remove a live emitted diagnostic.
+7. FOUNDATIONS principle under audit: §13 records-and-field economy. A never-emitted code has no concrete validation, compilation, continuity, voice, or authorial-control function and should be deleted rather than kept as speculative surface.
+8. Mismatch corrected from the pre-transition ticket wording: SPEC-014 and its tickets are archived, not active. Brittle line-number-specific claims are intentionally avoided here; verify current symbols directly before implementation.
 
 ## Architecture Check
 
-1. Deleting the unused registry line is the minimal, cleanest remediation — strictly less surface, no shim, no rename indirection. The alternative (keeping it "in case a future rule needs it") is YAGNI and perpetuates the two-contamination-codes confusion; a future rule can re-add a code when it actually emits one.
-2. No backwards-compatibility shims: the entry is removed outright; no alias or deprecation placeholder is introduced.
+1. Deleting the unused registry line is the minimal remediation: less surface, no shim, no alias, no rename indirection.
+2. Keeping the entry "in case a future rule needs it" is YAGNI. A future rule can add a fresh diagnostic code when it actually emits one.
+3. No backwards-compatibility shims or aliases are introduced.
 
 ## Verification Layers
 
-1. Orphan gone → grep-proof: `grep -rn '"accepted-prose-contamination"' packages --include=*.ts` returns no match (the value existed only at the deleted definition).
-2. No registry-consumer regression → `npm test` green; specifically `packages/core/src/demo/stress-coverage.test.ts` still passes (its superset check is unaffected).
-3. Live contamination code intact → grep-proof: `DIAGNOSTIC_CODES.promptFacingProseContamination` still defined (`types.ts`) and emitted (`universal-blockers.ts:388,415,427`); the accepted-prose-exclusion behavior is unchanged.
-4. FOUNDATIONS §13 alignment → FOUNDATIONS alignment check (removal eliminates a function-less code; no live rule loses its code).
+1. Orphan removed → `grep -rn '"accepted-prose-contamination"' packages --include='*.ts'` returns no production TypeScript match.
+2. Live contamination code intact → `grep -rn "promptFacingProseContamination" packages/core/src/validation --include='*.ts'` still finds the registry entry and live rule emit sites.
+3. Registry-consumer safety → `npm run build --workspace @loom/core && npm test` passes after the deletion.
+4. FOUNDATIONS alignment → removal eliminates a function-less diagnostic code and changes no accepted-prose exclusion behavior.
 
 ## What to Change
 
 ### 1. Delete the orphaned code entry
 
-Remove the single line `acceptedProseContamination: "accepted-prose-contamination",` from the `DIAGNOSTIC_CODES` object in `packages/core/src/validation/types.ts` (line 37). Leave every other entry — including `promptFacingProseContamination` — untouched.
+Remove this single entry from the `DIAGNOSTIC_CODES` object in `packages/core/src/validation/types.ts`:
+
+```ts
+acceptedProseContamination: "accepted-prose-contamination",
+```
+
+Leave every other diagnostic entry untouched, including `promptFacingProseContamination`.
 
 ## Files to Touch
 
@@ -43,31 +59,33 @@ Remove the single line `acceptedProseContamination: "accepted-prose-contaminatio
 
 ## Out of Scope
 
-- Renaming the coincidentally-named local fixture builder `acceptedProseContamination` in `packages/core/test/validation-stress-mapping.test.ts` — it is a valid local helper mapping to the live `promptFacingProseContamination` code; renaming it is optional cosmetic churn, not required by this removal.
-- Any change to `promptFacingProseContamination` or its emit sites, or to validation behavior.
-- Editing archived specs/tickets that reference the accepted-prose-contamination blocker concept (historical records).
+- Any change to `promptFacingProseContamination`, its string value, its validation emit sites, or accepted-prose exclusion behavior.
+- Renaming local test helper functions that happen to use the phrase `acceptedProseContamination` while mapping to the live `promptFacingProseContamination` code. That would be cosmetic churn.
+- Editing archived specs or tickets that mention the accepted-prose-contamination concept historically.
+- Introducing aliases, deprecation placeholders, or backwards-compatibility shims.
 
 ## Acceptance Criteria
 
 ### Tests That Must Pass
 
-1. `npm run build --workspace @loom/core && npm test` — full suite green after the deletion (no test referenced the orphaned key).
-2. `grep -rn '"accepted-prose-contamination"' packages --include=*.ts` — returns nothing (orphan value eliminated).
-3. `grep -rn "promptFacingProseContamination" packages/core/src/validation --include=*.ts` — still present (live code retained).
+1. `npm run build --workspace @loom/core && npm test`
+2. `grep -rn '"accepted-prose-contamination"' packages --include='*.ts'` returns no production TypeScript match.
+3. `grep -rn "promptFacingProseContamination" packages/core/src/validation --include='*.ts'` still returns the registry entry and rule emit sites.
 
 ### Invariants
 
-1. `DIAGNOSTIC_CODES` contains no never-emitted code after this change.
-2. The accepted-prose-exclusion blocking behavior (via `promptFacingProseContamination`) is unchanged.
+1. `DIAGNOSTIC_CODES` contains no never-emitted `accepted-prose-contamination` registry entry after this change.
+2. Accepted-prose/candidate-prose prompt-facing contamination still blocks via `promptFacingProseContamination`.
+3. No validation code, severity, gating behavior, prompt compiler behavior, or accepted-segment behavior changes.
 
 ## Test Plan
 
 ### New/Modified Tests
 
-1. `None — removal-only ticket; existing validation/stress-coverage suites prove no consumer relied on the orphaned code, and the grep-proofs confirm the value is gone while the live code remains.`
+1. None — this is a removal-only cleanup. Existing validation and accepted-prose exclusion suites prove the live behavior remains intact; grep-proof verifies the dead value is gone.
 
 ### Commands
 
 1. `npm run build --workspace @loom/core && npm test`
-2. `grep -rn '"accepted-prose-contamination"' packages --include=*.ts` (expect no output) and `grep -rn "promptFacingProseContamination" packages/core/src/validation --include=*.ts` (expect matches)
-3. The full `npm test` is the correct boundary — the only risk is a hidden registry consumer, which a whole-suite run plus the grep-proofs jointly rule out.
+2. `grep -rn '"accepted-prose-contamination"' packages --include='*.ts'`
+3. `grep -rn "promptFacingProseContamination" packages/core/src/validation --include='*.ts'`

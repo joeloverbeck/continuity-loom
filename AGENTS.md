@@ -1,23 +1,24 @@
 # AGENTS.md - Continuity Loom
 
-Continuity Loom is a local-first story-state app: a Node process serves a React UI
-and a localhost-only API for story records, deterministic prompt compilation, and
-segment acceptance. Data stays on the user's machine; there is no account, login,
-or cloud service.
+Continuity Loom is a local-first story-state app: a Node process serves a React UI and a localhost-only API for story records, deterministic prompt compilation, and segment acceptance. Data stays on the user's machine; there is no account, login, or cloud service.
+
+## Start Here
+
+Before changing code or docs, read `docs/ACTIVE-DOCS.md`. It is the post-v1 map of active authorities, archived material, tickets, and change-intake rules.
+
+Then read `docs/FOUNDATIONS.md` for any change touching runtime behavior, stored data, prompt compilation, validation rules, generation behavior, accepted-segment behavior, OpenRouter behavior, or LLM-assistance surfaces. Features that conflict with it are wrong unless `FOUNDATIONS.md` is deliberately amended first.
+
+Treat `archive/**` as historical evidence, not active implementation guidance, unless an active ticket or doc explicitly points to a specific archived file.
 
 ## Repository Shape
 
-This is an npm-workspaces ESM monorepo on Node >= 24 (`.nvmrc`) with strict
-TypeScript.
+This is an npm-workspaces ESM monorepo on Node >= 24 (`.nvmrc`) with strict TypeScript.
 
-- `packages/core`: pure continuity/compiler logic. Do not import `fastify`,
-  `react`, `vite`, or `node:*` builtins here; ESLint and a boundary test enforce
-  this platform-free boundary.
+- `packages/core`: pure continuity/compiler logic. Do not import `fastify`, `react`, `vite`, or `node:*` builtins here; ESLint and a boundary test enforce this platform-free boundary.
 - `packages/server`: localhost API plus production UI serving.
 - `packages/web`: React + Vite front end.
 
-Every server path, including dev, API, and production launch, must bind
-`127.0.0.1` only. Never expose the app to the LAN.
+Every server path, including dev, API, and production launch, must bind `127.0.0.1` only. Never expose the app to the LAN.
 
 ## Commands
 
@@ -30,30 +31,33 @@ npm test
 npm run build
 ```
 
-Before claiming a code change complete, run the relevant checks and report any
-that could not be run. `npm run dev` starts Vite HMR plus the API (`5173`/`5174`);
-`npm start` builds and serves the app on `127.0.0.1:4173`.
+Before claiming a code change complete, run the relevant checks and report any that could not be run. `npm run dev` starts Vite HMR plus the API (`5173`/`5174`); `npm start` builds and serves the app on `127.0.0.1:4173`.
 
 ## Governing Docs
 
-`docs/FOUNDATIONS.md` is the project constitution. Read it before changing
-runtime behavior, stored data, prompt compilation, validation rules, or
-LLM-assistance surfaces. Features that conflict with it are wrong unless
-FOUNDATIONS is amended first. Section 29 is the alignment checklist for specs
-and tickets.
+`docs/FOUNDATIONS.md` is the project constitution. Section 29 is the alignment checklist for specs and tickets.
 
-Read the domain docs that match the files being changed:
+Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domain. In particular:
 
 - Prompt compiler: `docs/compiler-contract.md`
-- Universal prompt template: `docs/prompt-template.md` and
-  `docs/prompt-template-rationale.md`
+- Universal prompt template: `docs/prompt-template.md` and `docs/prompt-template-rationale.md`
 - Story record shape and fields: `docs/story-record-schema.md`
-- Validation and hard-fail cases: `docs/stress-suite.md`
+- Validation and hard-fail cases: `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, and `docs/demo-blocker-recipes.md`
+- User-facing behavior: `docs/user-guide.md`
+
+## Tickets, Specs, and Archive
+
+Active tickets live in `tickets/` and must follow `tickets/README.md` and `tickets/_TEMPLATE.md`.
+
+Use a new spec for broad or risky behavior changes: compiler, validation, storage, schema, accepted-prose boundaries, OpenRouter/security, local-first data, or anything that could violate `FOUNDATIONS.md`. Use a ticket for narrow, already-scoped implementation work.
+
+Completed specs, tickets, requirements sets, and reports move under `archive/` according to `docs/archival-workflow.md`. Do not revive archived v1 requirements as active backlog.
 
 ## Conventions
 
 - Use ESM only; do not add CommonJS `require`.
 - Keep changes narrow and aligned with existing package boundaries.
 - Never adapt tests to match a bug; fix the code.
-- Work flows through `specs/`, `tickets/`, and `archive/`; follow
-  `docs/archival-workflow.md` for archival tasks.
+- Do not introduce backwards-compatibility aliases, shims, or duplicate authority paths unless a spec explicitly justifies them.
+- Do not let accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context.
+- Do not weaken validation gates, deterministic compilation, API-key secrecy, localhost binding, or local-first project ownership.
