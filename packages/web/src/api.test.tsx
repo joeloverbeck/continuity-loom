@@ -5,6 +5,8 @@ import {
   acceptCandidate,
   archiveRecord,
   compile,
+  createDemoProject,
+  createProject,
   createRecord,
   deleteAcceptedSegment,
   deleteRecord,
@@ -42,6 +44,61 @@ afterEach(() => {
 });
 
 describe("api client", () => {
+  it("issues project create route requests", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const status = {
+      folderPath: "/tmp/loom/letter-under-flour-bin-demo",
+      title: "The Letter Under the Flour Bin",
+      projectUuid: "019b0298-5c00-7000-8000-013000000099",
+      databaseFilename: "loom.sqlite",
+      isDemoFixture: true,
+      appSchemaVersion: 1,
+      storeUserVersion: 1,
+      compatibility: "ok"
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(status));
+      })
+    );
+
+    await expect(
+      createProject({
+        parentPath: "/tmp/loom",
+        folderName: "alpha",
+        title: "Alpha",
+        description: "Draft"
+      })
+    ).resolves.toEqual(status);
+    await expect(
+      createDemoProject({
+        parentPath: "/tmp/loom",
+        folderName: "letter-under-flour-bin-demo"
+      })
+    ).resolves.toEqual(status);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/project/create", "POST"],
+      ["/api/project/create-demo", "POST"]
+    ]);
+    expect(calls[0]?.init?.body).toBe(
+      JSON.stringify({
+        parentPath: "/tmp/loom",
+        folderName: "alpha",
+        title: "Alpha",
+        description: "Draft"
+      })
+    );
+    expect(calls[1]?.init?.body).toBe(
+      JSON.stringify({
+        parentPath: "/tmp/loom",
+        folderName: "letter-under-flour-bin-demo"
+      })
+    );
+  });
+
   it("issues the correct record route requests", async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = [];
     vi.stubGlobal(

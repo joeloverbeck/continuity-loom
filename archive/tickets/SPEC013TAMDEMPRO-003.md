@@ -1,6 +1,6 @@
 # SPEC013TAMDEMPRO-003: Web "Create demo project" entry point
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — new `@loom/web` `createDemoProject` API client + "Create demo project" affordance in `ProjectPicker`
@@ -80,3 +80,22 @@ Extend `packages/web/src/api.test.tsx` (client endpoint/shape) and `packages/web
 1. `npx vitest run packages/web/src/api.test.tsx packages/web/src/ProjectPicker.test.tsx`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted web tests are the correct boundary (UI + client only); `npm test` confirms no cross-package regression.
+
+## Outcome
+
+Completed: 2026-06-06
+
+What changed:
+- Added `createDemoProject` to the web API client, posting `{ parentPath, folderName }` to `/api/project/create-demo`.
+- Added a `Create Demo Project` action to `ProjectPicker` that reuses the existing parent-path input, calls the demo client with `letter-under-flour-bin-demo`, and uses the existing success/failure handling path.
+- Added a demo marker in the project status panel when `ProjectStatus.isDemoFixture` is present.
+- Extended web API and ProjectPicker tests for the demo transport contract, successful navigation/status rendering, failure notice, and disabled state.
+
+Deviations from original plan:
+- None beyond using a fixed, readable folder name (`letter-under-flour-bin-demo`) for the additive picker action.
+
+Verification:
+- `npx vitest run packages/web/src/api.test.tsx packages/web/src/ProjectPicker.test.tsx` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

@@ -11,6 +11,11 @@ export interface CreateProjectRequest {
   description?: string;
 }
 
+export interface CreateDemoProjectRequest {
+  parentPath: string;
+  folderName: string;
+}
+
 export interface OpenProjectRequest {
   folderPath: string;
 }
@@ -238,6 +243,10 @@ export async function fetchRuntimeStatus(): Promise<RuntimeStatus> {
 
 export async function createProject(request: CreateProjectRequest): Promise<CreateProjectResponse> {
   return postJson<CreateProjectResponse>("/api/project/create", request);
+}
+
+export async function createDemoProject(request: CreateDemoProjectRequest): Promise<CreateProjectResponse> {
+  return postJson<CreateProjectResponse>("/api/project/create-demo", request);
 }
 
 export async function openProject(request: OpenProjectRequest): Promise<OpenProjectResponse> {
