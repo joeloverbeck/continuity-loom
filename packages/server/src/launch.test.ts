@@ -4,10 +4,17 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { launch, parseLaunchArgs } from "./launch.js";
+import { launch, loadRootEnv, parseLaunchArgs } from "./launch.js";
+
+const originalApiKey = process.env.OPENROUTER_API_KEY;
 
 afterEach(() => {
   vi.restoreAllMocks();
+  if (originalApiKey === undefined) {
+    delete process.env.OPENROUTER_API_KEY;
+  } else {
+    process.env.OPENROUTER_API_KEY = originalApiKey;
+  }
 });
 
 describe("launch", () => {
@@ -18,6 +25,25 @@ describe("launch", () => {
       port: 5123,
       webDistDir: "/tmp/web-dist"
     });
+  });
+
+  it("loads an OpenRouter API key from an env file", () => {
+    const envDir = mkdtempSync(join(tmpdir(), "loom-env-"));
+    const envPath = join(envDir, ".env");
+    delete process.env.OPENROUTER_API_KEY;
+    writeFileSync(envPath, "OPENROUTER_API_KEY=sk-or-env-fixture\n");
+
+    loadRootEnv(envPath);
+
+    expect(process.env.OPENROUTER_API_KEY).toBe("sk-or-env-fixture");
+  });
+
+  it("does not throw when the env file is absent", () => {
+    const envPath = join(mkdtempSync(join(tmpdir(), "loom-env-")), ".env");
+    delete process.env.OPENROUTER_API_KEY;
+
+    expect(() => loadRootEnv(envPath)).not.toThrow();
+    expect(process.env.OPENROUTER_API_KEY).toBeUndefined();
   });
 
   it("prints the loopback URL when serving", async () => {
