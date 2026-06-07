@@ -18,9 +18,9 @@ describe("validation taxonomy capstone", () => {
     input.generationSession.current_authoritative_state = minimumCurrentState();
     input.generationSession.immediate_handoff = undefined;
     input.generationSession.stop_guidance = { soft_unit_guidance: "" };
-    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["first_segment"];
-    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
-    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [];
+    input.generationSession.generation_validation_focus.validation_focus_tags.generation_context = ["first_segment"];
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [];
 
     const result = runValidation(buildValidationSnapshot(input));
 
@@ -31,7 +31,7 @@ describe("validation taxonomy capstone", () => {
   it("keeps the required blockers after the taxonomy correction", () => {
     const continuation = demoInput();
     continuation.generationSession.immediate_handoff = undefined;
-    continuation.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+    continuation.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
       "continuation_after_accepted_segment"
     ];
     expect(blockerCodes(continuation)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
@@ -56,7 +56,7 @@ describe("validation taxonomy capstone", () => {
     expect(blockerCodes(missingContext)).not.toContain(DIAGNOSTIC_CODES.focusTagCountInvalid);
 
     const malformedContext = demoInput();
-    malformedContext.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+    malformedContext.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
       "first_segment",
       "continuation_after_accepted_segment"
     ];
@@ -66,7 +66,7 @@ describe("validation taxonomy capstone", () => {
   it("treats missing voice pins and salience risks as warnings, not blockers", () => {
     const input = demoInput();
     input.generationSession.current_cast_voice_pressure = [];
-    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
       "dialogue_expected"
     ];
     input.records = [
@@ -91,8 +91,8 @@ describe("validation taxonomy capstone", () => {
   it("does not activate physical blockers from selected object records alone", () => {
     const input = demoInput();
     input.generationSession.current_authoritative_state = minimumCurrentState();
-    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
-    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [];
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
@@ -102,7 +102,7 @@ describe("validation taxonomy capstone", () => {
   it("keeps warning diagnostics out of the compiled prompt", () => {
     const input = demoInput();
     input.generationSession.current_cast_voice_pressure = [];
-    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
       "dialogue_expected"
     ];
     const snapshot = buildValidationSnapshot(input);
