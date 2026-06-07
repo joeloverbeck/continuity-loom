@@ -313,6 +313,7 @@ describe("record data model", () => {
       current_time: "Night",
       current_location: idA,
       onstage_entities: [idA],
+      immediate_situation_summary: "A waits by the door while the hallway remains quiet.",
       offstage_pressuring_entities: [],
       positions: "A stands at the door.",
       possessions: "A has the key.",

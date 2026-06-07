@@ -16,6 +16,7 @@ describe("generation brief readiness normalization", () => {
         current_time: "  morning  ",
         current_location: "  old station  ",
         onstage_entities: [idA],
+        immediate_situation_summary: "  Mara is at the turnstile while the offered key changes the conversation. ",
         positions: ["  Mara is at the turnstile.  ", ""],
         visible_conditions: ["", "  coat soaked  "],
         routes_and_exits: []
@@ -65,6 +66,7 @@ describe("generation brief readiness normalization", () => {
         current_time: "morning",
         current_location: "old station",
         onstage_entities: [idA],
+        immediate_situation_summary: "Mara is at the turnstile while the offered key changes the conversation.",
         positions: ["Mara is at the turnstile."],
         visible_conditions: ["coat soaked"]
       },

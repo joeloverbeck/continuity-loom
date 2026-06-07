@@ -129,6 +129,32 @@ describe("migrateGenerationSessionDraft", () => {
     });
   });
 
+  it("backfills missing immediate situation summary without reading accepted prose", () => {
+    const db = database();
+    addAcceptedSegment(db);
+    setGenerationSession(db, {
+      current_authoritative_state: {
+        current_time: "late morning",
+        current_location: "bakery cellar",
+        onstage_entities: [idA]
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+
+    expect(generationSessionRow(db).payload).toMatchObject({
+      current_authoritative_state: {
+        current_time: "late morning",
+        current_location: "bakery cellar",
+        onstage_entities: [idA],
+        immediate_situation_summary: "None currently specified"
+      }
+    });
+    expect(JSON.stringify(generationSessionRow(db).payload)).not.toContain(
+      "Accepted prose text must not be read by the migration."
+    );
+  });
+
   it("removes empty current-cast-pressure rows and preserves semantic rows", () => {
     const db = database();
     setGenerationSession(db, {

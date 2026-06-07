@@ -102,6 +102,7 @@ Special style constraints: {special_style_constraints}
 Time: {current_time}
 Location: {current_location}
 Onstage entities: {onstage_entities}
+Immediate situation: {immediate_situation_summary}
 Offstage but pressuring entities: {offstage_pressuring_entities}
 Current physical positions: {positions}
 Current agency/status: {entity_statuses}

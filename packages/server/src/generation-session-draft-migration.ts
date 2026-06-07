@@ -1,5 +1,6 @@
 import {
   deriveGenerationContextDefault,
+  EMPTY_STATE_CONSTANTS,
   generationSessionDraftSchema,
   type GenerationSessionDraft
 } from "@loom/core";
@@ -59,6 +60,21 @@ function backfillGenerationContext(
   };
 }
 
+function backfillImmediateSituationSummary(session: GenerationSessionDraft): GenerationSessionDraft {
+  const currentState = session.current_authoritative_state;
+  if (!currentState || currentState.immediate_situation_summary?.trim()) {
+    return session;
+  }
+
+  return {
+    ...session,
+    current_authoritative_state: {
+      ...currentState,
+      immediate_situation_summary: EMPTY_STATE_CONSTANTS.immediate_situation_summary
+    }
+  };
+}
+
 function hasSemanticCastPressure(entry: NonNullable<GenerationSessionDraft["current_cast_voice_pressure"]>[number]) {
   return Object.entries(entry).some(([key, value]) => {
     if (key === "cast_member_id" || key === "local_function") {
@@ -100,9 +116,11 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
 
   const original = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
   const migrated = removeEmptyCastPressureRows(
-    backfillGenerationContext(
-      stripFabricatedDirective(original),
-      acceptedSegmentCount(database)
+    backfillImmediateSituationSummary(
+      backfillGenerationContext(
+        stripFabricatedDirective(original),
+        acceptedSegmentCount(database)
+      )
     )
   );
 

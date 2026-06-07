@@ -617,6 +617,8 @@ export const demoGenerationSession = {
     current_time: "Late morning, minutes after the market bell rang early.",
     current_location: demoRecordIds.bakeryCellar,
     onstage_entities: [demoRecordIds.elinEntity, demoRecordIds.nikoEntity],
+    immediate_situation_summary:
+      "Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.",
     offstage_pressuring_entities: [demoRecordIds.maraEntity, demoRecordIds.orinEntity],
     positions: [
       "Elin stands beside the flour bin with the shuttered lantern in hand.",

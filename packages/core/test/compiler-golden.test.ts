@@ -81,6 +81,7 @@ function goldenInput(): BuildValidationSnapshotInput {
         current_time: "Dawn.",
         current_location: "Archive.",
         onstage_entities: ["019b0298-5c00-7000-8000-000000000501"],
+        immediate_situation_summary: "Mara is alone in the archive with the ledger exposed on the desk.",
         offstage_pressuring_entities: [],
         positions: "Mara stands in the aisle.",
         possessions: "The ledger is on the desk.",

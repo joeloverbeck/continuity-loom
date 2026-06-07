@@ -1,6 +1,6 @@
 # SPECVALGATTAX-001: Add `immediate_situation_summary` current-state field, placeholder, and backfill
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new generation-time-brief field (`current_authoritative_state.immediate_situation_summary`) across final/draft/ready schemas; new prompt placeholder + template slot; `docs/compiler-contract.md` + `docs/story-record-schema.md` updates; draft-migration backfill. Production behavior changes (a new prompt-facing line and a new field the snapshot carries).
@@ -95,3 +95,17 @@ Add a backfill in `packages/server/src/generation-session-draft-migration.ts` th
 
 1. `npm run -w @loom/core build && npx vitest run packages/core/test/generation-brief-draft.test.ts packages/core/test/compiler-golden.test.ts`
 2. `npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented `current_authoritative_state.immediate_situation_summary` across strict, draft, and readiness schemas; added the prompt placeholder, empty-state constant, front-section resolver, template line, demo value, field guidance, prompt-template docs, compiler contract entry, and story schema documentation. Added a generation-session draft migration that backfills existing current-state objects with the deterministic empty-state value without reading accepted prose.
+
+Deviations from original plan: also updated `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, field-guidance coverage, readiness normalization, and records fixtures because the new prompt-facing schema field made those active surfaces fail the full suite.
+
+Verification results:
+
+- `npm run -w @loom/core build` passed.
+- `npx vitest run packages/core/test/generation-brief-draft.test.ts packages/core/test/compiler-golden.test.ts packages/server/src/generation-session-draft-migration.test.ts` passed.
+- `npm test` passed: 95 test files, 556 tests.

@@ -32,6 +32,7 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   genre_mode: "None specified",
   governing_policy_note: "None specified",
   hard_canon_bullets: "None selected for this generation",
+  immediate_situation_summary: "None currently specified",
   interiority_mode: "None specified",
   language_output: "None specified",
   language_register: "None specified",

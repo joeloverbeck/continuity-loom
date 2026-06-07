@@ -41,6 +41,7 @@ const currentAuthoritativeStateReadySchema = z
     current_time: readyString.optional(),
     current_location: z.union([recordId, readyString]).optional(),
     onstage_entities: z.array(recordId).optional(),
+    immediate_situation_summary: readyString,
     offstage_pressuring_entities: z.array(recordId).optional(),
     positions: z.union([readyString, z.array(readyString)]).optional(),
     possessions: z.union([readyString, z.array(readyString)]).optional(),

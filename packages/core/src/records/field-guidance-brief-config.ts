@@ -183,6 +183,17 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   brief("current_authoritative_state.onstage_entities[]", "Entities physically or narratively onstage now.", [
     "{onstage_entities}"
   ], currentStateOpts),
+  brief(
+    "current_authoritative_state.immediate_situation_summary",
+    "Short user-authored summary of the immediate local situation.",
+    ["{immediate_situation_summary}"],
+    {
+      ...currentStateOpts,
+      doctrineWarnings: ["Do not derive this from accepted prose, candidate prose, or automatic summaries."],
+      examples: ["Elin and Niko are in the cellar while she guards the hidden flour bin."],
+      authoringAdvice: "Keep it local, state-like, and prose-neutral; describe the starting situation, not an outline."
+    }
+  ),
   brief("current_authoritative_state.offstage_pressuring_entities[]", "Offstage entities exerting immediate pressure.", [
     "{offstage_pressuring_entities}"
   ], currentStateOpts),
