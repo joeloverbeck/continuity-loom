@@ -3,21 +3,27 @@ import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
-  warnPromptLengthRisk,
+  warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
   warnSparseSettingTexture,
   warnNoActiveClockPressure,
   warnLocalVoicePressureMayHelp,
   warnEnsembleVoiceDistinctionRisk,
-  warnLongDossierNeedsPin,
+  warnCastSalienceRisk,
   warnLowDramaScenePressure,
   warnStaleSelectedRecord
 ]);
 
-function warnPromptLengthRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return JSON.stringify(snapshot).length > 5000
-    ? [warning(DIAGNOSTIC_CODES.promptLengthRisk, "Snapshot is large enough to risk lost-in-the-middle prompt behavior.", "records")]
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
+          "Snapshot is large enough to risk lost-in-the-middle prompt behavior.",
+          "records"
+        )
+      ]
     : [];
 }
 
@@ -108,18 +114,25 @@ function warnEnsembleVoiceDistinctionRisk(snapshot: ValidationSnapshot): readonl
     : [];
 }
 
-function warnLongDossierNeedsPin(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  return snapshot.records.flatMap((record) => {
-    if (record.type !== "CAST MEMBER" || JSON.stringify(record.payload).length <= 1200) {
-      return [];
-    }
+function warnCastSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const affectedLabels = snapshot.records
+    .filter((record) => record.type === "CAST MEMBER" && JSON.stringify(record.payload).length > 1200)
+    .filter((record) =>
+      !snapshot.generationSession.current_cast_voice_pressure.some(
+        (entry) => entry.cast_member_id === record.id && hasText(entry.current_voice_pressure)
+      )
+    )
+    .map((record) => record.metadata?.displayLabel ?? record.id);
 
-    const hasPin = snapshot.generationSession.current_cast_voice_pressure.some((entry) => entry.cast_member_id === record.id && hasText(entry.current_voice_pressure));
-
-    return hasPin
-      ? []
-      : [warning(DIAGNOSTIC_CODES.longDossierNeedsPin, "Long active dossier may need a stronger current voice/body pressure pin.", `record:${record.id}`)];
-  });
+  return affectedLabels.length > 0
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.castSalienceRisk,
+          `Long active cast dossiers may need a stronger local salience pin: ${affectedLabels.join(", ")}.`,
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
 }
 
 function warnLowDramaScenePressure(snapshot: ValidationSnapshot): readonly Diagnostic[] {

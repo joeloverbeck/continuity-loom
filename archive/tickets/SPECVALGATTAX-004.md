@@ -1,6 +1,6 @@
 # SPECVALGATTAX-004: Grouped salience warnings — `cast-salience-risk` and `prompt-middle-salience-risk`
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — replaces the per-record `long-dossier-needs-pin` warning with a once-per-result grouped `cast-salience-risk`; renames `prompt-length-risk` to `prompt-middle-salience-risk` (`warnings.ts`); enum updates (`types.ts`). Production behavior change (warning shape and codes change; still advisory).
@@ -78,3 +78,18 @@ Remove `longDossierNeedsPin` and `promptLengthRisk`; add `castSalienceRisk: "cas
 
 1. `npm run -w @loom/core build && npx vitest run packages/core/test/validation-warnings-security.test.ts`
 2. `npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Replaced `prompt-length-risk` with `prompt-middle-salience-risk` and replaced per-record `long-dossier-needs-pin` emissions with one grouped `cast-salience-risk` warning per validation result. Both diagnostics remain advisory warnings and do not affect `isBlocked`.
+
+Deviations from original plan: updated the core stress-coverage audit to reference the renamed/grouped warning codes so the diagnostic registry check remains current.
+
+Verification results:
+
+- `npm run -w @loom/core build` passed.
+- `npx vitest run packages/core/test/validation-warnings-security.test.ts packages/core/src/demo/stress-coverage.test.ts` passed.
+- `npm test` passed: 95 test files, 565 tests.
+- `rg -n "prompt-length-risk|promptLengthRisk|long-dossier-needs-pin|longDossierNeedsPin" packages/core/src` returned no matches.

@@ -14,7 +14,7 @@ const keyLikeValue = "sk-or-v1-abcdefghijklmnopqrstuvwxyz123456";
 
 describe("warnings and security validation", () => {
   it.each([
-    [DIAGNOSTIC_CODES.promptLengthRisk, (input: BuildValidationSnapshotInput) => {
+    [DIAGNOSTIC_CODES.promptMiddleSalienceRisk, (input: BuildValidationSnapshotInput) => {
       input.records = [record("big", "FACT", { statement: "x".repeat(6000) })];
     }],
     [DIAGNOSTIC_CODES.manyHighSalienceRecords, (input: BuildValidationSnapshotInput) => {
@@ -69,7 +69,7 @@ describe("warnings and security validation", () => {
         }
       };
     }],
-    [DIAGNOSTIC_CODES.longDossierNeedsPin, (input: BuildValidationSnapshotInput) => {
+    [DIAGNOSTIC_CODES.castSalienceRisk, (input: BuildValidationSnapshotInput) => {
       input.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     }],
     [DIAGNOSTIC_CODES.lowDramaScenePressure, (input: BuildValidationSnapshotInput) => {
@@ -87,6 +87,22 @@ describe("warnings and security validation", () => {
     expect(result.blockers).toEqual([]);
     expect(result.isBlocked).toBe(false);
     expect(result.warnings.every((warning) => warning.severity === "warning")).toBe(true);
+  });
+
+  it("groups multiple long active cast dossier salience risks into one warning", () => {
+    const input = baseInput();
+    input.records = [
+      record("cast-a", "CAST MEMBER", { biography: "x".repeat(1300) }, "active_onstage_cast_full"),
+      record("cast-b", "CAST MEMBER", { biography: "y".repeat(1300) }, "active_onstage_cast_full")
+    ];
+
+    const result = runValidation(buildValidationSnapshot(input), warningRules);
+    const salienceWarnings = result.warnings.filter((warning) => warning.code === DIAGNOSTIC_CODES.castSalienceRisk);
+
+    expect(salienceWarnings).toHaveLength(1);
+    expect(salienceWarnings[0]?.severity).toBe("warning");
+    expect(result.blockers).toEqual([]);
+    expect(result.isBlocked).toBe(false);
   });
 
   it("blocks API-key-like prompt-facing text without echoing the matched key", () => {
