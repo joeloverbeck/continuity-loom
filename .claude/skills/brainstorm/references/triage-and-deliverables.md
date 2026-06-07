@@ -44,13 +44,41 @@ Findings discovered during exploration that are NOT in the source report (adjace
 When the request is a diagnostic question or exploration prompt rather than a formal report ("figure out why X", "what's happening with Z"), there's no source report to evaluate verdicts against:
 
 - **Check for a prior triage of this surface first.** A no-source-report conformance/diagnostic *re-audit* is the common case where an earlier `docs/triage/` record already exists; glob/grep `docs/triage/` (and existing `tickets/`/`specs/`) for the same spec or surface **before** forming findings, and frame the pass as a delta — don't re-propose a deliberately-deferred or already-rejected item as fresh. This discovery is also the precondition for the §User-pre-authorization reversal-check (surface a prior-decision reversal before the scope `AskUserQuestion`).
-- **For a runtime/UI-defect diagnostic, reproduce before diagnosing.** Drive the defect with the available browser-automation / CLI tooling (Puppeteer/Playwright MCP, `curl`, devtools resources such as `console://logs`) and capture concrete evidence — console output, the failing request(s) + status code, repro steps — *before* forming `O<N>` findings. Map each symptom to a specific request/root cause rather than relaying raw console text (e.g. when the console omits URLs, correlate via resource timing and probe each endpoint's status).
+- **For a runtime/UI-defect diagnostic, reproduce before diagnosing.** Drive the defect with the available browser-automation / CLI tooling (Puppeteer/Playwright MCP, `curl`, devtools resources such as `console://logs`) and capture concrete evidence — console output, the failing request(s) + status code, repro steps — *before* forming `O<N>` findings. Map each symptom to a specific request/root cause rather than relaying raw console text (e.g. when the console omits URLs, correlate via resource timing and probe each endpoint's status). When the user names a specific repro tool or path (e.g. "open the project, then Settings" via Puppeteer/Playwright), confirm the symptom at that layer at least once before substituting a cheaper proxy (`curl`, a code trace) for the remaining investigation — a proxy can diverge from what the user actually sees.
 - **Omit the verdict-bucket section entirely** — the verdicts are defined against source-report items.
-- **Route all findings to the out-of-report sub-section**, keyed `O<N>`. The answers to the user's questions ARE the findings — emit them as `O1`, `O2`, …, not as synthetic `R<N>` items restating the questions.
+- **Route all findings to the out-of-report sub-section**, keyed `O<N>`. The answers to the user's questions ARE the findings — emit them as `O1`, `O2`, …, not as synthetic `R<N>` items restating the questions. When the diagnosis is a *single* root cause backed by an evidence chain, key it as one `O<N>` finding (the root cause) with nested evidence bullets — reserve multiple `O<N>` for genuinely distinct findings, so `O<N>` always means "finding," not "evidence line."
 - **The closing structure still applies.**
 - **Companion `docs/triage/` record shape (when ≥3 tickets / ≥2 specs trigger it).** The §Deliverable classification companion rule is written for source-report triage ("accepted items / dismissed items"); that framing does not fit a no-source-report diagnostic, which has no verdict buckets. Instead structure the companion as: the reproduction/evidence summary (repro steps, failing requests + status codes, captured console output); the `O<N>` findings, each with its recommended fix and the ticket/spec it landed in; the decisions taken (including any `AskUserQuestion` choices that shaped the deliverables); and the finding→deliverable map. Omit the "dismissed items" section unless a candidate fix was genuinely considered and rejected. The ≤80-line companion budget still applies.
-- **When the diagnostic resolves to a recommended *action* (not a set of independent work items)** — i.e. the question is "what should we do about X?" and the answer is one course of action weighed against alternatives — the `O<N>` findings carry the *answer* (the diagnosis), and the close borrows Step 3's recommendation shape in place of (or alongside) the deliverable-shape recommendation: name the recommended action upfront, then the rejected alternatives with their grounds, then any optional add-ons. This is the sanctioned blend for action-shaped diagnostics; don't force an action choice into the flat `O<N>` finding list. **When the diagnostic instead resolves to a *set* of independent fixes** (several `O<N>` findings, each warranting its own work item), each `O<N>` may carry its own recommended fix + rejected alternatives, and the close is the deliverable-shape recommendation with a finding→deliverable map — distinct from both the single-action blend and the bare flat list (reserve the bare flat list for findings that are pure observations with no per-finding fix to weigh).
+- **When the diagnostic resolves to a recommended *action* (not a set of independent work items)** — i.e. the question is "what should we do about X?" and the answer is one course of action weighed against alternatives — the `O<N>` findings carry the *answer* (the diagnosis), and the close borrows Step 3's recommendation shape in place of (or alongside) the deliverable-shape recommendation: name the recommended action upfront, then the rejected alternatives with their grounds, then any optional add-ons. This is the sanctioned blend for action-shaped diagnostics; don't force an action choice into the flat `O<N>` finding list. **When the diagnostic instead resolves to a *set* of independent fixes** (several `O<N>` findings, each warranting its own work item), each `O<N>` may carry its own recommended fix + rejected alternatives, and the close is the deliverable-shape recommendation with a finding→deliverable map — distinct from both the single-action blend and the bare flat list (reserve the bare flat list for findings that are pure observations with no per-finding fix to weigh). **A third shape sits between these: a single root cause with one fix whose remediation spans multiple deliverables** (the common code-fix-plus-docs/tests case). Use the single-action recommendation shape for the diagnosis/close, and treat the deliverable split as a material-deliverable-shape decision settled via `AskUserQuestion` (the count crosses 1↔multi) per §Closing structure and Guardrails §User pre-authorization — don't mistake it for a set of independent fixes (the root cause and fix are one; only the deliverables divide).
 - **When the request is a conformance audit against an authority doc/contract** ("ensure the implementation matches `story-record-schema.md`", "verify X conforms to `compiler-contract.md`") — a frequent no-source-report shape — group the findings by *remediation route* (fix-code / amend-authority-doc / no-action-affirm) rather than by the report-oriented verdict types, since the natural disposition of each discrepancy is which side moves (code or doc). Keep the `O<N>` keying (the closed identifier convention still holds — don't coin an `F<N>` prefix), and include a brief affirming "what already conforms" note so the audit reads as coverage, not just a defect list. The remediation route is the per-item disposition; a "judgment-call" discrepancy (code-or-doc unclear) is surfaced as its own item with the recommendation and the rejected alternative.
+
+#### Worked skeleton (no-source-report)
+
+Parallels the source-report §Worked skeleton below. Use the `## Recommended fix` block for the action-shaped and single-fix-multiple-deliverable closes; for a set of independent fixes, drop that block and give each `O<N>` its own fix + rejected alternatives.
+
+```markdown
+## <Why X — root-cause headline>
+
+## Findings (out-of-report)
+- **O1** — <root cause>. _Evidence_: <file:line / repro output>.
+  - <evidence bullet>            ← single root cause: nest evidence under one O<N>
+  - <evidence bullet>
+- **O2** — <distinct finding, only if genuinely separate>.   ← set-of-fixes: one O<N> per finding
+  _Recommended fix_: <fix>. _Rejected_: <alt — grounds>.    ← per-finding fix (set-of-fixes shape only)
+
+## Recommended fix    ← action-shaped & single-fix-multiple-deliverable shapes only
+<recommended action upfront>
+_Rejected alternatives_: <alt — grounds>; <alt — grounds>.
+
+## Deliverable-shape recommendation
+<1 ticket / N tickets / spec — per §Deliverable classification; for single-fix-multiple-deliverable, confirm the count via AskUserQuestion; finding→deliverable map for ≥2 deliverables>
+
+## FOUNDATIONS alignment (product-behavior only)
+<principle @ surface — aligns / tensions>
+
+## Named assumptions
+(1) <unknown> — assuming <assumption>; (2) ...
+```
 
 ### Closing structure
 
