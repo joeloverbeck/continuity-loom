@@ -132,6 +132,12 @@ describe("record editor descriptors", () => {
 
   it("derives display labels from representative payloads", () => {
     expect(deriveDisplayLabel("ENTITY", { display_name: "Rhea Vale" })).toBe("Rhea Vale");
+    expect(
+      deriveDisplayLabel("CAST MEMBER", {
+        identity: { one_line: "Ane Arrieta, 18, a self-employed sex worker." }
+      })
+    ).toBe("Ane Arrieta, 18, a self-employed sex worker.");
+    expect(deriveDisplayLabel("CAST MEMBER", { entity_id: "entity-ane" })).toBe("entity-ane");
     expect(deriveDisplayLabel("FACT", { statement: "A very old promise controls the west gate." })).toBe(
       "A very old promise controls the west gate."
     );
