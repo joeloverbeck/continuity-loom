@@ -1,6 +1,6 @@
 # SPECVALGATTAX-002: Minimum universal brief-surface blocker set
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — rewrites `validateGenerationBriefSurfaces` and `validateGenerationContextFocus` (`universal-completeness.ts`); extends stop-guidance markers in `universal-blockers.ts`; removes the `missing-stop-guidance` code from `DIAGNOSTIC_CODES`. Production behavior change (a quiet first local unit stops being falsely blocked).
@@ -98,3 +98,18 @@ Remove `missingStopGuidance` from `DIAGNOSTIC_CODES`. Leave `missingCurrentAutho
 
 1. `npm run -w @loom/core build && npx vitest run packages/core/test/validation-completeness.test.ts packages/core/test/validation-blockers.test.ts`
 2. `npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented the minimum universal current-state blocker set: `current_time`, `current_location`, `onstage_entities`, and `immediate_situation_summary`. Blank `soft_unit_guidance` no longer produces a blocker, `missing-immediate-handoff` is gated to `continuation_after_accepted_segment`, and `focus-tag-count-invalid` now reports only malformed multiple generation contexts. Nonlocal stop guidance continues to block through `local-prose-scope-violation`.
+
+Deviations from original plan: made the narrow dependent `FOUNDATIONS.md` §4.5/§11 amendment in this ticket so the validator no longer contradicts the active constitution after retiring the stop-guidance hard fail. Updated blocker-free test fixtures across core and server suites to include the new minimum current-state field introduced by SPECVALGATTAX-001.
+
+Verification results:
+
+- `npm run -w @loom/core build` passed.
+- `npx vitest run packages/core/test/validation-completeness.test.ts packages/core/test/validation-blockers.test.ts` passed.
+- `npm test` passed: 95 test files, 559 tests.
+- `rg -n "missing-stop-guidance|missingStopGuidance" packages/core/src` returned no matches.

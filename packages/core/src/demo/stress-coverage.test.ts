@@ -40,7 +40,6 @@ const MATRIX_DIAGNOSTIC_CODES = [
   DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
   DIAGNOSTIC_CODES.missingImmediateHandoff,
   DIAGNOSTIC_CODES.missingManualDirective,
-  DIAGNOSTIC_CODES.missingStopGuidance,
   DIAGNOSTIC_CODES.promptFacingProseContamination,
   DIAGNOSTIC_CODES.handoffCurrentStateContradiction,
   DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete,

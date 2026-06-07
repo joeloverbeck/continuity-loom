@@ -53,7 +53,6 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   missingImmediateHandoff: "missing-immediate-handoff",
   missingManualDirective: "missing-manual-directive",
   missingStoryConfig: "missing-story-config",
-  missingStopGuidance: "missing-stop-guidance",
   matrixAmbiguousPerceptionIncomplete: "matrix-ambiguous-perception-incomplete",
   matrixActiveSilentPresenceIncomplete: "matrix-active-silent-presence-incomplete",
   matrixDialogueIncomplete: "matrix-dialogue-incomplete",

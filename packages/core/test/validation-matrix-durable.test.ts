@@ -169,6 +169,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A is at the loading door while the key changes hands.",
         offstage_pressuring_entities: [institutionId],
         positions: "A stands by the loading door.",
         possessions: "The key is in A's hand.",
