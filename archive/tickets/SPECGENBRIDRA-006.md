@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-006: Snapshot builder generation_context last-defense default
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `buildSnapshotFromOpenProject` applies `deriveGenerationContextDefault` from accepted-segment count before validation; modifies `snapshot-builder.ts`; new test file
@@ -74,3 +74,20 @@ The `focus-tag-count-invalid` false blocker exists because the server validation
 
 1. `npx vitest run packages/server/src/snapshot-builder.test.ts` — targeted snapshot-default tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Updated `buildSnapshotFromOpenProject` to derive a server-visible `generation_context` default from `repository.listAcceptedSegments().length` when the persisted draft lacks a context, while preserving an explicit valid context. Added focused coverage in `packages/server/src/snapshot-builder.test.ts`.
+
+Deviations from original plan: the defaulted strict snapshot focus object also fills `expected_local_modes` and `possible_durable_changes` with empty arrays to preserve the current strict `GenerationSession` snapshot shape.
+
+Verification results:
+
+- `npm exec vitest run packages/server/src/snapshot-builder.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
