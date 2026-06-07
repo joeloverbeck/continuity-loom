@@ -1,6 +1,6 @@
 # CONFIGDEDUP-002: De-register STORY CONTRACT / UNIVERSAL CONTENT POLICY / PROSE MODE as story-record types
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — record registry (`packages/core/src/records/registry.ts`, `global-config.ts`), compile-destinations preview (`packages/core/src/records/compile-destinations.ts`), and their tests. No prompt-template, compiler-output, or validation-rule behavior change.
@@ -96,3 +96,30 @@ FOUNDATIONS basis: §13 (atomic record enumeration deliberately excludes these t
 1. `rg -n "STORY CONTRACT|UNIVERSAL CONTENT POLICY|PROSE MODE" packages/core/src/records/` — expect hits only in `global-config.ts` (schemas/types) and `compile-destinations.ts` family label context, none as `recordTypeFamilies` keys or registry entries.
 2. `npm test`
 3. `npm run lint && npm run typecheck`
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+
+- Removed `globalConfigDefinitions` and its spread into the core record registry, while keeping the three config schemas and exported types.
+- Removed the three false `recordTypeFamilies` mappings from `compile-destinations.ts`.
+- Removed stale label-field fallbacks for the three config kinds from `editor-descriptors.ts`.
+- Updated core tests to prove `recordTypes` excludes the three kinds, `getRecordTypeDefinition` returns `undefined`, and `parseRecordPayload("STORY CONTRACT", ...)` fails closed.
+- Updated compile-destination tests to prove hypothetical config-kind records route only to `other_selected_records`.
+- Updated `RecordBrowser` tests to prove the create rail offers no buttons for the three config kinds.
+- Split the story configuration editor from record-type registration by letting `RecordEditor` accept an explicit descriptor/schema and by giving `StoryConfigEditor` its own config descriptors backed by the existing story-config schemas.
+
+Deviations from original plan:
+
+- `StoryConfigEditor.tsx` and `RecordEditor.tsx` needed scoped changes because the story-config page was previously borrowing record-editor descriptors from `recordTypeRegistry`; removing the duplicate record types otherwise made the legitimate `/story-config` page render "Unsupported record type." The final path keeps `story_config` editable without reintroducing record-type registration.
+
+Verification:
+
+- Targeted tests passed: `packages/web/src/config/StoryConfigEditor.test.tsx`, `packages/web/src/records/RecordBrowser.test.tsx`, `packages/core/test/records.test.ts`, and `packages/core/test/compile-destinations.test.ts`.
+- Record-path grep proof passed with no hits for `globalConfigDefinitions`, global-config `recordType:` wrappers, or global-config `recordTypeFamilies` mappings.
+- `npm test` passed: 75 files, 460 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- Production localhost smoke via `npm start` + Playwright opened red-bunny, confirmed `/records` create rail no longer offered `Create STORY CONTRACT`, `Create UNIVERSAL CONTENT POLICY`, or `Create PROSE MODE`, and confirmed `/story-config` still rendered editable Story Contract, Universal Content Policy, and Prose Mode sections. The only console error was the expected 404 for missing red-bunny `PROSE MODE`.

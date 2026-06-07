@@ -84,4 +84,24 @@ describe("whatWillCompile", () => {
 
     expect(familyIds).not.toContain("other_selected_records");
   });
+
+  it("does not route story_config kinds as record-backed compile inputs", () => {
+    expect(
+      whatWillCompile([
+        { id: "story-contract", type: "STORY CONTRACT", displayLabel: "Story contract" },
+        { id: "content-policy", type: "UNIVERSAL CONTENT POLICY", displayLabel: "Policy" },
+        { id: "prose-mode", type: "PROSE MODE", displayLabel: "Prose mode" }
+      ])
+    ).toEqual([
+      {
+        familyId: "other_selected_records",
+        label: "Other selected records",
+        records: [
+          { id: "prose-mode", type: "PROSE MODE", displayLabel: "Prose mode" },
+          { id: "story-contract", type: "STORY CONTRACT", displayLabel: "Story contract" },
+          { id: "content-policy", type: "UNIVERSAL CONTENT POLICY", displayLabel: "Policy" }
+        ]
+      }
+    ]);
+  });
 });

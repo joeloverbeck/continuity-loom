@@ -67,11 +67,8 @@ const recordTypeFamilies: Readonly<Record<string, CompileDestinationFamilyId>> =
   OBLIGATION: "plans_clocks_obligations",
   "OPEN THREAD": "plans_clocks_obligations",
   PLAN: "plans_clocks_obligations",
-  "PROSE MODE": "story_contract_and_prose_mode",
   RELATIONSHIP: "facts_beliefs_events",
   SECRET: "pov_audience_and_reveal_constraints",
-  "STORY CONTRACT": "story_contract_and_prose_mode",
-  "UNIVERSAL CONTENT POLICY": "story_contract_and_prose_mode",
   "VISIBLE AFFORDANCE": "locations_objects_affordances"
 });
 
