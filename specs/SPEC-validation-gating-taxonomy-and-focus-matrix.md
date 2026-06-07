@@ -4,6 +4,12 @@ Status: proposed active implementation spec
 Repository: `joeloverbeck/continuity-loom`  
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
+## Dependencies
+
+This is content-spec 2 in the generation-brief / validation / readiness sequence governed by `specs/IMPLEMENTATION-ORDER.md`. It consumes the landed Draftability/Save artifacts (`generationSessionDraftSchema`, `normalizeGenerationSessionDraft`, `deriveGenerationContextDefault`, `normalizeGenerationSessionForReadiness`, the `/api/generation-brief` draft save route) and produces the corrected blocker/warning taxonomy consumed by the Readiness/Three-Page UX spec. The "Separate draft and ready schemas," "Draft save route," "Deterministic defaults," and `generation_context` default decisions below are already delivered by that predecessor; they are restated here as the contract this spec builds on, not as new work.
+
+Constitutional coupling: retiring the `missing-stop-guidance` blocker, and minimizing the universal current-authoritative-state blocker, both depend on the FOUNDATIONS §11 amendment that removes the `missing stop guidance;` hard-fail bullet (line 348 at the target commit) and relaxes the universal-state hard-fail. That amendment lives in `specs/SPEC-foundational-doc-amendments-for-generation-readiness.md` and is sequenced at regression-plan Phase 7. Decomposition must treat the §11 amendment as a precondition or coupled change for the blocker retirements below; correcting the validator while FOUNDATIONS §11 still mandates the old blockers would put the validator in violation of the un-amended constitution.
+
 ## Executive decision
 
 The current validation rules are too strict in the wrong places and too vague in the places that should help the author. The corrected validator must distinguish structural impossibility from optional literary seasoning.
@@ -19,6 +25,16 @@ The current validation focus requires exactly one generation context but relies 
 The current universal voice rule blocks an active speaker or POV narrator merely because no current cast voice pressure row exists. That is backwards. Durable `CAST MEMBER` voice anchors are the primary voice authority; current cast voice pressure is a local salience pin or override-like emphasis.
 
 The current universal current-state rule requires many physical fields for every generation, including positions, routes, line of sight, available time, and locks. Those fields are sometimes essential. They are not universally essential for a quiet first local unit that does not involve movement, object transfer, coercion, violence, intimacy, offstage entrance, pursuit, or tight spatial blocking.
+
+## Current implementation baseline
+
+This is a correction spec (regression-plan Phase 4), not a greenfield build. The following already exist at the target commit and must be edited, not recreated:
+
+- The full context-gated matrix and its focus-tag vocabulary are implemented. `expected_local_modes` and `possible_durable_changes` carry exactly the tag sets tabulated below, dispatched by `validation/rules/matrix-voice.ts`, `matrix-physical.ts`, `matrix-knowledge.ts`, and `matrix-durable.ts`.
+- The deterministic empty state for blank `soft_unit_guidance` already exists verbatim in `compiler/empty-states.ts` (`EMPTY_STATE_CONSTANTS.soft_unit_guidance`). The remaining work is the validator flip, not the compiler string.
+- The dialogue and ensemble matrix rules already block on missing current voice pressure; this spec downgrades that to a warning.
+
+Genuine remaining deltas: retire `missing-stop-guidance`; context-gate `missing-immediate-handoff` to continuation; split `missing-current-authoritative-state` into minimum plus context-gated; remove `sparse-voice-pressure` as a universal blocker; replace `long-dossier-needs-pin` with grouped salience warnings; add the new `immediate_situation_summary` field; keep `focus-tag-count-invalid` only for malformed multiple context values.
 
 ## Blocker taxonomy
 
@@ -97,11 +113,10 @@ Soft unit: No additional user narrowing; use the universal local stop rule above
 
 The universal stop rule already tells the prose model to render only the next local unit and stop at the immediate response point. The blank user field therefore means “no extra narrowing,” not “no stop rule.”
 
-`missing-stop-guidance` must be retired or downgraded to an internal migration-only warning that never blocks. The preferred route is to remove it entirely and replace invalid nonblank stop guidance with specific blockers:
+`missing-stop-guidance` must be retired entirely as a blocker. Invalid nonblank stop guidance is already covered by existing blockers and must be handled by extending them rather than adding parallel `stop-guidance-*` codes:
 
-- `stop-guidance-nonlocal`
-- `stop-guidance-conflicts-with-launch-directive`
-- `stop-guidance-asks-for-future-consequences`
+- Non-local or future-consequence stop guidance is already caught by the existing `local-prose-scope-violation` rule (`validation/rules/universal-blockers.ts`), which scans prompt-facing stop guidance for non-local markers. Extend its marker set if any future-consequence phrasing is uncovered; do not introduce a separate code.
+- Stop guidance that contradicts the launch directive is already caught by the existing `directive-stop-guidance-disagreement` rule. Extend its agreement checks rather than adding a new code.
 
 ### Immediate handoff
 
@@ -141,9 +156,15 @@ The universal blocker set should be minimal:
 | `onstage_entities` | Yes | The model needs who/what is immediately present. |
 | `immediate_situation_summary` | Yes | The model needs the immediate pressure or settled situation in prose-neutral record terms. |
 
-`immediate_situation_summary` should be added to `current_authoritative_state`. It is not an outline. It is a short deterministic description of the current local situation, such as `Mara is alone in the pantry after hearing a sound near the flour bin.`
+`immediate_situation_summary` should be added to `current_authoritative_state`. It is not an outline. It is a short user-authored, record-neutral description of the current local situation, such as `Mara is alone in the pantry after hearing a sound near the flour bin.` It must stay user-authored; it must never be a prose-derived or auto-generated summary.
 
-All other current-state fields become context-gated.
+Because it is a new prompt-facing field promoted to a universal blocker, the deliverable must coordinate every surface in one change:
+
+- Schema: add it to `currentAuthoritativeStateSchema` in `packages/core/src/records/generation-brief.ts`, to the `GenerationSessionDraft` schema, and to `docs/story-record-schema.md`.
+- Compiler: add a new placeholder in `packages/core/src/compiler/placeholder-map.ts`, a deterministic entry in `EMPTY_STATE_CONSTANTS`, a slot in the universal prompt template, and a matching update to `docs/compiler-contract.md` in the same change (FOUNDATIONS §8 requires placeholder additions to update the compiler contract together).
+- Backfill: making this a universal blocker invalidates every existing draft/session until the field is present. Ship a migration/backfill alongside the existing draft migration that supplies the field, plus a deterministic empty state, so existing projects are not silently broken.
+
+All other current-state fields — `positions`, `visible_conditions`, `line_of_sight_and_visibility`, `routes_and_exits`, `available_time`, and `current_locks` — become context-gated. They are currently required by the universal blocker (`validation/rules/universal-completeness.ts`) and must be moved into the context-gated matrix below.
 
 ## Context-gated current-state matrix
 
@@ -251,6 +272,8 @@ Raised when active prompt inputs are large enough that important material may si
 
 This is advisory. It should cite the prompt-length estimate and the sections most likely to be diluted.
 
+This replaces the existing `prompt-length-risk` warning (`validation/rules/warnings.ts`), which is already a lost-in-the-middle warning. Rename or rewrite that rule into `prompt-middle-salience-risk` rather than running both in parallel.
+
 ## Diagnostic code changes
 
 Retire or change severity:
@@ -263,6 +286,16 @@ Retire or change severity:
 | `long-dossier-needs-pin` | Replace with grouped salience warnings. |
 | `missing-current-authoritative-state` | Split into minimum-state blocker and context-gated state blockers. |
 | `focus-tag-count-invalid` | Should not appear for missing context after normal defaults/backfill. Keep only for malformed multiple context values. |
+
+## FOUNDATIONS alignment
+
+| Principle | Alignment |
+|---|---|
+| §8 Deterministic prompt compilation | Validation derives requirements from explicit deterministic inputs only — no LLM validation, no semantic guessing from free prose. `immediate_situation_summary` is user-authored and renders through a deterministic placeholder. |
+| §11 Validation and hard fails | This spec is a §11 correction: it re-sorts diagnostics into blockers (structural impossibility) and warnings (quality risk), keeps blocking deterministic, and guarantees warnings never gate Preview/Generate and never enter the prompt. |
+| §15 POV, knowledge, secrets | The knowledge matrix (`secret_or_clue_pressure`, `introspection_expected`, `ambiguous_perception_expected`, `non_pov_hidden_plan_behavior`) preserves the secret firewall; no retirement weakens reveal-boundary blocking. |
+| §17 Character voice | The current cast voice pressure doctrine matches §17: the durable `CAST MEMBER` voice anchor is the primary authority; current voice pressure is a salience pin, so its absence warns rather than blocks. |
+| §29.5 Validation hard-fails | The `missing-stop-guidance` retirement is coupled to the sanctioned FOUNDATIONS §11 amendment (see Dependencies); it is not a unilateral relaxation. No retained blocker is weakened below what the amended §11 requires. |
 
 ## Tests
 
@@ -280,6 +313,13 @@ Validation tests must prove:
 - each focus tag activates only its deterministic matrix requirements;
 - generation context defaulting uses accepted-segment count;
 - no warning appears in the compiled prompt.
+
+## Risks and open questions
+
+- Promoting `immediate_situation_summary` to a universal blocker breaks every existing draft/session until backfilled. The backfill above is mandatory; verify it against the demo project before shipping.
+- The validator correction (Phase 4) lands before the FOUNDATIONS §11 amendment (Phase 7), opening a transient window where the validator and the un-amended constitution disagree. Decomposition must either sequence the §11 amendment first or land both together; this is tracked in `specs/SPEC-implementation-order-and-regression-plan.md`.
+- The matrix severity corrections and the new placeholder change the compiled prompt and its fingerprint; expect a deliberate template/compiler-contract version bump and golden-file regeneration (regression-plan Phase 3 risk note).
+- No open questions remain beyond the sequencing decision above.
 
 ## Research basis
 
