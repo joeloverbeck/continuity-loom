@@ -15,6 +15,7 @@ import { DatabaseSync } from "node:sqlite";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
+import { backfillDisplayLabels } from "./display-label-backfill.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables } from "./record-tables.js";
@@ -244,6 +245,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
       try {
         configureDatabase(database);
         ensureRecordTables(database);
+        backfillDisplayLabels(database);
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
         closeActive();
@@ -342,6 +344,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
         closeActive();
         ensureRecordTables(database);
+        backfillDisplayLabels(database);
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
         active = {

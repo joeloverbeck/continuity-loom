@@ -107,7 +107,7 @@ const referenceTargetsByRole: Readonly<Record<string, readonly string[]>> = Obje
 
 const labelFieldsByType: Readonly<Record<string, readonly string[]>> = Object.freeze({
   BELIEF: ["claim"],
-  CAST_MEMBER: ["identity.one_line", "entity_id"],
+  "CAST MEMBER": ["identity.one_line", "entity_id"],
   CLOCK: ["title"],
   CONSEQUENCE: ["current_effect"],
   EMOTION: ["description"],

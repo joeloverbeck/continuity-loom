@@ -1,6 +1,6 @@
 # CASTLABEL-001: Fix the CAST MEMBER label-field key mismatch in display-label derivation
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/records/editor-descriptors.ts` (`labelFieldsByType` key); regression test in `packages/core/test/editor-descriptors.test.ts`. No schema, compiler, validation, or stored-data change.
@@ -79,3 +79,19 @@ In `packages/core/test/editor-descriptors.test.ts`, extend the "derives display 
 
 1. `npm test -- editor-descriptors`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Changed `packages/core/src/records/editor-descriptors.ts` so `labelFieldsByType` uses the canonical `"CAST MEMBER"` record-type string instead of the unreachable `CAST_MEMBER` key. Added regression coverage in `packages/core/test/editor-descriptors.test.ts` proving CAST MEMBER labels derive from `identity.one_line` and fall back to `entity_id`.
+
+Deviations from original plan: none.
+
+Verification results:
+
+- `npm test -- editor-descriptors` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
+- `rg -n 'CAST_MEMBER|"CAST MEMBER"' packages/core/src/records/editor-descriptors.ts` shows only the canonical `"CAST MEMBER"` key.

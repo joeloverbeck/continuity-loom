@@ -30,6 +30,41 @@ const storyContractPayload = {
     paragraphing: "mixed"
   }
 } as const;
+const staleCastMemberPayload = {
+  entity_id: "019b0298-5c00-7000-8000-000000000001",
+  identity: {
+    one_line: "Ane Arrieta, 18, a self-employed sex worker.",
+    public_face: "Composed",
+    private_pressure: "Watching every exit."
+  },
+  voice_anchor: {
+    core_voice: "plainspoken",
+    rhythm_and_syntax: "short and precise",
+    register_and_diction: "direct",
+    vocabulary_and_metaphor_pools: "street work and weather",
+    profanity_and_intensity: "controlled",
+    taboo_and_avoidance_patterns: "avoids pity",
+    dialogue_tactics_and_speech_functions: "deflects",
+    address_terms_and_naming: "uses first names",
+    silence_interruption_and_turntaking: "lets silence sit",
+    under_pressure_voice: "clipped",
+    suppression_or_evasion_rule: "changes the subject",
+    must_preserve: ["directness"],
+    must_avoid: ["generic softness"],
+    anti_repetition_warnings: ["do not repeat weather metaphors"]
+  },
+  pressure_behavior_core: {
+    cornered: "narrows choices",
+    tempted_or_offered_power: "bargains",
+    protecting_attachment: "deflects"
+  },
+  body_presence_core: {
+    physicality: "still",
+    habitual_gestures_or_presence: "folded hands",
+    social_presentation: "controlled"
+  },
+  agency_core: { default_strategy: "delay", risk_style: "calculated" }
+} as const;
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-project-store-"));
@@ -63,6 +98,26 @@ function insertOrphanStoryContract(databasePath: string, id = "orphan-contract")
         "2026-06-07T00:00:00.000Z",
         "2026-06-07T00:00:00.000Z",
         JSON.stringify(storyContractPayload)
+      );
+  } finally {
+    database.close();
+  }
+}
+
+function insertStaleCastMemberLabel(databasePath: string): void {
+  const database = new DatabaseSync(databasePath);
+
+  try {
+    database
+      .prepare(
+        `INSERT INTO records (
+          id, type, display_label, archived, created_at, updated_at, payload_json
+        ) VALUES ('cast-ane', 'CAST MEMBER', 'Cast Member', 0, ?, ?, ?)`
+      )
+      .run(
+        "2026-06-07T00:00:00.000Z",
+        "2026-06-07T00:00:00.000Z",
+        JSON.stringify(staleCastMemberPayload)
       );
   } finally {
     database.close();
@@ -252,6 +307,31 @@ describe("createProjectStoreManager", () => {
           present_minor_cast_compressed: [],
           offstage_relevant_cast: []
         }
+      }
+    });
+  });
+
+  it("backfills stale display labels before exposing an opened repository", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "backfill-label",
+      title: "Backfill Label"
+    });
+    await firstManager.closeProject();
+
+    insertStaleCastMemberLabel(join(created.folderPath, "loom.sqlite"));
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+    const record = secondManager.getRecordRepository()?.getRecord("cast-ane");
+
+    expect(opened).toMatchObject({ ok: true });
+    expect(record).toMatchObject({
+      ok: true,
+      record: {
+        displayLabel: "Ane Arrieta, 18, a self-employed sex worker."
       }
     });
   });

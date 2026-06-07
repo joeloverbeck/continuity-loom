@@ -1,6 +1,6 @@
 # CASTLABEL-003: Associate working-set band/local_function controls with their cast member
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — `packages/web/src/working-set/WorkingSetView.tsx` (accessible names on the cast-band selects); test update in `packages/web/src/working-set/WorkingSetView.test.tsx`. No schema, compiler, validation, or stored-data change.
@@ -74,3 +74,18 @@ In `packages/web/src/working-set/WorkingSetView.test.tsx`, update the `getByLabe
 
 1. `npm test -- WorkingSetView`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Added cast-member-scoped accessible names to the working-set CAST MEMBER band and local_function selects using the row's `record.displayLabel`. Updated the coupled WorkingSetView regression test to query the controls by the new accessible names while preserving the existing persisted generation-brief payload assertions.
+
+Deviations from original plan: none.
+
+Verification results:
+
+- `npm test -- WorkingSetView` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.

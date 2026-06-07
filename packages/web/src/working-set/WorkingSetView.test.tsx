@@ -123,7 +123,9 @@ describe("WorkingSetView", () => {
     const castSection = await screen.findByRole("heading", { name: "CAST MEMBER" });
     const section = castSection.closest("section");
     expect(section).not.toBeNull();
-    fireEvent.change(within(section as HTMLElement).getByLabelText(/^band/), { target: { value: "active" } });
+    fireEvent.change(within(section as HTMLElement).getByLabelText("Cast band for Aster cast"), {
+      target: { value: "active" }
+    });
 
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
     const firstPayload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as {
@@ -133,7 +135,9 @@ describe("WorkingSetView", () => {
       selected_records: [castId],
       active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }]
     });
-    fireEvent.change(await screen.findByLabelText(/^local_function/), { target: { value: "physically_active" } });
+    fireEvent.change(await screen.findByLabelText("Local function for Aster cast"), {
+      target: { value: "physically_active" }
+    });
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalledTimes(2));
     const secondPayload = vi.mocked(setGenerationBrief).mock.calls[1]?.[0] as {
       active_working_set?: Record<string, unknown>;
