@@ -4,11 +4,11 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/web` shell (new project-open context, `AppShell` nav/routes, `ProjectPicker`, `DurableChangeReminder`). No `@loom/core` or `@loom/server` changes.
-**Deps**: None (PROJGATE-002 and PROJGATE-003 are independent and may land in any order)
+**Deps**: None (PROJGATE-002 is independent; `archive/tickets/PROJGATE-003.md` has landed)
 
 ## Problem
 
-With no project open, the seven project-scoped menu items — Records, Active Working Set, Generation Brief, Validation / Prompt Preview, Generate / Candidate, Accepted Segments, Story Configuration — are fully reachable and immediately fire project-scoped API calls on mount. The server fails closed with HTTP 409 `no-open-project`, which surfaces as console errors on every one of those views (live-reproduced 2026-06-06). The web app has **no shared notion of whether a project is open**: `ProjectPicker` (`packages/web/src/ProjectPicker.tsx`) and `DurableChangeReminder` (`packages/web/src/shell/DurableChangeReminder.tsx:48`) each call `getProject()` independently, and `AppShell` renders all routes unconditionally. This structural gap is the root cause of the mount-time 409s and the precondition for the Generation Brief crash tracked in PROJGATE-002 / PROJGATE-003.
+With no project open, the seven project-scoped menu items — Records, Active Working Set, Generation Brief, Validation / Prompt Preview, Generate / Candidate, Accepted Segments, Story Configuration — are fully reachable and immediately fire project-scoped API calls on mount. The server fails closed with HTTP 409 `no-open-project`, which surfaces as console errors on every one of those views (live-reproduced 2026-06-06). The web app has **no shared notion of whether a project is open**: `ProjectPicker` (`packages/web/src/ProjectPicker.tsx`) and `DurableChangeReminder` (`packages/web/src/shell/DurableChangeReminder.tsx:48`) each call `getProject()` independently, and `AppShell` renders all routes unconditionally. This structural gap is the root cause of the mount-time 409s and the precondition for the Generation Brief crash tracked in PROJGATE-002 / `archive/tickets/PROJGATE-003.md`.
 
 This ticket introduces a single source of truth for project-open state, gates the project-scoped navigation when no project is open (disabled-but-visible per the approved UX), and guards the routes so a typed URL or programmatic `navigate()` cannot mount a data-fetching view with no project.
 
@@ -72,7 +72,7 @@ Add `packages/web/src/shell/project-open.tsx`, modeled on `reminder-refresh.tsx`
 
 ## Out of Scope
 
-- The Generation Brief crash and its render-safety net (PROJGATE-002) and the unsound `validate()` transport typing (PROJGATE-003). This ticket prevents the *no-project* trigger by guarding the route, but the latent crash is fixed in those tickets.
+- The Generation Brief crash and its render-safety net (PROJGATE-002) and the unsound `validate()` transport typing (`archive/tickets/PROJGATE-003.md`). This ticket prevents the *no-project* trigger by guarding the route, but the latent crash is fixed in those tickets.
 - Any change to per-view empty-state copy beyond the shared `RequireProject` panel.
 - Any server, schema, compiler, or validation behavior change.
 

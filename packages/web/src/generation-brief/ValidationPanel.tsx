@@ -1,7 +1,7 @@
 import type { ValidationResult } from "@loom/core";
 import { useEffect, useState } from "react";
 
-import { validate } from "../api.js";
+import { type ApiFailure, validate } from "../api.js";
 import { ValidationResultView } from "./ValidationResultView.js";
 
 interface ValidationPanelProps {
@@ -24,6 +24,11 @@ export function ValidationPanel({ validationKey, onFocusField }: ValidationPanel
     void validate()
       .then((result) => {
         if (active) {
+          if (isApiFailure(result)) {
+            setState({ status: "error", message: validationFailureMessage(result) });
+            return;
+          }
+
           setState({ status: "ready", result });
         }
       })
@@ -62,4 +67,16 @@ export function ValidationPanel({ validationKey, onFocusField }: ValidationPanel
       <ValidationResultView result={state.result} {...(onFocusField ? { onFocusField } : {})} />
     </section>
   );
+}
+
+function isApiFailure(result: ValidationResult | ApiFailure): result is ApiFailure {
+  return "ok" in result && result.ok === false;
+}
+
+function validationFailureMessage(failure: ApiFailure): string {
+  if (failure.kind === "no-open-project") {
+    return "Open a project first.";
+  }
+
+  return failure.message || "Could not run validation.";
 }

@@ -17,6 +17,20 @@ afterEach(() => {
 });
 
 describe("ValidationPanel", () => {
+  it("surfaces validate failure bodies without rendering validation results", async () => {
+    vi.mocked(validate).mockResolvedValue({
+      ok: false,
+      kind: "no-open-project",
+      message: "No project is open."
+    });
+
+    renderPanel();
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Open a project first.");
+    expect(screen.queryByText(/Generation is not blocked/)).toBeNull();
+    expect(screen.queryByRole("heading", { name: /Blockers/ })).toBeNull();
+  });
+
   it("renders blockers and collapsible warnings separately with no override", async () => {
     vi.mocked(validate).mockResolvedValue({
       blockers: [

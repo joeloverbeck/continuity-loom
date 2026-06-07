@@ -1,6 +1,6 @@
 # PROJGATE-003: Sound failure handling for `validate()` so a 409/error body cannot masquerade as a ValidationResult
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web` (`api.ts` `validate()` typing, `generation-brief/ValidationPanel.tsx`). No `@loom/core` or `@loom/server` changes.
@@ -79,3 +79,24 @@ In `generation-brief/ValidationPanel.tsx`, branch on the result: if it is an `Ap
 1. `npm test --workspace @loom/web -- src/generation-brief/ValidationPanel.test.tsx`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted panel test plus typecheck (which proves the widened return type is fully handled by the single consumer) is the correct boundary; full `npm test` confirms no cross-package regression.
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+- `packages/web/src/api.ts` now types `validate()` as `ValidationResult | ApiFailure` so structured validation failure bodies are no longer represented as successful validation results.
+- `packages/web/src/generation-brief/ValidationPanel.tsx` detects `ApiFailure`, maps `no-open-project` to `Open a project first.`, and renders the panel error state instead of passing a malformed object to `ValidationResultView`.
+- `packages/web/src/api.test.tsx` verifies a 409 validation failure body is returned intact.
+- `packages/web/src/generation-brief/ValidationPanel.test.tsx` verifies the failure path renders the closed/error state and does not render validation result sections.
+
+Deviations from original plan:
+- No behavioral change was made to `requestJson()` or `postJson()`, matching the ticket's scoped architecture check.
+
+Verification results:
+- `npm test --workspace @loom/web -- src/generation-brief/ValidationPanel.test.tsx` passed.
+- `npm test --workspace @loom/web -- src/api.test.tsx` passed.
+- `npm test --workspace @loom/web` passed: 18 files, 112 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 72 files, 434 tests.

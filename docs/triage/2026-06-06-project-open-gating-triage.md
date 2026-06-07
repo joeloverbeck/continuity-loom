@@ -3,7 +3,7 @@
 **Date**: 2026-06-06
 **Source**: No formal report — diagnostic of a live bug. The app was reproduced at `http://127.0.0.1:5173/` (Puppeteer) with no project open; console behavior and crashes were captured per view.
 **Classification**: product-behavior (UI/workflow over project-ownership and story-state surfaces; governed by `docs/FOUNDATIONS.md` §27).
-**Deliverables**: `tickets/PROJGATE-001.md`, `tickets/PROJGATE-002.md`, `tickets/PROJGATE-003.md`.
+**Deliverables**: `tickets/PROJGATE-001.md`, `tickets/PROJGATE-002.md`, `archive/tickets/PROJGATE-003.md`.
 
 ## Reproduction (live, no project open)
 
@@ -19,7 +19,7 @@
 ### O1 — Generation Brief hard-crashes the whole SPA (BLOCKER)
 Chain: `ValidationPanel.tsx:24` calls `validate()` → `POST /api/validate` returns HTTP 409 `{ ok:false, kind:"no-open-project", … }`. `requestJson` (`api.ts:197`) never checks `response.ok`, so the failure body is cast to `ValidationResult` (`validate()` typed `Promise<ValidationResult>` at `api.ts:330` — unsound). `ValidationPanel` sets `status:"ready"` and passes it to `ValidationResultView`, which reads `result.blockers.length` (`ValidationResultView.tsx:33`) on `undefined` → throws. No React error boundary exists (grep-confirmed) → the throw unmounts the whole tree → blank page.
 
-**Recommended fix:** data-layer soundness at the `validate()` boundary + a render-safety net. → PROJGATE-003 (transport/typing) and PROJGATE-002 (error boundary).
+**Recommended fix:** data-layer soundness at the `validate()` boundary + a render-safety net. → `archive/tickets/PROJGATE-003.md` (transport/typing) and PROJGATE-002 (error boundary).
 **Rejected alternative:** make the shared `requestJson` throw on `!response.ok`. Rejected — `compile`, `generate`, settings, and accepted-segment callers intentionally consume `ok:false` bodies and render friendly failures; a global throw would break that handling.
 
 ### O2 — Pervasive mount-time 409 console errors + inconsistent empty states (MODERATE)
@@ -41,7 +41,7 @@ All seven project-scoped views fetch on mount with no project open; the server f
 ## FOUNDATIONS alignment
 
 - §27 (UI/workflow): all three tickets advance "clear distinction between surfaces," "make dangerous actions hard to do accidentally," and "respect power users without punishing ordinary users." No principle tensioned.
-- §11 (validation fails closed): PROJGATE-003 ensures a validation *failure* body is rendered as "could not validate," never as "no blockers" — preserves fail-closed semantics client-side.
+- §11 (validation fails closed): `archive/tickets/PROJGATE-003.md` ensures a validation *failure* body is rendered as "could not validate," never as "no blockers" — preserves fail-closed semantics client-side.
 - §8 / §15 / §23 / §24 (deterministic compilation, secret firewall, OpenRouter/logging, local-first): untouched — no compiler, secret, network, or storage surface changes.
 
 ## Ticket map
@@ -50,4 +50,4 @@ All seven project-scoped views fetch on mount with no project open; the server f
 |---|---|
 | O3 (root), O2 (trigger removal) | PROJGATE-001 — shared project-open state, nav gating, route guards |
 | O1 (render-safety net) | PROJGATE-002 — app-level error boundary |
-| O1 (data-layer root cause) | PROJGATE-003 — sound `validate()` failure handling |
+| O1 (data-layer root cause) | `archive/tickets/PROJGATE-003.md` — sound `validate()` failure handling |
