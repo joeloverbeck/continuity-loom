@@ -104,9 +104,9 @@ If any of checks 1–4 fails, abort with a clear missing-file error. If check 5'
 
 Read ALL of: the spec file (entire), `tickets/_TEMPLATE.md`, `tickets/README.md`, and `docs/FOUNDATIONS.md` (skip the last only if read earlier this session and unmodified).
 
-Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` / `Related:`) and its sections (Problem Statement, Approach, Deliverables, FOUNDATIONS Alignment, Verification, Out of Scope, Risks & Open Questions, and any deliverable sections).
+Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` / `Related:`) and its sections (Problem Statement, Approach, Deliverables, FOUNDATIONS Alignment, Verification — or its equivalently-named carrier: Testing / Acceptance / Acceptance Criteria / Coverage rules / Definition of Done, Out of Scope, Risks & Open Questions, and any deliverable sections).
 
-**Non-numbered deliverables**: if the spec uses named sections or a numbered `§Scope` / `§In scope` list instead of numbered deliverables, treat each distinct implementation section (or in-scope item) as a deliverable for decomposition.
+**Non-numbered deliverables**: many specs lack a numbered `§Deliverables` section. Anchor the deliverable enumeration in this precedence order: (1) a numbered `§Deliverables`; (2) absent that, a `§Implementation sequencing guidance` / `§Sequencing` ordered list when present — its steps are already work-ordered units and usually map close to one-per-ticket; (3) else the items of a `§Scope` / `§In scope` list, or each distinct named implementation section. Whichever enumeration you anchor on, **cross-check its coverage** against the spec's `§Acceptance` / `§Coverage` / `§Verification` (or equivalent) so no testable rule is left unmapped to a ticket, and reconcile divergent counts (one spec may carry, for the same work, a 4-surface `§Scope`, a 9-step `§Implementation sequencing guidance`, and 13 acceptance criteria) rather than treating any single list as exhaustive.
 
 ## Step 2: Codebase Validation
 

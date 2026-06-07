@@ -7,6 +7,7 @@ Analyze the spec and identify discrete work units:
 - Determine **priority ordering** from the dependency graph and criticality.
 - Ensure **every spec deliverable is covered** — no silent skipping. If a deliverable seems wrong, flag it with the 1-problem / 3-options / 1-recommendation format rather than omitting it.
 - Use the spec's **Out of Scope** section to populate each ticket's Out of Scope — these are pre-validated non-goals.
+- **Anchor the enumeration** — when the spec has no numbered `§Deliverables`, seed the work units from a `§Implementation sequencing guidance` / `§Sequencing` ordered list if present (its steps are pre-ordered tickets), else from `§Scope` in-scope items or distinct named sections; cross-check coverage against `§Acceptance` / `§Coverage` / `§Verification` so no testable rule goes unticketed (see SKILL.md Step 1 §Non-numbered deliverables for the precedence order).
 
 ## Deliverable-coverage categories
 
@@ -32,9 +33,9 @@ Most deliverables get their own ticket. These categories are exempt from per-del
 
 ### Capstone integration ticket
 
-A single trailing ticket whose scope IS the spec's §Verification section, exercising every prior implementation ticket end-to-end. It introduces no new production logic; it exercises the pipeline the earlier tickets composed.
+A single trailing ticket whose scope IS the spec's §Verification section — or its equivalently-named carrier when the spec has no literal §Verification: §Testing, §Acceptance / §Acceptance Criteria, §Coverage rules, or §Definition of Done (reassess-prepared specs routinely name it one of these) — exercising every prior implementation ticket end-to-end. It introduces no new production logic; it exercises the pipeline the earlier tickets composed.
 
-- Its acceptance criteria enumerate the spec's §Verification bullets as test sub-cases.
+- Its acceptance criteria enumerate the spec's §Verification bullets (or the equivalent carrier's bullets, per the section above) as test sub-cases.
 - Re-enumerate expected counts from a fixture at test start rather than hardcoding (hardcoded counts go stale).
 - **Files to Touch** — `_TEMPLATE.md` makes the section mandatory, but a capstone introduces no production logic, so it is either the new e2e/smoke test file the ticket adds, or `None — verification-only` when the gate is exercised purely by running existing scripts plus a manual runbook. Do NOT list the upstream tickets' files — the capstone exercises them, it does not modify them.
 - **Manual-runbook variant** (formerly "skill dry-run variant") — when a §Verification bullet cannot run in the project's test infra — either it requires invoking an LLM-driven skill (not runnable from test code), **or** it is a UI/manual smoke with no browser-automation harness in the project — structure the ticket as a hybrid: a *manual runbook* (in the What to Change section) the implementer follows by hand — for an LLM skill: fixture copy strategy, skill invocations against the copy, expected post-skill state with verification commands; for a UI smoke: the click-path with each step's expected observable result — plus an automated-test subsection for any test-runnable portion (grep negative tests, schema assertions, server-side e2e). The acceptance criteria distinguish CI-runnable assertions from implementer-checklist runbook steps.

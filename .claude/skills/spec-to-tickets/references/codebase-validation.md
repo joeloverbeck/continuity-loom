@@ -39,6 +39,8 @@ After spot-checks, render the exercised sub-checks as a compact inline list (e.g
 
 If `/reassess-spec` ran but some findings were **deferred** by the user, treat deferred items as out of scope for decomposition. Note them in the Step 6 summary as "deferred reassessment findings that may warrant separate tickets." Do not silently incorporate deferred findings into ticket scope.
 
+Distinguish two reassessment outcomes: a finding the user **deferred to its own follow-up ticket** belongs in that Step 6 list; an outcome the reassessment **resolved into the spec's §Out of Scope** (e.g. a scoping question answered by moving work out of this feature) is a *pre-validated non-goal* — populate each ticket's Out of Scope from it (per `references/decomposition-patterns.md`) and produce no follow-up ticket. Do not re-surface a §Out-of-Scope non-goal as a "deferred finding that may warrant a separate ticket."
+
 ## Validation Rules This Skill Upholds
 
 - **§11 Fail-closed validation** — when a deliverable introduces validation, verify it stays deterministic and blocking, distinguishes warnings from blockers, and names what failing means (block generation? warn?). Unaddressed second-order effects are Improvement findings at minimum.
