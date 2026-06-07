@@ -3,7 +3,7 @@
 **Date**: 2026-06-06
 **Source**: No formal report — diagnostic of a live bug. The app was reproduced at `http://127.0.0.1:5173/` (Puppeteer) with no project open; console behavior and crashes were captured per view.
 **Classification**: product-behavior (UI/workflow over project-ownership and story-state surfaces; governed by `docs/FOUNDATIONS.md` §27).
-**Deliverables**: `tickets/PROJGATE-001.md`, `archive/tickets/PROJGATE-002.md`, `archive/tickets/PROJGATE-003.md`.
+**Deliverables**: `archive/tickets/PROJGATE-001.md`, `archive/tickets/PROJGATE-002.md`, `archive/tickets/PROJGATE-003.md`.
 
 ## Reproduction (live, no project open)
 
@@ -25,13 +25,13 @@ Chain: `ValidationPanel.tsx:24` calls `validate()` → `POST /api/validate` retu
 ### O2 — Pervasive mount-time 409 console errors + inconsistent empty states (MODERATE)
 All seven project-scoped views fetch on mount with no project open; the server fails closed (409) and the browser logs each as a console error. Empty-state handling is inconsistent (four graceful, two generic, one crash).
 
-**Recommended fix:** prevent project-scoped views from mounting/fetching when no project is open, via shared project-open state + nav gating + route guards. → PROJGATE-001.
+**Recommended fix:** prevent project-scoped views from mounting/fetching when no project is open, via shared project-open state + nav gating + route guards. → `archive/tickets/PROJGATE-001.md`.
 **Rejected alternative:** suppress/silence the 409 console logging. Rejected — it hides a real precondition violation rather than fixing it, and leaves the inconsistent empty states.
 
 ### O3 — No shared project-open state, no nav gating, no route guard (ROOT/STRUCTURAL)
 `AppShell.tsx` renders all routes unconditionally; `getProject()` is polled independently by `ProjectPicker` and `DurableChangeReminder`. There is no single owner of "is a project open," which is the precondition for both O1 and O2.
 
-**Recommended fix:** a shell-level `ProjectOpenProvider` (mirroring `ReminderRefreshProvider`) owns the truth; nav and route guards consume it; `DurableChangeReminder`'s duplicate open-check is collapsed into it. → PROJGATE-001.
+**Recommended fix:** a shell-level `ProjectOpenProvider` (mirroring `ReminderRefreshProvider`) owns the truth; nav and route guards consume it; `DurableChangeReminder`'s duplicate open-check is collapsed into it. → `archive/tickets/PROJGATE-001.md`.
 
 ## Decisions taken (user-confirmed 2026-06-06)
 
@@ -48,6 +48,6 @@ All seven project-scoped views fetch on mount with no project open; the server f
 
 | Finding | Ticket |
 |---|---|
-| O3 (root), O2 (trigger removal) | PROJGATE-001 — shared project-open state, nav gating, route guards |
+| O3 (root), O2 (trigger removal) | `archive/tickets/PROJGATE-001.md` — shared project-open state, nav gating, route guards |
 | O1 (render-safety net) | `archive/tickets/PROJGATE-002.md` — app-level error boundary |
 | O1 (data-layer root cause) | `archive/tickets/PROJGATE-003.md` — sound `validate()` failure handling |

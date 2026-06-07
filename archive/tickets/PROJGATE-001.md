@@ -1,6 +1,6 @@
 # PROJGATE-001: Shared project-open state, navigation gating, and route guards
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/web` shell (new project-open context, `AppShell` nav/routes, `ProjectPicker`, `DurableChangeReminder`). No `@loom/core` or `@loom/server` changes.
@@ -103,3 +103,27 @@ Add `packages/web/src/shell/project-open.tsx`, modeled on `reminder-refresh.tsx`
 1. `npm test --workspace @loom/web -- src/shell/project-open.test.tsx src/shell/AppShell.test.tsx`
 2. `npm run lint && npm run typecheck && npm test`
 3. Targeted web run is the correct boundary for the new behavior; the full `npm test` confirms no cross-package regression (core/server untouched).
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+- Added `packages/web/src/shell/project-open.tsx` as the shared project-open context, with `ProjectOpenProvider` deriving open state from `getProject()` and exposing `refreshProjectOpen()`.
+- Wrapped `AppShell` in `ProjectOpenProvider`, disabled project-scoped nav links when no project is open, and guarded the seven project-scoped routes with a shared "Open a project first" panel.
+- Added loading guard UI while project-open state is still unknown.
+- Updated `ProjectPicker` to refresh project-open state after create, demo-create, open, and close; added a `Close Project` action using the existing API helper.
+- Replaced `DurableChangeReminder`'s independent `getProject()` open-check with `useProjectOpen()`.
+- Added project-open, shell, picker, and durable-reminder tests for provider refresh, disabled nav, route guards, project lifecycle refresh, and no reminder fetch while closed.
+
+Deviations from original plan:
+- Added close-project UI because the API already existed and the ticket required refresh behavior after close, but no close control existed in `ProjectPicker`.
+- Existing integration tests were updated to provide open-project state where they intentionally navigate project-scoped surfaces.
+
+Verification results:
+- `npm test --workspace @loom/web -- src/shell/project-open.test.tsx src/shell/AppShell.test.tsx src/ProjectPicker.test.tsx src/shell/DurableChangeReminder.test.tsx` passed: 4 files, 32 tests.
+- `npm test --workspace @loom/web` passed: 20 files, 128 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 74 files, 450 tests.
+- Grep-proof: production `getProject()` calls under `packages/web/src` are limited to `packages/web/src/shell/project-open.tsx`, `packages/web/src/ProjectPicker.tsx`, and the API helper definition.

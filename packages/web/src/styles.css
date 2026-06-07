@@ -146,6 +146,41 @@ body {
   color: #17466d;
 }
 
+.primaryNav a.disabledNavLink,
+.primaryNav a.disabledNavLink:hover {
+  background: transparent;
+  color: #9aa6b8;
+  cursor: not-allowed;
+}
+
+.projectRequiredPanel {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.projectRequiredPanel p {
+  margin: 0;
+}
+
+.projectRequiredPanel a {
+  width: fit-content;
+  border-radius: 6px;
+  background: #39445a;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.projectRequiredPanel a:hover {
+  background: #2f394b;
+}
+
 .laterPhaseList button {
   background: #eef1f5;
   color: #68758a;

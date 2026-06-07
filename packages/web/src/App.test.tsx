@@ -24,6 +24,18 @@ const versionPayload = {
   }
 };
 
+const projectStatus = {
+  folderPath: "/tmp/loom/alpha",
+  title: "Alpha",
+  projectUuid: "018f9c47-81f1-7cc0-9559-6bb9865ee7d9",
+  databaseFilename: "loom.sqlite",
+  appSchemaVersion: 1,
+  storeUserVersion: 1,
+  compatibility: "ok"
+};
+
+let projectResponse: unknown = { open: false };
+
 function jsonResponse(payload: unknown): Response {
   return new Response(JSON.stringify(payload), {
     status: 200,
@@ -43,7 +55,7 @@ function runtimeFetch(url: string): Promise<Response> {
   }
 
   if (url === "/api/project") {
-    return Promise.resolve(jsonResponse({ open: false }));
+    return Promise.resolve(jsonResponse(projectResponse));
   }
 
   if (url === "/api/records" || url === "/api/records?type=ENTITY" || url === "/api/records?includeArchived=true") {
@@ -77,6 +89,19 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ ok: true, segments: [] }));
   }
 
+  if (url === "/api/durable-change-reminder") {
+    return Promise.resolve(
+      jsonResponse({
+        ok: true,
+        reminder: {
+          active: false,
+          latestSegment: null,
+          acknowledgedThroughSequence: 0
+        }
+      })
+    );
+  }
+
   if (url.startsWith("/api/story-config/")) {
     return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
   }
@@ -91,6 +116,7 @@ afterEach(() => {
 
 beforeEach(() => {
   window.history.pushState({}, "", "/");
+  projectResponse = { open: false };
 });
 
 describe("App", () => {
@@ -110,6 +136,7 @@ describe("App", () => {
   });
 
   it("navigates the primary shell surfaces", async () => {
+    projectResponse = projectStatus;
     vi.stubGlobal(
       "fetch",
       vi.fn(runtimeFetch)
@@ -118,26 +145,26 @@ describe("App", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("link", { name: "Records" }));
-    expect(screen.getByRole("heading", { name: "Records" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Active Working Set" }));
-    expect(screen.getByRole("heading", { name: "Active Working Set" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Active Working Set" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Generation Brief" }));
-    expect(screen.getByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Validation / Prompt Preview" }));
-    expect(screen.getByRole("heading", { name: "Validation / Prompt Preview" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Validation / Prompt Preview" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Generate / Candidate" }));
-    expect(screen.getByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Accepted Segments" }));
-    expect(screen.getByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
     expect(await screen.findByText("No accepted segments yet.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Story Configuration" }));
-    expect(screen.getByRole("heading", { name: "Story Configuration" })).toBeTruthy();
+    expect(await screen.findByRole("heading", { name: "Story Configuration" })).toBeTruthy();
 
     expect(screen.queryByRole("button", { name: "Validation/Preview" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();

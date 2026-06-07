@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import {
   acknowledgeDurableChangeReminder,
   getDurableChangeReminder,
-  getProject,
   type DurableChangeReminder as DurableChangeReminderState
 } from "../api.js";
+import { useProjectOpen } from "./project-open.js";
 import { useReminderRefresh } from "./reminder-refresh.js";
 
 const checklistQuestions = [
@@ -40,26 +40,22 @@ function createRecordPath(recordType: string): string {
 export function DurableChangeReminder(): React.JSX.Element | null {
   const [reminder, setReminder] = useState<DurableChangeReminderState | null>(null);
   const [snoozed, setSnoozed] = useState(false);
+  const { isProjectOpen } = useProjectOpen();
   const { refreshSignal } = useReminderRefresh();
 
   useEffect(() => {
     let active = true;
 
-    void getProject()
-      .then((project) => {
-        if (!active) {
-          return;
-        }
+    if (!isProjectOpen) {
+      setReminder(null);
+      return () => {
+        active = false;
+      };
+    }
 
-        if ("open" in project && !project.open) {
-          setReminder(null);
-          return null;
-        }
-
-        return getDurableChangeReminder();
-      })
+    void getDurableChangeReminder()
       .then((response) => {
-        if (!active || !response) {
+        if (!active) {
           return;
         }
 
@@ -74,7 +70,7 @@ export function DurableChangeReminder(): React.JSX.Element | null {
     return () => {
       active = false;
     };
-  }, [refreshSignal]);
+  }, [isProjectOpen, refreshSignal]);
 
   async function acknowledge(): Promise<void> {
     const response = await acknowledgeDurableChangeReminder();

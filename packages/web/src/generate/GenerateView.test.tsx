@@ -12,11 +12,10 @@ import {
   generate,
   getDurableChangeReminder,
   getOpenRouterSettings,
-  getProject,
   type DurableChangeReminderResponse,
-  type ProjectOpenState
 } from "../api.js";
 import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
+import { useProjectOpen } from "../shell/project-open.js";
 import { ReminderRefreshProvider } from "../shell/reminder-refresh.js";
 import { GenerateView } from "./GenerateView.js";
 
@@ -26,19 +25,12 @@ vi.mock("../api.js", () => ({
   compile: vi.fn(),
   generate: vi.fn(),
   getDurableChangeReminder: vi.fn(),
-  getProject: vi.fn(),
   getOpenRouterSettings: vi.fn()
 }));
 
-const projectStatus = {
-  folderPath: "/tmp/loom/alpha",
-  title: "Alpha",
-  projectUuid: "018f9c47-81f1-7cc0-9559-6bb9865ee7d9",
-  databaseFilename: "loom.sqlite",
-  appSchemaVersion: 1,
-  storeUserVersion: 1,
-  compatibility: "ok" as const
-} satisfies ProjectOpenState;
+vi.mock("../shell/project-open.js", () => ({
+  useProjectOpen: vi.fn()
+}));
 
 beforeEach(() => {
   localStorage.clear();
@@ -46,12 +38,14 @@ beforeEach(() => {
   vi.mocked(acceptCandidate).mockReset();
   vi.mocked(generate).mockReset();
   vi.mocked(getDurableChangeReminder).mockReset();
-  vi.mocked(getProject).mockReset();
   vi.mocked(getOpenRouterSettings).mockReset();
   vi.mocked(acknowledgeDurableChangeReminder).mockReset();
   vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: true }));
-  vi.mocked(getProject).mockResolvedValue(projectStatus);
   vi.mocked(getDurableChangeReminder).mockResolvedValue(inactiveReminder());
+  vi.mocked(useProjectOpen).mockReturnValue({
+    isProjectOpen: true,
+    refreshProjectOpen: vi.fn()
+  });
 });
 
 afterEach(() => {

@@ -2,6 +2,7 @@ import type { ProjectStatus } from "@loom/core";
 import { FormEvent, useEffect, useState } from "react";
 
 import {
+  closeProject,
   createBackup,
   createDemoProject,
   createProject,
@@ -10,6 +11,7 @@ import {
   type ProjectOperationFailure,
   type ProjectOpenState
 } from "./api.js";
+import { useProjectOpen } from "./shell/project-open.js";
 import { useReminderRefresh } from "./shell/reminder-refresh.js";
 
 const DEMO_FOLDER_NAME = "letter-under-flour-bin-demo";
@@ -42,6 +44,7 @@ export function ProjectPicker(): React.JSX.Element {
     description: ""
   });
   const [openFolderPath, setOpenFolderPath] = useState("");
+  const { refreshProjectOpen } = useProjectOpen();
   const { refreshReminder } = useReminderRefresh();
 
   const canCreate =
@@ -93,6 +96,7 @@ export function ProjectPicker(): React.JSX.Element {
     }
 
     setProject(result);
+    refreshProjectOpen();
   }
 
   async function onCreateDemo(): Promise<void> {
@@ -110,6 +114,7 @@ export function ProjectPicker(): React.JSX.Element {
     }
 
     setProject(result);
+    refreshProjectOpen();
   }
 
   async function onOpen(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -125,6 +130,18 @@ export function ProjectPicker(): React.JSX.Element {
     }
 
     setProject(result.status);
+    refreshProjectOpen();
+    refreshReminder();
+  }
+
+  async function onClose(): Promise<void> {
+    setNotice(null);
+    setBackupPath(null);
+
+    const result = await closeProject();
+
+    setProject(result);
+    refreshProjectOpen();
     refreshReminder();
   }
 
@@ -269,6 +286,9 @@ export function ProjectPicker(): React.JSX.Element {
             <p className="projectPath">{project.folderPath}</p>
             <button type="button" onClick={() => void onBackup()}>
               Create Backup Copy
+            </button>
+            <button type="button" className="secondaryButton" onClick={() => void onClose()}>
+              Close Project
             </button>
             {backupPath ? <p className="projectPath">{backupPath}</p> : null}
           </>
