@@ -197,8 +197,10 @@ describe("CastMemberEditor", () => {
     expect(screen.queryByRole("button", { name: /compress/i })).toBeNull();
     expect(screen.queryByLabelText(/^current_voice_pressure/)).toBeNull();
     expect(screen.queryByLabelText(/^override_text/)).toBeNull();
-    expect(screen.getByText("voice_anchor.anti_repetition_warnings")).toBeTruthy();
-    expect(screen.getByText("voice_extended.anti_generic_warnings")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for core_voice" })).toBeTruthy();
+    expect(screen.queryByText("voice_anchor.anti_repetition_warnings")).toBeNull();
+    expect(screen.queryByText("voice_extended.anti_generic_warnings")).toBeNull();
+    expect(screen.queryByText(/Default policy is never_copy_verbatim/)).toBeNull();
   });
 
   it("creates and edits CAST MEMBER payloads with populated extended fields and sample utterances", async () => {

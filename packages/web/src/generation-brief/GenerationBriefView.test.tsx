@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
 import { getGenerationBrief, listStoryConfig, setGenerationBrief, validate } from "../api.js";
@@ -14,9 +14,25 @@ vi.mock("../api.js", () => ({
   validate: vi.fn()
 }));
 
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+const originalResizeObserver = globalThis.ResizeObserver;
+
+beforeAll(() => {
+  globalThis.ResizeObserver = ResizeObserverStub;
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+});
+
+afterAll(() => {
+  globalThis.ResizeObserver = originalResizeObserver;
 });
 
 function renderView(): void {
@@ -42,6 +58,10 @@ describe("GenerationBriefView", () => {
     renderView();
 
     expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for prior_accepted_prose_status_or_handoff_note" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for must_render" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for generation_context" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for soft_unit_guidance" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^selected_pov/), { target: { value: "omniscient" } });
     fireEvent.change(screen.getByLabelText(/^current_time/), { target: { value: "midnight" } });
     fireEvent.change(screen.getByLabelText(/^recent_causal_context/), { target: { value: "A reached the gate." } });
@@ -79,6 +99,29 @@ describe("GenerationBriefView", () => {
       },
       stop_guidance: { soft_unit_guidance: "Stop after the reply." }
     });
+  });
+
+  it("uses canonical generation-brief guidance keys and reconciles static doctrine hints", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const handoffHelp = screen.getByRole("button", { name: "Help for prior_accepted_prose_status_or_handoff_note" });
+
+    expect(handoffHelp.getAttribute("aria-controls")).toBe(
+      "field-help-generation-brief-immediate-handoff-prior-accepted-prose-status-or-handoff-note"
+    );
+    expect(screen.getAllByText("Completeness checks, not plot beats.")).toHaveLength(1);
+    expect(screen.getAllByText("Stop at the next local response point; do not ask for downstream consequences."))
+      .toHaveLength(1);
+
+    fireEvent.click(handoffHelp);
+
+    expect(await screen.findByText("A handoff note about accepted prose status, not prose authority.")).toBeTruthy();
+    expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
   });
 
   it("shows deterministic non-blocking warnings while still saving", async () => {

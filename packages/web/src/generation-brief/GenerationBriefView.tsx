@@ -10,6 +10,7 @@ import {
   listStoryConfig,
   setGenerationBrief
 } from "../api.js";
+import { FieldHelp } from "../field-help/FieldHelp.js";
 import { ValidationPanel } from "./ValidationPanel.js";
 
 type GenerationSession = z.infer<typeof generationSessionSchema>;
@@ -38,6 +39,10 @@ function proseLikePaste(value: string): boolean {
 
 function parseSession(value: unknown): GenerationSession {
   return generationSessionSchema.parse(value ?? {});
+}
+
+function BriefFieldHelp({ path, label }: { path: string; label: string }): React.JSX.Element {
+  return <FieldHelp fieldPath={`GENERATION BRIEF.${path}`} fieldLabel={label} />;
 }
 
 export function GenerationBriefView(): React.JSX.Element {
@@ -198,6 +203,7 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateActiveWorkingSet({ selected_pov: event.target.value || undefined })}
             />
           </label>
+          <BriefFieldHelp path="active_working_set.selected_pov" label="selected_pov" />
         </section>
 
         <section className="configPanel" aria-labelledby="current-state-brief">
@@ -227,6 +233,7 @@ export function GenerationBriefView(): React.JSX.Element {
               }
             />
           </label>
+          <BriefFieldHelp path="current_authoritative_state.current_time" label="current_time" />
         </section>
 
         <section className="configPanel" aria-labelledby="handoff-brief">
@@ -239,6 +246,7 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, recent_causal_context: event.target.value })}
             />
           </label>
+          <BriefFieldHelp path="immediate_handoff.recent_causal_context" label="recent_causal_context" />
           <label>
             prior_accepted_prose_status_or_handoff_note
             <textarea
@@ -252,6 +260,10 @@ export function GenerationBriefView(): React.JSX.Element {
               }
             />
           </label>
+          <BriefFieldHelp
+            path="immediate_handoff.prior_accepted_prose_status_or_handoff_note"
+            label="prior_accepted_prose_status_or_handoff_note"
+          />
           {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use a user-authored handoff note instead.</p> : null}
         </section>
 
@@ -265,6 +277,7 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: lines(event.target.value) })}
             />
           </label>
+          <BriefFieldHelp path="manual_moment_directive.must_render[]" label="must_render" />
         </section>
 
         <section className="configPanel" aria-labelledby="voice-pressure-brief">
@@ -278,6 +291,7 @@ export function GenerationBriefView(): React.JSX.Element {
               }
             />
           </label>
+          <BriefFieldHelp path="current_cast_voice_pressure[].cast_member_id" label="cast_member_id" />
           <label>
             local_function
             <select
@@ -293,6 +307,7 @@ export function GenerationBriefView(): React.JSX.Element {
               ))}
             </select>
           </label>
+          <BriefFieldHelp path="current_cast_voice_pressure[].local_function" label="local_function" />
           <label>
             current_voice_pressure
             <textarea
@@ -302,11 +317,11 @@ export function GenerationBriefView(): React.JSX.Element {
               }
             />
           </label>
+          <BriefFieldHelp path="current_cast_voice_pressure[].current_voice_pressure" label="current_voice_pressure" />
         </section>
 
         <section className="configPanel" aria-labelledby="override-brief">
           <h3 id="override-brief">CAST VOICE OVERRIDES</h3>
-          <p className="muted">current_generation_only; never written back to CAST MEMBER records.</p>
           <label>
             override_text
             <textarea
@@ -314,11 +329,11 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("cast_voice_overrides", [{ ...voiceOverride, override_text: event.target.value }])}
             />
           </label>
+          <BriefFieldHelp path="cast_voice_overrides[].override_text" label="override_text" />
         </section>
 
         <section className="configPanel" aria-labelledby="validation-focus-brief">
           <h3 id="validation-focus-brief">GENERATION VALIDATION FOCUS</h3>
-          <p className="muted">Completeness checks, not plot beats.</p>
           <label>
             generation_context
             <select
@@ -336,6 +351,10 @@ export function GenerationBriefView(): React.JSX.Element {
               <option value="continuation_after_accepted_segment">continuation_after_accepted_segment</option>
             </select>
           </label>
+          <BriefFieldHelp
+            path="generation_validation_focus.validation_focus_tags.generation_context[]"
+            label="generation_context"
+          />
         </section>
 
         <section className="configPanel stopGuidancePanel" aria-labelledby="stop-guidance-brief">
@@ -348,6 +367,7 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("stop_guidance", { soft_unit_guidance: event.target.value })}
             />
           </label>
+          <BriefFieldHelp path="stop_guidance.soft_unit_guidance" label="soft_unit_guidance" />
           {nonLocalStopWarning ? <p className="status statusWarning">This sounds non-local. Keep stop guidance to the next local prose unit.</p> : null}
         </section>
       </div>

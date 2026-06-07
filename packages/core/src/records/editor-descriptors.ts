@@ -169,6 +169,10 @@ export function referenceTargetTypes(refRole: string): readonly string[] {
   return referenceTargetsByRole[refRole] ?? [];
 }
 
+export function describeSchemaFields(schema: z.ZodType): readonly FieldDescriptor[] {
+  return describeObjectFields(schema);
+}
+
 function describeObjectFields(schema: z.ZodType): readonly FieldDescriptor[] {
   const unwrapped = unwrapSchema(schema).schema;
   const shape = objectShape(unwrapped);

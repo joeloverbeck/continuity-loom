@@ -127,6 +127,7 @@ describe("RecordEditor", () => {
 
     render(<RecordEditor recordType="FACT" record={factRecord} />);
 
+    expect(screen.getByRole("button", { name: "Help for statement" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^statement/), { target: { value: "A knows the west door code." } });
     fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
 
@@ -158,6 +159,22 @@ describe("RecordEditor", () => {
     cleanup();
     render(<RecordEditor recordType="CAST MEMBER" />);
     expect(screen.getByRole("group", { name: "identity" })).toBeTruthy();
+  });
+
+  it("writes enum card selections as the schema enum literal", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.change(screen.getByLabelText(/^id/), { target: { value: idA } });
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), { target: { value: "Aster carries the hidden seal." } });
+    fireEvent.click(screen.getByDisplayValue("clue_only"));
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      reveal_permission: "clue_only"
+    });
   });
 
   it("lists only eligible reference targets and stores selected ids", () => {

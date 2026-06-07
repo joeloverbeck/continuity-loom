@@ -150,25 +150,13 @@ export function CastMemberEditor({
                   generation-time brief.
                 </p>
               ) : null}
-              {section.id === "sample_utterances" ? (
-                <p className="muted">
-                  Samples should stay sparse and annotated by situation, speech function, pressure tags, and copy policy.
-                  Default policy is never_copy_verbatim.
-                </p>
-              ) : null}
-              {section.emphasisFieldPaths ? (
-                <ul className="castWarningPaths">
-                  {section.emphasisFieldPaths.map((fieldPath) => (
-                    <li key={fieldPath}>{fieldPath}</li>
-                  ))}
-                </ul>
-              ) : null}
               <div className="editorGrid">
                 {section.fields.map((field) => (
                   <FieldRenderer
                     key={field.name}
                     field={field}
                     path={field.name}
+                    ownerKind="CAST MEMBER"
                     form={form}
                     referenceRecords={referenceRecords}
                     serverIssues={serverIssues}
