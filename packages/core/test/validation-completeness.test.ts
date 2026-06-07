@@ -318,6 +318,9 @@ describe("universal completeness validation", () => {
         payload: { id: objectId, status: "active" }
       }
     ];
+    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [
+      "object_use_possible"
+    ];
     input.generationSession.current_authoritative_state = {
       ...input.generationSession.current_authoritative_state,
       possessions: []

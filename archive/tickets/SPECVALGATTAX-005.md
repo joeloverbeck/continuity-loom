@@ -1,6 +1,6 @@
 # SPECVALGATTAX-005: Validation-taxonomy capstone — end-to-end tests and web-test reconciliation
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds an end-to-end validation-taxonomy test surface and updates Readiness/UX-owned web tests that assert retired/renamed diagnostic codes; no production behavior change.
@@ -77,3 +77,18 @@ Update the four web test files to assert the corrected codes: replace `missing-s
 
 1. `npm run -w @loom/core build && npx vitest run packages/core/test/validation-taxonomy-capstone.test.ts`
 2. `npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Added `packages/core/test/validation-taxonomy-capstone.test.ts` covering the assembled taxonomy: blank stop guidance, first-segment no-handoff, continuation handoff blocking, missing directive blocking, malformed context count, voice/salience warnings, selected-record non-overtrigger, and warning text exclusion from compiled prompts. Reconciled web validation tests to current diagnostic codes.
+
+Deviations from original plan: made one production correction in `universal-completeness.ts` because the capstone exposed that selected `OBJECT` / `VISIBLE AFFORDANCE` records alone still activated physical blockers. The fixed behavior now matches the spec: physical blockers activate from explicit focus tags, not selected records by mere existence.
+
+Verification results:
+
+- `npm run -w @loom/core build` passed.
+- `npx vitest run packages/core/test/validation-taxonomy-capstone.test.ts packages/web/src/generation-brief/ValidationPanel.test.tsx packages/web/src/generation-brief/ValidationResultView.test.tsx packages/web/src/generate/GenerateView.test.tsx packages/web/src/preview/PromptPreviewView.test.tsx packages/core/test/validation-completeness.test.ts` passed.
+- `npm test` passed: 96 test files, 571 tests.
+- `rg -n "missing-stop-guidance|prompt-length-risk" packages/web/src packages/core/src` returned no matches.

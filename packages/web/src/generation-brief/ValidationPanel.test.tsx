@@ -37,7 +37,7 @@ describe("ValidationPanel", () => {
         diagnostic("blocker", "local-prose-scope-violation", "generationSession.stop_guidance.soft_unit_guidance")
       ],
       warnings: [
-        diagnostic("warning", "prompt-length-risk", "records")
+        diagnostic("warning", "prompt-middle-salience-risk", "records")
       ],
       isBlocked: true
     });
@@ -86,15 +86,15 @@ describe("ValidationPanel", () => {
   it("focuses field diagnostics and reruns when validation key changes", async () => {
     const onFocusField = vi.fn();
     vi.mocked(validate).mockResolvedValue({
-      blockers: [diagnostic("blocker", "missing-stop-guidance", "generationSession.stop_guidance.soft_unit_guidance")],
+      blockers: [diagnostic("blocker", "missing-manual-directive", "generationSession.manual_moment_directive.must_render")],
       warnings: [],
       isBlocked: true
     });
 
     const { rerender } = renderPanel({ validationKey: 1, onFocusField });
 
-    fireEvent.click(await screen.findByRole("button", { name: "missing-stop-guidance" }));
-    expect(onFocusField).toHaveBeenCalledWith("generationSession.stop_guidance.soft_unit_guidance");
+    fireEvent.click(await screen.findByRole("button", { name: "missing-manual-directive" }));
+    expect(onFocusField).toHaveBeenCalledWith("generationSession.manual_moment_directive.must_render");
 
     rerender(
       <MemoryRouter initialEntries={["/generation-brief"]}>

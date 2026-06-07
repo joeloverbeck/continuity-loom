@@ -325,18 +325,11 @@ function activeSecrets(snapshot: ValidationSnapshot): readonly ValidationRecord[
 }
 
 function hasActivePhysicalInteraction(snapshot: ValidationSnapshot): boolean {
-  return (
-    focusTags(snapshot).some((tag) => PHYSICAL_FOCUS_TAGS.has(tag)) ||
-    snapshot.records.some((record) => record.type === "VISIBLE AFFORDANCE" || record.type === "OBJECT")
-  );
+  return focusTags(snapshot).some((tag) => PHYSICAL_FOCUS_TAGS.has(tag));
 }
 
 function objectsMatter(snapshot: ValidationSnapshot): boolean {
-  return (
-    hasFocusTag(snapshot, "object_use_possible") ||
-    hasFocusTag(snapshot, "object_transfer_possible") ||
-    snapshot.records.some((record) => record.type === "OBJECT")
-  );
+  return hasFocusTag(snapshot, "object_use_possible") || hasFocusTag(snapshot, "object_transfer_possible");
 }
 
 function materialCastRecords(snapshot: ValidationSnapshot): readonly ValidationRecord[] {
