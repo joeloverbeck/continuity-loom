@@ -221,6 +221,7 @@ export function WorkingSetView(): React.JSX.Element {
                         <label>
                           band
                           <select
+                            aria-label={`Cast band for ${record.displayLabel}`}
                             value={castBand(record.id, activeWorkingSet)}
                             onChange={(event) => void assignCastBand(record.id, event.target.value as "none" | "active" | "present_minor" | "offstage")}
                           >
@@ -234,6 +235,7 @@ export function WorkingSetView(): React.JSX.Element {
                           <label>
                             local_function
                             <select
+                              aria-label={`Local function for ${record.displayLabel}`}
                               value={
                                 activeWorkingSet.active_onstage_cast_full.find((entry) => entry.cast_member_id === record.id)
                                   ?.local_function ?? "active_speaker"
