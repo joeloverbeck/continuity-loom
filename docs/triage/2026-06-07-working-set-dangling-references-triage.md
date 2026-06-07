@@ -44,7 +44,7 @@ Reproduced live before diagnosing: dev UI on `127.0.0.1:5173`, API on `127.0.0.1
 ## Deliverables
 
 - `archive/tickets/WSINTEGRITY-001.md` — completed repair of dangling working-set references on project open (fixes red-bunny). Deps: none.
-- `tickets/WSINTEGRITY-002.md` — scrub deleted records from the working set at the delete boundary (prevents recurrence). Deps: WSINTEGRITY-001 (shared core helper).
+- `archive/tickets/WSINTEGRITY-002.md` — completed scrub of deleted records from the working set at the delete boundary (prevents recurrence). Deps: WSINTEGRITY-001 (shared core helper).
 - `archive/tickets/STORYCFGUX-001.md` — completed additive `GET /api/story-config` list route to stop 404 console noise for unauthored kinds. Deps: none.
 
 ## Out of scope (recorded, not ticketed)

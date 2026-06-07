@@ -501,6 +501,163 @@ describe("SPEC-003 record tables and repository", () => {
     expect(repository.listRecords({ includeArchived: true })).toEqual([]);
   });
 
+  it("scrubs deleted selected records from the generation-session working set", async () => {
+    const storeManager = manager();
+    await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "delete-selected-working-set",
+      title: "Delete Selected Working Set"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    repository.createRecord({
+      type: "FACT",
+      displayLabel: "Selected",
+      payload: {
+        id: idA,
+        status: "active",
+        fact_kind: "current_state",
+        statement: "A selected fact.",
+        scope: "global",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "medium"
+      }
+    });
+    repository.setGenerationSession({
+      active_working_set: {
+        selected_records: [idA],
+        active_onstage_cast_full: [],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: [],
+        selected_pov: idA,
+        manual_directive_id: idA
+      }
+    });
+
+    repository.deleteRecord(idA);
+
+    expect(repository.getGenerationSession()).toMatchObject({
+      ok: true,
+      payload: {
+        active_working_set: {
+          selected_records: [],
+          active_onstage_cast_full: [],
+          present_minor_cast_compressed: [],
+          offstage_relevant_cast: []
+        }
+      }
+    });
+    const session = repository.getGenerationSession();
+    expect(session.ok ? session.payload : {}).not.toMatchObject({
+      active_working_set: {
+        selected_pov: idA,
+        manual_directive_id: idA
+      }
+    });
+  });
+
+  it("scrubs deleted cast-band records from the generation-session working set", async () => {
+    const storeManager = manager();
+    await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "delete-cast-band-working-set",
+      title: "Delete Cast Band Working Set"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    for (const id of [idA, idB]) {
+      repository.createRecord({
+        type: "ENTITY",
+        displayLabel: `Entity ${id}`,
+        payload: {
+          id,
+          display_name: `Entity ${id}`,
+          entity_kind: "person",
+          roles_in_story: ["primary_actor"],
+          short_description: "A person"
+        }
+      });
+    }
+    repository.setGenerationSession({
+      active_working_set: {
+        selected_records: [],
+        active_onstage_cast_full: [
+          { cast_member_id: idA, local_function: "active_speaker" },
+          { cast_member_id: idB, local_function: "active_silent" }
+        ],
+        present_minor_cast_compressed: [idA, idB],
+        offstage_relevant_cast: [idA]
+      }
+    });
+
+    repository.deleteRecord(idA);
+
+    expect(repository.getGenerationSession()).toMatchObject({
+      ok: true,
+      payload: {
+        active_working_set: {
+          selected_records: [],
+          active_onstage_cast_full: [{ cast_member_id: idB, local_function: "active_silent" }],
+          present_minor_cast_compressed: [idB],
+          offstage_relevant_cast: []
+        }
+      }
+    });
+  });
+
+  it("does not rewrite the generation session when deleting an unselected record", async () => {
+    const storeManager = manager();
+    const status = await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "delete-unselected-working-set",
+      title: "Delete Unselected Working Set"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    for (const id of [idA, idB]) {
+      repository.createRecord({
+        type: "FACT",
+        displayLabel: `Fact ${id}`,
+        payload: {
+          id,
+          status: "active",
+          fact_kind: "current_state",
+          statement: `Fact ${id}.`,
+          scope: "global",
+          known_by: [],
+          audience_visibility: "explicit",
+          salience: "medium"
+        }
+      });
+    }
+    repository.setGenerationSession({
+      active_working_set: {
+        selected_records: [idA],
+        active_onstage_cast_full: [],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      }
+    });
+    const beforeRows = stableRows(join(status.folderPath, "loom.sqlite"), ["generation_session"]);
+
+    repository.deleteRecord(idB);
+
+    expect(stableRows(join(status.folderPath, "loom.sqlite"), ["generation_session"])).toEqual(beforeRows);
+  });
+
   it("deletes accepted segments without renumbering or writing record tables", async () => {
     const storeManager = manager();
     const status = await storeManager.createProject({
