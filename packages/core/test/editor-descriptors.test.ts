@@ -5,6 +5,7 @@ import {
   deriveDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
+  getEditorFormSchema,
   recordTypes,
   referenceTargetTypes
 } from "../src/index.js";
@@ -38,15 +39,49 @@ function objectKeys(schema: z.ZodType): string[] {
 }
 
 describe("record editor descriptors", () => {
-  it("defines descriptors whose top-level fields match every registry payload schema", () => {
+  it("defines descriptors whose top-level fields match every registry payload schema except system-managed id", () => {
     for (const recordType of recordTypes) {
       const descriptor = getEditorDescriptor(recordType);
+      const expectedFieldNames = objectKeys(recordTypeRegistry[recordType].payloadSchema).filter((name) => name !== "id");
 
       expect(descriptor?.recordType).toBe(recordType);
-      expect(descriptor?.fields.map((field) => field.name).sort()).toEqual(
-        objectKeys(recordTypeRegistry[recordType].payloadSchema).sort()
-      );
+      expect(descriptor?.fields.map((field) => field.name).sort()).toEqual(expectedFieldNames.sort());
     }
+  });
+
+  it("omits only the record id from id-bearing descriptors", () => {
+    for (const recordType of recordTypes) {
+      const schemaFieldNames = objectKeys(recordTypeRegistry[recordType].payloadSchema);
+      const descriptorFieldNames = getEditorDescriptor(recordType)?.fields.map((field) => field.name) ?? [];
+
+      expect(descriptorFieldNames).not.toContain("id");
+
+      if (schemaFieldNames.includes("id")) {
+        expect(descriptorFieldNames).toHaveLength(schemaFieldNames.length - 1);
+      } else {
+        expect(descriptorFieldNames).toHaveLength(schemaFieldNames.length);
+      }
+    }
+  });
+
+  it("provides id-free form schemas while leaving reference fields renderable", () => {
+    expect(() =>
+      getEditorFormSchema("ENTITY")?.parse({
+        display_name: "Ane Arrieta",
+        entity_kind: "person",
+        roles_in_story: ["viewpoint"],
+        short_description: "A field medic carrying a promise she cannot safely explain."
+      })
+    ).not.toThrow();
+
+    expect(getEditorDescriptor("CAST MEMBER")?.fields.find((field) => field.name === "entity_id")).toMatchObject({
+      kind: "reference",
+      referenceRole: "entity_id"
+    });
+    expect(getEditorDescriptor("ENTITY STATUS")?.fields.find((field) => field.name === "entity_id")).toMatchObject({
+      kind: "reference",
+      referenceRole: "entity_id"
+    });
   });
 
   it("covers CAST MEMBER core and extended nested fields", () => {

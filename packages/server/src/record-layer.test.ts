@@ -12,6 +12,7 @@ const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
 const idD = "019b0298-5c00-7000-8000-000000000004";
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const managers: ProjectStoreManager[] = [];
 
 interface TableCounts {
@@ -351,6 +352,62 @@ describe("SPEC-003 record tables and repository", () => {
         salience: "medium",
         payload: { id: idA, statement: "Original statement" }
       }
+    });
+  });
+
+  it("generates and preserves payload ids for id-bearing records", async () => {
+    const storeManager = manager();
+    await storeManager.createProject({
+      parentPath: await tempParent(),
+      folderName: "generated-record-ids",
+      title: "Generated Record Ids"
+    });
+    const repository = storeManager.getRecordRepository();
+    expect(repository).not.toBeNull();
+    if (!repository) {
+      return;
+    }
+
+    const created = repository.createRecord({
+      type: "FACT",
+      displayLabel: "Generated",
+      payload: {
+        status: "active",
+        fact_kind: "current_state",
+        statement: "Generated id statement.",
+        scope: "entity",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "medium"
+      }
+    });
+
+    expect(created.id).toMatch(uuidPattern);
+    expect(created.payload).toMatchObject({ id: created.id });
+
+    const updated = repository.updateRecord({
+      id: created.id,
+      displayLabel: "Generated updated",
+      payload: {
+        status: "active",
+        fact_kind: "current_state",
+        statement: "Updated without payload id.",
+        scope: "entity",
+        known_by: [],
+        audience_visibility: "explicit",
+        salience: "high"
+      }
+    });
+
+    expect(updated).toMatchObject({
+      id: created.id,
+      displayLabel: "Generated updated",
+      salience: "high",
+      payload: { id: created.id, statement: "Updated without payload id." }
+    });
+    expect(repository.getRecord(created.id)).toMatchObject({
+      ok: true,
+      record: { id: created.id, payload: { id: created.id, statement: "Updated without payload id." } }
     });
   });
 

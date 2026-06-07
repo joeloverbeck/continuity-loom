@@ -2,8 +2,8 @@ import {
   deriveDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
+  getEditorFormSchema,
   normalizeListIndices,
-  recordTypeRegistry,
   type FieldDescriptor,
   type RecordEditorDescriptor
 } from "@loom/core";
@@ -404,8 +404,7 @@ export function RecordEditor({
   onSaved
 }: RecordEditorProps): React.JSX.Element {
   const descriptor = providedDescriptor ?? getEditorDescriptor(recordType);
-  const definition = recordTypeRegistry[recordType];
-  const schema = payloadSchema ?? definition?.payloadSchema;
+  const schema = payloadSchema ?? getEditorFormSchema(recordType);
   const [serverError, setServerError] = useState<ApiFailure | null>(null);
   const serverIssues = useMemo(() => serverIssuesByPath(serverError), [serverError]);
   const resolver = schema

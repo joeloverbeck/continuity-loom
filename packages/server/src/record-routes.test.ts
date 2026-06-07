@@ -9,6 +9,7 @@ const apps: ReturnType<typeof createServer>[] = [];
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-record-routes-"));
@@ -50,6 +51,15 @@ function factPayload(id: string, statement: string, salience = "medium") {
 function entityPayload(id: string, displayName: string) {
   return {
     id,
+    display_name: displayName,
+    entity_kind: "person",
+    roles_in_story: ["primary_actor"],
+    short_description: `${displayName} is present.`
+  };
+}
+
+function entityPayloadWithoutId(displayName: string) {
+  return {
     display_name: displayName,
     entity_kind: "person",
     roles_in_story: ["primary_actor"],
@@ -100,6 +110,29 @@ afterEach(async () => {
 });
 
 describe("record routes", () => {
+  it("generates record ids on create and honors explicit ids", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const generated = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: { type: "ENTITY", displayLabel: "Generated", payload: entityPayloadWithoutId("Generated") }
+    });
+    expect(generated.statusCode).toBe(201);
+    const generatedRecord = generated.json().record as { id: string; payload: { id: string } };
+    expect(generatedRecord.id).toMatch(uuidPattern);
+    expect(generatedRecord.payload.id).toBe(generatedRecord.id);
+
+    const explicit = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: { type: "ENTITY", displayLabel: "Explicit", payload: entityPayload(idA, "Explicit") }
+    });
+    expect(explicit.statusCode).toBe(201);
+    expect(explicit.json()).toMatchObject({ ok: true, record: { id: idA, payload: { id: idA } } });
+  });
+
   it("round-trips representative atomic and CAST MEMBER records over HTTP", async () => {
     const fastify = app();
     await openProject(fastify);
