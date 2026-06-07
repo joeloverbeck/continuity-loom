@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-009: Capstone — draft→save→readiness end-to-end + UI runbook
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — new server e2e test `generation-brief-draftability.e2e.test.ts` + a manual UI runbook; no production behavior change
@@ -75,3 +75,30 @@ The spec's §Test requirements span core, server, snapshot, and web layers. Per-
 
 1. `npx vitest run packages/server/src/generation-brief-draftability.e2e.test.ts` — the capstone e2e gate.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate (the final spec-completion gate; manual UI runbook executed alongside).
+
+## Outcome
+
+Completed on 2026-06-07.
+
+- Added `packages/server/src/generation-brief-draftability.e2e.test.ts` as the composed capstone for draft save, deterministic generation-context defaults, readiness validation, compile blocking, warning-only compile success, accepted-prose exclusion from compiled prompt text, and save-path log secrecy.
+- The capstone creates a project, appends one accepted segment, saves a blank launch-directive draft, verifies `continuation_after_accepted_segment` is derived from the accepted-segment count, verifies `missing-manual-directive` remains the true blocker while `focus-tag-count-invalid` is absent, then saves a directive and compiles without including accepted prose.
+
+Manual UI runbook:
+
+1. Start the app with `npm run dev` and open the Vite URL.
+2. Create or open a project, then navigate to Generation Brief.
+3. Leave `manual_moment_directive.must_render` blank and click Save Generation Brief.
+4. Expected: the page shows `Draft saved.`, no console error is emitted for the blank directive, and the UI does not insert `Continue the immediate moment.`
+5. Run Preview/Generate from the normal workflow with the directive still blank.
+6. Expected: Preview/Generate are blocked by the missing manual directive readiness blocker; the save itself is not reported as failed.
+7. Add a local must-render directive and save again.
+8. Expected: readiness refreshes from server state, warning-only validation does not block generation, and accepted prose text is not surfaced as prompt context.
+
+Verification:
+
+- `npm exec vitest run packages/server/src/generation-brief-draftability.e2e.test.ts`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `git diff --check`
