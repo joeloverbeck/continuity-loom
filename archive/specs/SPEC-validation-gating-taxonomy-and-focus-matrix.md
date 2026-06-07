@@ -1,6 +1,6 @@
 # SPEC — Validation Gating Taxonomy and Focus Matrix
 
-Status: proposed active implementation spec  
+Status: ✅ COMPLETED
 Repository: `joeloverbeck/continuity-loom`  
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
@@ -328,3 +328,25 @@ Long-context research supports salience warnings, not hard blockers. Liu et al. 
 Provider prompt-engineering documentation supports clear instructions, structured sections, delimiter/XML-like boundaries, and regression testing. That supports Continuity Loom’s deterministic compiler and readiness tests, not LLM-based validation: <https://platform.openai.com/docs/guides/prompt-engineering>, <https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview>.
 
 Interactive drama theory treats agency as meaningful action under material and formal constraints. That supports preserving `must_render` as the user’s immediate launch choice while validating deterministic affordances and constraints around that choice: <https://users.soe.ucsc.edu/~michaelm/publications/mateas-dc-2001.pdf>.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented through archived tickets `SPECVALGATTAX-001` through `SPECVALGATTAX-005`.
+
+What changed:
+
+- Added `current_authoritative_state.immediate_situation_summary` across schemas, prompt rendering, docs, demo fixture, field guidance, and draft migration.
+- Minimized universal current-state blockers, retired `missing-stop-guidance`, context-gated continuation handoff, and limited malformed generation-context blocking to multiple contexts.
+- Downgraded missing current voice pressure pins to advisory warnings while keeping durable voice anchors as the dialogue floor.
+- Replaced per-record/old salience warnings with `cast-salience-risk` and `prompt-middle-salience-risk`.
+- Added capstone validation coverage and reconciled web validation tests to current diagnostic codes.
+
+Deviations from original plan: the dependent `FOUNDATIONS.md` §11 amendment landed with `SPECVALGATTAX-002` to avoid a transient constitution/validator contradiction. `SPECVALGATTAX-005` also corrected selected-record physical over-triggering after the capstone exposed it.
+
+Verification results:
+
+- Per-ticket focused suites passed before each archive/commit.
+- Final family full suite passed: `npm test` with 96 test files and 571 tests.
+- Final grep checks confirmed retired diagnostic codes are absent from active core/web source where required.
