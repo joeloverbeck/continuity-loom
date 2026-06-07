@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-006: Guidance content for cast-member dossier and entity/space-material records
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new guidance-content module (`field-guidance-cast-material.ts`), registry wiring in `field-guidance.ts`, and a scoped coverage test; no production behavior change.
@@ -77,3 +77,26 @@ The cast-member dossier carries the product's deepest continuity surface — dur
 1. `npm test -- field-guidance-cast-material`
 2. `npm test -- field-guidance` — confirms registry aggregation still builds without duplicate `fieldPath`.
 3. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/src/records/field-guidance-cast-material.ts` with guidance entries for CAST MEMBER, ENTITY, ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE descriptor paths.
+- Added durable voice-anchor guidance that states active/onstage cast dossiers are not silently compressed and distinguishes durable cast identity from current-generation pressure.
+- Added sample utterance copy-policy enum guidance and physical-continuity enum guidance for object visibility/durability, visible-affordance risk/durability, and entity-status life/agency/visibility.
+- Wired `castMaterialGuidance` into the core guidance registry.
+- Added `packages/core/test/field-guidance-cast-material.test.ts` covering cast descriptors, cast section/emphasis paths, entity/material paths, enum guidance, and prompt-destination validity.
+
+Deviations from original plan:
+
+- Used descriptor-derived deterministic generic entries for low-risk fields, with authored overrides for the high-risk cast/material fields named in the ticket.
+
+Verification:
+
+- `npm test -- field-guidance-cast-material` passed.
+- `npm test -- field-guidance` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

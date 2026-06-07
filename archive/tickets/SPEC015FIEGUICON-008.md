@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-008: Wire FieldHelp into RecordEditor/FieldShell, story config, and cast sections
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `RecordEditor`/`FieldShell` render per-field help; `CastMemberEditor` threads owner kind and reconciles inline hints; `StoryConfigEditor` inherits. No change to form payload or validation.
@@ -83,3 +83,25 @@
 
 1. `npm test -- RecordEditor CastMemberEditor StoryConfigEditor`
 2. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Threaded `ownerKind` through `RecordEditor`, `FieldRenderer`, `ListField`, nested groups, and cast-section rendering.
+- `FieldShell` now computes canonical guidance keys as `${ownerKind}.${normalizeListIndices(path)}` and renders `FieldHelp` adjacent to each field label.
+- Story configuration inherits per-field help through `RecordEditor` with no `StoryConfigEditor.tsx` source change.
+- Cast sections now pass `ownerKind="CAST MEMBER"` and no longer render duplicate sample-utterance or raw emphasis-path inline notices that are covered by per-field guidance.
+- Extended `RecordEditor`, `CastMemberEditor`, and `StoryConfigEditor` tests for help-trigger presence and cast notice reconciliation.
+
+Deviations from original plan:
+
+- Placed the help trigger outside the wrapping `<label>` but adjacent to it, so the help button does not become part of the input label text or label click target.
+
+Verification:
+
+- `npm test -- RecordEditor CastMemberEditor StoryConfigEditor` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

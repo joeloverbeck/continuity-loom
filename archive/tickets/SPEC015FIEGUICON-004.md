@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-004: Guidance content for generation-brief and story-config fields
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new guidance-content module (`field-guidance-brief-config.ts`), registry wiring in `field-guidance.ts`, and a scoped coverage test; no production behavior change (catalog not yet consumed by compiler or UI).
@@ -78,3 +78,26 @@ The generation brief and story configuration carry the highest-risk authoring fi
 1. `npm test -- field-guidance-brief-config`
 2. `npm test -- field-guidance` — confirms registry aggregation still builds (no duplicate `fieldPath`).
 3. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/src/records/field-guidance-brief-config.ts` with authored guidance entries for every schema-derived story-config path and every full `generationSessionSchema` path.
+- Wired `briefConfigGuidance` into the core guidance registry.
+- Added enum guidance for high-impact story-config/prose-mode and generation-brief enum fields.
+- Added high-risk examples, anti-examples, doctrine warnings, and visible hints for accepted-prose handoff, manual directives, cast voice pressure, validation focus, temporary voice overrides, and stop guidance.
+- Added `packages/core/test/field-guidance-brief-config.test.ts` for full surface coverage, destination validity, validation-only discipline, and high-risk example coverage.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test -- field-guidance-brief-config` passed.
+- `npm test -- field-guidance` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-011: Capstone — global coverage gate, doctrine regression, and accessibility suite
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new verification surfaces (global coverage gate, doctrine-regression suite, FieldHelp accessibility suite); no production behavior change.
@@ -83,3 +83,26 @@ SPEC-015's completion is defined by its coverage rules (§11), testing requireme
 1. `npm test -- field-guidance-coverage field-guidance-doctrine`
 2. `npm test -- FieldHelp`
 3. `npm test && npm run typecheck && npm run lint` — full-pipeline acceptance gate (the correct boundary because the capstone asserts cross-package, end-to-end completeness).
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/test/field-guidance-coverage.test.ts`, a global coverage gate that enumerates story config, full generation brief schema, all record editor descriptors, and cast section emphasis paths.
+- Added catalog-wide prompt-destination and high-implication enum guidance checks.
+- Added `packages/core/test/field-guidance-doctrine.test.ts`, covering prompt-never wording, doctrine forbidden patterns, compiler import isolation, and compiled-prompt exclusion for guidance copy.
+- Added `packages/web/src/field-help/FieldHelp.a11y.test.tsx`, covering keyboard open, Escape dismissal, click/touch open, focus, and ARIA associations.
+
+Deviations from original plan:
+
+- The doctrine forbidden-phrase scan uses targeted positive-problem patterns so negative instructional copy such as "not plot beats" and "do not use accepted prose as canon" remains allowed while still blocking affirmative violations.
+
+Verification:
+
+- `npm test -- field-guidance-coverage field-guidance-doctrine` passed.
+- `npm test -- FieldHelp` passed.
+- `npm test` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

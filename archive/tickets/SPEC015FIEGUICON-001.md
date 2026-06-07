@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-001: Canonical field-path module and index normalization
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — new `@loom/core` field-path utility (`field-paths.ts`) + test surface and one `index.ts` export; no runtime/compiler/validator behavior change.
@@ -78,3 +78,24 @@ Add `export * from "./records/field-paths.js";` (or named re-exports matching th
 1. `npm test -- field-paths`
 2. `npm run typecheck && npm run lint`
 3. `npm test` — full `@loom/core` suite incl. `boundary.test.ts`, confirming the new module does not breach the purity boundary (narrower than a repo-wide run because the invariant at risk is core-package-local).
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/src/records/field-paths.ts` with canonical path building, numeric-index normalization, canonical-path checks, and an exported `FieldPathSegment` type.
+- Re-exported the field-path helpers from `packages/core/src/index.ts`.
+- Added `packages/core/test/field-paths.test.ts` covering the SPEC-015 required example paths, runtime index normalization, idempotence, and non-canonical rejection cases.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test -- field-paths` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.

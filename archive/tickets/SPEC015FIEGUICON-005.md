@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-005: Guidance content for knowledge, causal-pressure, and relationship/emotion records
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new guidance-content module (`field-guidance-records.ts`), registry wiring in `field-guidance.ts`, and a scoped coverage test; no production behavior change.
@@ -77,3 +77,26 @@ The knowledge records (FACT, BELIEF, SECRET), causal-pressure records (EVENT, IN
 1. `npm test -- field-guidance-records`
 2. `npm test -- field-guidance` — confirms registry aggregation still builds without duplicate `fieldPath`.
 3. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/src/records/field-guidance-records.ts` with guidance entries for FACT, BELIEF, SECRET, EVENT, INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD, RELATIONSHIP, and EMOTION descriptor paths.
+- Added specific secret-firewall, causal-pressure, relationship-pressure, and emotion-behavior copy for the high-risk fields named in the ticket.
+- Added enum guidance for `SECRET.reveal_permission`, `SECRET.pov_access`, `SECRET.audience_visibility`, `FACT.audience_visibility`, and non-obvious `EMOTION.behavioral_pressure[]` values.
+- Wired `recordGuidance` into the core guidance registry.
+- Added `packages/core/test/field-guidance-records.test.ts` for scoped record coverage, enum-guidance presence, and prompt-destination validity.
+
+Deviations from original plan:
+
+- Used descriptor-derived deterministic generic entries for low-risk fields, with authored overrides for high-risk fields, so coverage tracks the current schema without hand-maintaining repeated boilerplate.
+
+Verification:
+
+- `npm test -- field-guidance-records` passed.
+- `npm test -- field-guidance` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

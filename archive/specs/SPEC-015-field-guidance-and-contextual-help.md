@@ -1,6 +1,6 @@
 # SPEC-015 — Field Guidance and Contextual Help
 
-**Status:** proposed implementation specification  
+**Status:** COMPLETED
 **Feature name:** Field Guidance System  
 **Target repository:** `joeloverbeck/continuity-loom`  
 **Target commit:** `25ea294b3d146b3dc9cb2d05935c6d8d4d6e1630`  
@@ -1022,3 +1022,31 @@ This feature only *describes* continuity doctrine in static, product-authored he
 - **§29.11 — Quality and workflow.** The system improves validation legibility, makes prompt-facing status explicit, and surfaces continuity doctrine at the point of authoring, while keeping critical instructions always-visible (§12.1) so help never hides task-essential information.
 
 No §29 hard-fail question is answered "yes."
+
+---
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Implemented canonical field-path helpers and full schema/descriptor-derived field-path coverage sources.
+- Added a deterministic `FieldGuidance` catalog model, registry, lookup normalization, duplicate-path guard, and prompt-destination validator.
+- Authored guidance coverage for story configuration, full generation-time brief schema, all record editor surfaces, cast-member sections, and high-implication enum values.
+- Added accessible `FieldHelp` popovers, deterministic DOM ids, critical visible hints, and enum selected-value/card presentation in the web UI.
+- Wired help into generic record editing, story config, cast-member sections, and rendered generation-brief fields.
+- Added global coverage, doctrine, prompt-exclusion, and accessibility capstone tests.
+
+Deviations from original plan:
+
+- `FieldDescriptor` was not expanded with a stored path. The web renderer computes canonical keys from `ownerKind` plus `normalizeListIndices(path)`, matching the accepted SPEC-015 option and keeping descriptors small.
+- Low-risk record guidance uses deterministic descriptor-derived generic entries with authored overrides for the high-risk fields named in the tickets.
+
+Verification:
+
+- `npm test -- field-guidance-coverage field-guidance-doctrine` passed.
+- `npm test -- FieldHelp` passed.
+- `npm test` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

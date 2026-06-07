@@ -48,6 +48,7 @@ export type {
 export {
   whatWillCompile
 } from "./records/compile-destinations.js";
+export { compileDestinationFamilyIds } from "./records/compile-destinations.js";
 export type {
   CompileDestinationBucket,
   CompileDestinationFamilyId,
@@ -59,6 +60,7 @@ export {
 } from "./records/cast-member.js";
 export { entitySchema, entityStatusSchema } from "./records/entity.js";
 export {
+  describeSchemaFields,
   deriveDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
@@ -72,6 +74,24 @@ export type {
   RecordSummary
 } from "./records/editor-descriptors.js";
 export {
+  assertCanonical,
+  buildFieldPath,
+  isCanonicalFieldPath,
+  normalizeListIndices
+} from "./records/field-paths.js";
+export type { FieldPathSegment } from "./records/field-paths.js";
+export {
+  buildGuidanceRegistry,
+  getFieldGuidance,
+  GUIDANCE_REGISTRY,
+  validatePromptDestinations
+} from "./records/field-guidance.js";
+export type {
+  EnumValueGuidance,
+  FieldGuidance,
+  PromptFacing
+} from "./records/field-guidance.js";
+export {
   activeWorkingSetSchema,
   castVoiceOverridesSchema,
   currentAuthoritativeStateSchema,
@@ -83,6 +103,10 @@ export {
   stopGuidanceSchema
 } from "./records/generation-brief.js";
 export type { GenerationSession } from "./records/generation-brief.js";
+export {
+  generationBriefDescriptors,
+  generationBriefFieldPaths
+} from "./records/generation-brief-descriptors.js";
 export { pruneWorkingSetReferences } from "./records/working-set-integrity.js";
 export type { WorkingSetPruneResult } from "./records/working-set-integrity.js";
 export {
@@ -95,6 +119,10 @@ export type {
   StoryContract,
   UniversalContentPolicy
 } from "./records/global-config.js";
+export {
+  storyConfigDescriptors,
+  storyConfigFieldPaths
+} from "./records/story-config-descriptors.js";
 export type { RecordMetadata } from "./records/metadata.js";
 export { beliefSchema, factSchema, secretSchema } from "./records/knowledge.js";
 export { recordMetadataSchema } from "./records/metadata.js";

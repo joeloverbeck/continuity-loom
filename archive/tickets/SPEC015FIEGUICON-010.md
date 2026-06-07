@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-010: Enum guidance UI — selected-value display and radio/card controls
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `EnumGuidance` component, enum-rendering enhancement in `RecordEditor`, and enum/card styles; enum presentation changes, form payload unchanged.
@@ -79,3 +79,25 @@ SPEC-015 §12.4–§12.5 and §15 require value-level enum guidance: a selected-
 
 1. `npm test -- EnumGuidance RecordEditor`
 2. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/web/src/field-help/EnumGuidance.tsx` for selected-value enum explanations, plain-select rendering for ordinary enums, and card/radio rendering for a curated high-impact enum set.
+- Updated `RecordEditor` enum rendering to delegate to `EnumGuidance` with canonical guidance paths and to write enum string literals back through React Hook Form state.
+- Added enum card, selected-value, and enum explanation styles.
+- Added `packages/web/src/field-help/EnumGuidance.test.tsx` for selected-value copy, card/radio behavior, and select fallback.
+- Extended `RecordEditor.test.tsx` to prove a card selection submits the same enum literal expected by the schema.
+
+Deviations from original plan:
+
+- Added an `allowUnset` prop to preserve the existing optional-enum unset behavior for non-required fields.
+
+Verification:
+
+- `npm test -- EnumGuidance RecordEditor` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

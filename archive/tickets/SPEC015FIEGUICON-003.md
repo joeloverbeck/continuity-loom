@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-003: Core-accessible field-path sources for story config and generation brief
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — new `@loom/core` path-enumeration modules (`story-config-descriptors.ts`, `generation-brief-descriptors.ts`), one additive export from `editor-descriptors.ts`, and `index.ts` exports; no production behavior change.
@@ -85,3 +85,27 @@ SPEC-015 §16.1 places the story-config and generation-brief coverage tests in `
 1. `npm test -- guidance-coverage-sources`
 2. `npm test -- editor-descriptors` — confirms the additive `describeSchemaFields` export leaves existing descriptor generation unchanged.
 3. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `describeSchemaFields` as an additive export from `packages/core/src/records/editor-descriptors.ts`.
+- Added `packages/core/src/records/field-path-enumeration.ts` for shared canonical leaf-path enumeration from `FieldDescriptor` trees.
+- Added schema-derived story-config descriptors and paths in `packages/core/src/records/story-config-descriptors.ts`.
+- Added schema-derived generation-brief descriptors and paths in `packages/core/src/records/generation-brief-descriptors.ts`.
+- Re-exported the new descriptor/path APIs from `packages/core/src/index.ts`.
+- Added `packages/core/test/guidance-coverage-sources.test.ts` for story-config examples, full generation-brief schema examples, and canonical-path assertions.
+
+Deviations from original plan:
+
+- Added a small shared `field-path-enumeration.ts` module so story-config and generation-brief path recursion use one implementation.
+
+Verification:
+
+- `npm test -- guidance-coverage-sources` passed.
+- `npm test -- editor-descriptors` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

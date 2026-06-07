@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-002: FieldGuidance model, catalog registry, lookup, and promptDestination validator
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` guidance model + registry + lookup + destination validator (`field-guidance.ts`), one additive export from `compile-destinations.ts`, and `index.ts` exports; no production prompt/validation behavior change (catalog not yet consumed by compiler or UI).
@@ -86,3 +86,26 @@ SPEC-015 §9 defines the guidance data model — `FieldGuidance` / `EnumValueGui
 1. `npm test -- field-guidance`
 2. `npm test -- compiler-golden` — confirms the additive `compile-destinations.ts` export does not perturb deterministic compilation (the narrow boundary at risk).
 3. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `packages/core/src/records/field-guidance.ts` with the `FieldGuidance`/`EnumValueGuidance`/`PromptFacing` model, empty production registry, registry builder, normalized lookup, duplicate-path guard, and prompt-destination validator.
+- Exported `compileDestinationFamilyIds` from `packages/core/src/records/compile-destinations.ts` for runtime validation of destination families.
+- Re-exported guidance APIs and types from `packages/core/src/index.ts`.
+- Added `packages/core/test/field-guidance.test.ts` for destination validation, index-normalized lookup, duplicate-path rejection, and non-canonical path rejection.
+
+Deviations from original plan:
+
+- Added an exported `buildGuidanceRegistry` helper so duplicate-path behavior can be tested against fixtures while the production catalog remains empty until content tickets land.
+
+Verification:
+
+- `npm test -- field-guidance` passed.
+- `npm test -- compiler-golden` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `rg -n "field-guidance|GUIDANCE_REGISTRY|getFieldGuidance|validatePromptDestinations|buildGuidanceRegistry" packages/core/src/compiler packages/core/src/project-storage.ts packages/core/src/demo packages/server packages/web || true` returned no matches.

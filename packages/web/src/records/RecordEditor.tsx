@@ -2,6 +2,7 @@ import {
   deriveDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
+  normalizeListIndices,
   recordTypeRegistry,
   type FieldDescriptor,
   type RecordEditorDescriptor
@@ -25,6 +26,8 @@ import {
   type RecordDetail,
   type RecordSummary
 } from "../api.js";
+import { EnumGuidance } from "../field-help/EnumGuidance.js";
+import { FieldHelp } from "../field-help/FieldHelp.js";
 
 export interface RecordEditorProps {
   recordType: string;
@@ -185,18 +188,21 @@ function inputOptions(field: FieldDescriptor) {
 function FieldShell({
   field,
   path,
+  ownerKind,
   children,
   form,
   serverIssues
 }: {
   field: FieldDescriptor;
   path: string;
+  ownerKind: string;
   children: React.ReactNode;
   form: UseFormReturn<FormValues>;
   serverIssues: Map<string, string>;
 }): React.JSX.Element {
   const clientError = errorMessage(form.formState.errors, path);
   const serverError = serverIssues.get(path);
+  const canonicalPath = `${ownerKind}.${normalizeListIndices(path)}`;
 
   return (
     <div className={`editorField ${field.promptFacing ? "promptFacing" : "validationField"}`}>
@@ -207,6 +213,7 @@ function FieldShell({
         </span>
         {children}
       </label>
+      <FieldHelp fieldPath={canonicalPath} fieldLabel={field.name} listContext={path} />
       {clientError || serverError ? (
         <p className="fieldError" role="alert">
           {clientError ?? serverError}
@@ -244,12 +251,14 @@ function ReferencePicker({
 function ListField({
   field,
   path,
+  ownerKind,
   form,
   referenceRecords,
   serverIssues
 }: {
   field: FieldDescriptor;
   path: string;
+  ownerKind: string;
   form: UseFormReturn<FormValues>;
   referenceRecords: readonly RecordSummary[];
   serverIssues: Map<string, string>;
@@ -274,6 +283,7 @@ function ListField({
             <FieldRenderer
               field={{ ...item, name: `${field.name} ${index + 1}`, required: true }}
               path={`${path}.${index}`}
+              ownerKind={ownerKind}
               form={form}
               referenceRecords={referenceRecords}
               serverIssues={serverIssues}
@@ -303,6 +313,7 @@ function registerText(
 export function FieldRenderer({
   field,
   path,
+  ownerKind,
   form,
   referenceRecords,
   serverIssues,
@@ -310,6 +321,7 @@ export function FieldRenderer({
 }: {
   field: FieldDescriptor;
   path: string;
+  ownerKind: string;
   form: UseFormReturn<FormValues>;
   referenceRecords: readonly RecordSummary[];
   serverIssues: Map<string, string>;
@@ -321,20 +333,20 @@ export function FieldRenderer({
         return <input type="checkbox" {...form.register(path)} />;
       case "enum":
         return (
-          <select {...form.register(path, inputOptions(field))}>
-            {!field.required ? <option value="">Unset</option> : null}
-            {(field.enumValues ?? []).map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
+          <EnumGuidance
+            fieldPath={`${ownerKind}.${normalizeListIndices(path)}`}
+            enumValues={field.enumValues ?? []}
+            value={String(form.watch(path) ?? "")}
+            onChange={(value) => form.setValue(path, value, { shouldDirty: true, shouldValidate: true })}
+            allowUnset={!field.required}
+          />
         );
       case "list":
         return (
           <ListField
             field={field}
             path={path}
+            ownerKind={ownerKind}
             form={form}
             referenceRecords={referenceRecords}
             serverIssues={serverIssues}
@@ -349,6 +361,7 @@ export function FieldRenderer({
                 key={child.name}
                 field={child}
                 path={`${path}.${child.name}`}
+                ownerKind={ownerKind}
                 form={form}
                 referenceRecords={referenceRecords}
                 serverIssues={serverIssues}
@@ -372,7 +385,7 @@ export function FieldRenderer({
   }
 
   return (
-    <FieldShell field={field} path={path} form={form} serverIssues={serverIssues}>
+    <FieldShell field={field} path={path} ownerKind={ownerKind} form={form} serverIssues={serverIssues}>
       {control}
     </FieldShell>
   );
@@ -454,6 +467,7 @@ export function RecordEditor({
             key={field.name}
             field={field}
             path={field.name}
+            ownerKind={recordType}
             form={form}
             referenceRecords={referenceRecords}
             serverIssues={serverIssues}

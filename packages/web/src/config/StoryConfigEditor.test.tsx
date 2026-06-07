@@ -101,6 +101,7 @@ describe("StoryConfigEditor", () => {
       }
     }
 
+    expect(screen.getByRole("button", { name: "Help for premise" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^premise/), { target: { value: "A city remembers every broken promise." } });
     fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
     await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith("STORY CONTRACT", expect.objectContaining({
@@ -159,6 +160,7 @@ describe("StoryConfigEditor", () => {
     render(<StoryConfigEditor />);
 
     const picker = await screen.findByLabelText(/^pov_character/);
+    expect(screen.getByRole("button", { name: "Help for pov_character" })).toBeTruthy();
     expect(picker.tagName).toBe("SELECT");
     expect(within(picker).getByRole("option", { name: "Aster" })).toBeTruthy();
     expect((picker as HTMLSelectElement).value).toBe(entityId);

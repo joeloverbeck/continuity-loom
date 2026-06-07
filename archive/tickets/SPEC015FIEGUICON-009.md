@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-009: GenerationBriefView help triggers for rendered fields
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `GenerationBriefView` renders help triggers on its rendered fields and reconciles its inline hints; brief payload and validation are unchanged.
@@ -74,3 +74,24 @@
 
 1. `npm test -- GenerationBriefView`
 2. `npm run typecheck && npm run lint`
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added explicit `FieldHelp` calls in `GenerationBriefView` for every currently rendered generation-brief control, keyed by canonical `GENERATION BRIEF.<group>.<field>` paths rather than DOM `generationSession.*` names.
+- Removed static inline override and validation-focus hints that are now surfaced once through guidance critical hints and badges.
+- Preserved dynamic paste-like and non-local stop validation warnings.
+- Extended `GenerationBriefView.test.tsx` for help-trigger presence, canonical handoff id derivation, one-copy doctrine-hint reconciliation, and unchanged save behavior.
+
+Deviations from original plan:
+
+- Added a local `ResizeObserver` stub to the jsdom test file because opening Radix Popover content requires it.
+
+Verification:
+
+- `npm test -- GenerationBriefView` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

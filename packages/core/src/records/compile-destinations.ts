@@ -52,6 +52,8 @@ const promptFamilyOrder: readonly CompileDestinationFamilyId[] = [
   "other_selected_records"
 ];
 
+export const compileDestinationFamilyIds: readonly CompileDestinationFamilyId[] = promptFamilyOrder;
+
 const recordTypeFamilies: Readonly<Record<string, CompileDestinationFamilyId>> = Object.freeze({
   BELIEF: "facts_beliefs_events",
   CLOCK: "plans_clocks_obligations",

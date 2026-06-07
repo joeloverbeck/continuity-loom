@@ -1,6 +1,6 @@
 # SPEC015FIEGUICON-007: Accessible FieldHelp component and Radix Popover dependency
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/web` overlay primitive (`FieldHelp` + `field-help-ids`), the `@radix-ui/react-popover` dependency, and popover/badge styles; standalone component, not yet wired into editors (that is SPEC015FIEGUICON-008/009).
@@ -87,3 +87,26 @@ SPEC-015 §12–§13 require a reusable, accessible field-help affordance: a rea
 1. `npm test -- FieldHelp`
 2. `npm run typecheck && npm run lint`
 3. `npm --workspace @loom/web run build` — confirms the new dependency resolves and the component compiles in the Vite build (narrow boundary: the dependency add).
+
+## Outcome
+
+Completed: 2026-06-07
+
+Changed:
+
+- Added `@radix-ui/react-popover` to the web workspace dependency set and regenerated the lockfile.
+- Added `packages/web/src/field-help/field-help-ids.ts` for deterministic DOM ids derived from canonical field paths and optional list context.
+- Added `packages/web/src/field-help/FieldHelp.tsx`, a standalone display-only guidance popover that reads `getFieldGuidance`, renders critical hints outside the popover, exposes a real button trigger, and structures prompt/validation/continuity/advice/example/enum content.
+- Added FieldHelp styles to `packages/web/src/styles.css`.
+- Added `packages/web/src/field-help/FieldHelp.test.tsx` covering button trigger behavior, click and keyboard open, Escape/outside/second-click dismissal, ARIA state, non-hover access, visible critical hints, and graceful no-guidance rendering.
+
+Deviations from original plan:
+
+- Added explicit Enter/Space handling on the trigger so keyboard activation is deterministic in both jsdom and the component, instead of relying only on native button event synthesis.
+
+Verification:
+
+- `npm test -- FieldHelp` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm --workspace @loom/web run build` passed with Vite's large-chunk warning.

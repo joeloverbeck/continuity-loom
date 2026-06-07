@@ -859,6 +859,156 @@ button:disabled:hover {
   color: #17466d;
 }
 
+.fieldHelp {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.fieldHelpTrigger {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #8fa2bc;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #245a8d;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.fieldHelpTrigger:hover,
+.fieldHelpTrigger:focus-visible {
+  background: #e9f1f8;
+  outline: 2px solid #245a8d;
+  outline-offset: 2px;
+}
+
+.fieldHelpCriticalHint {
+  flex-basis: 100%;
+  color: #6d4a00;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.fieldHelpPopover {
+  z-index: 20;
+  width: min(380px, calc(100vw - 32px));
+  max-height: min(680px, calc(100vh - 32px));
+  overflow: auto;
+  border: 1px solid #aeb9c8;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 42px rgb(32 33 36 / 18%);
+  color: #202124;
+  padding: 14px;
+}
+
+.fieldHelpArrow {
+  fill: #ffffff;
+  stroke: #aeb9c8;
+}
+
+.fieldHelpHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.fieldHelpBadge {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  background: #f3f6fa;
+  color: #39445a;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.fieldHelpPopover p,
+.fieldHelpPopover ul,
+.fieldHelpEnumList {
+  margin: 0;
+}
+
+.fieldHelpSection {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.fieldHelpSection h4 {
+  margin: 0;
+  color: #39445a;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.fieldHelpSection ul {
+  padding-left: 18px;
+}
+
+.fieldHelpEnumList div {
+  display: grid;
+  gap: 2px;
+  padding: 6px 0;
+}
+
+.fieldHelpEnumList dt {
+  font-weight: 800;
+}
+
+.fieldHelpEnumList dd {
+  margin: 0;
+}
+
+.enumGuidance {
+  display: grid;
+  gap: 8px;
+}
+
+.enumCardGroup {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.enumCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.enumCard:has(input:checked) {
+  border-color: #245a8d;
+  background: #eef6ff;
+}
+
+.enumCardText {
+  display: grid;
+  gap: 3px;
+}
+
+.enumCardText small,
+.enumSelectedValue {
+  color: #5c677d;
+  font-size: 0.84rem;
+}
+
+.enumSelectedValue {
+  margin: 0;
+}
+
 @media (max-width: 760px) {
   .appFrame {
     grid-template-columns: 1fr;
