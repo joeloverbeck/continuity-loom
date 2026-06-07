@@ -666,9 +666,9 @@ describe("api client", () => {
   it("returns structured generation-brief failures unchanged", async () => {
     const failure = {
       ok: false,
-      kind: "invalid-request",
-      message: "Generation brief request is invalid.",
-      issues: [{ path: ["active_working_set", "selected_records", 0] }]
+      kind: "malformed-draft",
+      message: "The draft could not be saved because the request shape is invalid.",
+      issues: [{ path: "active_working_set.selected_records.0" }]
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 400))));
 

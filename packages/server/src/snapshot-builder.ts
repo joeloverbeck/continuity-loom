@@ -1,5 +1,6 @@
 import {
   buildValidationSnapshot,
+  deriveGenerationContextDefault,
   versionInfo,
   type GenerationSession,
   type ProseMode,
@@ -39,7 +40,11 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
   if (!sessionResult.ok && sessionResult.kind !== "not-found") {
     return { ok: false, status: 422, body: sessionResult };
   }
-  const generationSession = (sessionResult.ok ? sessionResult.payload : {}) as GenerationSession;
+  const acceptedSegmentCount = repository.listAcceptedSegments().length;
+  const generationSession = withSnapshotSessionDefaults(
+    sessionResult.ok ? sessionResult.payload : {},
+    acceptedSegmentCount
+  );
 
   const storyConfig = loadStoryConfig(repository);
   const records = resolveSelectedRecords(repository, generationSession);
@@ -60,6 +65,30 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
         contract: versionInfo.contract.version
       }
     })
+  };
+}
+
+function withSnapshotSessionDefaults(payload: unknown, acceptedSegmentCount: number): GenerationSession {
+  const session = (payload && typeof payload === "object" ? payload : {}) as Partial<GenerationSession>;
+  const context = session.generation_validation_focus?.validation_focus_tags.generation_context;
+  const generationValidationFocus = context?.length
+    ? session.generation_validation_focus
+    : {
+        ...session.generation_validation_focus,
+        validation_focus_tags: {
+          ...session.generation_validation_focus?.validation_focus_tags,
+          generation_context: [deriveGenerationContextDefault(acceptedSegmentCount)],
+          expected_local_modes: session.generation_validation_focus?.validation_focus_tags.expected_local_modes ?? [],
+          possible_durable_changes:
+            session.generation_validation_focus?.validation_focus_tags.possible_durable_changes ?? []
+        }
+      };
+
+  return {
+    ...session,
+    current_cast_voice_pressure: session.current_cast_voice_pressure ?? [],
+    cast_voice_overrides: session.cast_voice_overrides ?? [],
+    generation_validation_focus: generationValidationFocus
   };
 }
 

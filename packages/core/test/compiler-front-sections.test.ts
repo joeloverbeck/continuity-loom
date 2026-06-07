@@ -2,6 +2,7 @@ import {
   buildValidationSnapshot,
   compilePrompt,
   EMPTY_STATE_CONSTANTS,
+  versionInfo,
   type BuildValidationSnapshotInput
 } from "../src/index.js";
 import { describe, expect, it } from "vitest";
@@ -177,16 +178,27 @@ describe("compiler front-section resolvers", () => {
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 
+    expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
+      "Soft unit: No additional user narrowing; use the universal local stop rule above."
+    );
     expect(sectionBody(prompt, "content_policy")).toContain(`RATING: ${EMPTY_STATE_CONSTANTS.rating_label}`);
     expect(sectionBody(prompt, "story_contract")).toContain(`Title: ${EMPTY_STATE_CONSTANTS.title}`);
     expect(sectionBody(prompt, "hard_canon")).toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(EMPTY_STATE_CONSTANTS.current_time);
+    expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.recent_causal_context);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
+    expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.begin_after);
+    expect(sectionBody(prompt, "stop_rule")).toContain(EMPTY_STATE_CONSTANTS.soft_unit_guidance);
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
     );
+  });
+
+  it("records the deliberate compiler and contract version bump", () => {
+    expect(versionInfo.compiler.version).toBe("1.1.0");
+    expect(versionInfo.contract.version).toBe("1.1.0");
   });
 
   it("keeps writer-visible secrets out of POV knowledge while preserving protection lanes", () => {

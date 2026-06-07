@@ -551,7 +551,7 @@ describe("SPEC-003 record tables and repository", () => {
       }
     });
     expect(repository.getGenerationSession()).toMatchObject({ ok: true });
-    expect(() => repository.setGenerationSession({ manual_moment_directive: { must_render: [] } })).toThrow();
+    expect(() => repository.setGenerationSession({ manual_moment_directive: { must_render: [] } })).not.toThrow();
 
     repository.appendAcceptedSegment({ text: "Accepted prose.", metadata: { source: "test" } });
     expect(repository.listAcceptedSegments()).toHaveLength(1);

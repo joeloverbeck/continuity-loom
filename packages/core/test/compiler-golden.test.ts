@@ -135,7 +135,7 @@ function goldenInput(): BuildValidationSnapshotInput {
         special_style_constraints: []
       }
     },
-    versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
   };
 }
 
@@ -173,6 +173,6 @@ describe("compiler golden prompt", () => {
     expect(first.prompt).toContain("Mara guards the archive.");
     expect(first.prompt).toContain("The archive key is unique.");
     expect(first.prompt).toContain("The archive key cannot duplicate itself.");
-    expect(first.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" });
   });
 });

@@ -1,11 +1,12 @@
 import {
   activeWorkingSetSchema,
-  generationSessionSchema
+  generationSessionDraftSchema
 } from "@loom/core";
 import { useEffect, useMemo, useState } from "react";
 import type { z } from "zod";
 
 import {
+  type GenerationBriefDefaults,
   getGenerationBrief,
   listStoryConfig,
   setGenerationBrief
@@ -13,7 +14,7 @@ import {
 import { FieldHelp } from "../field-help/FieldHelp.js";
 import { ValidationPanel } from "./ValidationPanel.js";
 
-type GenerationSession = z.infer<typeof generationSessionSchema>;
+type GenerationSession = z.infer<typeof generationSessionDraftSchema>;
 type ActiveWorkingSet = z.infer<typeof activeWorkingSetSchema>;
 
 const currentCastLocalFunctions = [
@@ -38,7 +39,20 @@ function proseLikePaste(value: string): boolean {
 }
 
 function parseSession(value: unknown): GenerationSession {
-  return generationSessionSchema.parse(value ?? {});
+  return generationSessionDraftSchema.parse(value ?? {});
+}
+
+function issuePath(issue: unknown): string {
+  if (typeof issue === "object" && issue !== null && "path" in issue) {
+    const path = (issue as { path?: unknown }).path;
+    if (typeof path === "string") {
+      return path;
+    }
+    if (Array.isArray(path)) {
+      return path.map(String).join(".");
+    }
+  }
+  return "(unknown path)";
 }
 
 function BriefFieldHelp({ path, label }: { path: string; label: string }): React.JSX.Element {
@@ -47,8 +61,11 @@ function BriefFieldHelp({ path, label }: { path: string; label: string }): React
 
 export function GenerationBriefView(): React.JSX.Element {
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
+  const [briefDefaults, setBriefDefaults] = useState<GenerationBriefDefaults | null>(null);
   const [proseModeSummary, setProseModeSummary] = useState("Not configured");
   const [notice, setNotice] = useState<string | null>(null);
+  const [shapeIssues, setShapeIssues] = useState<string[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [validationKey, setValidationKey] = useState(0);
 
   useEffect(() => {
@@ -62,6 +79,8 @@ export function GenerationBriefView(): React.JSX.Element {
 
         if (briefResponse.ok) {
           setSession(parseSession(briefResponse.session));
+          setBriefDefaults(briefResponse.defaults);
+          setHasUnsavedChanges(false);
           setValidationKey((current) => current + 1);
         } else {
           setNotice(briefResponse.message);
@@ -90,24 +109,27 @@ export function GenerationBriefView(): React.JSX.Element {
     };
   }, []);
 
-  const activeWorkingSet = session.active_working_set ?? {
+  const activeWorkingSet = {
     selected_records: [],
     active_onstage_cast_full: [],
     present_minor_cast_compressed: [],
-    offstage_relevant_cast: []
+    offstage_relevant_cast: [],
+    ...(session.active_working_set ?? {})
   };
-  const immediateHandoff = session.immediate_handoff ?? {
-    recent_causal_context: "",
-    last_visible_moment: "",
-    prior_accepted_prose_status_or_handoff_note: "none",
-    begin_after: ""
+  const immediateHandoffDraft = session.immediate_handoff ?? {};
+  const immediateHandoff = {
+    recent_causal_context: immediateHandoffDraft.recent_causal_context ?? "",
+    last_visible_moment: immediateHandoffDraft.last_visible_moment ?? "",
+    prior_accepted_prose_status_or_handoff_note: immediateHandoffDraft.prior_accepted_prose_status_or_handoff_note ?? "none",
+    begin_after: immediateHandoffDraft.begin_after ?? ""
   };
-  const manualDirective = session.manual_moment_directive ?? {
-    must_render: [],
-    may_render_if_naturally_caused: [],
-    do_not_force: []
+  const manualDirectiveDraft = session.manual_moment_directive ?? {};
+  const manualDirective = {
+    must_render: manualDirectiveDraft.must_render ?? [],
+    may_render_if_naturally_caused: manualDirectiveDraft.may_render_if_naturally_caused ?? [],
+    do_not_force: manualDirectiveDraft.do_not_force ?? []
   };
-  const currentVoicePressure = session.current_cast_voice_pressure[0] ?? {
+  const currentVoicePressure = session.current_cast_voice_pressure?.[0] ?? {
     cast_member_id: "",
     local_function: "active_speaker",
     current_voice_pressure: "",
@@ -117,21 +139,27 @@ export function GenerationBriefView(): React.JSX.Element {
     current_must_preserve: [],
     current_must_avoid: []
   };
-  const voiceOverride = session.cast_voice_overrides[0] ?? {
+  const voiceOverride = session.cast_voice_overrides?.[0] ?? {
     cast_member_id: currentVoicePressure.cast_member_id,
     scope: "current_generation_only",
     reason: "none",
     applies_to: ["dialogue"],
     override_text: ""
   };
+  const defaultGenerationContext = briefDefaults?.generation_context.value ?? "first_segment";
   const validationFocus = session.generation_validation_focus ?? {
     validation_focus_tags: {
-      generation_context: ["first_segment"],
+      generation_context: [defaultGenerationContext],
       expected_local_modes: [],
       possible_durable_changes: []
     }
   };
-  const stopGuidance = session.stop_guidance ?? { soft_unit_guidance: "" };
+  const validationFocusTags = validationFocus.validation_focus_tags ?? {
+    generation_context: [defaultGenerationContext],
+    expected_local_modes: [],
+    possible_durable_changes: []
+  };
+  const stopGuidance = { soft_unit_guidance: session.stop_guidance?.soft_unit_guidance ?? "" };
   const pasteWarning = useMemo(
     () => proseLikePaste(immediateHandoff.prior_accepted_prose_status_or_handoff_note),
     [immediateHandoff.prior_accepted_prose_status_or_handoff_note]
@@ -140,7 +168,7 @@ export function GenerationBriefView(): React.JSX.Element {
 
   function updateSurface<K extends keyof GenerationSession>(key: K, value: GenerationSession[K]): void {
     setSession((current) => ({ ...current, [key]: value }));
-    setValidationKey((current) => current + 1);
+    setHasUnsavedChanges(true);
   }
 
   function updateActiveWorkingSet(value: Partial<ActiveWorkingSet>): void {
@@ -149,14 +177,12 @@ export function GenerationBriefView(): React.JSX.Element {
 
   async function save(): Promise<void> {
     setNotice(null);
+    setShapeIssues([]);
     const payload: Record<string, unknown> = {
       active_working_set: activeWorkingSet,
       current_authoritative_state: session.current_authoritative_state,
       immediate_handoff: immediateHandoff,
-      manual_moment_directive: {
-        ...manualDirective,
-        must_render: manualDirective.must_render.length > 0 ? manualDirective.must_render : ["Continue the immediate moment."]
-      },
+      manual_moment_directive: manualDirective,
       current_cast_voice_pressure: currentVoicePressure.cast_member_id ? [currentVoicePressure] : [],
       cast_voice_overrides: voiceOverride.override_text ? [voiceOverride] : [],
       generation_validation_focus: validationFocus,
@@ -164,8 +190,16 @@ export function GenerationBriefView(): React.JSX.Element {
     };
     const response = await setGenerationBrief(payload);
 
-    setNotice(response.ok ? "Generation brief saved." : response.message);
-    setValidationKey((current) => current + 1);
+    if (response.ok) {
+      setSession(parseSession(response.session));
+      setNotice("Draft saved.");
+      setHasUnsavedChanges(false);
+      setValidationKey((current) => current + 1);
+      return;
+    }
+
+    setNotice(response.message);
+    setShapeIssues(response.kind === "malformed-draft" ? (response.issues ?? []).map(issuePath) : []);
   }
 
   function focusBriefField(field: string): void {
@@ -187,6 +221,19 @@ export function GenerationBriefView(): React.JSX.Element {
         <p className={notice.endsWith("saved.") ? "status statusSuccess" : "status statusError"} role="status">
           {notice}
         </p>
+      ) : null}
+      {shapeIssues.length > 0 ? (
+        <details>
+          <summary>Technical details</summary>
+          <ul>
+            {shapeIssues.map((path) => (
+              <li key={path}>{path}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+      {hasUnsavedChanges ? (
+        <p className="status statusWarning">Displayed readiness may be stale until you save this draft.</p>
       ) : null}
 
       <div className="briefStack">
@@ -337,11 +384,11 @@ export function GenerationBriefView(): React.JSX.Element {
           <label>
             generation_context
             <select
-              value={validationFocus.validation_focus_tags.generation_context[0]}
+              value={validationFocusTags.generation_context?.[0] ?? defaultGenerationContext}
               onChange={(event) =>
                 updateSurface("generation_validation_focus", {
                   validation_focus_tags: {
-                    ...validationFocus.validation_focus_tags,
+                    ...validationFocusTags,
                     generation_context: [event.target.value as "first_segment" | "continuation_after_accepted_segment"]
                   }
                 })
@@ -355,6 +402,16 @@ export function GenerationBriefView(): React.JSX.Element {
             path="generation_validation_focus.validation_focus_tags.generation_context[]"
             label="generation_context"
           />
+          {briefDefaults ? (
+            <p className="muted">
+              Default: {briefDefaults.generation_context.value === "first_segment" ? "first segment" : "continuation after accepted segment"}
+              {briefDefaults.generation_context.source === "accepted-segment-count"
+                ? briefDefaults.generation_context.acceptedSegmentCount === 0
+                  ? " because no accepted prose exists yet."
+                  : ` because ${briefDefaults.generation_context.acceptedSegmentCount} accepted segment(s) exist.`
+                : " from the saved draft."}
+            </p>
+          ) : null}
         </section>
 
         <section className="configPanel stopGuidancePanel" aria-labelledby="stop-guidance-brief">

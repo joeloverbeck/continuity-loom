@@ -1,5 +1,5 @@
 import {
-  generationSessionSchema,
+  generationSessionDraftSchema,
   pruneWorkingSetReferences
 } from "@loom/core";
 import type { DatabaseSync } from "node:sqlite";
@@ -31,7 +31,7 @@ export function repairWorkingSetReferences(database: DatabaseSync): WorkingSetIn
   }
 
   const liveIds = liveRecordIds(database);
-  const session = generationSessionSchema.parse(JSON.parse(row.payload_json) as unknown);
+  const session = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
   const result = pruneWorkingSetReferences(session, (id) => liveIds.has(id));
 
   if (result.removed.length === 0) {

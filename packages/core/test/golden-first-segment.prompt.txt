@@ -415,7 +415,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Soft unit: None specified
+Soft unit: Soft unit: No additional user narrowing; use the universal local stop rule above.
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

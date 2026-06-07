@@ -39,7 +39,7 @@ Steps 1–7 are the audit. Step 8 (follow-up implementation) fires only if the u
    - Outcomes that diverged from what the skill intended
    - Steps not exercised this session (mark "not exercised" — do not speculate about them)
 
-   **Self-audit** (target is `skill-audit` itself): use evidence from any prior audit invocation(s) this session. If there were none, report "No session evidence available — self-audit with no prior invocations" and skip steps 3–6.
+   **Self-audit** (target is `skill-audit` itself): use evidence from any prior invocation(s) this session, **including the Step 8 implementation phase if one ran** (often the richest evidence — cascade scan, premise re-evaluation, cross-skill check). If there were none, report "No session evidence available — self-audit with no prior invocations" and skip steps 3–6.
 
 4. **Cross-check alignment.** For each finding, check whether the skill contradicts or fails to implement:
    - Principles from `docs/FOUNDATIONS.md` (reference by § number, including the §29 hard-fails)
@@ -55,6 +55,8 @@ Steps 1–7 are the audit. Step 8 (follow-up implementation) fires only if the u
    - **HIGH** — a missing guardrail/instruction that already caused rework or wrong output this session, or a plausible near-term failure on next use.
    - **MEDIUM** — friction that cost non-trivial improvisation or non-obvious judgment to work around; the right outcome still emerged, but the path wasn't smooth.
    - **LOW** — wording refinement, coverage gap, or polish that didn't block progress.
+
+   **Input-conditional severity** — for a defect that produces wrong output only for a specific input class, tag CRITICAL when that input class is common or the wrong output is silent/corrupting; otherwise HIGH, naming the triggering input class. (Don't downgrade a real correctness bug to MEDIUM just because it isn't universal.)
 
    **Pre-finalization verification** — before finalizing any finding tagged MEDIUM or higher whose Suggestion or Skill-gap field claims content is absent, missing, or undocumented, or mis-cites a specific location (phrasings like "Add X", "there is no documented Y", "the skill never mentions Z", "§W currently reads…"), verify the claim by a Read or grep of the cited file/section *before* writing the finding. The 30-second check keeps the report's premises true to the file's actual state, rather than to which content you happened to load. LOW findings are exempt from the mandatory check, but verify ad-hoc when you're unsure a claim holds.
 
@@ -131,7 +133,9 @@ After the report, the user may ask you to implement specific findings (or all of
 
 ## Cross-skill note
 
-This repo currently has one sibling skill, `brainstorm`. A cross-skill check matters only when a follow-up edit introduces or changes terminology, a convention, or an output path that `brainstorm` also relies on — in that case, grep `brainstorm` for the affected token and record the outcome (`Scanned brainstorm via grep for <token> — no inconsistencies`, or name what was adjusted). When no edit touches a shared surface, omit any cross-skill section entirely. As the skill ecosystem grows, extend the scan to the relevant siblings.
+Before a cross-skill check, `ls .claude/skills/` to enumerate the current siblings (exclude the audit target) — do not rely on a hardcoded inventory, which drifts as skills are added. A cross-skill check matters only when a follow-up edit introduces or changes terminology, a convention, or an output path a sibling also relies on — in that case, grep each relevant sibling for the affected token and record the outcome (`Scanned <sibling> via grep for <token> — no inconsistencies`, or name what was adjusted). When no edit touches a shared surface, omit any cross-skill section entirely.
+
+High-overlap siblings to weight first (they read `specs/` + `docs/FOUNDATIONS.md` and share terms like "deliverable", "FOUNDATIONS alignment", "ticket decomposition"): `reassess-spec` and `spec-to-tickets`. Treat this as a likely-relevant hint, not a closed set — the `ls` is authoritative.
 
 ## Auxiliary investigation and announcements
 

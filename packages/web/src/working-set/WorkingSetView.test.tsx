@@ -65,6 +65,14 @@ const records: RecordSummary[] = [
   }
 ];
 
+const briefDefaults = {
+  generation_context: {
+    value: "first_segment" as const,
+    source: "accepted-segment-count" as const,
+    acceptedSegmentCount: 0
+  }
+};
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -77,7 +85,7 @@ describe("WorkingSetView", () => {
       ok: true,
       selectedRecordIds: ["019b0298-5c00-7000-8000-000000000012", "019b0298-5c00-7000-8000-000000000011"]
     });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(setWorkingSet).mockImplementation((selectedRecordIds: string[]) =>
       Promise.resolve({ ok: true, selectedRecordIds })
     );
@@ -102,7 +110,7 @@ describe("WorkingSetView", () => {
   it("renders an empty state and does not write on load", async () => {
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
 
     render(<WorkingSetView />);
 
@@ -115,8 +123,8 @@ describe("WorkingSetView", () => {
     const castId = "019b0298-5c00-7000-8000-000000000014";
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [castId] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
 
     render(<WorkingSetView />);
 
@@ -162,7 +170,8 @@ describe("WorkingSetView", () => {
             { cast_member_id: "019b0298-5c00-7000-8000-000000000014", local_function: "active_speaker" }
           ]
         }
-      }
+      },
+      defaults: briefDefaults
     });
 
     render(<WorkingSetView />);

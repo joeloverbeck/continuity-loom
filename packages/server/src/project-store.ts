@@ -16,6 +16,7 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
 import { backfillDisplayLabels } from "./display-label-backfill.js";
+import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables } from "./record-tables.js";
@@ -248,6 +249,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         backfillDisplayLabels(database);
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
+        migrateGenerationSessionDraft(database);
         closeActive();
         active = {
           folderPath,
@@ -347,6 +349,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         backfillDisplayLabels(database);
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
+        migrateGenerationSessionDraft(database);
         active = {
           folderPath,
           metadata,
