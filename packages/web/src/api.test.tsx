@@ -19,6 +19,7 @@ import {
   getStoryConfig,
   getWorkingSet,
   listAcceptedSegments,
+  listStoryConfig,
   listRecords,
   putOpenRouterSettings,
   refreshModels,
@@ -140,19 +141,21 @@ describe("api client", () => {
       })
     );
 
+    await listStoryConfig();
     await getStoryConfig("PROSE MODE");
     await setStoryConfig("STORY CONTRACT", { title: "Story" });
     await getWorkingSet();
     await setWorkingSet(["019b0298-5c00-7000-8000-000000000001"]);
 
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/story-config", "GET"],
       ["/api/story-config/PROSE%20MODE", "GET"],
       ["/api/story-config/STORY%20CONTRACT", "PUT"],
       ["/api/working-set", "GET"],
       ["/api/working-set", "PUT"]
     ]);
-    expect(calls[1]?.init?.body).toBe(JSON.stringify({ payload: { title: "Story" } }));
-    expect(calls[3]?.init?.body).toBe(
+    expect(calls[2]?.init?.body).toBe(JSON.stringify({ payload: { title: "Story" } }));
+    expect(calls[4]?.init?.body).toBe(
       JSON.stringify({ selectedRecordIds: ["019b0298-5c00-7000-8000-000000000001"] })
     );
   });

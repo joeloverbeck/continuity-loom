@@ -7,7 +7,7 @@ import type { z } from "zod";
 
 import {
   getGenerationBrief,
-  getStoryConfig,
+  listStoryConfig,
   setGenerationBrief
 } from "../api.js";
 import { ValidationPanel } from "./ValidationPanel.js";
@@ -49,8 +49,8 @@ export function GenerationBriefView(): React.JSX.Element {
   useEffect(() => {
     let active = true;
 
-    void Promise.all([getGenerationBrief(), getStoryConfig("PROSE MODE")])
-      .then(([briefResponse, proseModeResponse]) => {
+    void Promise.all([getGenerationBrief(), listStoryConfig()])
+      .then(([briefResponse, configResponse]) => {
         if (!active) {
           return;
         }
@@ -62,8 +62,9 @@ export function GenerationBriefView(): React.JSX.Element {
           setNotice(briefResponse.message);
         }
 
-        if (proseModeResponse.ok && typeof proseModeResponse.payload === "object" && proseModeResponse.payload !== null) {
-          const payload = proseModeResponse.payload as Record<string, unknown>;
+        const proseModePayload = configResponse.ok ? configResponse.configs["PROSE MODE"] : undefined;
+        if (typeof proseModePayload === "object" && proseModePayload !== null) {
+          const payload = proseModePayload as Record<string, unknown>;
           setProseModeSummary(
             [
               typeof payload.pov_character === "string" ? payload.pov_character : null,
