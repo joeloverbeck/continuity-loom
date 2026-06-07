@@ -13,6 +13,23 @@ import {
 const EXPECTED_APPLICATION_ID = 0x4c4f4f4d;
 const EXPECTED_SCHEMA_VERSION = 1;
 const managers: ProjectStoreManager[] = [];
+const storyContractPayload = {
+  title: "Continuity Test",
+  premise: "A city keeps its promises badly.",
+  genre_mode: "urban fantasy",
+  tone: "tense and intimate",
+  continuity_philosophy: "continuity_first",
+  setting_baseline: "Rainy districts under old bargains.",
+  content_intensity: "mature",
+  explicitness: "Render mature material only when earned.",
+  language_register: "controlled contemporary prose",
+  prose_preferences: {
+    psychic_distance: "close",
+    dialogue_density: "moment_led",
+    interiority: "filtered",
+    paragraphing: "mixed"
+  }
+} as const;
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-project-store-"));
@@ -26,6 +43,27 @@ function readPragmaNumber(databasePath: string, pragmaName: "application_id" | "
     const value = row[pragmaName];
     expect(typeof value).toBe("number");
     return value as number;
+  } finally {
+    database.close();
+  }
+}
+
+function insertOrphanStoryContract(databasePath: string): void {
+  const database = new DatabaseSync(databasePath);
+
+  try {
+    database
+      .prepare(
+        `INSERT INTO records (
+          id, type, display_label, archived, created_at, updated_at, payload_json
+        ) VALUES (?, 'STORY CONTRACT', 'Story Contract', 0, ?, ?, ?)`
+      )
+      .run(
+        "orphan-contract",
+        "2026-06-07T00:00:00.000Z",
+        "2026-06-07T00:00:00.000Z",
+        JSON.stringify(storyContractPayload)
+      );
   } finally {
     database.close();
   }
@@ -140,6 +178,29 @@ describe("createProjectStoreManager", () => {
 
     expect(opened).toEqual({ ok: true, status: created });
     expect(secondManager.getActiveProjectStatus()).toEqual(created);
+  });
+
+  it("migrates orphan global-config records before exposing an opened repository", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "migrate",
+      title: "Migrate Project"
+    });
+    await firstManager.closeProject();
+
+    insertOrphanStoryContract(join(created.folderPath, "loom.sqlite"));
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+    const repository = secondManager.getRecordRepository();
+
+    expect(opened).toMatchObject({ ok: true });
+    expect(repository?.getStoryConfig("STORY CONTRACT")).toEqual({
+      ok: true,
+      payload: storyContractPayload
+    });
   });
 
   it("creates a consistent backup copy that opens as a Loom store", async () => {

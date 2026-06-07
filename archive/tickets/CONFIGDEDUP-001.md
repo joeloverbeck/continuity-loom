@@ -1,6 +1,6 @@
 # CONFIGDEDUP-001: Migrate orphaned global-config records into the story_config store
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new server migration (`packages/server/src/`), wired into project open/create in `packages/server/src/project-store.ts`. No schema-shape change to `story_config` or `records` tables.
@@ -103,3 +103,27 @@ In `packages/server/src/project-store.ts`, call `migrateGlobalConfigRecords(data
 1. `npm test -w @loom/server`
 2. `npm test`
 3. Narrow boundary rationale: migration logic is pure SQLite-on-`DatabaseSync`, so the `@loom/server` package suite is the correct proof surface; the full `npm test` run guards cross-package wiring (snapshot/compile) after the data move.
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+
+- Added `packages/server/src/global-config-migration.ts`, an idempotent raw-SQL migration that moves valid orphan `STORY CONTRACT`, `UNIVERSAL CONTENT POLICY`, and `PROSE MODE` records into `story_config`, preserves existing `story_config` rows, deletes handled orphan records, and leaves malformed orphan rows in place.
+- Wired the migration immediately after `ensureRecordTables(database)` in both project create and project open paths.
+- Added direct migration coverage in `packages/server/src/global-config-migration.test.ts` and project-open wiring coverage in `packages/server/src/project-store.test.ts`.
+
+Deviations from original plan:
+
+- No server log line was added; the migration returns a structured summary with malformed record ids and does not expose payload contents. Current project-store initialization has no logger dependency.
+- The create path is covered as an empty-project no-op by the migration tests and existing project-create tests; the project-store regression specifically covers the open path where legacy orphan rows can exist.
+
+Verification:
+
+- `npm test -w @loom/server` passed: 30 files, 166 tests.
+- `npm test` passed: 75 files, 459 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- Red-bunny API smoke opened `/home/joeloverbeck/stories/red-bunny`; `GET /api/story-config/STORY CONTRACT` and `GET /api/story-config/UNIVERSAL CONTENT POLICY` returned 200 with migrated payloads; `GET /api/story-config/PROSE MODE` remained 404 as expected because no prose-mode orphan existed.
+- Red-bunny read-only SQLite check showed zero remaining orphan records of the three global-config types and `story_config` rows for `STORY CONTRACT` and `UNIVERSAL CONTENT POLICY`.

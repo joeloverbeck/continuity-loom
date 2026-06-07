@@ -15,6 +15,7 @@ import { DatabaseSync } from "node:sqlite";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
+import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables } from "./record-tables.js";
 
@@ -242,6 +243,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
       try {
         configureDatabase(database);
         ensureRecordTables(database);
+        migrateGlobalConfigRecords(database);
         closeActive();
         active = {
           folderPath,
@@ -338,6 +340,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
         closeActive();
         ensureRecordTables(database);
+        migrateGlobalConfigRecords(database);
         active = {
           folderPath,
           metadata,
