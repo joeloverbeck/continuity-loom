@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-001: Core draft schema, draft normalizer & generation_context default
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` exports `generationSessionDraftSchema`, `normalizeGenerationSessionDraft`, `deriveGenerationContextDefault` (+ `GenerationSessionDraft` type); new `packages/core/src/records/generation-brief-draft.ts`; new test file
@@ -83,3 +83,19 @@ Saving a generation brief currently behaves like asking permission to generate p
 
 1. `npm test --workspace @loom/core` — targeted core schema/normalizer tests (build + Vitest for the package under change).
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate (the core import-boundary rule must still pass; `@loom/core` stays free of `node:*`/fastify/react/vite).
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented the additive core draft contract in `packages/core/src/records/generation-brief-draft.ts`, including `generationSessionDraftSchema`, `GenerationSessionDraft`, `deriveGenerationContextDefault`, and `normalizeGenerationSessionDraft`. Exported the new draft symbols from `packages/core/src/index.ts` and added focused coverage in `packages/core/test/generation-brief-draft.test.ts`.
+
+Deviations from original plan: none. The strict `generationSessionSchema` and `GenerationSession` type in `packages/core/src/records/generation-brief.ts` were not modified.
+
+Verification results:
+
+- `npm test --workspace @loom/core` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
