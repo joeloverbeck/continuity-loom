@@ -1,14 +1,14 @@
 # Implementation Order — Generation Brief / Validation / Readiness Specs
 
-Status: ordering rationale for the four active specs in `specs/`
+Status: ordering rationale for the generation brief / validation / readiness spec sequence
 Repository: `joeloverbeck/continuity-loom`
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
 ## What this document decides
 
-`specs/` currently holds four specs:
+`specs/` originally held four specs:
 
-1. `SPEC-generation-brief-draftability-and-save-model.md`
+1. `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` — completed and archived.
 2. `SPEC-validation-gating-taxonomy-and-focus-matrix.md`
 3. `SPEC-readiness-diagnostics-and-three-page-ux.md`
 4. `SPEC-implementation-order-and-regression-plan.md`
@@ -31,7 +31,7 @@ Therefore the regression-plan spec is **not implemented separately and last**. I
 
 **Content-spec order (the spine of the work):**
 
-1. **Draftability and Save Model** — the data contract first.
+1. **Draftability and Save Model** — the data contract first. Completed and archived at `archive/specs/SPEC-generation-brief-draftability-and-save-model.md`.
 2. **Validation Gating Taxonomy and Focus Matrix** — validation semantics second.
 3. **Readiness Diagnostics and Three-Page UX** — readiness presentation last.
 

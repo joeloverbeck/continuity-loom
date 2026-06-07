@@ -5,7 +5,7 @@ Repository: `joeloverbeck/continuity-loom`
 Baseline commit used for this review: `e1df2d032c7ae7976108f70cafa5802a7398ce39`  
 Purpose: describe precise amendments to the existing active Markdown documents; do **not** provide replacement documents.  
 Intended consumer: Claude Code or another implementation agent decomposing this into documentation and follow-on implementation tickets.  
-Predecessors (this spec supplies their documentation content): `SPEC-generation-brief-draftability-and-save-model.md`, `SPEC-validation-gating-taxonomy-and-focus-matrix.md`, `SPEC-readiness-diagnostics-and-three-page-ux.md`.  
+Predecessors (this spec supplies their documentation content): `archive/specs/SPEC-generation-brief-draftability-and-save-model.md`, `SPEC-validation-gating-taxonomy-and-focus-matrix.md`, `SPEC-readiness-diagnostics-and-three-page-ux.md`.
 Execution spine: `SPEC-implementation-order-and-regression-plan.md` / `IMPLEMENTATION-ORDER.md`. These amendments are **Phase 7 ("Active docs and user guide")** of that plan and must land *after* the behavioral specs, "once behavior is settled" — updating the docs first would make them describe unimplemented behavior.
 
 ---
@@ -1189,7 +1189,7 @@ quality gap blocks generation
 
 ## 8. Implementation notes for later code tickets
 
-This spec is documentation-focused. The code work the docs imply is **owned by the behavioral specs**, not re-decomposed here: `SPEC-generation-brief-draftability-and-save-model.md` (draft persistence, save model), `SPEC-validation-gating-taxonomy-and-focus-matrix.md` (blocker taxonomy; stop-guidance / voice / generation-context requiredness), and `SPEC-readiness-diagnostics-and-three-page-ux.md` (shared readiness model, diagnostic surface). The list below is a doc-author awareness index that maps each implied change to its owning spec — not an independent backlog:
+This spec is documentation-focused. The code work the docs imply is **owned by the behavioral specs**, not re-decomposed here: `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` (draft persistence, save model), `SPEC-validation-gating-taxonomy-and-focus-matrix.md` (blocker taxonomy; stop-guidance / voice / generation-context requiredness), and `SPEC-readiness-diagnostics-and-three-page-ux.md` (shared readiness model, diagnostic surface). The list below is a doc-author awareness index that maps each implied change to its owning spec — not an independent backlog:
 
 1. Add `GenerationSessionDraft` and normalized `GenerationSessionReadyInput` concepts.
 2. Make `/api/generation-brief` save partial drafts.
@@ -1221,4 +1221,3 @@ Use this rule of thumb:
 - **Sequencing dependency (resolved).** These amendments are Phase 7 ("Active docs and user guide") of `IMPLEMENTATION-ORDER.md` and must land *after* the behavioral specs (Draftability/Save → Validation Taxonomy → Readiness/Three-Page UX). Updating the docs before the behavior exists would make them describe unimplemented behavior. The section 6 ticket boundaries are the decomposition of that one phase, not a parallel track.
 - **§29 preservation (checked).** Every amendment was checked against FOUNDATIONS §29; none trips a hard fail. The amendments sharpen the warnings-vs-blockers distinction (§29.5), preserve deterministic compilation with no LLM intermediary (§29.4), keep the no-accepted-prose-in-prompts rule (§29.1 / §10), preserve the secret firewall (§29.6), and context-gate — rather than drop — physical continuity (§29.7). The one mechanical risk is leaving a stale hard-fail bullet behind; see the explicit removal instruction in section 4.1 and the dual search terms in section 5.1.
 - **Open questions:** none remaining at reassessment time.
-

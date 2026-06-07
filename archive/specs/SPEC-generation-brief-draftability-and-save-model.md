@@ -1,6 +1,6 @@
 # SPEC — Generation Brief Draftability and Save Model
 
-Status: proposed active implementation spec  
+Status: completed
 Repository: `joeloverbeck/continuity-loom`  
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
@@ -343,3 +343,28 @@ Required migration:
 - **Canonical empty-string storage form** — The spec states a preference for compact normalized draft storage (omit fully blank optional surfaces and blank list items) but also allows persisting empty strings "for editor round-trip." These can conflict. Settle the single canonical storage form so the normalizer and the editor agree.
 - **Accepted-segment count source** — The repository exposes no dedicated count API; `getLatestAcceptedSegment().sequence` (`record-repository.ts:437`) or `listAcceptedSegments().length` (`record-repository.ts:423`) is the source for `deriveGenerationContextDefault`. Confirm which is canonical, or add a `countAcceptedSegments()` helper, so GET, PUT, and the snapshot builder all read the same number.
 - **"Project has not yet generated" assumption** — The simple migration rests on the claim that no prompt has been successfully generated. This is a project-state assumption, not a codebase invariant. The exact-sole-entry directive rule (above) keeps the migration safe even if that assumption is wrong.
+
+## Outcome
+
+Completed on 2026-06-07 through tickets `SPECGENBRIDRA-001` through `SPECGENBRIDRA-009`.
+
+- Added draft and readiness schemas/normalizers in core, including deterministic generation-context defaults.
+- Switched persisted generation sessions and server draft routes to the draft schema, with field-aware partial saves, structured malformed-draft errors, and compact normalized storage.
+- Defaulted generation context in snapshots from accepted-segment count, migrated existing drafts on project open, and stripped only the exact sole fabricated `Continue the immediate moment.` directive.
+- Updated compiler empty states and contract versions for blank stop guidance.
+- Updated the web save flow to be a draft write: no fabricated directive, `Draft saved.` success, malformed-draft technical details, default labels, and stale-readiness refresh behavior.
+- Added the capstone e2e `packages/server/src/generation-brief-draftability.e2e.test.ts` covering draft save, defaults, validation/compile boundaries, accepted-prose exclusion, and log secrecy.
+
+Notable settled questions:
+
+- `null` surface clearing is not part of the implemented draft route contract; malformed shapes return `malformed-draft`.
+- Compact normalized storage is the canonical storage form for blank optional draft surfaces.
+- Accepted-segment count is derived from `repository.listAcceptedSegments().length`.
+
+Final verification:
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `git diff --check`
