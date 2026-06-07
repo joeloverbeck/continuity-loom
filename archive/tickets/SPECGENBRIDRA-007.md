@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-007: Generation-session draft migration & backfill
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new on-open migration `generation-session-draft-migration.ts` (default context, strip fabricated directive, remove empty cast-pressure rows), wired in `project-store.ts`; new test file
@@ -79,3 +79,20 @@ Existing stored generation sessions carry artifacts of the old strict/UI-fabrica
 
 1. `npx vitest run packages/server/src/generation-session-draft-migration.test.ts` — targeted migration tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Added `migrateGenerationSessionDraft(database)` and wired it into both project create/open migration chains. The migration removes only the exact sole fabricated directive, backfills missing `generation_context` from accepted-segment count, removes semantically empty current-cast-pressure rows, preserves nonblank stop guidance, and writes only when the canonical stored draft changes.
+
+Deviations from original plan: none.
+
+Verification results:
+
+- `npm exec vitest run packages/server/src/generation-session-draft-migration.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.
