@@ -82,6 +82,8 @@ const STATUS_OR_VALIDATION_FIELDS = new Set([
   "can_drive_prose"
 ]);
 
+const SYSTEM_MANAGED_FIELDS = new Set(["id"]);
+
 const referenceTargetsByRole: Readonly<Record<string, readonly string[]>> = Object.freeze({
   available_to: ["ENTITY"],
   carried_by: ["ENTITY"],
@@ -130,7 +132,7 @@ export const recordEditorDescriptors: Readonly<Record<string, RecordEditorDescri
       definition.recordType,
       {
         recordType: definition.recordType,
-        fields: describeObjectFields(definition.payloadSchema)
+        fields: describeObjectFields(definition.payloadSchema).filter((field) => !SYSTEM_MANAGED_FIELDS.has(field.name))
       }
     ])
   )
@@ -138,6 +140,16 @@ export const recordEditorDescriptors: Readonly<Record<string, RecordEditorDescri
 
 export function getEditorDescriptor(recordType: string): RecordEditorDescriptor | undefined {
   return recordEditorDescriptors[recordType];
+}
+
+export function getEditorFormSchema(recordType: string): z.ZodType | undefined {
+  const schema = recordTypeRegistry[recordType]?.payloadSchema;
+
+  if (!schema || !hasTopLevelField(schema, "id")) {
+    return schema;
+  }
+
+  return (schema as z.ZodObject<Record<string, z.ZodType>>).omit({ id: true });
 }
 
 export function deriveDisplayLabel(recordType: string, payload: unknown): string {
@@ -267,6 +279,12 @@ function objectShape(schema: z.ZodType): Record<string, z.ZodType> {
   }
 
   return shape;
+}
+
+function hasTopLevelField(schema: z.ZodType, fieldName: string): boolean {
+  const unwrapped = unwrapSchema(schema).schema;
+
+  return schemaType(unwrapped) === "object" && Object.hasOwn(objectShape(unwrapped), fieldName);
 }
 
 function arrayElement(schema: z.ZodType): z.ZodType {

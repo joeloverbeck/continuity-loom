@@ -44,8 +44,10 @@
 
 | Finding(s) | Ticket | Scope |
 |---|---|---|
-| O1 | `tickets/RECIDGEN-001.md` | Core: drop own `id` from editor descriptor; expose id-free `getEditorFormSchema`. |
-| O3 | `tickets/RECIDGEN-002.md` | Server: generate UUIDv7 on create / preserve row id on update; inject before validation; honor client-supplied ids. |
-| O1, O4 | `tickets/RECIDGEN-003.md` | Web: resolver uses id-free schema; reference-picker label regression test. |
+| O1 | `archive/tickets/RECIDGEN-001.md` | Core: drop own `id` from editor descriptor; expose id-free `getEditorFormSchema`. |
+| O3 | `archive/tickets/RECIDGEN-002.md` | Server: generate UUIDv7 on create / preserve row id on update; inject before validation; honor client-supplied ids. |
+| O1, O4 | `archive/tickets/RECIDGEN-003.md` | Web: resolver uses id-free schema; reference-picker label regression test. |
 
 Dependency order: RECIDGEN-001 → RECIDGEN-002, RECIDGEN-003. End-to-end create requires all three.
+
+Status: completed and archived on 2026-06-07.

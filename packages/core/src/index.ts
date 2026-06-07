@@ -64,6 +64,7 @@ export {
   deriveDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
+  getEditorFormSchema,
   recordEditorDescriptors,
   referenceTargetTypes
 } from "./records/editor-descriptors.js";

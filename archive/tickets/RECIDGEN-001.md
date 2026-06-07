@@ -1,6 +1,6 @@
 # RECIDGEN-001: Treat record `id` as system-managed — drop it from the editor descriptor and expose an id-free form schema
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/core`: `packages/core/src/records/editor-descriptors.ts` (new `SYSTEM_MANAGED_FIELDS`, descriptor field filter, new `getEditorFormSchema` helper) and its export in `packages/core/src/index.ts`.
@@ -85,3 +85,13 @@ Export `getEditorFormSchema` from `packages/core/src/index.ts` alongside `getEdi
 
 1. `npm test -w @loom/core`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed on 2026-06-07.
+
+Core now treats top-level record `id` as the only system-managed editor field: `getEditorDescriptor(...)` omits it from rendered fields, while reference fields such as `entity_id` remain renderable pickers. Added `getEditorFormSchema(recordType)` and exported it from `@loom/core`; id-bearing record types receive an id-omitted form schema and id-less record types keep their original schema.
+
+Deviation from original plan: the full-suite acceptance criteria required the dependent web resolver seam from RECIDGEN-003 because the existing `RecordEditor` consumed core descriptors directly. The resolver change was implemented before archival so the repository was not left in a state where the full suite or real create flow failed.
+
+Verification: `npm test -w @loom/core`, `npm test -w @loom/web`, `npm test -w @loom/server`, `npm run typecheck`, `npm run lint`, and `npm test` all passed. Browser smoke on `http://127.0.0.1:5173/records` confirmed Create ENTITY renders no `id` field and persists a server-generated UUID into the record payload.

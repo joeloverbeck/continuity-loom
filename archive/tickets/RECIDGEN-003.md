@@ -1,6 +1,6 @@
 # RECIDGEN-003: Web form stops asking for `id` — use the id-free resolver and lock reference pickers to display labels
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web`: `packages/web/src/records/RecordEditor.tsx` (resolver schema source), and a reference-picker regression test.
@@ -85,3 +85,13 @@ Add/strengthen a test asserting that `ReferencePicker` renders option **text** =
 ### End-to-end (with RECIDGEN-001 + RECIDGEN-002 landed)
 
 3. Manual: `npm run dev`, open `/records` → Create ENTITY → fill `display_name`/`entity_kind`/`roles_in_story`/`short_description` (no id field present) → record is created; reopen and confirm a server-generated UUID id and that a CAST MEMBER entity picker lists the entity by name.
+
+## Outcome
+
+Completed on 2026-06-07.
+
+The web record editor now validates with `getEditorFormSchema(recordType)` by default, so rendered descriptor fields and client validation agree that the record's own `id` is not user-authored. Create and update payloads omit the own `id`; the server supplies or preserves it. Regression tests assert no own-id input for representative creates, id-free create/update submission, and reference pickers displaying `displayLabel` while keeping UUIDs as option values. CAST MEMBER keeps its `entity_id` picker label/value behavior.
+
+Deviation from original plan: this seam was implemented before server archival because RECIDGEN-001's descriptor change made the full suite fail until the web resolver consumed the id-free schema. RECIDGEN-002 was then implemented before archival so the real browser create flow was end-to-end valid.
+
+Verification: `npm test -w @loom/web`, `npm test -w @loom/server`, `npm run typecheck`, `npm run lint`, and `npm test` all passed. Manual browser smoke on `http://127.0.0.1:5173/records` created ENTITY "Ane Arrieta" with no `id` field shown; the detail panel displayed generated id `019ea1a5-deda-799f-8321-f5b4ccf388f5` and matching `payload.id`.

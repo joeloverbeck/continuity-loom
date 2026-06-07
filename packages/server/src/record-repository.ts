@@ -98,8 +98,36 @@ function payloadRecordId(payload: unknown): string | null {
   return null;
 }
 
-function recordIdFromPayload(recordType: string, payload: unknown): string {
-  return payloadRecordId(payload) ?? generateRecordId();
+function schemaDefinition(schema: ZodType): Record<string, unknown> {
+  return (schema as unknown as { _def?: Record<string, unknown>; def?: Record<string, unknown> })._def
+    ?? (schema as unknown as { def?: Record<string, unknown> }).def
+    ?? {};
+}
+
+function schemaType(schema: ZodType): string | undefined {
+  return schemaDefinition(schema).type as string | undefined;
+}
+
+function objectShape(schema: ZodType): Record<string, ZodType> {
+  const shape = schemaDefinition(schema).shape as Record<string, ZodType> | (() => Record<string, ZodType>);
+
+  if (typeof shape === "function") {
+    return shape();
+  }
+
+  return shape;
+}
+
+function schemaHasRecordId(schema: ZodType): boolean {
+  return schemaType(schema) === "object" && Object.hasOwn(objectShape(schema), "id");
+}
+
+function injectRecordId(schema: ZodType, payload: unknown, id: string): unknown {
+  if (!schemaHasRecordId(schema) || typeof payload !== "object" || payload === null) {
+    return payload;
+  }
+
+  return { ...payload, id };
 }
 
 function parsePayloadJson(json: string): unknown {
@@ -146,8 +174,8 @@ export class RecordRepository {
       throw new Error(`Unsupported record type: ${input.type}`);
     }
 
-    const payload = parseRecordPayload(input.type, input.payload);
-    const id = recordIdFromPayload(input.type, payload);
+    const id = payloadRecordId(input.payload) ?? generateRecordId();
+    const payload = parseRecordPayload(input.type, injectRecordId(definition.payloadSchema, input.payload, id));
     const timestamp = nowIso();
     const status = projectRecordStatus(input.type, payload);
     const salience = normalizeProjection(projectRecordSalience(input.type, payload));
@@ -204,11 +232,11 @@ export class RecordRepository {
       throw new Error(`Unsupported record type: ${type}`);
     }
 
-    const payload = parseRecordPayload(type, input.payload);
-    const payloadId = payloadRecordId(payload);
+    const payloadId = payloadRecordId(input.payload);
     if (payloadId !== null && payloadId !== input.id) {
       throw new RecordIntegrityError(`Record update id mismatch: row ${input.id} vs payload ${payloadId}`);
     }
+    const payload = parseRecordPayload(type, injectRecordId(definition.payloadSchema, input.payload, input.id));
 
     const timestamp = nowIso();
     const displayLabel = input.displayLabel ?? String(existing.display_label);

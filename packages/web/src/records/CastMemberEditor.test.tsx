@@ -185,6 +185,16 @@ describe("CastMemberEditor", () => {
     expect(screen.queryByLabelText(/payload/i)).toBeNull();
   });
 
+  it("shows entity reference labels while keeping ids as option values", () => {
+    render(<CastMemberEditor referenceRecords={referenceRecords} />);
+
+    const picker = screen.getByLabelText(/^entity_id/);
+    const option = within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" });
+
+    expect(option.value).toBe(entityId);
+    expect(within(picker).queryByRole("option", { name: entityId })).toBeNull();
+  });
+
   it("renders section navigation, durable/current distinction, and warning-only long-dossier guidance", () => {
     render(<CastMemberEditor record={castRecord} referenceRecords={referenceRecords} />);
 

@@ -101,7 +101,7 @@ describe("RecordEditor", () => {
 
     render(<RecordEditor recordType="ENTITY" onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText(/^id/), { target: { value: idA } });
+    expect(screen.queryByLabelText(/^id/)).toBeNull();
     fireEvent.change(screen.getByLabelText(/^display_name/), { target: { value: "Aster" } });
     fireEvent.change(screen.getByLabelText(/^short_description/), { target: { value: "A careful operator." } });
     fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
@@ -111,7 +111,6 @@ describe("RecordEditor", () => {
         type: "ENTITY",
         displayLabel: "Aster",
         payload: {
-          id: idA,
           display_name: "Aster",
           entity_kind: "person",
           roles_in_story: [],
@@ -135,8 +134,13 @@ describe("RecordEditor", () => {
       expect(updateRecord).toHaveBeenCalledWith(idB, {
         displayLabel: "A knows the west door code.",
         payload: {
-          ...(factRecord.payload as Record<string, unknown>),
-          statement: "A knows the west door code."
+          status: "active",
+          fact_kind: "current_state",
+          statement: "A knows the west door code.",
+          scope: "entity",
+          known_by: [],
+          audience_visibility: "explicit",
+          salience: "medium"
         }
       })
     );
@@ -166,7 +170,7 @@ describe("RecordEditor", () => {
 
     render(<RecordEditor recordType="SECRET" onSubmitPayload={onSubmitPayload} />);
 
-    fireEvent.change(screen.getByLabelText(/^id/), { target: { value: idA } });
+    expect(screen.queryByLabelText(/^id/)).toBeNull();
     fireEvent.change(screen.getByLabelText(/^secret_claim/), { target: { value: "Aster carries the hidden seal." } });
     fireEvent.click(screen.getByDisplayValue("clue_only"));
     fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
@@ -186,7 +190,8 @@ describe("RecordEditor", () => {
     render(<RecordEditor recordType="CAST MEMBER" referenceRecords={entityRecords} />);
 
     const picker = screen.getByLabelText(/^entity_id/);
-    expect(within(picker).getByRole("option", { name: "Aster" })).toBeTruthy();
+    const asterOption = within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" });
+    expect(asterOption.value).toBe(idA);
     expect(within(picker).queryByRole("option", { name: "Vault" })).toBeNull();
     expect(within(picker).queryByRole("option", { name: "Archived entity" })).toBeNull();
 
@@ -213,7 +218,7 @@ describe("RecordEditor", () => {
 
     render(<RecordEditor recordType="ENTITY" />);
 
-    fireEvent.change(screen.getByLabelText(/^id/), { target: { value: idA } });
+    expect(screen.queryByLabelText(/^id/)).toBeNull();
     fireEvent.change(screen.getByLabelText(/^display_name/), { target: { value: "Aster" } });
     fireEvent.change(screen.getByLabelText(/^short_description/), { target: { value: "A careful operator." } });
     fireEvent.click(screen.getByRole("button", { name: "Create Record" }));

@@ -1,6 +1,6 @@
 # RECIDGEN-002: Make the server the sole authority for record `id` — generate on create, preserve on update
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/server`: `packages/server/src/record-repository.ts` (`createRecord`, `updateRecord`, `recordIdFromPayload`).
@@ -87,3 +87,13 @@ Keep `payloadRecordId` (still used for the honor-client-id precedence and the up
 
 1. `npm test -w @loom/server`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed on 2026-06-07.
+
+The server is now the authority for id-bearing record payload ids. `createRecord` chooses a raw client-supplied id when present or generates a UUID otherwise, injects it before payload validation only for schemas with a top-level `id`, and stores canonical payload JSON whose `payload.id` equals the row id. `updateRecord` rejects explicit mismatched ids before parsing, injects the existing row id for id-bearing schemas, and leaves id-less strict schemas such as CAST MEMBER unchanged.
+
+Deviation from original plan: the implementation retained id-less record behavior explicitly by schema-shape checking before injection; this prevents strict id-less payload schemas from receiving an unknown `id`.
+
+Verification: `npm test -w @loom/server`, `npm run typecheck`, `npm run lint`, and `npm test` all passed. Browser smoke on `http://127.0.0.1:5173/records` confirmed id-free ENTITY creation succeeds against the real server and stores the generated UUID in the payload.
