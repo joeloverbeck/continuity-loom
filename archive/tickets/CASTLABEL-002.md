@@ -1,6 +1,6 @@
 # CASTLABEL-002: Backfill stale persisted display labels on project open
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/display-label-backfill.ts` invoked from `packages/server/src/project-store.ts` `openProject`; regression test `packages/server/src/display-label-backfill.test.ts`. Uses `deriveDisplayLabel` from `@loom/core`. No schema change; rewrites only the derived `records.display_label` column.
@@ -91,3 +91,19 @@ In `packages/server/src/project-store.ts` `openProject`, call `backfillDisplayLa
 
 1. `npm test -- display-label-backfill`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Added `packages/server/src/display-label-backfill.ts`, which recomputes stored `records.display_label` values from `deriveDisplayLabel(type, payload_json)` and updates only rows whose cached label differs. Wired the backfill into project-store initialization before repositories are exposed, and added direct plus open-project regression coverage for stale CAST MEMBER labels, idempotency, and payload immutability.
+
+Deviations from original plan: added a small `packages/server/src/project-store.test.ts` integration assertion to prove the on-open hook, and raised the ESLint default-project file-count cap in `eslint.config.js` because adding the new test file crossed the existing limit during `npm run lint`.
+
+Verification results:
+
+- `npm test -- display-label-backfill` passed.
+- `npm test -- display-label-backfill project-store` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
