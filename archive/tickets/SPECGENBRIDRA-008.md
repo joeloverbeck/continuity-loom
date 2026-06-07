@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-008: Web draft-save UX & API response shapes
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — `GenerationBriefView` save becomes a draft write (no fabricated directive, "Draft saved.", malformed-draft handling, readiness refresh, default labels); `api.ts` response types updated; modifies the view, `api.ts`, and the view test
@@ -83,3 +83,23 @@ The web editor fabricates `manual_moment_directive.must_render: ["Continue the i
 
 1. `npx vitest run packages/web/src/generation-brief/GenerationBriefView.test.tsx` — targeted web view tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate.
+
+## Outcome
+
+Completed on 2026-06-07.
+
+- Updated the web API types to consume the draft route response shapes: GET includes `defaults`, PUT returns the canonical saved draft or `malformed-draft` issues.
+- Switched `GenerationBriefView` to parse draft-shaped sessions, save authored directive arrays without fabricating `Continue the immediate moment.`, show `Draft saved.`, render malformed-draft issue paths in technical details, label deterministic generation-context defaults, and mark readiness stale until save refreshes validation.
+- Updated web tests for blank directive saves, malformed draft failures, readiness blocker independence from Save, stale readiness refresh, default labels, console cleanliness, and adjacent API-client consumers.
+
+Verification:
+
+- `npm exec vitest run packages/web/src/generation-brief/GenerationBriefView.test.tsx`
+- `npm exec vitest run packages/web/src/api.test.tsx`
+- `npm exec vitest run packages/web/src/working-set/WorkingSetView.test.tsx`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `git diff --check`
+- `rg -n "Continue the immediate moment\\." packages/web/src/generation-brief/GenerationBriefView.tsx` returned no matches.

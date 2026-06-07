@@ -179,7 +179,15 @@ export type OkResponse = { ok: true } | ApiFailure;
 export type StoryConfigListResponse = { ok: true; configs: Partial<Record<StoryConfigKind, unknown>> } | ApiFailure;
 export type StoryConfigResponse = { ok: true; payload: unknown } | ApiFailure;
 export type WorkingSetResponse = { ok: true; selectedRecordIds: string[] } | ApiFailure;
-export type GenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
+export interface GenerationBriefDefaults {
+  generation_context: {
+    value: "first_segment" | "continuation_after_accepted_segment";
+    source: "persisted" | "accepted-segment-count";
+    acceptedSegmentCount: number;
+  };
+}
+export type GenerationBriefResponse = { ok: true; session: unknown; defaults: GenerationBriefDefaults } | ApiFailure;
+export type SetGenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -328,8 +336,8 @@ export async function getGenerationBrief(): Promise<GenerationBriefResponse> {
   return requestJson<GenerationBriefResponse>("/api/generation-brief", "GET");
 }
 
-export async function setGenerationBrief(surfaces: Record<string, unknown>): Promise<OkResponse> {
-  return requestJson<OkResponse>("/api/generation-brief", "PUT", surfaces);
+export async function setGenerationBrief(surfaces: Record<string, unknown>): Promise<SetGenerationBriefResponse> {
+  return requestJson<SetGenerationBriefResponse>("/api/generation-brief", "PUT", surfaces);
 }
 
 export async function validate(): Promise<ValidationResult | ApiFailure> {
