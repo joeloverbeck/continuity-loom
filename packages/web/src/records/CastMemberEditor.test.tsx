@@ -271,4 +271,25 @@ describe("CastMemberEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remove sample_utterances 1" }));
     expect(screen.queryByRole("group", { name: "sample_utterances 2" })).toBeNull();
   });
+
+  it("keeps copy_policy radio names unique per sample utterance", () => {
+    render(<CastMemberEditor record={castRecord} referenceRecords={referenceRecords} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add sample_utterances" }));
+
+    const firstSample = screen.getByRole("group", { name: "sample_utterances 1" });
+    const secondSample = screen.getByRole("group", { name: "sample_utterances 2" });
+    const firstRadios = within(firstSample).getAllByRole<HTMLInputElement>("radio");
+    const secondRadios = within(secondSample).getAllByRole<HTMLInputElement>("radio");
+    const firstGroupName = firstRadios[0]?.name;
+    const secondGroupName = secondRadios[0]?.name;
+
+    expect(firstRadios.length).toBeGreaterThan(1);
+    expect(secondRadios.length).toBeGreaterThan(1);
+    expect(firstGroupName).toBeTruthy();
+    expect(secondGroupName).toBeTruthy();
+    expect(firstRadios.every((radio) => radio.name === firstGroupName)).toBe(true);
+    expect(secondRadios.every((radio) => radio.name === secondGroupName)).toBe(true);
+    expect(firstGroupName).not.toBe(secondGroupName);
+  });
 });

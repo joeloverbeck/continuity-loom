@@ -1,6 +1,6 @@
 # ENUMRADIO-001: Give card-style enum radio groups a unique name per list item
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `packages/web/src/field-help/EnumGuidance.tsx` (radio `name` attribute); regression test in `packages/web/src/records/CastMemberEditor.test.tsx`. No schema, compiler, validation, or stored-data change.
@@ -97,3 +97,20 @@ In `packages/web/src/records/CastMemberEditor.test.tsx`, add a test that:
 1. `npx vitest run packages/web/src/records/CastMemberEditor.test.tsx`
 2. `npm test`
 3. `npm run lint && npm run typecheck` — confirms the `useId` import and component change satisfy lint/strict-TS gates.
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+- `EnumGuidance` now uses React `useId()` for the native radio `name`, giving each rendered card-style enum group its own DOM grouping handle while leaving canonical field-path guidance lookup unchanged.
+- `CastMemberEditor.test.tsx` now covers the reported list-item case by asserting copy-policy radios share a name within one sample utterance and use distinct names across separate sample utterances.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npx vitest run packages/web/src/records/CastMemberEditor.test.tsx` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.

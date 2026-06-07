@@ -3,6 +3,7 @@ import {
   normalizeListIndices,
   type EnumValueGuidance
 } from "@loom/core";
+import { useId } from "react";
 
 export interface EnumGuidanceProps {
   fieldPath: string;
@@ -33,6 +34,7 @@ export function EnumGuidance({
   onChange,
   allowUnset = false
 }: EnumGuidanceProps): React.JSX.Element {
+  const radioGroupName = useId();
   const canonicalPath = normalizeListIndices(fieldPath);
   const guidance = getFieldGuidance(canonicalPath);
   const valueGuidance = guidance?.enumValues;
@@ -46,7 +48,7 @@ export function EnumGuidance({
             <label className="enumCard" key={option}>
               <input
                 type="radio"
-                name={fieldPath}
+                name={radioGroupName}
                 value={option}
                 checked={value === option}
                 onChange={() => onChange(option)}
