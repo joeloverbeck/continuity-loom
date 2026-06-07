@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-004: Repository read/write paths parse via draft schema
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `record-repository.ts` and `working-set-integrity-migration.ts` parse persisted generation-session state with `generationSessionDraftSchema` instead of the strict `generationSessionSchema`; new test file
@@ -81,3 +81,20 @@ Every server path that reads or writes the persisted generation session currentl
 
 1. `npx vitest run packages/server/src/record-repository-draft.test.ts` — targeted repository draft-parse tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Switched persisted generation-session parsing in `record-repository.ts` and `working-set-integrity-migration.ts` from the strict schema to `generationSessionDraftSchema`. Added repository-level draft persistence coverage in `packages/server/src/record-repository-draft.test.ts`, updated route/repository expectations for draft-shape preservation, and kept `generation-brief-descriptors.ts` on the strict schema.
+
+Deviations from original plan: `packages/core/src/records/working-set-integrity.ts` needed a narrow type adjustment because `pruneWorkingSetReferences` only depends on `active_working_set` but was typed to the strict `GenerationSession`. It now accepts draft-shaped sessions and defaults missing working-set arrays to empty arrays during pruning.
+
+Verification results:
+
+- `npm exec vitest run packages/server/src/record-repository-draft.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.

@@ -165,14 +165,7 @@ describe("generation-brief routes", () => {
     expect(putResponse.statusCode).toBe(200);
     expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
       ok: true,
-      session: {
-        ...session,
-        manual_moment_directive: {
-          must_render: ["The door opens."],
-          may_render_if_naturally_caused: [],
-          do_not_force: []
-        }
-      }
+      session
     });
   });
 

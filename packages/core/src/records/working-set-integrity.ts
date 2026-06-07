@@ -1,7 +1,7 @@
-import type { GenerationSession } from "./generation-brief.js";
+import type { GenerationSessionDraft } from "./generation-brief-draft.js";
 
-export interface WorkingSetPruneResult {
-  session: GenerationSession;
+export interface WorkingSetPruneResult<Session extends GenerationSessionDraft = GenerationSessionDraft> {
+  session: Session;
   removed: string[];
 }
 
@@ -24,7 +24,7 @@ function isRecordIdPov(value: string | undefined): value is string {
 }
 
 export function pruneWorkingSetReferences(
-  session: GenerationSession,
+  session: GenerationSessionDraft,
   keepRecordId: (recordId: string) => boolean
 ): WorkingSetPruneResult {
   if (!session.active_working_set) {
@@ -52,11 +52,11 @@ export function pruneWorkingSetReferences(
     removed.add(manualDirectiveId);
   }
 
-  const sessionWithPrunedWorkingSet: GenerationSession = {
+  const sessionWithPrunedWorkingSet: GenerationSessionDraft = {
     ...session,
     active_working_set: {
-      selected_records: removeDanglingIds(activeWorkingSet.selected_records, keepRecordId, removed),
-      active_onstage_cast_full: activeWorkingSet.active_onstage_cast_full.filter((entry) => {
+      selected_records: removeDanglingIds(activeWorkingSet.selected_records ?? [], keepRecordId, removed),
+      active_onstage_cast_full: (activeWorkingSet.active_onstage_cast_full ?? []).filter((entry) => {
         const keep = keepRecordId(entry.cast_member_id);
         if (!keep) {
           removed.add(entry.cast_member_id);
@@ -64,11 +64,11 @@ export function pruneWorkingSetReferences(
         return keep;
       }),
       present_minor_cast_compressed: removeDanglingIds(
-        activeWorkingSet.present_minor_cast_compressed,
+        activeWorkingSet.present_minor_cast_compressed ?? [],
         keepRecordId,
         removed
       ),
-      offstage_relevant_cast: removeDanglingIds(activeWorkingSet.offstage_relevant_cast, keepRecordId, removed),
+      offstage_relevant_cast: removeDanglingIds(activeWorkingSet.offstage_relevant_cast ?? [], keepRecordId, removed),
       ...(prunedSelectedPov === undefined ? {} : { selected_pov: prunedSelectedPov }),
       ...(prunedManualDirectiveId === undefined ? {} : { manual_directive_id: prunedManualDirectiveId })
     }

@@ -1,6 +1,6 @@
 import {
   generateRecordId,
-  generationSessionSchema,
+  generationSessionDraftSchema,
   getRecordTypeDefinition,
   parseRecordPayload,
   projectRecordSalience,
@@ -358,7 +358,7 @@ export class RecordRepository {
   }
 
   setGenerationSession(payloadInput: unknown): void {
-    const payload = generationSessionSchema.parse(payloadInput);
+    const payload = generationSessionDraftSchema.parse(payloadInput);
     this.database
       .prepare(
         `INSERT INTO generation_session (id, payload_json, updated_at)
@@ -377,7 +377,7 @@ export class RecordRepository {
       return { ok: false, kind: "not-found", message: "Generation session not found." };
     }
 
-    return this.parseJsonWithSchema(row.payload_json, generationSessionSchema, "Generation session");
+    return this.parseJsonWithSchema(row.payload_json, generationSessionDraftSchema, "Generation session");
   }
 
   private pruneDeletedRecordFromGenerationSession(deletedId: string): void {
@@ -389,7 +389,7 @@ export class RecordRepository {
       return;
     }
 
-    const session = generationSessionSchema.parse(JSON.parse(row.payload_json) as unknown);
+    const session = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
     const result = pruneWorkingSetReferences(session, (id) => id !== deletedId);
     if (result.removed.length === 0) {
       return;
