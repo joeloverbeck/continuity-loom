@@ -26,13 +26,15 @@ For specs with >10 references, consider parallel Explore agents organized by the
 **Greenfield / foundation specs** (the spec's deliverables ARE the repo's first code — no pre-existing code tree, e.g. a Phase-1 repository/runtime foundation): the substep table still applies, but the consumer-grep substeps have nothing to grep. Handle them explicitly rather than skipping silently:
 
 - **3.6 Downstream Consumers**: record `N/A — greenfield, no code tree` instead of an empty grep. There are no existing import sites because there is no code yet.
-- **3.9 New-Deliverable Consumer Verification**: the deliverables' consumers are **planned**, not present — every later phase named in a sequencing doc (`docs/requirements-version-1/IMPLEMENTATION-ORDER.md`) or the spec's own later-phase plan. That satisfies the "explicitly planned" branch; do NOT fire the zero-consumer HIGH Issue for a foundation spec whose consumers are unbuilt-but-sequenced future work. Record the planned consumers (the sequencing doc's phase list) for the audit trail.
+- **3.9 New-Deliverable Consumer Verification**: the deliverables' consumers are **planned**, not present — every later phase named in a sequencing doc (`specs/IMPLEMENTATION-ORDER.md`) or the spec's own later-phase plan. That satisfies the "explicitly planned" branch; do NOT fire the zero-consumer HIGH Issue for a foundation spec whose consumers are unbuilt-but-sequenced future work. Record the planned consumers (the sequencing doc's phase list) for the audit trail.
 
 This is distinct from `SKILL.md`'s "no greenfield approach proposals" guardrail, which is about not proposing alternative designs — here "greenfield" means the *repo* is empty.
 
 ## 3.0 Cross-File Scope Establishment
 
 For patterns referenced across multiple files (type imports, schema-field usage, command invocations), run a cross-file count grep first to establish full scope before per-file analysis. Compare the spec's claimed locations against the actual count — this catches files the spec missed and prevents incomplete deliverables.
+
+**Embedded quantitative baseline claims**: when a spec embeds numeric assertions about the current codebase (per-file word/line counts, percentages, file sizes, match counts), spot-verify them with `wc` / `grep -c` / `find`. A mismatch reveals a stale baseline the rest of the spec may rest on; an exact match corroborates that the spec was written against the current tree. Cheap to run, high signal — especially for doc-amendment specs that tabulate current-vs-proposed document sizes.
 
 ## 3.1 File Paths
 
@@ -90,13 +92,17 @@ For **new, retired, or changed** string-enum values (a new/retired validation fo
 
 Grep specs in `specs/` for references to this spec's deliverables; note affected specs. Use matches to refresh the Dependencies section and any "X has not landed yet" claims with accurate status.
 
+**Bidirectional symbol-name consistency**: when a sequencing/index doc (`specs/IMPLEMENTATION-ORDER.md`) or a sibling spec names a deliverable this spec also defines, compare the *names*, not just resolve the dependency. Grep the **sibling's / index doc's** token for the concept, not only this spec's token — a one-directional grep for this spec's own name returns zero sibling hits and silently misses reverse-direction drift (this spec calls it `fooDefault`; the index calls it `deriveFooDefault`). On mismatch, flag a cross-spec contract-drift Issue (HIGH) and adopt the index doc's name as canonical when one exists. This check fires even when the spec carries no `Depends on:` / `Blocks:` headers — the index doc is the dependency record. A "rely on <doc>" inline hint (SKILL.md §Inline user hint) nominates exactly this authority.
+
+**Set-membership & sequencing registration**: beyond name consistency, when the index doc governs a *set* the target belongs to, verify the target is actually registered in it AND that the target's metadata states its sequencing dependency (which specs land first / after). A target that is part of a governed set but unlisted in the index — or silent on its phase/ordering — is a coordination Issue (HIGH): it risks a parallel, conflicting decomposition track and docs landing before the behavior they describe. To discover the ledger, list `specs/` for an ordering/index/implementation-order document at Step 3 entry.
+
 **Forward-compat with blocked specs**: for specs that define schemas/validators/contracts AND whose `Blocks:` list includes later specs, read each blocked spec for extensions to the current spec's surfaces (new conditionally-mandatory fields, new validator codes, new enum values). If a blocked spec proposes additions the current spec's design would silently reject (strict shape validation, closed enums, no unknown-field tolerance), flag a forward-compat Improvement at MEDIUM. Skip when there are no `Blocks:` entries or the blocked specs don't extend the current spec's data surfaces.
 
 ## 3.8 FOUNDATIONS-Contract Fidelity
 
 For deliverables that touch FOUNDATIONS-governed semantics — deterministic prompt compilation (§8), the universal prompt contract (§9), validation and hard-fails (§11), record authority and human gatekeeping (§13/§14/§20), POV/knowledge/secrets (§15), physical continuity (§16), the accepted-segment archive (§21), prompt inspection and secrets (§22/§23):
 
-- **No principle weakening**: read the relevant FOUNDATIONS sections. For each principle the deliverable touches, verify the proposal enforces it at least as strictly as the constitution requires. A proposal that weakens a principle is a CRITICAL Issue.
+- **No principle weakening**: read the relevant FOUNDATIONS sections. For each principle the deliverable touches, verify the proposal enforces it at least as strictly as the constitution requires. A proposal that weakens a principle is a CRITICAL Issue. **Exception — constitutional-amendment specs**: when the spec's declared purpose is amending `docs/FOUNDATIONS.md` itself, relaxing a rule is the intended deliverable, not a violation. Do not auto-CRITICAL it; instead verify the amendment is internally coherent, preserves each engaged §29 hard-fail's intent, and synchronizes sibling docs (see the constitutional-amendment carve-out in SKILL.md Guardrails and `foundations-alignment.md` §4.4).
 - **Secret-firewall preservation**: for deliverables affecting POV/secret handling or prompt compilation, verify no path lets a secret leak into a narrator/mind the deterministic records forbid (§15, §29.6). Missing firewall is CRITICAL.
 - **Deterministic-compilation preservation**: for deliverables touching prompt compilation, verify no LLM intermediary selects/ranks/summarizes/rewrites records during compilation and that identical inputs+versions produce identical output (§4.4, §8, §29.4). Violations are CRITICAL.
 - **Validation discipline**: for deliverables proposing validation rules, verify they stay deterministic and blocking, distinguish warnings from blockers, and name what failing means (block generation? warn?) (§11). Unaddressed second-order effects are Improvement findings at minimum.
@@ -115,6 +121,8 @@ For each proposed new deliverable (new command, new validator, new skill output,
 ## 3.10 Source-Document Completeness Check
 
 For specs citing an external source document (a report under `reports/`, a brainstorm output under `docs/plans/`, a research report) in their Problem Statement / Motivating Evidence / Approach, the claims were enumerated and tagged at Step 2. Here:
+
+**Cited-but-missing source**: if a cited source document could not be resolved or read at Step 2 (no enumerable claims), there is nothing to adjudicate — do not treat it as the no-source skip case below. Raise it as a finding: **HIGH** when the spec's claims rest on the source unverifiably, **MEDIUM** when those claims are independently verifiable against the codebase (verify them directly first, then recommend removing or repointing the dangling citation).
 
 1. **Verify** each enumerated claim is adjudicated by the spec — **Accepted** in Approach/Deliverables with a per-claim mapping (this covers accept-with-divergence: the spec adopts the intent but deliberately diverges; record the divergence in the mapping), **Rejected** in Out of Scope with a rationale, or **Deferred** with a named follow-up surface.
 2. **Surface unadjudicated claims** as MEDIUM Improvement findings — name the claim, cite the source line, recommend the spec add an adjudication.

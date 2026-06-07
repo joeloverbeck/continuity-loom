@@ -31,7 +31,7 @@ This gate holds under auto mode and any autonomous-execution context. Auto-mode 
 
 **Glob resolution**: if the argument contains wildcards, resolve via `ls`/`find`; proceed if exactly one match (note the resolution inline), disambiguate if many, stop with an error if none.
 
-**Inline user hint (optional)**: text accompanying the path — a parenthetical, post-dash note, or follow-on message (e.g. `specs/SPEC-004-validator.md (Note: I'm worried some validators are too brittle)`) — is an audit-lens constraint. It shapes severity assignment at Step 5 and may reframe Questions at Step 6; it is NOT a second path argument and does NOT override FOUNDATIONS alignment or approved recommendations. When a hint materially shaped a finding's classification, cite it in the Step 6 presentation. A hint that would force a FOUNDATIONS hard-fail is flagged as a CRITICAL Issue, not applied.
+**Inline user hint (optional)**: text accompanying the path — a parenthetical, post-dash note, or follow-on message (e.g. `specs/SPEC-004-validator.md (Note: I'm worried some validators are too brittle)`) — is an audit-lens constraint. It shapes severity assignment at Step 5 and may reframe Questions at Step 6; it is NOT a second path argument and does NOT override FOUNDATIONS alignment or approved recommendations. When a hint materially shaped a finding's classification, cite it in the Step 6 presentation. A hint that would force a FOUNDATIONS hard-fail is flagged as a CRITICAL Issue, not applied. A hint that instead names a document or path ("rely on / per / see X") is a **reference pointer**, not a severity lens: promote the named doc into the Step 1–2 mandatory reads and treat it as a Step 3 cross-validation authority (e.g. the canonical source for deliverable names) — see §3.7 Bidirectional symbol-name consistency.
 
 ## Process Flow
 
@@ -110,6 +110,8 @@ Classify the spec into exactly one of four classes. Classification drives which 
 
 **Removal target that never existed**: when a spec tasks removing a symbol that returns zero matches AND was never created, there is nothing to delete — classify as a stale-premise Issue (HIGH when restated across multiple sections), drop the removal framing, and where the symbol name still appears in Verification, keep it as a trivially-passing absence guard.
 
+**Documentation / amendment specs**: a spec whose deliverables are edits to existing docs (a doc-amendment spec, often amending `docs/FOUNDATIONS.md` and synchronizing sibling docs) classifies as **(b)**. Treat each file's amendment plan as a deliverable (per Step 1's non-numbered-deliverables rule). Map the Step 3 substeps to doc surfaces: 3.1 → doc/section existence; 3.2 → section-heading, prompt-placeholder, and schema-field existence **plus** the spec's quoted *current text* matching the live doc verbatim (a stale quote is an Issue — see `references/codebase-validation.md` §3.2); 3.6/3.7 → sibling docs/specs carrying the same doctrine. When the spec amends FOUNDATIONS, also apply the constitutional-amendment carve-out in Guardrails — relaxing a rule is then the intended deliverable, not an auto-CRITICAL violation.
+
 **Hybrid specs**: apply the union of applicable substeps, using the most rigorous classification's checklist for shared substeps.
 
 **Re-reassessment shortcut**: if the same spec was reassessed earlier this session and not externally modified, Steps 2–3 may scope to only the references affected by the triggering change. Step 1 still applies.
@@ -138,9 +140,9 @@ Extract every concrete codebase reference from the spec:
 - **Code examples** (TypeScript, JSON/YAML schema snippets, prompt-section blocks) — extract for fidelity checking.
 - **Validation thresholds / config** — focus tags, severity mappings (warning vs blocker per FOUNDATIONS §11).
 
-**Reference-count checkpoint**: before Step 3, emit a one-line note with the exact reference count and the tracking decision — e.g. `Reference count: 12 — mental tracking sufficient` or `Reference count: 23 — TaskCreate recommended`. Use an exact integer (not `~20` or `20+`); the >15 threshold-decision must be reproducible. For specs with >15 references spanning unrelated areas, consider `TaskCreate` per-reference tracking; for tightly-clustered sets, mental tracking is acceptable. A fixed closed set checked by one presence grep counts as 1 reference, not N.
+**Reference-count checkpoint**: before Step 3, emit a one-line note with the exact reference count and the tracking decision — e.g. `Reference count: 12 — mental tracking sufficient` or `Reference count: 23 — TaskCreate recommended`. Use an exact integer (not `~20` or `20+`); the >15 threshold-decision must be reproducible. **Exception for doc/amendment specs**: when references are doc-section anchors rather than discrete code symbols (so an exact tally is arbitrary), an estimate plus the tracking decision is acceptable — the reproducibility requirement then binds the >15 *decision*, not the precise count (e.g. `Reference count: ~60 doc-section anchors — clustered, mental tracking sufficient`). For specs with >15 references spanning unrelated areas, consider `TaskCreate` per-reference tracking; for tightly-clustered sets, mental tracking is acceptable. A fixed closed set checked by one presence grep counts as 1 reference, not N.
 
-**Source-document engagement checkpoint** (when source documents are cited): emit a one-line note naming each source and its per-document adjudication counts — `Source-document engagement: <doc>: N claims enumerated, M adjudicated (accept / reject / defer), (N-M) unadjudicated flagged as findings.` When no source document is cited, emit `Source-document engagement: N/A — no external source cited`.
+**Source-document engagement checkpoint** (when source documents are cited): emit a one-line note naming each source and its per-document adjudication counts — `Source-document engagement: <doc>: N claims enumerated, M adjudicated (accept / reject / defer), (N-M) unadjudicated flagged as findings.` When no source document is cited, emit `Source-document engagement: N/A — no external source cited`. When a cited source document cannot be resolved or read, emit `Source-document engagement: <doc> — CITED BUT MISSING` and raise a finding (see §3.10).
 
 Prioritize references most likely to have drifted (import paths, signatures, types the spec extends, sibling-spec dependency paths). Stable references (FOUNDATIONS principle names, well-known schema fields) can be spot-checked.
 
@@ -150,7 +152,7 @@ Prioritize references most likely to have drifted (import paths, signatures, typ
 
 ## Step 4: FOUNDATIONS Alignment Check
 
-**Load `references/foundations-alignment.md` before alignment classification.** Then check the spec against applicable FOUNDATIONS principles — the §4 non-negotiable principles, §11 validation/hard-fails, the five continuity surfaces (§6), and the **§29 hard-fail checklist**. Any §29 question answered "yes" is a CRITICAL Issue.
+**Load `references/foundations-alignment.md` before alignment classification.** Then check the spec against applicable FOUNDATIONS principles — the §4 non-negotiable principles, §11 validation/hard-fails, the five continuity surfaces (§6), and the **§29 hard-fail checklist**. Any §29 question answered "yes" is a CRITICAL Issue — except for sanctioned FOUNDATIONS-amendment specs, where the §29 check is evaluated against the hard-fail's *intent* post-amendment (see the constitutional-amendment carve-out in `references/foundations-alignment.md` §4.4).
 
 ## Steps 5-6: Classify and Present Findings
 
@@ -183,6 +185,7 @@ Do NOT commit. Leave the file for user review.
 ## Guardrails
 
 - **FOUNDATIONS is authoritative**: never approve a spec change that violates a FOUNDATIONS principle or trips a §29 hard-fail, even if requested — flag it as a CRITICAL Issue instead.
+- **Constitutional-amendment specs are the exception**: when the spec's declared purpose is amending `docs/FOUNDATIONS.md` itself (FOUNDATIONS §1 permits deliberate amendment — "the feature is wrong unless this document is deliberately amended first"), relaxing or removing a rule is the intended deliverable and is NOT auto-CRITICAL. Audit the amendment instead for (1) internal coherence — every restated rule across the doc set moves together, with no orphaned bullet left contradicting the new doctrine; (2) preservation of each §29 hard-fail's *intent* — deterministic compilation with no LLM intermediary, no accepted prose in prompts, the secret firewall, warnings never gating, human gatekeeping; (3) cross-doc synchronization. Flag CRITICAL only when the amendment is internally incoherent or breaks a §29 hard-fail in spirit — not merely because it loosens a rule. See `references/foundations-alignment.md` §4.4 and `references/codebase-validation.md` §3.8.
 - **Codebase truth**: every reference in the updated spec must be validated. Never propagate stale paths, renamed types, or removed functions through Step 7.
 - **No scope creep**: the deliverable is the updated spec file. Do not write design docs, create tickets, start implementation, or edit sibling spec files — unless a Step 6 question response explicitly authorizes a named sibling-spec edit (record it in Step 8 under a "Cross-spec scope extension" line).
 - **No greenfield approach proposals**: validate and refine the existing design, not alternatives — except when the approach violates a FOUNDATIONS principle or conflicts with an established contract (`docs/compiler-contract.md`, the universal prompt contract, the story-record schema), where a minimum-viable alternative is part of the Issue finding.
@@ -200,7 +203,7 @@ Do NOT commit. Leave the file for user review.
 | §4.4 / §8 Deterministic compilation | Step 4 (§4.3 determinism sub-check) | Specs claiming determinism or reproducibility are checked for nondeterministic inputs (wall-clock, unordered collections, LLM intermediaries in compilation). |
 | §15 POV, knowledge, secrets | Step 3.8 | Specs touching POV/secret handling must preserve the secret firewall (no leakage the deterministic records forbid); violations are CRITICAL. |
 | §20 Durable change & human gatekeeping | Steps 4, 7 (retroactive) | Specs that mutate records or canon must keep human review/acceptance authoritative; the spec's own retroactive Outcome section makes landed work explicit (no silent retcon). |
-| §29 Alignment checklist | Step 4 | Any §29 hard-fail answered "yes" is a CRITICAL Issue blocking ticket decomposition. |
+| §29 Alignment checklist | Step 4 | Any §29 hard-fail answered "yes" is a CRITICAL Issue blocking ticket decomposition — except sanctioned FOUNDATIONS-amendment specs, judged against the hard-fail's post-amendment intent (see Guardrails carve-out). |
 
 ## Final Rule
 
