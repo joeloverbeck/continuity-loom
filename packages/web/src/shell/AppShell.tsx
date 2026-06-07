@@ -1,4 +1,5 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import type { MouseEvent, ReactNode } from "react";
+import { Link, NavLink, Route, Routes, useLocation } from "react-router-dom";
 
 import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
@@ -10,6 +11,8 @@ import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
 import { DurableChangeReminder } from "./DurableChangeReminder.js";
+import { ErrorBoundary } from "./ErrorBoundary.js";
+import { ProjectOpenProvider, useProjectOpen } from "./project-open.js";
 import { ReminderRefreshProvider } from "./reminder-refresh.js";
 import { SettingsSurface } from "./SettingsSurface.js";
 
@@ -21,15 +24,15 @@ interface AppShellProps {
 }
 
 const primaryRoutes = [
-  { to: "/", label: "Project Library" },
-  { to: "/records", label: "Records" },
-  { to: "/working-set", label: "Active Working Set" },
-  { to: "/generation-brief", label: "Generation Brief" },
-  { to: "/preview", label: "Validation / Prompt Preview" },
-  { to: "/generate", label: "Generate / Candidate" },
-  { to: "/accepted-segments", label: "Accepted Segments" },
-  { to: "/story-config", label: "Story Configuration" },
-  { to: "/settings", label: "Settings" }
+  { to: "/", label: "Project Library", requiresProject: false },
+  { to: "/records", label: "Records", requiresProject: true },
+  { to: "/working-set", label: "Active Working Set", requiresProject: true },
+  { to: "/generation-brief", label: "Generation Brief", requiresProject: true },
+  { to: "/preview", label: "Validation / Prompt Preview", requiresProject: true },
+  { to: "/generate", label: "Generate / Candidate", requiresProject: true },
+  { to: "/accepted-segments", label: "Accepted Segments", requiresProject: true },
+  { to: "/story-config", label: "Story Configuration", requiresProject: true },
+  { to: "/settings", label: "Settings", requiresProject: false }
 ] as const;
 
 function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
@@ -69,33 +72,93 @@ function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
 
 export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
   return (
+    <ProjectOpenProvider>
+      <AppShellContent loadState={loadState} />
+    </ProjectOpenProvider>
+  );
+}
+
+function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
+  const location = useLocation();
+  const { isProjectOpen } = useProjectOpen();
+
+  return (
     <main className="appFrame">
       <aside className="sidebar" aria-label="Primary">
         <RuntimePanel loadState={loadState} />
         <nav className="primaryNav">
-          {primaryRoutes.map((route) => (
-            <NavLink key={route.to} to={route.to} end={route.to === "/"}>
-              {route.label}
-            </NavLink>
-          ))}
+          {primaryRoutes.map((route) => {
+            const isDisabled = route.requiresProject && isProjectOpen === false;
+
+            return (
+              <NavLink
+                key={route.to}
+                to={route.to}
+                end={route.to === "/"}
+                {...(isDisabled
+                  ? {
+                      "aria-disabled": true,
+                      className: "disabledNavLink",
+                      onClick: preventDisabledNavigation,
+                      tabIndex: -1,
+                      title: "Open a project first."
+                    }
+                  : {})}
+              >
+                {route.label}
+              </NavLink>
+            );
+          })}
         </nav>
       </aside>
       <div className="contentPane">
         <ReminderRefreshProvider>
           <DurableChangeReminder />
-          <Routes>
-            <Route path="/" element={<ProjectPicker />} />
-            <Route path="/records" element={<RecordBrowser />} />
-            <Route path="/working-set" element={<WorkingSetView />} />
-            <Route path="/generation-brief" element={<GenerationBriefView />} />
-            <Route path="/preview" element={<PromptPreviewView />} />
-            <Route path="/generate" element={<GenerateView />} />
-            <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
-            <Route path="/story-config" element={<StoryConfigEditor />} />
-            <Route path="/settings" element={<SettingsSurface />} />
-          </Routes>
+          <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
+            <Routes>
+              <Route path="/" element={<ProjectPicker />} />
+              <Route path="/records" element={<RequireProject><RecordBrowser /></RequireProject>} />
+              <Route path="/working-set" element={<RequireProject><WorkingSetView /></RequireProject>} />
+              <Route path="/generation-brief" element={<RequireProject><GenerationBriefView /></RequireProject>} />
+              <Route path="/preview" element={<RequireProject><PromptPreviewView /></RequireProject>} />
+              <Route path="/generate" element={<RequireProject><GenerateView /></RequireProject>} />
+              <Route path="/accepted-segments" element={<RequireProject><AcceptedSegmentsView /></RequireProject>} />
+              <Route path="/story-config" element={<RequireProject><StoryConfigEditor /></RequireProject>} />
+              <Route path="/settings" element={<SettingsSurface />} />
+            </Routes>
+          </ErrorBoundary>
         </ReminderRefreshProvider>
       </div>
     </main>
   );
+}
+
+function preventDisabledNavigation(event: MouseEvent<HTMLAnchorElement>): void {
+  event.preventDefault();
+}
+
+function RequireProject({ children }: { children: ReactNode }): React.JSX.Element {
+  const { isProjectOpen } = useProjectOpen();
+
+  if (isProjectOpen === undefined) {
+    return (
+      <section className="projectRequiredPanel" aria-labelledby="project-required-title">
+        <h2 id="project-required-title">Checking project status</h2>
+        <p className="muted" role="status">Checking for an open project.</p>
+      </section>
+    );
+  }
+
+  if (!isProjectOpen) {
+    return (
+      <section className="projectRequiredPanel" aria-labelledby="project-required-title">
+        <p className="eyebrow">Project required</p>
+        <h2 id="project-required-title">Open a project first</h2>
+        <p className="muted">This view uses project data.</p>
+        <Link to="/">Project Library</Link>
+      </section>
+    );
+  }
+
+  return <>{children}</>;
 }

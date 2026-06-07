@@ -88,6 +88,39 @@ body {
   background: #2f394b;
 }
 
+.errorBoundaryPanel {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+  border: 1px solid #d96a5f;
+  border-radius: 8px;
+  background: #fff7f6;
+  padding: 20px;
+}
+
+.errorBoundaryPanel p {
+  margin: 0;
+}
+
+.errorBoundaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.errorBoundaryActions a {
+  border-radius: 6px;
+  background: #39445a;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.errorBoundaryActions a:hover {
+  background: #2f394b;
+}
+
 .runtimePanel {
   margin-bottom: 24px;
 }
@@ -111,6 +144,41 @@ body {
 .primaryNav a.active {
   background: #e9f1f8;
   color: #17466d;
+}
+
+.primaryNav a.disabledNavLink,
+.primaryNav a.disabledNavLink:hover {
+  background: transparent;
+  color: #9aa6b8;
+  cursor: not-allowed;
+}
+
+.projectRequiredPanel {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.projectRequiredPanel p {
+  margin: 0;
+}
+
+.projectRequiredPanel a {
+  width: fit-content;
+  border-radius: 6px;
+  background: #39445a;
+  color: #ffffff;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.projectRequiredPanel a:hover {
+  background: #2f394b;
 }
 
 .laterPhaseList button {

@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ProjectPicker } from "./ProjectPicker.js";
 import {
+  closeProject,
   createBackup,
   createDemoProject,
   createProject,
@@ -17,13 +18,24 @@ import {
   type OpenProjectRequest,
   type ProjectOpenState
 } from "./api.js";
+import { useProjectOpen } from "./shell/project-open.js";
+import { useReminderRefresh } from "./shell/reminder-refresh.js";
 
 vi.mock("./api.js", () => ({
+  closeProject: vi.fn(),
   createBackup: vi.fn(),
   createDemoProject: vi.fn(),
   createProject: vi.fn(),
   getProject: vi.fn(),
   openProject: vi.fn()
+}));
+
+vi.mock("./shell/reminder-refresh.js", () => ({
+  useReminderRefresh: vi.fn()
+}));
+
+vi.mock("./shell/project-open.js", () => ({
+  useProjectOpen: vi.fn()
 }));
 
 const projectStatus = {
@@ -37,18 +49,33 @@ const projectStatus = {
 };
 
 const getProjectMock = vi.mocked(getProject);
+const closeProjectMock = vi.mocked(closeProject);
 const createProjectMock = vi.mocked(createProject);
 const createDemoProjectMock = vi.mocked(createDemoProject);
 const openProjectMock = vi.mocked(openProject);
 const createBackupMock = vi.mocked(createBackup);
+const refreshProjectOpenMock = vi.fn();
+const refreshReminderMock = vi.fn();
 
 beforeEach(() => {
   getProjectMock.mockReset();
   getProjectMock.mockResolvedValue({ open: false } satisfies ProjectOpenState);
+  closeProjectMock.mockReset();
+  closeProjectMock.mockResolvedValue({ open: false });
   createProjectMock.mockReset();
   createDemoProjectMock.mockReset();
   openProjectMock.mockReset();
   createBackupMock.mockReset();
+  refreshReminderMock.mockReset();
+  refreshProjectOpenMock.mockReset();
+  vi.mocked(useProjectOpen).mockReturnValue({
+    isProjectOpen: false,
+    refreshProjectOpen: refreshProjectOpenMock
+  });
+  vi.mocked(useReminderRefresh).mockReturnValue({
+    refreshReminder: refreshReminderMock,
+    refreshSignal: 0
+  });
 });
 
 afterEach(() => {
@@ -74,6 +101,7 @@ describe("ProjectPicker", () => {
       folderName: "alpha",
       title: "Alpha"
     } satisfies CreateProjectRequest);
+    expect(refreshProjectOpenMock).toHaveBeenCalledTimes(1);
   });
 
   it("renders structured open diagnostics", async () => {
@@ -96,6 +124,25 @@ describe("ProjectPicker", () => {
     expect(openProjectMock).toHaveBeenCalledWith({
       folderPath: "/tmp/not-project"
     } satisfies OpenProjectRequest);
+    expect(refreshReminderMock).not.toHaveBeenCalled();
+  });
+
+  it("refreshes durable reminders after opening a project", async () => {
+    openProjectMock.mockResolvedValue({
+      ok: true,
+      status: projectStatus
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Folder path"), {
+      target: { value: "/tmp/loom/alpha" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Open Project" }));
+
+    expect(await screen.findByText("/tmp/loom/alpha")).toBeTruthy();
+    expect(refreshProjectOpenMock).toHaveBeenCalledTimes(1);
+    expect(refreshReminderMock).toHaveBeenCalledTimes(1);
   });
 
   it("creates the demo project from the parent path and renders it as sample data", async () => {
@@ -118,6 +165,20 @@ describe("ProjectPicker", () => {
       parentPath: "/tmp/loom",
       folderName: "letter-under-flour-bin-demo"
     } satisfies CreateDemoProjectRequest);
+    expect(refreshProjectOpenMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes an open project and refreshes project-open consumers", async () => {
+    getProjectMock.mockResolvedValue(projectStatus satisfies ProjectOpenState);
+
+    render(<ProjectPicker />);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Close Project" }));
+
+    expect(await screen.findByText("No project open.")).toBeTruthy();
+    expect(closeProjectMock).toHaveBeenCalledTimes(1);
+    expect(refreshProjectOpenMock).toHaveBeenCalledTimes(1);
+    expect(refreshReminderMock).toHaveBeenCalledTimes(1);
   });
 
   it("renders demo create diagnostics through the existing notice path", async () => {

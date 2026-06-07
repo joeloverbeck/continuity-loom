@@ -200,6 +200,20 @@ describe("api client", () => {
     ]);
   });
 
+  it("returns validation failure bodies without casting them to a validation result", async () => {
+    const failureBody = {
+      ok: false,
+      kind: "no-open-project",
+      message: "No project is open."
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(jsonResponse(failureBody, 409)))
+    );
+
+    await expect(validate()).resolves.toEqual(failureBody);
+  });
+
   it("returns a successful compile result from the bare success body", async () => {
     const resultBody = {
       prompt: "<role>\nWrite the next local prose segment.",

@@ -327,8 +327,8 @@ export async function setGenerationBrief(surfaces: Record<string, unknown>): Pro
   return requestJson<OkResponse>("/api/generation-brief", "PUT", surfaces);
 }
 
-export async function validate(): Promise<ValidationResult> {
-  return postJson<ValidationResult>("/api/validate");
+export async function validate(): Promise<ValidationResult | ApiFailure> {
+  return postJson<ValidationResult | ApiFailure>("/api/validate");
 }
 
 export async function compile(): Promise<CompileResponse> {

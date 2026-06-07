@@ -12,9 +12,10 @@ import {
   generate,
   getDurableChangeReminder,
   getOpenRouterSettings,
-  type DurableChangeReminderResponse
+  type DurableChangeReminderResponse,
 } from "../api.js";
 import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
+import { useProjectOpen } from "../shell/project-open.js";
 import { ReminderRefreshProvider } from "../shell/reminder-refresh.js";
 import { GenerateView } from "./GenerateView.js";
 
@@ -27,6 +28,10 @@ vi.mock("../api.js", () => ({
   getOpenRouterSettings: vi.fn()
 }));
 
+vi.mock("../shell/project-open.js", () => ({
+  useProjectOpen: vi.fn()
+}));
+
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
@@ -37,6 +42,10 @@ beforeEach(() => {
   vi.mocked(acknowledgeDurableChangeReminder).mockReset();
   vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: true }));
   vi.mocked(getDurableChangeReminder).mockResolvedValue(inactiveReminder());
+  vi.mocked(useProjectOpen).mockReturnValue({
+    isProjectOpen: true,
+    refreshProjectOpen: vi.fn()
+  });
 });
 
 afterEach(() => {

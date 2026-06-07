@@ -7,10 +7,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { DurableChangeReminder } from "./DurableChangeReminder.js";
 import { acknowledgeDurableChangeReminder, getDurableChangeReminder } from "../api.js";
 import type { DurableChangeReminderResponse } from "../api.js";
+import { useProjectOpen } from "./project-open.js";
 
 vi.mock("../api.js", () => ({
   acknowledgeDurableChangeReminder: vi.fn(),
   getDurableChangeReminder: vi.fn()
+}));
+
+vi.mock("./project-open.js", () => ({
+  useProjectOpen: vi.fn()
 }));
 
 const activeReminder = {
@@ -44,6 +49,7 @@ afterEach(() => {
 
 describe("DurableChangeReminder", () => {
   it("renders active reminder content, checklist, quick links, and non-modal controls", async () => {
+    mockProjectOpen(true);
     vi.mocked(getDurableChangeReminder).mockResolvedValue(activeReminder);
 
     renderReminder();
@@ -69,6 +75,7 @@ describe("DurableChangeReminder", () => {
   });
 
   it("acknowledges durably and hides the banner from the server response", async () => {
+    mockProjectOpen(true);
     vi.mocked(getDurableChangeReminder).mockResolvedValue(activeReminder);
     vi.mocked(acknowledgeDurableChangeReminder).mockResolvedValue(inactiveReminder);
 
@@ -80,6 +87,7 @@ describe("DurableChangeReminder", () => {
   });
 
   it("snoozes only in component state and reappears after remount", async () => {
+    mockProjectOpen(true);
     vi.mocked(getDurableChangeReminder).mockResolvedValue(activeReminder);
 
     const rendered = renderReminder();
@@ -94,7 +102,27 @@ describe("DurableChangeReminder", () => {
     expect(await screen.findByRole("heading", { name: "Segment 3 was accepted" })).toBeTruthy();
   });
 
-  it("renders nothing for inactive and no-open-project states", async () => {
+  it("does not fetch the durable reminder when shared project-open state is false", () => {
+    mockProjectOpen(false);
+
+    renderReminder();
+
+    expect(getDurableChangeReminder).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: /was accepted/i })).toBeNull();
+  });
+
+  it("fetches the durable reminder when a project is open", async () => {
+    mockProjectOpen(true);
+    vi.mocked(getDurableChangeReminder).mockResolvedValue(activeReminder);
+
+    renderReminder();
+
+    expect(await screen.findByRole("heading", { name: "Segment 3 was accepted" })).toBeTruthy();
+    expect(getDurableChangeReminder).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders nothing for inactive and no-open-project reminder states after project-open check", async () => {
+    mockProjectOpen(true);
     vi.mocked(getDurableChangeReminder).mockResolvedValueOnce(inactiveReminder).mockResolvedValueOnce(noOpenProject);
 
     const inactive = renderReminder();
@@ -114,4 +142,11 @@ function renderReminder() {
       <DurableChangeReminder />
     </MemoryRouter>
   );
+}
+
+function mockProjectOpen(isProjectOpen: boolean | undefined): void {
+  vi.mocked(useProjectOpen).mockReturnValue({
+    isProjectOpen,
+    refreshProjectOpen: vi.fn()
+  });
 }
