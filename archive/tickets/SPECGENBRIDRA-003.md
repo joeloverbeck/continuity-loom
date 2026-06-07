@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-003: Compiler empty states for blank stop-guidance & first-segment handoff
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — modifies `EMPTY_STATE_CONSTANTS` (compiler output), bumps `compiler`/`contract` versions, updates `docs/compiler-contract.md` and compiler goldens; deliberate prompt-fingerprint change
@@ -89,3 +89,20 @@ Once draft saving (SPECGENBRIDRA-001/-004/-005) allows blank `soft_unit_guidance
 
 1. `npm test --workspace @loom/core` — targeted compiler golden + section tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate (fingerprint/version coherence across the build).
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented the compiler empty-state seam by updating `EMPTY_STATE_CONSTANTS.soft_unit_guidance`, bumping compiler and contract versions to `1.1.0`, updating the compiler contract, and rebasing compiler/server metadata tests plus the first-segment golden prompt fixture.
+
+Deviations from original plan: server route tests also needed version expectation updates because route metadata reports `versionInfo`. No production server behavior changed beyond the intended compiler/contract metadata bump.
+
+Verification results:
+
+- `npm test --workspace @loom/core` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.
+- `git diff --check` passed.

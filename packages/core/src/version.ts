@@ -27,11 +27,11 @@ export const versionInfo: VersionInfo = {
     status: "stable"
   },
   compiler: {
-    version: "1.0.0",
+    version: "1.1.0",
     status: "stable"
   },
   contract: {
-    version: "1.0.0",
+    version: "1.1.0",
     status: "stable"
   }
 };
