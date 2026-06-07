@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-005: GET/PUT generation-brief route contracts
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — rewrites `GET`/`PUT /api/generation-brief` (deterministic display defaults, field-aware merge, draft-schema parse, `malformed-draft` response); modifies `generation-brief-routes.ts` + its test
@@ -81,3 +81,20 @@
 
 1. `npx vitest run packages/server/src/generation-brief-routes.test.ts` — targeted route-contract tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Updated `GET /api/generation-brief` to return persisted draft state plus deterministic `defaults.generation_context`, and updated `PUT /api/generation-brief` to parse draft payloads, field-aware merge object surfaces, normalize compact draft storage, persist missing `generation_context`, and return `malformed-draft` issue responses without echoing submitted values.
+
+Deviations from original plan: `packages/server/src/snapshot-builder.ts` needed a minimal compatibility default for `current_cast_voice_pressure` and `cast_voice_overrides` because existing compile/generate validation code dereferences those arrays while route normalization now stores compact draft sessions.
+
+Verification results:
+
+- `npm exec vitest run packages/server/src/generation-brief-routes.test.ts` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+- `git diff --check` passed.

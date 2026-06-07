@@ -65,6 +65,20 @@ function writeSession(databasePath: string, payload: unknown): void {
   }
 }
 
+function writeAcceptedSegment(databasePath: string): void {
+  const database = new DatabaseSync(databasePath);
+  try {
+    database
+      .prepare(
+        `INSERT INTO accepted_segments (sequence, text, metadata_json, created_at)
+         VALUES (1, 'Accepted prose.', '{}', ?)`
+      )
+      .run(new Date().toISOString());
+  } finally {
+    database.close();
+  }
+}
+
 function captureProcessWrites(): { restore: () => string } {
   const originalStdoutWrite = process.stdout.write;
   const originalStderrWrite = process.stderr.write;
@@ -102,7 +116,14 @@ describe("generation-brief routes", () => {
 
     expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
       ok: true,
-      session: {}
+      session: {},
+      defaults: {
+        generation_context: {
+          value: "first_segment",
+          source: "accepted-segment-count",
+          acceptedSegmentCount: 0
+        }
+      }
     });
 
     const session = {
@@ -165,7 +186,39 @@ describe("generation-brief routes", () => {
     expect(putResponse.statusCode).toBe(200);
     expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
       ok: true,
-      session
+      session: {
+        active_working_set: session.active_working_set,
+        immediate_handoff: session.immediate_handoff,
+        manual_moment_directive: {
+          must_render: ["The door opens."]
+        },
+        current_cast_voice_pressure: [
+          {
+            cast_member_id: idA,
+            local_function: "active_speaker",
+            current_voice_pressure: "Keep the voice clipped.",
+            dialogue_pressure: "answer briefly",
+            pov_narration_pressure: "none",
+            nonverbal_or_silence_pressure: "still hands",
+            current_must_preserve: ["precision"],
+            current_must_avoid: ["rambling"]
+          }
+        ],
+        cast_voice_overrides: session.cast_voice_overrides,
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["first_segment"]
+          }
+        },
+        stop_guidance: session.stop_guidance
+      },
+      defaults: {
+        generation_context: {
+          value: "first_segment",
+          source: "persisted",
+          acceptedSegmentCount: 0
+        }
+      }
     });
   });
 
@@ -194,9 +247,96 @@ describe("generation-brief routes", () => {
     expect(response.statusCode).toBe(200);
     expect(readSession(databasePath)).toMatchObject({
       immediate_handoff: { begin_after: "A waits" },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      },
       stop_guidance: { soft_unit_guidance: "Stop before any aftermath." }
     });
     expect(readSession(databasePath)).not.toHaveProperty("current_authoritative_state");
+
+    const nestedUpdate = await fastify.inject({
+      method: "PUT",
+      url: "/api/generation-brief",
+      payload: {
+        immediate_handoff: {
+          begin_after: "A opens the door."
+        }
+      }
+    });
+
+    expect(nestedUpdate.statusCode).toBe(200);
+    expect(readSession(databasePath)).toMatchObject({
+      immediate_handoff: {
+        recent_causal_context: "A arrived.",
+        last_visible_moment: "Doorway",
+        prior_accepted_prose_status_or_handoff_note: "none",
+        begin_after: "A opens the door."
+      },
+      stop_guidance: { soft_unit_guidance: "Stop before any aftermath." }
+    });
+  });
+
+  it("saves a partial blank draft as a normalized draft without readiness validation", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const response = await fastify.inject({
+      method: "PUT",
+      url: "/api/generation-brief",
+      payload: {
+        immediate_handoff: {
+          recent_causal_context: "",
+          last_visible_moment: "",
+          prior_accepted_prose_status_or_handoff_note: "none",
+          begin_after: ""
+        },
+        manual_moment_directive: {
+          must_render: [],
+          may_render_if_naturally_caused: [],
+          do_not_force: []
+        },
+        stop_guidance: {
+          soft_unit_guidance: ""
+        }
+      }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: true,
+      session: {
+        immediate_handoff: {
+          prior_accepted_prose_status_or_handoff_note: "none"
+        },
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["first_segment"]
+          }
+        }
+      }
+    });
+  });
+
+  it("returns accepted-segment-count generation context defaults on GET", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const databasePath = join(folderPath, "loom.sqlite");
+
+    writeAcceptedSegment(databasePath);
+
+    expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
+      ok: true,
+      session: {},
+      defaults: {
+        generation_context: {
+          value: "continuation_after_accepted_segment",
+          source: "accepted-segment-count",
+          acceptedSegmentCount: 1
+        }
+      }
+    });
   });
 
   it("persists the full active working set surface while preserving membership routes", async () => {
@@ -252,8 +392,43 @@ describe("generation-brief routes", () => {
     expect(invalid.statusCode).toBe(400);
     expect(invalid.json()).toMatchObject({
       ok: false,
-      kind: "invalid-request",
-      issues: expect.arrayContaining([expect.objectContaining({ path: ["active_working_set", "selected_records", 0] })])
+      kind: "malformed-draft",
+      message: "The draft could not be saved because the request shape is invalid.",
+      issues: expect.arrayContaining([
+        expect.objectContaining({ path: "active_working_set.selected_records.0" })
+      ])
+    });
+    expect(JSON.stringify(invalid.json())).not.toContain("not-a-uuid");
+
+    const explicitNull = await fastify.inject({
+      method: "PUT",
+      url: "/api/generation-brief",
+      payload: {
+        stop_guidance: null
+      }
+    });
+    expect(explicitNull.statusCode).toBe(400);
+    expect(explicitNull.json()).toMatchObject({
+      ok: false,
+      kind: "malformed-draft",
+      issues: expect.arrayContaining([expect.objectContaining({ path: "stop_guidance" })])
+    });
+
+    const unknownKey = await fastify.inject({
+      method: "PUT",
+      url: "/api/generation-brief",
+      payload: {
+        stop_guidance: {
+          soft_unit_guidance: "Stop.",
+          unknown: true
+        }
+      }
+    });
+    expect(unknownKey.statusCode).toBe(400);
+    expect(unknownKey.json()).toMatchObject({
+      ok: false,
+      kind: "malformed-draft",
+      issues: expect.arrayContaining([expect.objectContaining({ path: "stop_guidance" })])
     });
 
     const unopened = app();

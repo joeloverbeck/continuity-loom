@@ -39,7 +39,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
   if (!sessionResult.ok && sessionResult.kind !== "not-found") {
     return { ok: false, status: 422, body: sessionResult };
   }
-  const generationSession = (sessionResult.ok ? sessionResult.payload : {}) as GenerationSession;
+  const generationSession = withSnapshotSessionDefaults(sessionResult.ok ? sessionResult.payload : {});
 
   const storyConfig = loadStoryConfig(repository);
   const records = resolveSelectedRecords(repository, generationSession);
@@ -60,6 +60,15 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
         contract: versionInfo.contract.version
       }
     })
+  };
+}
+
+function withSnapshotSessionDefaults(payload: unknown): GenerationSession {
+  const session = (payload && typeof payload === "object" ? payload : {}) as Partial<GenerationSession>;
+  return {
+    ...session,
+    current_cast_voice_pressure: session.current_cast_voice_pressure ?? [],
+    cast_voice_overrides: session.cast_voice_overrides ?? []
   };
 }
 
