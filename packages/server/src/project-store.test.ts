@@ -48,7 +48,7 @@ function readPragmaNumber(databasePath: string, pragmaName: "application_id" | "
   }
 }
 
-function insertOrphanStoryContract(databasePath: string): void {
+function insertOrphanStoryContract(databasePath: string, id = "orphan-contract"): void {
   const database = new DatabaseSync(databasePath);
 
   try {
@@ -59,11 +59,24 @@ function insertOrphanStoryContract(databasePath: string): void {
         ) VALUES (?, 'STORY CONTRACT', 'Story Contract', 0, ?, ?, ?)`
       )
       .run(
-        "orphan-contract",
+        id,
         "2026-06-07T00:00:00.000Z",
         "2026-06-07T00:00:00.000Z",
         JSON.stringify(storyContractPayload)
       );
+  } finally {
+    database.close();
+  }
+}
+
+function setGenerationSession(databasePath: string, session: unknown): void {
+  const database = new DatabaseSync(databasePath);
+
+  try {
+    database.prepare("INSERT INTO generation_session (id, payload_json, updated_at) VALUES (1, ?, ?)").run(
+      JSON.stringify(session),
+      "2026-06-07T00:00:00.000Z"
+    );
   } finally {
     database.close();
   }
@@ -200,6 +213,46 @@ describe("createProjectStoreManager", () => {
     expect(repository?.getStoryConfig("STORY CONTRACT")).toEqual({
       ok: true,
       payload: storyContractPayload
+    });
+  });
+
+  it("repairs working-set references after global-config migration before exposing an opened repository", async () => {
+    const parentPath = await tempParent();
+    const orphanConfigRecordId = "019b0298-5c00-7000-8000-000000000001";
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "repair-working-set",
+      title: "Repair Working Set"
+    });
+    await firstManager.closeProject();
+
+    const storePath = join(created.folderPath, "loom.sqlite");
+    insertOrphanStoryContract(storePath, orphanConfigRecordId);
+    setGenerationSession(storePath, {
+      active_working_set: {
+        selected_records: [orphanConfigRecordId],
+        active_onstage_cast_full: [],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      }
+    });
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+    const repository = secondManager.getRecordRepository();
+
+    expect(opened).toMatchObject({ ok: true });
+    expect(repository?.getGenerationSession()).toMatchObject({
+      ok: true,
+      payload: {
+        active_working_set: {
+          selected_records: [],
+          active_onstage_cast_full: [],
+          present_minor_cast_compressed: [],
+          offstage_relevant_cast: []
+        }
+      }
     });
   });
 

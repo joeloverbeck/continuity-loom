@@ -83,6 +83,8 @@ export {
   stopGuidanceSchema
 } from "./records/generation-brief.js";
 export type { GenerationSession } from "./records/generation-brief.js";
+export { pruneWorkingSetReferences } from "./records/working-set-integrity.js";
+export type { WorkingSetPruneResult } from "./records/working-set-integrity.js";
 export {
   proseModeSchema,
   storyContractSchema,
