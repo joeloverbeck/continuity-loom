@@ -7,6 +7,10 @@ import {
   type BuildValidationSnapshotInput
 } from "../src/index.js";
 
+type DurableChangeTag = NonNullable<
+  BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]
+>["validation_focus_tags"]["possible_durable_changes"][number];
+
 const objectId = "019b0298-5c00-7000-8000-000000000001";
 const affordanceUseId = "019b0298-5c00-7000-8000-000000000002";
 const affordanceTransferId = "019b0298-5c00-7000-8000-000000000003";
@@ -20,17 +24,19 @@ const obligationId = "019b0298-5c00-7000-8000-000000000009";
 describe("durable-change matrix validation", () => {
   it("stays silent when durable matrix tags are absent", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [];
     input.records = [];
 
-    expect(blockerCodes(input)).not.toEqual(expect.arrayContaining(allDurableCodes));
+    expect(blockerCodes(input)).not.toEqual(expect.arrayContaining([...allDurableCodes]));
   });
 
   it("stays silent when all durable matrix tags are satisfied", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = allDurableTags;
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      ...allDurableTags
+    ];
 
-    expect(blockerCodes(input)).not.toEqual(expect.arrayContaining(allDurableCodes));
+    expect(blockerCodes(input)).not.toEqual(expect.arrayContaining([...allDurableCodes]));
   });
 
   it.each([
@@ -45,7 +51,9 @@ describe("durable-change matrix validation", () => {
     ["obligation_breach_possible", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, (input: BuildValidationSnapshotInput) => removeRecord(input, obligationId)]
   ])("blocks %s when required durable state is missing", (tag, code, mutate) => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [tag];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      tag as DurableChangeTag
+    ];
     mutate(input);
 
     expect(blockerCodes(input)).toContain(code);
@@ -85,7 +93,7 @@ function removeRecord(input: BuildValidationSnapshotInput, id: string): void {
 }
 
 function removeLock(input: BuildValidationSnapshotInput, marker: string): void {
-  input.generationSession.current_authoritative_state.current_locks = input.generationSession.current_authoritative_state.current_locks.filter(
+  input.generationSession.current_authoritative_state!.current_locks = input.generationSession.current_authoritative_state!.current_locks.filter(
     (lock) => !lock.toLowerCase().includes(marker)
   );
 }

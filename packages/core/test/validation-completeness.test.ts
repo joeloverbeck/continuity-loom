@@ -160,21 +160,25 @@ describe("universal completeness validation", () => {
       "story config",
       DIAGNOSTIC_CODES.missingStoryConfig,
       (input: BuildValidationSnapshotInput) => {
-        input.storyConfig.storyContract = undefined;
+        delete input.storyConfig.storyContract;
       }
     ],
     [
       "current state",
       DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_authoritative_state = undefined;
+        delete input.generationSession.current_authoritative_state;
       }
     ],
     [
       "manual directive",
       DIAGNOSTIC_CODES.missingManualDirective,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.manual_moment_directive = { must_render: [] };
+        input.generationSession.manual_moment_directive = {
+          must_render: [],
+          may_render_if_naturally_caused: [],
+          do_not_force: []
+        };
       }
     ],
     [
@@ -217,7 +221,7 @@ describe("universal completeness validation", () => {
   it("blocks when immediate situation summary is missing from the minimum current state", () => {
     const input = cleanInput();
     input.generationSession.current_authoritative_state = {
-      ...input.generationSession.current_authoritative_state,
+      ...input.generationSession.current_authoritative_state!,
       immediate_situation_summary: ""
     };
 
@@ -236,21 +240,21 @@ describe("universal completeness validation", () => {
 
   it("blocks continuation generation without a complete handoff", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "continuation_after_accepted_segment"
     ];
-    input.generationSession.immediate_handoff = undefined;
+    delete input.generationSession.immediate_handoff;
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
   });
 
   it("flags only malformed multiple generation contexts", () => {
     const missingContextInput = cleanInput();
-    missingContextInput.generationSession.generation_validation_focus = undefined;
+    delete missingContextInput.generationSession.generation_validation_focus;
     expect(blockerCodes(missingContextInput)).not.toContain(DIAGNOSTIC_CODES.focusTagCountInvalid);
 
     const malformedInput = cleanInput();
-    malformedInput.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
+    malformedInput.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "first_segment",
       "continuation_after_accepted_segment"
     ];
@@ -318,11 +322,11 @@ describe("universal completeness validation", () => {
         payload: { id: objectId, status: "active" }
       }
     ];
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
       "object_use_possible"
     ];
     input.generationSession.current_authoritative_state = {
-      ...input.generationSession.current_authoritative_state,
+      ...input.generationSession.current_authoritative_state!,
       possessions: []
     };
 
@@ -333,14 +337,17 @@ describe("universal completeness validation", () => {
     const input = cleanInput();
     input.records = input.records.map((record) =>
       record.id === castId
-        ? {
-            ...record,
-            localFunction: undefined,
-            payload: {
-              entity_id: entityId,
-              identity: { one_line: "A" }
-            }
-          }
+        ? (() => {
+            const recordWithoutLocalFunction = { ...record };
+            delete recordWithoutLocalFunction.localFunction;
+            return {
+              ...recordWithoutLocalFunction,
+              payload: {
+                entity_id: entityId,
+                identity: { one_line: "A" }
+              }
+            };
+          })()
         : record
     );
 

@@ -153,7 +153,8 @@ describe("compiler golden prompt", () => {
     const snapshot = buildValidationSnapshot({
       records: demoRecords,
       generationSession: demoGenerationSession,
-      storyConfig: demoStoryConfig
+      storyConfig: demoStoryConfig,
+      versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
     });
     const result = compilePrompt(snapshot);
     const frozenGolden = readFileSync(new URL("./golden-first-segment.prompt.txt", import.meta.url), "utf8");

@@ -24,10 +24,13 @@ describe("warnings and security validation", () => {
       input.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
     }],
     [DIAGNOSTIC_CODES.sparseSettingTexture, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.current_authoritative_state = { environmental_conditions: "Bare." };
+      input.generationSession.current_authoritative_state = {
+        ...input.generationSession.current_authoritative_state!,
+        environmental_conditions: "Bare."
+      };
     }],
     [DIAGNOSTIC_CODES.noActiveClockPressure, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.manual_moment_directive = { must_render: ["Ask for the key."] };
+      input.generationSession.manual_moment_directive = manualDirective("Ask for the key.");
     }],
     [DIAGNOSTIC_CODES.localVoicePressureMayHelp, (input: BuildValidationSnapshotInput) => {
       input.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
@@ -73,7 +76,7 @@ describe("warnings and security validation", () => {
       input.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     }],
     [DIAGNOSTIC_CODES.lowDramaScenePressure, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.manual_moment_directive = { must_render: ["Pause."] };
+      input.generationSession.manual_moment_directive = manualDirective("Pause.");
     }],
     [DIAGNOSTIC_CODES.staleSelectedRecord, (input: BuildValidationSnapshotInput) => {
       input.records = [record("old", "EVENT", { status: "resolved" })];
@@ -108,7 +111,9 @@ describe("warnings and security validation", () => {
   it("blocks API-key-like prompt-facing text without echoing the matched key", () => {
     const input = baseInput();
     input.generationSession.manual_moment_directive = {
-      must_render: [`Do not include ${keyLikeValue} in prose.`]
+      must_render: [`Do not include ${keyLikeValue} in prose.`],
+      may_render_if_naturally_caused: [],
+      do_not_force: []
     };
 
     const result = runValidation(buildValidationSnapshot(input), securityRules);
@@ -131,6 +136,14 @@ function baseInput(): BuildValidationSnapshotInput {
     },
     storyConfig: {},
     versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
+  };
+}
+
+function manualDirective(mustRender: string) {
+  return {
+    must_render: [mustRender],
+    may_render_if_naturally_caused: [],
+    do_not_force: []
   };
 }
 

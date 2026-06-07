@@ -31,7 +31,7 @@ describe("accepted prose exclusion", () => {
 
   it.each(promptFacingHandoffFields)("blocks prompt-facing prose contamination in %s", (field) => {
     const snapshotInput = input();
-    snapshotInput.generationSession.immediate_handoff[field] =
+    snapshotInput.generationSession.immediate_handoff![field] =
       `Rejected candidate copied from accepted prose: ${acceptedSegmentCanary}`;
 
     const result = runValidation(buildValidationSnapshot(snapshotInput));
@@ -44,10 +44,10 @@ describe("accepted prose exclusion", () => {
 
   it("allows a clean user-authored accepted-prose status handoff note", () => {
     const snapshotInput = input();
-    snapshotInput.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
+    snapshotInput.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "continuation_after_accepted_segment"
     ];
-    snapshotInput.generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note =
+    snapshotInput.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note =
       "The previous accepted segment introduced no durable continuity change; records are current.";
 
     const result = runValidation(buildValidationSnapshot(snapshotInput));
@@ -64,7 +64,7 @@ describe("accepted prose exclusion", () => {
       "prior_accepted_prose_status_or_handoff_note",
       "recent_causal_context"
     ];
-    const validHandoff = input().generationSession.immediate_handoff;
+    const validHandoff = input().generationSession.immediate_handoff!;
 
     expect(immediateHandoffSchema.parse(validHandoff)).toEqual(validHandoff);
     expect(() =>

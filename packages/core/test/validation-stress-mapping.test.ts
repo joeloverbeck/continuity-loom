@@ -171,7 +171,7 @@ function impossiblePhysicalAction(input: BuildValidationSnapshotInput): void {
     }
   };
   input.generationSession.current_authoritative_state = {
-    ...input.generationSession.current_authoritative_state,
+    ...input.generationSession.current_authoritative_state!,
     consent_or_force_conditions: ""
   };
 }
@@ -186,7 +186,7 @@ function nonLocalDirective(input: BuildValidationSnapshotInput): void {
 
 function acceptedProseContamination(input: BuildValidationSnapshotInput): void {
   input.generationSession.immediate_handoff = {
-    ...input.generationSession.immediate_handoff,
+    ...input.generationSession.immediate_handoff!,
     recent_causal_context: "This includes copied accepted prose from the prior candidate."
   };
 }

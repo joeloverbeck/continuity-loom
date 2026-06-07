@@ -7,6 +7,10 @@ import {
   type BuildValidationSnapshotInput
 } from "../src/index.js";
 
+type ExpectedLocalMode = NonNullable<
+  BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]
+>["validation_focus_tags"]["expected_local_modes"][number];
+
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castId = "019b0298-5c00-7000-8000-000000000002";
 const factId = "019b0298-5c00-7000-8000-000000000003";
@@ -22,7 +26,7 @@ describe("knowledge/secret/POV matrix validation", () => {
   it("stays silent when knowledge matrix tags are absent", () => {
     const input = cleanInput();
     input.records = input.records.filter((record) => !["BELIEF", "EMOTION", "SECRET", "PLAN"].includes(record.type));
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
 
     expect(blockerCodes(input)).not.toEqual(
       expect.arrayContaining([
@@ -36,7 +40,7 @@ describe("knowledge/secret/POV matrix validation", () => {
 
   it("stays silent when all four knowledge matrix tags are satisfied", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "introspection_expected",
       "ambiguous_perception_expected",
       "secret_or_clue_pressure",
@@ -65,7 +69,7 @@ describe("knowledge/secret/POV matrix validation", () => {
       "ambiguous_perception_expected",
       DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_authoritative_state.current_locks = ["No non-POV interiority leak."];
+        input.generationSession.current_authoritative_state!.current_locks = ["No non-POV interiority leak."];
       }
     ],
     [
@@ -102,7 +106,9 @@ describe("knowledge/secret/POV matrix validation", () => {
     ]
   ])("blocks %s when required matrix state is missing", (tag, code, mutate) => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [tag];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      tag as ExpectedLocalMode
+    ];
     mutate(input);
 
     expect(blockerCodes(input)).toContain(code);

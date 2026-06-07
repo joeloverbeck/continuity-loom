@@ -325,7 +325,7 @@ describe("record data model", () => {
       available_time: "A few minutes.",
       consent_or_force_conditions: "none",
       current_locks: []
-    } as const;
+    };
 
     expect(currentAuthoritativeStateSchema.parse(currentStatePayload).offstage_pressuring_entities).toEqual([]);
     expect(

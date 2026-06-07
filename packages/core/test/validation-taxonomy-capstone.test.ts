@@ -18,9 +18,9 @@ describe("validation taxonomy capstone", () => {
     input.generationSession.current_authoritative_state = minimumCurrentState();
     input.generationSession.immediate_handoff = undefined;
     input.generationSession.stop_guidance = { soft_unit_guidance: "" };
-    input.generationSession.generation_validation_focus.validation_focus_tags.generation_context = ["first_segment"];
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["first_segment"];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [];
 
     const result = runValidation(buildValidationSnapshot(input));
 
@@ -31,13 +31,17 @@ describe("validation taxonomy capstone", () => {
   it("keeps the required blockers after the taxonomy correction", () => {
     const continuation = demoInput();
     continuation.generationSession.immediate_handoff = undefined;
-    continuation.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
+    continuation.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "continuation_after_accepted_segment"
     ];
     expect(blockerCodes(continuation)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
 
     const missingDirective = demoInput();
-    missingDirective.generationSession.manual_moment_directive = { must_render: [] };
+    missingDirective.generationSession.manual_moment_directive = {
+      must_render: [],
+      may_render_if_naturally_caused: [],
+      do_not_force: []
+    };
     expect(blockerCodes(missingDirective)).toContain(DIAGNOSTIC_CODES.missingManualDirective);
 
     const nonlocalStop = demoInput();
@@ -56,7 +60,7 @@ describe("validation taxonomy capstone", () => {
     expect(blockerCodes(missingContext)).not.toContain(DIAGNOSTIC_CODES.focusTagCountInvalid);
 
     const malformedContext = demoInput();
-    malformedContext.generationSession.generation_validation_focus.validation_focus_tags.generation_context = [
+    malformedContext.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "first_segment",
       "continuation_after_accepted_segment"
     ];
@@ -66,7 +70,7 @@ describe("validation taxonomy capstone", () => {
   it("treats missing voice pins and salience risks as warnings, not blockers", () => {
     const input = demoInput();
     input.generationSession.current_cast_voice_pressure = [];
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "dialogue_expected"
     ];
     input.records = [
@@ -75,7 +79,14 @@ describe("validation taxonomy capstone", () => {
         id: "019b0298-5c00-7000-8000-099999999001",
         type: "CAST MEMBER",
         payload: { biography: "x".repeat(1300) },
-        metadata: { displayLabel: "Long dossier cast" }
+        metadata: {
+          id: "019b0298-5c00-7000-8000-099999999001",
+          type: "CAST MEMBER",
+          displayLabel: "Long dossier cast",
+          createdAt: "2026-06-07T00:00:00.000Z",
+          updatedAt: "2026-06-07T00:00:00.000Z",
+          archived: false
+        }
       }
     ];
 
@@ -91,8 +102,8 @@ describe("validation taxonomy capstone", () => {
   it("does not activate physical blockers from selected object records alone", () => {
     const input = demoInput();
     input.generationSession.current_authoritative_state = minimumCurrentState();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
-    input.generationSession.generation_validation_focus.validation_focus_tags.possible_durable_changes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
@@ -102,7 +113,7 @@ describe("validation taxonomy capstone", () => {
   it("keeps warning diagnostics out of the compiled prompt", () => {
     const input = demoInput();
     input.generationSession.current_cast_voice_pressure = [];
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "dialogue_expected"
     ];
     const snapshot = buildValidationSnapshot(input);
