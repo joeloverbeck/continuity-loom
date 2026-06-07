@@ -389,6 +389,7 @@ const cleanBrief = {
     current_time: "Night.",
     current_location: "Warehouse.",
     onstage_entities: ["019b0298-5c00-7000-8000-000000000001"],
+    immediate_situation_summary: "A is at the loading door while the key changes hands.",
     offstage_pressuring_entities: [],
     positions: "A stands near the loading door.",
     possessions: "The key is in A's hand.",

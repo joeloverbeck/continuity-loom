@@ -39,6 +39,7 @@ function baseInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A is at the loading door while the key changes hands.",
         offstage_pressuring_entities: [],
         positions: "A stands near the loading door.",
         possessions: "The key is in A's hand.",
@@ -170,7 +171,7 @@ function impossiblePhysicalAction(input: BuildValidationSnapshotInput): void {
     }
   };
   input.generationSession.current_authoritative_state = {
-    ...input.generationSession.current_authoritative_state,
+    ...input.generationSession.current_authoritative_state!,
     consent_or_force_conditions: ""
   };
 }
@@ -185,7 +186,7 @@ function nonLocalDirective(input: BuildValidationSnapshotInput): void {
 
 function acceptedProseContamination(input: BuildValidationSnapshotInput): void {
   input.generationSession.immediate_handoff = {
-    ...input.generationSession.immediate_handoff,
+    ...input.generationSession.immediate_handoff!,
     recent_causal_context: "This includes copied accepted prose from the prior candidate."
   };
 }

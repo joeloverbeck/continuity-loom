@@ -63,7 +63,7 @@ describe("validation clarity invariants", () => {
     expect(warningOnly.isBlocked).toBe(false);
 
     const blockerInput = cleanInput();
-    blockerInput.generationSession.manual_moment_directive.must_render = ["Write the whole chapter outline."];
+    blockerInput.generationSession.manual_moment_directive!.must_render = ["Write the whole chapter outline."];
     const blockerBearing = runValidation(buildValidationSnapshot(blockerInput));
 
     expect(blockerBearing.blockers.length).toBeGreaterThan(0);
@@ -87,20 +87,20 @@ function diagnosticCorpus(): Array<{ label: string; mutate: InputMutator }> {
     {
       label: "non-local directive",
       mutate: (input) => {
-        input.generationSession.manual_moment_directive.must_render = ["Write the whole chapter outline."];
+        input.generationSession.manual_moment_directive!.must_render = ["Write the whole chapter outline."];
       }
     },
     {
       label: "directive and stop disagreement",
       mutate: (input) => {
-        input.generationSession.manual_moment_directive.must_render = ["Continue through the later consequence."];
-        input.generationSession.stop_guidance.soft_unit_guidance = "Stop after the first response point.";
+        input.generationSession.manual_moment_directive!.must_render = ["Continue through the later consequence."];
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the first response point.";
       }
     },
     {
       label: "state handoff contradiction",
       mutate: (input) => {
-        input.generationSession.immediate_handoff.last_visible_moment = "This contradicts current state.";
+        input.generationSession.immediate_handoff!.last_visible_moment = "This contradicts current state.";
       }
     },
     {
@@ -132,23 +132,23 @@ function diagnosticCorpus(): Array<{ label: string; mutate: InputMutator }> {
     {
       label: "offstage interruption missing route",
       mutate: (input) => {
-        input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
           "offstage_interruption_possible"
         ];
-        input.generationSession.current_authoritative_state.routes_and_exits = [];
+        input.generationSession.current_authoritative_state!.routes_and_exits = [];
       }
     },
     {
       label: "content envelope contradiction",
       mutate: (input) => {
-        input.storyConfig.universalContentPolicy.allowed_content_scope = "No explicit sex or non-graphic violence.";
-        input.generationSession.manual_moment_directive.must_render = ["Render explicit sex."];
+        input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex or non-graphic violence.";
+        input.generationSession.manual_moment_directive!.must_render = ["Render explicit sex."];
       }
     },
     {
       label: "prompt-facing prose contamination",
       mutate: (input) => {
-        input.generationSession.immediate_handoff.recent_causal_context =
+        input.generationSession.immediate_handoff!.recent_causal_context =
           "This is copied accepted prose from the last scene.";
       }
     },
@@ -194,6 +194,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
         offstage_pressuring_entities: ["019b0298-5c00-7000-8000-000000000999"],
         positions: "A and B stand near the loading door.",
         possessions: "The key is in A's hand.",

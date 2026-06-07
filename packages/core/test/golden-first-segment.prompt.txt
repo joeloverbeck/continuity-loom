@@ -82,6 +82,7 @@ Time: Late morning, minutes after the market bell rang early.
 Location: 019b0298-5c00-7000-8000-013000000012
 Onstage entities: 019b0298-5c00-7000-8000-013000000001
 019b0298-5c00-7000-8000-013000000002
+Immediate situation: Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.
 Offstage but pressuring entities: 019b0298-5c00-7000-8000-013000000003
 019b0298-5c00-7000-8000-013000000004
 Current physical positions: Elin stands beside the flour bin with the shuttered lantern in hand.

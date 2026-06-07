@@ -132,6 +132,7 @@ Required fields:
 current_time: prose or timestamp-like string
 current_location: location_id | prose
 onstage_entities: list[entity_id]
+immediate_situation_summary: prose
 offstage_pressuring_entities: list[entity_id]
 positions: prose or structured list
 possessions: prose or structured list
@@ -148,6 +149,7 @@ current_locks: prose list
 Prompt treatment:
 
 - Always included.
+- `immediate_situation_summary` is a short, user-authored, prose-neutral description of the immediate local situation; it must not be generated from accepted prose, candidate prose, or automatic summaries.
 - Overrides older events, older facts, and stale descriptions, but contradictions must be resolved before compilation.
 - Should be compact, explicit, and state-like.
 

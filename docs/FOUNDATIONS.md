@@ -105,7 +105,7 @@ The compiler may format, order, and render records according to deterministic ru
 
 ### 4.5 Fail closed
 
-When deterministic validation detects contradictions, impossible prompt conditions, unsafe continuity gaps, or dangerous prompt-quality gaps, generation must be blocked.
+When deterministic validation detects contradictions, impossible prompt conditions, unsafe continuity gaps, or structural prompt-contract failures, generation must be blocked. Quality, salience, prompt-length, and optional nuance risks are warnings unless they also prove deterministic impossibility or a prompt-contract failure.
 
 There is no override in v1.
 
@@ -330,7 +330,7 @@ If a prior accepted segment created continuity-relevant durable change, that cha
 
 Validation is deterministic and blocking.
 
-Generation must be blocked when deterministic validation detects contradictions, impossible conditions, or dangerous prompt-quality gaps. OpenRouter sending must remain disabled until the user fixes the records or generation-time fields.
+Generation must be blocked when deterministic validation detects contradictions, impossible conditions, unsafe continuity gaps, or structural prompt-contract failures. Advisory warnings do not block prompt preview, generation, or OpenRouter sending. OpenRouter sending must remain disabled until the user fixes blocking records or generation-time fields.
 
 There is no override in v1.
 
@@ -345,7 +345,6 @@ Hard validation must include objective continuity contradictions and determinist
 - missing current location when physical continuity matters;
 - missing onstage cast when required by prose mode;
 - missing manual directive;
-- missing stop guidance;
 - manual directive or stop guidance requests a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
 - selected secret is both hidden from POV and revealed to POV by another selected record;
 - no current authoritative state for an active physical interaction;

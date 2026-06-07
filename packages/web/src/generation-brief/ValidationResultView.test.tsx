@@ -19,7 +19,7 @@ describe("ValidationResultView", () => {
 
     renderView({
       blockers: [diagnostic("blocker", "local-prose-scope-violation", "generationSession.manual_directive.must_render")],
-      warnings: [diagnostic("warning", "prompt-length-risk", "records")],
+      warnings: [diagnostic("warning", "prompt-middle-salience-risk", "records")],
       isBlocked: true
     });
 
@@ -31,7 +31,7 @@ describe("ValidationResultView", () => {
     fireEvent.click(screen.getByText("Warnings (1)"));
 
     expect(screen.getByRole("heading", { name: "Warnings" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "prompt-length-risk" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "prompt-middle-salience-risk" })).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
@@ -42,7 +42,7 @@ describe("ValidationResultView", () => {
     renderView(
       {
         blockers: [
-          diagnostic("blocker", "missing-stop-guidance", "generationSession.stop_guidance.soft_unit_guidance"),
+          diagnostic("blocker", "missing-manual-directive", "generationSession.manual_moment_directive.must_render"),
           {
             ...diagnostic("blocker", "cast-missing-core-dossier", "CAST MEMBER"),
             affected: [{ recordId, field: "CAST MEMBER" }]
@@ -54,8 +54,8 @@ describe("ValidationResultView", () => {
       { onFocusField }
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "missing-stop-guidance" }));
-    expect(onFocusField).toHaveBeenCalledWith("generationSession.stop_guidance.soft_unit_guidance");
+    fireEvent.click(screen.getByRole("button", { name: "missing-manual-directive" }));
+    expect(onFocusField).toHaveBeenCalledWith("generationSession.manual_moment_directive.must_render");
 
     fireEvent.click(screen.getByRole("button", { name: "cast-missing-core-dossier" }));
 

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   deriveGenerationContextDefault,
+  generationSessionReadySchema,
   generationSessionDraftSchema,
+  generationSessionSchema,
   normalizeGenerationSessionDraft,
   type GenerationSessionDraft
 } from "../src/index.js";
@@ -37,6 +39,65 @@ describe("generation brief draft schema", () => {
           must_render: [],
           may_render_if_naturally_caused: [],
           do_not_force: []
+        }
+      }).success
+    ).toBe(true);
+  });
+
+  it("requires immediate situation summary in strict and ready current-state schemas", () => {
+    const currentStateWithoutSummary = {
+      current_time: "late morning",
+      current_location: "bakery cellar",
+      onstage_entities: [idA],
+      offstage_pressuring_entities: [],
+      positions: "Elin stands by the flour bin.",
+      possessions: "The letter is hidden.",
+      visible_conditions: [],
+      environmental_conditions: "The cellar is cold.",
+      entity_statuses: "Elin is present.",
+      line_of_sight_and_visibility: "The bin is visible.",
+      routes_and_exits: ["stairs"],
+      available_time: "One exchange.",
+      consent_or_force_conditions: "none",
+      current_locks: []
+    };
+
+    expect(
+      generationSessionSchema.safeParse({
+        current_authoritative_state: currentStateWithoutSummary
+      }).success
+    ).toBe(false);
+    expect(
+      generationSessionSchema.safeParse({
+        current_authoritative_state: {
+          ...currentStateWithoutSummary,
+          immediate_situation_summary: "Elin is guarding the flour bin while Niko waits nearby."
+        }
+      }).success
+    ).toBe(true);
+    expect(
+      generationSessionReadySchema.safeParse({
+        generation_validation_focus: { validation_focus_tags: { generation_context: ["first_segment"] } },
+        stop_guidance: { soft_unit_guidance: "" },
+        current_authoritative_state: {
+          current_time: "late morning"
+        }
+      }).success
+    ).toBe(false);
+    expect(
+      generationSessionReadySchema.safeParse({
+        generation_validation_focus: { validation_focus_tags: { generation_context: ["first_segment"] } },
+        stop_guidance: { soft_unit_guidance: "" },
+        current_authoritative_state: {
+          current_time: "late morning",
+          immediate_situation_summary: "Elin is guarding the flour bin while Niko waits nearby."
+        }
+      }).success
+    ).toBe(true);
+    expect(
+      generationSessionDraftSchema.safeParse({
+        current_authoritative_state: {
+          current_time: "late morning"
         }
       }).success
     ).toBe(true);
@@ -83,6 +144,7 @@ describe("generation brief draft normalization", () => {
     const draft: GenerationSessionDraft = {
       current_authoritative_state: {
         current_time: "  late night  ",
+        immediate_situation_summary: "  Mara has reached the stairwell while the door remains closed. ",
         current_location: "",
         onstage_entities: [idA],
         visible_conditions: ["  rain on the window  ", "   "],
@@ -125,6 +187,7 @@ describe("generation brief draft normalization", () => {
     expect(normalizeGenerationSessionDraft(draft, { acceptedSegmentCount: 0 })).toEqual({
       current_authoritative_state: {
         current_time: "late night",
+        immediate_situation_summary: "Mara has reached the stairwell while the door remains closed.",
         onstage_entities: [idA],
         visible_conditions: ["rain on the window"]
       },

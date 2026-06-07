@@ -54,6 +54,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
         offstage_pressuring_entities: [],
         positions: "A and B stand near the loading door.",
         possessions: "The key is in A's hand.",
@@ -159,35 +160,25 @@ describe("universal completeness validation", () => {
       "story config",
       DIAGNOSTIC_CODES.missingStoryConfig,
       (input: BuildValidationSnapshotInput) => {
-        input.storyConfig.storyContract = undefined;
+        delete input.storyConfig.storyContract;
       }
     ],
     [
       "current state",
       DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_authoritative_state = undefined;
-      }
-    ],
-    [
-      "handoff",
-      DIAGNOSTIC_CODES.missingImmediateHandoff,
-      (input: BuildValidationSnapshotInput) => {
-        input.generationSession.immediate_handoff = undefined;
+        delete input.generationSession.current_authoritative_state;
       }
     ],
     [
       "manual directive",
       DIAGNOSTIC_CODES.missingManualDirective,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.manual_moment_directive = { must_render: [] };
-      }
-    ],
-    [
-      "stop guidance",
-      DIAGNOSTIC_CODES.missingStopGuidance,
-      (input: BuildValidationSnapshotInput) => {
-        input.generationSession.stop_guidance = undefined;
+        input.generationSession.manual_moment_directive = {
+          must_render: [],
+          may_render_if_naturally_caused: [],
+          do_not_force: []
+        };
       }
     ],
     [
@@ -196,19 +187,78 @@ describe("universal completeness validation", () => {
       (input: BuildValidationSnapshotInput) => {
         input.records = input.records.filter((record) => record.id !== factId);
       }
-    ],
-    [
-      "generation context focus",
-      DIAGNOSTIC_CODES.focusTagCountInvalid,
-      (input: BuildValidationSnapshotInput) => {
-        input.generationSession.generation_validation_focus = undefined;
-      }
     ]
   ])("blocks when %s is incomplete", (_name, code, mutate) => {
     const input = cleanInput();
     mutate(input);
 
     expect(blockerCodes(input)).toContain(code);
+  });
+
+  it("requires only the minimum current authoritative state when no physical focus tag is selected", () => {
+    const input = cleanInput();
+    input.generationSession.current_authoritative_state = {
+      current_time: "Night.",
+      current_location: "Warehouse.",
+      onstage_entities: [entityId],
+      immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
+      offstage_pressuring_entities: [],
+      positions: [],
+      possessions: [],
+      visible_conditions: [],
+      environmental_conditions: "",
+      entity_statuses: "",
+      line_of_sight_and_visibility: "",
+      routes_and_exits: [],
+      available_time: "",
+      consent_or_force_conditions: "none",
+      current_locks: []
+    };
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.missingCurrentAuthoritativeState);
+  });
+
+  it("blocks when immediate situation summary is missing from the minimum current state", () => {
+    const input = cleanInput();
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      immediate_situation_summary: ""
+    };
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingCurrentAuthoritativeState);
+  });
+
+  it("allows first-segment generation without handoff or stop guidance", () => {
+    const input = cleanInput();
+    input.generationSession.immediate_handoff = undefined;
+    input.generationSession.stop_guidance = { soft_unit_guidance: "" };
+
+    const codes = blockerCodes(input);
+    expect(codes).not.toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
+    expect(codes).not.toContain("missing-stop-guidance");
+  });
+
+  it("blocks continuation generation without a complete handoff", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+      "continuation_after_accepted_segment"
+    ];
+    delete input.generationSession.immediate_handoff;
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
+  });
+
+  it("flags only malformed multiple generation contexts", () => {
+    const missingContextInput = cleanInput();
+    delete missingContextInput.generationSession.generation_validation_focus;
+    expect(blockerCodes(missingContextInput)).not.toContain(DIAGNOSTIC_CODES.focusTagCountInvalid);
+
+    const malformedInput = cleanInput();
+    malformedInput.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+      "first_segment",
+      "continuation_after_accepted_segment"
+    ];
+    expect(blockerCodes(malformedInput)).toContain(DIAGNOSTIC_CODES.focusTagCountInvalid);
   });
 
   it("blocks an active secret missing reveal-boundary fields", () => {
@@ -272,8 +322,11 @@ describe("universal completeness validation", () => {
         payload: { id: objectId, status: "active" }
       }
     ];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "object_use_possible"
+    ];
     input.generationSession.current_authoritative_state = {
-      ...input.generationSession.current_authoritative_state,
+      ...input.generationSession.current_authoritative_state!,
       possessions: []
     };
 
@@ -284,14 +337,17 @@ describe("universal completeness validation", () => {
     const input = cleanInput();
     input.records = input.records.map((record) =>
       record.id === castId
-        ? {
-            ...record,
-            localFunction: undefined,
-            payload: {
-              entity_id: entityId,
-              identity: { one_line: "A" }
-            }
-          }
+        ? (() => {
+            const recordWithoutLocalFunction = { ...record };
+            delete recordWithoutLocalFunction.localFunction;
+            return {
+              ...recordWithoutLocalFunction,
+              payload: {
+                entity_id: entityId,
+                identity: { one_line: "A" }
+              }
+            };
+          })()
         : record
     );
 

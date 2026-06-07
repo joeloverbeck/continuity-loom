@@ -3,19 +3,27 @@ import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
-  warnPromptLengthRisk,
+  warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
   warnSparseSettingTexture,
   warnNoActiveClockPressure,
-  warnLongDossierNeedsPin,
+  warnLocalVoicePressureMayHelp,
+  warnEnsembleVoiceDistinctionRisk,
+  warnCastSalienceRisk,
   warnLowDramaScenePressure,
   warnStaleSelectedRecord
 ]);
 
-function warnPromptLengthRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return JSON.stringify(snapshot).length > 5000
-    ? [warning(DIAGNOSTIC_CODES.promptLengthRisk, "Snapshot is large enough to risk lost-in-the-middle prompt behavior.", "records")]
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
+          "Snapshot is large enough to risk lost-in-the-middle prompt behavior.",
+          "records"
+        )
+      ]
     : [];
 }
 
@@ -59,18 +67,72 @@ function warnNoActiveClockPressure(snapshot: ValidationSnapshot): readonly Diagn
     : [];
 }
 
-function warnLongDossierNeedsPin(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  return snapshot.records.flatMap((record) => {
-    if (record.type !== "CAST MEMBER" || JSON.stringify(record.payload).length <= 1200) {
-      return [];
-    }
+function warnLocalVoicePressureMayHelp(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (!hasFocusTag(snapshot, "dialogue_expected")) {
+    return [];
+  }
 
-    const hasPin = snapshot.generationSession.current_cast_voice_pressure.some((entry) => entry.cast_member_id === record.id && hasText(entry.current_voice_pressure));
+  const missingPins = activeSpeakerIds(snapshot).filter(
+    (castId) => castHasVoiceAnchor(snapshot, castId) && !hasVoicePressure(snapshot, castId)
+  );
 
-    return hasPin
-      ? []
-      : [warning(DIAGNOSTIC_CODES.longDossierNeedsPin, "Long active dossier may need a stronger current voice/body pressure pin.", `record:${record.id}`)];
-  });
+  return missingPins.length > 0
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.localVoicePressureMayHelp,
+          "Dialogue is structurally ready, but local voice pressure may help keep active speakers salient.",
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
+}
+
+function warnEnsembleVoiceDistinctionRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (!hasFocusTag(snapshot, "ensemble_dialogue_expected")) {
+    return [];
+  }
+
+  const speakerIds = activeSpeakerIds(snapshot);
+  if (speakerIds.length < 3) {
+    return [];
+  }
+
+  const pressurePins = speakerIds
+    .map((castId) => voicePressureFor(snapshot, castId)?.current_voice_pressure)
+    .filter(hasText)
+    .map((pin) => pin.trim().toLowerCase());
+  const distinctPins = new Set(pressurePins);
+
+  return pressurePins.length < speakerIds.length || distinctPins.size < pressurePins.length
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk,
+          "Ensemble dialogue is structurally ready, but absent or repeated local voice pins may blur speakers.",
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
+}
+
+function warnCastSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const affectedLabels = snapshot.records
+    .filter((record) => record.type === "CAST MEMBER" && JSON.stringify(record.payload).length > 1200)
+    .filter((record) =>
+      !snapshot.generationSession.current_cast_voice_pressure.some(
+        (entry) => entry.cast_member_id === record.id && hasText(entry.current_voice_pressure)
+      )
+    )
+    .map((record) => record.metadata?.displayLabel ?? record.id);
+
+  return affectedLabels.length > 0
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.castSalienceRisk,
+          `Long active cast dossiers may need a stronger local salience pin: ${affectedLabels.join(", ")}.`,
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
 }
 
 function warnLowDramaScenePressure(snapshot: ValidationSnapshot): readonly Diagnostic[] {
@@ -107,6 +169,43 @@ function objectPayload(record: ValidationRecord): Record<string, unknown> {
   return record.payload && typeof record.payload === "object" && !Array.isArray(record.payload)
     ? record.payload as Record<string, unknown>
     : {};
+}
+
+function activeSpeakerIds(snapshot: ValidationSnapshot): readonly string[] {
+  return snapshot.generationSession.active_working_set?.active_onstage_cast_full
+    .filter((entry) => entry.local_function === "active_speaker" || entry.local_function === "pov_narrator")
+    .map((entry) => entry.cast_member_id) ?? [];
+}
+
+function castHasVoiceAnchor(snapshot: ValidationSnapshot, castId: string): boolean {
+  const cast = snapshot.records.find((record) => record.id === castId && record.type === "CAST MEMBER");
+
+  return !!cast && hasObject(objectPayload(cast).voice_anchor);
+}
+
+function hasVoicePressure(snapshot: ValidationSnapshot, castId: string): boolean {
+  const pressure = voicePressureFor(snapshot, castId);
+
+  return !!pressure && (hasText(pressure.current_voice_pressure) || hasText(pressure.dialogue_pressure));
+}
+
+function voicePressureFor(snapshot: ValidationSnapshot, castId: string) {
+  return snapshot.generationSession.current_cast_voice_pressure.find((entry) => entry.cast_member_id === castId);
+}
+
+function hasFocusTag(snapshot: ValidationSnapshot, tag: string): boolean {
+  const tags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags;
+  const activeTags: readonly string[] = [
+    ...(tags?.generation_context ?? []),
+    ...(tags?.expected_local_modes ?? []),
+    ...(tags?.possible_durable_changes ?? [])
+  ];
+
+  return activeTags.includes(tag);
+}
+
+function hasObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function hasValue(value: unknown): boolean {

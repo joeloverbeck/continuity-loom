@@ -7,6 +7,10 @@ import {
   type BuildValidationSnapshotInput
 } from "../src/index.js";
 
+type ExpectedLocalMode = NonNullable<
+  BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]
+>["validation_focus_tags"]["expected_local_modes"][number];
+
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castId = "019b0298-5c00-7000-8000-000000000002";
 const factId = "019b0298-5c00-7000-8000-000000000003";
@@ -17,8 +21,8 @@ const statusId = "019b0298-5c00-7000-8000-000000000006";
 describe("physical/perception/offstage matrix validation", () => {
   it("stays silent when physical matrix tags are absent", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
-    input.generationSession.current_authoritative_state.routes_and_exits = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.current_authoritative_state!.routes_and_exits = [];
 
     expect(blockerCodes(input)).not.toEqual(
       expect.arrayContaining([
@@ -31,7 +35,7 @@ describe("physical/perception/offstage matrix validation", () => {
 
   it("stays silent when all physical matrix tags are satisfied", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "physical_interaction_expected",
       "offstage_interruption_possible",
       "nonhuman_or_institutional_pressure_expected"
@@ -51,14 +55,14 @@ describe("physical/perception/offstage matrix validation", () => {
       "physical_interaction_expected",
       DIAGNOSTIC_CODES.matrixPhysicalInteractionIncomplete,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_authoritative_state.positions = [];
+        input.generationSession.current_authoritative_state!.positions = [];
       }
     ],
     [
       "offstage_interruption_possible",
       DIAGNOSTIC_CODES.matrixOffstageInterruptionIncomplete,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_authoritative_state.offstage_pressuring_entities = [];
+        input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [];
       }
     ],
     [
@@ -70,7 +74,9 @@ describe("physical/perception/offstage matrix validation", () => {
     ]
   ])("blocks %s when required physical matrix state is missing", (tag, code, mutate) => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [tag];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      tag as ExpectedLocalMode
+    ];
     mutate(input);
 
     expect(blockerCodes(input)).toContain(code);
@@ -134,6 +140,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
         offstage_pressuring_entities: [institutionId],
         positions: "A and B stand near the loading door.",
         possessions: "The key is in A's hand.",

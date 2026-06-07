@@ -40,7 +40,6 @@ export default tseslint.config(
             "*.js",
             "*.ts",
             "scripts/*.mjs",
-            "packages/*/test/*.ts",
             "packages/*/src/*.test.ts"
           ],
           maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 96

@@ -4,8 +4,13 @@ import {
   DIAGNOSTIC_CODES,
   buildValidationSnapshot,
   runValidation,
-  type BuildValidationSnapshotInput
+  type BuildValidationSnapshotInput,
+  type ValidationRecord
 } from "../src/index.js";
+
+type ExpectedLocalMode = NonNullable<
+  BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]
+>["validation_focus_tags"]["expected_local_modes"][number];
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castA = "019b0298-5c00-7000-8000-000000000002";
@@ -20,7 +25,7 @@ const relationshipId = "019b0298-5c00-7000-8000-000000000009";
 describe("voice/dialogue/presence matrix validation", () => {
   it("stays silent when voice matrix tags are absent", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
     input.generationSession.current_cast_voice_pressure = [];
 
     expect(blockerCodes(input)).not.toEqual(
@@ -35,7 +40,7 @@ describe("voice/dialogue/presence matrix validation", () => {
 
   it("stays silent when all voice matrix tags are satisfied", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "dialogue_expected",
       "ensemble_dialogue_expected",
       "active_silent_presence_expected",
@@ -64,10 +69,10 @@ describe("voice/dialogue/presence matrix validation", () => {
       "ensemble_dialogue_expected",
       DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
-          ["019b0298-5c00-7000-8000-000000000002", "019b0298-5c00-7000-8000-000000000003", "019b0298-5c00-7000-8000-000000000004"].includes(entry.cast_member_id)
-            ? { ...entry, current_voice_pressure: "same" }
-            : entry
+        input.records = input.records.map((record) =>
+      record.id === castB
+            ? { ...record, payload: { ...(record.payload as Record<string, unknown>), voice_anchor: undefined } }
+            : record
         );
       }
     ],
@@ -89,15 +94,60 @@ describe("voice/dialogue/presence matrix validation", () => {
     ]
   ])("blocks %s when required voice matrix state is missing", (tag, code, mutate) => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [tag];
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      tag as ExpectedLocalMode
+    ];
     mutate(input);
 
     expect(blockerCodes(input)).toContain(code);
+  });
+
+  it("does not block dialogue when speakers have durable voice anchors but no local pressure pins", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.generationSession.current_cast_voice_pressure = [];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+    expect(warningCodes(input)).toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
+  });
+
+  it("still blocks dialogue when an active speaker lacks a durable voice anchor", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.records = input.records.map((record) =>
+      record.id === castA
+        ? { ...record, payload: { ...(record.payload as Record<string, unknown>), voice_anchor: undefined } }
+        : record
+    );
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
+  it("warns but does not block when ensemble voice pins are absent or repeated", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "ensemble_dialogue_expected"
+    ];
+    input.generationSession.active_working_set!.active_onstage_cast_full = [
+      { cast_member_id: castA, local_function: "active_speaker" },
+      { cast_member_id: castB, local_function: "active_speaker" },
+      { cast_member_id: castC, local_function: "active_speaker" }
+    ];
+    input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
+      [castA, castB].includes(entry.cast_member_id) ? { ...entry, current_voice_pressure: "same" } : entry
+    );
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete);
+    expect(warningCodes(input)).toContain(DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk);
   });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function warningCodes(input: BuildValidationSnapshotInput): readonly string[] {
+  return runValidation(buildValidationSnapshot(input)).warnings.map((diagnostic) => diagnostic.code);
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
@@ -151,6 +201,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A, B, and C are at the loading door while the key changes hands.",
         offstage_pressuring_entities: [],
         positions: "A, B, and C stand near the loading door.",
         possessions: "The key is in A's hand.",
@@ -231,7 +282,7 @@ function cleanInput(): BuildValidationSnapshotInput {
   };
 }
 
-function castRecord(id: string, entityIdValue: string) {
+function castRecord(id: string, entityIdValue: string): ValidationRecord {
   return {
     id,
     type: "CAST MEMBER",

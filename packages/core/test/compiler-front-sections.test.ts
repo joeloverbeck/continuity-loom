@@ -68,6 +68,7 @@ function populatedInput(): BuildValidationSnapshotInput {
         current_time: "After midnight.",
         current_location: "North archive.",
         onstage_entities: [povId],
+        immediate_situation_summary: "Mara is beside the desk while Jon waits at the archive door.",
         offstage_pressuring_entities: [holderId],
         positions: ["Mara is beside the desk.", "Jon is at the door."],
         possessions: "Jon carries the lantern.",

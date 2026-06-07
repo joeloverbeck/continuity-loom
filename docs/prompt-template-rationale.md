@@ -37,7 +37,7 @@ Narrative-planning research supports preserving causality and character intentio
 
 ## 5. Why current authoritative state is separate from immediate handoff
 
-`<current_authoritative_state>` is the live start snapshot: time, place, bodies, positions, agency/status, possessions, visible conditions, line of sight, routes, available time, consent/force conditions, and continuity locks.
+`<current_authoritative_state>` is the live start snapshot: time, place, onstage bodies, immediate local situation, positions, agency/status, possessions, visible conditions, line of sight, routes, available time, consent/force conditions, and continuity locks.
 
 `<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, prior accepted prose status or user-authored handoff note, and begin-after instruction.
 

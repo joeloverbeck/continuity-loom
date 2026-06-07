@@ -51,6 +51,11 @@ const frontResolvers: ResolverMap = {
     valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_location, "current_location"),
   onstage_entities: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.current_authoritative_state?.onstage_entities, "onstage_entities"),
+  immediate_situation_summary: (snapshot) =>
+    valueOrEmpty(
+      snapshot.generationSession.current_authoritative_state?.immediate_situation_summary,
+      "immediate_situation_summary"
+    ),
   offstage_pressuring_entities: (snapshot) =>
     valueOrEmpty(
       snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities,

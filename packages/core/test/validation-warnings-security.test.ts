@@ -14,7 +14,7 @@ const keyLikeValue = "sk-or-v1-abcdefghijklmnopqrstuvwxyz123456";
 
 describe("warnings and security validation", () => {
   it.each([
-    [DIAGNOSTIC_CODES.promptLengthRisk, (input: BuildValidationSnapshotInput) => {
+    [DIAGNOSTIC_CODES.promptMiddleSalienceRisk, (input: BuildValidationSnapshotInput) => {
       input.records = [record("big", "FACT", { statement: "x".repeat(6000) })];
     }],
     [DIAGNOSTIC_CODES.manyHighSalienceRecords, (input: BuildValidationSnapshotInput) => {
@@ -24,16 +24,59 @@ describe("warnings and security validation", () => {
       input.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
     }],
     [DIAGNOSTIC_CODES.sparseSettingTexture, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.current_authoritative_state = { environmental_conditions: "Bare." };
+      input.generationSession.current_authoritative_state = {
+        ...input.generationSession.current_authoritative_state!,
+        environmental_conditions: "Bare."
+      };
     }],
     [DIAGNOSTIC_CODES.noActiveClockPressure, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.manual_moment_directive = { must_render: ["Ask for the key."] };
+      input.generationSession.manual_moment_directive = manualDirective("Ask for the key.");
     }],
-    [DIAGNOSTIC_CODES.longDossierNeedsPin, (input: BuildValidationSnapshotInput) => {
+    [DIAGNOSTIC_CODES.localVoicePressureMayHelp, (input: BuildValidationSnapshotInput) => {
+      input.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
+      input.generationSession.active_working_set = {
+        selected_records: ["cast"],
+        active_onstage_cast_full: [{ cast_member_id: "cast", local_function: "active_speaker" }],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      };
+      input.generationSession.generation_validation_focus = {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: ["dialogue_expected"],
+          possible_durable_changes: []
+        }
+      };
+    }],
+    [DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk, (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        record("cast-a", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full"),
+        record("cast-b", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full"),
+        record("cast-c", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")
+      ];
+      input.generationSession.active_working_set = {
+        selected_records: ["cast-a", "cast-b", "cast-c"],
+        active_onstage_cast_full: [
+          { cast_member_id: "cast-a", local_function: "active_speaker" },
+          { cast_member_id: "cast-b", local_function: "active_speaker" },
+          { cast_member_id: "cast-c", local_function: "active_speaker" }
+        ],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      };
+      input.generationSession.generation_validation_focus = {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: ["ensemble_dialogue_expected"],
+          possible_durable_changes: []
+        }
+      };
+    }],
+    [DIAGNOSTIC_CODES.castSalienceRisk, (input: BuildValidationSnapshotInput) => {
       input.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     }],
     [DIAGNOSTIC_CODES.lowDramaScenePressure, (input: BuildValidationSnapshotInput) => {
-      input.generationSession.manual_moment_directive = { must_render: ["Pause."] };
+      input.generationSession.manual_moment_directive = manualDirective("Pause.");
     }],
     [DIAGNOSTIC_CODES.staleSelectedRecord, (input: BuildValidationSnapshotInput) => {
       input.records = [record("old", "EVENT", { status: "resolved" })];
@@ -49,10 +92,28 @@ describe("warnings and security validation", () => {
     expect(result.warnings.every((warning) => warning.severity === "warning")).toBe(true);
   });
 
+  it("groups multiple long active cast dossier salience risks into one warning", () => {
+    const input = baseInput();
+    input.records = [
+      record("cast-a", "CAST MEMBER", { biography: "x".repeat(1300) }, "active_onstage_cast_full"),
+      record("cast-b", "CAST MEMBER", { biography: "y".repeat(1300) }, "active_onstage_cast_full")
+    ];
+
+    const result = runValidation(buildValidationSnapshot(input), warningRules);
+    const salienceWarnings = result.warnings.filter((warning) => warning.code === DIAGNOSTIC_CODES.castSalienceRisk);
+
+    expect(salienceWarnings).toHaveLength(1);
+    expect(salienceWarnings[0]?.severity).toBe("warning");
+    expect(result.blockers).toEqual([]);
+    expect(result.isBlocked).toBe(false);
+  });
+
   it("blocks API-key-like prompt-facing text without echoing the matched key", () => {
     const input = baseInput();
     input.generationSession.manual_moment_directive = {
-      must_render: [`Do not include ${keyLikeValue} in prose.`]
+      must_render: [`Do not include ${keyLikeValue} in prose.`],
+      may_render_if_naturally_caused: [],
+      do_not_force: []
     };
 
     const result = runValidation(buildValidationSnapshot(input), securityRules);
@@ -75,6 +136,14 @@ function baseInput(): BuildValidationSnapshotInput {
     },
     storyConfig: {},
     versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
+  };
+}
+
+function manualDirective(mustRender: string) {
+  return {
+    must_render: [mustRender],
+    may_render_if_naturally_caused: [],
+    do_not_force: []
   };
 }
 

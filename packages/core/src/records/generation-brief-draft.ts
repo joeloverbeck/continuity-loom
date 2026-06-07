@@ -37,6 +37,7 @@ const currentAuthoritativeStateDraftSchema = z
     current_time: draftString.optional(),
     current_location: z.union([recordId, draftString]).optional(),
     onstage_entities: z.array(recordId).optional(),
+    immediate_situation_summary: draftString.optional(),
     offstage_pressuring_entities: z.array(recordId).optional(),
     positions: z.union([draftString, z.array(draftString)]).optional(),
     possessions: z.union([draftString, z.array(draftString)]).optional(),

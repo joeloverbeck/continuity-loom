@@ -42,7 +42,8 @@ describe("record editor descriptors", () => {
   it("defines descriptors whose top-level fields match every registry payload schema except system-managed id", () => {
     for (const recordType of recordTypes) {
       const descriptor = getEditorDescriptor(recordType);
-      const expectedFieldNames = objectKeys(recordTypeRegistry[recordType].payloadSchema).filter((name) => name !== "id");
+      const registryEntry = recordTypeRegistry[recordType]!;
+      const expectedFieldNames = objectKeys(registryEntry.payloadSchema).filter((name) => name !== "id");
 
       expect(descriptor?.recordType).toBe(recordType);
       expect(descriptor?.fields.map((field) => field.name).sort()).toEqual(expectedFieldNames.sort());
@@ -51,7 +52,7 @@ describe("record editor descriptors", () => {
 
   it("omits only the record id from id-bearing descriptors", () => {
     for (const recordType of recordTypes) {
-      const schemaFieldNames = objectKeys(recordTypeRegistry[recordType].payloadSchema);
+      const schemaFieldNames = objectKeys(recordTypeRegistry[recordType]!.payloadSchema);
       const descriptorFieldNames = getEditorDescriptor(recordType)?.fields.map((field) => field.name) ?? [];
 
       expect(descriptorFieldNames).not.toContain("id");

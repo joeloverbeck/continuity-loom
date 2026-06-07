@@ -27,7 +27,7 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
   it("covers every descriptor field path for in-scope record types", () => {
     for (const recordType of recordTypes) {
       const descriptor = recordEditorDescriptors[recordType];
-      const paths = enumerateCanonicalPaths(recordType, descriptor.fields);
+      const paths = enumerateCanonicalPaths(recordType, descriptor!.fields);
 
       for (const path of paths) {
         expect(getFieldGuidance(path), path).toBeDefined();

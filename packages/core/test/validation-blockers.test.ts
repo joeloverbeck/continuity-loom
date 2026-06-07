@@ -29,7 +29,7 @@ describe("universal blocker validation", () => {
         compiler: "0.0.0",
         contract: "1.0.0"
       }
-    } as BuildValidationSnapshotInput);
+    } as unknown as BuildValidationSnapshotInput);
 
     expect(() => runValidation(snapshot)).not.toThrow();
   });
@@ -39,22 +39,29 @@ describe("universal blocker validation", () => {
       "non-local directive",
       DIAGNOSTIC_CODES.localProseScopeViolation,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.manual_moment_directive.must_render = ["Write the whole chapter outline."];
+        input.generationSession.manual_moment_directive!.must_render = ["Write the whole chapter outline."];
+      }
+    ],
+    [
+      "non-local stop guidance",
+      DIAGNOSTIC_CODES.localProseScopeViolation,
+      (input: BuildValidationSnapshotInput) => {
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through future consequences.";
       }
     ],
     [
       "directive and stop disagreement",
       DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.manual_moment_directive.must_render = ["Continue through the later consequence."];
-        input.generationSession.stop_guidance.soft_unit_guidance = "Stop after the first response point.";
+        input.generationSession.manual_moment_directive!.must_render = ["Continue through the later consequence."];
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the first response point.";
       }
     ],
     [
       "state handoff contradiction",
       DIAGNOSTIC_CODES.handoffCurrentStateContradiction,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.immediate_handoff.last_visible_moment = "This contradicts current state.";
+        input.generationSession.immediate_handoff!.last_visible_moment = "This contradicts current state.";
       }
     ],
     [
@@ -137,38 +144,38 @@ describe("universal blocker validation", () => {
       "offstage interruption missing route",
       DIAGNOSTIC_CODES.offstageInterruptionMissingRoute,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
-        input.generationSession.current_authoritative_state.routes_and_exits = [];
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+        input.generationSession.current_authoritative_state!.routes_and_exits = [];
       }
     ],
     [
       "physical action missing context",
       DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = ["physical_interaction_expected"];
-        input.generationSession.current_authoritative_state.consent_or_force_conditions = "";
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["physical_interaction_expected"];
+        input.generationSession.current_authoritative_state!.consent_or_force_conditions = "";
       }
     ],
     [
-      "expected dialogue missing voice pressure",
-      DIAGNOSTIC_CODES.sparseVoicePressure,
+      "current voice pressure contradicts content envelope",
+      DIAGNOSTIC_CODES.contentEnvelopeContradiction,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_cast_voice_pressure = [];
+        input.generationSession.current_cast_voice_pressure[0]!.current_voice_pressure = "Render graphic gore in the voice.";
       }
     ],
     [
       "content envelope contradiction",
       DIAGNOSTIC_CODES.contentEnvelopeContradiction,
       (input: BuildValidationSnapshotInput) => {
-        input.storyConfig.universalContentPolicy.allowed_content_scope = "No explicit sex or non-graphic violence.";
-        input.generationSession.manual_moment_directive.must_render = ["Render explicit sex."];
+        input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex or non-graphic violence.";
+        input.generationSession.manual_moment_directive!.must_render = ["Render explicit sex."];
       }
     ],
     [
       "prompt-facing prose contamination",
       DIAGNOSTIC_CODES.promptFacingProseContamination,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.immediate_handoff.recent_causal_context = "This is copied accepted prose from the last scene.";
+        input.generationSession.immediate_handoff!.recent_causal_context = "This is copied accepted prose from the last scene.";
       }
     ],
     [
@@ -192,15 +199,15 @@ describe("universal blocker validation", () => {
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
 
-    input.generationSession.immediate_handoff.begin_after = "Continue from last time.";
+    input.generationSession.immediate_handoff!.begin_after = "Continue from last time.";
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
 
   it("blocks contaminated continuation handoff", () => {
     const input = cleanInput();
-    input.generationSession.generation_validation_focus.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
-    input.generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note = "Rejected candidate: she opened the door.";
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
+    input.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note = "Rejected candidate: she opened the door.";
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
@@ -250,6 +257,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_time: "Night.",
         current_location: "Warehouse.",
         onstage_entities: [entityId],
+        immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
         offstage_pressuring_entities: ["019b0298-5c00-7000-8000-000000000999"],
         positions: "A and B stand near the loading door.",
         possessions: "The key is in A's hand.",

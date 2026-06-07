@@ -59,7 +59,8 @@ describe("field guidance doctrine", () => {
       buildValidationSnapshot({
         records: structuredClone(demoRecords),
         generationSession: structuredClone(demoGenerationSession),
-        storyConfig: structuredClone(demoStoryConfig)
+        storyConfig: structuredClone(demoStoryConfig),
+        versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
       })
     ).prompt;
 

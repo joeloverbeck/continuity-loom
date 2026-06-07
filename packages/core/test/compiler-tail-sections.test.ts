@@ -107,6 +107,7 @@ function input(records = tailRecords()): BuildValidationSnapshotInput {
         current_time: "Dawn.",
         current_location: "Archive stair.",
         onstage_entities: [povId],
+        immediate_situation_summary: "The POV stands below the landing with the lantern in hand.",
         offstage_pressuring_entities: [nonPovId],
         positions: "The POV stands below the landing.",
         possessions: "The lantern is in POV's hand.",

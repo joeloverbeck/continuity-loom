@@ -95,36 +95,33 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
   const state = session.current_authoritative_state;
   const handoff = session.immediate_handoff;
   const directive = session.manual_moment_directive;
-  const stopGuidance = session.stop_guidance;
+  const generationContext = session.generation_validation_focus?.validation_focus_tags.generation_context[0];
 
   if (
     !state ||
     !hasText(state.current_time) ||
     !hasText(state.current_location) ||
     !hasValue(state.onstage_entities) ||
-    !hasValue(state.positions) ||
-    !hasValue(state.visible_conditions) ||
-    !hasText(state.line_of_sight_and_visibility) ||
-    !hasValue(state.routes_and_exits) ||
-    !hasText(state.available_time)
+    !hasText(state.immediate_situation_summary)
   ) {
     diagnostics.push(
       blocker({
         code: DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
         field: "generationSession.current_authoritative_state",
         message: "Current authoritative state is missing required launch context.",
-        whyItMatters: "The prompt needs current time, location, onstage entities, positions, visibility, routes, and available time as deterministic continuity ground.",
+        whyItMatters: "The prompt needs current time, location, onstage entities, and an immediate situation summary as deterministic continuity ground.",
         suggestedActions: ["add-current-state"]
       })
     );
   }
 
   if (
-    !handoff ||
-    !hasText(handoff.recent_causal_context) ||
-    !hasText(handoff.last_visible_moment) ||
-    !hasText(handoff.prior_accepted_prose_status_or_handoff_note) ||
-    !hasText(handoff.begin_after)
+    generationContext === "continuation_after_accepted_segment" &&
+    (!handoff ||
+      !hasText(handoff.recent_causal_context) ||
+      !hasText(handoff.last_visible_moment) ||
+      !hasText(handoff.prior_accepted_prose_status_or_handoff_note) ||
+      !hasText(handoff.begin_after))
   ) {
     diagnostics.push(
       blocker({
@@ -145,18 +142,6 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
         message: "Manual moment directive needs at least one must-render instruction.",
         whyItMatters: "The prose writer needs a local, user-authored launch instruction instead of inferring the next story move.",
         suggestedActions: ["change-directive"]
-      })
-    );
-  }
-
-  if (!stopGuidance || !hasText(stopGuidance.soft_unit_guidance)) {
-    diagnostics.push(
-      blocker({
-        code: DIAGNOSTIC_CODES.missingStopGuidance,
-        field: "generationSession.stop_guidance.soft_unit_guidance",
-        message: "Stop guidance is missing.",
-        whyItMatters: "The prompt must define where the next local prose unit should stop so generation does not drift into later consequences.",
-        suggestedActions: ["change-stop-guidance"]
       })
     );
   }
@@ -272,7 +257,7 @@ function validateActiveCast(snapshot: ValidationSnapshot): readonly Diagnostic[]
 function validateGenerationContextFocus(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   const contextTags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context;
 
-  if (contextTags?.length === 1) {
+  if (!contextTags || contextTags.length <= 1) {
     return [];
   }
 
@@ -340,18 +325,11 @@ function activeSecrets(snapshot: ValidationSnapshot): readonly ValidationRecord[
 }
 
 function hasActivePhysicalInteraction(snapshot: ValidationSnapshot): boolean {
-  return (
-    focusTags(snapshot).some((tag) => PHYSICAL_FOCUS_TAGS.has(tag)) ||
-    snapshot.records.some((record) => record.type === "VISIBLE AFFORDANCE" || record.type === "OBJECT")
-  );
+  return focusTags(snapshot).some((tag) => PHYSICAL_FOCUS_TAGS.has(tag));
 }
 
 function objectsMatter(snapshot: ValidationSnapshot): boolean {
-  return (
-    hasFocusTag(snapshot, "object_use_possible") ||
-    hasFocusTag(snapshot, "object_transfer_possible") ||
-    snapshot.records.some((record) => record.type === "OBJECT")
-  );
+  return hasFocusTag(snapshot, "object_use_possible") || hasFocusTag(snapshot, "object_transfer_possible");
 }
 
 function materialCastRecords(snapshot: ValidationSnapshot): readonly ValidationRecord[] {
