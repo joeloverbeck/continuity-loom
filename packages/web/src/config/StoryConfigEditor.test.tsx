@@ -5,11 +5,11 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StoryConfigEditor } from "./StoryConfigEditor.js";
-import { getStoryConfig, listRecords, setStoryConfig, type StoryConfigKind } from "../api.js";
+import { listRecords, listStoryConfig, setStoryConfig, type StoryConfigKind } from "../api.js";
 
 vi.mock("../api.js", () => ({
-  getStoryConfig: vi.fn(),
   listRecords: vi.fn(),
+  listStoryConfig: vi.fn(),
   setStoryConfig: vi.fn()
 }));
 
@@ -62,9 +62,7 @@ function descriptorNames(fields: readonly FieldDescriptor[]): string[] {
 }
 
 function setupMocks(): void {
-  vi.mocked(getStoryConfig).mockImplementation((kind: StoryConfigKind) =>
-    Promise.resolve({ ok: true, payload: payloads[kind] })
-  );
+  vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: payloads });
   vi.mocked(setStoryConfig).mockResolvedValue({ ok: true });
   vi.mocked(listRecords).mockResolvedValue({
     ok: true,
@@ -120,6 +118,23 @@ describe("StoryConfigEditor", () => {
     await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith("PROSE MODE", expect.objectContaining({
       language_output: "English with close POV"
     })));
+    expect(listStoryConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders missing singleton states from the list route without per-kind config fetches", async () => {
+    setupMocks();
+    vi.mocked(listStoryConfig).mockResolvedValue({
+      ok: true,
+      configs: {
+        "STORY CONTRACT": payloads["STORY CONTRACT"],
+        "UNIVERSAL CONTENT POLICY": payloads["UNIVERSAL CONTENT POLICY"]
+      }
+    });
+    render(<StoryConfigEditor />);
+
+    expect(await screen.findByText("No saved PROSE MODE yet.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save PROSE MODE" })).toBeTruthy();
+    expect(listStoryConfig).toHaveBeenCalledTimes(1);
   });
 
   it("keeps all five content-policy fields distinct with no boilerplate shortcut", async () => {

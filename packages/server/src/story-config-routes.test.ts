@@ -95,6 +95,34 @@ describe("story-config routes", () => {
     }
   });
 
+  it("lists only authored story config singletons and preserves per-kind missing 404", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    for (const kind of ["STORY CONTRACT", "UNIVERSAL CONTENT POLICY"] as const) {
+      const putResponse = await fastify.inject({
+        method: "PUT",
+        url: `/api/story-config/${encodeURIComponent(kind)}`,
+        payload: { payload: payloads[kind] }
+      });
+      expect(putResponse.statusCode).toBe(200);
+    }
+
+    const listResponse = await fastify.inject({ method: "GET", url: "/api/story-config" });
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json()).toEqual({
+      ok: true,
+      configs: {
+        "STORY CONTRACT": payloads["STORY CONTRACT"],
+        "UNIVERSAL CONTENT POLICY": payloads["UNIVERSAL CONTENT POLICY"]
+      }
+    });
+
+    const missingResponse = await fastify.inject({ method: "GET", url: "/api/story-config/PROSE%20MODE" });
+    expect(missingResponse.statusCode).toBe(404);
+    expect(missingResponse.json()).toMatchObject({ ok: false, kind: "not-found" });
+  });
+
   it("returns structured malformed-payload errors and does not persist invalid configs", async () => {
     const fastify = app();
     await openProject(fastify);
@@ -116,6 +144,7 @@ describe("story-config routes", () => {
     const fastify = app();
 
     for (const request of [
+      { method: "GET", url: "/api/story-config" },
       { method: "GET", url: "/api/story-config/PROSE%20MODE" },
       { method: "PUT", url: "/api/story-config/PROSE%20MODE", payload: { payload: payloads["PROSE MODE"] } }
     ] as const) {

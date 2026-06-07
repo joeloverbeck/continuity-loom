@@ -4,11 +4,12 @@ import { z, ZodError } from "zod";
 import type { ProjectStoreManager } from "./project-store.js";
 import type { StoryConfigKind } from "./record-repository.js";
 
-const storyConfigKinds = new Set<StoryConfigKind>([
+const storyConfigKinds: StoryConfigKind[] = [
   "STORY CONTRACT",
   "UNIVERSAL CONTENT POLICY",
   "PROSE MODE"
-]);
+];
+const storyConfigKindSet = new Set<StoryConfigKind>(storyConfigKinds);
 
 const storyConfigBodySchema = z
   .object({
@@ -25,10 +26,29 @@ function invalidKind(kind: string) {
 }
 
 function isStoryConfigKind(kind: string): kind is StoryConfigKind {
-  return storyConfigKinds.has(kind as StoryConfigKind);
+  return storyConfigKindSet.has(kind as StoryConfigKind);
 }
 
 export function registerStoryConfigRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
+  app.get("/api/story-config", (request, reply) => {
+    const repository = manager.getRecordRepository();
+    if (!repository) {
+      return reply.code(409).send(noOpenProject());
+    }
+
+    const configs: Partial<Record<StoryConfigKind, unknown>> = {};
+    for (const kind of storyConfigKinds) {
+      const result = repository.getStoryConfig(kind);
+      if (result.ok) {
+        configs[kind] = result.payload;
+      } else if (result.kind !== "not-found") {
+        return reply.code(422).send(result);
+      }
+    }
+
+    return { ok: true, configs };
+  });
+
   app.get("/api/story-config/:kind", (request, reply) => {
     const repository = manager.getRecordRepository();
     if (!repository) {

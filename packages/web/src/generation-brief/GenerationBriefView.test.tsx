@@ -5,11 +5,11 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
-import { getGenerationBrief, getStoryConfig, setGenerationBrief, validate } from "../api.js";
+import { getGenerationBrief, listStoryConfig, setGenerationBrief, validate } from "../api.js";
 
 vi.mock("../api.js", () => ({
   getGenerationBrief: vi.fn(),
-  getStoryConfig: vi.fn(),
+  listStoryConfig: vi.fn(),
   setGenerationBrief: vi.fn(),
   validate: vi.fn()
 }));
@@ -30,9 +30,11 @@ function renderView(): void {
 describe("GenerationBriefView", () => {
   it("edits all eight surfaces and persists them through the brief client", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(getStoryConfig).mockResolvedValue({
+    vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
-      payload: { pov_character: "omniscient", person: "third", tense: "past" }
+      configs: {
+        "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
+      }
     });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true });
     vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
@@ -81,7 +83,7 @@ describe("GenerationBriefView", () => {
 
   it("shows deterministic non-blocking warnings while still saving", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(getStoryConfig).mockResolvedValue({ ok: false, kind: "not-found", message: "Missing config." });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true });
     vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
 
@@ -103,7 +105,7 @@ describe("GenerationBriefView", () => {
 
   it("offers all current-cast local functions including present_minor_speaker", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(getStoryConfig).mockResolvedValue({ ok: false, kind: "not-found", message: "Missing config." });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
 
     renderView();

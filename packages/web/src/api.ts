@@ -176,6 +176,7 @@ export type RecordReferencesResponse =
   | { ok: true; outgoing: Array<{ refRole: string; targetId: string }>; incoming: Array<{ fromRecordId: string; refRole: string }> }
   | ApiFailure;
 export type OkResponse = { ok: true } | ApiFailure;
+export type StoryConfigListResponse = { ok: true; configs: Partial<Record<StoryConfigKind, unknown>> } | ApiFailure;
 export type StoryConfigResponse = { ok: true; payload: unknown } | ApiFailure;
 export type WorkingSetResponse = { ok: true; selectedRecordIds: string[] } | ApiFailure;
 export type GenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
@@ -305,6 +306,10 @@ export async function getRecordReferences(id: string): Promise<RecordReferencesR
 
 export async function getStoryConfig(kind: StoryConfigKind): Promise<StoryConfigResponse> {
   return requestJson<StoryConfigResponse>(`/api/story-config/${encodeURIComponent(kind)}`, "GET");
+}
+
+export async function listStoryConfig(): Promise<StoryConfigListResponse> {
+  return requestJson<StoryConfigListResponse>("/api/story-config", "GET");
 }
 
 export async function setStoryConfig(kind: StoryConfigKind, payload: unknown): Promise<OkResponse> {

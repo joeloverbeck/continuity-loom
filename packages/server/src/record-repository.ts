@@ -6,6 +6,7 @@ import {
   projectRecordSalience,
   projectRecordStatus,
   projectRecordUrgency,
+  pruneWorkingSetReferences,
   storyContractSchema,
   universalContentPolicySchema,
   proseModeSchema,
@@ -293,8 +294,16 @@ export class RecordRepository {
   }
 
   deleteRecord(id: string): void {
-    this.assertNoActiveInboundReferences(id);
-    this.database.prepare("DELETE FROM records WHERE id = ?").run(id);
+    this.database.exec("BEGIN IMMEDIATE");
+    try {
+      this.assertNoActiveInboundReferences(id);
+      this.database.prepare("DELETE FROM records WHERE id = ?").run(id);
+      this.pruneDeletedRecordFromGenerationSession(id);
+      this.database.exec("COMMIT");
+    } catch (error) {
+      this.database.exec("ROLLBACK");
+      throw error;
+    }
   }
 
   setStoryConfig(kind: StoryConfigKind, payloadInput: unknown): void {
@@ -341,6 +350,30 @@ export class RecordRepository {
     }
 
     return this.parseJsonWithSchema(row.payload_json, generationSessionSchema, "Generation session");
+  }
+
+  private pruneDeletedRecordFromGenerationSession(deletedId: string): void {
+    const row = this.database.prepare("SELECT payload_json FROM generation_session WHERE id = 1").get() as
+      | { payload_json: string }
+      | undefined;
+
+    if (!row) {
+      return;
+    }
+
+    const session = generationSessionSchema.parse(JSON.parse(row.payload_json) as unknown);
+    const result = pruneWorkingSetReferences(session, (id) => id !== deletedId);
+    if (result.removed.length === 0) {
+      return;
+    }
+
+    this.database
+      .prepare(
+        `INSERT INTO generation_session (id, payload_json, updated_at)
+         VALUES (1, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET payload_json = excluded.payload_json, updated_at = excluded.updated_at`
+      )
+      .run(canonicalJson(result.session), nowIso());
   }
 
   appendAcceptedSegment(input: { text: string; metadata?: unknown }): AcceptedSegment {

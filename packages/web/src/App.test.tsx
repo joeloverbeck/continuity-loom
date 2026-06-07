@@ -102,6 +102,10 @@ function runtimeFetch(url: string): Promise<Response> {
     );
   }
 
+  if (url === "/api/story-config") {
+    return Promise.resolve(jsonResponse({ ok: true, configs: {} }));
+  }
+
   if (url.startsWith("/api/story-config/")) {
     return Promise.resolve(jsonResponse({ ok: false, kind: "not-found", message: "Missing config." }));
   }

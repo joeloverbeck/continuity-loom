@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import type { z } from "zod";
 
-import { getStoryConfig, listRecords, setStoryConfig, type RecordSummary, type StoryConfigKind } from "../api.js";
+import { listRecords, listStoryConfig, setStoryConfig, type RecordSummary, type StoryConfigKind } from "../api.js";
 import { RecordEditor } from "../records/RecordEditor.js";
 
 const storyConfigKinds: StoryConfigKind[] = [
@@ -104,41 +104,14 @@ type LoadedConfig =
 
 function ConfigPanel({
   kind,
+  state,
   referenceRecords
 }: {
   kind: StoryConfigKind;
+  state: LoadedConfig;
   referenceRecords: readonly RecordSummary[];
 }): React.JSX.Element {
-  const [state, setState] = useState<LoadedConfig>({ status: "loading" });
   const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    void getStoryConfig(kind)
-      .then((response) => {
-        if (!active) {
-          return;
-        }
-
-        if (response.ok) {
-          setState({ status: "ready", payload: response.payload });
-        } else if (response.kind === "not-found") {
-          setState({ status: "missing" });
-        } else {
-          setState({ status: "error", message: response.message });
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setState({ status: "error", message: "Could not load story configuration." });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [kind]);
 
   const payload = state.status === "ready" ? state.payload : undefined;
 
@@ -183,6 +156,56 @@ function ConfigPanel({
 
 export function StoryConfigEditor(): React.JSX.Element {
   const [referenceRecords, setReferenceRecords] = useState<RecordSummary[]>([]);
+  const [configs, setConfigs] = useState<Record<StoryConfigKind, LoadedConfig>>({
+    "STORY CONTRACT": { status: "loading" },
+    "UNIVERSAL CONTENT POLICY": { status: "loading" },
+    "PROSE MODE": { status: "loading" }
+  });
+
+  useEffect(() => {
+    let active = true;
+
+    void listStoryConfig()
+      .then((response) => {
+        if (!active) {
+          return;
+        }
+
+        if (!response.ok) {
+          setConfigs({
+            "STORY CONTRACT": { status: "error", message: response.message },
+            "UNIVERSAL CONTENT POLICY": { status: "error", message: response.message },
+            "PROSE MODE": { status: "error", message: response.message }
+          });
+          return;
+        }
+
+        setConfigs({
+          "STORY CONTRACT": response.configs["STORY CONTRACT"] === undefined
+            ? { status: "missing" }
+            : { status: "ready", payload: response.configs["STORY CONTRACT"] },
+          "UNIVERSAL CONTENT POLICY": response.configs["UNIVERSAL CONTENT POLICY"] === undefined
+            ? { status: "missing" }
+            : { status: "ready", payload: response.configs["UNIVERSAL CONTENT POLICY"] },
+          "PROSE MODE": response.configs["PROSE MODE"] === undefined
+            ? { status: "missing" }
+            : { status: "ready", payload: response.configs["PROSE MODE"] }
+        });
+      })
+      .catch(() => {
+        if (active) {
+          setConfigs({
+            "STORY CONTRACT": { status: "error", message: "Could not load story configuration." },
+            "UNIVERSAL CONTENT POLICY": { status: "error", message: "Could not load story configuration." },
+            "PROSE MODE": { status: "error", message: "Could not load story configuration." }
+          });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -206,7 +229,7 @@ export function StoryConfigEditor(): React.JSX.Element {
       </div>
       <div className="configStack">
         {storyConfigKinds.map((kind) => (
-          <ConfigPanel key={kind} kind={kind} referenceRecords={referenceRecords} />
+          <ConfigPanel key={kind} kind={kind} state={configs[kind]} referenceRecords={referenceRecords} />
         ))}
       </div>
     </section>

@@ -247,6 +247,39 @@ describe("record routes", () => {
     ]);
   });
 
+  it("scrubs a selected record from the working set when deleted through the route", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const createFact = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: {
+        type: "FACT",
+        displayLabel: "Selected fact",
+        payload: factPayload(idA, "A selected fact.")
+      }
+    });
+    expect(createFact.statusCode).toBe(201);
+    const setWorkingSet = await fastify.inject({
+      method: "PUT",
+      url: "/api/working-set",
+      payload: { selectedRecordIds: [idA] }
+    });
+    expect(setWorkingSet.statusCode).toBe(200);
+
+    const deleteFact = await fastify.inject({ method: "DELETE", url: `/api/records/${idA}` });
+    expect(deleteFact.statusCode).toBe(200);
+    expect(deleteFact.json()).toEqual({ ok: true });
+
+    const workingSet = await fastify.inject({ method: "GET", url: "/api/working-set" });
+    expect(workingSet.json()).toEqual({ ok: true, selectedRecordIds: [] });
+
+    const validate = await fastify.inject({ method: "POST", url: "/api/validate" });
+    expect(validate.statusCode).toBe(200);
+    expect(validate.body).not.toContain("Record not found");
+  });
+
   it("returns structured no-open-project errors on record routes", async () => {
     const fastify = app();
     const requests = [

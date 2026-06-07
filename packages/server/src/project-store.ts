@@ -18,6 +18,7 @@ import { z, ZodError } from "zod";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables } from "./record-tables.js";
+import { repairWorkingSetReferences } from "./working-set-integrity-migration.js";
 
 const METADATA_FILENAME = "continuity-loom.project.json";
 const DATABASE_FILENAME = "loom.sqlite";
@@ -244,6 +245,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         configureDatabase(database);
         ensureRecordTables(database);
         migrateGlobalConfigRecords(database);
+        repairWorkingSetReferences(database);
         closeActive();
         active = {
           folderPath,
@@ -341,6 +343,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         closeActive();
         ensureRecordTables(database);
         migrateGlobalConfigRecords(database);
+        repairWorkingSetReferences(database);
         active = {
           folderPath,
           metadata,
