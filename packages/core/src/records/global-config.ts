@@ -1,8 +1,6 @@
 import { z } from "zod";
 
 import { nonemptyString, recordId } from "./common.js";
-import type { RecordTypeDefinition } from "./registry.js";
-import { compactReferences } from "./references.js";
 
 export const storyContractSchema = z
   .object({
@@ -53,26 +51,3 @@ export const proseModeSchema = z
 export type StoryContract = z.infer<typeof storyContractSchema>;
 export type UniversalContentPolicy = z.infer<typeof universalContentPolicySchema>;
 export type ProseMode = z.infer<typeof proseModeSchema>;
-
-export const globalConfigDefinitions = [
-  {
-    recordType: "STORY CONTRACT",
-    payloadSchema: storyContractSchema,
-    extractReferences: () => []
-  },
-  {
-    recordType: "UNIVERSAL CONTENT POLICY",
-    payloadSchema: universalContentPolicySchema,
-    extractReferences: () => []
-  },
-  {
-    recordType: "PROSE MODE",
-    payloadSchema: proseModeSchema,
-    extractReferences: (payload: ProseMode) =>
-      compactReferences(
-        payload.pov_character && payload.pov_character !== "omniscient" && payload.pov_character !== "variable"
-          ? [{ refRole: "pov_character", targetId: payload.pov_character }]
-          : []
-      )
-  }
-] satisfies RecordTypeDefinition[];

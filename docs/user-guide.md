@@ -47,7 +47,7 @@ OpenRouter is the external prose transport. It is not a continuity authority.
 
 Configure the model, temperature, maximum output tokens, and optional top-p in global OpenRouter settings. These are local app settings, not project canon.
 
-Your API key belongs in global local secret storage, such as the `OPENROUTER_API_KEY` environment variable. The key is not stored in project metadata, the SQLite project store, accepted segment metadata, compiled prompts, prompt preview text, or logs. If a key appears in any of those surfaces, treat it as a security bug.
+For local key setup, copy `.env.example` to `.env` at the repository root and set `OPENROUTER_API_KEY=<your key>`. The root `.env` is gitignored and loads automatically when the app launches through `npm run dev` or `npm start`; a shell-exported `OPENROUTER_API_KEY` also works as an alternative. The key is not stored in project metadata, the SQLite project store, accepted segment metadata, compiled prompts, prompt preview text, or logs. If a key appears in any of those surfaces, treat it as a security bug.
 
 ## Candidate Lifecycle
 

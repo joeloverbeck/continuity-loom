@@ -9,6 +9,7 @@ import {
   generateRecordId,
   generationSessionSchema,
   getRecordTypeDefinition,
+  parseRecordPayload,
   planSchema,
   proseModeSchema,
   projectRecordSalience,
@@ -168,6 +169,15 @@ describe("record data model", () => {
     expect(recordTypes).toContain("FACT");
     expect(recordTypes).toContain("CAST MEMBER");
     expect(recordTypes).not.toContain("ACTIVE WORKING SET");
+    expect(recordTypes).not.toContain("STORY CONTRACT");
+    expect(recordTypes).not.toContain("UNIVERSAL CONTENT POLICY");
+    expect(recordTypes).not.toContain("PROSE MODE");
+    expect(getRecordTypeDefinition("STORY CONTRACT")).toBeUndefined();
+    expect(getRecordTypeDefinition("UNIVERSAL CONTENT POLICY")).toBeUndefined();
+    expect(getRecordTypeDefinition("PROSE MODE")).toBeUndefined();
+    expect(() => parseRecordPayload("STORY CONTRACT", storyContractPayload)).toThrow(
+      "Unsupported record type: STORY CONTRACT"
+    );
     expect(getRecordTypeDefinition("PLAN")?.projectStatus?.({ plan_status: "blocked" })).toBe(
       "blocked"
     );
@@ -535,20 +545,7 @@ describe("record data model", () => {
       })
     ).toThrow();
 
-    expect(
-      extractRecordReferences("PROSE MODE", {
-        ...proseModePayload,
-        pov_character: idA
-      })
-    ).toEqual([{ refRole: "pov_character", targetId: idA }]);
-
-    expect(extractRecordReferences("PROSE MODE", proseModePayload)).toEqual([]);
-    expect(
-      extractRecordReferences("PROSE MODE", {
-        ...proseModePayload,
-        pov_character: "variable"
-      })
-    ).toEqual([]);
+    expect(proseModeSchema.parse({ ...proseModePayload, pov_character: idA }).pov_character).toBe(idA);
   });
 
   it("validates STOP GUIDANCE as the single-field generation brief surface", () => {

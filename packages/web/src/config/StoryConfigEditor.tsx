@@ -1,4 +1,12 @@
+import {
+  proseModeSchema,
+  storyContractSchema,
+  universalContentPolicySchema,
+  type FieldDescriptor,
+  type RecordEditorDescriptor
+} from "@loom/core";
 import { useEffect, useState } from "react";
+import type { z } from "zod";
 
 import { getStoryConfig, listRecords, setStoryConfig, type RecordSummary, type StoryConfigKind } from "../api.js";
 import { RecordEditor } from "../records/RecordEditor.js";
@@ -8,6 +16,85 @@ const storyConfigKinds: StoryConfigKind[] = [
   "UNIVERSAL CONTENT POLICY",
   "PROSE MODE"
 ];
+
+function field(
+  name: string,
+  kind: FieldDescriptor["kind"],
+  options: Partial<Omit<FieldDescriptor, "name" | "kind">> = {}
+): FieldDescriptor {
+  return {
+    name,
+    kind,
+    required: options.required ?? true,
+    promptFacing: options.promptFacing ?? true,
+    ...(options.enumValues ? { enumValues: options.enumValues } : {}),
+    ...(options.referenceRole ? { referenceRole: options.referenceRole } : {}),
+    ...(options.itemDescriptor ? { itemDescriptor: options.itemDescriptor } : {}),
+    ...(options.fields ? { fields: options.fields } : {})
+  };
+}
+
+function descriptor(recordType: StoryConfigKind, fields: readonly FieldDescriptor[]): RecordEditorDescriptor {
+  return { recordType, fields };
+}
+
+const storyConfigEditorDescriptors: Record<StoryConfigKind, RecordEditorDescriptor> = {
+  "STORY CONTRACT": descriptor(
+    "STORY CONTRACT",
+    [
+      field("title", "short_string"),
+      field("premise", "prose"),
+      field("genre_mode", "short_string"),
+      field("tone", "short_string"),
+      field("continuity_philosophy", "enum", { enumValues: ["continuity_first"] }),
+      field("setting_baseline", "prose"),
+      field("content_intensity", "enum", { enumValues: ["general", "mature", "explicit", "graphic", "variable"] }),
+      field("explicitness", "prose"),
+      field("language_register", "short_string"),
+      field("prose_preferences", "nested_group", {
+        fields: [
+          field("psychic_distance", "enum", { enumValues: ["close", "medium", "distant", "variable"] }),
+          field("dialogue_density", "enum", { enumValues: ["sparse", "balanced", "moment_led", "dense"] }),
+          field("interiority", "enum", { enumValues: ["minimal", "filtered", "free_indirect", "direct", "variable"] }),
+          field("paragraphing", "enum", { enumValues: ["spare", "mixed", "lush", "variable"] })
+        ]
+      })
+    ]
+  ),
+  "UNIVERSAL CONTENT POLICY": descriptor(
+    "UNIVERSAL CONTENT POLICY",
+    [
+      field("rating_label", "short_string"),
+      field("allowed_content_scope", "prose"),
+      field("tonal_handling", "prose"),
+      field("governing_policy_note", "prose"),
+      field("character_bias_handling", "prose")
+    ]
+  ),
+  "PROSE MODE": descriptor(
+    "PROSE MODE",
+    [
+      field("pov_character", "reference", { referenceRole: "pov_character" }),
+      field("person", "enum", { enumValues: ["first", "second", "third", "omniscient"] }),
+      field("tense", "enum", { enumValues: ["past", "present", "future", "variable"] }),
+      field("psychic_distance", "enum", { enumValues: ["close", "medium", "distant", "variable"] }),
+      field("interiority_mode", "enum", { enumValues: ["minimal", "filtered", "free_indirect", "direct", "variable"] }),
+      field("dialogue_density", "enum", { enumValues: ["sparse", "balanced", "moment_led", "dense"] }),
+      field("paragraphing", "enum", { enumValues: ["spare", "mixed", "lush", "variable"] }),
+      field("language_output", "short_string"),
+      field("special_style_constraints", "list", {
+        required: false,
+        itemDescriptor: field("special_style_constraints item", "short_string")
+      })
+    ]
+  )
+};
+
+const storyConfigSchemas: Record<StoryConfigKind, z.ZodType> = {
+  "STORY CONTRACT": storyContractSchema,
+  "UNIVERSAL CONTENT POLICY": universalContentPolicySchema,
+  "PROSE MODE": proseModeSchema
+};
 
 type LoadedConfig =
   | { status: "loading" }
@@ -74,6 +161,8 @@ function ConfigPanel({
           <RecordEditor
             recordType={kind}
             payload={payload}
+            descriptor={storyConfigEditorDescriptors[kind]}
+            payloadSchema={storyConfigSchemas[kind]}
             referenceRecords={referenceRecords}
             headingEyebrow="Story configuration"
             submitLabel={`Save ${kind}`}

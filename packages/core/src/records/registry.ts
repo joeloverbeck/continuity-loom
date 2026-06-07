@@ -3,7 +3,6 @@ import type { z } from "zod";
 import { causalPressureDefinitions } from "./causal-pressure.js";
 import { castMemberDefinition } from "./cast-member.js";
 import { entityDefinitions } from "./entity.js";
-import { globalConfigDefinitions } from "./global-config.js";
 import { knowledgeDefinitions } from "./knowledge.js";
 import { relationshipEmotionDefinitions } from "./relationship-emotion.js";
 import type { RecordReference } from "./references.js";
@@ -23,7 +22,6 @@ export interface RecordTypeDefinition<TPayload = unknown> {
 }
 
 const definitions = [
-  ...globalConfigDefinitions,
   ...entityDefinitions,
   castMemberDefinition,
   ...knowledgeDefinitions,

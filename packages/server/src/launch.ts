@@ -61,6 +61,16 @@ export function defaultWebDistDir(): string {
   return fileURLToPath(new URL("../../web/dist/", import.meta.url));
 }
 
+export function defaultRootEnvPath(): string {
+  return fileURLToPath(new URL("../../../.env", import.meta.url));
+}
+
+export function loadRootEnv(envPath = defaultRootEnvPath()): void {
+  if (existsSync(envPath)) {
+    process.loadEnvFile(envPath);
+  }
+}
+
 export function configureStaticAssets(webDistDir: string): void {
   if (!existsSync(webDistDir)) {
     throw new Error(`Web build output not found at ${webDistDir}. Run npm run build first.`);
@@ -122,6 +132,7 @@ export async function launch(options: LaunchOptions): Promise<LaunchedApp> {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  loadRootEnv();
   launch(parseLaunchArgs(process.argv.slice(2))).catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error(message);

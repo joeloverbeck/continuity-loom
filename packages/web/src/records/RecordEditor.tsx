@@ -3,7 +3,8 @@ import {
   eligibleReferenceTargets,
   getEditorDescriptor,
   recordTypeRegistry,
-  type FieldDescriptor
+  type FieldDescriptor,
+  type RecordEditorDescriptor
 } from "@loom/core";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMemo, useState } from "react";
@@ -29,6 +30,8 @@ export interface RecordEditorProps {
   recordType: string;
   record?: RecordDetail;
   payload?: unknown;
+  descriptor?: RecordEditorDescriptor;
+  payloadSchema?: z.ZodType;
   referenceRecords?: readonly RecordSummary[];
   submitLabel?: string;
   headingEyebrow?: string;
@@ -379,18 +382,21 @@ export function RecordEditor({
   recordType,
   record,
   payload,
+  descriptor: providedDescriptor,
+  payloadSchema,
   referenceRecords = [],
   submitLabel,
   headingEyebrow,
   onSubmitPayload,
   onSaved
 }: RecordEditorProps): React.JSX.Element {
-  const descriptor = getEditorDescriptor(recordType);
+  const descriptor = providedDescriptor ?? getEditorDescriptor(recordType);
   const definition = recordTypeRegistry[recordType];
+  const schema = payloadSchema ?? definition?.payloadSchema;
   const [serverError, setServerError] = useState<ApiFailure | null>(null);
   const serverIssues = useMemo(() => serverIssuesByPath(serverError), [serverError]);
-  const resolver = definition
-    ? (zodResolver(z.preprocess((values) => prunePayload(values, descriptor?.fields ?? []), definition.payloadSchema) as never) as Resolver<FormValues>)
+  const resolver = schema
+    ? (zodResolver(z.preprocess((values) => prunePayload(values, descriptor?.fields ?? []), schema) as never) as Resolver<FormValues>)
     : undefined;
   const formOptions = {
     defaultValues: descriptor ? defaultValues(descriptor.fields, record?.payload ?? payload) : {},
@@ -398,7 +404,7 @@ export function RecordEditor({
   };
   const form = useForm<FormValues>(formOptions);
 
-  if (!descriptor || !definition) {
+  if (!descriptor || !schema) {
     return (
       <p role="alert" className="status statusError">
         Unsupported record type.

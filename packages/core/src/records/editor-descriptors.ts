@@ -119,11 +119,8 @@ const labelFieldsByType: Readonly<Record<string, readonly string[]>> = Object.fr
   OBLIGATION: ["terms"],
   "OPEN THREAD": ["title"],
   PLAN: ["objective"],
-  "PROSE MODE": ["person", "pov_character"],
   RELATIONSHIP: ["description"],
   SECRET: ["secret_claim"],
-  "STORY CONTRACT": ["title"],
-  "UNIVERSAL CONTENT POLICY": ["rating_label"],
   "VISIBLE AFFORDANCE": ["label"]
 });
 

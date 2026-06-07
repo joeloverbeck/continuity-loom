@@ -293,6 +293,9 @@ describe("RecordBrowser", () => {
     for (const recordType of recordTypes) {
       expect(screen.getByRole("button", { name: `Create ${recordType}` })).toBeTruthy();
     }
+    expect(screen.queryByRole("button", { name: "Create STORY CONTRACT" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create UNIVERSAL CONTENT POLICY" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Create PROSE MODE" })).toBeNull();
   });
 
   it("opens typed editors from create actions instead of leaving inert buttons", async () => {
