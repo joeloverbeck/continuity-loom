@@ -1,6 +1,6 @@
 # SPECGENBRIDRA-002: Core ready-candidate normalizer & ready schema
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` exports `normalizeGenerationSessionForReadiness`, `generationSessionReadySchema` (+ `GenerationSessionReadyCandidate`, `GenerationSessionReady` types); new `packages/core/src/records/generation-brief-readiness.ts`; new test file
@@ -80,3 +80,19 @@ Validation must not parse persisted draft state with the same schema used for pe
 
 1. `npm test --workspace @loom/core` — targeted readiness-normalizer tests.
 2. `npm run lint && npm run typecheck && npm test` — full-pipeline gate including the core import-boundary rule.
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Implemented the additive readiness contract in `packages/core/src/records/generation-brief-readiness.ts`, including `generationSessionReadySchema`, `GenerationSessionReadyCandidate`, `GenerationSessionReady`, and `normalizeGenerationSessionForReadiness`. Exported the new readiness symbols from `packages/core/src/index.ts` and added focused coverage in `packages/core/test/generation-brief-readiness.test.ts`.
+
+Deviations from original plan: none. The ready view remains derived-only; no repository persistence path writes `GenerationSessionReady`.
+
+Verification results:
+
+- `npm test --workspace @loom/core` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
