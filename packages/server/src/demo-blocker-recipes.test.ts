@@ -138,15 +138,18 @@ const RECIPES: readonly Recipe[] = [
     }
   },
   {
-    name: "active speaker lacks current voice pressure",
-    code: DIAGNOSTIC_CODES.sparseVoicePressure,
+    name: "dialogue focus lacks relationship context",
+    code: DIAGNOSTIC_CODES.matrixDialogueIncomplete,
     async apply(app) {
       const session = await generationSession(app);
-      const activeSpeakerIds = activeSpeakerCastIds(session);
+      const relationship = await recordByLabel(app, "Elin and Niko's strained trust");
+      const workingSet = objectPayload(session.active_working_set);
       await putGenerationSession(app, {
         ...session,
-        current_cast_voice_pressure: (arrayPayload(session.current_cast_voice_pressure) as Array<Record<string, unknown>>)
-          .filter((row) => !activeSpeakerIds.includes(String(row.cast_member_id)))
+        active_working_set: {
+          ...workingSet,
+          selected_records: arrayPayload(workingSet.selected_records).filter((id) => id !== relationship.id)
+        }
       });
     }
   },
@@ -288,11 +291,3 @@ function validationFocus(session: Record<string, unknown>): {
     possible_durable_changes: arrayPayload(tags.possible_durable_changes).map(String)
   };
 }
-
-function activeSpeakerCastIds(session: Record<string, unknown>): string[] {
-  const workingSet = objectPayload(session.active_working_set);
-  return (arrayPayload(workingSet.active_onstage_cast_full) as Array<Record<string, unknown>>)
-    .filter((entry) => entry.local_function === "active_speaker")
-    .map((entry) => String(entry.cast_member_id));
-}
-

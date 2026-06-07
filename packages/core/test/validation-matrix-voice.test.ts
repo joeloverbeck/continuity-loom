@@ -64,10 +64,10 @@ describe("voice/dialogue/presence matrix validation", () => {
       "ensemble_dialogue_expected",
       DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
-          ["019b0298-5c00-7000-8000-000000000002", "019b0298-5c00-7000-8000-000000000003", "019b0298-5c00-7000-8000-000000000004"].includes(entry.cast_member_id)
-            ? { ...entry, current_voice_pressure: "same" }
-            : entry
+        input.records = input.records.map((record) =>
+      record.id === castB
+            ? { ...record, payload: { ...(record.payload as Record<string, unknown>), voice_anchor: undefined } }
+            : record
         );
       }
     ],
@@ -94,10 +94,53 @@ describe("voice/dialogue/presence matrix validation", () => {
 
     expect(blockerCodes(input)).toContain(code);
   });
+
+  it("does not block dialogue when speakers have durable voice anchors but no local pressure pins", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.generationSession.current_cast_voice_pressure = [];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+    expect(warningCodes(input)).toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
+  });
+
+  it("still blocks dialogue when an active speaker lacks a durable voice anchor", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.records = input.records.map((record) =>
+      record.id === castA
+        ? { ...record, payload: { ...(record.payload as Record<string, unknown>), voice_anchor: undefined } }
+        : record
+    );
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
+  it("warns but does not block when ensemble voice pins are absent or repeated", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes = [
+      "ensemble_dialogue_expected"
+    ];
+    input.generationSession.active_working_set.active_onstage_cast_full = [
+      { cast_member_id: castA, local_function: "active_speaker" },
+      { cast_member_id: castB, local_function: "active_speaker" },
+      { cast_member_id: castC, local_function: "active_speaker" }
+    ];
+    input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
+      [castA, castB].includes(entry.cast_member_id) ? { ...entry, current_voice_pressure: "same" } : entry
+    );
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete);
+    expect(warningCodes(input)).toContain(DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk);
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function warningCodes(input: BuildValidationSnapshotInput): readonly string[] {
+  return runValidation(buildValidationSnapshot(input)).warnings.map((diagnostic) => diagnostic.code);
 }
 
 function cleanInput(): BuildValidationSnapshotInput {

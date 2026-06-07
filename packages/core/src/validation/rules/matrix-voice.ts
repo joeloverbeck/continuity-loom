@@ -20,7 +20,7 @@ function validateDialogueExpected(snapshot: ValidationSnapshot): readonly Diagno
 
   if (
     speakerIds.length > 0 &&
-    speakerIds.every((castId) => castHasVoiceAnchor(snapshot, castId) && hasVoicePressure(snapshot, castId)) &&
+    speakerIds.every((castId) => castHasVoiceAnchor(snapshot, castId)) &&
     hasText(snapshot.storyConfig.proseMode?.language_output) &&
     hasPovKnowledge(snapshot) &&
     hasRelationshipOrStatusContext(snapshot)
@@ -32,8 +32,8 @@ function validateDialogueExpected(snapshot: ValidationSnapshot): readonly Diagno
     blocker({
       code: DIAGNOSTIC_CODES.matrixDialogueIncomplete,
       field: "generationSession.active_working_set.active_onstage_cast_full",
-      message: "Dialogue focus lacks active speaker voice, current pressure, language, knowledge, or relationship/status context.",
-      whyItMatters: "Dialogue needs current speaker functions and voice pressure so active cast do not flatten into generic speech.",
+      message: "Dialogue focus lacks active speaker voice anchors, language, knowledge, or relationship/status context.",
+      whyItMatters: "Dialogue needs current speaker functions, durable voice anchors, and relationship/status context so active cast do not flatten into generic speech.",
       suggestedActions: ["add-voice-or-body-pressure", "add-knowledge-constraint"]
     })
   ];
@@ -45,15 +45,11 @@ function validateEnsembleDialogueExpected(snapshot: ValidationSnapshot): readonl
   }
 
   const speakerIds = activeSpeakerIds(snapshot);
-  const pressurePins = speakerIds
-    .map((castId) => voicePressureFor(snapshot, castId)?.current_voice_pressure)
-    .filter(hasText);
-  const distinctPins = new Set(pressurePins.map((pin) => pin.trim().toLowerCase()));
   const state = snapshot.generationSession.current_authoritative_state;
 
   if (
     speakerIds.length >= 3 &&
-    distinctPins.size === speakerIds.length &&
+    speakerIds.every((castId) => castHasVoiceAnchor(snapshot, castId)) &&
     hasRelationshipOrStatusContext(snapshot) &&
     state &&
     hasText(state.line_of_sight_and_visibility) &&
@@ -65,9 +61,9 @@ function validateEnsembleDialogueExpected(snapshot: ValidationSnapshot): readonl
   return [
     blocker({
       code: DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete,
-      field: "generationSession.current_cast_voice_pressure",
-      message: "Ensemble dialogue focus lacks three distinct speaker pins or audibility/relationship context.",
-      whyItMatters: "Three or more speakers need distinct current voice pressure and clear interruptibility/audibility state.",
+      field: "generationSession.active_working_set.active_onstage_cast_full",
+      message: "Ensemble dialogue focus lacks three anchored speakers or audibility/relationship context.",
+      whyItMatters: "Three or more speakers need durable voice anchors plus clear interruptibility/audibility and relationship/status state.",
       suggestedActions: ["add-voice-or-body-pressure", "add-current-state"]
     })
   ];
@@ -168,12 +164,6 @@ function castHasBodyPresence(snapshot: ValidationSnapshot, castId: string): bool
 
 function findCast(snapshot: ValidationSnapshot, castId: string): ValidationRecord | undefined {
   return snapshot.records.find((record) => record.id === castId && record.type === "CAST MEMBER");
-}
-
-function hasVoicePressure(snapshot: ValidationSnapshot, castId: string): boolean {
-  const pressure = voicePressureFor(snapshot, castId);
-
-  return !!pressure && (hasText(pressure.current_voice_pressure) || hasText(pressure.dialogue_pressure));
 }
 
 function hasSilentPressure(snapshot: ValidationSnapshot, castId: string): boolean {

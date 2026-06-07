@@ -79,11 +79,12 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   secretRevealContradiction: "secret-reveal-contradiction",
   manyHighSalienceRecords: "many-high-salience-records",
   noActiveClockPressure: "no-active-clock-pressure",
+  localVoicePressureMayHelp: "local-voice-pressure-may-help",
+  ensembleVoiceDistinctionRisk: "ensemble-voice-distinction-risk",
   noSampleUtterances: "no-sample-utterances",
   lowDramaScenePressure: "low-drama-scene-pressure",
   longDossierNeedsPin: "long-dossier-needs-pin",
   sparseSettingTexture: "sparse-setting-texture",
-  sparseVoicePressure: "sparse-voice-pressure",
   staleSelectedRecord: "stale-selected-record",
   objectCurrentHolderContradiction: "object-current-holder-contradiction",
   offstageInterruptionMissingRoute: "offstage-interruption-missing-route"

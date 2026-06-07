@@ -29,6 +29,46 @@ describe("warnings and security validation", () => {
     [DIAGNOSTIC_CODES.noActiveClockPressure, (input: BuildValidationSnapshotInput) => {
       input.generationSession.manual_moment_directive = { must_render: ["Ask for the key."] };
     }],
+    [DIAGNOSTIC_CODES.localVoicePressureMayHelp, (input: BuildValidationSnapshotInput) => {
+      input.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
+      input.generationSession.active_working_set = {
+        selected_records: ["cast"],
+        active_onstage_cast_full: [{ cast_member_id: "cast", local_function: "active_speaker" }],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      };
+      input.generationSession.generation_validation_focus = {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: ["dialogue_expected"],
+          possible_durable_changes: []
+        }
+      };
+    }],
+    [DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk, (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        record("cast-a", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full"),
+        record("cast-b", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full"),
+        record("cast-c", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")
+      ];
+      input.generationSession.active_working_set = {
+        selected_records: ["cast-a", "cast-b", "cast-c"],
+        active_onstage_cast_full: [
+          { cast_member_id: "cast-a", local_function: "active_speaker" },
+          { cast_member_id: "cast-b", local_function: "active_speaker" },
+          { cast_member_id: "cast-c", local_function: "active_speaker" }
+        ],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      };
+      input.generationSession.generation_validation_focus = {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: ["ensemble_dialogue_expected"],
+          possible_durable_changes: []
+        }
+      };
+    }],
     [DIAGNOSTIC_CODES.longDossierNeedsPin, (input: BuildValidationSnapshotInput) => {
       input.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     }],

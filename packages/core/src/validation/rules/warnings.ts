@@ -8,6 +8,8 @@ export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnNoSampleUtterances,
   warnSparseSettingTexture,
   warnNoActiveClockPressure,
+  warnLocalVoicePressureMayHelp,
+  warnEnsembleVoiceDistinctionRisk,
   warnLongDossierNeedsPin,
   warnLowDramaScenePressure,
   warnStaleSelectedRecord
@@ -59,6 +61,53 @@ function warnNoActiveClockPressure(snapshot: ValidationSnapshot): readonly Diagn
     : [];
 }
 
+function warnLocalVoicePressureMayHelp(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (!hasFocusTag(snapshot, "dialogue_expected")) {
+    return [];
+  }
+
+  const missingPins = activeSpeakerIds(snapshot).filter(
+    (castId) => castHasVoiceAnchor(snapshot, castId) && !hasVoicePressure(snapshot, castId)
+  );
+
+  return missingPins.length > 0
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.localVoicePressureMayHelp,
+          "Dialogue is structurally ready, but local voice pressure may help keep active speakers salient.",
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
+}
+
+function warnEnsembleVoiceDistinctionRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (!hasFocusTag(snapshot, "ensemble_dialogue_expected")) {
+    return [];
+  }
+
+  const speakerIds = activeSpeakerIds(snapshot);
+  if (speakerIds.length < 3) {
+    return [];
+  }
+
+  const pressurePins = speakerIds
+    .map((castId) => voicePressureFor(snapshot, castId)?.current_voice_pressure)
+    .filter(hasText)
+    .map((pin) => pin.trim().toLowerCase());
+  const distinctPins = new Set(pressurePins);
+
+  return pressurePins.length < speakerIds.length || distinctPins.size < pressurePins.length
+    ? [
+        warning(
+          DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk,
+          "Ensemble dialogue is structurally ready, but absent or repeated local voice pins may blur speakers.",
+          "generationSession.current_cast_voice_pressure"
+        )
+      ]
+    : [];
+}
+
 function warnLongDossierNeedsPin(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return snapshot.records.flatMap((record) => {
     if (record.type !== "CAST MEMBER" || JSON.stringify(record.payload).length <= 1200) {
@@ -107,6 +156,43 @@ function objectPayload(record: ValidationRecord): Record<string, unknown> {
   return record.payload && typeof record.payload === "object" && !Array.isArray(record.payload)
     ? record.payload as Record<string, unknown>
     : {};
+}
+
+function activeSpeakerIds(snapshot: ValidationSnapshot): readonly string[] {
+  return snapshot.generationSession.active_working_set?.active_onstage_cast_full
+    .filter((entry) => entry.local_function === "active_speaker" || entry.local_function === "pov_narrator")
+    .map((entry) => entry.cast_member_id) ?? [];
+}
+
+function castHasVoiceAnchor(snapshot: ValidationSnapshot, castId: string): boolean {
+  const cast = snapshot.records.find((record) => record.id === castId && record.type === "CAST MEMBER");
+
+  return !!cast && hasObject(objectPayload(cast).voice_anchor);
+}
+
+function hasVoicePressure(snapshot: ValidationSnapshot, castId: string): boolean {
+  const pressure = voicePressureFor(snapshot, castId);
+
+  return !!pressure && (hasText(pressure.current_voice_pressure) || hasText(pressure.dialogue_pressure));
+}
+
+function voicePressureFor(snapshot: ValidationSnapshot, castId: string) {
+  return snapshot.generationSession.current_cast_voice_pressure.find((entry) => entry.cast_member_id === castId);
+}
+
+function hasFocusTag(snapshot: ValidationSnapshot, tag: string): boolean {
+  const tags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags;
+  const activeTags: readonly string[] = [
+    ...(tags?.generation_context ?? []),
+    ...(tags?.expected_local_modes ?? []),
+    ...(tags?.possible_durable_changes ?? [])
+  ];
+
+  return activeTags.includes(tag);
+}
+
+function hasObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
 function hasValue(value: unknown): boolean {

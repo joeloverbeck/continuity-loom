@@ -157,10 +157,10 @@ describe("universal blocker validation", () => {
       }
     ],
     [
-      "expected dialogue missing voice pressure",
-      DIAGNOSTIC_CODES.sparseVoicePressure,
+      "current voice pressure contradicts content envelope",
+      DIAGNOSTIC_CODES.contentEnvelopeContradiction,
       (input: BuildValidationSnapshotInput) => {
-        input.generationSession.current_cast_voice_pressure = [];
+        input.generationSession.current_cast_voice_pressure[0].current_voice_pressure = "Render graphic gore in the voice.";
       }
     ],
     [

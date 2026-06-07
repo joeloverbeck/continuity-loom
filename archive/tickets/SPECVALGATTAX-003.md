@@ -1,6 +1,6 @@
 # SPECVALGATTAX-003: Cast voice-pressure doctrine — remove `sparse-voice-pressure`, downgrade dialogue/ensemble blockers
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — removes the `sparse-voice-pressure` universal blocker (`universal-blockers.ts`); downgrades current-voice-pressure from a blocker to a warning in the dialogue/ensemble matrix (`matrix-voice.ts`); adds `local-voice-pressure-may-help` and `ensemble-voice-distinction-risk` warnings (`warnings.ts`); enum updates (`types.ts`). Production behavior change (durable voice anchors, not current pressure pins, gate dialogue).
@@ -91,3 +91,18 @@ Remove `sparseVoicePressure`; add `localVoicePressureMayHelp: "local-voice-press
 
 1. `npm run -w @loom/core build && npx vitest run packages/core/test/validation-matrix-voice.test.ts packages/core/test/validation-warnings-security.test.ts packages/core/test/validation-blockers.test.ts`
 2. `npm test`
+
+## Outcome
+
+Completion date: 2026-06-07
+
+Removed `sparse-voice-pressure` as a universal blocker and removed current voice pressure pin presence/distinctness from dialogue and ensemble blocker conditions. Dialogue now gates on durable voice anchors plus language, POV knowledge, and relationship/status context; ensemble dialogue gates on three anchored speakers plus relationship/status and audibility/position context. Added advisory `local-voice-pressure-may-help` and `ensemble-voice-distinction-risk` warnings, and extended content-envelope validation to scan user-authored current voice pressure/override text so policy-contradictory pressure still blocks.
+
+Deviations from original plan: updated the demo blocker recipe test to use a still-blocking dialogue matrix case (missing relationship/status context) because missing current pressure is intentionally no longer a blocker.
+
+Verification results:
+
+- `npm run -w @loom/core build` passed.
+- `npx vitest run packages/core/test/validation-matrix-voice.test.ts packages/core/test/validation-warnings-security.test.ts packages/core/test/validation-blockers.test.ts packages/server/src/demo-blocker-recipes.test.ts packages/core/src/demo/stress-coverage.test.ts` passed.
+- `npm test` passed: 95 test files, 564 tests.
+- `rg -n "sparse-voice-pressure|sparseVoicePressure" packages/core/src` returned no matches.

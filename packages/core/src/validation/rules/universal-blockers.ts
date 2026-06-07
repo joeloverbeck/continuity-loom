@@ -48,7 +48,6 @@ export const universalBlockerRules: readonly ValidationRule[] = Object.freeze([
   validateSecretFirewall,
   validateOffstageInterruptionRoute,
   validatePhysicalActionContext,
-  validateDialogueVoicePressure,
   validateContentEnvelope,
   validatePromptFacingContamination,
   validateGenerationContextRows,
@@ -331,45 +330,14 @@ function validatePhysicalActionContext(snapshot: ValidationSnapshot): readonly D
   ];
 }
 
-function validateDialogueVoicePressure(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const activeSpeakerIds = new Set(
-    snapshot.generationSession.active_working_set?.active_onstage_cast_full
-      .filter((entry) => entry.local_function === "active_speaker" || entry.local_function === "pov_narrator")
-      .map((entry) => entry.cast_member_id) ?? []
-  );
-  const pressuredIds = new Set(
-    (snapshot.generationSession.current_cast_voice_pressure ?? [])
-      .filter((entry) => entry.local_function === "active_speaker" || entry.local_function === "pov_narrator")
-      .filter((entry) => hasText(entry.current_voice_pressure) || hasText(entry.dialogue_pressure))
-      .map((entry) => entry.cast_member_id)
-  );
-
-  return [...activeSpeakerIds].flatMap((castId) => {
-    const castRecord = snapshot.records.find((record) => record.id === castId && record.type === "CAST MEMBER");
-    const hasVoiceAnchor = castRecord ? hasObject(objectPayload(castRecord).voice_anchor) : false;
-
-    if (hasVoiceAnchor && pressuredIds.has(castId)) {
-      return [];
-    }
-
-    return [
-      blocker({
-        code: DIAGNOSTIC_CODES.sparseVoicePressure,
-        recordId: castId,
-        field: "generationSession.current_cast_voice_pressure",
-        message: "Active speaker lacks enough voice pressure for expected dialogue.",
-        whyItMatters: "Dialogue or close POV needs a current voice/body pin so the prompt does not flatten the speaker into generic prose.",
-        suggestedActions: ["add-voice-or-body-pressure"]
-      })
-    ];
-  });
-}
-
 function validateContentEnvelope(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   const policy = snapshot.storyConfig.universalContentPolicy?.allowed_content_scope ?? "";
-  const directive = promptFacingDirectiveText(snapshot);
+  const promptFacingText = promptFacingUserInstructionText(snapshot);
 
-  if (containsAny(policy, ["non-explicit", "no explicit sex", "non-graphic"]) && containsAny(directive, ["explicit sex", "graphic sex", "graphic gore"])) {
+  if (
+    containsAny(policy, ["non-explicit", "no explicit sex", "non-graphic"]) &&
+    containsAny(promptFacingText, ["explicit sex", "graphic sex", "graphic gore"])
+  ) {
     return [
       blocker({
         code: DIAGNOSTIC_CODES.contentEnvelopeContradiction,
@@ -500,6 +468,24 @@ function promptFacingDirectiveText(snapshot: ValidationSnapshot): string {
     ...(directive?.may_render_if_naturally_caused ?? []),
     ...(directive?.do_not_force ?? [])
   ].join("\n");
+}
+
+function promptFacingUserInstructionText(snapshot: ValidationSnapshot): string {
+  const directiveText = promptFacingDirectiveText(snapshot);
+  const pressureText = (snapshot.generationSession.current_cast_voice_pressure ?? []).flatMap((entry) => [
+    entry.current_voice_pressure,
+    entry.dialogue_pressure,
+    entry.pov_narration_pressure,
+    entry.nonverbal_or_silence_pressure,
+    ...(entry.current_must_preserve ?? []),
+    ...(entry.current_must_avoid ?? [])
+  ]);
+  const overrideText = (snapshot.generationSession.cast_voice_overrides ?? []).flatMap((entry) => [
+    entry.reason,
+    entry.override_text
+  ]);
+
+  return [directiveText, ...pressureText, ...overrideText].filter(isText).join("\n");
 }
 
 function textEntry(field: string, value: unknown): readonly { field: string; text: string }[] {
