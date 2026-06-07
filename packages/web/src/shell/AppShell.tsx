@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 
 import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
@@ -10,6 +10,7 @@ import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
 import { DurableChangeReminder } from "./DurableChangeReminder.js";
+import { ErrorBoundary } from "./ErrorBoundary.js";
 import { ReminderRefreshProvider } from "./reminder-refresh.js";
 import { SettingsSurface } from "./SettingsSurface.js";
 
@@ -68,6 +69,8 @@ function RuntimePanel({ loadState }: AppShellProps): React.JSX.Element {
 }
 
 export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
+  const location = useLocation();
+
   return (
     <main className="appFrame">
       <aside className="sidebar" aria-label="Primary">
@@ -83,17 +86,19 @@ export function AppShell({ loadState }: AppShellProps): React.JSX.Element {
       <div className="contentPane">
         <ReminderRefreshProvider>
           <DurableChangeReminder />
-          <Routes>
-            <Route path="/" element={<ProjectPicker />} />
-            <Route path="/records" element={<RecordBrowser />} />
-            <Route path="/working-set" element={<WorkingSetView />} />
-            <Route path="/generation-brief" element={<GenerationBriefView />} />
-            <Route path="/preview" element={<PromptPreviewView />} />
-            <Route path="/generate" element={<GenerateView />} />
-            <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
-            <Route path="/story-config" element={<StoryConfigEditor />} />
-            <Route path="/settings" element={<SettingsSurface />} />
-          </Routes>
+          <ErrorBoundary resetKey={`${location.pathname}${location.search}`}>
+            <Routes>
+              <Route path="/" element={<ProjectPicker />} />
+              <Route path="/records" element={<RecordBrowser />} />
+              <Route path="/working-set" element={<WorkingSetView />} />
+              <Route path="/generation-brief" element={<GenerationBriefView />} />
+              <Route path="/preview" element={<PromptPreviewView />} />
+              <Route path="/generate" element={<GenerateView />} />
+              <Route path="/accepted-segments" element={<AcceptedSegmentsView />} />
+              <Route path="/story-config" element={<StoryConfigEditor />} />
+              <Route path="/settings" element={<SettingsSurface />} />
+            </Routes>
+          </ErrorBoundary>
         </ReminderRefreshProvider>
       </div>
     </main>

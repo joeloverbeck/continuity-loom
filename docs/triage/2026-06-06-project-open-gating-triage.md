@@ -3,7 +3,7 @@
 **Date**: 2026-06-06
 **Source**: No formal report — diagnostic of a live bug. The app was reproduced at `http://127.0.0.1:5173/` (Puppeteer) with no project open; console behavior and crashes were captured per view.
 **Classification**: product-behavior (UI/workflow over project-ownership and story-state surfaces; governed by `docs/FOUNDATIONS.md` §27).
-**Deliverables**: `tickets/PROJGATE-001.md`, `tickets/PROJGATE-002.md`, `archive/tickets/PROJGATE-003.md`.
+**Deliverables**: `tickets/PROJGATE-001.md`, `archive/tickets/PROJGATE-002.md`, `archive/tickets/PROJGATE-003.md`.
 
 ## Reproduction (live, no project open)
 
@@ -19,7 +19,7 @@
 ### O1 — Generation Brief hard-crashes the whole SPA (BLOCKER)
 Chain: `ValidationPanel.tsx:24` calls `validate()` → `POST /api/validate` returns HTTP 409 `{ ok:false, kind:"no-open-project", … }`. `requestJson` (`api.ts:197`) never checks `response.ok`, so the failure body is cast to `ValidationResult` (`validate()` typed `Promise<ValidationResult>` at `api.ts:330` — unsound). `ValidationPanel` sets `status:"ready"` and passes it to `ValidationResultView`, which reads `result.blockers.length` (`ValidationResultView.tsx:33`) on `undefined` → throws. No React error boundary exists (grep-confirmed) → the throw unmounts the whole tree → blank page.
 
-**Recommended fix:** data-layer soundness at the `validate()` boundary + a render-safety net. → `archive/tickets/PROJGATE-003.md` (transport/typing) and PROJGATE-002 (error boundary).
+**Recommended fix:** data-layer soundness at the `validate()` boundary + a render-safety net. → `archive/tickets/PROJGATE-003.md` (transport/typing) and `archive/tickets/PROJGATE-002.md` (error boundary).
 **Rejected alternative:** make the shared `requestJson` throw on `!response.ok`. Rejected — `compile`, `generate`, settings, and accepted-segment callers intentionally consume `ok:false` bodies and render friendly failures; a global throw would break that handling.
 
 ### O2 — Pervasive mount-time 409 console errors + inconsistent empty states (MODERATE)
@@ -49,5 +49,5 @@ All seven project-scoped views fetch on mount with no project open; the server f
 | Finding | Ticket |
 |---|---|
 | O3 (root), O2 (trigger removal) | PROJGATE-001 — shared project-open state, nav gating, route guards |
-| O1 (render-safety net) | PROJGATE-002 — app-level error boundary |
+| O1 (render-safety net) | `archive/tickets/PROJGATE-002.md` — app-level error boundary |
 | O1 (data-layer root cause) | `archive/tickets/PROJGATE-003.md` — sound `validate()` failure handling |

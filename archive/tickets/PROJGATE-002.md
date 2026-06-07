@@ -1,6 +1,6 @@
 # PROJGATE-002: App-level error boundary so a render throw never blanks the app
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web` shell (new `ErrorBoundary` component wrapping the content pane). No `@loom/core` or `@loom/server` changes.
@@ -76,3 +76,26 @@ In `AppShell.tsx`, wrap the content-pane subtree (around `<Routes>`, inside `con
 1. `npm test --workspace @loom/web -- src/shell/ErrorBoundary.test.tsx`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted boundary test is the correct verification surface for the new component; full `npm test` confirms the `AppShell` wiring causes no regression.
+
+## Outcome
+
+Completed: 2026-06-07
+
+What changed:
+- Added `packages/web/src/shell/ErrorBoundary.tsx`, a content-pane error boundary with a recoverable fallback, reset button, and Project Library link.
+- Wrapped the routed content in `packages/web/src/shell/AppShell.tsx` with the boundary while leaving the sidebar and durable-change reminder outside the failure region.
+- Added route-key reset behavior so navigation clears a prior view error.
+- Added fallback styling in `packages/web/src/styles.css`.
+- Added `packages/web/src/shell/ErrorBoundary.test.tsx` for fallback, nonblank body, reset, and surrounding-nav behavior.
+- Extended `packages/web/src/shell/AppShell.test.tsx` to verify a throwing routed view is contained while primary navigation remains mounted and usable.
+
+Deviations from original plan:
+- The boundary includes a route-derived `resetKey` in addition to the reset button so route changes also recover from a previous view error.
+- No telemetry or disk/network logging was added.
+
+Verification results:
+- `npm test --workspace @loom/web -- src/shell/ErrorBoundary.test.tsx src/shell/AppShell.test.tsx` passed.
+- `npm test --workspace @loom/web` passed: 19 files, 116 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 73 files, 438 tests.
