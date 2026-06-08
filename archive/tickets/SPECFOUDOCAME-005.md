@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-005: Amend user-guide.md and demo-blocker-recipes.md
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/user-guide.md` (The Loop, new Generation Readiness section, field guidance, FAQ) and `docs/demo-blocker-recipes.md` (true-blocker + non-blocking-warning recipes); no production behavior change.
@@ -85,3 +85,21 @@ The author-facing guide has no generation-readiness guidance (draft-save vs read
 1. `grep -nE "Generation Readiness|Draft saved|blocker|warning" docs/user-guide.md` — confirm the readiness section + framing landed.
 2. `grep -rn "sparse-voice-pressure" docs/demo-blocker-recipes.md packages/` — confirm the doc reclassification and that no engine code asserts it as a blocker.
 3. Manual review of each kept blocker recipe's code against the implemented validator (the correct boundary — a recipe is only valid if its code is a real engine blocker, which is per-code, not a single grep).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/user-guide.md` to add author-facing Generation Readiness guidance, explain draft saving versus readiness, distinguish blockers from warnings, document field guidance for generation context, current state, manual directive, stop guidance, immediate handoff, and current cast voice pressure, and add FAQ entries for saving blocked drafts, blank stop guidance, and manual directive requirements.
+
+Changed `docs/demo-blocker-recipes.md` from a blocker-only table into true-blocker recipes plus non-blocking warning recipes. Reclassified the stale `sparse-voice-pressure` scenario as warning-only behavior using implemented warning codes such as `local-voice-pressure-may-help`, while retaining implemented blocker codes for true readiness failures.
+
+Deviations from original plan: none. Provider configuration is documented as a Generate-only blocker using the implemented readiness code `provider-configuration-missing`.
+
+Verification:
+
+- `grep -nE "Generation Readiness|A blocker means|A warning means" docs/user-guide.md`
+- `grep -nE "Why can I save a brief|Do I have to fill stop guidance|asking for a manual directive" docs/user-guide.md`
+- `grep -nE "warning|advisory|grouped salience" docs/demo-blocker-recipes.md`
+- `grep -n "sparse-voice-pressure" docs/demo-blocker-recipes.md packages/` returned no matches
+- Manual code review confirmed each kept blocker or warning code appears in `packages/core/src/validation/types.ts` or the provider readiness code in `packages/core/src/validation/readiness.ts`.
