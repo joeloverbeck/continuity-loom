@@ -91,9 +91,9 @@ const tailResolvers: ResolverMap = {
       compactParts([
         asString(payload.label),
         asString(payload.description),
-        labelValue("owner", payload.owner),
-        labelValue("carried by", payload.carried_by),
-        labelValue("location", payload.current_location),
+        labelValue("owner", resolveRecordLabel(snapshot, payload.owner)),
+        labelValue("carried by", resolveRecordLabel(snapshot, payload.carried_by)),
+        labelValue("location", resolveRecordLabel(snapshot, payload.current_location)),
         labelValue("visibility", payload.visibility_to_pov),
         labelValue("affordances", payload.usable_affordances),
         labelValue("constraints", payload.constraints)
@@ -104,7 +104,7 @@ const tailResolvers: ResolverMap = {
       compactParts([
         asString(payload.label),
         asString(payload.prompt_text),
-        labelValue("available to", payload.available_to),
+        labelValue("available to", resolveRecordLabel(snapshot, payload.available_to)),
         labelValue("actions", payload.action_families),
         labelValue("requires", payload.requires),
         labelValue("risk", payload.risk)

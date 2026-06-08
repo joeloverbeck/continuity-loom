@@ -155,8 +155,8 @@ Requiredness terms:
 | `{relevant_backstory}` | Selected EVENT relevant_backstory and selected backstory facts with current relevance | No | Warn if too many/stale | `None selected` | Only current-relevant backstory. |
 | `{offstage_or_withheld_events}` | Selected EVENT offstage/withheld grouped by visibility | No except when offstage/withheld pressure matters | Block if withheld event leaks into POV | `None selected` | Writer-visible does not mean POV-visible. |
 | `{locations}` | Selected LOCATION + current location | Required for physical/location-focused generation | Block if underspecified | `None specified` only for nonphysical abstract prose | Current first. |
-| `{objects}` | Selected OBJECT + current possessions | Required for object use/transfer or salient object presence | Block if underspecified | `None specified` | Owner/carried_by/current_location/visibility must align. |
-| `{visible_affordances}` | Selected VISIBLE AFFORDANCE records + current state | Required for physical interaction/action choices | Block if directive requires action without affordance | `None specified` | Possible actions. |
+| `{objects}` | Selected OBJECT + current possessions | Required for object use/transfer or salient object presence | Block if underspecified | `None specified` | Owner/carried_by/current_location ids resolve to selected records' display labels, with raw-id fallback when absent. Visibility must align. |
+| `{visible_affordances}` | Selected VISIBLE AFFORDANCE records + current state | Required for physical interaction/action choices | Block if directive requires action without affordance | `None specified` | Possible actions. `available_to` ids resolve to selected records' display labels, with raw-id fallback when absent; `group` and `any_onstage` render as literals. |
 | `{unavailable_or_impossible_actions}` | CURRENT STATE locks + AFFORDANCE unavailable/blocked + validation-derived impossibilities | Required when omission would invite errors | Block if physical scene risky and absent | `None specified` | Must not be invented by an LLM. |
 | `{physical_continuity}` | CURRENT STATE + ENTITY STATUS + LOCATION/OBJECT/AFFORDANCE | Yes for active physical interaction | Block if missing required physical fields | N/A only for nonphysical abstract prose | Concrete and current. |
 | `<invention_permissions>` | Template constant | Yes | Block if absent | N/A | Human gatekeeping. Dynamic durable-change pressure renders in its own records and placeholders, not as a second render site here. |
@@ -269,7 +269,7 @@ Validation-only by default:
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
 
-The `{pov_character}`, `{secret_holders}`, and `{secret_non_holders_to_protect}` placeholders are prompt-facing id-derived values: entity ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. A raw id in these lines means the referenced record was not available in the selected snapshot.
+The `{pov_character}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, object-holder, object-location, and affordance availability ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. A raw id in these lines means the referenced record was not available in the selected snapshot.
 
 Prompt-facing when selected or compiled:
 
