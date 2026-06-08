@@ -52,18 +52,22 @@ The canonical workflow is:
 1. The user adds, modifies, removes, or selects story records.
 2. The user curates the active working set for the next generation.
 3. The user edits generation-time fields, especially the manual directive, current authoritative state, and immediate handoff.
-4. Deterministic validation runs.
-5. If validation fails, prompt generation and OpenRouter sending are blocked.
-6. If validation passes, the deterministic compiler generates the universal prose prompt.
-7. The user can inspect the generated prompt.
-8. The app sends the prompt to OpenRouter using the configured global model setting.
-9. The app receives candidate prose from the external prose writer.
-10. The user may edit the candidate prose before acceptance.
-11. The user may regenerate, discard, or go back to modify records and generation-time fields.
-12. The user accepts a final prose segment.
-13. The app stores the accepted segment text plus useful metadata.
-14. The app reminds the user that durable changes in the accepted segment likely require manual record updates.
-15. The user manually updates records before the next generation.
+4. The user can save a generation-time brief draft even while required readiness fields are incomplete.
+5. Deterministic readiness validation runs against the saved draft, selected records, story configuration, and normalized project-derived defaults.
+6. If validation finds blockers, prompt preview, deterministic compilation, OpenRouter sending, and candidate generation are blocked until the user fixes them.
+7. Warnings remain visible and actionable, but they do not block Preview, Generate, compilation, or draft saving.
+8. If validation passes, the deterministic compiler generates the universal prose prompt.
+9. The user can inspect the generated prompt.
+10. The app sends the prompt to OpenRouter using the configured global model setting.
+11. The app receives candidate prose from the external prose writer.
+12. The user may edit the candidate prose before acceptance.
+13. The user may regenerate, discard, or go back to modify records and generation-time fields.
+14. The user accepts a final prose segment.
+15. The app stores the accepted segment text plus useful metadata.
+16. The app reminds the user that durable changes in the accepted segment likely require manual record updates.
+17. The user manually updates records before the next generation.
+
+Generation-time brief editing has a draft state. Saving an incomplete generation brief is ordinary authoring work and must not be blocked by generation-readiness validation. Deterministic validation gates prompt preview, deterministic compilation, OpenRouter sending, and candidate generation. It does not gate basic persistence of a structurally saveable draft.
 
 Rejected candidates and superseded regenerations should be discarded. Only the accepted or user-edited final segment is stored.
 
@@ -106,6 +110,8 @@ The compiler may format, order, and render records according to deterministic ru
 ### 4.5 Fail closed
 
 When deterministic validation detects contradictions, impossible prompt conditions, unsafe continuity gaps, or structural prompt-contract failures, generation must be blocked. Quality, salience, prompt-length, and optional nuance risks are warnings unless they also prove deterministic impossibility or a prompt-contract failure.
+
+Fail closed applies to prompt compilation, prompt preview availability where no valid prompt can be compiled, provider sending, and candidate generation. It does not mean incomplete generation-time drafts cannot be saved. It does not let advisory warnings disable Preview or Generate. Quality, salience, and prompt-length risks are warnings unless they also prove a structural prompt-contract failure, hard contradiction, policy conflict, or deterministic impossibility.
 
 There is no override in v1.
 
@@ -186,6 +192,10 @@ This includes current authoritative state, immediate handoff, manual directive, 
 
 Generation-time fields are not a license to paste accepted prose. They are user-maintained continuity inputs.
 
+The generation-time brief has two operational states: draft and ready. Draft fields may be partial, blank, or locally inconsistent while the author is working. The app may show readiness diagnostics while the draft is incomplete, but it must still preserve the author's partial work. Ready state is the normalized input used for prompt preview, compilation, and generation.
+
+Deterministic non-story defaults are allowed when derived from project state. For example, generation context may resolve to first segment when there are no accepted segments, and to continuation after accepted segment when accepted segments exist. Such defaults must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
+
 ### 6.4 Generated prompt
 
 The deterministic, inspectable prompt compiled from the active working set and generation-time brief.
@@ -241,6 +251,8 @@ Structured fields carry operational meaning. Author-written prose fields carry n
 
 Compiler mapping is part of deterministic compilation, not a convenience appendix. Any prompt placeholder, schema field used for prompt generation, validation-only field, empty-state rendering rule, or prompt-section ordering rule must have an explicit deterministic source in the compiler contract or schema mapping. Adding, renaming, deleting, or changing the requiredness of a prompt placeholder must update the compiler contract in the same change. Drift between template, schema, rationale, example, and compiler contract is a continuity bug.
 
+The compiler receives a normalized readiness input. Normalization may apply deterministic non-story defaults, such as first-segment vs continuation derived from accepted-segment count. Normalization must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
+
 
 ---
 
@@ -286,6 +298,8 @@ The universal prompt must preserve these conceptual sections:
 The template may evolve, but any evolution must preserve the constitutional functions above unless this document is amended.
 
 Critical state and binding instructions should appear near the prompt edges where feasible. Long-context models can underuse information buried in the middle of very long contexts, so the prompt should keep hard state, output contract, and final stop/output instructions especially prominent. This does not justify dumping less context. It justifies ordered context.
+
+The universal prompt always contains the local-unit stop rule. Optional stop guidance may narrow that local unit for the current generation, but blank optional stop guidance is not a structural prompt failure. Nonlocal or contradictory supplied stop guidance remains a blocker.
 
 ---
 
@@ -334,6 +348,16 @@ Generation must be blocked when deterministic validation detects contradictions,
 
 There is no override in v1.
 
+This blocker taxonomy defines when readiness blockers are legitimate. Readiness blockers are legitimate only when deterministic validation proves one of these conditions:
+
+1. The compiler cannot produce a structurally valid universal prompt.
+2. A required prompt contract section would be missing and has no truthful deterministic empty state.
+3. Selected records or generation fields contain a hard contradiction.
+4. The manual directive requires impossible knowledge, perception, movement, timing, physical action, reveal, or provider-policy violation based on explicit fields.
+5. The selected local mode requires state that is deterministically absent.
+6. Provider or content-policy configuration is missing or contradictory enough that sending would be unsafe.
+7. The prompt would ask the external prose writer to plan, summarize future consequences, produce alternatives, produce branches, or perform nonlocal story-structure work.
+
 Hard validation must include objective continuity contradictions and deterministically detectable prompt-safety gaps, including:
 
 - two current locations for the same entity;
@@ -357,6 +381,10 @@ Hard validation must include objective continuity contradictions and determinist
 Validation errors must be legible and actionable. A validation error should identify the conflicting records or fields, explain the conflict in plain language, and indicate what the user can change.
 
 The app should distinguish warnings from blockers. Length warnings, lost-in-the-middle warnings, salience doubts, or missing optional nuance may be warnings. Contradictions, impossible prompt conditions, and missing mandatory generation fields are blockers.
+
+Warnings never compile into the prompt. Warnings never block Preview, Generate, prompt compilation, candidate generation, or draft saving; warnings never block readiness surfaces. Deterministic validation cannot use an LLM. Validation cannot infer semantics from accepted prose, candidate prose, or hidden model judgment to create blockers. Deterministic threshold diagnostics, such as length, salience, or lost-in-the-middle risk, are allowed only as warnings unless they also prove a structural prompt-contract failure, hard contradiction, policy conflict, or deterministic impossibility.
+
+Readiness diagnostics must be author-actionable. Raw technical codes may appear in details, logs, or developer-facing audit output, but they must not be the primary author-facing message.
 
 Generation validation focus tags may be used to activate context-dependent completeness checks, such as dialogue, physical interaction, object use or transfer, location change, intimacy, violence/injury, offstage interruption, hidden-plan behavior, clock ticks, obligation breach, or continuation after an accepted segment. These tags are validation controls, not plot beats, act structure, dramatic machinery, or instructions to force events. They should remain non-prompt-facing by default. If a future prompt-facing use is proposed, it must be justified by demonstrated generation-quality gain and must not weaken local-prose-only or no-plot-rails doctrine.
 
@@ -502,6 +530,8 @@ Prompt compilation must include unavailable or impossible actions when omitting 
 
 Validation must block generation when selected records make physical continuity impossible or dangerously underspecified.
 
+Physical continuity is hard authority when the selected local mode involves bodies, movement, object use, transfer, pursuit, intimacy, violence, restraint, entrance, interruption, perception, or timing. The minimum current state is universal, but not every detailed spatial or affordance field is universal. The absence of detailed routes, line of sight, possessions, locks, or force conditions should not block a quiet minimal opening unless an explicit tag, selected record, or manual directive makes that detail structurally necessary.
+
 The external prose writer may invent local blocking, gesture, small movements, and sensory detail only within the physical affordances established by the selected records and current state.
 
 ---
@@ -539,6 +569,8 @@ The compiler must not impose token-budget-driven compression on active/onstage c
 Sample utterances are optional. When used, they must be annotated by situation, speech function, and copy policy. The default copy policy is never-copy-verbatim. Sample utterances should be sparse and pressure-relevant. They should teach speech function, cadence, and register; they must not become catchphrase banks or mimicry traps.
 
 A durable cast dossier should distinguish stable voice identity from current-generation voice pressure. Stable voice identity belongs in a durable voice anchor. Current voice pressure pins are compiled salience duplicates for the active local unit, assembled deterministically from the voice anchor, current generation-time pressure, and any temporary cast voice override. A current voice pressure pin is not a second character bible and must not silently rewrite durable identity.
+
+Durable CAST MEMBER records are the primary voice and behavior authority. Current cast voice pressure is optional scene-specific salience reinforcement or temporary emphasis. It may help in dialogue-heavy, ensemble, close-POV, or silent-body-pressure moments, but its absence is not normally a blocker when durable voice/body anchors are sufficient. It blocks only when supplied pressure contradicts hard canon, current state, POV/reveal constraints, physical continuity, or provider policy, or when the selected local mode requires voice/body authority and no durable or compressed authority exists.
 
 Temporary cast voice overrides are allowed only as generation-time instructions scoped to the current request. They may adjust dialogue, POV narration, register, rhythm, diction, nonverbal behavior, or silence behavior for the current local unit. They must be clearly labeled when compiled, must not persist into CAST MEMBER records automatically, and must not override hard canon, current state, physical continuity, POV/reveal locks, or governing provider policy.
 
@@ -801,6 +833,8 @@ The UI should respect power users without punishing ordinary users. Power users 
 
 The app should make dangerous actions hard to do accidentally: accepting prose without understanding durable changes, generating from contradictory state, sending with missing secrets, leaking API keys, or relying on prose archives as canon.
 
+Author-facing generation diagnostics should be presented as a readiness checklist, not as raw validation codes. The same readiness model must drive Generation Brief, Prompt Preview, and Generate. Draft saving should show whether the draft saved and whether Preview or Generate remain blocked. Warnings should explain what may degrade and why ignoring them may be reasonable.
+
 ---
 
 ## 28. Research-grounded conclusions
@@ -884,6 +918,11 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it allow secret leakage when deterministic records forbid it?
 - Does it allow a user override for hard validation failure in v1?
 - Does it treat validation warnings and blockers as the same thing?
+- Does it block saving a structurally saveable generation-time draft because readiness fields are incomplete?
+- Does it block Preview, Generate, prompt compilation, or provider sending for anything other than a true blocker?
+- Does it treat blank optional `soft_unit_guidance` as a blocker even though the universal stop rule remains compiled?
+- Does it make `generation_context` depend on a UI-only local default instead of deterministic normalization from accepted-segment count?
+- Does it let a warning gate Preview, Generate, prompt compilation, provider sending, candidate generation, or draft saving?
 
 ### 29.6 POV and reveal hard fails
 
@@ -934,6 +973,8 @@ These are not all hard fails, but a good proposal should satisfy them.
 - Does it preserve prompt inspectability?
 - Does it make cast dossier editing more discoverable?
 - Does it preserve rich active cast voice?
+- Does it keep `manual_moment_directive.must_render` readiness-required while allowing draft saving before it is filled?
+- Does it treat current cast voice pressure as optional salience unless supplied pressure contradicts authority or the local mode needs voice/body authority with no durable or compressed source?
 - Does it reduce clerical friction without reducing authorial control?
 - Does it help the user update records after accepted durable changes?
 - Does it make the five continuity surfaces more distinct rather than more blurred?

@@ -22,10 +22,13 @@ The compiler renders from these sources only:
 
 1. Template constants from `prompt-template.md`.
 2. Story configuration records: STORY CONTRACT, UNIVERSAL CONTENT POLICY, story-level prose preferences, and story-level defaults.
-3. Generation-time brief: current authoritative state, immediate handoff, manual directive, prose mode, stop guidance, validation focus tags, current cast voice pressure, and cast voice overrides.
-4. User-selected active working set records.
-5. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
-6. Deterministic empty-state constants defined in this contract.
+3. `GenerationSessionReadyInput`, produced by deterministic normalization from saved draft state, story configuration, active working set, accepted-segment count, selected records, provider configuration where relevant, and deterministic empty-state/default rules.
+4. Generation-time brief fields inside that ready input: current authoritative state, immediate handoff, manual directive, prose mode, stop guidance, validation focus tags, current cast voice pressure, and cast voice overrides.
+5. User-selected active working set records.
+6. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
+7. Deterministic empty-state constants defined in this contract.
+
+The compiler consumes `GenerationSessionReadyInput`, not UI-only defaults. Normalization may default non-story values such as generation context from accepted-segment count, but it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
 The compiler must not use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, inactive records, or automatic prose-derived summaries unless the user has represented equivalent information in selected records or generation-time fields.
 
@@ -70,6 +73,13 @@ Rationale: hard state and launch state appear early; compact active pressure and
 
 Every placeholder in `prompt-template.md` must appear in this mapping. Grouped rows are allowed only when each placeholder is named explicitly and all named placeholders share the same source, requiredness, missing behavior, and empty-state behavior.
 
+Requiredness terms:
+
+- Draft-save required: necessary for storing a structurally valid draft.
+- Readiness required: blocks prompt preview, compilation, and generation when missing after normalization.
+- Context-gated required: readiness-required only when explicit focus tags, selected records, story configuration, or manual directive make the state structurally necessary.
+- Optional prompt preference: may compile if supplied; blank or missing state has a truthful deterministic omission or empty state.
+
 | Prompt section / placeholder(s) | Deterministic source | Required? | Missing behavior | Empty-state rendering | Notes |
 |---|---|---:|---|---|---|
 | `<role>` | Template constant | Yes | Block if missing or edited to permit non-prose output | N/A | Must not invite planning, validation, record updates, or commentary. |
@@ -84,26 +94,26 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
 | `{pov_character}`, `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Non-omniscient POV requires knowledge profile. |
 | `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
-| `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Yes | Block if blank | N/A | Approximate prose time is acceptable. |
-| `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Yes | Block if blank | N/A | Must not contradict ENTITY STATUS/LOCATION records. |
-| `{onstage_entities}` | CURRENT AUTHORITATIVE STATE.onstage_entities + ENTITY/CAST selected active or present-minor | Yes when any entity is materially involved | Block if directive requires an entity but none selected/onstage | `None onstage` only for abstract/nonphysical prose | Person-like material entities require cast handling. |
-| `{immediate_situation_summary}` | CURRENT AUTHORITATIVE STATE.immediate_situation_summary user-authored generation-time field | Yes | Block if blank | `None currently specified` only during deterministic backfill or empty prompt inspection | Prose-neutral summary of the immediate local situation. Must not be inferred from accepted prose or generated automatically. |
-| `{offstage_pressuring_entities}` | CURRENT AUTHORITATIVE STATE.offstage_pressuring_entities + offstage selected records | No unless offstage pressure/interruption active | Block if offstage interruption lacks source | `None specified` | Offstage relevance section may expand. |
-| `{positions}` | CURRENT AUTHORITATIVE STATE.positions + ENTITY STATUS + LOCATION/OBJECT state | Required for physical interaction, gaze, object transfer, intimacy, violence, movement | Block if relevant and absent | `None currently specified` only for nonphysical/minimal moments | Distance counts as position state. |
-| `{entity_statuses}` | CURRENT AUTHORITATIVE STATE.entity_statuses + ENTITY STATUS records | Yes for material entities | Block if absent or contradictory | `None currently specified` only when no material entities | Life/agency/location/visibility contradictions block. |
-| `{possessions}` | CURRENT AUTHORITATIVE STATE.possessions + OBJECT.owner/carried_by/current_location | Required when objects can matter | Block if object use/transfer possible and absent | `None currently specified` | Two holders for one object block. |
-| `{visible_conditions}` | CURRENT AUTHORITATIVE STATE.visible_conditions + ENTITY STATUS/CONSEQUENCE where visible | No unless injury/status/condition matters | Warn if expected but absent | `None currently specified` | Includes visible injury, exhaustion, restraint, disguise. |
-| `{environmental_conditions}` | CURRENT AUTHORITATIVE STATE.environmental_conditions + LOCATION | No unless environment affects action/perception/tone | Warn if sparse | `None currently specified` | Texture and physical constraint. |
-| `{line_of_sight_and_visibility}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS.visibility_to_pov + LOCATION.visibility_and_sound | Required for physical interaction, perception, secrets, violence, intimacy, interruption, ambiguous perception | Block if relevant and absent | `None currently specified` only for nonphysical/minimal moments | Also reflected in physical continuity. |
-| `{routes_and_exits}` | CURRENT AUTHORITATIVE STATE + LOCATION.access_routes + AFFORDANCE | Required for movement, pursuit, escape, interruption, location change | Block if route matters and absent | `None currently specified` | Include impossible routes when omission invites errors. |
-| `{available_time}` | CURRENT AUTHORITATIVE STATE + CLOCK + handoff | Required when timing matters | Block if directive requires action without enough time state | `None currently specified` | “Enough time to speak” can be sufficient. |
-| `{consent_or_force_conditions}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS + RELATIONSHIP/OBLIGATION/AFFORDANCE | Required for intimacy, restraint, coercion, object seizure, rescue movement, captivity, violence | Block if relevant and absent | `None currently specified` | Continuity field, not moralizing. |
-| `{current_locks}` | CURRENT AUTHORITATIVE STATE.current_locks + hard current locks from selected records | Yes when locks exist; otherwise optional | Block if directive contradicts a lock | `None currently specified` | Keeps current impossibilities visible. |
-| `{recent_causal_context}` | IMMEDIATE HANDOFF.recent_causal_context + selected EVENT immediate/recent | Yes unless first segment is fully self-sufficient from current state | Block if blank and not self-sufficient | `None; first local unit begins from current state` | Writer-visible; not automatically POV knowledge. No accepted prose. |
-| `{last_visible_moment}` | IMMEDIATE HANDOFF.last_visible_moment | Yes | Block if blank unless first-segment empty handoff is allowed | `None specified` for first-segment empty handoff | Launch point. First-segment empty handoff renders per-placeholder constants; the single-line spec phrase "No prior accepted prose. Begin from current authoritative state and the launch directive." is descriptive, not a second compiler path. |
+| `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
+| `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |
+| `{onstage_entities}` | CURRENT AUTHORITATIVE STATE.onstage_entities + ENTITY/CAST selected active or present-minor | Readiness required for material prose | Block if directive requires an entity but none selected/onstage | `None onstage` only for abstract/nonphysical prose | Person-like material entities require cast handling. |
+| `{immediate_situation_summary}` | CURRENT AUTHORITATIVE STATE.immediate_situation_summary user-authored generation-time field | Readiness required | Block if blank | `None currently specified` only during deterministic backfill or empty prompt inspection | Prose-neutral summary of the immediate local situation. Must not be inferred from accepted prose or generated automatically. |
+| `{offstage_pressuring_entities}` | CURRENT AUTHORITATIVE STATE.offstage_pressuring_entities + offstage selected records | Context-gated required | Block if offstage interruption lacks source | `None specified` | Required when offstage pressure/interruption is active. Offstage relevance section may expand. |
+| `{positions}` | CURRENT AUTHORITATIVE STATE.positions + ENTITY STATUS + LOCATION/OBJECT state | Context-gated required | Block if relevant and absent | `None currently specified` only for nonphysical/minimal moments | Required for physical interaction, gaze, object transfer, intimacy, violence, movement, blocking, turn-taking, or audibility. |
+| `{entity_statuses}` | CURRENT AUTHORITATIVE STATE.entity_statuses + ENTITY STATUS records | Context-gated required | Block if relevant and absent or contradictory | `None currently specified` only when no material entities | Required for materially involved entities whose agency/status matters. |
+| `{possessions}` | CURRENT AUTHORITATIVE STATE.possessions + OBJECT.owner/carried_by/current_location | Context-gated required | Block if object use/transfer/search/concealment can matter and absent | `None currently specified` | Two holders for one object block. |
+| `{visible_conditions}` | CURRENT AUTHORITATIVE STATE.visible_conditions + ENTITY STATUS/CONSEQUENCE where visible | Context-gated required | Block if visible condition is structurally necessary and absent; otherwise warn | `None currently specified` | Includes visible injury, exhaustion, restraint, disguise. |
+| `{environmental_conditions}` | CURRENT AUTHORITATIVE STATE.environmental_conditions + LOCATION | Context-gated required | Block if environment constrains local action/perception and absent; otherwise warn | `None currently specified` | Texture and physical constraint. |
+| `{line_of_sight_and_visibility}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS.visibility_to_pov + LOCATION.visibility_and_sound | Context-gated required | Block if relevant and absent | `None currently specified` only for nonphysical/minimal moments | Required for perception, secrecy, violence, intimacy, interruption, ambiguous perception, or who-can-see/hear-whom. |
+| `{routes_and_exits}` | CURRENT AUTHORITATIVE STATE + LOCATION.access_routes + AFFORDANCE | Context-gated required | Block if route matters and absent | `None currently specified` | Required for movement, pursuit, escape, interruption, entrance, location change, or containment. Include impossible routes when omission invites errors. |
+| `{available_time}` | CURRENT AUTHORITATIVE STATE + CLOCK + handoff | Context-gated required | Block if directive requires action without enough time state | `None currently specified` | "Enough time to speak" can be sufficient. |
+| `{consent_or_force_conditions}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS + RELATIONSHIP/OBLIGATION/AFFORDANCE | Context-gated required | Block if relevant and absent | `None currently specified` | Required for intimacy, restraint, coercion, object seizure, rescue movement, captivity, violence, or constrained agency. |
+| `{current_locks}` | CURRENT AUTHORITATIVE STATE.current_locks + hard current locks from selected records | Context-gated required | Block if directive contradicts a lock | `None currently specified` | Required when locks/constraints exist or directive could contradict them. |
+| `{recent_causal_context}` | IMMEDIATE HANDOFF.recent_causal_context + selected EVENT immediate/recent | Context-gated required | Block if continuation handoff is blank or not self-sufficient | `None; first local unit begins from current state` | First segment: optional deterministic empty state. Continuation: user-authored handoff required. Writer-visible; not automatically POV knowledge. No accepted prose. |
+| `{last_visible_moment}` | IMMEDIATE HANDOFF.last_visible_moment | Context-gated required | Block if continuation lacks last visible moment or begin-after | `None specified` for first-segment empty handoff | First segment: optional deterministic empty state. Continuation requires this or `{begin_after}`. |
 | `{prior_accepted_prose_status_or_handoff_note}` | IMMEDIATE HANDOFF user-authored field | Yes | Block if accepted prose text, rejected candidate text, superseded regeneration text, or automatic prose-derived summary detected | `None. No accepted prose is included.` | Replaces accepted prose summary. |
-| `{begin_after}` | IMMEDIATE HANDOFF.begin_after | Yes | Block if blank unless first-segment empty handoff is allowed; block if contradicts state/handoff | `None specified` for first-segment empty handoff | Exact start instruction. First-segment empty handoff uses the canonical per-placeholder constants in `EMPTY_STATE_CONSTANTS`. |
-| `{manual_must_render}` | MANUAL DIRECTIVE.must_render | Yes | Block if blank | N/A | May be one instruction. |
+| `{begin_after}` | IMMEDIATE HANDOFF.begin_after | Context-gated required | Block if continuation lacks begin-after or last visible moment; block if contradicts state/handoff | `None specified` for first-segment empty handoff | Exact start instruction. First-segment empty handoff uses the canonical per-placeholder constants in `EMPTY_STATE_CONSTANTS`. |
+| `{manual_must_render}` | MANUAL DIRECTIVE.must_render | Readiness required | Block if blank after normalization | N/A | May be one instruction. Draft may save blank. |
 | `{manual_may_render_if_naturally_caused}` | MANUAL DIRECTIVE.may_render_if_naturally_caused | No | No block | `None specified` | Invention corridor. |
 | `{manual_do_not_force}` | MANUAL DIRECTIVE.do_not_force | Recommended | Warn if blank in risky scenes | `None specified` | Guardrail against overreach. |
 | `{pov_knows}` | POV KNOWLEDGE PROFILE.pov_knows from PROSE MODE/FACT/BELIEF/SECRET/EVENT/ENTITY STATUS | Required for non-omniscient POV | Block if absent or contradictory | `None specified` only for omniscient or no relevant knowledge | Labels do not grant knowledge. |
@@ -123,8 +133,8 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `{active_knowledge_pressure}` | User-authored pressure summary + POV/SECRET/BELIEF/EVENT lanes | Yes when knowledge/secrecy matters | Warn/block as applicable | `None beyond detailed records below` | Keeps information pressure salient. |
 | `{relationship_emotion_pressure}` | Selected RELATIONSHIP/EMOTION records rendered as pressure text | No unless local pressure depends on it | Warn if expected but absent | `None beyond detailed records below` | Avoid raw axes alone. |
 | `{material_pressure}` | Selected LOCATION/OBJECT/AFFORDANCE/ENTITY STATUS pressure summary | Required for physical/object-heavy moments | Block if physical tag set and absent | `None beyond detailed records below` | Current physical affordances. |
-| `{voice_pressure}` | User-authored generation-time voice pressure summary | Required when dialogue, close POV, ensemble, or active silent presence matters | Block if required and absent | `None beyond detailed records below` | Complements pins. |
-| `{active_cast_voice_pressure_pins}` | CAST MEMBER.voice_anchor + CURRENT CAST VOICE PRESSURE + CAST VOICE OVERRIDES + active local_function | Required for active/onstage cast when dialogue, close POV voice, ensemble speech, or active silent presence matters | Block if required and missing/too generic | N/A if no active person-like cast | Salience duplicate; includes dialogue/narration/nonverbal/silence scopes. |
+| `{voice_pressure}` | User-authored generation-time voice pressure summary | Optional prompt preference | Warn if absent when local voice salience may degrade; block only when no durable/compressed voice authority exists for required speech/POV/body presence | `None beyond detailed records below` | Complements durable voice anchors and pins. |
+| `{active_cast_voice_pressure_pins}` | CAST MEMBER.voice_anchor + CURRENT CAST VOICE PRESSURE + CAST VOICE OVERRIDES + active local_function | Optional prompt preference | Warn if absent when durable anchors are sufficient; block only if supplied pressure contradicts authority or required voice/body authority has no durable/compressed/current source | Omit or `None` if no active person-like cast | Salience duplicate; includes dialogue/narration/nonverbal/silence scopes. |
 | `{active_intentions}` | Selected INTENTION records | No | Warn if directive implies goal but none selected/authored | `None active` | Weaker than plans. |
 | `{active_plans}` | Selected PLAN records | No unless directive depends on plan | Block if plan holder cannot act but plan is meant to drive prose | `None active` | Active relevant plans drive tactics. |
 | `{active_clocks}` | Selected CLOCK records | No | Block if contradicts current state; warn stale | `None active` | Human updates after acceptance. |
@@ -151,37 +161,38 @@ Every placeholder in `prompt-template.md` must appear in this mapping. Grouped r
 | `<invention_permissions>` | Template constant | Yes | Block if absent | N/A | Human gatekeeping. Dynamic durable-change pressure renders in its own records and placeholders, not as a second render site here. |
 | `<contradiction_prohibitions>` | Template constant | Yes | Block if absent | N/A | Cannot be weakened by directive. Selected current locks render in `{current_locks}` and physical-continuity placeholders. |
 | `<prose_craft>` | Template constant | Yes | Warn if style conflicts with prose mode | N/A | Craft cannot alter continuity. Story/prose preferences and cast voice fields render in their own placeholders. |
-| `{soft_unit_guidance}` | STOP GUIDANCE.soft_unit_guidance generation-time field | Yes | Block if non-local or contradictory with manual directive; blank renders the deterministic empty state | `Soft unit: No additional user narrowing; use the universal local stop rule above.` | Replaces beat count; must describe the next local unit, not a chapter/arc/future summary. Blank guidance means no additional user narrowing beyond the universal local stop rule. |
+| `{soft_unit_guidance}` | STOP GUIDANCE.soft_unit_guidance generation-time field | Optional prompt preference | Block only if supplied text is non-local or contradictory with manual directive; blank does not block | Prefer conditional omission; otherwise `Soft unit: No additional user narrowing; use the universal local stop rule above.` | Replaces beat count; must describe the next local unit, not a chapter/arc/future summary. Blank guidance means no additional user narrowing beyond the universal local stop rule. |
 | `<final_output_instruction>` | Template constant | Yes | Block if absent | N/A | Final prompt edge. |
-| `validation_focus_tags` | GENERATION VALIDATION FOCUS | Yes, validation-only | Block if generation context absent | Not prompt-facing | Activates matrix rows only. |
+| `validation_focus_tags` | GENERATION VALIDATION FOCUS | Readiness required, validation-only | Exactly one generation context after normalization; draft value may default by accepted-segment count | Not prompt-facing | Activates matrix rows only. |
 
 ## 5. Universal minimum prompt completeness
 
 Generation blocks unless these are satisfied:
 
-1. Role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction exist.
-2. Story title, premise, tone/content envelope, language/register, and prose mode are populated enough to avoid a generic story prompt.
-3. Current authoritative state, immediate handoff, manual directive, and stop guidance exist, and the manual directive/stop guidance remain local-prose-only.
-4. Non-omniscient POV has a populated POV knowledge profile.
-5. Active secrets have holders, protected non-holders, allowed cues when clues may appear, forbidden reveals, and reveal permission.
-6. Active physical interaction has current location, onstage entities, positions/distance, object possession when objects matter, visibility/line of sight, routes/exits, available time, and impossible/unavailable actions where omission would invite error.
-7. Active/onstage person-like cast materially involved has a core dossier and local function. Dialogue, close POV voice, ensemble speech, or active silent presence requires enough voice/body pressure to avoid generic rendering.
-8. Generation validation focus tags identify first segment vs continuation and activate all context-dependent blockers relevant to the directive/current state.
-9. Optional sections render explicit empty states; constitutional sections are not omitted.
-10. Accepted prose text, rejected candidate text, superseded regeneration text, automatic prose-derived summaries, and prose-mined continuity never appear in prompt-facing fields.
+1. Constitutional template sections always compile: role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction.
+2. Story configuration is populated enough to avoid a generic story prompt and to satisfy provider/content boundaries.
+3. Current authoritative state has the universal floor: time/temporal position, location/scene-space, onstage/material entities, and immediate situation summary.
+4. Manual directive `must_render` is present and local.
+5. Generation context is resolved by normalization.
+6. First segment can compile without continuation handoff. Continuation requires user-authored handoff.
+7. Blank stop guidance is allowed; supplied stop guidance must be local and noncontradictory.
+8. Non-omniscient POV requires a populated POV knowledge profile when a POV entity is involved.
+9. Active secrets/reveal constraints require deterministic holder/non-holder/reveal-permission data when selected or relevant.
+10. Context-gated physical, knowledge, cast, object, movement, violence, intimacy, institutional, clock, and obligation requirements apply only when explicit tags, records, story configuration, or directive make them structurally necessary.
+11. Accepted prose text, rejected candidate text, superseded regeneration text, automatic prose-derived summaries, and prose-mined continuity never appear in prompt-facing fields.
 
 ## 6. Generation validation matrix
 
 | Validation focus tag | Context-dependent blockers |
 |---|---|
-| `first_segment` | `prior_accepted_prose_status_or_handoff_note` must render no accepted prose included; launch state must be self-sufficient; no continuation phrases such as “as above.” |
+| `first_segment` | No continuation handoff is required. `prior_accepted_prose_status_or_handoff_note` must render no accepted prose included; launch state must be self-sufficient; no continuation phrases such as "as above." |
 | `continuation_after_accepted_segment` | Handoff must be user-authored; accepted prose/rejected candidate/auto summary blocks; deterministically identifiable durable changes in handoff must be represented in selected records or current state. |
-| `dialogue_expected` | Active speakers require core CAST MEMBER dossier, voice anchor, current voice pressure or sufficient pin, language/register state, POV knowledge boundaries, and relationship/status context. |
-| `ensemble_dialogue_expected` | Three or more likely speakers require distinct voice pins, current speaker functions, relationship/status pressure among speakers, and physical/auditory state showing who can hear or interrupt whom. |
+| `dialogue_expected` | Active speakers require core CAST MEMBER dossier, durable voice anchor or compressed present-minor voice note, language/register state, POV knowledge boundaries, and relationship/status context. Current voice pressure warns when absent unless no durable/compressed voice authority exists. |
+| `ensemble_dialogue_expected` | Three or more likely speakers require current speaker functions, relationship/status pressure among speakers, and physical/auditory state showing who can hear or interrupt whom. Distinct current voice pins usually warn unless durable voice anchors are missing or too generic for required material speech. |
 | `introspection_expected` | Requires POV beliefs/suspicions/misreads, relevant emotion/interior pressure, psychic distance/interiority mode, and non-POV interiority restrictions. |
 | `physical_interaction_expected` | Requires location, onstage entities, positions/distance, visibility, possessions where relevant, routes/exits, available time, and impossible/unavailable actions when omission invites error. |
-| `active_silent_presence_expected` | Active silent character needs core dossier, body_presence_core, current position/visibility, nonverbal_or_silence_pressure, allowed actions, and POV access limits. |
-| `present_minor_speech_possible` | Present-minor speaker needs compressed voice note sufficient for a line or must be promoted to active/onstage; otherwise block material speech. |
+| `active_silent_presence_expected` | Active silent character needs core dossier, body_presence_core, current position/visibility, allowed actions, and POV access limits when the silent presence materially affects prose. Current silence pressure is recommended, not universal. |
+| `present_minor_speech_possible` | Present-minor speaker needs compressed voice note sufficient for material speech or must be promoted to active/onstage; otherwise block material speech. No block when no material speech is expected. |
 | `ambiguous_perception_expected` | Requires line-of-sight/sound state, obstruction or uncertainty source, what the POV can and cannot perceive, possible misreads, and whether audience/writer knows more. |
 | `offstage_interruption_possible` | Requires offstage entity location or uncertainty state, awareness mechanism, communication/entrance/timing route, and interruption type: physical, audible, digital, institutional, or environmental. |
 | `nonhuman_or_institutional_pressure_expected` | Requires ENTITY kind/description, operating rules or authority relation, current location/reach, mechanism for pressure, and limits on interiority/agency if non-person. |
@@ -222,6 +233,19 @@ Warnings are shown to the user but do not compile into the prose prompt. The com
 
 A validation message should identify the conflicting records or fields, explain the conflict in plain language, and indicate possible user actions: revise, remove, deselect, add current state, add route, add knowledge constraint, add reveal permission, promote cast, add voice/body pressure, or change directive.
 
+Author-facing readiness items must not lead with raw technical codes. Blockers and warnings should include these fields where relevant:
+
+- Title.
+- What may degrade.
+- Why this is not blocking.
+- When it would become blocking.
+- Fastest fix.
+- Ignoring is reasonable when.
+- Affected labels.
+- Technical code in details.
+
+Repeated warnings should deduplicate by affected field/record group and present grouped salience warnings instead of one warning per long dossier, missing optional pin, or sparse optional nuance.
+
 ## 8. Empty-state rendering rules
 
 - Constitutional sections are never omitted.
@@ -229,6 +253,8 @@ A validation message should identify the conflicting records or fields, explain 
 - Empty states must not imply missing canon is safe when a validation tag requires it. Required-but-missing state blocks before rendering.
 - Empty states are deterministic constants, not model-authored paraphrases.
 - Empty-state rendering must not be used to hide a structurally unusable prompt.
+- Optional prompt-preference fields may be omitted entirely when blank if the surrounding universal instruction remains structurally complete.
+- Empty-state rendering is required only when omission would make the prompt ambiguous or structurally malformed.
 
 ## 9. Prompt-facing vs validation-only fields
 

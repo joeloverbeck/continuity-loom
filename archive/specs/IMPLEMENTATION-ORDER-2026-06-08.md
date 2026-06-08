@@ -1,6 +1,6 @@
 # Implementation Order — Generation Brief / Validation / Readiness Specs
 
-Status: ordering rationale for the generation brief / validation / readiness spec sequence
+**Status**: ✅ COMPLETED — ordering rationale for the generation brief / validation / readiness spec sequence; all three content specs and the regression-plan spine have shipped and are archived.
 Repository: `joeloverbeck/continuity-loom`
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 

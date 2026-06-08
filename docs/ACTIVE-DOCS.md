@@ -88,7 +88,16 @@ The post-v1 cleanup ticket that removed the orphaned validation diagnostic code 
 
 - `archive/tickets/CLEANUP-001.md`
 
-There is no active `specs/` directory at the post-v1 target commit. Create a new active spec only when the change is too broad or risky for a single ticket.
+Active specs live in:
+
+- `specs/`
+
+There are currently no active specs. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
+
+- `archive/specs/SPEC-implementation-order-and-regression-plan.md`
+- `archive/specs/IMPLEMENTATION-ORDER-2026-06-08.md`
+
+Create a new active spec only when the change is too broad or risky for a single ticket.
 
 ## When a change needs a spec, ticket, ADR, or doc correction
 

@@ -10,14 +10,33 @@ The records are the continuity authority. Accepted prose is readable output, not
 2. Add, edit, archive, or remove story records.
 3. Curate the active working set for the next segment.
 4. Edit generation-time fields: current authoritative state, immediate handoff, manual directive, POV/prose mode, stop guidance, and current voice pressure.
-5. Run validation.
-6. If validation has blockers, fix the records or generation-time fields. Prompt preview and OpenRouter send stay blocked in v1.
-7. Compile and inspect the prompt preview.
-8. Send the prompt to OpenRouter when you are ready.
-9. Review the returned candidate prose.
-10. Edit, regenerate, discard, or accept the candidate.
-11. The accepted final segment is stored in the accepted segment archive.
-12. Update records manually for any durable continuity changes before generating again.
+5. Save the Generation Brief draft. A draft can save before it is ready.
+6. Run validation or review the readiness checklist.
+7. If readiness has blockers, fix the records or generation-time fields. Prompt preview and OpenRouter send stay blocked in v1, but the draft remains saved.
+8. If readiness has only warnings, decide whether to improve the brief or continue.
+9. Compile and inspect the prompt preview.
+10. Send the prompt to OpenRouter when you are ready.
+11. Review the returned candidate prose.
+12. Edit, regenerate, discard, or accept the candidate.
+13. The accepted final segment is stored in the accepted segment archive.
+14. Update records manually for any durable continuity changes before generating again.
+
+## Generation Readiness
+
+Saving a Generation Brief is draft persistence. It preserves your work even when the brief is incomplete.
+
+Readiness is the gate for Prompt Preview and Generate. A blocker means the app cannot safely compile or send the prompt until you fix a required item. A warning means generation is possible, but the prose may be weaker, less specific, or harder for the model to use. Warnings never block Preview or Generate.
+
+The readiness checklist should explain the issue in author language first. Technical codes belong in details.
+
+Important fields:
+
+- Generation context defaults from project state: no accepted prose means first segment; one or more accepted segments means continuation. You can still see and edit the resolved value.
+- Current state needs a minimum of time, place or scene-space, onstage/material entities, and what is happening now.
+- Manual moment directive is required for readiness. It should be an immediate launch action or pressure, such as "Have Mara open the cellar door" or "Render the next immediate beat from Ken's intention to lie."
+- Stop guidance is optional. Blank stop guidance uses the universal local stop rule.
+- Immediate handoff is usually only required for continuation after accepted prose. It must be user-authored and must not paste accepted prose.
+- Current cast voice pressure is optional local emphasis. Durable CAST MEMBER profiles are the primary voice authority.
 
 ## Project Ownership
 
@@ -91,6 +110,18 @@ Continuity Loom v1 works from one current continuity. Inactive, archived, unreso
 Accepted prose is output. Records and generation-time fields are the prompt authority. This keeps continuity explicit, inspectable, and owned by you instead of inferred from previous prose.
 
 Use `prior_accepted_prose_status_or_handoff_note` only for a user-authored status or continuity handoff note. Do not paste accepted prose, rejected candidates, superseded regenerations, or automatic prose summaries into prompt-facing fields.
+
+### Why can I save a brief that still has blockers?
+
+Saving protects your draft. Blockers prevent prompt preview and generation, not ordinary form persistence.
+
+### Do I have to fill stop guidance?
+
+No. Stop guidance is optional narrowing. If it is blank, the universal local stop rule still applies.
+
+### Why is the app asking for a manual directive?
+
+The directive is the immediate launch choice for the next local prose unit. It tells the prose writer what pressure or action to render now without becoming a plot outline.
 
 ### Is my data uploaded?
 

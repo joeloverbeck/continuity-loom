@@ -7,6 +7,8 @@ Status: corrected implementation baseline
 
 ---
 
+## Template
+
 ```md
 # Generated Prose Prompt
 
@@ -28,7 +30,7 @@ Obey these in order:
 5. Manual moment directive. The directive wins over character defaults, ordinary reluctance, soft tendencies, and general record pressure, but it cannot contradict higher-priority constraints.
 6. Active plans, intentions, clocks, obligations, and consequences.
 7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization, voice anchors, current voice pressure pins, speech-pattern peculiarities, and behavior.
+8. Active cast characterization, voice anchors, any supplied current voice pressure pins, speech-pattern peculiarities, body/behavior dossiers, and behavior.
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
@@ -112,6 +114,8 @@ Prior accepted prose status / user-authored continuity handoff:
 
 Begin prose exactly after this point:
 {begin_after}
+
+For first segments, missing handoff fields render deterministic empty states and do not imply missing required context. For continuations after an accepted segment, the handoff must be user-authored and must not include accepted prose text.
 
 Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
 </immediate_handoff>
@@ -200,6 +204,8 @@ Voice pressure:
 
 Active cast voice pressure pins:
 {active_cast_voice_pressure_pins}
+
+If no current voice pressure pins are supplied, omit the pins sub-block or render a concise deterministic empty state. Do not treat missing pins as an instruction to invent current voice pressure.
 
 Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
 </active_working_set>
@@ -353,7 +359,7 @@ Do not:
 <prose_craft>
 Stay inside the selected POV, person, tense, and psychic distance.
 Let the POV character's diction, judgments, omissions, bodily attention, and sentence rhythms color the prose.
-Use active cast voice anchors, current voice pressure pins, and speech-pattern peculiarities. Characters should not sound interchangeable.
+Use active cast voice anchors, speech-pattern peculiarities, body/behavior dossiers, and any supplied current voice pressure pins. Characters should not sound interchangeable.
 Prefer concrete nouns, embodied verbs, pressure-shaped dialogue, specific sensory detail, and visible action.
 In low-drama or minimalist scenes, preserve pressure through exact perception, rhythm, gesture, omission, and subtext rather than manufacturing incident.
 Use interiority when it is part of the moment's pressure; avoid explaining psychology from outside.
@@ -366,7 +372,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Soft unit: {soft_unit_guidance}
+Conditional soft-unit narrowing: if `{soft_unit_guidance}` is supplied, render `Soft unit: {soft_unit_guidance}`. If it is blank, omit that line; if conditional omission is unavailable, render `Additional user stop guidance: None supplied.`
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

@@ -43,11 +43,15 @@ Narrative-planning research supports preserving causality and character intentio
 
 Keeping these separate is the biggest safeguard after POV/reveal locks. Current state answers “what is true now.” Handoff answers “how did we get here and where does prose begin.” Mixing them invites the prose writer to turn non-POV context into POV knowledge.
 
+For a first segment, there is no prior accepted prose and no continuation bridge to supply. Current authoritative state plus the manual directive can be enough to begin. For a continuation after an accepted segment, a user-authored handoff is needed because accepted prose remains excluded from prompt context.
+
 ## 6. Why `prior_accepted_prose_status_or_handoff_note` stays narrow
 
 The old idea of a most-recent-prose summary is wrong for this app. It points implementers toward mining accepted prose, which violates record-first continuity.
 
 The correct field is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
+
+The handoff note is a bridge written by the user, not a prose-archive substitute. It may identify the causal hinge or begin-after point for a continuation, but it must not quote accepted prose or let the compiler mine prose into canon.
 
 If an accepted segment created a durable change, that change belongs in selected story records, current authoritative state, immediate handoff, or selected event/fact/belief/relationship/emotion/plan/clock/obligation/consequence/open-thread/location/object/affordance/cast records before the next generation.
 
@@ -86,6 +90,8 @@ The corrected shape separates:
 - compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, local function, and any temporary override.
 
 The pin does not replace the full dossier. It prevents generic dialogue and generic close narration when the full dossier is long.
+
+Durable CAST MEMBER fields are the primary voice authority. Current voice pressure pins are optional scene-specific emphasis. Missing pins are usually salience warnings, not blockers, when durable voice anchors and body/behavior dossiers are sufficient. A missing pin becomes blocking only when the selected local mode needs voice/body authority and no durable, compressed, or current source can supply it, or when supplied current pressure contradicts higher authority.
 
 ## 11. Why cast voice overrides are generation-time only
 
@@ -147,7 +153,9 @@ Durable change should come from current pressure, physical affordance, manual di
 
 Hard “3–5 beat” instructions can make the model continue after the first real response point. The better rule is local and causal: render the next local unit, then stop when continuing would answer the next question rather than create it.
 
-The `soft_unit_guidance` placeholder can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length preference. Stop guidance is a required generation-time field, not an optional prose-style hint. Validation should block a directive or stop guidance that asks for a whole chapter, global outline, alternate options, future consequences, plot beats, or multiple response points.
+The `soft_unit_guidance` placeholder can say “one approach,” “one short exchange,” “one discovery,” or “one physical maneuver,” but the response-point stop rule outranks length preference. Stop guidance is optional user narrowing, not a universal readiness field. Validation should block a directive or supplied stop guidance that asks for a whole chapter, global outline, alternate options, future consequences, plot beats, or multiple response points.
+
+Blank `soft_unit_guidance` is not a prompt-contract failure. The universal stop rule already defines the boundary, so optional user guidance narrows the local unit only when supplied. Validation should still block supplied guidance that is nonlocal or contradicts the manual directive.
 
 ## 20. Why generation validation focus tags are validation-only by default
 
@@ -155,11 +163,15 @@ Universal minimum prompt completeness is not enough. Different local modes need 
 
 Generation validation focus tags activate deterministic checks before compilation. They are not plot beats, act structure, dramatic arcs, or story rails. They should not compile into the generated prompt by default. A future prompt-facing use would need evidence of generation-quality gain and a clear guarantee that it does not become an instruction to force events.
 
+Generation context may be defaulted deterministically from accepted-segment count: no accepted segments means first segment, and one or more accepted segments means continuation after accepted segment. That default is project state, not story invention. Other focus tags should come from explicit controls or records, not LLM interpretation of prose.
+
 ## 21. Why warnings must not enter the prompt
 
 Unresolved contradictions must block. Non-blocking warnings belong in the app validation surface. They should not compile as `<compiler_warning>` or prose-writer instructions.
 
 Putting warnings into the prompt asks the external prose writer to repair continuity. That reintroduces the intelligence layer the app rejects.
+
+Warnings must not indirectly gate Preview or Generate. If a diagnostic is serious enough to block compilation or sending, it is not a warning; it must be classified as a deterministic blocker with a concrete condition and author-facing fix.
 
 ## 22. Why a compiler contract is warranted
 
@@ -167,7 +179,15 @@ The template, schema, rationale, examples, and stress suite are complex enough t
 
 The schema remains the conceptual record model. The compiler contract is the deterministic rendering and validation bridge. Any prompt placeholder change must update the compiler contract in the same change.
 
-## 23. Research notes
+## 23. Why draft saving is separate from readiness
+
+Draft persistence protects author work. A generation brief can be incomplete, locally messy, or missing readiness fields while the author is still shaping the next launch.
+
+Readiness protects prompt preview, deterministic compilation, OpenRouter sending, and candidate generation. It checks whether the normalized ready input can produce a structurally valid, local, non-leaking prompt. The app should be able to save a draft and still say that Preview or Generate is blocked by required readiness items.
+
+Keeping these states separate prevents validation from trapping the author outside the form state needed to fix blockers, while preserving fail-closed behavior for compilation and provider send.
+
+## 24. Research notes
 
 Provider guidance supports clear, structured prompts. Anthropic recommends XML tags for complex prompts that mix instructions, context, examples, and variable inputs. OpenAI guidance emphasizes clear instructions and separating instructions from context. Google’s Gemini documentation treats prompt design as iterative and supports structured prompt strategies.
 

@@ -1,12 +1,12 @@
 # SPEC: Foundational Document Amendments for Generation Readiness
 
-Status: proposed doc-amendment spec  
+Status: COMPLETED
 Repository: `joeloverbeck/continuity-loom`  
 Baseline commit used for this review: `e1df2d032c7ae7976108f70cafa5802a7398ce39`  
 Purpose: describe precise amendments to the existing active Markdown documents; do **not** provide replacement documents.  
 Intended consumer: Claude Code or another implementation agent decomposing this into documentation and follow-on implementation tickets.  
-Predecessors (this spec supplies their documentation content): `archive/specs/SPEC-generation-brief-draftability-and-save-model.md`, `SPEC-validation-gating-taxonomy-and-focus-matrix.md`, `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md`.
-Execution spine: `SPEC-implementation-order-and-regression-plan.md` / `IMPLEMENTATION-ORDER.md`. These amendments are **Phase 7 ("Active docs and user guide")** of that plan and must land *after* the behavioral specs, "once behavior is settled" — updating the docs first would make them describe unimplemented behavior.
+Predecessors (this spec supplies their documentation content), all now completed and archived: `archive/specs/SPEC-generation-brief-draftability-and-save-model.md`, `archive/specs/SPEC-validation-gating-taxonomy-and-focus-matrix.md`, `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md`.
+Execution spine: `SPEC-implementation-order-and-regression-plan.md` / `IMPLEMENTATION-ORDER.md`. These amendments are **Phase 7 ("Active docs and user guide")** of that plan, scheduled to land *after* the behavioral specs, "once behavior is settled." The behavioral specs have now landed and been archived (`IMPLEMENTATION-ORDER.md` lines 11–13), so behavior is settled and this Phase 7 doc work is unblocked and ready to execute.
 
 ---
 
@@ -43,6 +43,8 @@ This table is included so future tickets do not repeat the same mistake. The iss
 | `docs/demo-blocker-recipes.md` | 341 | 497 | 145.7% |
 | `docs/stress-coverage-matrix.md` | 680 | 309 | 45.4% |
 | `docs/stress-suite.md` | 3,347 | 242 | 7.2% |
+
+The "current repo baseline words" column is the snapshot at the review baseline commit (`e1df2d03`). Since then the behavioral specs landed and three docs grew slightly — `compiler-contract.md` (~4,324), `FOUNDATIONS.md` (~7,115), and `story-record-schema.md` (~4,685) — mostly from the already-added `immediate_situation_summary` field/row/line (see sections 4.2–4.4). The bottom four files still match exactly. The drift is expected and does not affect the bad-replacement audit this table supports.
 
 Any ticket that changes an active foundational doc should include a preservation note:
 
@@ -228,7 +230,7 @@ Do not remove the human-accepted-prose loop, durable-change reminder, or no-acce
 
 #### Amend section 4.5, `Fail closed`
 
-The existing `Fail closed` doctrine is directionally right but too broad if read as “anything risky blocks everything.” Change it to fail closed for prompt generation and sending only.
+The existing `Fail closed` doctrine already carries the warnings-vs-blockers nuance — the current §4.5 reads *"Quality, salience, prompt-length, and optional nuance risks are warnings unless they also prove deterministic impossibility or a prompt-contract failure"* — so the over-broad "anything risky blocks everything" reading is already partly corrected. The genuinely **net-new** doctrine to add is the **draft-saving distinction**: fail-closed governs compilation/preview/sending and must not be read to forbid saving an incomplete draft. Scope fail-closed to prompt generation and sending only.
 
 Required doctrine:
 
@@ -272,9 +274,9 @@ The universal prompt always contains the local-unit stop rule. Optional stop gui
 
 Add the blocker taxonomy from section 3.2 of this spec. Also state that readiness diagnostics must be author-actionable and cannot use raw codes as the primary message.
 
-Remove the existing hard-fail bullet `missing stop guidance;` from the §11 hard-validation list. The universal stop rule makes blank `soft_unit_guidance` non-blocking (see section 3.5); leaving this bullet would make the amended constitution contradict itself. Retain `missing manual directive;`. (Note: this prose bullet is distinct from the `missing-stop-guidance` validation code in section 5.1; both must be addressed.)
+There is **no** blank-stop-guidance hard-fail bullet to remove from the §11 list: the current `FOUNDATIONS.md` §11 hard-validation enumeration contains no `missing stop guidance;` bullet (verified — zero matches). Its only stop-guidance bullet is the *nonlocal-request* blocker ("manual directive or stop guidance requests a whole chapter, global outline, … or multiple response points"), which this correction deliberately keeps. Retain `missing manual directive;`. The blank-stop-guidance over-gating lives elsewhere — `story-record-schema.md` §3.8 ("Blocks generation if blank…") and the `missing-stop-guidance` validation code cited in `stress-coverage-matrix.md` Cases 7 and 26 — and is addressed in sections 4.2 and 5.1, not here.
 
-Make explicit:
+The current §11 already states *"Advisory warnings do not block prompt preview, generation, or OpenRouter sending"* and already distinguishes warnings from blockers ("Length warnings, lost-in-the-middle warnings, salience doubts, or missing optional nuance may be warnings. Contradictions, impossible prompt conditions, and missing mandatory generation fields are blockers"). The net-new work here is the **blocker taxonomy** (section 3.2) and the explicit no-LLM / no-semantic-inference statements below; the warnings-vs-blockers framing is a reinforcement, not a first introduction. Make explicit:
 
 - warnings never compile into the prompt;
 - warnings never block Preview or Generate;
@@ -381,7 +383,7 @@ Context-gated fields:
 - `current_locks` is required when a lock/constraint exists or when the directive could contradict a lock.
 ```
 
-Add `immediate_situation_summary` to the field catalog. This is not a plot outline. It is the immediate state bridge needed to prevent the external prose writer from fabricating the initial situation.
+`immediate_situation_summary` is **already present** in the field catalog (`docs/story-record-schema.md` line 135 `immediate_situation_summary: prose`, with its definition at line 152) — it landed with the behavioral work. No re-adding is required; the remaining task is to verify the existing definition reads as the immediate state bridge that prevents the external prose writer from fabricating the initial situation, and that it is filed under the readiness-required universal floor (not the context-gated set). It is not a plot outline.
 
 #### Amend section 3.3, `IMMEDIATE HANDOFF`
 
@@ -522,7 +524,7 @@ Make these row-level changes while preserving the full table.
 | `{current_time}` | Readiness required. |
 | `{current_location}` | Readiness required; allow scene-space/prose label where no LOCATION record exists yet. |
 | `{onstage_entities}` | Readiness required for material prose; allow explicit deterministic empty state only for abstract/non-material first prose if the app supports that mode. |
-| new `{immediate_situation_summary}` | Add row. Readiness required. Source: `CURRENT AUTHORITATIVE STATE.immediate_situation_summary`. Missing behavior: blocker. Empty state: none. |
+| `{immediate_situation_summary}` | **Row already present** (`docs/compiler-contract.md` line 90): readiness required, source `CURRENT AUTHORITATIVE STATE.immediate_situation_summary`, missing behavior "Block if blank". No add required — verify the existing row matches this requiredness; the only refinement to consider is its empty-state cell (`None currently specified` during deterministic backfill / empty prompt inspection), which is acceptable as-is. |
 | `{positions}` | Context-gated required, not universal. Required for physical interaction, blocking, object transfer, turn-taking/audibility, intimacy, violence, movement, restraint, or line-of-sight-sensitive moments. |
 | `{entity_statuses}` | Required for materially involved entities where agency/status matters; not a universal blocker for an entity-free/abstract opening. |
 | `{possessions}` | Context-gated required when objects can matter. |
@@ -604,13 +606,13 @@ Preserve the full universal prompt template. Do not replace it with a simplified
 
 #### Amend `<current_authoritative_state>`
 
-Add a line near the top:
+The line is **already present** (`docs/prompt-template.md` line 89):
 
 ```md
 Immediate situation: {immediate_situation_summary}
 ```
 
-Keep the existing detailed lines. Their placeholders remain available, but requiredness is context-gated in the compiler contract.
+No add required — verify it is positioned near the top of the section and preserved. Keep the existing detailed lines. Their placeholders remain available, but requiredness is context-gated in the compiler contract.
 
 #### Amend `<immediate_handoff>`
 
@@ -903,7 +905,15 @@ Add cases 27-31:
 
 ### 4.10 `docs/ACTIVE-DOCS.md`
 
-This spec is part of a five-document generation-readiness set — the three behavioral specs (draftability/save, validation-gating, readiness-diagnostics), the regression-plan spec, and `IMPLEMENTATION-ORDER.md` — none of which currently appears in `docs/ACTIVE-DOCS.md`. Add the set (or at minimum this spec plus `IMPLEMENTATION-ORDER.md`) to the active-doc index so change-intake routes through it per `CLAUDE.md`. If the team deliberately keeps these as `specs/`-only planning artifacts outside the active index, record that decision here instead of leaving the index silently incomplete.
+This spec is part of a five-document generation-readiness set whose membership has since split between active and archived. The three behavioral specs (draftability/save, validation-gating, readiness-diagnostics) are now **completed and archived** under `archive/specs/`; only this spec, `SPEC-implementation-order-and-regression-plan.md`, and `IMPLEMENTATION-ORDER.md` remain active under `specs/`. None of the set currently appears in `docs/ACTIVE-DOCS.md`, whose "Active tickets and specs" section still asserts *"There is no active `specs/` directory at the post-v1 target commit"* — a claim that is now false.
+
+The amendment should:
+
+1. Correct the stale "no active `specs/` directory" statement.
+2. Register the **active** specs (this spec, `SPEC-implementation-order-and-regression-plan.md`, `IMPLEMENTATION-ORDER.md`) under "Active tickets and specs" so change-intake routes through the index per `CLAUDE.md`.
+3. Leave the three behavioral specs as archived/historical (they already fall under the existing "Historical material → `archive/specs/`" entry; do not list them as active).
+
+If the team deliberately keeps the active specs as `specs/`-only planning artifacts outside the index, record that decision here instead of leaving the index silently incomplete and self-contradictory.
 
 ---
 
@@ -929,7 +939,7 @@ missing-stop-guidance
 missing stop guidance
 ```
 
-(`missing stop guidance` without the hyphen is the FOUNDATIONS §11 hard-fail bullet; `missing-stop-guidance` is the validation code. Search for both.)
+(`missing-stop-guidance` is the validation code — it currently appears in `stress-coverage-matrix.md` Cases 7 and 26 and must be reclassified. The unhyphenated `missing stop guidance` is **not** present in `FOUNDATIONS.md` §11 as a hard-fail bullet — searching for it is a defensive zero-match guard, not a removal target. Search for both anyway, but expect the unhyphenated form to return nothing in the constitution.)
 
 Correct to:
 
@@ -1025,7 +1035,7 @@ Warnings do not block. If a condition must block, it must be expressed as a dete
 
 ## 6. Suggested ticket decomposition
 
-These are not ticket files. They are suggested ticket boundaries for the **Phase 7 ("Active docs and user guide")** doc work in `IMPLEMENTATION-ORDER.md` — the decomposition of that single phase, executed *after* the behavioral specs land, not a parallel implementation track.
+These are not ticket files. They are suggested ticket boundaries for the **Phase 7 ("Active docs and user guide")** doc work in `IMPLEMENTATION-ORDER.md` — the decomposition of that single phase. The behavioral specs have already landed and been archived, so this is now executable doc work, not a parallel implementation track.
 
 ### DOCREADINESS-001 — Repair `FOUNDATIONS.md`
 
@@ -1052,7 +1062,7 @@ Acceptance:
 Scope:
 
 - Add draft vs ready shapes.
-- Add/define `immediate_situation_summary`.
+- Verify/preserve `immediate_situation_summary` (already defined at `story-record-schema.md` lines 135/152 — no re-add).
 - Reclassify current state fields.
 - Context-gate handoff.
 - Keep `must_render` readiness-required.
@@ -1088,7 +1098,7 @@ Acceptance:
 
 Scope:
 
-- Add `immediate_situation_summary` to current state.
+- Verify/preserve `immediate_situation_summary` in current state (already at `prompt-template.md` line 89 — no re-add).
 - Make soft stop guidance conditional/optional.
 - Revise current voice pressure wording.
 - Add first-segment handoff empty-state doctrine.
@@ -1189,14 +1199,14 @@ quality gap blocks generation
 
 ## 8. Implementation notes for later code tickets
 
-This spec is documentation-focused. The code work the docs imply is **owned by the behavioral specs**, not re-decomposed here: `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` (draft persistence, save model), `SPEC-validation-gating-taxonomy-and-focus-matrix.md` (blocker taxonomy; stop-guidance / voice / generation-context requiredness), and `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md` (shared readiness model, diagnostic surface). The list below is a doc-author awareness index that maps each implied change to its owning spec — not an independent backlog:
+This spec is documentation-focused. The code work the docs imply is **owned by the behavioral specs**, not re-decomposed here: `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` (draft persistence, save model), `archive/specs/SPEC-validation-gating-taxonomy-and-focus-matrix.md` (blocker taxonomy; stop-guidance / voice / generation-context requiredness), and `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md` (shared readiness model, diagnostic surface). The list below is a doc-author awareness index that maps each implied change to its owning spec — not an independent backlog:
 
 1. Add `GenerationSessionDraft` and normalized `GenerationSessionReadyInput` concepts.
 2. Make `/api/generation-brief` save partial drafts.
 3. Normalize `generation_context` from accepted-segment count in shared core/server/snapshot builder.
 4. Allow blank `soft_unit_guidance` in schemas and readiness.
 5. Context-gate first-segment vs continuation handoff.
-6. Add or surface `immediate_situation_summary`.
+6. Surface/verify `immediate_situation_summary` (already present in schema, compiler-contract, and prompt-template — preserve, do not re-add).
 7. Rework validation blockers and warnings to the taxonomy.
 8. Rework `long-dossier-needs-pin` into grouped salience warning.
 9. Add readiness model consumed by Generation Brief, Preview, and Generate.
@@ -1218,6 +1228,20 @@ Use this rule of thumb:
 
 ## 10. Open questions and sequencing risks
 
-- **Sequencing dependency (resolved).** These amendments are Phase 7 ("Active docs and user guide") of `IMPLEMENTATION-ORDER.md` and must land *after* the behavioral specs (Draftability/Save → Validation Taxonomy → Readiness/Three-Page UX). Updating the docs before the behavior exists would make them describe unimplemented behavior. The section 6 ticket boundaries are the decomposition of that one phase, not a parallel track.
-- **§29 preservation (checked).** Every amendment was checked against FOUNDATIONS §29; none trips a hard fail. The amendments sharpen the warnings-vs-blockers distinction (§29.5), preserve deterministic compilation with no LLM intermediary (§29.4), keep the no-accepted-prose-in-prompts rule (§29.1 / §10), preserve the secret firewall (§29.6), and context-gate — rather than drop — physical continuity (§29.7). The one mechanical risk is leaving a stale hard-fail bullet behind; see the explicit removal instruction in section 4.1 and the dual search terms in section 5.1.
+- **Sequencing dependency (resolved — predecessors landed).** These amendments are Phase 7 ("Active docs and user guide") of `IMPLEMENTATION-ORDER.md`, scheduled after the behavioral specs (Draftability/Save → Validation Taxonomy → Readiness/Three-Page UX). All three behavioral specs are now completed and archived under `archive/specs/` (`IMPLEMENTATION-ORDER.md` lines 11–13), so the behavior they describe exists and this doc work is unblocked. The section 6 ticket boundaries are the decomposition of that one phase, not a parallel track. Index-side follow-up (out of scope here): `IMPLEMENTATION-ORDER.md` line 12 still lists the validation-gating spec with a bare path and no "completed and archived" marker, and neither the index nor the regression-plan spec names *this* spec as Phase 7's decomposition — both should be reconciled when the index is next touched.
+- **§29 preservation (checked).** Every amendment was checked against FOUNDATIONS §29; none trips a hard fail. The amendments sharpen the warnings-vs-blockers distinction (§29.5), preserve deterministic compilation with no LLM intermediary (§29.4), keep the no-accepted-prose-in-prompts rule (§29.1 / §10), preserve the secret firewall (§29.6), and context-gate — rather than drop — physical continuity (§29.7). Note: a prior draft of this spec assumed `FOUNDATIONS.md` §11 carried a removable `missing stop guidance;` hard-fail bullet. It does not (verified — zero matches); the blank-stop-guidance over-gating lives only in `story-record-schema.md` §3.8 and the `missing-stop-guidance` validation code in `stress-coverage-matrix.md` Cases 7/26. There is no orphaned constitution bullet to leave behind; see sections 4.2 and 5.1.
 - **Open questions:** none remaining at reassessment time.
+
+## Outcome
+
+Completed on 2026-06-08.
+
+The Phase 7 foundational documentation amendments were implemented through archived tickets `SPECFOUDOCAME-001` through `SPECFOUDOCAME-008`. The active docs now document draft persistence versus readiness, true blockers versus advisory warnings, normalized generation context, blank `soft_unit_guidance`, context-gated current state, optional current cast voice pressure, shared readiness surfaces, author-facing diagnostics, and the updated stress/readiness coverage.
+
+Deviations from original plan: none in scope. During the final consistency gate, two small active-doc consistency fixes were made: one negated warning sentence in `FOUNDATIONS.md` was rephrased to avoid the retired `warnings block` wording, and `prompt-template.md` received a preservation heading for the heading-preservation check.
+
+Verification:
+
+- All eight `SPECFOUDOCAME-*` tickets were completed, archived, and committed individually.
+- The `SPECFOUDOCAME-008` gate verified the retired-phrase sweeps, heading preservation, prompt/template checks, and §29 hard-fail intent preservation.
+- Active-doc references were updated so this completed spec can move to `archive/specs/`.

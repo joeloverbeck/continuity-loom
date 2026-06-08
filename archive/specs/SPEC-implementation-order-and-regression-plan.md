@@ -1,6 +1,6 @@
 # SPEC — Implementation Order and Regression Plan
 
-Status: proposed active implementation spec  
+**Status**: ✅ COMPLETED
 Repository: `joeloverbeck/continuity-loom`  
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
@@ -255,3 +255,19 @@ Run a full demo project path:
 - Preview/Generate are blocked only by true blockers and provider configuration.
 - No implementation introduces branch/beat/act/drama-manager logic.
 - No LLM validation or semantic inference is added.
+
+## Outcome
+
+**Completion date**: 2026-06-08
+
+**What actually changed**: This regression-plan spine governed the sequenced implementation of the three content specs it coordinates. All three have since shipped and are archived:
+
+- `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` (Phases 1–3 data contract)
+- `archive/specs/SPEC-validation-gating-taxonomy-and-focus-matrix.md` (Phases 3–4 validation semantics)
+- `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md` (Phases 5–6 readiness presentation)
+
+The cross-cutting phases also landed: Phase 0 characterization fixtures, Phase 3 shared compiler empty states (single contract-version bump), Phase 7 active-docs/user-guide update, and Phase 8 demo smoke path. The supporting foundational amendments shipped via `archive/specs/SPEC-foundational-doc-amendments-for-generation-readiness.md`.
+
+**Deviations from original plan**: None material. The spec remained a spec-level plan ("no tickets included"); decomposition and execution proceeded through the owning content specs rather than directly from this document.
+
+**Verification results**: Each owning content spec was verified and archived on completion. The final-acceptance checklist invariants (draft/readiness separation, deterministic server-visible `generation_context` default, settled blank `soft_unit_guidance`, no branch/beat/drama-manager logic, no LLM validation) are reflected in the shipped behavior and active docs.
