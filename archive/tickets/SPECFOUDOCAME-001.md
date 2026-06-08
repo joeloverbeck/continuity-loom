@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-001: Amend FOUNDATIONS.md for the draft/readiness split
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/FOUNDATIONS.md` doctrine sections (§3, §4.5, §6.3, §8, §9, §11, §16, §17, §27, §29); no production behavior change.
@@ -102,3 +102,20 @@ Add the blocker taxonomy from spec §3.2 and that readiness diagnostics must be 
 1. `grep -nE "draft|readiness|normalized readiness input|blocker taxonomy" docs/FOUNDATIONS.md` — confirm the added doctrine lands in the intended sections.
 2. `grep -c "^## " docs/FOUNDATIONS.md` — confirm no top-level section was dropped.
 3. Manual review of §29 against §29.1/§29.4/§29.5/§29.6 + §20 — confirm each engaged hard-fail's intent is preserved post-amendment (the correct verification boundary, since intent preservation is not greppable).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/FOUNDATIONS.md` to document the generation-brief draft/readiness split, scope fail-closed behavior to readiness surfaces rather than draft persistence, define normalized readiness input for deterministic compilation, add the readiness blocker taxonomy and no-LLM validation rule, clarify optional stop guidance, context-gated physical detail, and current cast voice pressure optionality, and add readiness checklist doctrine and §29 alignment checks.
+
+Deviations from original plan: none. The existing `missing manual directive` blocker was preserved, and no `missing stop guidance` blocker was introduced.
+
+Verification:
+
+- `grep -nE "draft state|Saving an incomplete generation brief|draft and ready" docs/FOUNDATIONS.md`
+- `grep -nE "Fail closed applies to prompt compilation|normalized readiness input|validation cannot use an LLM" docs/FOUNDATIONS.md`
+- `grep -c "missing stop guidance" docs/FOUNDATIONS.md` returned `0`
+- `grep -c "missing manual directive" docs/FOUNDATIONS.md` returned `1`
+- `grep -c "^## " docs/FOUNDATIONS.md` returned `30`
+- Manual §29 intent review confirmed deterministic compilation, no accepted prose in prompts, the secret firewall, warning/blocker separation, and human gatekeeping remain intact.
