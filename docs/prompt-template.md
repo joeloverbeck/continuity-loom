@@ -108,16 +108,16 @@ Current continuity locks: {current_locks}
 Recent causal context (writer-visible; not automatically POV knowledge):
 {recent_causal_context}
 
-Last visible moment:
+Last visible moment (omit this label and value when empty):
 {last_visible_moment}
 
 Prior accepted prose status / user-authored continuity handoff:
 {prior_accepted_prose_status_or_handoff_note}
 
-Begin prose exactly after this point:
+Begin prose exactly after this point (omit this label and value when empty):
 {begin_after}
 
-For first segments, missing handoff fields render deterministic empty states and do not imply missing required context. For continuations after an accepted segment, the handoff must be user-authored and must not include accepted prose text.
+For first segments, missing `recent_causal_context` renders its deterministic empty state and does not imply missing required context. Missing `last_visible_moment` and `begin_after` omit their labels and values. For continuations after an accepted segment, the handoff must be user-authored and must not include accepted prose text.
 
 Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
 </immediate_handoff>
@@ -126,10 +126,10 @@ Do not include or quote accepted prose. Do not infer canon from archived prose. 
 Must render:
 {manual_must_render}
 
-May render if naturally caused:
+May render if naturally caused (omit this label and value when empty):
 {manual_may_render_if_naturally_caused}
 
-Do not force:
+Do not force (omit this label and value when empty):
 {manual_do_not_force}
 </manual_directive>
 

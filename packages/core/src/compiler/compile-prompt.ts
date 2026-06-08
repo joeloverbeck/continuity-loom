@@ -34,6 +34,35 @@ const currentAuthoritativeStateLines: readonly {
   { label: "Current continuity locks", placeholder: "current_locks" }
 ];
 
+const immediateHandoffBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+  alwaysRender?: boolean;
+}[] = [
+  {
+    label: "Recent causal context (writer-visible; not automatically POV knowledge)",
+    placeholder: "recent_causal_context",
+    alwaysRender: true
+  },
+  { label: "Last visible moment", placeholder: "last_visible_moment" },
+  {
+    label: "Prior accepted prose status / user-authored continuity handoff",
+    placeholder: "prior_accepted_prose_status_or_handoff_note",
+    alwaysRender: true
+  },
+  { label: "Begin prose exactly after this point", placeholder: "begin_after" }
+];
+
+const manualDirectiveBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+  alwaysRender?: boolean;
+}[] = [
+  { label: "Must render", placeholder: "manual_must_render", alwaysRender: true },
+  { label: "May render if naturally caused", placeholder: "manual_may_render_if_naturally_caused" },
+  { label: "Do not force", placeholder: "manual_do_not_force" }
+];
+
 export { SECTION_ORDER };
 
 export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
@@ -67,6 +96,14 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
     return renderCurrentAuthoritativeStateSection(snapshot);
   }
 
+  if (sectionId === "immediate_handoff") {
+    return renderImmediateHandoffSection(snapshot);
+  }
+
+  if (sectionId === "manual_directive") {
+    return renderManualDirectiveSection(snapshot);
+  }
+
   const template = SECTION_TEMPLATES[sectionId];
   return template.replace(placeholderPattern, (_match, placeholder: string) =>
     resolvePlaceholder(placeholder, snapshot)
@@ -79,6 +116,26 @@ function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): s
     .map((line) => `${line.label}: ${resolvePlaceholder(line.placeholder, snapshot)}`);
 
   return `<current_authoritative_state>\n${renderedLines.join("\n")}\n</current_authoritative_state>`;
+}
+
+function renderImmediateHandoffSection(snapshot: ValidationSnapshot): string {
+  const renderedBlocks = immediateHandoffBlocks
+    .filter((block) => block.alwaysRender || hasImmediateHandoffValue(snapshot, block.placeholder))
+    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+  const body = [
+    ...renderedBlocks,
+    "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure."
+  ].join("\n\n");
+
+  return `<immediate_handoff>\n${body}\n</immediate_handoff>`;
+}
+
+function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
+  const renderedBlocks = manualDirectiveBlocks
+    .filter((block) => block.alwaysRender || hasManualDirectiveValue(snapshot, block.placeholder))
+    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+
+  return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
 }
 
 function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {
@@ -107,6 +164,32 @@ function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: Placeho
       return hasValue(state?.consent_or_force_conditions) && state?.consent_or_force_conditions !== "none";
     case "current_locks":
       return hasValue(state?.current_locks);
+    default:
+      return true;
+  }
+}
+
+function hasImmediateHandoffValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {
+  const handoff = snapshot.generationSession.immediate_handoff;
+
+  switch (placeholder) {
+    case "last_visible_moment":
+      return hasValue(handoff?.last_visible_moment);
+    case "begin_after":
+      return hasValue(handoff?.begin_after);
+    default:
+      return true;
+  }
+}
+
+function hasManualDirectiveValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {
+  const directive = snapshot.generationSession.manual_moment_directive;
+
+  switch (placeholder) {
+    case "manual_may_render_if_naturally_caused":
+      return hasValue(directive?.may_render_if_naturally_caused);
+    case "manual_do_not_force":
+      return hasValue(directive?.do_not_force);
     default:
       return true;
   }

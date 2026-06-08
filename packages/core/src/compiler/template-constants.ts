@@ -57,7 +57,10 @@ export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
 
 export type CompositeSectionId = keyof typeof COMPOSITE_SECTION_TEMPLATES;
 
-export type StaticSectionId = Exclude<PromptSectionId, CompositeSectionId | "current_authoritative_state">;
+export type StaticSectionId = Exclude<
+  PromptSectionId,
+  CompositeSectionId | "current_authoritative_state" | "immediate_handoff" | "manual_directive"
+>;
 
 export const SECTION_TEMPLATES: Readonly<Record<StaticSectionId, string>> = Object.freeze({
   role: `<role>
@@ -126,31 +129,6 @@ Special style constraints: {special_style_constraints}
   hard_canon: `<hard_canon>
 {hard_canon_bullets}
 </hard_canon>`,
-  immediate_handoff: `<immediate_handoff>
-Recent causal context (writer-visible; not automatically POV knowledge):
-{recent_causal_context}
-
-Last visible moment:
-{last_visible_moment}
-
-Prior accepted prose status / user-authored continuity handoff:
-{prior_accepted_prose_status_or_handoff_note}
-
-Begin prose exactly after this point:
-{begin_after}
-
-Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
-</immediate_handoff>`,
-  manual_directive: `<manual_directive priority="high">
-Must render:
-{manual_must_render}
-
-May render if naturally caused:
-{manual_may_render_if_naturally_caused}
-
-Do not force:
-{manual_do_not_force}
-</manual_directive>`,
   pov_knowledge_constraints: `<pov_knowledge_constraints>
 POV knows:
 {pov_knows}

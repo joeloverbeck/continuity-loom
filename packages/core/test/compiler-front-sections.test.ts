@@ -294,7 +294,8 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "immediate_handoff")).toContain(
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
-    expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.begin_after);
+    expect(sectionBody(prompt, "immediate_handoff")).not.toContain(EMPTY_STATE_CONSTANTS.begin_after);
+    expect(sectionBody(prompt, "manual_directive")).toContain(EMPTY_STATE_CONSTANTS.manual_must_render);
     expect(sectionBody(prompt, "stop_rule")).toContain(EMPTY_STATE_CONSTANTS.soft_unit_guidance);
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
@@ -507,6 +508,67 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(empty, "immediate_handoff")).toContain(
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
+  });
+
+  it("omits empty optional handoff and directive blocks while keeping load-bearing defaults", () => {
+    const input = populatedInput();
+    input.generationSession.immediate_handoff = {
+      recent_causal_context: "",
+      last_visible_moment: "",
+      prior_accepted_prose_status_or_handoff_note: "none",
+      begin_after: ""
+    };
+    input.generationSession.manual_moment_directive = {
+      must_render: [],
+      may_render_if_naturally_caused: [],
+      do_not_force: []
+    };
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const handoff = sectionBody(prompt, "immediate_handoff");
+    const directive = sectionBody(prompt, "manual_directive");
+
+    expect(handoff).toContain(`Recent causal context (writer-visible; not automatically POV knowledge):\n${EMPTY_STATE_CONSTANTS.recent_causal_context}`);
+    expect(handoff).toContain(
+      `Prior accepted prose status / user-authored continuity handoff:\n${EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note}`
+    );
+    expect(handoff).toContain(
+      "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context."
+    );
+    expect(handoff).not.toContain("Last visible moment:");
+    expect(handoff).not.toContain("Begin prose exactly after this point:");
+    expect(directive).toContain(`Must render:\n${EMPTY_STATE_CONSTANTS.manual_must_render}`);
+    expect(directive).not.toContain("May render if naturally caused:");
+    expect(directive).not.toContain("Do not force:");
+    expect(prompt).toContain('<manual_directive priority="high">');
+  });
+
+  it("renders optional handoff and directive blocks only while their values are populated", () => {
+    const input = populatedInput();
+    input.generationSession.immediate_handoff!.last_visible_moment = "Mara's hand vanished into her sleeve.";
+    input.generationSession.immediate_handoff!.begin_after = "";
+    input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = ["Mara changes the subject."];
+    input.generationSession.manual_moment_directive!.do_not_force = [];
+
+    const populatedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(populatedPrompt, "immediate_handoff")).toContain(
+      "Last visible moment:\nMara's hand vanished into her sleeve."
+    );
+    expect(sectionBody(populatedPrompt, "immediate_handoff")).not.toContain(
+      "Begin prose exactly after this point:"
+    );
+    expect(sectionBody(populatedPrompt, "manual_directive")).toContain(
+      "May render if naturally caused:\nMara changes the subject."
+    );
+    expect(sectionBody(populatedPrompt, "manual_directive")).not.toContain("Do not force:");
+
+    input.generationSession.immediate_handoff!.last_visible_moment = "";
+    input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = [];
+    const clearedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(clearedPrompt, "immediate_handoff")).not.toContain("Last visible moment:");
+    expect(sectionBody(clearedPrompt, "manual_directive")).not.toContain("May render if naturally caused:");
   });
 
   it("renders deterministic front-section output for identical snapshots", () => {
