@@ -161,12 +161,16 @@ export function getEditorFormSchema(recordType: string): z.ZodType | undefined {
 }
 
 export function deriveDisplayLabel(recordType: string, payload: unknown): string {
+  return truncateLabel(deriveFullDisplayLabel(recordType, payload));
+}
+
+export function deriveFullDisplayLabel(recordType: string, payload: unknown): string {
   const label = labelFieldsByType[recordType]
     ?.map((path) => valueAtPath(payload, path))
     .find((value): value is string => typeof value === "string" && value.trim().length > 0);
 
   if (label) {
-    return truncateLabel(label);
+    return normalizeLabel(label);
   }
 
   return titleCase(recordType);
@@ -437,8 +441,12 @@ function valueAtPath(value: unknown, path: string): unknown {
 }
 
 function truncateLabel(label: string): string {
-  const trimmed = label.trim().replace(/\s+/g, " ");
+  const trimmed = normalizeLabel(label);
   return trimmed.length <= 80 ? trimmed : `${trimmed.slice(0, 77)}...`;
+}
+
+function normalizeLabel(label: string): string {
+  return label.trim().replace(/\s+/g, " ");
 }
 
 function titleCase(recordType: string): string {

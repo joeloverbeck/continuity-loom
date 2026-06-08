@@ -17,6 +17,12 @@ const relationshipId = "019b0298-5c00-7000-8000-000000000107";
 const emotionId = "019b0298-5c00-7000-8000-000000000108";
 const locationId = "019b0298-5c00-7000-8000-000000000109";
 const affordanceId = "019b0298-5c00-7000-8000-000000000110";
+const longObligationTerms =
+  "Do not abandon the apprentice while the archive stair is flooding and every witness expects a public explanation before the bell stops.";
+const longConsequenceEffect =
+  "The office is under inspection by a hostile clerk who keeps asking exactly which ledger moved and why the seal looks warmed.";
+const longPlanObjective =
+  "Get the ledger out of the archive by sending the guard toward the rain door before the apprentice notices the missing seal.";
 
 function pressureRecords(): ValidationRecord[] {
   return [
@@ -137,6 +143,50 @@ function pressureRecords(): ValidationRecord[] {
   ];
 }
 
+function longLabelPressureRecords(): ValidationRecord[] {
+  return [
+    {
+      id: planId,
+      type: "PLAN",
+      metadata: metadata(planId, `${longPlanObjective.slice(0, 77)}...`),
+      payload: {
+        plan_status: "active",
+        objective: longPlanObjective,
+        current_step: "Distract the guard at the side door.",
+        resources: ["lamp", "rain noise"],
+        blockers: ["guard is suspicious"],
+        visibility_to_pov: "visible"
+      }
+    },
+    {
+      id: obligationId,
+      type: "OBLIGATION",
+      metadata: metadata(obligationId, `${longObligationTerms.slice(0, 77)}...`),
+      payload: {
+        status: "open",
+        owed_by: ["019b0298-5c00-7000-8000-000000000202"],
+        owed_to: "self",
+        urgency: "critical",
+        terms: longObligationTerms,
+        consequence_if_broken: "Trust collapses."
+      }
+    },
+    {
+      id: consequenceId,
+      type: "CONSEQUENCE",
+      metadata: metadata(consequenceId, `${longConsequenceEffect.slice(0, 77)}...`),
+      payload: {
+        status: "active",
+        holder_or_target: "public",
+        cause: "The missing ledger.",
+        urgency: "critical",
+        current_effect: longConsequenceEffect,
+        possible_next_effect: "The side door may be watched."
+      }
+    }
+  ];
+}
+
 function populatedInput(records = pressureRecords()): BuildValidationSnapshotInput {
   return {
     records,
@@ -238,8 +288,8 @@ describe("compiler pressure-section resolvers", () => {
 
     expect(reversed).toBe(forward);
     expect(plans.indexOf("Keep the guard calm.")).toBeLessThan(plans.indexOf("Get the ledger out of the archive."));
-    expect(sectionBody(forward, "active_working_set").indexOf("Clock A")).toBeLessThan(
-      sectionBody(forward, "active_working_set").indexOf("Plan B")
+    expect(sectionBody(forward, "active_working_set").indexOf("Guard return")).toBeLessThan(
+      sectionBody(forward, "active_working_set").indexOf("Get the ledger out of the archive.")
     );
   });
 
@@ -254,5 +304,18 @@ describe("compiler pressure-section resolvers", () => {
     ].map((section) => sectionBody(prompt, section).toLowerCase());
 
     expect(pressureSections.join("\n")).not.toMatch(/\b(act structure|beat|arc|chapter)\b/);
+  });
+
+  it("renders long pressure labels fully without editor truncation markers", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(longLabelPressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+    const obligations = sectionBody(prompt, "active_obligations_and_consequences");
+
+    expect(activeWorkingSet).toContain(longPlanObjective);
+    expect(obligations).toContain(longObligationTerms);
+    expect(obligations).toContain(longConsequenceEffect);
+    expect(activeWorkingSet).not.toContain(`${longPlanObjective.slice(0, 77)}...`);
+    expect(obligations).not.toContain(`${longObligationTerms.slice(0, 77)}...`);
+    expect(obligations).not.toContain(`${longConsequenceEffect.slice(0, 77)}...`);
   });
 });

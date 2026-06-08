@@ -1,13 +1,8 @@
 import type { ValidationRecord, ValidationSnapshot } from "../validation/snapshot.js";
+import { deriveFullDisplayLabel } from "../records/editor-descriptors.js";
 
 export function displayLabel(record: ValidationRecord): string {
-  const promptLabel = promptFacingLabel(record);
-  if (promptLabel) {
-    return promptLabel;
-  }
-
-  const fixtureLabel = (record as ValidationRecord & { displayLabel?: unknown }).displayLabel;
-  return record.metadata?.displayLabel || asString(fixtureLabel) || record.id;
+  return deriveFullDisplayLabel(record.type, record.payload);
 }
 
 export function resolveRecordLabel(snapshot: ValidationSnapshot, value: unknown): string {
@@ -22,20 +17,4 @@ export function resolveRecordLabel(snapshot: ValidationSnapshot, value: unknown)
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function promptFacingLabel(record: ValidationRecord): string {
-  const payload = record.payload && typeof record.payload === "object"
-    ? (record.payload as Record<string, unknown>)
-    : {};
-
-  if (record.type === "ENTITY") {
-    return asString(payload.display_name);
-  }
-
-  if (record.type === "LOCATION" || record.type === "OBJECT" || record.type === "VISIBLE AFFORDANCE") {
-    return asString(payload.label);
-  }
-
-  return "";
 }

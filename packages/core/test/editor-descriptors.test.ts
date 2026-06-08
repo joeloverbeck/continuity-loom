@@ -3,6 +3,7 @@ import type { z } from "zod";
 
 import {
   deriveDisplayLabel,
+  deriveFullDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
   getEditorFormSchema,
@@ -207,6 +208,14 @@ describe("record editor descriptors", () => {
       "A very old promise controls the west gate."
     );
     expect(deriveDisplayLabel("UNKNOWN", {})).toBe("Unknown");
+  });
+
+  it("keeps editor labels truncated while exposing full labels for compiler use", () => {
+    const longTerms =
+      "Do not abandon the apprentice while the archive stair is flooding and every witness expects a public explanation before the bell stops.";
+
+    expect(deriveDisplayLabel("OBLIGATION", { terms: longTerms })).toBe(`${longTerms.slice(0, 77)}...`);
+    expect(deriveFullDisplayLabel("OBLIGATION", { terms: longTerms })).toBe(longTerms);
   });
 
   it("returns eligible reference targets by role in stable order", () => {

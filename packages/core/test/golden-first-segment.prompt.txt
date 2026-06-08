@@ -197,30 +197,30 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 
 <active_working_set>
 Action pressure:
-- 019b0298-5c00-7000-8000-013000000021; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- 019b0298-5c00-7000-8000-013000000022; He presses for truth without grabbing the hidden object.
-- 019b0298-5c00-7000-8000-013000000023; The scene may hint at the ledger without naming the culprit or page.
-- 019b0298-5c00-7000-8000-013000000013; Either onstage character can pause near the latch to check whether someone is coming.
+- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
+- Missing ledger page; The scene may hint at the ledger without naming the culprit or page.
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Knowledge pressure:
-- 019b0298-5c00-7000-8000-013000000007; The sealed letter says a market ledger page was replaced before Orin's audit.
-- 019b0298-5c00-7000-8000-013000000014; high
-- 019b0298-5c00-7000-8000-013000000015; critical
-- 019b0298-5c00-7000-8000-013000000016; Niko will be safer if he knows a letter exists but not what it says.
-- 019b0298-5c00-7000-8000-013000000017; Elin hid something connected to the audit, but he does not know it is a letter.
+- The sealed letter says a market ledger page was replaced before Orin's audit.; The sealed letter says a market ledger page was replaced before Orin's audit.
+- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; high
+- Niko followed flour smears to the cellar after seeing Elin close the shop early.; critical
+- Niko will be safer if he knows a letter exists but not what it says.; Niko will be safer if he knows a letter exists but not what it says.
+- Elin hid something connected to the audit, but he does not know it is a letter.; Elin hid something connected to the audit, but he does not know it is a letter.
 
 Relationship and emotion pressure:
-- 019b0298-5c00-7000-8000-013000000018; She keeps one hand near the lantern shutter and answers too precisely.
-- 019b0298-5c00-7000-8000-013000000019; He jokes once, then watches Elin's hands instead of her face.
-- 019b0298-5c00-7000-8000-013000000020; Their affection makes every evasion feel personal.
+- Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
+- Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
+- They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.
 
 Material pressure:
-- 019b0298-5c00-7000-8000-013000000008; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.
-- 019b0298-5c00-7000-8000-013000000009; A small tin lantern with a thumb shutter that narrows the light.
-- 019b0298-5c00-7000-8000-013000000010; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
-- 019b0298-5c00-7000-8000-013000000011; An old iron latch at the stair door, sticky enough to announce anyone entering.
-- 019b0298-5c00-7000-8000-013000000012; The stair door is behind Niko; the flour bin is against the far wall near Elin.
-- 019b0298-5c00-7000-8000-013000000013; Either onstage character can pause near the latch to check whether someone is coming.
+- sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.
+- shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
+- Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Voice pressure:
 - Elin narrates through practical details and controlled evasions.

@@ -62,6 +62,7 @@ export { entitySchema, entityStatusSchema } from "./records/entity.js";
 export {
   describeSchemaFields,
   deriveDisplayLabel,
+  deriveFullDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
   getEditorFormSchema,
