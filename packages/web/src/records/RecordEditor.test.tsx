@@ -446,6 +446,33 @@ describe("RecordEditor", () => {
     });
   });
 
+  it("stores EVENT known_by as specific entity ids", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="EVENT" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.change(screen.getByLabelText(/^known_by mode/), {
+      target: { value: "specific_entities" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add known_by" }));
+
+    const picker = screen.getByLabelText<HTMLSelectElement>(/^known_by 1/);
+    expect(picker.tagName).toBe("SELECT");
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(picker).queryByRole("option", { name: "Vault" })).toBeNull();
+
+    fireEvent.change(picker, { target: { value: idA } });
+    fireEvent.change(screen.getByLabelText(/^description/), {
+      target: { value: "Aster notices the vault door opening." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      known_by: [idA]
+    });
+  });
+
   it("stores specific SECRET protected non-holders as selected entity ids", async () => {
     const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
 

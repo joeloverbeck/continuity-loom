@@ -388,17 +388,24 @@ function isReferenceSchema(schema: z.ZodType, name: string): boolean {
 }
 
 function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean {
-  if (roleForField(name) !== "non_holder_to_protect" || schemaType(schema) !== "union") {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
     return false;
   }
 
   const options = unionOptions(schema);
-  const hasReferenceArray = options.some(
-    (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
-  );
   const hasSentinels = enumValuesForSchema(schema).length > 0;
+  if (!hasSentinels) {
+    return false;
+  }
 
-  return hasReferenceArray && hasSentinels;
+  const nonSentinelArms = options.filter((option) => enumValuesForSchema(option).length === 0);
+
+  return (
+    nonSentinelArms.length > 0 &&
+    nonSentinelArms.every(
+      (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
+    )
+  );
 }
 
 function isRecordLinkListSchema(schema: z.ZodType, name: string): boolean {
