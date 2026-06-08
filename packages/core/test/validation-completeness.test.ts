@@ -247,7 +247,12 @@ describe("universal completeness validation", () => {
 
   it("does not throw when generation context is absent from validation focus tags", () => {
     const input = cleanInput();
-    delete input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context;
+    input.generationSession.generation_validation_focus = ({
+      validation_focus_tags: {
+        expected_local_modes: [],
+        possible_durable_changes: []
+      }
+    } as unknown) as BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"];
 
     expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
   });

@@ -107,6 +107,15 @@ const COPY_TABLE: Readonly<Record<string, DiagnosticCopy>> = Object.freeze({
     fastestFix: "Add the last visible moment and the begin-after point in record terms, not pasted prose.",
     whenItBecomesBlocking: "Blocks only when generation context is continuation_after_accepted_segment."
   },
+  [DIAGNOSTIC_CODES.missingCurrentAuthoritativeState]: {
+    code: "missing-current-state",
+    title: "Complete the current state",
+    group: "required-before-prompt-generation",
+    summary: "Current authoritative state is missing required launch context.",
+    whyItMatters: "The prompt needs deterministic current time, location, onstage entities, and immediate situation before it can generate local prose.",
+    fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary.",
+    whenItBecomesBlocking: "Always blocks Preview and Generate until all required current-state fields are supplied."
+  },
   [DIAGNOSTIC_CODES.localProseScopeViolation]: {
     code: "stop-guidance-nonlocal",
     title: "Keep stop guidance local",
@@ -235,7 +244,7 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
     code: copy.code,
     title: copy.title,
     group: copy.group,
-    summary: copy.summary,
+    summary: diagnostic.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState ? diagnostic.message : copy.summary,
     whyItMatters: copy.whyItMatters,
     fastestFix: copy.fastestFix,
     ...(copy.whenItBecomesBlocking ? { whenItBecomesBlocking: copy.whenItBecomesBlocking } : {}),

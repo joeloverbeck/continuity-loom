@@ -66,6 +66,27 @@ describe("deriveReadiness", () => {
     expect(readiness.canGenerate).toBe(false);
   });
 
+  it("uses current-state blocker copy while preserving the dynamic missing-field summary", () => {
+    const validation = validationResult({
+      blockers: [
+        {
+          ...diagnostic("blocker", DIAGNOSTIC_CODES.missingCurrentAuthoritativeState, "generationSession.current_authoritative_state"),
+          message: "Current authoritative state is missing: current location, onstage entities, immediate situation summary."
+        }
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers[0]).toMatchObject({
+      code: "missing-current-state",
+      title: "Complete the current state",
+      group: "required-before-prompt-generation",
+      summary: "Current authoritative state is missing: current location, onstage entities, immediate situation summary.",
+      fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary."
+    });
+  });
+
   it("uses provider configuration only for generate gating", () => {
     const readiness = deriveReadiness(validationResult({}), { configured: false }, { hasUnsavedChanges: false }, new Map());
 

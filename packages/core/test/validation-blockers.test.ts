@@ -44,7 +44,12 @@ describe("universal blocker validation", () => {
 
   it("does not throw when generation context is absent from validation focus tags", () => {
     const input = cleanInput();
-    delete input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context;
+    input.generationSession.generation_validation_focus = ({
+      validation_focus_tags: {
+        expected_local_modes: [],
+        possible_durable_changes: []
+      }
+    } as unknown) as BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"];
 
     expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
   });
@@ -231,10 +236,39 @@ describe("universal blocker validation", () => {
 
   it("does not block first-segment handoff when the prior-prose note is absent", () => {
     const input = cleanInput();
-    delete input.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note;
+    input.generationSession.immediate_handoff = {
+      recent_causal_context: "A arrived with the key.",
+      last_visible_moment: "B noticed the key.",
+      begin_after: "B noticing the key."
+    } as BuildValidationSnapshotInput["generationSession"]["immediate_handoff"];
 
     expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
+  });
+
+  it("names the missing current-state fields in the universal blocker", () => {
+    const input = cleanInput();
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      current_time: "Night.",
+      current_location: "",
+      onstage_entities: [],
+      immediate_situation_summary: ""
+    };
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find(
+      (item) => item.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState
+    );
+
+    expect(diagnostic?.message).toBe(
+      "Current authoritative state is missing: current location, onstage entities, immediate situation summary."
+    );
+  });
+
+  it("does not emit the current-state blocker when all current-state required fields are present", () => {
+    const input = cleanInput();
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.missingCurrentAuthoritativeState);
   });
 
   it("blocks contaminated continuation handoff", () => {

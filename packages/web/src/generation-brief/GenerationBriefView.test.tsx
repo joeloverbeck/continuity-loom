@@ -58,12 +58,17 @@ function renderView(): void {
 
 describe("GenerationBriefView", () => {
   it("edits all eight surfaces and persists them through the brief client", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
         "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
       }
+    });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
     });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -75,10 +80,21 @@ describe("GenerationBriefView", () => {
     expect(screen.getByRole("button", { name: "Help for must_render" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for generation_context" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for soft_unit_guidance" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for current_location" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for onstage_entities" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for immediate_situation_summary" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Omniscient" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^selected_pov/), { target: { value: "omniscient" } });
     fireEvent.change(screen.getByLabelText(/^current_time/), { target: { value: "midnight" } });
+    fireEvent.change(screen.getByLabelText(/^current_location/), { target: { value: "loading dock" } });
+    const onstageEntities = screen.getByLabelText(/^onstage_entities/);
+    const jonOption = within(onstageEntities).getByRole<HTMLOptionElement>("option", { name: "Jon Ureña" });
+    jonOption.selected = true;
+    fireEvent.change(onstageEntities);
+    fireEvent.change(screen.getByLabelText(/^immediate_situation_summary/), {
+      target: { value: "Jon is at the loading dock with the door half open." }
+    });
     fireEvent.change(screen.getByLabelText(/^recent_causal_context/), { target: { value: "A reached the gate." } });
     fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
     fireEvent.change(screen.getByLabelText(/^must_render/), { target: { value: "The lock opens." } });
@@ -104,7 +120,12 @@ describe("GenerationBriefView", () => {
     ].sort());
     expect(payload).toMatchObject({
       active_working_set: { selected_pov: "omniscient" },
-      current_authoritative_state: { current_time: "midnight" },
+      current_authoritative_state: {
+        current_time: "midnight",
+        current_location: "loading dock",
+        onstage_entities: [jonId],
+        immediate_situation_summary: "Jon is at the loading dock with the door half open."
+      },
       immediate_handoff: { recent_causal_context: "A reached the gate." },
       manual_moment_directive: { must_render: ["The lock opens."] },
       current_cast_voice_pressure: [{ local_function: "present_minor_speaker", current_voice_pressure: "clipped and wary" }],

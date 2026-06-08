@@ -201,6 +201,27 @@ export function GenerationBriefView(): React.JSX.Element {
     updateSurface("active_working_set", { ...activeWorkingSet, ...value });
   }
 
+  function updateCurrentAuthoritativeState(value: Partial<NonNullable<GenerationSession["current_authoritative_state"]>>): void {
+    updateSurface("current_authoritative_state", {
+      current_time: session.current_authoritative_state?.current_time ?? "",
+      current_location: session.current_authoritative_state?.current_location ?? "",
+      onstage_entities: session.current_authoritative_state?.onstage_entities ?? [],
+      immediate_situation_summary: session.current_authoritative_state?.immediate_situation_summary ?? "",
+      offstage_pressuring_entities: session.current_authoritative_state?.offstage_pressuring_entities ?? [],
+      positions: session.current_authoritative_state?.positions ?? "",
+      possessions: session.current_authoritative_state?.possessions ?? "",
+      visible_conditions: session.current_authoritative_state?.visible_conditions ?? [],
+      environmental_conditions: session.current_authoritative_state?.environmental_conditions ?? "",
+      entity_statuses: session.current_authoritative_state?.entity_statuses ?? "",
+      line_of_sight_and_visibility: session.current_authoritative_state?.line_of_sight_and_visibility ?? "",
+      routes_and_exits: session.current_authoritative_state?.routes_and_exits ?? [],
+      available_time: session.current_authoritative_state?.available_time ?? "",
+      consent_or_force_conditions: session.current_authoritative_state?.consent_or_force_conditions ?? "none",
+      current_locks: session.current_authoritative_state?.current_locks ?? [],
+      ...value
+    });
+  }
+
   async function save(): Promise<void> {
     setNotice(null);
     setShapeIssues([]);
@@ -288,34 +309,60 @@ export function GenerationBriefView(): React.JSX.Element {
           <BriefFieldHelp path="active_working_set.selected_pov" label="selected_pov" />
         </section>
 
-        <section className="configPanel" aria-labelledby="current-state-brief">
+        <section
+          className="configPanel"
+          aria-labelledby="current-state-brief"
+          data-field="generationSession.current_authoritative_state"
+        >
           <h3 id="current-state-brief">CURRENT AUTHORITATIVE STATE</h3>
           <label>
             current_time
             <input
               name="generationSession.current_authoritative_state.current_time"
               value={session.current_authoritative_state?.current_time ?? ""}
-              onChange={(event) =>
-                updateSurface("current_authoritative_state", {
-                  current_time: event.target.value,
-                  current_location: session.current_authoritative_state?.current_location ?? "",
-                  onstage_entities: session.current_authoritative_state?.onstage_entities ?? [],
-                  offstage_pressuring_entities: session.current_authoritative_state?.offstage_pressuring_entities ?? [],
-                  positions: session.current_authoritative_state?.positions ?? "",
-                  possessions: session.current_authoritative_state?.possessions ?? "",
-                  visible_conditions: session.current_authoritative_state?.visible_conditions ?? [],
-                  environmental_conditions: session.current_authoritative_state?.environmental_conditions ?? "",
-                  entity_statuses: session.current_authoritative_state?.entity_statuses ?? "",
-                  line_of_sight_and_visibility: session.current_authoritative_state?.line_of_sight_and_visibility ?? "",
-                  routes_and_exits: session.current_authoritative_state?.routes_and_exits ?? [],
-                  available_time: session.current_authoritative_state?.available_time ?? "",
-                  consent_or_force_conditions: session.current_authoritative_state?.consent_or_force_conditions ?? "none",
-                  current_locks: session.current_authoritative_state?.current_locks ?? []
-                })
-              }
+              onChange={(event) => updateCurrentAuthoritativeState({ current_time: event.target.value })}
             />
           </label>
           <BriefFieldHelp path="current_authoritative_state.current_time" label="current_time" />
+          <label>
+            current_location
+            <input
+              name="generationSession.current_authoritative_state.current_location"
+              value={session.current_authoritative_state?.current_location ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ current_location: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.current_location" label="current_location" />
+          <label>
+            onstage_entities
+            <select
+              multiple
+              name="generationSession.current_authoritative_state.onstage_entities"
+              value={session.current_authoritative_state?.onstage_entities ?? []}
+              onChange={(event) =>
+                updateCurrentAuthoritativeState({
+                  onstage_entities: Array.from(event.currentTarget.selectedOptions, (option) => option.value)
+                })
+              }
+            >
+              {povEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              ))}
+            </select>
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.onstage_entities[]" label="onstage_entities" />
+          <label>
+            immediate_situation_summary
+            <textarea
+              name="generationSession.current_authoritative_state.immediate_situation_summary"
+              value={session.current_authoritative_state?.immediate_situation_summary ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ immediate_situation_summary: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.immediate_situation_summary"
+            label="immediate_situation_summary"
+          />
         </section>
 
         <section className="configPanel" aria-labelledby="handoff-brief">
