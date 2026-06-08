@@ -61,7 +61,7 @@ Continuity philosophy: continuity-first; no branches; no dramatic act structure.
 </story_contract>
 
 <prose_mode>
-POV: 019b0298-5c00-7000-8000-013000000001
+POV: Elin Vale
 Person: third
 Tense: past
 Psychic distance: close

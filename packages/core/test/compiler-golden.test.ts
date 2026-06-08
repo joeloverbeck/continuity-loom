@@ -136,7 +136,7 @@ function goldenInput(): BuildValidationSnapshotInput {
         special_style_constraints: []
       }
     },
-    versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
+    versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
   };
 }
 
@@ -154,7 +154,7 @@ describe("compiler golden prompt", () => {
       records: demoRecords,
       generationSession: demoGenerationSession,
       storyConfig: demoStoryConfig,
-      versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
+      versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
     });
     const result = compilePrompt(snapshot);
     const frozenGolden = readFileSync(new URL("./golden-first-segment.prompt.txt", import.meta.url), "utf8");
@@ -173,8 +173,9 @@ describe("compiler golden prompt", () => {
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(first.prompt).toContain("Golden Archive");
     expect(first.prompt).toContain("Mara guards the archive.");
+    expect(first.prompt).toContain("POV: Mara");
     expect(first.prompt).toContain("The archive key is unique.");
     expect(first.prompt).toContain("The archive key cannot duplicate itself.");
-    expect(first.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" });
   });
 });

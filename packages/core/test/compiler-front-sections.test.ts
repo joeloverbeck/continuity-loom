@@ -17,6 +17,18 @@ function populatedInput(): BuildValidationSnapshotInput {
   return {
     records: [
       {
+        id: povId,
+        type: "ENTITY",
+        metadata: metadata(povId, "Jon Vale"),
+        payload: {
+          id: povId,
+          display_name: "Jon Vale",
+          status: "active",
+          entity_kind: "person",
+          canonical_summary: "Jon watches the archive door."
+        }
+      },
+      {
         id: factId,
         type: "FACT",
         payload: {
@@ -58,7 +70,7 @@ function populatedInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [factId, beliefId, secretId],
+        selected_records: [povId, factId, beliefId, secretId],
         active_onstage_cast_full: [],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],
@@ -168,7 +180,9 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "content_policy")).toContain("RATING: Mature");
     expect(sectionBody(prompt, "story_contract")).toContain("Title: Rain Archive");
     expect(sectionBody(prompt, "story_contract")).toContain("Tone: tense\nintimate");
-    expect(sectionBody(prompt, "prose_mode")).toContain(`POV: ${povId}`);
+    const proseMode = sectionBody(prompt, "prose_mode");
+    expect(proseMode).toContain("POV: Jon Vale");
+    expect(proseMode).not.toContain(povId);
     expect(sectionBody(prompt, "hard_canon")).toContain("- The tower bell never rings after midnight.");
     expect(sectionBody(prompt, "current_authoritative_state")).toContain("After midnight.");
     expect(sectionBody(prompt, "current_authoritative_state")).toContain("Mara is beside the desk.\nJon is at the door.");
@@ -198,8 +212,30 @@ describe("compiler front-section resolvers", () => {
   });
 
   it("records the deliberate compiler and contract version bump", () => {
-    expect(versionInfo.compiler.version).toBe("1.1.0");
-    expect(versionInfo.contract.version).toBe("1.1.0");
+    expect(versionInfo.compiler.version).toBe("1.2.0");
+    expect(versionInfo.contract.version).toBe("1.2.0");
+  });
+
+  it("renders literal POV modes without record lookup", () => {
+    for (const literal of ["omniscient", "variable"] as const) {
+      const input = populatedInput();
+      input.storyConfig.proseMode!.pov_character = literal;
+
+      const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+      expect(sectionBody(prompt, "prose_mode")).toContain(`POV: ${literal}`);
+    }
+  });
+
+  it("falls back to the raw POV id when the referenced record is not selected", () => {
+    const input = populatedInput();
+    input.records = input.records.filter((record) => record.id !== povId);
+    input.generationSession.active_working_set!.selected_records =
+      input.generationSession.active_working_set!.selected_records.filter((recordId) => recordId !== povId);
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "prose_mode")).toContain(`POV: ${povId}`);
   });
 
   it("keeps writer-visible secrets out of POV knowledge while preserving protection lanes", () => {
@@ -237,3 +273,14 @@ describe("compiler front-section resolvers", () => {
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
   });
 });
+
+function metadata(id: string, displayLabel: string) {
+  return {
+    id,
+    type: "test",
+    displayLabel,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z",
+    archived: false
+  };
+}

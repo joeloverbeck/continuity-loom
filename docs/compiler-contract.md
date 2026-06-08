@@ -92,7 +92,8 @@ Requiredness terms:
 | `{title}` | STORY CONTRACT.title | Yes | Block | N/A | Stable story identity. |
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
-| `{pov_character}`, `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Non-omniscient POV requires knowledge profile. |
+| `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank; unresolved selected-record lookup falls back to raw id until the POV selection warning is surfaced | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity not present in selected records renders as raw id and should warn. |
+| `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
 | `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
 | `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
 | `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |
@@ -266,6 +267,8 @@ Validation-only by default:
 - record IDs unless deliberately exposed for debugging outside the generated prompt;
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
+
+The `{pov_character}` placeholder is the one prompt-facing id-derived value: entity ids are resolved to a selected record's human display label before rendering, while `omniscient` and `variable` render as literals. A raw id in this line means the referenced POV record was not available in the selected snapshot.
 
 Prompt-facing when selected or compiled:
 
