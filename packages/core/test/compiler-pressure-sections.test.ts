@@ -261,6 +261,54 @@ function absentReferenceRecords(): ValidationRecord[] {
   });
 }
 
+function knowledgePressureRecords(): ValidationRecord[] {
+  return [
+    {
+      id: "019b0298-5c00-7000-8000-000000000301",
+      type: "SECRET",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000301", "Secret A"),
+      payload: {
+        secret_claim: "The archive key was copied before dawn."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000302",
+      type: "BELIEF",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000302", "Belief A"),
+      payload: {
+        claim: "Mara believes the guard will return through the rain door."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000303",
+      type: "FACT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000303", "Fact A"),
+      payload: {
+        statement: "The stair bell rings before the upper door opens."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000304",
+      type: "EVENT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000304", "Event A"),
+      payload: {
+        description: "Niko saw Mara hide the ledger under the oilcloth.",
+        current_relevance: "critical"
+      }
+    },
+    {
+      id: intentionId,
+      type: "INTENTION",
+      metadata: metadata(intentionId, "Intent A"),
+      payload: {
+        status: "active",
+        intent: "Keep the guard calm.",
+        behavioral_pressure: "Speak softly and keep moving."
+      }
+    }
+  ];
+}
+
 function populatedInput(records = pressureRecords()): BuildValidationSnapshotInput {
   return {
     records,
@@ -368,6 +416,40 @@ describe("compiler pressure-section resolvers", () => {
     expect(sectionBody(populated, "active_obligations_and_consequences")).toContain("cause: The missing ledger.");
     expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain(`owed by: ${absentReferenceId}`);
     expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain("owed to: institution");
+  });
+
+  it("deduplicates knowledge-pressure labels that match projected text", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(knowledgePressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- The archive key was copied before dawn.");
+    expect(activeWorkingSet).toContain("- Mara believes the guard will return through the rain door.");
+    expect(activeWorkingSet).toContain("- The stair bell rings before the upper door opens.");
+    expect(activeWorkingSet).not.toContain(
+      "- The archive key was copied before dawn.; The archive key was copied before dawn."
+    );
+    expect(activeWorkingSet).not.toContain(
+      "- Mara believes the guard will return through the rain door.; Mara believes the guard will return through the rain door."
+    );
+    expect(activeWorkingSet).not.toContain(
+      "- The stair bell rings before the upper door opens.; The stair bell rings before the upper door opens."
+    );
+  });
+
+  it("renders event knowledge pressure without a relevance-enum tail", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(knowledgePressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- Niko saw Mara hide the ledger under the oilcloth.");
+    expect(activeWorkingSet).not.toContain("- Niko saw Mara hide the ledger under the oilcloth.; critical");
+  });
+
+  it("preserves distinct compact pressure-summary parts", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(knowledgePressureRecords()))).prompt;
+
+    expect(sectionBody(prompt, "active_working_set")).toContain(
+      "- Keep the guard calm.; Speak softly and keep moving."
+    );
   });
 
   it("renders exact empty-state constants when pressure sources are absent", () => {

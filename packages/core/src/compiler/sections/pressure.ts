@@ -20,7 +20,7 @@ const pressureResolvers: ResolverMap = {
     pressureFromRecords(
       snapshot,
       ["SECRET", "BELIEF", "FACT", "EVENT"],
-      (record, payload) => firstText(payload, ["secret_claim", "claim", "statement", "current_relevance", "description"]),
+      (record, payload) => firstText(payload, ["secret_claim", "claim", "statement", "description"]),
       "active_knowledge_pressure"
     ),
   relationship_emotion_pressure: (snapshot) =>
@@ -133,7 +133,7 @@ function pressureFromRecords(
     snapshot,
     types,
     () => true,
-    (payload, record) => compactParts([displayLabel(record), project(record, payload)])
+    (payload, record) => compactSummaryLine(displayLabel(record), project(record, payload))
   ) || EMPTY_STATE_CONSTANTS[placeholder];
 }
 
@@ -188,6 +188,10 @@ function labelReference(snapshot: ValidationSnapshot, value: unknown): string {
 
 function compactParts(parts: readonly string[]): string {
   return parts.filter(Boolean).join("; ");
+}
+
+function compactSummaryLine(label: string, projectedText: string): string {
+  return compactParts(label === projectedText ? [label] : [label, projectedText]);
 }
 
 function labelValue(label: string, value: unknown): string {
