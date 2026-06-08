@@ -7,6 +7,8 @@ Status: corrected implementation baseline
 
 ---
 
+## Template
+
 ```md
 # Generated Prose Prompt
 

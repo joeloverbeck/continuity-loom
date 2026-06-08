@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-008: Documentation acceptance & cross-doc consistency gate
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — documentation acceptance/consistency verification runbook (no new files); no production behavior change.
@@ -91,3 +91,19 @@ This is a verification-only ticket — it modifies no doc. Implementer runbook:
 1. `grep -rnE "stop guidance is required|Blocks generation if blank|current cast voice pressure is required|warnings block|quality gap blocks" docs/` — the §5 retired-phrasing sweep; must return no active-doctrine hits (only reclassified/historical references).
 2. `grep -rnE "draft|readiness|generation_context|universal floor|warnings (do not|never) block" docs/` — confirm the new doctrine is present and consistent across the set.
 3. Manual runbook (§7.1 preservation, §7.3 prompt/template render, §29 intent) — the correct boundary for the non-greppable checks (heading preservation judgement, prose-firewall audit, hard-fail intent).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Ran the cross-doc consistency gate over the amended active docs. Fixed two gate findings during verification: changed one negated sentence in `docs/FOUNDATIONS.md` from "warnings block" phrasing to "warnings disable," and added a preservation heading to `docs/prompt-template.md` so the heading-preservation command covers the template doc.
+
+Deviations from original plan: the ticket was intended as verification-only, but the gate exposed the two small active-doc consistency fixes above. No doctrine was added beyond the prior tickets.
+
+Verification:
+
+- `grep -rnE "stop guidance is required|Blocks generation if blank|current cast voice pressure is required|warnings block|quality gap blocks" docs/` returned no matches
+- `grep -rnE "draft|readiness|generation_context|universal floor|warnings (do not|never) block" docs/` confirmed the new doctrine across the active doc set
+- `for d in FOUNDATIONS story-record-schema compiler-contract prompt-template prompt-template-rationale user-guide demo-blocker-recipes stress-coverage-matrix stress-suite ACTIVE-DOCS; do grep -q "^## " "docs/$d.md" || echo "MISSING headings $d"; done` printed nothing
+- Prompt/template manual review confirmed first-segment empty handoff, continuation handoff, no accepted prose in prompt-facing fields, optional current pins, and universal stop-rule rendering
+- §29 intent review confirmed no LLM compilation, no accepted prose prompt context, secret firewall, warnings-never-gate, and human gatekeeping remain intact.

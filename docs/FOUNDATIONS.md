@@ -111,7 +111,7 @@ The compiler may format, order, and render records according to deterministic ru
 
 When deterministic validation detects contradictions, impossible prompt conditions, unsafe continuity gaps, or structural prompt-contract failures, generation must be blocked. Quality, salience, prompt-length, and optional nuance risks are warnings unless they also prove deterministic impossibility or a prompt-contract failure.
 
-Fail closed applies to prompt compilation, prompt preview availability where no valid prompt can be compiled, provider sending, and candidate generation. It does not mean incomplete generation-time drafts cannot be saved. It does not let advisory warnings block Preview or Generate. Quality, salience, and prompt-length risks are warnings unless they also prove a structural prompt-contract failure, hard contradiction, policy conflict, or deterministic impossibility.
+Fail closed applies to prompt compilation, prompt preview availability where no valid prompt can be compiled, provider sending, and candidate generation. It does not mean incomplete generation-time drafts cannot be saved. It does not let advisory warnings disable Preview or Generate. Quality, salience, and prompt-length risks are warnings unless they also prove a structural prompt-contract failure, hard contradiction, policy conflict, or deterministic impossibility.
 
 There is no override in v1.
 
