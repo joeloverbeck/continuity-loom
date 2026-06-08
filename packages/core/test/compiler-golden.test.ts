@@ -167,8 +167,11 @@ describe("compiler golden prompt", () => {
     const snapshot = buildValidationSnapshot(goldenInput());
     const first = compilePrompt(snapshot);
     const second = compilePrompt(snapshot);
+    const expectedRenderedOrder = SECTION_ORDER.filter(
+      (section) => section !== "present_minor_cast" && section !== "offstage_relevance"
+    );
 
-    expect(promptSectionOrder(first.prompt)).toEqual(SECTION_ORDER);
+    expect(promptSectionOrder(first.prompt)).toEqual(expectedRenderedOrder);
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(first.prompt).toContain("Golden Archive");

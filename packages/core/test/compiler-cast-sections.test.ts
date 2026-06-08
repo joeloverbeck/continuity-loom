@@ -284,15 +284,42 @@ describe("compiler cast-section resolvers", () => {
     expect(JSON.stringify(snapshot.records)).toBe(before);
   });
 
-  it("renders present-minor and offstage compressed notes with exact empty states when absent", () => {
+  it("omits empty present-minor and offstage compressed cast sections", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(emptyInput())).prompt;
+
+    expect(prompt).not.toContain("<present_minor_cast>");
+    expect(prompt).not.toContain("</present_minor_cast>");
+    expect(prompt).not.toContain("<offstage_relevance>");
+    expect(prompt).not.toContain("</offstage_relevance>");
+  });
+
+  it("renders populated present-minor and offstage compressed cast sections", () => {
     const populated = compilePrompt(buildValidationSnapshot(input())).prompt;
-    const empty = compilePrompt(buildValidationSnapshot(emptyInput())).prompt;
 
     expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
     expect(sectionBody(populated, "present_minor_cast")).toContain("Keep him silent unless directly addressed.");
     expect(sectionBody(populated, "offstage_relevance")).toContain("The guard may return soon.");
-    expect(sectionBody(empty, "present_minor_cast")).toContain(EMPTY_STATE_CONSTANTS.present_minor_cast_notes);
-    expect(sectionBody(empty, "offstage_relevance")).toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
+  });
+
+  it("keeps offstage relevance present when offstage interruption focus is active", () => {
+    const prompt = compilePrompt(
+      buildValidationSnapshot({
+        ...emptyInput(),
+        generationSession: {
+          ...emptyInput().generationSession,
+          generation_validation_focus: {
+            validation_focus_tags: {
+              generation_context: ["first_segment"],
+              expected_local_modes: ["offstage_interruption_possible"],
+              possible_durable_changes: []
+            }
+          }
+        }
+      })
+    ).prompt;
+
+    expect(prompt).toContain("<offstage_relevance>");
+    expect(sectionBody(prompt, "offstage_relevance")).toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
   });
 
   it("renders long cast labels fully in voice pins and once in compressed notes", () => {

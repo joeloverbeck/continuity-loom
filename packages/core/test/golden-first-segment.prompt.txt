@@ -281,12 +281,6 @@ If sample utterances are included, treat them as annotated short examples of spe
 None active
 </active_cast_full_dossiers>
 
-<present_minor_cast>
-Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation. Temporary voice overrides, when present here, are current-generation only and do not rewrite durable identity.
-
-None
-</present_minor_cast>
-
 <offstage_relevance>
 Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
 

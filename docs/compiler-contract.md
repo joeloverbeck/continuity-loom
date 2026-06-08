@@ -56,8 +56,8 @@ The compiler renders sections in this order:
 16. `<active_obligations_and_consequences>`
 17. `<active_open_threads>`
 18. `<active_cast_full_dossiers>`
-19. `<present_minor_cast>`
-20. `<offstage_relevance>`
+19. `<present_minor_cast>` when at least one present-minor cast record is selected
+20. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
 21. `<relevant_facts_beliefs_events>`
 22. `<locations_objects_affordances>`
 23. `<physical_continuity>`
@@ -145,8 +145,8 @@ Requiredness terms:
 | `{active_onstage_full_cast_dossiers}` | CAST MEMBER selected active/onstage full, including all populated fields | Required for active person-like cast materially involved | Block if required core missing | N/A if no active person-like cast | Include all populated fields. Render structured fields core-first: identity, voice_anchor plus voice_extended/speech-pattern fields, pressure_behavior_core, body_presence_core, agency_core, remaining optional extended fields, selected samples last. No silent compression. |
 | `Current generation voice override` line | CAST VOICE OVERRIDES targeting active/onstage cast | No | No block unless contradictory | Omit when absent | Temporary, scoped, not durable. For present-minor targets, render inside `{present_minor_cast_notes}` only. |
 | sample utterances inside dossiers | CAST MEMBER.sample_utterances selected by user or deterministic metadata | No | No block | Omit; optional explicit `No selected sample utterances` allowed in examples | At most three; default zero; one short line each, normally <=40 words; `may_reuse_cadence_not_text`, not `may_echo_lightly`. |
-| `{present_minor_cast_notes}` | ENTITY/CAST MEMBER selected present-minor + current status + compressed voice note + temporary voice override when present | No | No block; block only if present-minor speech is required and voice note absent | `None` | Compressed notes only. Temporary overrides remain current-generation only. |
-| `{offstage_relevance_notes}` | ENTITY/CAST selected offstage + offstage pressure records | Required if offstage interruption/pressure active | Block if interruption lacks route/timing/communication | `None` | No full offstage dossier unless active. |
+| `{present_minor_cast_notes}` | ENTITY/CAST MEMBER selected present-minor + current status + compressed voice note + temporary voice override when present | No | No block; block only if present-minor speech is required and voice note absent | Omit whole `<present_minor_cast>` section when the band is empty | Compressed notes only. Temporary overrides remain current-generation only. |
+| `{offstage_relevance_notes}` | ENTITY/CAST selected offstage + offstage pressure records | Required if offstage interruption/pressure active | Block if interruption lacks route/timing/communication | Omit whole `<offstage_relevance>` section when the band is empty and no offstage pressure/interruption is active | No full offstage dossier unless active. If offstage pressure/interruption is active, the section remains present even when validation will block missing route/timing/communication. |
 | `{pov_accessible_facts}` | Selected FACT known to POV/public | No except when directive depends on them | Block if required fact missing | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Prevents generic fact leakage. |
 | `{writer_visible_or_non_pov_facts}` | Selected FACT not POV-accessible; SECRET/EVENT-derived writer-visible truth | No | Block if hidden fact lacks reveal constraints | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Not narrator knowledge. |
 | `{pov_relevant_beliefs}` | BELIEF held by POV | No | Warn if POV-heavy scene lacks interpretive pressure | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Mark truth relation first; render claim in full plus belief mode, truth relation, confidence, access route, behavioral effect, and visibility. |
@@ -260,6 +260,7 @@ Repeated warnings should deduplicate by affected field/record group and present 
 - `<current_authoritative_state>` always renders the section tag and the four readiness-required lines: time, location, onstage entities, and immediate situation. The eleven context-gated lines omit both label and value when empty; `consent_or_force_conditions: "none"` is treated as empty.
 - `<immediate_handoff>` always renders the section tag, `recent_causal_context`, `prior_accepted_prose_status_or_handoff_note`, and the accepted-prose firewall instruction text. `last_visible_moment` and `begin_after` omit both label and value when empty.
 - `<manual_directive priority="high">` always renders the section tag and `must_render`. `may_render_if_naturally_caused` and `do_not_force` omit both label and value when empty.
+- `<present_minor_cast>` and `<offstage_relevance>` are the only designated optional universal-prompt cast-band sections. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
 - Optional list sub-blocks inside `<relevant_facts_beliefs_events>` and `<locations_objects_affordances>` omit both the sub-block header and value when empty. If all sibling sub-blocks in one of those composite sections are empty, the section tag remains and renders the single deterministic section-level empty state `None specified`.
 
 ## 9. Prompt-facing vs validation-only fields

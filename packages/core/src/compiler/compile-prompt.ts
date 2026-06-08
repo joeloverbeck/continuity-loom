@@ -83,11 +83,19 @@ function renderPrompt(snapshot: ValidationSnapshot): string {
   return [
     "# Generated Prose Prompt",
     "",
-    ...SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot))
+    ...SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot)).filter((section) => section !== null)
   ].join("\n\n");
 }
 
-function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot): string {
+function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot): string | null {
+  if (sectionId === "present_minor_cast" && !hasSelectedCastBand(snapshot, "present_minor_cast_compressed")) {
+    return null;
+  }
+
+  if (sectionId === "offstage_relevance" && !shouldRenderOffstageRelevance(snapshot)) {
+    return null;
+  }
+
   if (isCompositeSectionId(sectionId)) {
     return renderCompositeSection(sectionId, snapshot);
   }
@@ -201,6 +209,23 @@ function hasValue(value: unknown): boolean {
   }
 
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasSelectedCastBand(
+  snapshot: ValidationSnapshot,
+  castBand: "present_minor_cast_compressed" | "offstage_relevant_cast"
+): boolean {
+  return snapshot.records.some((record) => record.castBand === castBand);
+}
+
+function shouldRenderOffstageRelevance(snapshot: ValidationSnapshot): boolean {
+  return (
+    hasSelectedCastBand(snapshot, "offstage_relevant_cast") ||
+    hasValue(snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities) ||
+    snapshot.generationSession.generation_validation_focus?.validation_focus_tags.expected_local_modes?.includes(
+      "offstage_interruption_possible"
+    ) === true
+  );
 }
 
 function renderCompositeSection(sectionId: CompositeSectionId, snapshot: ValidationSnapshot): string {
