@@ -57,7 +57,9 @@ export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
 
 export type CompositeSectionId = keyof typeof COMPOSITE_SECTION_TEMPLATES;
 
-export const SECTION_TEMPLATES: Readonly<Record<PromptSectionId, string>> = Object.freeze({
+export type StaticSectionId = Exclude<PromptSectionId, CompositeSectionId | "current_authoritative_state">;
+
+export const SECTION_TEMPLATES: Readonly<Record<StaticSectionId, string>> = Object.freeze({
   role: `<role>
 You are the external prose writer for a continuity-first fiction system.
 Render the next local prose segment from the provided story records and the current manual directive.
@@ -124,23 +126,6 @@ Special style constraints: {special_style_constraints}
   hard_canon: `<hard_canon>
 {hard_canon_bullets}
 </hard_canon>`,
-  current_authoritative_state: `<current_authoritative_state>
-Time: {current_time}
-Location: {current_location}
-Onstage entities: {onstage_entities}
-Immediate situation: {immediate_situation_summary}
-Offstage but pressuring entities: {offstage_pressuring_entities}
-Current physical positions: {positions}
-Current agency/status: {entity_statuses}
-Current possessions: {possessions}
-Visible injuries/conditions: {visible_conditions}
-Environmental conditions: {environmental_conditions}
-Line of sight / visibility: {line_of_sight_and_visibility}
-Routes and exits: {routes_and_exits}
-Available time: {available_time}
-Consent or force conditions: {consent_or_force_conditions}
-Current continuity locks: {current_locks}
-</current_authoritative_state>`,
   immediate_handoff: `<immediate_handoff>
 Recent causal context (writer-visible; not automatically POV knowledge):
 {recent_causal_context}

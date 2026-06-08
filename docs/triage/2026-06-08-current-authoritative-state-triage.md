@@ -48,7 +48,7 @@ The block is a flat `SECTION_TEMPLATES` entry rendered by unconditional placehol
 |---|---|---|
 | O1 | bug | `archive/tickets/CURSTATELABEL-001.md` |
 | O2 | gap | `archive/tickets/CURSTATEEDIT-001.md` |
-| O3 | token economy | `tickets/CURSTATEOMIT-001.md` |
+| O3 | token economy | `archive/tickets/CURSTATEOMIT-001.md` |
 
 ## Named assumptions
 - O1 uses silent raw-id fallback (parity with `secret_holders`/`objects`), no new warning.

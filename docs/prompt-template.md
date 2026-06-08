@@ -89,6 +89,8 @@ Time: {current_time}
 Location: {current_location}
 Onstage entities: {onstage_entities}
 Immediate situation: {immediate_situation_summary}
+
+Conditional lines: if any of the following fields is populated, render the whole line; if blank, omit the whole line. Treat consent_or_force_conditions="none" as blank.
 Offstage but pressuring entities: {offstage_pressuring_entities}
 Current physical positions: {positions}
 Current agency/status: {entity_statuses}

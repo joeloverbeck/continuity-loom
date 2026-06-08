@@ -187,6 +187,10 @@ function sectionBody(prompt: string, section: string): string {
   return prompt.match(pattern)?.[1] ?? "";
 }
 
+function sectionLines(prompt: string, section: string): string[] {
+  return sectionBody(prompt, section).split("\n").filter((line) => line.trim().length > 0);
+}
+
 describe("compiler front-section resolvers", () => {
   it("renders populated content policy, story contract, prose mode, state, handoff, and directive fields", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
@@ -221,6 +225,59 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(input));
 
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(`Onstage entities: ${danglingHolderId}`);
+  });
+
+  it("always renders the four required current-state lines and omits empty optional lines", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state = {
+      current_time: "After midnight.",
+      current_location: "North archive.",
+      onstage_entities: [povId],
+      immediate_situation_summary: "Jon waits at the archive door.",
+      offstage_pressuring_entities: [],
+      positions: [],
+      possessions: [],
+      visible_conditions: [],
+      environmental_conditions: "",
+      entity_statuses: [],
+      line_of_sight_and_visibility: "",
+      routes_and_exits: [],
+      available_time: "",
+      consent_or_force_conditions: "none",
+      current_locks: []
+    };
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const currentState = sectionBody(prompt, "current_authoritative_state");
+
+    expect(sectionLines(prompt, "current_authoritative_state")).toEqual([
+      "Time: After midnight.",
+      "Location: North archive.",
+      "Onstage entities: Jon Vale",
+      "Immediate situation: Jon waits at the archive door."
+    ]);
+    expect(currentState).not.toContain("None currently specified");
+    expect(currentState).not.toContain("Offstage but pressuring entities:");
+    expect(currentState).not.toContain("Routes and exits:");
+  });
+
+  it("renders optional current-state lines only while their values are populated", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.routes_and_exits = ["North stair"];
+
+    const populatedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+    expect(sectionBody(populatedPrompt, "current_authoritative_state")).toContain("Routes and exits: North stair");
+
+    input.generationSession.current_authoritative_state!.routes_and_exits = [];
+    const clearedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(clearedPrompt, "current_authoritative_state")).not.toContain("Routes and exits:");
+  });
+
+  it("omits default none consent or force conditions", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain("Consent or force conditions:");
   });
 
   it("renders exact empty-state constants when front-section sources are absent", () => {

@@ -1,6 +1,6 @@
 # CURSTATEOMIT-001: Omit empty optional lines in `<current_authoritative_state>`
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `current_authoritative_state` section rendering in `packages/core/src/compiler`; `docs/compiler-contract.md` and `docs/prompt-template.md` empty-state rules
@@ -96,3 +96,25 @@ Update the `<current_authoritative_state>` template depiction (lines ~87–103) 
 
 1. `npm test`
 2. `npm run lint && npm run typecheck`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+- Replaced the flat `current_authoritative_state` template path with a dedicated line-level renderer.
+- Kept the section tag and the four readiness-required lines always rendered.
+- Omitted the eleven context-gated current-state lines when their raw snapshot values are empty.
+- Treated `consent_or_force_conditions: "none"` as empty for line omission.
+- Updated `docs/compiler-contract.md` and `docs/prompt-template.md` to document the always-render / omit-empty split.
+- Added compiler tests for required-only output, optional `routes_and_exits` appearance/removal, and default `"none"` consent omission.
+
+Deviations from original plan:
+- `packages/core/src/compiler/sections/front.ts` did not need simplification; the renderer checks raw snapshot values before invoking existing placeholder resolvers and fallbacks.
+- The existing golden prompt fixture did not need rebaselining for this ticket because its optional current-state fields are populated, including a non-`none` consent/force line.
+
+Verification:
+- `npm exec -- vitest run packages/core/test/compiler-front-sections.test.ts packages/core/test/compiler-golden.test.ts packages/core/test/compiler-scaffold.test.ts` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
