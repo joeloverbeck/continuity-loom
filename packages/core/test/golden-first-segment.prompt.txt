@@ -294,12 +294,6 @@ None
 </offstage_relevance>
 
 <relevant_facts_beliefs_events>
-POV-accessible facts:
-None beyond current state and hard canon
-
-Writer-visible or non-POV facts:
-None
-
 POV-relevant beliefs:
 - Niko will be safer if he knows a letter exists but not what it says.; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
 
@@ -309,12 +303,6 @@ Non-POV behavior-shaping beliefs:
 Recent events:
 - The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
-
-Relevant backstory:
-None selected
-
-Offstage or withheld events:
-None selected
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>

@@ -289,18 +289,36 @@ describe("compiler tail-section resolvers", () => {
     );
   });
 
-  it("renders exact empty-state constants when tail sources are absent", () => {
+  it("renders section-level empty states when composite tail sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
+    const facts = sectionBody(prompt, "relevant_facts_beliefs_events");
+    const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
 
-    expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain(
-      EMPTY_STATE_CONSTANTS.pov_accessible_facts
-    );
-    expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain(EMPTY_STATE_CONSTANTS.recent_events);
-    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(EMPTY_STATE_CONSTANTS.locations);
-    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(
-      EMPTY_STATE_CONSTANTS.unavailable_or_impossible_actions
-    );
+    expect(facts.trim()).toBe("None specified");
+    expect(facts).not.toContain("POV-accessible facts:");
+    expect(facts).not.toContain("Recent events:");
+    expect(locationsObjects.trim()).toBe("None specified");
+    expect(locationsObjects).not.toContain("Locations:");
+    expect(locationsObjects).not.toContain("Visible affordances:");
+    expect(locationsObjects).not.toContain("Unavailable or impossible actions:");
     expect(sectionBody(prompt, "physical_continuity")).toContain(EMPTY_STATE_CONSTANTS.physical_continuity);
+  });
+
+  it("omits empty optional sub-blocks while keeping populated composite siblings", () => {
+    const records = tailRecords().filter((item) => item.type !== "VISIBLE AFFORDANCE");
+    const mixedInput = input(records);
+    const state = mixedInput.generationSession.current_authoritative_state;
+    if (state) {
+      state.current_locks = [];
+    }
+    const prompt = compilePrompt(buildValidationSnapshot(mixedInput)).prompt;
+    const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
+
+    expect(locationsObjects).toContain("Locations:\n- Archive stair");
+    expect(locationsObjects).toContain("Objects:\n- Lantern");
+    expect(locationsObjects).not.toContain("Visible affordances:");
+    expect(locationsObjects).not.toContain("Unavailable or impossible actions:");
+    expect(locationsObjects).not.toContain("None specified");
   });
 
   it("derives unavailable actions from current locks and blocked affordances", () => {
