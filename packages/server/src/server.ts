@@ -7,6 +7,7 @@ import { registerAcceptedRoutes } from "./accepted-routes.js";
 import { registerGenerateRoutes } from "./generate-routes.js";
 import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
 import { registerProjectRoutes } from "./project-routes.js";
+import { registerReadinessRoutes } from "./readiness-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
 import { registerReminderRoutes } from "./reminder-routes.js";
@@ -75,6 +76,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerGenerationBriefRoutes(app, projectStoreManager);
   registerWorkingSetRoutes(app, projectStoreManager);
   registerValidationRoutes(app, projectStoreManager);
+  registerReadinessRoutes(app, projectStoreManager);
   registerCompileRoutes(app, projectStoreManager);
   registerSettingsRoutes(app);
   registerGenerateRoutes(app, projectStoreManager);

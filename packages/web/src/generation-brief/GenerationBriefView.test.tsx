@@ -1,17 +1,18 @@
 // @vitest-environment jsdom
 
+import type { GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
-import { getGenerationBrief, listStoryConfig, setGenerationBrief, validate } from "../api.js";
+import { getGenerationBrief, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
 
 vi.mock("../api.js", () => ({
   getGenerationBrief: vi.fn(),
   listStoryConfig: vi.fn(),
+  readiness: vi.fn(),
   setGenerationBrief: vi.fn(),
-  validate: vi.fn()
 }));
 
 class ResizeObserverStub {
@@ -60,7 +61,7 @@ describe("GenerationBriefView", () => {
       }
     });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
@@ -112,7 +113,7 @@ describe("GenerationBriefView", () => {
   it("uses canonical generation-brief guidance keys and reconciles static doctrine hints", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
-    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
@@ -136,18 +137,15 @@ describe("GenerationBriefView", () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(validate).mockResolvedValue({
-      blockers: [{
-        code: "missing-current-state",
-        message: "Current state is required.",
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [readinessDiagnostic({
         severity: "blocker",
-        affected: [],
-        whyItMatters: "Generation needs a current state.",
-        suggestedActions: ["add-current-state"]
-      }],
-      warnings: [],
-      isBlocked: true
-    });
+        code: "missing-current-state",
+        legacyCode: "missing-current-authoritative-state",
+        title: "Current state is required.",
+        group: "required-before-prompt-generation"
+      })]
+    }));
 
     renderView();
 
@@ -161,7 +159,7 @@ describe("GenerationBriefView", () => {
 
     expect(screen.getByText(/looks like pasted prose/i)).toBeTruthy();
     expect(screen.getByText(/sounds non-local/i)).toBeTruthy();
-    expect(screen.getByText("Current state is required.")).toBeTruthy();
+    expect(screen.getAllByText("Current state is required.").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
     expect(await screen.findByText("Draft saved.")).toBeTruthy();
@@ -170,7 +168,7 @@ describe("GenerationBriefView", () => {
   it("offers all current-cast local functions including present_minor_speaker", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
-    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
@@ -191,17 +189,13 @@ describe("GenerationBriefView", () => {
         }
       }
     });
-    vi.mocked(validate).mockResolvedValue({
-      blockers: [],
-      warnings: [],
-      isBlocked: false
-    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    await waitFor(() => expect(validate).toHaveBeenCalled());
-    const initialValidationCalls = vi.mocked(validate).mock.calls.length;
+    await waitFor(() => expect(readiness).toHaveBeenCalled());
+    const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
     expect(screen.getByText("Default: first segment because no accepted prose exists yet.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
@@ -212,7 +206,7 @@ describe("GenerationBriefView", () => {
     });
     expect(JSON.stringify(payload)).not.toContain("Continue the immediate moment.");
     expect(await screen.findByText("Draft saved.")).toBeTruthy();
-    await waitFor(() => expect(validate).toHaveBeenCalledTimes(initialValidationCalls + 1));
+    await waitFor(() => expect(readiness).toHaveBeenCalledTimes(initialValidationCalls + 1));
     expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
   });
@@ -226,7 +220,7 @@ describe("GenerationBriefView", () => {
       message: "The draft could not be saved because the request shape is invalid.",
       issues: [{ path: "active_working_set.selected_records.0", message: "Invalid UUID" }]
     });
-    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
@@ -242,19 +236,68 @@ describe("GenerationBriefView", () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
-    vi.mocked(validate).mockResolvedValue({ blockers: [], warnings: [], isBlocked: false });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
     renderView();
 
-    await waitFor(() => expect(validate).toHaveBeenCalled());
-    const initialValidationCalls = vi.mocked(validate).mock.calls.length;
+    await waitFor(() => expect(readiness).toHaveBeenCalled());
+    const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
     fireEvent.change(screen.getByLabelText(/^soft_unit_guidance/), { target: { value: "Stop." } });
     expect(screen.getByText("Displayed readiness may be stale until you save this draft.")).toBeTruthy();
-    expect(validate).toHaveBeenCalledTimes(initialValidationCalls);
+    expect(readiness).toHaveBeenCalledTimes(initialValidationCalls);
 
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
-    await waitFor(() => expect(validate).toHaveBeenCalledTimes(initialValidationCalls + 1));
+    await waitFor(() => expect(readiness).toHaveBeenCalledTimes(initialValidationCalls + 1));
     expect(screen.queryByText("Displayed readiness may be stale until you save this draft.")).toBeNull();
   });
 });
+
+function readinessFixture(input: {
+  blockers?: readonly ReadinessDiagnostic[];
+  warnings?: readonly ReadinessDiagnostic[];
+}): GenerationReadiness {
+  const blockers = input.blockers ?? [];
+  const warnings = input.warnings ?? [];
+
+  return {
+    status: blockers.length > 0 ? "blocked" : warnings.length > 0 ? "ready-with-warnings" : "ready",
+    canSaveDraft: true,
+    canPreview: blockers.length === 0,
+    canGenerate: blockers.length === 0,
+    blockers,
+    warnings,
+    provider: { configured: true, blockers: [] },
+    unsavedDraft: { hasUnsavedChanges: false, readinessMayBeStale: false },
+    summary: blockers.length > 0
+      ? { headline: "Generation is blocked", nextAction: "Fix blockers." }
+      : { headline: "Ready to generate", nextAction: "Preview and Generate are available." }
+  };
+}
+
+function readinessDiagnostic(input: {
+  severity: "blocker" | "warning";
+  code: string;
+  legacyCode: string;
+  title: string;
+  group: ReadinessDiagnostic["group"];
+}): ReadinessDiagnostic {
+  return {
+    severity: input.severity,
+    code: input.code,
+    title: input.title,
+    group: input.group,
+    summary: input.title,
+    whyItMatters: `${input.title} matters.`,
+    fastestFix: `${input.title} fastest fix.`,
+    affected: [],
+    actions: [{ kind: "copy-technical-json", label: "Copy technical JSON" }],
+    dedupeKey: `${input.severity}:${input.code}`,
+    sortKey: `${input.severity}:${input.code}`,
+    technical: {
+      legacyCode: input.legacyCode,
+      ruleId: input.legacyCode,
+      rawPaths: []
+    }
+  };
+}

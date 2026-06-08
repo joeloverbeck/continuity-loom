@@ -1,27 +1,30 @@
-import type { ValidationResult } from "@loom/core";
+import type { GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { type ApiFailure, validate } from "../api.js";
-import { ValidationResultView } from "./ValidationResultView.js";
+import { type ApiFailure, readiness } from "../api.js";
+import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 
 interface ValidationPanelProps {
   validationKey: number;
+  hasUnsavedChanges: boolean;
   onFocusField?: (field: string) => void;
 }
 
 type ValidationState =
   | { status: "loading" }
-  | { status: "ready"; result: ValidationResult }
+  | { status: "ready"; result: GenerationReadiness }
   | { status: "error"; message: string };
 
-export function ValidationPanel({ validationKey, onFocusField }: ValidationPanelProps): React.JSX.Element {
+export function ValidationPanel({ validationKey, hasUnsavedChanges, onFocusField }: ValidationPanelProps): React.JSX.Element {
   const [state, setState] = useState<ValidationState>({ status: "loading" });
+  const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
     setState({ status: "loading" });
 
-    void validate()
+    void readiness()
       .then((result) => {
         if (active) {
           if (isApiFailure(result)) {
@@ -42,6 +45,10 @@ export function ValidationPanel({ validationKey, onFocusField }: ValidationPanel
       active = false;
     };
   }, [validationKey]);
+
+  function copyTechnicalJson(diagnostic: ReadinessDiagnostic): void {
+    void navigator.clipboard?.writeText(JSON.stringify(diagnostic, null, 2));
+  }
 
   if (state.status === "loading") {
     return (
@@ -64,12 +71,27 @@ export function ValidationPanel({ validationKey, onFocusField }: ValidationPanel
   return (
     <section className="configPanel validationPanel" aria-labelledby="validation-panel-title">
       <h3 id="validation-panel-title">VALIDATION</h3>
-      <ValidationResultView result={state.result} {...(onFocusField ? { onFocusField } : {})} />
+      <ReadinessChecklist
+        readiness={withUnsavedDraftState(state.result, hasUnsavedChanges)}
+        actions={{
+          onFocusField: (field) => onFocusField?.(field),
+          onOpenRecord: (recordId) => {
+            void navigate(`/records?recordId=${encodeURIComponent(recordId)}`);
+          },
+          onOpenProviderSettings: () => {
+            void navigate("/settings");
+          },
+          onOpenWorkingSet: () => {
+            void navigate("/working-set");
+          },
+          onCopyTechnicalJson: copyTechnicalJson
+        }}
+      />
     </section>
   );
 }
 
-function isApiFailure(result: ValidationResult | ApiFailure): result is ApiFailure {
+function isApiFailure(result: GenerationReadiness | ApiFailure): result is ApiFailure {
   return "ok" in result && result.ok === false;
 }
 
@@ -79,4 +101,23 @@ function validationFailureMessage(failure: ApiFailure): string {
   }
 
   return failure.message || "Could not run validation.";
+}
+
+function withUnsavedDraftState(readinessResult: GenerationReadiness, hasUnsavedChanges: boolean): GenerationReadiness {
+  if (!hasUnsavedChanges) {
+    return readinessResult;
+  }
+
+  return {
+    ...readinessResult,
+    status: "draft",
+    unsavedDraft: {
+      hasUnsavedChanges: true,
+      readinessMayBeStale: true
+    },
+    summary: {
+      headline: "Draft has unsaved changes",
+      nextAction: "Save the draft before trusting this readiness result."
+    }
+  };
 }

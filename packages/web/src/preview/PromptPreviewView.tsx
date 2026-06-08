@@ -1,26 +1,29 @@
-import type { CompileResult } from "@loom/core";
+import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   compile,
   type ApiFailure,
   type CompileBlocked,
-  type CompileResponse
+  type CompileResponse,
+  readiness
 } from "../api.js";
-import { ValidationResultView } from "../generation-brief/ValidationResultView.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
+import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 
 type PreviewState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult }
-  | { status: "blocked"; result: CompileBlocked }
+  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness }
+  | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
 export function PromptPreviewView(): React.JSX.Element {
   const [state, setState] = useState<PreviewState>({ status: "loading" });
   const [searchTerm, setSearchTerm] = useState("");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const navigate = useNavigate();
 
   useEffect(() => {
     void refreshPreview();
@@ -32,19 +35,29 @@ export function PromptPreviewView(): React.JSX.Element {
     setSearchTerm("");
 
     try {
-      const result = await compile();
+      const [compileResult, readinessResult] = await Promise.all([compile(), readiness()]);
 
-      if (isFailure(result)) {
-        if (isValidationBlocked(result)) {
-          setState({ status: "blocked", result });
-          return;
-        }
-
-        setState({ status: "error", kind: result.kind, message: result.message });
+      if (isReadinessFailure(readinessResult)) {
+        setState({ status: "error", kind: readinessResult.kind, message: readinessResult.message });
         return;
       }
 
-      setState({ status: "ready", result });
+      if (!readinessResult.canPreview) {
+        setState({ status: "blocked", readiness: readinessResult });
+        return;
+      }
+
+      if (isFailure(compileResult)) {
+        if (isValidationBlocked(compileResult)) {
+          setState({ status: "blocked", readiness: readinessResult });
+          return;
+        }
+
+        setState({ status: "error", kind: compileResult.kind, message: compileResult.message });
+        return;
+      }
+
+      setState({ status: "ready", result: compileResult, readiness: readinessResult });
     } catch {
       setState({ status: "error", kind: "compile-request-failed", message: "Could not compile the prompt." });
     }
@@ -65,6 +78,26 @@ export function PromptPreviewView(): React.JSX.Element {
     }
   }
 
+  function copyTechnicalJson(diagnostic: ReadinessDiagnostic): void {
+    void navigator.clipboard?.writeText(JSON.stringify(diagnostic, null, 2));
+  }
+
+  const checklistActions = {
+    onFocusField: () => {
+      void navigate("/generation-brief");
+    },
+    onOpenRecord: (recordId: string) => {
+      void navigate(`/records?recordId=${encodeURIComponent(recordId)}`);
+    },
+    onOpenProviderSettings: () => {
+      void navigate("/settings");
+    },
+    onOpenWorkingSet: () => {
+      void navigate("/working-set");
+    },
+    onCopyTechnicalJson: copyTechnicalJson
+  };
+
   return (
     <section className="surface previewSurface" aria-labelledby="prompt-preview-title">
       <div className="projectHeader">
@@ -84,11 +117,11 @@ export function PromptPreviewView(): React.JSX.Element {
       {state.status === "blocked" ? (
         <section className="previewStack">
           <p className="status statusError" role="alert">
-            Prompt preview is unavailable while blockers exist.
+            Prompt preview is blocked.
           </p>
           <section className="configPanel validationPanel" aria-labelledby="preview-validation-title">
-            <h3 id="preview-validation-title">VALIDATION</h3>
-            <ValidationResultView result={state.result.validation} />
+            <h3 id="preview-validation-title">READINESS</h3>
+            <ReadinessChecklist readiness={state.readiness} actions={checklistActions} />
           </section>
           <button type="button" onClick={() => void refreshPreview()}>Refresh preview</button>
         </section>
@@ -104,12 +137,14 @@ export function PromptPreviewView(): React.JSX.Element {
       {state.status === "ready" ? (
         <ReadyPreview
           result={state.result}
+          readiness={state.readiness}
           searchTerm={searchTerm}
           copyStatus={copyStatus}
           onSearchTermChange={setSearchTerm}
           onCopy={() => void copyPrompt(state.result.prompt)}
           onClear={clearPreview}
           onRefresh={() => void refreshPreview()}
+          onChecklistAction={checklistActions}
         />
       ) : null}
     </section>
@@ -118,26 +153,36 @@ export function PromptPreviewView(): React.JSX.Element {
 
 function ReadyPreview({
   result,
+  readiness,
   searchTerm,
   copyStatus,
   onSearchTermChange,
   onCopy,
   onClear,
-  onRefresh
+  onRefresh,
+  onChecklistAction
 }: {
   result: CompileResult;
+  readiness: GenerationReadiness;
   searchTerm: string;
   copyStatus: "idle" | "copied" | "failed";
   onSearchTermChange: (value: string) => void;
   onCopy: () => void;
   onClear: () => void;
   onRefresh: () => void;
+  onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
   return (
     <section className="previewStack">
-      <p className="status statusWarning" role="note">
-        This prompt is temporary and not canon.
-      </p>
+      {readiness.status === "ready-with-warnings" ? (
+        <section className="configPanel validationPanel" aria-labelledby="preview-recommended-title">
+          <h3 id="preview-recommended-title">Recommended before sending</h3>
+          <ReadinessChecklist readiness={readiness} actions={onChecklistAction} />
+        </section>
+      ) : (
+        <p className="status statusSuccess" role="status">Ready to generate.</p>
+      )}
+      <p className="status statusWarning" role="note">This prompt is temporary and not canon.</p>
 
       <div className="previewToolbar">
         <button type="button" onClick={onCopy}>Copy prompt</button>
@@ -153,6 +198,10 @@ function ReadyPreview({
 }
 
 function isFailure(result: CompileResponse): result is Extract<CompileResponse, { ok: false }> {
+  return "ok" in result && result.ok === false;
+}
+
+function isReadinessFailure(result: GenerationReadiness | ApiFailure): result is ApiFailure {
   return "ok" in result && result.ok === false;
 }
 

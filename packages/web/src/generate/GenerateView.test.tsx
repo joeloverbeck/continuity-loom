@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { CompileResult, Diagnostic, ValidationResult } from "@loom/core";
+import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,7 +11,7 @@ import {
   compile,
   generate,
   getDurableChangeReminder,
-  getOpenRouterSettings,
+  readiness,
   type DurableChangeReminderResponse,
 } from "../api.js";
 import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
@@ -25,7 +25,7 @@ vi.mock("../api.js", () => ({
   compile: vi.fn(),
   generate: vi.fn(),
   getDurableChangeReminder: vi.fn(),
-  getOpenRouterSettings: vi.fn()
+  readiness: vi.fn()
 }));
 
 vi.mock("../shell/project-open.js", () => ({
@@ -38,9 +38,9 @@ beforeEach(() => {
   vi.mocked(acceptCandidate).mockReset();
   vi.mocked(generate).mockReset();
   vi.mocked(getDurableChangeReminder).mockReset();
-  vi.mocked(getOpenRouterSettings).mockReset();
+  vi.mocked(readiness).mockReset();
   vi.mocked(acknowledgeDurableChangeReminder).mockReset();
-  vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: true }));
+  vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
   vi.mocked(getDurableChangeReminder).mockResolvedValue(inactiveReminder());
   vi.mocked(useProjectOpen).mockReturnValue({
     isProjectOpen: true,
@@ -203,12 +203,70 @@ describe("GenerateView", () => {
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 
-  it("defers to the blocked view when generate returns validation-blocked", async () => {
+  it("renders validation blockers from readiness and disables Generate", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "missing-launch-directive",
+        legacyCode: "missing-manual-directive",
+        title: "Add the launch directive",
+        group: "required-before-prompt-generation"
+      })]
+    }));
+    vi.mocked(compile).mockResolvedValue({
+      ok: false,
+      kind: "validation-blocked",
+      validation: { blockers: [], warnings: [], isBlocked: true }
+    });
+
+    renderGenerate();
+
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Add the launch directive" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Generate" })).toBeNull();
+  });
+
+  it("keeps Generate enabled for warning-only readiness when the provider is configured", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      warnings: [readinessDiagnostic({
+        severity: "warning",
+        code: "cast-salience-risk",
+        legacyCode: "cast-salience-risk",
+        title: "Long cast context may dilute local voice emphasis",
+        group: "prompt-length-salience-risk"
+      })]
+    }));
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByRole("heading", { name: "Long cast context may dilute local voice emphasis" })).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(false);
+  });
+
+  it("defers to the blocked view when generate returns validation-blocked", async () => {
+    vi.mocked(compile)
+      .mockResolvedValueOnce(compileResult("<role>\nPrompt"))
+      .mockResolvedValueOnce({
+        ok: false,
+        kind: "validation-blocked",
+        validation: { blockers: [], warnings: [], isBlocked: true }
+      });
+    vi.mocked(readiness)
+      .mockResolvedValueOnce(readinessFixture({}))
+      .mockResolvedValueOnce(readinessFixture({
+        blockers: [readinessDiagnostic({
+          severity: "blocker",
+          code: "missing-current-state",
+          legacyCode: "missing-current-authoritative-state",
+          title: "Current state is required",
+          group: "required-before-prompt-generation"
+        })]
+      }));
     vi.mocked(generate).mockResolvedValue({
       ok: false,
       kind: "validation-blocked",
-      validation: validationResult()
+      validation: { blockers: [], warnings: [], isBlocked: true }
     });
 
     renderGenerate();
@@ -216,12 +274,23 @@ describe("GenerateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
-    expect(await screen.findByText("Prompt preview is unavailable while blockers exist.")).toBeTruthy();
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Current state is required" })).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 
   it("disables send when the OpenRouter key is missing", async () => {
-    vi.mocked(getOpenRouterSettings).mockResolvedValue(openRouterSettings({ hasOpenRouterCredential: false }));
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      providerConfigured: false,
+      providerBlockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "provider-configuration-missing",
+        legacyCode: "provider-configuration-missing",
+        title: "Configure OpenRouter before generating",
+        group: "required-before-prompt-generation",
+        actions: [{ kind: "open-provider-settings", label: "Open provider settings", target: "/settings" }]
+      })]
+    }));
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
 
     renderGenerate();
@@ -229,7 +298,7 @@ describe("GenerateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     const generateButton = screen.getByRole<HTMLButtonElement>("button", { name: "Generate" });
     expect(generateButton.disabled).toBe(true);
-    expect(screen.getByText("API key missing. Configure it in Settings.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Configure OpenRouter before generating" })).toBeTruthy();
 
     fireEvent.click(generateButton);
     expect(generate).not.toHaveBeenCalled();
@@ -286,15 +355,6 @@ function candidateMetadata() {
   };
 }
 
-function openRouterSettings({ hasOpenRouterCredential }: { hasOpenRouterCredential: boolean }) {
-  return {
-    model: "openai/gpt-4.1",
-    temperature: 0.4,
-    maxOutputTokens: 2200,
-    hasOpenRouterCredential
-  };
-}
-
 function activeReminder(sequence: number): DurableChangeReminderResponse {
   return {
     ok: true,
@@ -317,21 +377,62 @@ function inactiveReminder(): DurableChangeReminderResponse {
   };
 }
 
-function validationResult(): ValidationResult {
+function readinessFixture(input: {
+  blockers?: readonly ReadinessDiagnostic[];
+  warnings?: readonly ReadinessDiagnostic[];
+  providerConfigured?: boolean;
+  providerBlockers?: readonly ReadinessDiagnostic[];
+}): GenerationReadiness {
+  const blockers = input.blockers ?? [];
+  const warnings = input.warnings ?? [];
+  const providerConfigured = input.providerConfigured ?? true;
+  const providerBlockers = input.providerBlockers ?? [];
+
   return {
-    blockers: [diagnostic("blocker", "missing-current-authoritative-state", "generationSession.current_authoritative_state")],
-    warnings: [],
-    isBlocked: true
+    status: blockers.length > 0 ? "blocked" : warnings.length > 0 ? "ready-with-warnings" : "ready",
+    canSaveDraft: true,
+    canPreview: blockers.length === 0,
+    canGenerate: blockers.length === 0 && providerBlockers.length === 0,
+    blockers,
+    warnings,
+    provider: { configured: providerConfigured, blockers: providerBlockers },
+    unsavedDraft: { hasUnsavedChanges: false, readinessMayBeStale: false },
+    summary: blockers.length > 0 || providerBlockers.length > 0
+      ? { headline: "Generate is blocked", nextAction: "Fix blockers." }
+      : warnings.length > 0
+        ? { headline: "Ready with recommendations", nextAction: "Review warnings if useful." }
+        : { headline: "Ready to generate", nextAction: "Preview and Generate are available." }
   };
 }
 
-function diagnostic(severity: "blocker" | "warning", code: string, field: string): Diagnostic {
+function readinessDiagnostic(input: {
+  severity: "blocker" | "warning";
+  code: string;
+  legacyCode: string;
+  title: string;
+  group: ReadinessDiagnostic["group"];
+  affected?: ReadinessDiagnostic["affected"];
+  actions?: ReadinessDiagnostic["actions"];
+}): ReadinessDiagnostic {
   return {
-    severity,
-    code,
-    message: `${code} message`,
-    affected: [{ field }],
-    whyItMatters: `${code} rationale`,
-    suggestedActions: ["revise"]
+    severity: input.severity,
+    code: input.code,
+    title: input.title,
+    group: input.group,
+    summary: `${input.title} summary.`,
+    whyItMatters: `${input.title} matters.`,
+    fastestFix: `${input.title} fastest fix.`,
+    affected: input.affected ?? [],
+    actions: [
+      ...(input.actions ?? []),
+      { kind: "copy-technical-json", label: "Copy technical JSON" }
+    ],
+    dedupeKey: `${input.severity}:${input.code}`,
+    sortKey: `${input.severity}:${input.code}`,
+    technical: {
+      legacyCode: input.legacyCode,
+      ruleId: input.legacyCode,
+      rawPaths: input.affected?.flatMap((target) => target.fieldPath ? [target.fieldPath] : []) ?? []
+    }
   };
 }

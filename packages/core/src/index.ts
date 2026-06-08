@@ -168,6 +168,15 @@ export {
 } from "./records/space-material.js";
 export { generateRecordId } from "./records/uuidv7.js";
 export { runValidation } from "./validation/engine.js";
+export { deriveReadiness } from "./validation/readiness.js";
+export type {
+  AffectedTarget,
+  DiagnosticAction,
+  GenerationReadiness,
+  ReadinessDiagnostic,
+  ReadinessDiagnosticGroup,
+  ReadinessStatus
+} from "./validation/readiness.js";
 export { buildValidationSnapshot } from "./validation/snapshot.js";
 export type {
   BuildValidationSnapshotInput,

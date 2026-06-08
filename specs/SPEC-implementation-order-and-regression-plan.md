@@ -177,10 +177,12 @@ Update:
 
 - `GenerationBriefView.tsx`
 - `ValidationPanel.tsx`
-- `ValidationResultView.tsx`
+- `ReadinessChecklist.tsx`
 - `PromptPreviewView.tsx`
 - `GenerateView.tsx`
 - web tests
+
+`ValidationResultView.tsx` was retired by the completed readiness capstone; do not treat it as an active update target.
 
 Required behavior:
 

@@ -589,6 +589,104 @@ button:disabled:hover {
   padding-top: 20px;
 }
 
+.readinessChecklist {
+  display: grid;
+  gap: 16px;
+}
+
+.readinessSummary,
+.readinessGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.readinessSummary p,
+.readinessGroup p,
+.readinessTechnical dl {
+  margin: 0;
+}
+
+.readinessGroups {
+  display: grid;
+  gap: 14px;
+}
+
+.readinessDiagnosticList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.readinessDiagnostic {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #d8dee8;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.readinessDiagnostic-blocker {
+  border-left-color: #d96a5f;
+}
+
+.readinessDiagnostic-warning {
+  border-left-color: #c99a2e;
+}
+
+.readinessDiagnosticHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.readinessDiagnosticHeader h5 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.readinessSeverity {
+  color: #5c677d;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.readinessActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.readinessAffected {
+  display: grid;
+  gap: 6px;
+}
+
+.readinessAffected ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.readinessTechnical {
+  border-top: 1px solid #e0e5ee;
+  padding-top: 8px;
+}
+
+.readinessTechnical dl {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.readinessTechnical dd {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
 .stopGuidancePanel {
   border-color: #c99a2e;
 }
