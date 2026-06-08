@@ -1,6 +1,6 @@
 # REFTARGET-001: Source the record editor's reference-target universe independently of the browse filter
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web` `RecordBrowser` reference-target wiring only. No schema, storage, validation, or compiler change.
@@ -88,3 +88,23 @@ In `packages/web/src/records/RecordBrowser.tsx`:
 
 1. `npm test --workspace @loom/web` (targeted browser/editor suite; requires `npm run build --workspace @loom/core` first because `@loom/web` resolves `@loom/core` through `packages/core/dist`).
 2. `npm run typecheck && npm run lint && npm test` (full pipeline).
+
+## Outcome
+
+Completion date: 2026-06-08
+
+What changed:
+- `RecordBrowser` now fetches an unfiltered `referenceTargets` universe with `listRecords({})` independently from the browse table filters.
+- Generic and CAST editors now receive `referenceTargets` instead of the browse-filtered row list.
+- Saved records are upserted into both the filtered browse state and the independent reference-target state so newly saved records remain immediately selectable.
+- Added RTL coverage proving an OBJECT browse filter keeps the table narrowed while OBJECT editor reference pickers still expose ENTITY and LOCATION targets, and that stored reference UUIDs round-trip on save.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm run build --workspace @loom/core` passed.
+- `npm test --workspace @loom/web` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.

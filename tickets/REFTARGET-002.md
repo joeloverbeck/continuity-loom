@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web` `RecordEditor` reference picker components only. No schema, storage, validation, or compiler change.
-**Deps**: REFTARGET-001 (the common filter-starvation cause is fixed there; this ticket hardens the residual edge).
+**Deps**: `archive/tickets/REFTARGET-001.md` (the common filter-starvation cause is fixed there; this ticket hardens the residual edge).
 
 ## Problem
 
