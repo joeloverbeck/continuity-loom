@@ -69,6 +69,7 @@ function populatedInput(): BuildValidationSnapshotInput {
         payload: {
           id: secretId,
           status: "hidden",
+          secret_kind: "other",
           secret_claim: "Mara stole the archive key.",
           holders: [holderId],
           non_holders_to_protect: [povId],
@@ -257,7 +258,7 @@ describe("compiler front-section resolvers", () => {
     const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
     const audienceSection = sectionBody(prompt, "audience_knowledge");
 
-    expect(secretSection).toContain("Mara stole the archive key.");
+    expect(secretSection).toContain("[other] Mara stole the archive key.");
     expect(secretSection).toContain("Secret holders:\n- Mara Lorne");
     expect(secretSection).toContain("Characters who must not know yet:\n- Jon Vale");
     expect(secretSection).not.toContain(holderId);
@@ -390,6 +391,7 @@ describe("compiler front-section resolvers", () => {
             payload: {
               id: secretId,
               status: "hidden",
+              secret_kind: "other",
               secret_claim: "Mara stole the archive key.",
               holders: [holderId],
               non_holders_to_protect: [povId],

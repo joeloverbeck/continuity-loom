@@ -1,6 +1,6 @@
 # SECRETPROMPT-003: Resolve the status of the unused SECRET `secret_kind` field
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — either `packages/core/src/compiler/sections/front.ts` (`writer_visible_hidden_truths` projection) + `docs/compiler-contract.md` row 127, **or** a docs-only clarification in `docs/story-record-schema.md` §6.3 + `docs/compiler-contract.md` §9. Decide in the Architecture Check.
@@ -75,3 +75,27 @@ This ticket resolves the ambiguity one way or the other so the field stops being
 
 1. Path (a): `npm test --workspace @loom/core -- compiler-front-sections`; Path (b): `grep -rn "secret_kind" packages/core/src` to prove non-consumption.
 2. `npm run lint && npm run typecheck && npm test` (full-pipeline gate).
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Chose path (a): `{writer_visible_hidden_truths}` now renders active secrets as `[<secret_kind>] <secret_claim>`.
+- `secret_kind` now has a concrete deterministic compiler role and is no longer silently inert.
+- Focused compiler tests assert the kind-prefixed writer-visible hidden-truth bullet.
+- The golden demo prompt now renders `[artifact_truth]` before the hidden letter claim in the writer-visible hidden-truth lane only.
+- `docs/compiler-contract.md` row 127 now names `SECRET.secret_kind` as part of the placeholder source.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test --workspace @loom/core -- compiler-front-sections` passed.
+- `npm test --workspace @loom/core -- compiler-golden` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 99 files, 657 tests.

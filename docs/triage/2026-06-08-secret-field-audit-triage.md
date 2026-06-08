@@ -45,7 +45,7 @@ Characters who must not know yet:
 |---|---|---|---|
 | O1 | Holder/non-holder ids render as UUIDs in the compiled prompt | ACT (HIGH) | `archive/tickets/SECRETPROMPT-001.md` |
 | O2 | `clue_carriers` never compiled though contract row 130 promises it | ACT (MEDIUM) | `archive/tickets/SECRETPROMPT-002.md` |
-| O3 | `secret_kind` defined but unused; no doc requires it | DECIDE (LOW) | `tickets/SECRETPROMPT-003.md` |
+| O3 | `secret_kind` defined but unused; no doc requires it | DECIDE (LOW) | `archive/tickets/SECRETPROMPT-003.md` |
 
 Out of scope (flagged, not actioned): `{onstage_entities}`, `{offstage_pressuring_entities}`, `{possessions}` derive from free-text current-state fields (different input class), not reported — own ticket if id-rendering is later confirmed.
 

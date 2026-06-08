@@ -125,7 +125,7 @@ const frontResolvers: ResolverMap = {
   dramatic_irony_permissions: (snapshot) => renderDramaticIrony(snapshot),
 
   writer_visible_hidden_truths: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => asString(payload.secret_claim)).join("\n") ||
+    bulletRecords(snapshot, "SECRET", isActiveSecret, renderWriterVisibleHiddenTruth).join("\n") ||
     EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths,
   secret_holders: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => resolveEntityLabels(snapshot, payload.holders)).join("\n") ||
@@ -275,6 +275,17 @@ function allowedClueLines(payload: JsonRecord): string[] {
     .filter(Boolean);
 
   return [...surfaceCues, ...availableCarrierTexts];
+}
+
+function renderWriterVisibleHiddenTruth(payload: JsonRecord): string {
+  const secretClaim = asString(payload.secret_claim);
+  const secretKind = asString(payload.secret_kind);
+
+  if (!secretClaim) {
+    return "";
+  }
+
+  return secretKind ? `[${secretKind}] ${secretClaim}` : secretClaim;
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {

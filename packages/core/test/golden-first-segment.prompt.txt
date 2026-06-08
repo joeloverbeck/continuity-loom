@@ -175,7 +175,7 @@ If the audience knows something the POV does not, you may let that truth shape s
 
 <secrets_and_reveal_constraints>
 Writer-visible hidden truths:
-- The sealed letter says a market ledger page was replaced before Orin's audit.
+- [artifact_truth] The sealed letter says a market ledger page was replaced before Orin's audit.
 
 Secret holders:
 - Elin Vale
