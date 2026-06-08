@@ -93,6 +93,20 @@ Prompt treatment:
 
 Generation-time fields define the immediate prompt generation. They are not durable story records unless the user manually writes equivalent durable records.
 
+### 3.0 Draft and ready generation session shapes
+
+Generation-time fields have a draft shape and a ready shape.
+
+`GenerationSessionDraft` is the persistence shape. It may contain partial nested objects, blank optional strings, empty arrays, and missing readiness fields. It must preserve the author's work even when Preview and Generate are blocked.
+
+`GenerationSessionReadyInput` is the normalized validation and compiler input. It is produced from the saved draft, selected records, story configuration, accepted-segment count, provider configuration where relevant, and deterministic empty-state/default rules. It may default non-story values such as `generation_context`; it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
+
+Schema-level principle:
+
+- Draft schema should be permissive enough for normal form work.
+- Ready schema should be strict enough for compiler safety.
+- Storage validation and generation readiness validation are separate concerns.
+
 ### 3.1 ACTIVE WORKING SET
 
 Fields:
@@ -126,7 +140,28 @@ Compiler requirements:
 
 Snapshot of what is true at the start of generation.
 
-Required fields:
+Readiness-required universal fields:
+
+- `current_time`: prose or timestamp-like string;
+- `current_location`: location id, scene-space id, or prose location/scene-space label;
+- `onstage_entities`: list of entity ids or an explicit none/abstract state when the local unit has no material entities;
+- `immediate_situation_summary`: concise prose describing what is happening now and why the next local unit can begin.
+
+Context-gated fields:
+
+- `offstage_pressuring_entities` is required when offstage pressure, interruption, communication, pursuit, or institutional action can matter.
+- `positions` is required when physical interaction, line of sight, movement, intimacy, violence, object transfer, turn-taking, or blocking can matter.
+- `possessions` is required when object use, transfer, search, concealment, theft, weapon use, or carried-object continuity can matter.
+- `visible_conditions` is required when injury, restraint, disguise, exhaustion, intoxication, status, or other visible condition can affect the local unit.
+- `environmental_conditions` is required when environment constrains action, perception, tone, danger, route, or affordance.
+- `entity_statuses` is required for materially involved entities whose agency, consciousness, availability, captivity, injury, age/status, or presence matters.
+- `line_of_sight_and_visibility` is required when perception, secrecy, ambiguous perception, violence, intimacy, interruption, or who-can-see/hear-whom matters.
+- `routes_and_exits` is required when movement, pursuit, escape, entrance, interruption, location change, or containment matters.
+- `available_time` is required when a clock, interruption, deadline, pursuit, timed action, or temporal impossibility can matter.
+- `consent_or_force_conditions` is required when intimacy, sex, restraint, coercion, object seizure, rescue movement, violence, captivity, or power-limited agency can matter.
+- `current_locks` is required when a lock/constraint exists or when the directive could contradict a lock.
+
+Field catalog:
 
 ```yaml
 current_time: prose or timestamp-like string
@@ -169,6 +204,8 @@ Rules:
 - Always included.
 - Must not contain verbatim accepted prose, rejected candidate prose, superseded regeneration text, or automatic prose-derived summaries.
 - `prior_accepted_prose_status_or_handoff_note` must render `None. No accepted prose is included.` for first segments or when no handoff is needed.
+- For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no prior accepted prose exists.
+- For `continuation_after_accepted_segment`, a user-authored handoff is required. The required continuation handoff must include a recent causal bridge and either a last visible moment or a begin-after point.
 - Durable changes from accepted prose must be represented in selected records or current state before the next prompt.
 
 ### 3.4 MANUAL MOMENT DIRECTIVE
@@ -183,7 +220,7 @@ do_not_force: prose list
 
 Rules:
 
-- `must_render` is required.
+- `must_render` is required for readiness, prompt preview, compilation, and generation. It may be blank in a saved draft. Blank `must_render` produces a readiness blocker, not a draft-save failure.
 - The other two fields are optional but should render explicit empty states.
 - The directive wins over character defaults and soft tendencies.
 - The directive does not override hard canon, current state, physical possibility, POV/reveal constraints, or provider policy.
@@ -208,10 +245,12 @@ current_cast_voice_pressure:
 
 Rules:
 
-- Required when an active/onstage character is expected to speak materially.
-- Required when close POV narration depends on a character-specific current voice pressure.
-- Required when an active/onstage silent character’s body, gesture, posture, stillness, or social presence materially drives the local unit.
-- May be empty only when the durable voice anchor/body-presence core is sufficient and dialogue, close POV voice, and active silent presence are not a focus.
+- Current cast voice pressure is optional scene-specific salience reinforcement. Durable CAST MEMBER voice and behavior fields are the primary authority.
+- Recommended when an active/onstage character is expected to speak materially.
+- Recommended when close POV narration depends on a character-specific current voice pressure.
+- Recommended when an active/onstage silent character's body, gesture, posture, stillness, or social presence materially drives the local unit.
+- It is not normally required when the durable dossier already gives enough voice/body authority.
+- Blocks only when supplied current pressure contradicts hard canon, current state, POV/reveal constraints, physical continuity, or provider policy; or when a selected local mode requires voice/body authority and neither durable cast fields nor compressed present-minor guidance can supply it.
 - Compiles into `{active_cast_voice_pressure_pins}`.
 
 ### 3.6 CAST VOICE OVERRIDES
@@ -290,14 +329,15 @@ validation_focus_tags:
 
 Requirements:
 
-- Exactly one `generation_context` value is required.
+- Exactly one `generation_context` value is required in `GenerationSessionReadyInput`. A draft may omit it.
+- Normalization defaults `generation_context` from accepted-segment count: no accepted segments means `first_segment`; one or more accepted segments means `continuation_after_accepted_segment`.
 - Other tags may be empty only if the manual directive and current state are genuinely minimal.
-- Tags are selected by the user or deterministic UI controls, not by an LLM.
+- Tags are selected by the user or deterministic UI controls, or are deterministically derived from explicit controls/records. They are never derived from LLM interpretation of prose.
 - Tags are validation-facing by default and should not compile into the prose prompt.
 
 ### 3.8 STOP GUIDANCE
 
-Generation-time field defining the local unit and response-point boundary. This is required for every generation and compiles into `{soft_unit_guidance}` inside `<stop_rule>`.
+Generation-time field defining optional user narrowing for the local unit and response-point boundary. Blank or missing stop guidance does not block readiness because the universal prompt contains the local-unit stop rule.
 
 Fields:
 
@@ -307,10 +347,10 @@ soft_unit_guidance: prose
 
 Rules:
 
-- Always included.
-- Must describe the next local unit of causally connected forward motion, such as one approach, one exchange, one discovery, one refusal, one physical maneuver, one interruption, one reveal-withheld, or one practical result.
-- Must not request a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points.
-- Blocks generation if blank, structurally non-local, or contradictory with the manual directive.
+- `soft_unit_guidance` is optional.
+- If supplied, it must describe the next local unit of causally connected forward motion, such as one approach, one exchange, one discovery, one refusal, one physical maneuver, one interruption, one reveal-withheld, or one practical result.
+- If supplied, it must not request a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points.
+- Blocks generation only when supplied guidance is structurally non-local or contradictory with the manual directive.
 - The stop rule outranks desired length, drama, escalation, or completion.
 
 ## 4. Core entity records
@@ -877,14 +917,18 @@ Schema/template synchronization rules:
 Minimum prompt completeness for v1:
 
 1. Role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction must always compile.
-2. Current authoritative state, immediate handoff, manual directive, and stop guidance must be present for every generation.
-3. Non-omniscient POV requires a populated POV knowledge profile.
-4. Active secrets require holders, protected non-holders, allowed cues, forbidden reveals, and reveal permission.
-5. Active physical interaction requires current location, onstage entities, positions/distance, object possession, visibility/line of sight, routes/exits, available time, and unavailable/impossible actions where omission would invite error.
-6. Active/onstage person-like cast requires a core cast dossier and local function. Dialogue, close POV voice, ensemble speech, or active silent presence requires a compiled voice/body pressure pin sufficient for the local function.
-7. Generation validation focus tags must identify first segment vs continuation and activate context-dependent blockers.
-8. Optional sections render explicit empty states; constitutional sections are not omitted.
-9. Unresolved contradictions, impossible conditions, missing mandatory fields, secret leakage, and accepted-prose inclusion are blockers.
+2. Current authoritative state has a universal minimum: current time or temporal position, current location or scene-space, onstage/materially relevant entities, and immediate situation summary.
+3. Context-gated current-state fields are required only when explicit focus tags, selected records, story configuration, or the manual directive make them structurally necessary.
+4. Immediate handoff is required only for `continuation_after_accepted_segment`; first segments compile a deterministic no-prior-prose empty state.
+5. Stop guidance is optional because the universal prompt always contains the local-unit stop rule. Supplied stop guidance must be local and noncontradictory.
+6. Manual directive `must_render` remains required for readiness, prompt preview, compilation, and generation.
+7. Non-omniscient POV requires a populated POV knowledge profile.
+8. Active secrets require holders, protected non-holders, allowed cues, forbidden reveals, and reveal permission.
+9. Active physical interaction requires current location, onstage entities, positions/distance, object possession, visibility/line of sight, routes/exits, available time, and unavailable/impossible actions where omission would invite error.
+10. Active/onstage person-like cast requires a core cast dossier and local function. Current cast voice pressure is optional unless the selected local mode needs voice/body authority and no durable or compressed source exists, or supplied pressure contradicts authority.
+11. Generation validation focus tags must resolve first segment vs continuation and activate context-dependent blockers.
+12. Optional sections may render explicit empty states or be omitted when the surrounding prompt remains structurally complete; constitutional sections are not omitted.
+13. Unresolved contradictions, impossible conditions, missing mandatory readiness fields, secret leakage, and accepted-prose inclusion are blockers.
 
 ## 11. Validation blockers and warnings
 
@@ -905,9 +949,9 @@ Blockers include:
 - content envelope inconsistent with active cast ages/statuses, story configuration, or provider constraints;
 - active physical interaction without bodies, positions, objects, routes, visibility, time, and consent/force conditions where relevant;
 - active/onstage person-like cast missing required core dossier when materially involved;
-- dialogue or close POV expected while active speaker lacks enough voice anchor/current voice pressure;
-- ensemble dialogue expected while likely speakers lack distinct voice pressure pins or relationship/status context;
-- active silent presence expected while body presence, visibility, or nonverbal/silence pressure is missing;
+- dialogue or close POV expected while active speaker lacks durable voice/body authority, compressed present-minor guidance, and any current voice pressure sufficient for the local function;
+- ensemble dialogue expected while likely speakers lack distinct durable voice/body authority or relationship/status context;
+- active silent presence expected while body presence, visibility, or allowed-action authority is missing;
 - ambiguous perception expected while line of sight, sound, obstruction, or POV uncertainty is unspecified;
 - nonhuman/institutional pressure expected while entity operating rules, authority/route, or action mechanism is missing;
 - selected validation focus tag missing matrix-required state;
@@ -921,7 +965,28 @@ Warnings include:
 - missing optional sample utterances;
 - sparse setting texture;
 - no active clock/obligation/open thread when manual directive is otherwise sufficient;
-- long active cast dossier where the user may want a stronger voice pin.
+- long active cast dossier where the user may want a stronger voice pin;
+- missing current cast voice pressure when durable anchors are sufficient but the local unit may benefit from scene-specific emphasis.
+
+Diagnostic author-surface metadata should be rich enough to explain blockers and warnings without making raw codes primary author copy:
+
+```ts
+interface DiagnosticAuthorSurface {
+  code: string;
+  severity: "blocker" | "warning" | "info";
+  group: "required" | "provider" | "recommended" | "salience" | "technical";
+  title: string;
+  summary: string;
+  whyBlocks?: string;
+  whatMayDegrade?: string;
+  whyNotBlocking?: string;
+  whenBecomesBlocking?: string;
+  fastestFix: string;
+  ignoreGuidance?: string;
+  affected: AffectedTarget[];
+  technicalDetails?: unknown;
+}
+```
 
 ## 12. Local invention and durable change
 

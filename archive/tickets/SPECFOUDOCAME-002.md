@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-002: Amend story-record-schema.md — draft/ready shapes and field reclassification
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/story-record-schema.md` §3.0 (new), §3.2/§3.3/§3.4/§3.5/§3.7/§3.8, §10, §11 (diagnostic metadata model); no production behavior change.
@@ -96,3 +96,22 @@ Replace the flat "every field required" framing with **readiness-required univer
 1. `grep -nE "Readiness-required universal|Context-gated|GenerationSessionDraft|DiagnosticAuthorSurface" docs/story-record-schema.md` — confirm the reclassification and metadata model landed.
 2. `grep -c "Blocks generation if blank" docs/story-record-schema.md` — must return `0`.
 3. Manual review of §3.2 field categories against `docs/compiler-contract.md` placeholder requiredness (the correct boundary, since cross-doc requiredness agreement is not single-file greppable) — full agreement is gated by SPECFOUDOCAME-008.
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/story-record-schema.md` to add `GenerationSessionDraft` and `GenerationSessionReadyInput`, distinguish storage validation from readiness validation, reclassify `CURRENT AUTHORITATIVE STATE` into a readiness-required universal floor plus context-gated fields, make first-segment handoff optional and continuation handoff required, preserve `manual_moment_directive.must_render` as readiness-required while allowing draft saves, make `soft_unit_guidance` optional, and reclassify current cast voice pressure as optional salience with narrow blocking exceptions.
+
+Also updated §10/§11 minimum completeness and validation examples so blank stop guidance and generic missing current cast voice pressure are not blockers, while nonlocal supplied stop guidance, accepted-prose contamination, hard contradictions, and missing true readiness authority remain blockers. Added conceptual `DiagnosticAuthorSurface` metadata for author-facing diagnostics.
+
+Deviations from original plan: none. `immediate_situation_summary` was preserved and filed under the universal floor; no field was removed.
+
+Verification:
+
+- `grep -nE "GenerationSessionDraft|GenerationSessionReadyInput" docs/story-record-schema.md`
+- `grep -c "Blocks generation if blank" docs/story-record-schema.md` returned `0`
+- `grep -nE "must_render. is required|Readiness-required universal" docs/story-record-schema.md`
+- `grep -n "immediate_situation_summary" docs/story-record-schema.md`
+- `grep -nE "Readiness-required universal|Context-gated|GenerationSessionDraft|DiagnosticAuthorSurface" docs/story-record-schema.md`
+- Manual review confirmed the field catalog remains intact and the reclassified requiredness matches the amended FOUNDATIONS doctrine.
