@@ -71,7 +71,7 @@ export const secretSchema = z
     pov_access: z.enum(["hidden", "can_suspect", "knows_partly", "knows"]),
     salience: z.enum(["low", "medium", "high", "critical"]),
     allowed_surface_cues: z.array(nonemptyString).default([]),
-    forbidden_reveals: z.array(nonemptyString).default([]),
+    forbidden_reveals: z.union([z.array(nonemptyString), z.literal("none")]).default([]),
     reveal_permission: z.enum(["locked", "clue_only", "natural_reveal_allowed", "directive_required"]),
     reveal_triggers: z.array(nonemptyString).default([]),
     clue_carriers: z.array(clueCarrierSchema).default([])

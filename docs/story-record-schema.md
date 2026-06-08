@@ -619,7 +619,7 @@ pov_access: hidden | can_suspect | knows_partly | knows
 salience: low | medium | high | critical
 status: hidden | partially_revealed | revealed | disproven | abandoned
 allowed_surface_cues: prose list
-forbidden_reveals: prose list
+forbidden_reveals: prose list | none
 reveal_permission: locked | clue_only | natural_reveal_allowed | directive_required
 reveal_triggers: prose list
 clue_carriers:

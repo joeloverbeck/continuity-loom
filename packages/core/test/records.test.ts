@@ -213,6 +213,78 @@ describe("record data model", () => {
         api_key: "not allowed"
       })
     ).toThrow();
+    expect(
+      secretSchema.parse({
+        id: idB,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "Hidden truth",
+        holders: [idA],
+        non_holders_to_protect: [idB],
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        reveal_permission: "locked",
+        allowed_surface_cues: [],
+        forbidden_reveals: "none",
+        reveal_triggers: [],
+        clue_carriers: []
+      }).forbidden_reveals
+    ).toBe("none");
+    expect(
+      secretSchema.parse({
+        id: idB,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "Hidden truth",
+        holders: [idA],
+        non_holders_to_protect: [idB],
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        reveal_permission: "locked",
+        allowed_surface_cues: [],
+        forbidden_reveals: ["Do not name the real parent."],
+        reveal_triggers: [],
+        clue_carriers: []
+      }).forbidden_reveals
+    ).toEqual(["Do not name the real parent."]);
+    expect(() =>
+      secretSchema.parse({
+        id: idB,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "Hidden truth",
+        holders: [idA],
+        non_holders_to_protect: [idB],
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        reveal_permission: "locked",
+        allowed_surface_cues: [],
+        forbidden_reveals: "None",
+        reveal_triggers: [],
+        clue_carriers: []
+      })
+    ).toThrow();
+    expect(() =>
+      secretSchema.parse({
+        id: idB,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "Hidden truth",
+        holders: [idA],
+        non_holders_to_protect: [idB],
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        reveal_permission: "locked",
+        allowed_surface_cues: [],
+        forbidden_reveals: "anything else",
+        reveal_triggers: [],
+        clue_carriers: []
+      })
+    ).toThrow();
     expect(() =>
       planSchema.parse({ plan_status: "active", holder: idA, objective: "Act", steps: [], can_drive_prose: true, status: "active" })
     ).toThrow();

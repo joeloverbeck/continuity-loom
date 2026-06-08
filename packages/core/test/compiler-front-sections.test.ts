@@ -252,6 +252,44 @@ describe("compiler front-section resolvers", () => {
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
   });
 
+  it("renders affirmative no-forbidden-reveals secrets without using the empty state", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              id: secretId,
+              status: "hidden",
+              secret_claim: "Mara stole the archive key.",
+              holders: [holderId],
+              non_holders_to_protect: [povId],
+              audience_visibility: "explicit",
+              pov_access: "can_suspect",
+              allowed_surface_cues: ["Mara avoids the desk drawer."],
+              forbidden_reveals: "none",
+              reveal_permission: "clue_only",
+              reveal_triggers: ["Only if Mara is directly searched."]
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).toContain("- No reveals are forbidden beyond the stated reveal permission.");
+    expect(secretSection).not.toContain(`Forbidden reveals:\n${EMPTY_STATE_CONSTANTS.forbidden_reveals}`);
+  });
+
+  it("still renders populated forbidden reveals as a list", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+      "- Do not state that Mara has the key."
+    );
+  });
+
   it("renders only the user-authored handoff note or the no-accepted-prose constant", () => {
     const populated = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
     const empty = compilePrompt(buildValidationSnapshot(emptyInput())).prompt;

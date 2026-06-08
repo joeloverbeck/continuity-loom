@@ -138,7 +138,11 @@ const frontResolvers: ResolverMap = {
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.allowed_surface_cues)).join("\n") ||
     EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues,
   forbidden_reveals: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.forbidden_reveals)).join("\n") ||
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
+      payload.forbidden_reveals === "none"
+        ? "No reveals are forbidden beyond the stated reveal permission."
+        : listLine(payload.forbidden_reveals)
+    ).join("\n") ||
     EMPTY_STATE_CONSTANTS.forbidden_reveals,
   reveal_permissions: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>

@@ -356,6 +356,29 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
   });
 
+  it("does not block an active secret with an affirmative no-forbidden-reveals sentinel", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: [entityId],
+          forbidden_reveals: "none",
+          reveal_permission: "natural_reveal_allowed",
+          allowed_surface_cues: ["A flinch at the old name."]
+        }
+      }
+    ];
+    selectRecord(input, secretId);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
+  });
+
   it("lists every missing active-secret reveal-boundary field", () => {
     const input = cleanInput();
     input.records = [

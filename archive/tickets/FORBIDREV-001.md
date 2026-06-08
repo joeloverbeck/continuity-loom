@@ -1,6 +1,6 @@
 # FORBIDREV-001: Let an active secret affirmatively declare "no forbidden reveals"
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/records/knowledge.ts` (SECRET schema), `packages/core/src/compiler/sections/front.ts` (`forbidden_reveals` resolver), `packages/core/src/records/field-guidance-records.ts` (authoring guidance), `docs/compiler-contract.md`, `docs/story-record-schema.md`; regression coverage in `packages/core/test/`
@@ -119,3 +119,25 @@ forbidden_reveals: (snapshot) =>
 
 1. `npm test -- validation-completeness validation-matrix-knowledge`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Widened the SECRET `forbidden_reveals` schema to accept either a prose-string array or the exact literal `"none"`, keeping the default blank array unchanged.
+- Added deterministic compiler rendering for `"none"` as `No reveals are forbidden beyond the stated reveal permission.`
+- Updated field guidance, compiler contract, and story record schema documentation for the affirmative sentinel.
+- Added regression coverage for active-secret completeness, secret/clue matrix validation, compiler rendering, and schema parsing/rejection.
+
+Deviations from original plan:
+
+- None. Validation predicates were left unchanged; the existing `hasValue` behavior now treats the accepted `"none"` literal as populated while blank arrays still block.
+
+Verification results:
+
+- `npm test -- validation-completeness validation-matrix-knowledge compiler-front-sections records` — passed, 8 files / 81 tests.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 99 files / 649 tests.
