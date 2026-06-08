@@ -141,6 +141,28 @@ describe("compile routes", () => {
     expect(body).not.toHaveProperty("prompt");
   });
 
+  it("does not throw when a first-segment brief has no prior-prose note", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify, {
+      immediate_handoff: {
+        recent_causal_context: "A arrived with the key.",
+        last_visible_moment: "B noticed the key.",
+        begin_after: "B noticing the key."
+      }
+    });
+
+    const response = await fastify.inject({ method: "POST", url: "/api/compile" });
+    const body = response.json() as { kind?: string; prompt?: string; validation?: { isBlocked: boolean; blockers: { code: string }[] } };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.kind).not.toBe("internal-server-error");
+    expect(body.validation?.blockers.map((blocker) => blocker.code) ?? []).not.toContain(
+      "prompt-facing-prose-contamination"
+    );
+  });
+
   it("returns malformed-source errors from the shared snapshot builder with no prompt", async () => {
     const fastify = app();
     await openProject(fastify);

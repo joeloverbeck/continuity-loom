@@ -511,8 +511,10 @@ function isCleanAcceptedStatus(entry: { field: string; text: string }): boolean 
   );
 }
 
-function isCleanNoAcceptedProseNote(text: string): boolean {
-  return text.trim().toLowerCase() === "none. no accepted prose is included.";
+export function isCleanNoAcceptedProseNote(text: string | undefined): boolean {
+  const normalized = text?.trim().toLowerCase() ?? "";
+
+  return normalized === "" || normalized === "none" || normalized === "none. no accepted prose is included.";
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {

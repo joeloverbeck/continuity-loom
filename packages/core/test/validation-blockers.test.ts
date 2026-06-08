@@ -6,6 +6,7 @@ import {
   runValidation,
   type BuildValidationSnapshotInput
 } from "../src/index.js";
+import { isCleanNoAcceptedProseNote } from "../src/validation/rules/universal-blockers.js";
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castId = "019b0298-5c00-7000-8000-000000000002";
@@ -202,6 +203,24 @@ describe("universal blocker validation", () => {
     input.generationSession.immediate_handoff!.begin_after = "Continue from last time.";
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
+  });
+
+  it.each([
+    ["absent", undefined, true],
+    ["empty", "", true],
+    ["clean sentinel", "None. No accepted prose is included.", true],
+    ["literal none", "none", true],
+    ["real handoff note", "A user-authored continuation bridge.", false]
+  ])("classifies %s prior-prose notes", (_name, text, expected) => {
+    expect(isCleanNoAcceptedProseNote(text)).toBe(expected);
+  });
+
+  it("does not block first-segment handoff when the prior-prose note is absent", () => {
+    const input = cleanInput();
+    delete input.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note;
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
 
   it("blocks contaminated continuation handoff", () => {
