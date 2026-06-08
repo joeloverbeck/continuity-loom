@@ -1,6 +1,6 @@
 # SPEC — Readiness Diagnostics and Three-Page UX
 
-Status: proposed active implementation spec  
+Status: COMPLETED
 Repository: `joeloverbeck/continuity-loom`  
 Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`  
 Predecessors (landed): `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` (draft schema, normalizer, `normalizeGenerationSessionForReadiness`), `archive/specs/SPEC-validation-gating-taxonomy-and-focus-matrix.md` (blocker/warning taxonomy and the diagnostic codes this spec presents).  
@@ -385,3 +385,33 @@ The preferred route is `/api/readiness` because the three pages need the same gr
 - **Author-facing copy table must stay in sync with `DIAGNOSTIC_CODES`.** New or retired validator codes require a matching per-code copy-table entry. The deterministic fallback prevents a hard break, but an un-mapped code renders as a raw technical diagnostic until copy is authored — a coverage test over `DIAGNOSTIC_CODES` is recommended.
 - **`providerState` shape.** This spec assumes `providerState` is derived server-side from OpenRouter settings as a boolean `configured` (mirroring `getOpenRouterSettings().hasOpenRouterCredential` in `GenerateView`). If a richer provider-readiness model is needed later (e.g. invalid-key vs missing-key), it extends `provider.blockers` without changing the readiness contract.
 - **Open questions:** none remaining at reassessment time.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added the core `GenerationReadiness` / `ReadinessDiagnostic` presentation model and deterministic `deriveReadiness` adapter.
+- Added `POST /api/readiness`, wired from the existing validation snapshot and provider credential state without returning secrets, prompt text, candidate text, accepted prose, or full record payloads.
+- Added a shared `ReadinessChecklist` component and adopted it on Generation Brief, Prompt Preview, and Generate.
+- Replaced raw diagnostic-code-first UI on the three generation pages with author-facing grouped readiness diagnostics and collapsed technical details.
+- Preserved draft save independence, prompt-body isolation, provider send gating, and candidate accept/discard lifecycle semantics.
+- Retired the orphaned `ValidationResultView`.
+
+Deviations from original plan:
+
+- None. Documentation amendments and demo smoke remain owned by the separate active follow-up specs.
+
+Verification:
+
+- `npm test -- packages/core/test/readiness.test.ts` — passed.
+- `npm test -- packages/server/src/readiness-routes.test.ts` — passed.
+- `npm test -- packages/web/src/readiness/ReadinessChecklist.test.tsx` — passed.
+- `npm test -- packages/web/src/generation-brief/ValidationPanel.test.tsx packages/web/src/generation-brief/GenerationBriefView.test.tsx` — passed.
+- `npm test -- packages/web/src/preview/PromptPreviewView.test.tsx` — passed.
+- `npm test -- packages/web/src/generate/GenerateView.test.tsx` — passed.
+- `npm test -- packages/web/src/readiness/readiness-cross-page.test.tsx` — passed.
+- `npm test` — passed, 99 files / 597 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.

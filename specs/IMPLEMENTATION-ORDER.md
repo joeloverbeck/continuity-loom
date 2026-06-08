@@ -10,7 +10,7 @@ Target commit: `e1df2d032c7ae7976108f70cafa5802a7398ce39`
 
 1. `archive/specs/SPEC-generation-brief-draftability-and-save-model.md` — completed and archived.
 2. `SPEC-validation-gating-taxonomy-and-focus-matrix.md`
-3. `SPEC-readiness-diagnostics-and-three-page-ux.md`
+3. `archive/specs/SPEC-readiness-diagnostics-and-three-page-ux.md` — completed and archived.
 4. `SPEC-implementation-order-and-regression-plan.md`
 
 This file formalizes the order in which they should be implemented and why.
