@@ -1,6 +1,6 @@
 # SPECREADIATHR-001: Core readiness model, diagnostic types, and `deriveReadiness`
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/core/src/validation/readiness.ts` (the `GenerationReadiness` / `ReadinessDiagnostic` / `AffectedTarget` types, the `deriveReadiness` adapter, and the per-code author-facing copy table); barrel export from `packages/core/src/index.ts`. No change to existing validator rules or emitted `Diagnostic` codes.
@@ -85,3 +85,24 @@ Export `deriveReadiness` and the new types alongside the existing `DIAGNOSTIC_CO
 1. `npm test -- packages/core/test/readiness.test.ts`
 2. `npm run typecheck && npm run lint`
 3. Targeted core test is the correct boundary because this ticket adds pure core logic with no server/UI surface; the full pipeline is exercised by the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added `packages/core/src/validation/readiness.ts` with the pure `deriveReadiness` adapter, readiness/checklist types, seeded author-facing copy for the grounded diagnostic examples, deterministic fallback copy, provider-state gating, unsaved-draft stale state, display-label enrichment, and warning grouping.
+- Exported the new readiness function and types from `packages/core/src/index.ts`.
+- Added `packages/core/test/readiness.test.ts` covering determinism, legacy-code preservation, warning-only non-gating, blocker gating, provider gating, fallback behavior, display labels, grouped cast-salience warnings, and unsaved draft state.
+
+Deviations from original plan:
+
+- None. Server route and UI wiring remain out of scope for later tickets.
+
+Verification:
+
+- `npm test -- packages/core/test/readiness.test.ts` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `rg -n "node:|fastify|react|Date\\.now|Math\\.random|fetch\\(" packages/core/src/validation/readiness.ts` — no matches.
