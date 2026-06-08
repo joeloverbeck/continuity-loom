@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-003: Amend compiler-contract.md — requiredness terms and placeholder rows
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/compiler-contract.md` requiredness terminology + §2/§4/§5/§6/§7/§8; no production behavior change.
@@ -94,3 +94,18 @@ Apply the spec §4.3 row table: `{current_time}`/`{current_location}`/`{onstage_
 1. `grep -nE "GenerationSessionReadyInput|Context-gated required|Optional prompt preference" docs/compiler-contract.md` — confirm the source + requiredness terms landed.
 2. `grep -nE "\{soft_unit_guidance\}|\{immediate_situation_summary\}|\{manual_must_render\}" docs/compiler-contract.md` — confirm the affected rows render with corrected requiredness.
 3. Manual review of the §4 table against `docs/story-record-schema.md` §3.2/§3.8 and `docs/prompt-template.md` placeholders (the correct boundary; three-way requiredness agreement is verified end-to-end by SPECFOUDOCAME-008).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/compiler-contract.md` to make `GenerationSessionReadyInput` the deterministic compiler source, add requiredness terminology, reclassify current-state, handoff, stop-guidance, validation-focus, and cast-voice placeholder rows, and update minimum completeness, validation matrix, warning rendering, and empty-state rules for the draft/readiness doctrine.
+
+Deviations from original plan: none. `{immediate_situation_summary}` was preserved as readiness-required, and `{soft_unit_guidance}` was changed to an optional prompt preference that does not block when blank.
+
+Verification:
+
+- `grep -nE "Readiness required|Context-gated required|Optional prompt preference|Draft-save required" docs/compiler-contract.md`
+- `grep -n "GenerationSessionReadyInput" docs/compiler-contract.md`
+- `grep -nE "\{soft_unit_guidance\}|\{immediate_situation_summary\}|\{manual_must_render\}" docs/compiler-contract.md`
+- Manual review confirmed the placeholder mapping still maps every existing row to deterministic sources and keeps no-LLM, no-accepted-prose, and no-inactive-record source rules intact.
