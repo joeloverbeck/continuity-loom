@@ -2,10 +2,10 @@
 
 import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { compile, getGenerationBrief, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
+import { compile, getGenerationBrief, listRecords, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
 import { GenerateView } from "../generate/GenerateView.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { ValidationPanel } from "../generation-brief/ValidationPanel.js";
@@ -17,6 +17,7 @@ vi.mock("../api.js", () => ({
   generate: vi.fn(),
   getGenerationBrief: vi.fn(),
   getDurableChangeReminder: vi.fn(),
+  listRecords: vi.fn(),
   listStoryConfig: vi.fn(),
   readiness: vi.fn(),
   setGenerationBrief: vi.fn()
@@ -29,7 +30,9 @@ class ResizeObserverStub {
 }
 
 const originalResizeObserver = globalThis.ResizeObserver;
+const originalScrollIntoViewDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
 const writeText = vi.fn();
+const scrollIntoView = vi.fn();
 
 beforeAll(() => {
   globalThis.ResizeObserver = ResizeObserverStub;
@@ -37,6 +40,11 @@ beforeAll(() => {
 
 beforeEach(() => {
   writeText.mockReset();
+  scrollIntoView.mockReset();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+    configurable: true,
+    value: scrollIntoView
+  });
   Object.defineProperty(navigator, "clipboard", {
     configurable: true,
     value: { writeText }
@@ -53,6 +61,7 @@ beforeEach(() => {
       }
     }
   });
+  vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
   vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
   vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
 });
@@ -64,6 +73,11 @@ afterEach(() => {
 
 afterAll(() => {
   globalThis.ResizeObserver = originalResizeObserver;
+  if (originalScrollIntoViewDescriptor) {
+    Object.defineProperty(HTMLElement.prototype, "scrollIntoView", originalScrollIntoViewDescriptor);
+  } else {
+    Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
+  }
 });
 
 describe("cross-page readiness behavior", () => {
@@ -179,6 +193,58 @@ describe("cross-page readiness behavior", () => {
     expect(onFocusField).toHaveBeenCalledWith("generationSession.manual_moment_directive.must_render");
     expect(document.activeElement).toBe(screen.getByLabelText("Launch directive"));
   });
+
+  it("scrolls and focuses the current-state section from a Generation Brief readiness action", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [currentStateBlocker()]
+    }));
+
+    renderBrief();
+
+    expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    fireEvent.click(await screen.findByRole("button", { name: "Edit current state" }));
+
+    const currentStateSection = screen.getByRole("heading", { name: "CURRENT AUTHORITATIVE STATE" }).closest("section");
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(currentStateSection?.contains(document.activeElement)).toBe(true);
+  });
+
+  it("carries Prompt Preview field actions to the Generation Brief field URL and focused section", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [currentStateBlocker()]
+    }));
+
+    renderPreviewToBriefRoute();
+
+    expect(await screen.findByText("Prompt preview is blocked.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit current state" }));
+
+    expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    expect(screen.getByTestId("route-location").textContent).toBe(
+      "/generation-brief?field=generationSession.current_authoritative_state"
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+  });
+
+  it("carries Generate field actions to the Generation Brief field URL and focused section", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [currentStateBlocker()]
+    }));
+
+    renderGenerateToBriefRoute();
+
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit current state" }));
+
+    expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    expect(screen.getByTestId("route-location").textContent).toBe(
+      "/generation-brief?field=generationSession.current_authoritative_state"
+    );
+    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
+  });
 });
 
 async function renderAndCollect(renderSurface: () => void): Promise<string> {
@@ -213,12 +279,42 @@ function renderGenerate(): void {
   );
 }
 
+function renderPreviewToBriefRoute(): void {
+  render(
+    <MemoryRouter initialEntries={["/preview"]}>
+      <LocationProbe />
+      <Routes>
+        <Route path="/preview" element={<PromptPreviewView />} />
+        <Route path="/generation-brief" element={<GenerationBriefView />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+function renderGenerateToBriefRoute(): void {
+  render(
+    <MemoryRouter initialEntries={["/generate"]}>
+      <LocationProbe />
+      <Routes>
+        <Route path="/generate" element={<GenerateView />} />
+        <Route path="/generation-brief" element={<GenerationBriefView />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
 function renderBrief(): void {
   render(
     <MemoryRouter>
       <GenerationBriefView />
     </MemoryRouter>
   );
+}
+
+function LocationProbe(): React.JSX.Element {
+  const location = useLocation();
+
+  return <output data-testid="route-location">{location.pathname}{location.search}</output>;
 }
 
 function compileResult(prompt: string): CompileResult {
@@ -276,6 +372,26 @@ function launchDirectiveBlocker(): ReadinessDiagnostic {
       kind: "focus-field",
       label: "Edit launch directive",
       target: "generationSession.manual_moment_directive.must_render"
+    }]
+  });
+}
+
+function currentStateBlocker(): ReadinessDiagnostic {
+  return diagnostic({
+    severity: "blocker",
+    code: "missing-current-state",
+    legacyCode: "missing-current-authoritative-state",
+    title: "Complete the current state",
+    group: "required-before-prompt-generation",
+    affected: [{
+      kind: "generation-field",
+      fieldPath: "generationSession.current_authoritative_state",
+      displayLabel: "Current authoritative state"
+    }],
+    actions: [{
+      kind: "focus-field",
+      label: "Edit current state",
+      target: "generationSession.current_authoritative_state"
     }]
   });
 }

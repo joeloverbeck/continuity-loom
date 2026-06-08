@@ -1,15 +1,16 @@
 // @vitest-environment jsdom
 
-import type { GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import { generationSessionDraftSchema, type GenerationReadiness, type ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
-import { getGenerationBrief, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
+import { getGenerationBrief, listRecords, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
 
 vi.mock("../api.js", () => ({
   getGenerationBrief: vi.fn(),
+  listRecords: vi.fn(),
   listStoryConfig: vi.fn(),
   readiness: vi.fn(),
   setGenerationBrief: vi.fn(),
@@ -34,6 +35,10 @@ beforeAll(() => {
   globalThis.ResizeObserver = ResizeObserverStub;
 });
 
+beforeEach(() => {
+  vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
+});
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -53,12 +58,17 @@ function renderView(): void {
 
 describe("GenerationBriefView", () => {
   it("edits all eight surfaces and persists them through the brief client", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
         "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
       }
+    });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
     });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -70,8 +80,21 @@ describe("GenerationBriefView", () => {
     expect(screen.getByRole("button", { name: "Help for must_render" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for generation_context" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for soft_unit_guidance" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for current_location" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for onstage_entities" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for immediate_situation_summary" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
+    expect(screen.getByRole("option", { name: "Omniscient" })).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/^selected_pov/), { target: { value: "omniscient" } });
     fireEvent.change(screen.getByLabelText(/^current_time/), { target: { value: "midnight" } });
+    fireEvent.change(screen.getByLabelText(/^current_location/), { target: { value: "loading dock" } });
+    const onstageEntities = screen.getByLabelText(/^onstage_entities/);
+    const jonOption = within(onstageEntities).getByRole<HTMLOptionElement>("option", { name: "Jon Ureña" });
+    jonOption.selected = true;
+    fireEvent.change(onstageEntities);
+    fireEvent.change(screen.getByLabelText(/^immediate_situation_summary/), {
+      target: { value: "Jon is at the loading dock with the door half open." }
+    });
     fireEvent.change(screen.getByLabelText(/^recent_causal_context/), { target: { value: "A reached the gate." } });
     fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
     fireEvent.change(screen.getByLabelText(/^must_render/), { target: { value: "The lock opens." } });
@@ -97,7 +120,12 @@ describe("GenerationBriefView", () => {
     ].sort());
     expect(payload).toMatchObject({
       active_working_set: { selected_pov: "omniscient" },
-      current_authoritative_state: { current_time: "midnight" },
+      current_authoritative_state: {
+        current_time: "midnight",
+        current_location: "loading dock",
+        onstage_entities: [jonId],
+        immediate_situation_summary: "Jon is at the loading dock with the door half open."
+      },
       immediate_handoff: { recent_causal_context: "A reached the gate." },
       manual_moment_directive: { must_render: ["The lock opens."] },
       current_cast_voice_pressure: [{ local_function: "present_minor_speaker", current_voice_pressure: "clipped and wary" }],
@@ -108,6 +136,104 @@ describe("GenerationBriefView", () => {
       stop_guidance: { soft_unit_guidance: "Stop after the reply." }
     });
     expect(await screen.findByText("Draft saved.")).toBeTruthy();
+  });
+
+  it("shows entity POV options, saves canonical selected_pov values, and supports the prose-mode default", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    const aneId = "019ea213-8f7e-73dc-8e5b-67ba95ca9500";
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({
+      ok: true,
+      configs: {
+        "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
+      }
+    });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [
+        recordSummary({ id: jonId, displayLabel: "Jon Ureña" }),
+        recordSummary({ id: aneId, displayLabel: "Ane Arrieta" })
+      ]
+    });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const selectedPov = await screen.findByLabelText(/^selected_pov/);
+    expect(within(selectedPov).getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
+    expect(within(selectedPov).getByRole("option", { name: "Omniscient" })).toBeTruthy();
+    expect(within(selectedPov).getByRole("option", { name: "Ane Arrieta" })).toBeTruthy();
+    expect(within(selectedPov).getByRole("option", { name: "Jon Ureña" })).toBeTruthy();
+
+    fireEvent.change(selectedPov, { target: { value: jonId } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalledTimes(1));
+    const entityPayload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(entityPayload).toMatchObject({ active_working_set: { selected_pov: jonId } });
+    expect(() => generationSessionDraftSchema.parse(entityPayload)).not.toThrow();
+
+    fireEvent.change(selectedPov, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalledTimes(2));
+    const defaultPayload = vi.mocked(setGenerationBrief).mock.calls[1]?.[0] as Record<string, unknown>;
+    expect((defaultPayload.active_working_set as { selected_pov?: unknown }).selected_pov).toBeUndefined();
+    expect(() => generationSessionDraftSchema.parse(defaultPayload)).not.toThrow();
+  });
+
+  it("renders matching PROSE MODE pov_character UUIDs by entity display label and preserves literals", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({
+      ok: true,
+      configs: {
+        "PROSE MODE": { pov_character: jonId, person: "first", tense: "present" }
+      }
+    });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    expect(await screen.findByText("PROSE MODE source: Jon Ureña / first / present")).toBeTruthy();
+    expect(screen.queryByText(new RegExp(jonId))).toBeNull();
+  });
+
+  it("renders variable PROSE MODE pov_character literally", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({
+      ok: true,
+      configs: {
+        "PROSE MODE": { pov_character: "variable", person: "third", tense: "present" }
+      }
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    expect(await screen.findByText("PROSE MODE source: variable / third / present")).toBeTruthy();
+  });
+
+  it("keeps a dangling selected_pov UUID selectable without relabeling it as a known entity", async () => {
+    const missingId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: { active_working_set: { selected_pov: missingId } },
+      defaults: briefDefaults
+    });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const selectedPov = await screen.findByLabelText(/^selected_pov/);
+    expect((selectedPov as HTMLSelectElement).value).toBe(missingId);
+    expect(within(selectedPov).getByRole("option", { name: `Unknown entity (${missingId.slice(0, 8)})` })).toBeTruthy();
   });
 
   it("uses canonical generation-brief guidance keys and reconciles static doctrine hints", async () => {
@@ -131,6 +257,44 @@ describe("GenerationBriefView", () => {
 
     expect(await screen.findByText("A handoff note about accepted prose status, not prose authority.")).toBeTruthy();
     expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
+  });
+
+  it("preserves in-progress trailing spaces while editing must_render", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const mustRender = await screen.findByLabelText(/^must_render/);
+    fireEvent.change(mustRender, { target: { value: "door closing " } });
+
+    expect((mustRender as HTMLTextAreaElement).value).toBe("door closing ");
+  });
+
+  it("normalizes must_render lines only when saving the draft", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const mustRender = await screen.findByLabelText(/^must_render/);
+    fireEvent.change(mustRender, {
+      target: {
+        value: "  the door closing  \n\n  the candle guttering\t\n   "
+      }
+    });
+    expect((mustRender as HTMLTextAreaElement).value).toBe("  the door closing  \n\n  the candle guttering\t\n   ");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      manual_moment_directive: { must_render: ["the door closing", "the candle guttering"] }
+    });
   });
 
   it("shows deterministic warnings and readiness blockers while still saving", async () => {
@@ -299,5 +463,20 @@ function readinessDiagnostic(input: {
       ruleId: input.legacyCode,
       rawPaths: []
     }
+  };
+}
+
+function recordSummary(input: { id: string; displayLabel: string }) {
+  return {
+    id: input.id,
+    type: "ENTITY",
+    displayLabel: input.displayLabel,
+    status: null,
+    salience: null,
+    urgency: null,
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-08T00:00:00.000Z",
+    updatedAt: "2026-06-08T00:00:00.000Z"
   };
 }

@@ -6,6 +6,7 @@ import {
   runValidation,
   type BuildValidationSnapshotInput
 } from "../src/index.js";
+import { isCleanNoAcceptedProseNote } from "../src/validation/rules/universal-blockers.js";
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castId = "019b0298-5c00-7000-8000-000000000002";
@@ -32,6 +33,25 @@ describe("universal blocker validation", () => {
     } as unknown as BuildValidationSnapshotInput);
 
     expect(() => runValidation(snapshot)).not.toThrow();
+  });
+
+  it("does not throw when validation focus tags are absent", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus = {} as BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"];
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+  });
+
+  it("does not throw when generation context is absent from validation focus tags", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus = ({
+      validation_focus_tags: {
+        expected_local_modes: [],
+        possible_durable_changes: []
+      }
+    } as unknown) as BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"];
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
   });
 
   it.each([
@@ -202,6 +222,53 @@ describe("universal blocker validation", () => {
     input.generationSession.immediate_handoff!.begin_after = "Continue from last time.";
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
+  });
+
+  it.each([
+    ["absent", undefined, true],
+    ["empty", "", true],
+    ["clean sentinel", "None. No accepted prose is included.", true],
+    ["literal none", "none", true],
+    ["real handoff note", "A user-authored continuation bridge.", false]
+  ])("classifies %s prior-prose notes", (_name, text, expected) => {
+    expect(isCleanNoAcceptedProseNote(text)).toBe(expected);
+  });
+
+  it("does not block first-segment handoff when the prior-prose note is absent", () => {
+    const input = cleanInput();
+    input.generationSession.immediate_handoff = {
+      recent_causal_context: "A arrived with the key.",
+      last_visible_moment: "B noticed the key.",
+      begin_after: "B noticing the key."
+    } as BuildValidationSnapshotInput["generationSession"]["immediate_handoff"];
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
+  });
+
+  it("names the missing current-state fields in the universal blocker", () => {
+    const input = cleanInput();
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      current_time: "Night.",
+      current_location: "",
+      onstage_entities: [],
+      immediate_situation_summary: ""
+    };
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find(
+      (item) => item.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState
+    );
+
+    expect(diagnostic?.message).toBe(
+      "Current authoritative state is missing: current location, onstage entities, immediate situation summary."
+    );
+  });
+
+  it("does not emit the current-state blocker when all current-state required fields are present", () => {
+    const input = cleanInput();
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.missingCurrentAuthoritativeState);
   });
 
   it("blocks contaminated continuation handoff", () => {

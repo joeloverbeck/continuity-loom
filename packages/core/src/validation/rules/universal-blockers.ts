@@ -367,7 +367,7 @@ function validatePromptFacingContamination(snapshot: ValidationSnapshot): readon
 }
 
 function validateGenerationContextRows(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const context = snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context[0];
+  const context = snapshot.generationSession.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
   const handoff = snapshot.generationSession.immediate_handoff;
 
   if (!context || !handoff) {
@@ -511,8 +511,10 @@ function isCleanAcceptedStatus(entry: { field: string; text: string }): boolean 
   );
 }
 
-function isCleanNoAcceptedProseNote(text: string): boolean {
-  return text.trim().toLowerCase() === "none. no accepted prose is included.";
+export function isCleanNoAcceptedProseNote(text: string | undefined): boolean {
+  const normalized = text?.trim().toLowerCase() ?? "";
+
+  return normalized === "" || normalized === "none" || normalized === "none. no accepted prose is included.";
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {

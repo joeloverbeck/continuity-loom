@@ -66,6 +66,27 @@ describe("deriveReadiness", () => {
     expect(readiness.canGenerate).toBe(false);
   });
 
+  it("uses current-state blocker copy while preserving the dynamic missing-field summary", () => {
+    const validation = validationResult({
+      blockers: [
+        {
+          ...diagnostic("blocker", DIAGNOSTIC_CODES.missingCurrentAuthoritativeState, "generationSession.current_authoritative_state"),
+          message: "Current authoritative state is missing: current location, onstage entities, immediate situation summary."
+        }
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers[0]).toMatchObject({
+      code: "missing-current-state",
+      title: "Complete the current state",
+      group: "required-before-prompt-generation",
+      summary: "Current authoritative state is missing: current location, onstage entities, immediate situation summary.",
+      fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary."
+    });
+  });
+
   it("uses provider configuration only for generate gating", () => {
     const readiness = deriveReadiness(validationResult({}), { configured: false }, { hasUnsavedChanges: false }, new Map());
 
@@ -75,7 +96,7 @@ describe("deriveReadiness", () => {
     expect(readiness.provider.blockers[0]?.affected[0]?.kind).toBe("provider-setting");
   });
 
-  it("falls back deterministically for unmapped diagnostic codes", () => {
+  it("routes fallback blockers to required readiness items", () => {
     const validation = validationResult({
       blockers: [diagnostic("blocker", "new-validator-code", "versions")]
     });
@@ -85,11 +106,25 @@ describe("deriveReadiness", () => {
     expect(readiness.blockers[0]).toMatchObject({
       code: "new-validator-code",
       title: "New Validator Code",
-      group: "technical-diagnostics",
+      group: "required-before-prompt-generation",
       technical: {
         legacyCode: "new-validator-code",
         rawPaths: ["versions"]
       }
+    });
+  });
+
+  it("routes fallback warnings to recommended readiness items", () => {
+    const validation = validationResult({
+      warnings: [diagnostic("warning", "new-warning-code", "versions")]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.warnings[0]).toMatchObject({
+      code: "new-warning-code",
+      title: "New Warning Code",
+      group: "recommended-for-stronger-output"
     });
   });
 

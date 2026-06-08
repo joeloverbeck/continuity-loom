@@ -95,20 +95,15 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
   const state = session.current_authoritative_state;
   const handoff = session.immediate_handoff;
   const directive = session.manual_moment_directive;
-  const generationContext = session.generation_validation_focus?.validation_focus_tags.generation_context[0];
+  const generationContext = session.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
+  const missingCurrentStateFields = currentStateMissingFields(state);
 
-  if (
-    !state ||
-    !hasText(state.current_time) ||
-    !hasText(state.current_location) ||
-    !hasValue(state.onstage_entities) ||
-    !hasText(state.immediate_situation_summary)
-  ) {
+  if (missingCurrentStateFields.length > 0) {
     diagnostics.push(
       blocker({
         code: DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
         field: "generationSession.current_authoritative_state",
-        message: "Current authoritative state is missing required launch context.",
+        message: `Current authoritative state is missing: ${missingCurrentStateFields.join(", ")}.`,
         whyItMatters: "The prompt needs current time, location, onstage entities, and an immediate situation summary as deterministic continuity ground.",
         suggestedActions: ["add-current-state"]
       })
@@ -147,6 +142,15 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
   }
 
   return diagnostics;
+}
+
+function currentStateMissingFields(state: ValidationSnapshot["generationSession"]["current_authoritative_state"]): readonly string[] {
+  return [
+    ...(!state || !hasText(state.current_time) ? ["current time"] : []),
+    ...(!state || !hasText(state.current_location) ? ["current location"] : []),
+    ...(!state || !hasValue(state.onstage_entities) ? ["onstage entities"] : []),
+    ...(!state || !hasText(state.immediate_situation_summary) ? ["immediate situation summary"] : [])
+  ];
 }
 
 function validatePovKnowledgeProfile(snapshot: ValidationSnapshot): readonly Diagnostic[] {
@@ -255,7 +259,7 @@ function validateActiveCast(snapshot: ValidationSnapshot): readonly Diagnostic[]
 }
 
 function validateGenerationContextFocus(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const contextTags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context;
+  const contextTags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags?.generation_context;
 
   if (!contextTags || contextTags.length <= 1) {
     return [];

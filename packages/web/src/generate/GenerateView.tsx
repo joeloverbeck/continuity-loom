@@ -127,8 +127,8 @@ export function GenerateView(): React.JSX.Element {
   }
 
   const checklistActions = {
-    onFocusField: () => {
-      void navigate("/generation-brief");
+    onFocusField: (field: string) => {
+      void navigate(`/generation-brief?field=${encodeURIComponent(field)}`);
     },
     onOpenRecord: (recordId: string) => {
       void navigate(`/records?recordId=${encodeURIComponent(recordId)}`);

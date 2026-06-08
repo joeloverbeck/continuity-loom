@@ -5,8 +5,7 @@ export type ReadinessStatus = "draft" | "blocked" | "ready-with-warnings" | "rea
 export type ReadinessDiagnosticGroup =
   | "required-before-prompt-generation"
   | "recommended-for-stronger-output"
-  | "prompt-length-salience-risk"
-  | "technical-diagnostics";
+  | "prompt-length-salience-risk";
 
 export interface AffectedTarget {
   kind: "generation-field" | "record" | "provider-setting" | "project" | "technical";
@@ -107,6 +106,15 @@ const COPY_TABLE: Readonly<Record<string, DiagnosticCopy>> = Object.freeze({
     whyItMatters: "The model must know where to begin without seeing prior accepted prose.",
     fastestFix: "Add the last visible moment and the begin-after point in record terms, not pasted prose.",
     whenItBecomesBlocking: "Blocks only when generation context is continuation_after_accepted_segment."
+  },
+  [DIAGNOSTIC_CODES.missingCurrentAuthoritativeState]: {
+    code: "missing-current-state",
+    title: "Complete the current state",
+    group: "required-before-prompt-generation",
+    summary: "Current authoritative state is missing required launch context.",
+    whyItMatters: "The prompt needs deterministic current time, location, onstage entities, and immediate situation before it can generate local prose.",
+    fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary.",
+    whenItBecomesBlocking: "Always blocks Preview and Generate until all required current-state fields are supplied."
   },
   [DIAGNOSTIC_CODES.localProseScopeViolation]: {
     code: "stop-guidance-nonlocal",
@@ -236,7 +244,7 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
     code: copy.code,
     title: copy.title,
     group: copy.group,
-    summary: copy.summary,
+    summary: diagnostic.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState ? diagnostic.message : copy.summary,
     whyItMatters: copy.whyItMatters,
     fastestFix: copy.fastestFix,
     ...(copy.whenItBecomesBlocking ? { whenItBecomesBlocking: copy.whenItBecomesBlocking } : {}),
@@ -430,7 +438,7 @@ function fallbackCopy(diagnostic: Diagnostic): DiagnosticCopy {
   return {
     code: diagnostic.code,
     title,
-    group: diagnostic.severity === "warning" ? "recommended-for-stronger-output" : "technical-diagnostics",
+    group: diagnostic.severity === "warning" ? "recommended-for-stronger-output" : "required-before-prompt-generation",
     summary: diagnostic.message,
     whyItMatters: diagnostic.whyItMatters,
     fastestFix: diagnostic.suggestedActions.length > 0 ? `Use suggested action: ${diagnostic.suggestedActions[0]}.` : "Review the technical diagnostic details."
@@ -464,8 +472,6 @@ function groupSortIndex(group: ReadinessDiagnosticGroup): number {
       return 1;
     case "prompt-length-salience-risk":
       return 2;
-    case "technical-diagnostics":
-      return 3;
   }
 }
 

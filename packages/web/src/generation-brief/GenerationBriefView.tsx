@@ -2,12 +2,15 @@ import {
   activeWorkingSetSchema,
   generationSessionDraftSchema
 } from "@loom/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { z } from "zod";
 
 import {
   type GenerationBriefDefaults,
+  type RecordSummary,
   getGenerationBrief,
+  listRecords,
   listStoryConfig,
   setGenerationBrief
 } from "../api.js";
@@ -29,8 +32,12 @@ const currentCastLocalFunctions = [
 
 const nonLocalStopPattern = /\b(whole chapter|chapter|act|beat|future consequences|alternate options|multiple response points)\b/i;
 
-function lines(value: string): string[] {
-  return value.split("\n").map((line) => line.trim()).filter(Boolean);
+function splitLines(value: string): string[] {
+  return value.split("\n");
+}
+
+function normalizeLines(values: readonly string[]): string[] {
+  return values.map((line) => line.trim()).filter(Boolean);
 }
 
 function proseLikePaste(value: string): boolean {
@@ -59,20 +66,42 @@ function BriefFieldHelp({ path, label }: { path: string; label: string }): React
   return <FieldHelp fieldPath={`GENERATION BRIEF.${path}`} fieldLabel={label} />;
 }
 
+function focusableElement(element: HTMLElement): HTMLElement | undefined {
+  return element.matches("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ? element : undefined;
+}
+
+function firstFocusableChild(element: HTMLElement): HTMLElement | undefined {
+  return element.querySelector<HTMLElement>("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ?? undefined;
+}
+
+function briefFieldTarget(
+  scrollTarget: HTMLElement,
+  focusTarget: HTMLElement | undefined
+): { scrollTarget: HTMLElement; focusTarget?: HTMLElement } {
+  return focusTarget ? { scrollTarget, focusTarget } : { scrollTarget };
+}
+
+function escapeSelectorValue(value: string): string {
+  return globalThis.CSS?.escape(value) ?? value.replace(/["\\]/g, "\\$&");
+}
+
 export function GenerationBriefView(): React.JSX.Element {
+  const [searchParams] = useSearchParams();
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
   const [briefDefaults, setBriefDefaults] = useState<GenerationBriefDefaults | null>(null);
-  const [proseModeSummary, setProseModeSummary] = useState("Not configured");
+  const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
+  const [povEntities, setPovEntities] = useState<RecordSummary[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [shapeIssues, setShapeIssues] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [validationKey, setValidationKey] = useState(0);
+  const focusedFieldParamRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    void Promise.all([getGenerationBrief(), listStoryConfig()])
-      .then(([briefResponse, configResponse]) => {
+    void Promise.all([getGenerationBrief(), listStoryConfig(), listRecords({ type: "ENTITY" })])
+      .then(([briefResponse, configResponse, entityResponse]) => {
         if (!active) {
           return;
         }
@@ -88,14 +117,11 @@ export function GenerationBriefView(): React.JSX.Element {
 
         const proseModePayload = configResponse.ok ? configResponse.configs["PROSE MODE"] : undefined;
         if (typeof proseModePayload === "object" && proseModePayload !== null) {
-          const payload = proseModePayload as Record<string, unknown>;
-          setProseModeSummary(
-            [
-              typeof payload.pov_character === "string" ? payload.pov_character : null,
-              typeof payload.person === "string" ? payload.person : null,
-              typeof payload.tense === "string" ? payload.tense : null
-            ].filter(Boolean).join(" / ") || "Configured"
-          );
+          setProseModePayload(proseModePayload as Record<string, unknown>);
+        }
+
+        if (entityResponse.ok) {
+          setPovEntities([...entityResponse.records].sort((left, right) => left.displayLabel.localeCompare(right.displayLabel)));
         }
       })
       .catch(() => {
@@ -109,6 +135,17 @@ export function GenerationBriefView(): React.JSX.Element {
     };
   }, []);
 
+  const fieldParam = searchParams.get("field");
+
+  useEffect(() => {
+    if (!fieldParam || !briefDefaults || focusedFieldParamRef.current === fieldParam) {
+      return;
+    }
+
+    focusedFieldParamRef.current = fieldParam;
+    focusBriefField(fieldParam);
+  }, [briefDefaults, fieldParam]);
+
   const activeWorkingSet = {
     selected_records: [],
     active_onstage_cast_full: [],
@@ -116,6 +153,28 @@ export function GenerationBriefView(): React.JSX.Element {
     offstage_relevant_cast: [],
     ...(session.active_working_set ?? {})
   };
+  const selectedPov = activeWorkingSet.selected_pov;
+  const povEntityLabels = useMemo(
+    () => new Map(povEntities.map((entity) => [entity.id, entity.displayLabel])),
+    [povEntities]
+  );
+  const proseModeSummary = useMemo(() => {
+    if (!proseModePayload) {
+      return "Not configured";
+    }
+
+    const povCharacter = typeof proseModePayload.pov_character === "string" ? proseModePayload.pov_character : null;
+    const povLabel = povCharacter ? (povEntityLabels.get(povCharacter) ?? povCharacter) : null;
+
+    return [
+      povLabel,
+      typeof proseModePayload.person === "string" ? proseModePayload.person : null,
+      typeof proseModePayload.tense === "string" ? proseModePayload.tense : null
+    ].filter(Boolean).join(" / ") || "Configured";
+  }, [proseModePayload, povEntityLabels]);
+  const selectedPovHasKnownEntity = selectedPov
+    ? selectedPov === "omniscient" || povEntityLabels.has(selectedPov)
+    : true;
   const immediateHandoffDraft = session.immediate_handoff ?? {};
   const immediateHandoff = {
     recent_causal_context: immediateHandoffDraft.recent_causal_context ?? "",
@@ -175,6 +234,27 @@ export function GenerationBriefView(): React.JSX.Element {
     updateSurface("active_working_set", { ...activeWorkingSet, ...value });
   }
 
+  function updateCurrentAuthoritativeState(value: Partial<NonNullable<GenerationSession["current_authoritative_state"]>>): void {
+    updateSurface("current_authoritative_state", {
+      current_time: session.current_authoritative_state?.current_time ?? "",
+      current_location: session.current_authoritative_state?.current_location ?? "",
+      onstage_entities: session.current_authoritative_state?.onstage_entities ?? [],
+      immediate_situation_summary: session.current_authoritative_state?.immediate_situation_summary ?? "",
+      offstage_pressuring_entities: session.current_authoritative_state?.offstage_pressuring_entities ?? [],
+      positions: session.current_authoritative_state?.positions ?? "",
+      possessions: session.current_authoritative_state?.possessions ?? "",
+      visible_conditions: session.current_authoritative_state?.visible_conditions ?? [],
+      environmental_conditions: session.current_authoritative_state?.environmental_conditions ?? "",
+      entity_statuses: session.current_authoritative_state?.entity_statuses ?? "",
+      line_of_sight_and_visibility: session.current_authoritative_state?.line_of_sight_and_visibility ?? "",
+      routes_and_exits: session.current_authoritative_state?.routes_and_exits ?? [],
+      available_time: session.current_authoritative_state?.available_time ?? "",
+      consent_or_force_conditions: session.current_authoritative_state?.consent_or_force_conditions ?? "none",
+      current_locks: session.current_authoritative_state?.current_locks ?? [],
+      ...value
+    });
+  }
+
   async function save(): Promise<void> {
     setNotice(null);
     setShapeIssues([]);
@@ -182,7 +262,7 @@ export function GenerationBriefView(): React.JSX.Element {
       active_working_set: activeWorkingSet,
       current_authoritative_state: session.current_authoritative_state,
       immediate_handoff: immediateHandoff,
-      manual_moment_directive: manualDirective,
+      manual_moment_directive: { ...manualDirective, must_render: normalizeLines(manualDirective.must_render) },
       current_cast_voice_pressure: currentVoicePressure.cast_member_id ? [currentVoicePressure] : [],
       cast_voice_overrides: voiceOverride.override_text ? [voiceOverride] : [],
       generation_validation_focus: validationFocus,
@@ -203,11 +283,37 @@ export function GenerationBriefView(): React.JSX.Element {
   }
 
   function focusBriefField(field: string): void {
-    const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-      `[name="${CSS.escape(field)}"], [data-field="${CSS.escape(field)}"]`
+    const target = resolveBriefFieldTarget(field);
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollTarget.scrollIntoView({ block: "center" });
+    target.focusTarget?.focus();
+  }
+
+  function resolveBriefFieldTarget(field: string): { scrollTarget: HTMLElement; focusTarget?: HTMLElement } | null {
+    const escapedField = escapeSelectorValue(field);
+    const exact = document.querySelector<HTMLElement>(
+      `[name="${escapedField}"], [data-field="${escapedField}"]`
     );
 
-    input?.focus();
+    if (exact) {
+      return briefFieldTarget(exact, focusableElement(exact) ?? firstFocusableChild(exact));
+    }
+
+    const section = Array.from(document.querySelectorAll<HTMLElement>("section[data-field]")).find((element) => {
+      const fieldAnchor = element.dataset.field;
+
+      return !!fieldAnchor && (field === fieldAnchor || field.startsWith(`${fieldAnchor}.`));
+    });
+
+    if (!section) {
+      return null;
+    }
+
+    return briefFieldTarget(section, firstFocusableChild(section));
   }
 
   return (
@@ -244,43 +350,78 @@ export function GenerationBriefView(): React.JSX.Element {
           <p className="muted">PROSE MODE source: {proseModeSummary}</p>
           <label>
             selected_pov
-            <input
+            <select
               name="generationSession.active_working_set.selected_pov"
-              value={activeWorkingSet.selected_pov ?? ""}
+              value={selectedPov ?? ""}
               onChange={(event) => updateActiveWorkingSet({ selected_pov: event.target.value || undefined })}
-            />
+            >
+              <option value="">Use PROSE MODE default</option>
+              <option value="omniscient">Omniscient</option>
+              {selectedPovHasKnownEntity || !selectedPov ? null : (
+                <option value={selectedPov}>Unknown entity ({selectedPov.slice(0, 8)})</option>
+              )}
+              {povEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              ))}
+            </select>
           </label>
           <BriefFieldHelp path="active_working_set.selected_pov" label="selected_pov" />
         </section>
 
-        <section className="configPanel" aria-labelledby="current-state-brief">
+        <section
+          className="configPanel"
+          aria-labelledby="current-state-brief"
+          data-field="generationSession.current_authoritative_state"
+        >
           <h3 id="current-state-brief">CURRENT AUTHORITATIVE STATE</h3>
           <label>
             current_time
             <input
               name="generationSession.current_authoritative_state.current_time"
               value={session.current_authoritative_state?.current_time ?? ""}
-              onChange={(event) =>
-                updateSurface("current_authoritative_state", {
-                  current_time: event.target.value,
-                  current_location: session.current_authoritative_state?.current_location ?? "",
-                  onstage_entities: session.current_authoritative_state?.onstage_entities ?? [],
-                  offstage_pressuring_entities: session.current_authoritative_state?.offstage_pressuring_entities ?? [],
-                  positions: session.current_authoritative_state?.positions ?? "",
-                  possessions: session.current_authoritative_state?.possessions ?? "",
-                  visible_conditions: session.current_authoritative_state?.visible_conditions ?? [],
-                  environmental_conditions: session.current_authoritative_state?.environmental_conditions ?? "",
-                  entity_statuses: session.current_authoritative_state?.entity_statuses ?? "",
-                  line_of_sight_and_visibility: session.current_authoritative_state?.line_of_sight_and_visibility ?? "",
-                  routes_and_exits: session.current_authoritative_state?.routes_and_exits ?? [],
-                  available_time: session.current_authoritative_state?.available_time ?? "",
-                  consent_or_force_conditions: session.current_authoritative_state?.consent_or_force_conditions ?? "none",
-                  current_locks: session.current_authoritative_state?.current_locks ?? []
-                })
-              }
+              onChange={(event) => updateCurrentAuthoritativeState({ current_time: event.target.value })}
             />
           </label>
           <BriefFieldHelp path="current_authoritative_state.current_time" label="current_time" />
+          <label>
+            current_location
+            <input
+              name="generationSession.current_authoritative_state.current_location"
+              value={session.current_authoritative_state?.current_location ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ current_location: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.current_location" label="current_location" />
+          <label>
+            onstage_entities
+            <select
+              multiple
+              name="generationSession.current_authoritative_state.onstage_entities"
+              value={session.current_authoritative_state?.onstage_entities ?? []}
+              onChange={(event) =>
+                updateCurrentAuthoritativeState({
+                  onstage_entities: Array.from(event.currentTarget.selectedOptions, (option) => option.value)
+                })
+              }
+            >
+              {povEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              ))}
+            </select>
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.onstage_entities[]" label="onstage_entities" />
+          <label>
+            immediate_situation_summary
+            <textarea
+              name="generationSession.current_authoritative_state.immediate_situation_summary"
+              value={session.current_authoritative_state?.immediate_situation_summary ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ immediate_situation_summary: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.immediate_situation_summary"
+            label="immediate_situation_summary"
+          />
         </section>
 
         <section className="configPanel" aria-labelledby="handoff-brief">
@@ -321,7 +462,7 @@ export function GenerationBriefView(): React.JSX.Element {
             <textarea
               name="generationSession.manual_moment_directive.must_render"
               value={manualDirective.must_render.join("\n")}
-              onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: lines(event.target.value) })}
+              onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: splitLines(event.target.value) })}
             />
           </label>
           <BriefFieldHelp path="manual_moment_directive.must_render[]" label="must_render" />
