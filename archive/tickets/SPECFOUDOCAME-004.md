@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-004: Amend prompt-template.md and prompt-template-rationale.md
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/prompt-template.md` (`<current_authoritative_state>`, `<immediate_handoff>`, `<active_working_set>`, `<prose_craft>`, `<stop_rule>`) and `docs/prompt-template-rationale.md` (§5, §6, §10, §19, §20, §21 + new section); no production behavior change.
@@ -91,3 +91,21 @@ The universal prompt template renders the soft-unit stop line unconditionally (`
 1. `grep -nE "<stop_rule>|Soft unit|None supplied|<prose_craft>" docs/prompt-template.md` — confirm the stop-rule + prose-craft edits landed.
 2. `grep -nE "^## (5|6|10|19|20|21|23)\.|Why draft saving is separate from readiness" docs/prompt-template-rationale.md` — confirm rationale sections amended + new section added.
 3. Manual review of `<immediate_handoff>` for accepted-prose exclusion (the correct boundary — the no-prose firewall is a prose-audit check, not a greppable count).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/prompt-template.md` to preserve `Immediate situation: {immediate_situation_summary}`, document first-segment empty handoff versus continuation handoff, make active cast voice pins safely omittable/empty, revise voice craft wording to use durable anchors, body/behavior dossiers, and any supplied current pins, and make the soft-unit stop line conditional while keeping the universal local stop triggers.
+
+Changed `docs/prompt-template-rationale.md` to explain first-segment versus continuation handoff, user-authored handoff boundaries, durable CAST MEMBER authority over optional pins, blank `soft_unit_guidance`, deterministic generation-context defaulting, warning non-gating, and why draft saving is separate from readiness.
+
+Deviations from original plan: none. No prompt section was removed, and the no-accepted-prose handoff firewall remains explicit.
+
+Verification:
+
+- `grep -nE "body/behavior dossiers|any supplied current voice pressure pins" docs/prompt-template.md`
+- `grep -nE "None supplied|supplied|conditional" docs/prompt-template.md`
+- `grep -n "Immediate situation: {immediate_situation_summary}" docs/prompt-template.md`
+- `grep -nE "Why draft saving is separate from readiness|first segment|user-authored handoff|primary voice authority|Blank \`soft_unit_guidance\`|defaulted deterministically|Warnings must not indirectly gate" docs/prompt-template-rationale.md`
+- Manual review confirmed `<immediate_handoff>` excludes accepted/rejected/superseded prose and automatic prose-derived summaries.
