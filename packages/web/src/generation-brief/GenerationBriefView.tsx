@@ -29,8 +29,12 @@ const currentCastLocalFunctions = [
 
 const nonLocalStopPattern = /\b(whole chapter|chapter|act|beat|future consequences|alternate options|multiple response points)\b/i;
 
-function lines(value: string): string[] {
-  return value.split("\n").map((line) => line.trim()).filter(Boolean);
+function splitLines(value: string): string[] {
+  return value.split("\n");
+}
+
+function normalizeLines(values: readonly string[]): string[] {
+  return values.map((line) => line.trim()).filter(Boolean);
 }
 
 function proseLikePaste(value: string): boolean {
@@ -182,7 +186,7 @@ export function GenerationBriefView(): React.JSX.Element {
       active_working_set: activeWorkingSet,
       current_authoritative_state: session.current_authoritative_state,
       immediate_handoff: immediateHandoff,
-      manual_moment_directive: manualDirective,
+      manual_moment_directive: { ...manualDirective, must_render: normalizeLines(manualDirective.must_render) },
       current_cast_voice_pressure: currentVoicePressure.cast_member_id ? [currentVoicePressure] : [],
       cast_voice_overrides: voiceOverride.override_text ? [voiceOverride] : [],
       generation_validation_focus: validationFocus,
@@ -321,7 +325,7 @@ export function GenerationBriefView(): React.JSX.Element {
             <textarea
               name="generationSession.manual_moment_directive.must_render"
               value={manualDirective.must_render.join("\n")}
-              onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: lines(event.target.value) })}
+              onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: splitLines(event.target.value) })}
             />
           </label>
           <BriefFieldHelp path="manual_moment_directive.must_render[]" label="must_render" />

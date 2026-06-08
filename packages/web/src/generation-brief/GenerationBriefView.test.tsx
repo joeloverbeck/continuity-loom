@@ -133,6 +133,44 @@ describe("GenerationBriefView", () => {
     expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
   });
 
+  it("preserves in-progress trailing spaces while editing must_render", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const mustRender = await screen.findByLabelText(/^must_render/);
+    fireEvent.change(mustRender, { target: { value: "door closing " } });
+
+    expect((mustRender as HTMLTextAreaElement).value).toBe("door closing ");
+  });
+
+  it("normalizes must_render lines only when saving the draft", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const mustRender = await screen.findByLabelText(/^must_render/);
+    fireEvent.change(mustRender, {
+      target: {
+        value: "  the door closing  \n\n  the candle guttering\t\n   "
+      }
+    });
+    expect((mustRender as HTMLTextAreaElement).value).toBe("  the door closing  \n\n  the candle guttering\t\n   ");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      manual_moment_directive: { must_render: ["the door closing", "the candle guttering"] }
+    });
+  });
+
   it("shows deterministic warnings and readiness blockers while still saving", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
