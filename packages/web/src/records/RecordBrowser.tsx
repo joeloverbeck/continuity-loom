@@ -61,9 +61,25 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
   );
 }
 
+function toRecordSummary(record: RecordDetail): RecordSummary {
+  return {
+    id: record.id,
+    type: record.type,
+    displayLabel: record.displayLabel,
+    status: record.status,
+    salience: record.salience,
+    urgency: record.urgency,
+    archived: record.archived,
+    userOrder: record.userOrder,
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt
+  };
+}
+
 export function RecordBrowser(): React.JSX.Element {
   const [searchParams] = useSearchParams();
   const [records, setRecords] = useState<RecordSummary[]>([]);
+  const [referenceTargets, setReferenceTargets] = useState<RecordSummary[]>([]);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
   const [genericEditorRecord, setGenericEditorRecord] = useState<{ recordType: string; record?: RecordDetail } | null>(null);
@@ -91,6 +107,26 @@ export function RecordBrowser(): React.JSX.Element {
       .catch(() => {
         if (active) {
           setWorkingSetIds([]);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    void listRecords({})
+      .then((response) => {
+        if (active && response.ok) {
+          setReferenceTargets(response.records);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setReferenceTargets([]);
         }
       });
 
@@ -193,21 +229,20 @@ export function RecordBrowser(): React.JSX.Element {
   }
 
   function handleSavedRecord(savedRecord: RecordDetail): void {
+    const savedSummary = toRecordSummary(savedRecord);
+
     setSelectedRecord(savedRecord);
     setRecords((current) => {
       const existingIndex = current.findIndex((record) => record.id === savedRecord.id);
-      const savedSummary: RecordSummary = {
-        id: savedRecord.id,
-        type: savedRecord.type,
-        displayLabel: savedRecord.displayLabel,
-        status: savedRecord.status,
-        salience: savedRecord.salience,
-        urgency: savedRecord.urgency,
-        archived: savedRecord.archived,
-        userOrder: savedRecord.userOrder,
-        createdAt: savedRecord.createdAt,
-        updatedAt: savedRecord.updatedAt
-      };
+
+      if (existingIndex === -1) {
+        return [savedSummary, ...current];
+      }
+
+      return current.map((record) => (record.id === savedRecord.id ? savedSummary : record));
+    });
+    setReferenceTargets((current) => {
+      const existingIndex = current.findIndex((record) => record.id === savedRecord.id);
 
       if (existingIndex === -1) {
         return [savedSummary, ...current];
@@ -249,7 +284,7 @@ export function RecordBrowser(): React.JSX.Element {
         <RecordEditor
           recordType={genericEditorRecord.recordType}
           {...(genericEditorRecord.record ? { record: genericEditorRecord.record } : {})}
-          referenceRecords={records}
+          referenceRecords={referenceTargets}
           onSaved={(savedRecord) => {
             handleSavedRecord(savedRecord);
             setGenericEditorRecord(null);
@@ -267,7 +302,7 @@ export function RecordBrowser(): React.JSX.Element {
         </button>
         <CastMemberEditor
           {...(castEditorRecord ? { record: castEditorRecord } : {})}
-          referenceRecords={records}
+          referenceRecords={referenceTargets}
           onSaved={(savedRecord) => {
             handleSavedRecord(savedRecord);
             setCastEditorRecord(undefined);

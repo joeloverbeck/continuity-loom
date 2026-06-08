@@ -294,12 +294,6 @@ None
 </offstage_relevance>
 
 <relevant_facts_beliefs_events>
-POV-accessible facts:
-None beyond current state and hard canon
-
-Writer-visible or non-POV facts:
-None
-
 POV-relevant beliefs:
 - Niko will be safer if he knows a letter exists but not what it says.; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
 
@@ -309,12 +303,6 @@ Non-POV behavior-shaping beliefs:
 Recent events:
 - The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
-
-Relevant backstory:
-None selected
-
-Offstage or withheld events:
-None selected
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>
@@ -322,13 +310,13 @@ Locations:
 - Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.
 
 Objects:
-- sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; owner: 019b0298-5c00-7000-8000-013000000001; location: 019b0298-5c00-7000-8000-013000000010; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
-- shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; owner: 019b0298-5c00-7000-8000-013000000001; carried by: 019b0298-5c00-7000-8000-013000000001; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
-- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; owner: 019b0298-5c00-7000-8000-013000000001; location: 019b0298-5c00-7000-8000-013000000012; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
-- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; location: 019b0298-5c00-7000-8000-013000000012; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
+- sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
+- shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; owner: Elin Vale; carried by: Elin Vale; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
 
 Visible affordances:
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
 
 Unavailable or impossible actions:
 - Current lock: cellar latch is closed but not barred

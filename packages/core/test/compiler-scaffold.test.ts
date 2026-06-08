@@ -72,12 +72,8 @@ describe("compiler scaffold", () => {
     expect(sectionBody(prompt, "offstage_relevance")).toContain(
       EMPTY_STATE_CONSTANTS.offstage_relevance_notes
     );
-    expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain(
-      EMPTY_STATE_CONSTANTS.pov_accessible_facts
-    );
-    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(
-      EMPTY_STATE_CONSTANTS.visible_affordances
-    );
+    expect(sectionBody(prompt, "relevant_facts_beliefs_events").trim()).toBe("None specified");
+    expect(sectionBody(prompt, "locations_objects_affordances").trim()).toBe("None specified");
     expect(sectionBody(prompt, "physical_continuity")).toContain(
       EMPTY_STATE_CONSTANTS.physical_continuity
     );

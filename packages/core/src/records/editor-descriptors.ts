@@ -7,6 +7,7 @@ export type FieldKind =
   | "prose"
   | "enum"
   | "reference"
+  | "sentinel_reference"
   | "sentinel_reference_list"
   | "sentinel_prose_list"
   | "list"
@@ -213,10 +214,6 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     promptFacing: isPromptFacingField(name, recordType)
   };
 
-  if (isReferenceSchema(unwrapped, name)) {
-    return { ...base, kind: "reference", referenceRole: roleForField(name) };
-  }
-
   if (isSentinelReferenceListSchema(unwrapped, name)) {
     return {
       ...base,
@@ -226,12 +223,39 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     };
   }
 
+  if (isSentinelReferenceSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_reference",
+      enumValues: enumValuesForSchema(unwrapped),
+      referenceRole: roleForField(name)
+    };
+  }
+
+  if (isReferenceSchema(unwrapped, name)) {
+    return { ...base, kind: "reference", referenceRole: roleForField(name) };
+  }
+
   if (isSentinelProseListSchema(unwrapped, name)) {
     return {
       ...base,
       kind: "sentinel_prose_list",
       enumValues: enumValuesForSchema(unwrapped),
       itemDescriptor: describeListItem(name, sentinelListArrayElement(unwrapped), recordType)
+    };
+  }
+
+  if (isRecordLinkListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "list",
+      itemDescriptor: {
+        ...base,
+        name,
+        kind: "reference",
+        required: true,
+        referenceRole: roleForField(name)
+      }
     };
   }
 
@@ -364,7 +388,28 @@ function isReferenceSchema(schema: z.ZodType, name: string): boolean {
 }
 
 function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean {
-  if (roleForField(name) !== "non_holder_to_protect" || schemaType(schema) !== "union") {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+  if (!hasSentinels) {
+    return false;
+  }
+
+  const nonSentinelArms = options.filter((option) => enumValuesForSchema(option).length === 0);
+
+  return (
+    nonSentinelArms.length > 0 &&
+    nonSentinelArms.every(
+      (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
+    )
+  );
+}
+
+function isRecordLinkListSchema(schema: z.ZodType, name: string): boolean {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
     return false;
   }
 
@@ -374,7 +419,19 @@ function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean
   );
   const hasSentinels = enumValuesForSchema(schema).length > 0;
 
-  return hasReferenceArray && hasSentinels;
+  return hasReferenceArray && !hasSentinels;
+}
+
+function isSentinelReferenceSchema(schema: z.ZodType, name: string): boolean {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasReference = options.some((option) => isReferenceSchema(option, name));
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasReference && hasSentinels;
 }
 
 function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {

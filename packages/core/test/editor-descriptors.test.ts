@@ -17,6 +17,7 @@ const knownKinds = new Set([
   "prose",
   "enum",
   "reference",
+  "sentinel_reference",
   "sentinel_reference_list",
   "sentinel_prose_list",
   "list",
@@ -115,11 +116,84 @@ describe("record editor descriptors", () => {
     });
   });
 
+  it("classifies event causes and effects as record-link reference lists", () => {
+    const eventFields = new Map(getEditorDescriptor("EVENT")?.fields.map((field) => [field.name, field]));
+
+    expect(eventFields.get("causes")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "record_link"
+      }
+    });
+    expect(eventFields.get("effects")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "record_link"
+      }
+    });
+    expect(eventFields.get("known_by")?.kind).not.toBe("list");
+  });
+
+  it("classifies known-by and owed-to as sentinels or entity reference lists", () => {
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "known_by")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["public", "unknown"],
+      referenceRole: "known_by"
+    });
+    expect(getEditorDescriptor("FACT")?.fields.find((field) => field.name === "known_by")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["public", "unknown", "not_applicable"],
+      referenceRole: "known_by"
+    });
+    expect(getEditorDescriptor("OBLIGATION")?.fields.find((field) => field.name === "owed_to")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["public", "institution", "self", "unknown"],
+      referenceRole: "owed_to"
+    });
+  });
+
   it("classifies non-holder protection as sentinels or an entity reference list", () => {
     expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
       kind: "sentinel_reference_list",
       enumValues: ["all_except_holders", "none"],
       referenceRole: "non_holder_to_protect"
+    });
+  });
+
+  it("keeps holder-or-target classified as a single sentinel reference", () => {
+    expect(getEditorDescriptor("CONSEQUENCE")?.fields.find((field) => field.name === "holder_or_target")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["public", "unknown"],
+      referenceRole: "holder_or_target"
+    });
+  });
+
+  it("classifies single reference-or-sentinel fields as sentinel references", () => {
+    expect(getEditorDescriptor("VISIBLE AFFORDANCE")?.fields.find((field) => field.name === "available_to"))
+      .toMatchObject({
+        kind: "sentinel_reference",
+        enumValues: ["group", "any_onstage"],
+        referenceRole: "available_to"
+      });
+
+    const objectFields = new Map(getEditorDescriptor("OBJECT")?.fields.map((field) => [field.name, field]));
+
+    expect(objectFields.get("owner")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["none", "unknown"],
+      referenceRole: "owner"
+    });
+    expect(objectFields.get("carried_by")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["none", "unknown"],
+      referenceRole: "carried_by"
+    });
+    expect(objectFields.get("current_location")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["carried_by_holder", "unknown", "offstage"],
+      referenceRole: "current_location"
     });
   });
 

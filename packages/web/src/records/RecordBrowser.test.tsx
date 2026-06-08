@@ -79,6 +79,65 @@ const fixtures: RecordSummary[] = [
 
 const referencedRecords = new Set(["fact-1"]);
 
+const referenceEntityId = "019b0298-5c00-7000-8000-000000000101";
+const referenceLocationId = "019b0298-5c00-7000-8000-000000000102";
+const referenceObjectId = "019b0298-5c00-7000-8000-000000000103";
+
+const referenceTargetFixtures: RecordSummary[] = [
+  {
+    id: referenceEntityId,
+    type: "ENTITY",
+    displayLabel: "Aster",
+    status: "active",
+    salience: null,
+    urgency: null,
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z"
+  },
+  {
+    id: referenceLocationId,
+    type: "LOCATION",
+    displayLabel: "Vault",
+    status: "active",
+    salience: null,
+    urgency: null,
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z"
+  },
+  {
+    id: referenceObjectId,
+    type: "OBJECT",
+    displayLabel: "Sealed letter",
+    status: "active",
+    salience: null,
+    urgency: null,
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z"
+  }
+];
+
+const objectDetail = {
+  ...referenceTargetFixtures[2]!,
+  payload: {
+    status: "active",
+    label: "Sealed letter",
+    description: "A folded letter sealed with blue wax.",
+    owner: referenceEntityId,
+    carried_by: referenceEntityId,
+    current_location: referenceLocationId,
+    visibility_to_pov: "visible",
+    usable_affordances: [],
+    constraints: [],
+    durability: "continuity_relevant"
+  }
+};
+
 function filterFixtures(filters: ListRecordsFilters): RecordSummary[] {
   return filterRecords(fixtures, filters);
 }
@@ -261,6 +320,74 @@ describe("RecordBrowser", () => {
       })
     );
     expect(await screen.findByText("Door code")).toBeTruthy();
+  });
+
+  it("keeps editor reference targets independent of the active type filter", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(referenceTargetFixtures, filters)
+      })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: objectDetail });
+
+    renderBrowser();
+
+    expect(await screen.findByRole("button", { name: "Sealed letter" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "OBJECT" } });
+
+    await waitFor(() => expect(tableLabels()).toEqual(["Sealed letter"]));
+    expect(within(screen.getByRole("table")).queryByText("Aster")).toBeNull();
+    expect(within(screen.getByRole("table")).queryByText("Vault")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sealed letter" }));
+    expect(await screen.findByRole("button", { name: "Edit Record" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Record" }));
+
+    const owner = await screen.findByLabelText<HTMLSelectElement>(/^owner/);
+    const carriedBy = screen.getByLabelText<HTMLSelectElement>(/^carried_by/);
+    const currentLocation = screen.getByLabelText<HTMLSelectElement>(/^current_location/);
+
+    expect(within(owner).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(referenceEntityId);
+    expect(within(carriedBy).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(referenceEntityId);
+    expect(within(currentLocation).getByRole<HTMLOptionElement>("option", { name: "Vault" }).value).toBe(referenceLocationId);
+    expect(owner.value).toBe(referenceEntityId);
+    expect(carriedBy.value).toBe(referenceEntityId);
+    expect(currentLocation.value).toBe(referenceLocationId);
+  });
+
+  it("preserves stored reference ids when saving an editor opened under a browse filter", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(referenceTargetFixtures, filters)
+      })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: objectDetail });
+    vi.mocked(updateRecord).mockResolvedValue({ ok: true, record: objectDetail });
+
+    renderBrowser();
+
+    await screen.findByRole("button", { name: "Sealed letter" });
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "OBJECT" } });
+    await waitFor(() => expect(tableLabels()).toEqual(["Sealed letter"]));
+    fireEvent.click(screen.getByRole("button", { name: "Sealed letter" }));
+    expect(await screen.findByRole("button", { name: "Edit Record" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit Record" }));
+
+    expect((await screen.findByLabelText<HTMLSelectElement>(/^carried_by/)).value).toBe(referenceEntityId);
+    fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
+
+    await waitFor(() => expect(updateRecord).toHaveBeenCalled());
+    expect(vi.mocked(updateRecord).mock.calls[0]?.[1]).toMatchObject({
+      payload: {
+        owner: referenceEntityId,
+        carried_by: referenceEntityId,
+        current_location: referenceLocationId
+      }
+    });
   });
 
   it("offers salience and urgency grouping only when descriptors expose those fields", async () => {

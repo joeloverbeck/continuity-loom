@@ -271,6 +271,8 @@ Offstage cast/entities. Include only why they matter now, what pressure they exe
 </offstage_relevance>
 
 <relevant_facts_beliefs_events>
+Render only populated sub-blocks in this composite section. If all sub-blocks are empty, render the section tag with a single line: `None specified`.
+
 POV-accessible facts:
 {pov_accessible_facts}
 
@@ -294,6 +296,8 @@ Offstage or withheld events:
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>
+Render only populated sub-blocks in this composite section. If all sub-blocks are empty, render the section tag with a single line: `None specified`.
+
 Locations:
 {locations}
 

@@ -15,14 +15,14 @@ const tailResolvers: ResolverMap = {
       "FACT",
       (payload) => knownBy(payload.known_by, selectedPov(snapshot)),
       (payload) => asString(payload.statement)
-    ) || EMPTY_STATE_CONSTANTS.pov_accessible_facts,
+    ),
   writer_visible_or_non_pov_facts: (snapshot) =>
     renderRecords(
       snapshot,
       "FACT",
       (payload) => !knownBy(payload.known_by, selectedPov(snapshot)),
       (payload) => asString(payload.statement)
-    ) || EMPTY_STATE_CONSTANTS.writer_visible_or_non_pov_facts,
+    ),
   pov_relevant_beliefs: (snapshot) =>
     renderRecords(
       snapshot,
@@ -38,7 +38,7 @@ const tailResolvers: ResolverMap = {
           labelValue("behavior", payload.behavioral_effect),
           labelValue("visibility", payload.visibility)
         ])
-    ) || EMPTY_STATE_CONSTANTS.pov_relevant_beliefs,
+    ),
   non_pov_behavior_shaping_beliefs: (snapshot) =>
     renderRecords(
       snapshot,
@@ -54,28 +54,28 @@ const tailResolvers: ResolverMap = {
           labelValue("access", payload.access_route),
           labelValue("visibility", payload.visibility)
         ])
-    ) || EMPTY_STATE_CONSTANTS.non_pov_behavior_shaping_beliefs,
+    ),
   recent_events: (snapshot) =>
     renderRecords(
       snapshot,
       "EVENT",
       (payload) => payload.event_kind === "immediate_previous" || payload.event_kind === "recent_causal",
       (payload) => compactParts([asString(payload.description), labelValue("visibility", payload.pov_visibility)])
-    ) || EMPTY_STATE_CONSTANTS.recent_events,
+    ),
   relevant_backstory: (snapshot) =>
     renderRecords(
       snapshot,
       "EVENT",
       (payload) => payload.event_kind === "relevant_backstory",
       (payload) => compactParts([asString(payload.description), labelValue("current relevance", payload.current_relevance)])
-    ) || EMPTY_STATE_CONSTANTS.relevant_backstory,
+    ),
   offstage_or_withheld_events: (snapshot) =>
     renderRecords(
       snapshot,
       "EVENT",
       (payload) => payload.event_kind === "offstage" || payload.event_kind === "withheld",
       (payload) => compactParts([asString(payload.description), labelValue("visibility", payload.pov_visibility)])
-    ) || EMPTY_STATE_CONSTANTS.offstage_or_withheld_events,
+    ),
   locations: (snapshot) =>
     renderRecords(snapshot, "LOCATION", activeStatus, (payload) =>
       compactParts([
@@ -85,31 +85,32 @@ const tailResolvers: ResolverMap = {
         labelValue("routes", payload.access_routes),
         labelValue("visibility/sound", payload.visibility_and_sound)
       ])
-    ) || EMPTY_STATE_CONSTANTS.locations,
+    ),
   objects: (snapshot) =>
     renderRecords(snapshot, "OBJECT", activeStatus, (payload) =>
       compactParts([
         asString(payload.label),
         asString(payload.description),
-        labelValue("owner", payload.owner),
-        labelValue("carried by", payload.carried_by),
-        labelValue("location", payload.current_location),
+        labelValue("owner", resolveRecordLabel(snapshot, payload.owner)),
+        labelValue("carried by", resolveRecordLabel(snapshot, payload.carried_by)),
+        labelValue("location", resolveRecordLabel(snapshot, payload.current_location)),
         labelValue("visibility", payload.visibility_to_pov),
         labelValue("affordances", payload.usable_affordances),
         labelValue("constraints", payload.constraints)
       ])
-    ) || EMPTY_STATE_CONSTANTS.objects,
+    ),
   visible_affordances: (snapshot) =>
     renderRecords(snapshot, "VISIBLE AFFORDANCE", (payload) => payload.status === "available", (payload) =>
       compactParts([
         asString(payload.label),
         asString(payload.prompt_text),
-        labelValue("available to", payload.available_to),
+        labelValue("available to", resolveRecordLabel(snapshot, payload.available_to)),
         labelValue("actions", payload.action_families),
         labelValue("requires", payload.requires),
-        labelValue("risk", payload.risk)
+        labelValue("risk", payload.risk),
+        labelValue("durability", payload.durability)
       ])
-    ) || EMPTY_STATE_CONSTANTS.visible_affordances,
+    ),
   unavailable_or_impossible_actions: (snapshot) => renderUnavailableActions(snapshot),
   physical_continuity: (snapshot) => renderPhysicalContinuity(snapshot)
 };
@@ -138,7 +139,7 @@ function renderUnavailableActions(snapshot: ValidationSnapshot): string {
   );
   const lines = [...lockLines, affordanceLines].filter(Boolean);
 
-  return lines.join("\n") || EMPTY_STATE_CONSTANTS.unavailable_or_impossible_actions;
+  return lines.join("\n");
 }
 
 function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {

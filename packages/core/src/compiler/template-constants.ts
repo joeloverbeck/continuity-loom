@@ -31,6 +31,32 @@ export const SECTION_ORDER = Object.freeze([
 
 export type PromptSectionId = (typeof SECTION_ORDER)[number];
 
+export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
+  relevant_facts_beliefs_events: {
+    emptyState: "None specified",
+    subBlocks: [
+      { label: "POV-accessible facts", placeholder: "pov_accessible_facts" },
+      { label: "Writer-visible or non-POV facts", placeholder: "writer_visible_or_non_pov_facts" },
+      { label: "POV-relevant beliefs", placeholder: "pov_relevant_beliefs" },
+      { label: "Non-POV behavior-shaping beliefs", placeholder: "non_pov_behavior_shaping_beliefs" },
+      { label: "Recent events", placeholder: "recent_events" },
+      { label: "Relevant backstory", placeholder: "relevant_backstory" },
+      { label: "Offstage or withheld events", placeholder: "offstage_or_withheld_events" }
+    ]
+  },
+  locations_objects_affordances: {
+    emptyState: "None specified",
+    subBlocks: [
+      { label: "Locations", placeholder: "locations" },
+      { label: "Objects", placeholder: "objects" },
+      { label: "Visible affordances", placeholder: "visible_affordances" },
+      { label: "Unavailable or impossible actions", placeholder: "unavailable_or_impossible_actions" }
+    ]
+  }
+} as const);
+
+export type CompositeSectionId = keyof typeof COMPOSITE_SECTION_TEMPLATES;
+
 export const SECTION_TEMPLATES: Readonly<Record<PromptSectionId, string>> = Object.freeze({
   role: `<role>
 You are the external prose writer for a continuity-first fiction system.

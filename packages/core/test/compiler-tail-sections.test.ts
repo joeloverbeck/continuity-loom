@@ -12,6 +12,7 @@ const nonPovId = "019b0298-5c00-7000-8000-000000000402";
 const physicalEntityId = "019b0298-5c00-7000-8000-000000000413";
 const physicalLocationId = "019b0298-5c00-7000-8000-000000000414";
 const missingPhysicalEntityId = "019b0298-5c00-7000-8000-000000000416";
+const missingObjectOwnerId = "019b0298-5c00-7000-8000-000000000417";
 const povLongBeliefClaim =
   "The guard is bluffing about the archive lock because he keeps touching the wrong key ring before answering.";
 const nonPovLongBeliefClaim =
@@ -208,18 +209,121 @@ describe("compiler tail-section resolvers", () => {
     expect(sectionBody(prompt, "physical_continuity")).toContain("The POV stands below the landing.");
   });
 
-  it("renders exact empty-state constants when tail sources are absent", () => {
-    const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
+  it("resolves object and visible affordance references to display labels", () => {
+    const availableAffordanceId = "019b0298-5c00-7000-8000-000000000418";
+    const sentinelAffordanceId = "019b0298-5c00-7000-8000-000000000419";
+    const records = tailRecords().map((item) =>
+      item.id === "019b0298-5c00-7000-8000-000000000411"
+        ? record(item.id, item.type, item.metadata?.displayLabel ?? item.id, {
+            status: "active",
+            label: "Lantern",
+            description: "A smoky hand lantern.",
+            owner: physicalEntityId,
+            carried_by: physicalEntityId,
+            current_location: physicalLocationId,
+            visibility_to_pov: "visible",
+            usable_affordances: ["raise light"],
+            constraints: ["oil is low"]
+          })
+        : item
+    );
+    const recordsWithAvailableAffordance = [
+      ...records,
+      record(availableAffordanceId, "VISIBLE AFFORDANCE", "Lift lantern", {
+        status: "available",
+        label: "Lift lantern",
+        prompt_text: "The lantern can be raised to throw light up the stair.",
+        requires: ["free hand"],
+        action_families: ["perceive"],
+        available_to: physicalEntityId,
+        risk: "physical",
+        durability: "reversible_state_change"
+      }),
+      record(sentinelAffordanceId, "VISIBLE AFFORDANCE", "Signal anyone onstage", {
+        status: "available",
+        label: "Signal anyone onstage",
+        prompt_text: "Anyone onstage can signal toward the landing.",
+        requires: [],
+        action_families: ["communicate"],
+        available_to: "any_onstage",
+        risk: "social",
+        durability: "durable_state_change"
+      })
+    ];
+    const locationsObjects = sectionBody(
+      compilePrompt(buildValidationSnapshot(input(recordsWithAvailableAffordance))).prompt,
+      "locations_objects_affordances"
+    );
 
-    expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain(
-      EMPTY_STATE_CONSTANTS.pov_accessible_facts
+    expect(locationsObjects).toContain(
+      "- Lantern; A smoky hand lantern.; owner: Jon Ureña; carried by: Jon Ureña; location: Jon Ureña's home; visibility: visible; affordances: raise light; constraints: oil is low"
     );
-    expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain(EMPTY_STATE_CONSTANTS.recent_events);
-    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(EMPTY_STATE_CONSTANTS.locations);
-    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(
-      EMPTY_STATE_CONSTANTS.unavailable_or_impossible_actions
+    expect(locationsObjects).toContain(
+      "- Lift lantern; The lantern can be raised to throw light up the stair.; available to: Jon Ureña; actions: perceive; requires: free hand; risk: physical; durability: reversible_state_change"
     );
+    expect(locationsObjects).toContain(
+      "- Signal anyone onstage; Anyone onstage can signal toward the landing.; available to: any_onstage; actions: communicate; risk: social; durability: durable_state_change"
+    );
+    expect(locationsObjects).toContain("available to: any_onstage");
+    expect(locationsObjects).not.toContain(`owner: ${physicalEntityId}`);
+    expect(locationsObjects).not.toContain(`carried by: ${physicalEntityId}`);
+    expect(locationsObjects).not.toContain(`location: ${physicalLocationId}`);
+    expect(locationsObjects).not.toContain(`available to: ${physicalEntityId}`);
+  });
+
+  it("falls back to raw ids when object references are absent from the snapshot", () => {
+    const records = tailRecords().map((item) =>
+      item.id === "019b0298-5c00-7000-8000-000000000411"
+        ? record(item.id, item.type, item.metadata?.displayLabel ?? item.id, {
+            status: "active",
+            label: "Lantern",
+            description: "A smoky hand lantern.",
+            owner: missingObjectOwnerId,
+            carried_by: "unknown",
+            current_location: "offstage",
+            visibility_to_pov: "hidden",
+            usable_affordances: ["raise light"],
+            constraints: ["oil is low"]
+          })
+        : item
+    );
+    const locationsObjects = sectionBody(compilePrompt(buildValidationSnapshot(input(records))).prompt, "locations_objects_affordances");
+
+    expect(locationsObjects).toContain(
+      `- Lantern; A smoky hand lantern.; owner: ${missingObjectOwnerId}; carried by: unknown; location: offstage; visibility: hidden; affordances: raise light; constraints: oil is low`
+    );
+  });
+
+  it("renders section-level empty states when composite tail sources are absent", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
+    const facts = sectionBody(prompt, "relevant_facts_beliefs_events");
+    const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
+
+    expect(facts.trim()).toBe("None specified");
+    expect(facts).not.toContain("POV-accessible facts:");
+    expect(facts).not.toContain("Recent events:");
+    expect(locationsObjects.trim()).toBe("None specified");
+    expect(locationsObjects).not.toContain("Locations:");
+    expect(locationsObjects).not.toContain("Visible affordances:");
+    expect(locationsObjects).not.toContain("Unavailable or impossible actions:");
     expect(sectionBody(prompt, "physical_continuity")).toContain(EMPTY_STATE_CONSTANTS.physical_continuity);
+  });
+
+  it("omits empty optional sub-blocks while keeping populated composite siblings", () => {
+    const records = tailRecords().filter((item) => item.type !== "VISIBLE AFFORDANCE");
+    const mixedInput = input(records);
+    const state = mixedInput.generationSession.current_authoritative_state;
+    if (state) {
+      state.current_locks = [];
+    }
+    const prompt = compilePrompt(buildValidationSnapshot(mixedInput)).prompt;
+    const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
+
+    expect(locationsObjects).toContain("Locations:\n- Archive stair");
+    expect(locationsObjects).toContain("Objects:\n- Lantern");
+    expect(locationsObjects).not.toContain("Visible affordances:");
+    expect(locationsObjects).not.toContain("Unavailable or impossible actions:");
+    expect(locationsObjects).not.toContain("None specified");
   });
 
   it("derives unavailable actions from current locks and blocked affordances", () => {
