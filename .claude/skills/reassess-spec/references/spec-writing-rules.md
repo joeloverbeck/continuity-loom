@@ -51,7 +51,7 @@ If Step 3 concluded all deliverables already landed, Step 7's output is NOT deli
 4. Cross-reference any later specs/skills that extended or absorbed the original scope.
 5. Do NOT apply structural refinements to deliverables that already shipped — the spec is now a historical record; editing deliverable sections to match current code would confuse the causal narrative.
 
-(Continuity Loom has no `archive/specs/` archival ledger that tracks completed specs — leave the file at `specs/<ID>.md` with its Status flipped. Note `specs/IMPLEMENTATION-ORDER.md` exists, but it is an ordering-rationale doc, not a completion ledger. If an archival convention is introduced later, add the archival move here.)
+(Continuity Loom archives completed specs under `archive/specs/` per `docs/archival-workflow.md`: flip Status, add the Outcome section, then `git mv specs/<ID>.md archive/specs/<ID>.md` and correct any active-doc references — `docs/ACTIVE-DOCS.md` lists current active specs. Preserve the filename unless it collides; ordering-rationale docs may be suffixed with the completion date on move.)
 
 ## Post-Apply Confirmation
 

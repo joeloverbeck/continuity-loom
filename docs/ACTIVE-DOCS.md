@@ -92,10 +92,10 @@ Active specs live in:
 
 - `specs/`
 
-Current active specs:
+There are currently no active specs. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
 
-- `specs/SPEC-implementation-order-and-regression-plan.md`
-- `specs/IMPLEMENTATION-ORDER.md`
+- `archive/specs/SPEC-implementation-order-and-regression-plan.md`
+- `archive/specs/IMPLEMENTATION-ORDER-2026-06-08.md`
 
 Create a new active spec only when the change is too broad or risky for a single ticket.
 
