@@ -316,7 +316,7 @@ Objects:
 - cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
 
 Visible affordances:
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
 
 Unavailable or impossible actions:
 - Current lock: cellar latch is closed but not barred

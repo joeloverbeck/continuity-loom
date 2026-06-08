@@ -107,7 +107,8 @@ const tailResolvers: ResolverMap = {
         labelValue("available to", resolveRecordLabel(snapshot, payload.available_to)),
         labelValue("actions", payload.action_families),
         labelValue("requires", payload.requires),
-        labelValue("risk", payload.risk)
+        labelValue("risk", payload.risk),
+        labelValue("durability", payload.durability)
       ])
     ),
   unavailable_or_impossible_actions: (snapshot) => renderUnavailableActions(snapshot),

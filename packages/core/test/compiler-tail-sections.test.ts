@@ -236,7 +236,8 @@ describe("compiler tail-section resolvers", () => {
         requires: ["free hand"],
         action_families: ["perceive"],
         available_to: physicalEntityId,
-        risk: "none"
+        risk: "physical",
+        durability: "reversible_state_change"
       }),
       record(sentinelAffordanceId, "VISIBLE AFFORDANCE", "Signal anyone onstage", {
         status: "available",
@@ -245,7 +246,8 @@ describe("compiler tail-section resolvers", () => {
         requires: [],
         action_families: ["communicate"],
         available_to: "any_onstage",
-        risk: "social"
+        risk: "social",
+        durability: "durable_state_change"
       })
     ];
     const locationsObjects = sectionBody(
@@ -257,7 +259,10 @@ describe("compiler tail-section resolvers", () => {
       "- Lantern; A smoky hand lantern.; owner: Jon Ureña; carried by: Jon Ureña; location: Jon Ureña's home; visibility: visible; affordances: raise light; constraints: oil is low"
     );
     expect(locationsObjects).toContain(
-      "- Lift lantern; The lantern can be raised to throw light up the stair.; available to: Jon Ureña; actions: perceive; requires: free hand"
+      "- Lift lantern; The lantern can be raised to throw light up the stair.; available to: Jon Ureña; actions: perceive; requires: free hand; risk: physical; durability: reversible_state_change"
+    );
+    expect(locationsObjects).toContain(
+      "- Signal anyone onstage; Anyone onstage can signal toward the landing.; available to: any_onstage; actions: communicate; risk: social; durability: durable_state_change"
     );
     expect(locationsObjects).toContain("available to: any_onstage");
     expect(locationsObjects).not.toContain(`owner: ${physicalEntityId}`);
