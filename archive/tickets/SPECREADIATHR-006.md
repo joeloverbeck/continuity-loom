@@ -1,6 +1,6 @@
 # SPECREADIATHR-006: Generate page readiness wiring
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — modify `packages/web/src/generate/GenerateView.tsx` to gate on the shared readiness model (including the provider blocker) and render `ReadinessChecklist`. The candidate generate/accept/discard lifecycle and accepted-prose boundaries are unchanged.
@@ -76,3 +76,25 @@ Cover the four Verification Layers; keep the existing candidate-lifecycle assert
 1. `npm test -- packages/web/src/generate/GenerateView.test.tsx`
 2. `npm run typecheck && npm run lint`
 3. Page-level component test is the correct boundary; cross-page end-to-end is the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Updated `GenerateView` to fetch `readiness()` alongside `compile()` and to gate sending on `readiness.canGenerate`.
+- Replaced raw `ValidationResultView` rendering with `ReadinessChecklist` for blocked, provider-blocked, and warning-only states.
+- Removed the standalone `getOpenRouterSettings()` UI gate; provider readiness now comes from the shared readiness model.
+- Preserved candidate generate/regenerate/discard/accept behavior, post-send provider errors, and durable-change reminder refresh.
+- Updated `GenerateView.test.tsx` to cover validation blockers, provider blockers, warning-only non-gating, generate-time validation refresh, and the existing candidate lifecycle.
+
+Deviations from original plan:
+
+- None. Candidate persistence and accepted-prose boundaries were left unchanged.
+
+Verification:
+
+- `npm test -- packages/web/src/generate/GenerateView.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.

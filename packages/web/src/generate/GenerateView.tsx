@@ -1,27 +1,28 @@
-import type { CompileResult } from "@loom/core";
+import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
   acceptCandidate,
   compile,
   generate,
-  getOpenRouterSettings,
   type ApiFailure,
   type CompileBlocked,
   type CompileResponse,
   type GenerationMetadata,
   type GenerateResponse,
-  type TransportFailure
+  type TransportFailure,
+  readiness
 } from "../api.js";
-import { ValidationResultView } from "../generation-brief/ValidationResultView.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
+import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 import { useReminderRefresh } from "../shell/reminder-refresh.js";
 
 type GenerateSurfaceState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult; hasOpenRouterCredential: boolean }
-  | { status: "blocked"; result: CompileBlocked }
+  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness }
+  | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
 type CandidateState =
@@ -43,6 +44,7 @@ export function GenerateView(): React.JSX.Element {
   const [searchTerm, setSearchTerm] = useState("");
   const [acceptNotice, setAcceptNotice] = useState<string | null>(null);
   const { refreshReminder } = useReminderRefresh();
+  const navigate = useNavigate();
 
   useEffect(() => {
     void refreshPrompt();
@@ -55,19 +57,29 @@ export function GenerateView(): React.JSX.Element {
     setAcceptNotice(null);
 
     try {
-      const [result, settings] = await Promise.all([compile(), getOpenRouterSettings()]);
+      const [compileResult, readinessResult] = await Promise.all([compile(), readiness()]);
 
-      if (isFailure(result)) {
-        if (isValidationBlocked(result)) {
-          setState({ status: "blocked", result });
-          return;
-        }
-
-        setState({ status: "error", kind: result.kind, message: result.message });
+      if (isReadinessFailure(readinessResult)) {
+        setState({ status: "error", kind: readinessResult.kind, message: readinessResult.message });
         return;
       }
 
-      setState({ status: "ready", result, hasOpenRouterCredential: settings.hasOpenRouterCredential });
+      if (!readinessResult.canPreview) {
+        setState({ status: "blocked", readiness: readinessResult });
+        return;
+      }
+
+      if (isFailure(compileResult)) {
+        if (isValidationBlocked(compileResult)) {
+          setState({ status: "blocked", readiness: readinessResult });
+          return;
+        }
+
+        setState({ status: "error", kind: compileResult.kind, message: compileResult.message });
+        return;
+      }
+
+      setState({ status: "ready", result: compileResult, readiness: readinessResult });
     } catch {
       setState({ status: "error", kind: "compile-request-failed", message: "Could not compile the prompt." });
     }
@@ -99,8 +111,8 @@ export function GenerateView(): React.JSX.Element {
       }
 
       if (isGenerateBlocked(result)) {
-        setState({ status: "blocked", result });
         setCandidateState({ status: "idle" });
+        await refreshPrompt();
         return;
       }
 
@@ -109,6 +121,26 @@ export function GenerateView(): React.JSX.Element {
       setCandidateState({ status: "error", message: "Could not generate candidate prose." });
     }
   }
+
+  function copyTechnicalJson(diagnostic: ReadinessDiagnostic): void {
+    void navigator.clipboard?.writeText(JSON.stringify(diagnostic, null, 2));
+  }
+
+  const checklistActions = {
+    onFocusField: () => {
+      void navigate("/generation-brief");
+    },
+    onOpenRecord: (recordId: string) => {
+      void navigate(`/records?recordId=${encodeURIComponent(recordId)}`);
+    },
+    onOpenProviderSettings: () => {
+      void navigate("/settings");
+    },
+    onOpenWorkingSet: () => {
+      void navigate("/working-set");
+    },
+    onCopyTechnicalJson: copyTechnicalJson
+  };
 
   function updateCandidateText(text: string): void {
     setCandidateState((current) => {
@@ -174,11 +206,11 @@ export function GenerateView(): React.JSX.Element {
       {state.status === "blocked" ? (
         <section className="previewStack">
           <p className="status statusError" role="alert">
-            Prompt preview is unavailable while blockers exist.
+            Generate is blocked.
           </p>
           <section className="configPanel validationPanel" aria-labelledby="generate-validation-title">
-            <h3 id="generate-validation-title">VALIDATION</h3>
-            <ValidationResultView result={state.result.validation} />
+            <h3 id="generate-validation-title">READINESS</h3>
+            <ReadinessChecklist readiness={state.readiness} actions={checklistActions} />
           </section>
           <button type="button" onClick={() => void refreshPrompt()}>Refresh prompt</button>
         </section>
@@ -194,7 +226,7 @@ export function GenerateView(): React.JSX.Element {
       {state.status === "ready" ? (
         <ReadyGenerate
           result={state.result}
-          hasOpenRouterCredential={state.hasOpenRouterCredential}
+          readiness={state.readiness}
           searchTerm={searchTerm}
           candidateState={candidateState}
           acceptNotice={acceptNotice}
@@ -204,6 +236,7 @@ export function GenerateView(): React.JSX.Element {
           onCandidateTextChange={updateCandidateText}
           onDiscardCandidate={discardCandidate}
           onAcceptCandidate={() => void acceptCurrentCandidate()}
+          onChecklistAction={checklistActions}
         />
       ) : null}
     </section>
@@ -225,7 +258,7 @@ function withoutAcceptError(candidate: Extract<CandidateState, { status: "candid
 
 function ReadyGenerate({
   result,
-  hasOpenRouterCredential,
+  readiness,
   searchTerm,
   candidateState,
   acceptNotice,
@@ -234,10 +267,11 @@ function ReadyGenerate({
   onGenerate,
   onCandidateTextChange,
   onDiscardCandidate,
-  onAcceptCandidate
+  onAcceptCandidate,
+  onChecklistAction
 }: {
   result: CompileResult;
-  hasOpenRouterCredential: boolean;
+  readiness: GenerationReadiness;
   searchTerm: string;
   candidateState: CandidateState;
   acceptNotice: string | null;
@@ -247,11 +281,21 @@ function ReadyGenerate({
   onCandidateTextChange: (value: string) => void;
   onDiscardCandidate: () => void;
   onAcceptCandidate: () => void;
+  onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
-  const canGenerate = hasOpenRouterCredential && candidateState.status !== "sending";
+  const canGenerate = readiness.canGenerate && candidateState.status !== "sending";
+  const showReadinessChecklist = readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
 
   return (
     <section className="previewStack">
+      {showReadinessChecklist ? (
+        <section className="configPanel validationPanel" aria-labelledby="generate-readiness-title">
+          <h3 id="generate-readiness-title">READINESS</h3>
+          <ReadinessChecklist readiness={readiness} actions={onChecklistAction} />
+        </section>
+      ) : (
+        <p className="status statusSuccess" role="status">Ready to generate.</p>
+      )}
       <p className="status statusWarning" role="note">
         This prompt is temporary and not canon.
       </p>
@@ -262,9 +306,6 @@ function ReadyGenerate({
         ) : null}
         <button type="button" onClick={onRefresh}>Refresh prompt</button>
       </div>
-      {!hasOpenRouterCredential ? (
-        <p className="status statusError" role="alert">API key missing. Configure it in Settings.</p>
-      ) : null}
       {candidateState.status === "sending" ? <p className="muted" role="status">Generating...</p> : null}
       {candidateState.status === "error" ? (
         <p className="status statusError" role="alert">{candidateState.message}</p>
@@ -311,6 +352,10 @@ function ReadyGenerate({
 }
 
 function isFailure(result: CompileResponse): result is Extract<CompileResponse, { ok: false }> {
+  return "ok" in result && result.ok === false;
+}
+
+function isReadinessFailure(result: GenerationReadiness | ApiFailure): result is ApiFailure {
   return "ok" in result && result.ok === false;
 }
 
