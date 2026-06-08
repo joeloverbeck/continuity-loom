@@ -204,6 +204,25 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "manual_directive")).toContain("Jon asks about the drawer.");
   });
 
+  it("resolves current-state onstage and offstage entity ids to display labels", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+    const currentState = sectionBody(prompt, "current_authoritative_state");
+
+    expect(currentState).toContain("Onstage entities: Jon Vale");
+    expect(currentState).toContain("Offstage but pressuring entities: Mara Lorne");
+    expect(currentState).not.toContain(`Onstage entities: ${povId}`);
+    expect(currentState).not.toContain(`Offstage but pressuring entities: ${holderId}`);
+  });
+
+  it("falls back to a raw current-state entity id when no matching record is selected", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.onstage_entities = [danglingHolderId];
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(`Onstage entities: ${danglingHolderId}`);
+  });
+
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 

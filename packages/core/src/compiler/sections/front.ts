@@ -51,7 +51,10 @@ const frontResolvers: ResolverMap = {
   current_location: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_location, "current_location"),
   onstage_entities: (snapshot) =>
-    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.onstage_entities, "onstage_entities"),
+    valueOrEmpty(
+      renderEntityReferenceList(snapshot, snapshot.generationSession.current_authoritative_state?.onstage_entities),
+      "onstage_entities"
+    ),
   immediate_situation_summary: (snapshot) =>
     valueOrEmpty(
       snapshot.generationSession.current_authoritative_state?.immediate_situation_summary,
@@ -59,7 +62,10 @@ const frontResolvers: ResolverMap = {
     ),
   offstage_pressuring_entities: (snapshot) =>
     valueOrEmpty(
-      snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities,
+      renderEntityReferenceList(
+        snapshot,
+        snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities
+      ),
       "offstage_pressuring_entities"
     ),
   positions: (snapshot) => valueOrEmpty(snapshot.generationSession.current_authoritative_state?.positions, "positions"),
@@ -182,6 +188,14 @@ function renderValue(value: unknown): string {
   }
 
   return "";
+}
+
+function renderEntityReferenceList(snapshot: ValidationSnapshot, value: unknown): string {
+  if (!Array.isArray(value)) {
+    return "";
+  }
+
+  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join("\n");
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {

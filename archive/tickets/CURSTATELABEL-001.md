@@ -1,6 +1,6 @@
 # CURSTATELABEL-001: Resolve onstage/offstage entity ids to display labels in `<current_authoritative_state>`
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/compiler/sections/front.ts` resolvers; `docs/compiler-contract.md` §9 resolved-label list
@@ -83,3 +83,22 @@ Add `onstage_entities` and `offstage_pressuring_entities` to the list of placeho
 
 1. `npm test`
 2. `npm run lint && npm run typecheck`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+- Resolved `current_authoritative_state.onstage_entities` and `offstage_pressuring_entities` through the existing deterministic record-label resolver.
+- Preserved the existing raw-id fallback when a referenced record is absent from the validation snapshot.
+- Updated `docs/compiler-contract.md` so prompt-facing id-resolution rules include both current-state entity placeholders.
+- Updated compiler-front and golden prompt coverage for label rendering.
+
+Deviations from original plan:
+- The golden first-segment prompt fixture also needed the intentional label-rendering rebaseline.
+
+Verification:
+- `npm exec -- vitest run packages/core/test/compiler-front-sections.test.ts packages/core/test/compiler-golden.test.ts` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.

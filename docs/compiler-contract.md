@@ -270,7 +270,7 @@ Validation-only by default:
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
 
-The `{pov_character}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, object-holder, object-location, and affordance availability ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. A raw id in these lines means the referenced record was not available in the selected snapshot.
+The `{pov_character}`, `{onstage_entities}`, `{offstage_pressuring_entities}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, object-holder, object-location, and affordance availability ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. A raw id in these lines means the referenced record was not available in the selected snapshot.
 
 Prompt-facing when selected or compiled:
 
