@@ -1,6 +1,6 @@
 import { orderCompilerRecords } from "../ordering.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
-import { displayLabel } from "../labels.js";
+import { displayLabel, resolveRecordLabel } from "../labels.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
@@ -50,7 +50,7 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "INTENTION", isActiveIntention, (payload) =>
       compactParts([
         asString(payload.intent),
-        labelValue("holder", payload.holder),
+        labelValue("holder", labelReference(snapshot, payload.holder)),
         labelValue("urgency", payload.urgency),
         asString(payload.behavioral_pressure)
       ])
@@ -59,6 +59,7 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "PLAN", isActivePlan, (payload) =>
       compactParts([
         asString(payload.objective),
+        labelValue("holder", labelReference(snapshot, payload.holder)),
         labelValue("current step", payload.current_step),
         labelValue("resources", payload.resources),
         labelValue("blockers", payload.blockers),
@@ -79,8 +80,8 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "OBLIGATION", isOpenObligation, (payload) =>
       compactParts([
         asString(payload.terms),
-        labelValue("owed by", payload.owed_by),
-        labelValue("owed to", payload.owed_to),
+        labelValue("owed by", labelReference(snapshot, payload.owed_by)),
+        labelValue("owed to", labelReference(snapshot, payload.owed_to)),
         labelValue("urgency", payload.urgency),
         labelValue("if broken", payload.consequence_if_broken)
       ])
@@ -89,8 +90,8 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "CONSEQUENCE", isActiveConsequence, (payload) =>
       compactParts([
         asString(payload.current_effect),
-        labelValue("target", payload.holder_or_target),
-        labelValue("cause", payload.cause),
+        labelValue("target", labelReference(snapshot, payload.holder_or_target)),
+        labelValue("cause", labelReference(snapshot, payload.cause)),
         labelValue("urgency", payload.urgency),
         labelValue("possible next effect", payload.possible_next_effect)
       ])
@@ -175,6 +176,14 @@ function renderValue(value: unknown): string {
   }
 
   return asString(value);
+}
+
+function labelReference(snapshot: ValidationSnapshot, value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((item) => labelReference(snapshot, item)).filter(Boolean).join(", ");
+  }
+
+  return resolveRecordLabel(snapshot, value);
 }
 
 function compactParts(parts: readonly string[]): string {

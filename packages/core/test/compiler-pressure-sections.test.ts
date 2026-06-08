@@ -17,6 +17,10 @@ const relationshipId = "019b0298-5c00-7000-8000-000000000107";
 const emotionId = "019b0298-5c00-7000-8000-000000000108";
 const locationId = "019b0298-5c00-7000-8000-000000000109";
 const affordanceId = "019b0298-5c00-7000-8000-000000000110";
+const holderAId = "019b0298-5c00-7000-8000-000000000201";
+const holderBId = "019b0298-5c00-7000-8000-000000000202";
+const causeFactId = "019b0298-5c00-7000-8000-000000000203";
+const absentReferenceId = "019b0298-5c00-7000-8000-000000000999";
 const longObligationTerms =
   "Do not abandon the apprentice while the archive stair is flooding and every witness expects a public explanation before the bell stops.";
 const longConsequenceEffect =
@@ -32,6 +36,7 @@ function pressureRecords(): ValidationRecord[] {
       metadata: metadata(planId, "Plan B", { userOrder: 2, salience: "critical" }),
       payload: {
         plan_status: "active",
+        holder: holderAId,
         objective: "Get the ledger out of the archive.",
         current_step: "Distract the guard at the side door.",
         resources: ["lamp", "rain noise"],
@@ -58,7 +63,7 @@ function pressureRecords(): ValidationRecord[] {
       metadata: metadata(intentionId, "Intent A", { urgency: "high" }),
       payload: {
         status: "active",
-        holder: "019b0298-5c00-7000-8000-000000000201",
+        holder: holderAId,
         intent: "Keep the guard calm.",
         urgency: "high",
         behavioral_pressure: "Speak softly and keep moving."
@@ -70,7 +75,7 @@ function pressureRecords(): ValidationRecord[] {
       metadata: metadata(obligationId, "Debt A", { urgency: "medium" }),
       payload: {
         status: "open",
-        owed_by: ["019b0298-5c00-7000-8000-000000000202"],
+        owed_by: [holderBId],
         owed_to: "self",
         urgency: "medium",
         terms: "Do not abandon the apprentice.",
@@ -139,6 +144,30 @@ function pressureRecords(): ValidationRecord[] {
         label: "Loose latch",
         prompt_text: "The latch can be slipped quietly."
       }
+    },
+    {
+      id: holderAId,
+      type: "ENTITY",
+      metadata: metadata(holderAId, "Niko"),
+      payload: {
+        display_name: "Niko"
+      }
+    },
+    {
+      id: holderBId,
+      type: "ENTITY",
+      metadata: metadata(holderBId, "Mara"),
+      payload: {
+        display_name: "Mara"
+      }
+    },
+    {
+      id: causeFactId,
+      type: "FACT",
+      metadata: metadata(causeFactId, "Stolen ledger"),
+      payload: {
+        statement: "The ledger was stolen."
+      }
     }
   ];
 }
@@ -185,6 +214,51 @@ function longLabelPressureRecords(): ValidationRecord[] {
       }
     }
   ];
+}
+
+function referenceResolutionRecords(): ValidationRecord[] {
+  return pressureRecords().map((record) => {
+    if (record.id === obligationId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          owed_by: [holderAId, holderBId],
+          owed_to: [holderBId]
+        }
+      };
+    }
+
+    if (record.id === consequenceId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          holder_or_target: holderBId,
+          cause: causeFactId
+        }
+      };
+    }
+
+    return record;
+  });
+}
+
+function absentReferenceRecords(): ValidationRecord[] {
+  return pressureRecords().map((record) => {
+    if (record.id === obligationId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          owed_by: [absentReferenceId],
+          owed_to: "institution"
+        }
+      };
+    }
+
+    return record;
+  });
 }
 
 function populatedInput(records = pressureRecords()): BuildValidationSnapshotInput {
@@ -251,6 +325,10 @@ function sectionBody(prompt: string, section: string): string {
   return prompt.match(pattern)?.[1] ?? "";
 }
 
+function payloadOf(record: ValidationRecord): Record<string, unknown> {
+  return record.payload && typeof record.payload === "object" ? (record.payload as Record<string, unknown>) : {};
+}
+
 describe("compiler pressure-section resolvers", () => {
   it("renders populated pressure and causal sections", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
@@ -265,6 +343,31 @@ describe("compiler pressure-section resolvers", () => {
     expect(sectionBody(prompt, "active_obligations_and_consequences")).toContain("Do not abandon the apprentice.");
     expect(sectionBody(prompt, "active_obligations_and_consequences")).toContain("The office is under inspection.");
     expect(sectionBody(prompt, "active_open_threads")).toContain("Who moved the ledger?");
+  });
+
+  it("resolves causal-pressure reference fields to selected record display labels", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput(referenceResolutionRecords())));
+    const plans = sectionBody(prompt, "active_plans_and_intentions");
+    const obligations = sectionBody(prompt, "active_obligations_and_consequences");
+
+    expect(plans).toContain("holder: Niko");
+    expect(obligations).toContain("owed by: Niko, Mara");
+    expect(obligations).toContain("owed to: Mara");
+    expect(obligations).toContain("target: Mara");
+    expect(obligations).toContain("cause: The ledger was stolen.");
+    expect(obligations).not.toContain(holderAId);
+    expect(obligations).not.toContain(holderBId);
+    expect(obligations).not.toContain(causeFactId);
+  });
+
+  it("preserves causal-pressure free text, sentinel literals, and absent-id fallback", () => {
+    const populated = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
+    const fallback = compilePrompt(buildValidationSnapshot(populatedInput(absentReferenceRecords()))).prompt;
+
+    expect(sectionBody(populated, "active_obligations_and_consequences")).toContain("owed to: self");
+    expect(sectionBody(populated, "active_obligations_and_consequences")).toContain("cause: The missing ledger.");
+    expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain(`owed by: ${absentReferenceId}`);
+    expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain("owed to: institution");
   });
 
   it("renders exact empty-state constants when pressure sources are absent", () => {

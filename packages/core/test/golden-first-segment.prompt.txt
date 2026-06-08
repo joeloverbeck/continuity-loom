@@ -234,8 +234,8 @@ Voice pressure pins are current-generation salience duplicates for dialogue, POV
 
 <active_plans_and_intentions>
 Intentions:
-- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: 019b0298-5c00-7000-8000-013000000001; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- Make Elin admit what kind of danger she has pulled him near.; holder: 019b0298-5c00-7000-8000-013000000002; urgency: high; He presses for truth without grabbing the hidden object.
+- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: Elin Vale; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- Make Elin admit what kind of danger she has pulled him near.; holder: Niko Bram; urgency: high; He presses for truth without grabbing the hidden object.
 
 Plans:
 None active
@@ -254,7 +254,7 @@ Obligations:
 None active
 
 Consequences:
-- If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: 019b0298-5c00-7000-8000-013000000002; cause: 019b0298-5c00-7000-8000-013000000007; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
+- If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: Niko Bram; cause: The sealed letter says a market ledger page was replaced before Orin's audit.; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
 
 Use obligations and consequences as constraints on plausible choice and as causes for escalation or durable change.
 </active_obligations_and_consequences>
