@@ -1,6 +1,6 @@
 # HANDOFFDIR-002: Wire up the four missing handoff/directive brief editor fields
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/web/src/generation-brief/GenerationBriefView.tsx` editor surface (additive UI only; no schema or compiler change)
@@ -96,3 +96,22 @@ Extend the `manual_moment_directive` payload to normalize all three array fields
 1. `npm exec -- vitest run packages/web/src/generation-brief/GenerationBriefView.test.tsx`
 2. `npm test`
 3. `npm run lint && npm run typecheck`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+- Added editable `last_visible_moment` and `begin_after` textareas to the IMMEDIATE HANDOFF editor, wired to the existing draft state and field-guidance help keys.
+- Added editable `may_render_if_naturally_caused` and `do_not_force` multiline textareas to the MANUAL MOMENT DIRECTIVE editor, wired to existing array draft fields and field-guidance help keys.
+- Extended save normalization so `must_render`, `may_render_if_naturally_caused`, and `do_not_force` all trim lines and drop blanks on save.
+- Added component coverage for field presence, help buttons, edit/reload round-trip, and normalized save payload arrays.
+
+Deviations:
+- No schema or compiler changes were needed; the existing generation brief model and compiler consumers already supported these fields.
+
+Verification:
+- `npm exec -- vitest run packages/web/src/generation-brief/GenerationBriefView.test.tsx` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.

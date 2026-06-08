@@ -266,7 +266,12 @@ export function GenerationBriefView(): React.JSX.Element {
       active_working_set: activeWorkingSet,
       current_authoritative_state: session.current_authoritative_state,
       immediate_handoff: immediateHandoff,
-      manual_moment_directive: { ...manualDirective, must_render: normalizeLines(manualDirective.must_render) },
+      manual_moment_directive: {
+        ...manualDirective,
+        must_render: normalizeLines(manualDirective.must_render),
+        may_render_if_naturally_caused: normalizeLines(manualDirective.may_render_if_naturally_caused),
+        do_not_force: normalizeLines(manualDirective.do_not_force)
+      },
       current_cast_voice_pressure: currentVoicePressure.cast_member_id ? [currentVoicePressure] : [],
       cast_voice_overrides: voiceOverride.override_text ? [voiceOverride] : [],
       generation_validation_focus: validationFocus,
@@ -560,6 +565,15 @@ export function GenerationBriefView(): React.JSX.Element {
           </label>
           <BriefFieldHelp path="immediate_handoff.recent_causal_context" label="recent_causal_context" />
           <label>
+            last_visible_moment
+            <textarea
+              name="generationSession.immediate_handoff.last_visible_moment"
+              value={immediateHandoff.last_visible_moment}
+              onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, last_visible_moment: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="immediate_handoff.last_visible_moment" label="last_visible_moment" />
+          <label>
             prior_accepted_prose_status_or_handoff_note
             <textarea
               name="generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note"
@@ -577,6 +591,15 @@ export function GenerationBriefView(): React.JSX.Element {
             label="prior_accepted_prose_status_or_handoff_note"
           />
           {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use a user-authored handoff note instead.</p> : null}
+          <label>
+            begin_after
+            <textarea
+              name="generationSession.immediate_handoff.begin_after"
+              value={immediateHandoff.begin_after}
+              onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, begin_after: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="immediate_handoff.begin_after" label="begin_after" />
         </section>
 
         <section className="configPanel" aria-labelledby="directive-brief">
@@ -590,6 +613,37 @@ export function GenerationBriefView(): React.JSX.Element {
             />
           </label>
           <BriefFieldHelp path="manual_moment_directive.must_render[]" label="must_render" />
+          <label>
+            may_render_if_naturally_caused
+            <textarea
+              name="generationSession.manual_moment_directive.may_render_if_naturally_caused"
+              value={manualDirective.may_render_if_naturally_caused.join("\n")}
+              onChange={(event) =>
+                updateSurface("manual_moment_directive", {
+                  ...manualDirective,
+                  may_render_if_naturally_caused: splitLines(event.target.value)
+                })
+              }
+            />
+          </label>
+          <BriefFieldHelp
+            path="manual_moment_directive.may_render_if_naturally_caused[]"
+            label="may_render_if_naturally_caused"
+          />
+          <label>
+            do_not_force
+            <textarea
+              name="generationSession.manual_moment_directive.do_not_force"
+              value={manualDirective.do_not_force.join("\n")}
+              onChange={(event) =>
+                updateSurface("manual_moment_directive", {
+                  ...manualDirective,
+                  do_not_force: splitLines(event.target.value)
+                })
+              }
+            />
+          </label>
+          <BriefFieldHelp path="manual_moment_directive.do_not_force[]" label="do_not_force" />
         </section>
 
         <section className="configPanel" aria-labelledby="voice-pressure-brief">
