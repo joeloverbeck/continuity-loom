@@ -82,6 +82,10 @@ const STATUS_OR_VALIDATION_FIELDS = new Set([
   "can_drive_prose"
 ]);
 
+export const PROMPT_FACING_FIELD_OVERRIDES: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({
+  BELIEF: new Set(["visibility"])
+});
+
 const SYSTEM_MANAGED_FIELDS = new Set(["id"]);
 
 const referenceTargetsByRole: Readonly<Record<string, readonly string[]>> = Object.freeze({
@@ -132,7 +136,9 @@ export const recordEditorDescriptors: Readonly<Record<string, RecordEditorDescri
       definition.recordType,
       {
         recordType: definition.recordType,
-        fields: describeObjectFields(definition.payloadSchema).filter((field) => !SYSTEM_MANAGED_FIELDS.has(field.name))
+        fields: describeObjectFields(definition.payloadSchema, definition.recordType).filter(
+          (field) => !SYSTEM_MANAGED_FIELDS.has(field.name)
+        )
       }
     ])
   )
@@ -185,20 +191,20 @@ export function describeSchemaFields(schema: z.ZodType): readonly FieldDescripto
   return describeObjectFields(schema);
 }
 
-function describeObjectFields(schema: z.ZodType): readonly FieldDescriptor[] {
+function describeObjectFields(schema: z.ZodType, recordType?: string): readonly FieldDescriptor[] {
   const unwrapped = unwrapSchema(schema).schema;
   const shape = objectShape(unwrapped);
-  const fields = Object.entries(shape).map(([name, fieldSchema]) => describeField(name, fieldSchema));
+  const fields = Object.entries(shape).map(([name, fieldSchema]) => describeField(name, fieldSchema, recordType));
 
   return [...fields.filter((field) => field.required), ...fields.filter((field) => !field.required)];
 }
 
-function describeField(name: string, schema: z.ZodType): FieldDescriptor {
+function describeField(name: string, schema: z.ZodType, recordType?: string): FieldDescriptor {
   const { schema: unwrapped, required } = unwrapSchema(schema);
   const base = {
     name,
     required,
-    promptFacing: !STATUS_OR_VALIDATION_FIELDS.has(name)
+    promptFacing: isPromptFacingField(name, recordType)
   };
 
   if (isReferenceSchema(unwrapped, name)) {
@@ -210,7 +216,7 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
     return {
       ...base,
       kind: "list",
-      itemDescriptor: describeListItem(name, element)
+      itemDescriptor: describeListItem(name, element, recordType)
     };
   }
 
@@ -218,7 +224,7 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
     return {
       ...base,
       kind: "nested_group",
-      fields: describeObjectFields(unwrapped)
+      fields: describeObjectFields(unwrapped, recordType)
     };
   }
 
@@ -239,14 +245,19 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
   return { ...base, kind: stringFieldKind(name) };
 }
 
-function describeListItem(name: string, schema: z.ZodType): FieldDescriptor {
-  const item = describeField(`${name}[]`, schema);
+function describeListItem(name: string, schema: z.ZodType, recordType?: string): FieldDescriptor {
+  const item = describeField(`${name}[]`, schema, recordType);
 
   return {
     ...item,
     name: name,
     required: true
   };
+}
+
+function isPromptFacingField(name: string, recordType?: string): boolean {
+  return Boolean(recordType && PROMPT_FACING_FIELD_OVERRIDES[recordType]?.has(name))
+    || !STATUS_OR_VALIDATION_FIELDS.has(name);
 }
 
 function unwrapSchema(schema: z.ZodType): { schema: z.ZodType; required: boolean } {

@@ -12,6 +12,7 @@ import {
 import { recordTypeRegistry } from "../src/records/registry.js";
 
 const knownKinds = new Set(["short_string", "prose", "enum", "reference", "list", "nested_group", "boolean", "number"]);
+const nonBeliefVisibilityRecordTypes = ["RELATIONSHIP", "EMOTION", "CLOCK", "OBLIGATION", "CONSEQUENCE"] as const;
 
 function schemaDefinition(schema: z.ZodType): Record<string, unknown> {
   return (schema as unknown as { _def?: Record<string, unknown>; def?: Record<string, unknown> })._def
@@ -128,6 +129,18 @@ describe("record editor descriptors", () => {
 
     for (const recordType of recordTypes) {
       getEditorDescriptor(recordType)?.fields.forEach(visit);
+    }
+  });
+
+  it("classifies only BELIEF visibility as prompt-facing", () => {
+    expect(getEditorDescriptor("BELIEF")?.fields.find((field) => field.name === "visibility")).toMatchObject({
+      promptFacing: true
+    });
+
+    for (const recordType of nonBeliefVisibilityRecordTypes) {
+      expect(getEditorDescriptor(recordType)?.fields.find((field) => field.name === "visibility")).toMatchObject({
+        promptFacing: false
+      });
     }
   });
 

@@ -30,6 +30,7 @@ function tailRecords(): ValidationRecord[] {
       belief_mode: "suspects",
       truth_relation: "unknown",
       confidence: "medium",
+      visibility: "private",
       access_route: "inference",
       behavioral_effect: "Keeps pressure on the guard instead of retreating."
     }),
@@ -39,6 +40,7 @@ function tailRecords(): ValidationRecord[] {
       belief_mode: "believes",
       truth_relation: "partly_true",
       confidence: "high",
+      visibility: "concealed",
       access_route: "direct_observation",
       behavioral_effect: "Keeps glancing toward the landing."
     }),
@@ -215,13 +217,13 @@ describe("compiler tail-section resolvers", () => {
     expect(facts).toContain(
       [
         "POV-relevant beliefs:",
-        `- ${povLongBeliefClaim}; truth: unknown; mode: suspects; confidence: medium; access: inference; behavior: Keeps pressure on the guard instead of retreating.`
+        `- ${povLongBeliefClaim}; truth: unknown; mode: suspects; confidence: medium; access: inference; behavior: Keeps pressure on the guard instead of retreating.; visibility: private`
       ].join("\n")
     );
     expect(facts).toContain(
       [
         "Non-POV behavior-shaping beliefs:",
-        `- ${nonPovLongBeliefClaim}; behavior: Keeps glancing toward the landing.; mode: believes; truth: partly_true; confidence: high; access: direct_observation`
+        `- ${nonPovLongBeliefClaim}; behavior: Keeps glancing toward the landing.; mode: believes; truth: partly_true; confidence: high; access: direct_observation; visibility: concealed`
       ].join("\n")
     );
     expect(facts).not.toContain(`${povLongBeliefClaim.slice(0, 80)}...`);

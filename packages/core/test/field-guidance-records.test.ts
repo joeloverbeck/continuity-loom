@@ -72,4 +72,18 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
       expect(validatePromptDestinations(entry), entry.fieldPath).toEqual([]);
     }
   });
+
+  it("marks only BELIEF visibility as prompt-facing guidance", () => {
+    expect(getFieldGuidance("BELIEF.visibility")).toMatchObject({
+      promptFacing: "conditional",
+      promptDestinations: ["facts_beliefs_events"]
+    });
+    expect(getFieldGuidance("BELIEF.visibility")?.validationRole).toBeUndefined();
+
+    expect(getFieldGuidance("RELATIONSHIP.visibility")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: [],
+      validationRole: "Operational metadata for filtering, validation, or UI state."
+    });
+  });
 });
