@@ -7,7 +7,9 @@ import type { z } from "zod";
 
 import {
   type GenerationBriefDefaults,
+  type RecordSummary,
   getGenerationBrief,
+  listRecords,
   listStoryConfig,
   setGenerationBrief
 } from "../api.js";
@@ -66,7 +68,8 @@ function BriefFieldHelp({ path, label }: { path: string; label: string }): React
 export function GenerationBriefView(): React.JSX.Element {
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
   const [briefDefaults, setBriefDefaults] = useState<GenerationBriefDefaults | null>(null);
-  const [proseModeSummary, setProseModeSummary] = useState("Not configured");
+  const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
+  const [povEntities, setPovEntities] = useState<RecordSummary[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [shapeIssues, setShapeIssues] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -75,8 +78,8 @@ export function GenerationBriefView(): React.JSX.Element {
   useEffect(() => {
     let active = true;
 
-    void Promise.all([getGenerationBrief(), listStoryConfig()])
-      .then(([briefResponse, configResponse]) => {
+    void Promise.all([getGenerationBrief(), listStoryConfig(), listRecords({ type: "ENTITY" })])
+      .then(([briefResponse, configResponse, entityResponse]) => {
         if (!active) {
           return;
         }
@@ -92,14 +95,11 @@ export function GenerationBriefView(): React.JSX.Element {
 
         const proseModePayload = configResponse.ok ? configResponse.configs["PROSE MODE"] : undefined;
         if (typeof proseModePayload === "object" && proseModePayload !== null) {
-          const payload = proseModePayload as Record<string, unknown>;
-          setProseModeSummary(
-            [
-              typeof payload.pov_character === "string" ? payload.pov_character : null,
-              typeof payload.person === "string" ? payload.person : null,
-              typeof payload.tense === "string" ? payload.tense : null
-            ].filter(Boolean).join(" / ") || "Configured"
-          );
+          setProseModePayload(proseModePayload as Record<string, unknown>);
+        }
+
+        if (entityResponse.ok) {
+          setPovEntities([...entityResponse.records].sort((left, right) => left.displayLabel.localeCompare(right.displayLabel)));
         }
       })
       .catch(() => {
@@ -120,6 +120,28 @@ export function GenerationBriefView(): React.JSX.Element {
     offstage_relevant_cast: [],
     ...(session.active_working_set ?? {})
   };
+  const selectedPov = activeWorkingSet.selected_pov;
+  const povEntityLabels = useMemo(
+    () => new Map(povEntities.map((entity) => [entity.id, entity.displayLabel])),
+    [povEntities]
+  );
+  const proseModeSummary = useMemo(() => {
+    if (!proseModePayload) {
+      return "Not configured";
+    }
+
+    const povCharacter = typeof proseModePayload.pov_character === "string" ? proseModePayload.pov_character : null;
+    const povLabel = povCharacter ? (povEntityLabels.get(povCharacter) ?? povCharacter) : null;
+
+    return [
+      povLabel,
+      typeof proseModePayload.person === "string" ? proseModePayload.person : null,
+      typeof proseModePayload.tense === "string" ? proseModePayload.tense : null
+    ].filter(Boolean).join(" / ") || "Configured";
+  }, [proseModePayload, povEntityLabels]);
+  const selectedPovHasKnownEntity = selectedPov
+    ? selectedPov === "omniscient" || povEntityLabels.has(selectedPov)
+    : true;
   const immediateHandoffDraft = session.immediate_handoff ?? {};
   const immediateHandoff = {
     recent_causal_context: immediateHandoffDraft.recent_causal_context ?? "",
@@ -248,11 +270,20 @@ export function GenerationBriefView(): React.JSX.Element {
           <p className="muted">PROSE MODE source: {proseModeSummary}</p>
           <label>
             selected_pov
-            <input
+            <select
               name="generationSession.active_working_set.selected_pov"
-              value={activeWorkingSet.selected_pov ?? ""}
+              value={selectedPov ?? ""}
               onChange={(event) => updateActiveWorkingSet({ selected_pov: event.target.value || undefined })}
-            />
+            >
+              <option value="">Use PROSE MODE default</option>
+              <option value="omniscient">Omniscient</option>
+              {selectedPovHasKnownEntity || !selectedPov ? null : (
+                <option value={selectedPov}>Unknown entity ({selectedPov.slice(0, 8)})</option>
+              )}
+              {povEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              ))}
+            </select>
           </label>
           <BriefFieldHelp path="active_working_set.selected_pov" label="selected_pov" />
         </section>

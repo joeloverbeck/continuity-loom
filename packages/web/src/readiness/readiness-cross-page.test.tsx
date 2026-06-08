@@ -5,7 +5,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { MemoryRouter } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { compile, getGenerationBrief, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
+import { compile, getGenerationBrief, listRecords, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
 import { GenerateView } from "../generate/GenerateView.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { ValidationPanel } from "../generation-brief/ValidationPanel.js";
@@ -17,6 +17,7 @@ vi.mock("../api.js", () => ({
   generate: vi.fn(),
   getGenerationBrief: vi.fn(),
   getDurableChangeReminder: vi.fn(),
+  listRecords: vi.fn(),
   listStoryConfig: vi.fn(),
   readiness: vi.fn(),
   setGenerationBrief: vi.fn()
@@ -53,6 +54,7 @@ beforeEach(() => {
       }
     }
   });
+  vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
   vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
   vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
 });
