@@ -264,6 +264,16 @@ describe("compiler cast-section resolvers", () => {
     expect(dossier).not.toContain("Fourth sample should not render.");
   });
 
+  it("does not render record-reference ids in active cast dossiers", () => {
+    const dossier = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "active_cast_full_dossiers");
+
+    expect(dossier).not.toContain("entity_id:");
+    expect(dossier).not.toContain(entityId);
+    expect(dossier).not.toContain(activeCastId);
+    expect(dossier).not.toMatch(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/u);
+    expect(dossier.trimStart()).toContain("identity:");
+  });
+
   it("renders voice pins near the active working set without replacing the full dossier", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(input()));
     const activeWorkingSet = sectionBody(prompt, "active_working_set");
