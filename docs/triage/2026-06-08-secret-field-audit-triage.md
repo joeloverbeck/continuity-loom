@@ -43,7 +43,7 @@ Characters who must not know yet:
 
 | ID | Finding | Verdict | Deliverable |
 |---|---|---|---|
-| O1 | Holder/non-holder ids render as UUIDs in the compiled prompt | ACT (HIGH) | `tickets/SECRETPROMPT-001.md` |
+| O1 | Holder/non-holder ids render as UUIDs in the compiled prompt | ACT (HIGH) | `archive/tickets/SECRETPROMPT-001.md` |
 | O2 | `clue_carriers` never compiled though contract row 130 promises it | ACT (MEDIUM) | `tickets/SECRETPROMPT-002.md` |
 | O3 | `secret_kind` defined but unused; no doc requires it | DECIDE (LOW) | `tickets/SECRETPROMPT-003.md` |
 

@@ -1,6 +1,6 @@
 # SECRETPROMPT-001: Resolve SECRET holder/non-holder entity IDs to display names in the compiled prompt
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/compiler/sections/front.ts` (`secret_holders`, `secret_non_holders_to_protect` resolvers + a shared id→label helper); regression coverage in `packages/core/test/compiler-front-sections.test.ts` and the golden fixture (`packages/core/test/compiler-golden.test.ts`). Docs sync: `docs/compiler-contract.md` rows 128–129 and §9. No schema, validation, or stored-data change.
@@ -106,3 +106,27 @@ This also contradicts `docs/compiler-contract.md` §9, which states record IDs a
 
 1. `npm test --workspace @loom/core -- compiler-front-sections` (targeted proof).
 2. `npm run lint && npm run typecheck && npm test` (full-pipeline gate per CLAUDE.md, includes golden + boundary tests).
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- `SECRET.holders` and `SECRET.non_holders_to_protect` now resolve referenced record ids to display labels in the compiled secrets prompt block, with raw-id fallback when a referenced record is absent from the selected snapshot.
+- `all_except_holders` and `none` protected-non-holder sentinels now render as deterministic human-readable phrases.
+- Focused compiler tests cover display-label resolution, dangling-id fallback, and both sentinel values.
+- The golden demo prompt now renders `Elin Vale` and `Niko Bram` instead of their UUIDs.
+- `docs/compiler-contract.md` now lists these two placeholders as prompt-facing id-derived values alongside `{pov_character}`.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test --workspace @loom/core -- compiler-front-sections` passed.
+- `npm test --workspace @loom/core -- compiler-golden` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 99 files, 655 tests.

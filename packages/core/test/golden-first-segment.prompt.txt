@@ -178,10 +178,10 @@ Writer-visible hidden truths:
 - The sealed letter says a market ledger page was replaced before Orin's audit.
 
 Secret holders:
-- 019b0298-5c00-7000-8000-013000000001
+- Elin Vale
 
 Characters who must not know yet:
-- 019b0298-5c00-7000-8000-013000000002
+- Niko Bram
 
 Allowed clues and surface cues now:
 - Elin guards the flour bin too carefully., Niko may notice the letter exists but not read or infer its contents.

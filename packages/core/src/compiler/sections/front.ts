@@ -128,12 +128,12 @@ const frontResolvers: ResolverMap = {
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => asString(payload.secret_claim)).join("\n") ||
     EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths,
   secret_holders: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.holders)).join("\n") ||
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => resolveEntityLabels(snapshot, payload.holders)).join("\n") ||
     EMPTY_STATE_CONSTANTS.secret_holders,
   secret_non_holders_to_protect: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.non_holders_to_protect)).join(
-      "\n"
-    ) || EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
+      resolveEntityLabels(snapshot, payload.non_holders_to_protect)
+    ).join("\n") || EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
   allowed_clues_and_surface_cues: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.allowed_surface_cues)).join("\n") ||
     EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues,
@@ -232,6 +232,35 @@ function listLine(value: unknown): string {
   }
 
   return asString(value);
+}
+
+function resolveEntityLabels(snapshot: ValidationSnapshot, value: unknown): string {
+  if (value === "all_except_holders") {
+    return "Everyone except the secret holders";
+  }
+
+  if (value === "none") {
+    return "No protected non-holders";
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .map((id) => resolveEntityLabel(snapshot, id))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  return asString(value);
+}
+
+function resolveEntityLabel(snapshot: ValidationSnapshot, value: unknown): string {
+  const id = asString(value);
+  if (!id) {
+    return "";
+  }
+
+  const record = snapshot.records.find((item) => item.id === id);
+  return record ? displayLabel(record) : id;
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {

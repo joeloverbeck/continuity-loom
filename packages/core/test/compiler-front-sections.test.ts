@@ -12,6 +12,7 @@ const holderId = "019b0298-5c00-7000-8000-000000000002";
 const factId = "019b0298-5c00-7000-8000-000000000003";
 const secretId = "019b0298-5c00-7000-8000-000000000004";
 const beliefId = "019b0298-5c00-7000-8000-000000000005";
+const danglingHolderId = "019b0298-5c00-7000-8000-000000000006";
 
 function populatedInput(): BuildValidationSnapshotInput {
   return {
@@ -26,6 +27,18 @@ function populatedInput(): BuildValidationSnapshotInput {
           status: "active",
           entity_kind: "person",
           canonical_summary: "Jon watches the archive door."
+        }
+      },
+      {
+        id: holderId,
+        type: "ENTITY",
+        metadata: metadata(holderId, "Mara Lorne"),
+        payload: {
+          id: holderId,
+          display_name: "Mara Lorne",
+          status: "active",
+          entity_kind: "person",
+          canonical_summary: "Mara keeps secrets behind procedural calm."
         }
       },
       {
@@ -70,7 +83,7 @@ function populatedInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [povId, factId, beliefId, secretId],
+        selected_records: [povId, holderId, factId, beliefId, secretId],
         active_onstage_cast_full: [],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],
@@ -245,11 +258,61 @@ describe("compiler front-section resolvers", () => {
     const audienceSection = sectionBody(prompt, "audience_knowledge");
 
     expect(secretSection).toContain("Mara stole the archive key.");
-    expect(secretSection).toContain(holderId);
-    expect(secretSection).toContain(povId);
+    expect(secretSection).toContain("Secret holders:\n- Mara Lorne");
+    expect(secretSection).toContain("Characters who must not know yet:\n- Jon Vale");
+    expect(secretSection).not.toContain(holderId);
+    expect(secretSection).not.toContain(povId);
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("falls back to a raw secret holder id when no matching record is selected", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              holders: [danglingHolderId]
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+      `Secret holders:\n- ${danglingHolderId}`
+    );
+  });
+
+  it("renders protected non-holder sentinel values as deterministic phrases", () => {
+    for (const [sentinel, phrase] of [
+      ["all_except_holders", "Everyone except the secret holders"],
+      ["none", "No protected non-holders"]
+    ] as const) {
+      const input = populatedInput();
+      input.records = input.records.map((record) =>
+        record.id === secretId
+          ? {
+              ...record,
+              payload: {
+                ...(record.payload as Record<string, unknown>),
+                non_holders_to_protect: sentinel
+              }
+            }
+          : record
+      );
+
+      const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+      expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+        `Characters who must not know yet:\n- ${phrase}`
+      );
+      expect(sectionBody(prompt, "secrets_and_reveal_constraints")).not.toContain(`- ${sentinel}`);
+    }
   });
 
   it("renders affirmative no-forbidden-reveals secrets without using the empty state", () => {

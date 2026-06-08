@@ -125,8 +125,8 @@ Requiredness terms:
 | `{audience_does_not_know}` | AUDIENCE KNOWLEDGE PROFILE.audience_does_not_know | No unless audience ignorance matters | No block | `None specified` | Avoids overrevealing. |
 | `{dramatic_irony_permissions}` | AUDIENCE KNOWLEDGE PROFILE.dramatic_irony_permissions | Required when audience knows more than POV | Block if absent in heavy irony scene | `None specified` | Does not grant POV knowledge. |
 | `{writer_visible_hidden_truths}` | Selected SECRET.secret_claim and writer-visible hidden facts | Required when any active secret matters | Block if absent but secret tag set | `No active secrets or reveal locks selected` | Writer-facing only. |
-| `{secret_holders}` | SECRET.holders | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Holder list may be all/unknown only if explicit. |
-| `{secret_non_holders_to_protect}` | SECRET.non_holders_to_protect | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Defines protected ignorance. |
+| `{secret_holders}` | SECRET.holders resolved to referenced records' display labels | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Raw-id fallback only when a referenced record is absent from the selected snapshot; holder list may be all/unknown only if explicit. |
+| `{secret_non_holders_to_protect}` | SECRET.non_holders_to_protect resolved to referenced records' display labels | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Defines protected ignorance. Raw-id fallback only when a referenced record is absent from the selected snapshot; `all_except_holders` and `none` render as deterministic phrases. |
 | `{allowed_clues_and_surface_cues}` | SECRET.allowed_surface_cues + clue_carriers available now | Required for clue pressure; optional otherwise | Block if clue pressure tag set and absent | `None specified` | Surface cues without reveal. |
 | `{forbidden_reveals}` | SECRET.forbidden_reveals | Required for active secret | Block if blank | `None specified` only when no active secret; active secrets may use the affirmative `none` sentinel, which renders as `No reveals are forbidden beyond the stated reveal permission.` | Prevents narrator leakage. |
 | `{reveal_permissions}` | SECRET.reveal_permission + reveal_triggers | Required for active secret | Block if blank or contradictory | `No active secrets or reveal locks selected` | `locked` cannot be overridden by directive. |
@@ -269,7 +269,7 @@ Validation-only by default:
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
 
-The `{pov_character}` placeholder is the one prompt-facing id-derived value: entity ids are resolved to a selected record's human display label before rendering, while `omniscient` and `variable` render as literals. A raw id in this line means the referenced POV record was not available in the selected snapshot.
+The `{pov_character}`, `{secret_holders}`, and `{secret_non_holders_to_protect}` placeholders are prompt-facing id-derived values: entity ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. A raw id in these lines means the referenced record was not available in the selected snapshot.
 
 Prompt-facing when selected or compiled:
 
