@@ -95,7 +95,7 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
   const state = session.current_authoritative_state;
   const handoff = session.immediate_handoff;
   const directive = session.manual_moment_directive;
-  const generationContext = session.generation_validation_focus?.validation_focus_tags.generation_context[0];
+  const generationContext = session.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
 
   if (
     !state ||
@@ -255,7 +255,7 @@ function validateActiveCast(snapshot: ValidationSnapshot): readonly Diagnostic[]
 }
 
 function validateGenerationContextFocus(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const contextTags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context;
+  const contextTags = snapshot.generationSession.generation_validation_focus?.validation_focus_tags?.generation_context;
 
   if (!contextTags || contextTags.length <= 1) {
     return [];

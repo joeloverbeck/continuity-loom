@@ -57,9 +57,56 @@ function contextFor(input: {
   return result.snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context;
 }
 
+function focusTagsFor(input: {
+  generationSession?: Partial<GenerationSession>;
+  acceptedSegmentCount?: number;
+}) {
+  const result = buildSnapshotFromOpenProject(managerFor(input));
+  expect(result.ok).toBe(true);
+  if (!result.ok) {
+    throw new Error("Expected snapshot build to succeed.");
+  }
+
+  return result.snapshot.generationSession.generation_validation_focus?.validation_focus_tags;
+}
+
 describe("buildSnapshotFromOpenProject generation context defaults", () => {
   it("defaults missing generation context to first_segment with zero accepted segments", () => {
     expect(contextFor({ generationSession: {}, acceptedSegmentCount: 0 })).toEqual(["first_segment"]);
+  });
+
+  it("defaults partial validation focus without nested tags", () => {
+    expect(
+      focusTagsFor({
+        generationSession: {
+          generation_validation_focus: {}
+        } as Partial<GenerationSession>,
+        acceptedSegmentCount: 0
+      })
+    ).toEqual({
+      generation_context: ["first_segment"],
+      expected_local_modes: [],
+      possible_durable_changes: []
+    });
+  });
+
+  it("defaults partial validation tags without generation context", () => {
+    expect(
+      focusTagsFor({
+        generationSession: {
+          generation_validation_focus: {
+            validation_focus_tags: {
+              expected_local_modes: ["dialogue_expected"]
+            }
+          }
+        } as Partial<GenerationSession>,
+        acceptedSegmentCount: 2
+      })
+    ).toEqual({
+      generation_context: ["continuation_after_accepted_segment"],
+      expected_local_modes: ["dialogue_expected"],
+      possible_durable_changes: []
+    });
   });
 
   it("defaults missing generation context to continuation when accepted segments exist", () => {

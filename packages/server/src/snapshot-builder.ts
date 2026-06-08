@@ -70,17 +70,17 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
 
 function withSnapshotSessionDefaults(payload: unknown, acceptedSegmentCount: number): GenerationSession {
   const session = (payload && typeof payload === "object" ? payload : {}) as Partial<GenerationSession>;
-  const context = session.generation_validation_focus?.validation_focus_tags.generation_context;
+  const focusTags = session.generation_validation_focus?.validation_focus_tags;
+  const context = focusTags?.generation_context;
   const generationValidationFocus = context?.length
     ? session.generation_validation_focus
     : {
         ...session.generation_validation_focus,
         validation_focus_tags: {
-          ...session.generation_validation_focus?.validation_focus_tags,
+          ...focusTags,
           generation_context: [deriveGenerationContextDefault(acceptedSegmentCount)],
-          expected_local_modes: session.generation_validation_focus?.validation_focus_tags.expected_local_modes ?? [],
-          possible_durable_changes:
-            session.generation_validation_focus?.validation_focus_tags.possible_durable_changes ?? []
+          expected_local_modes: focusTags?.expected_local_modes ?? [],
+          possible_durable_changes: focusTags?.possible_durable_changes ?? []
         }
       };
 

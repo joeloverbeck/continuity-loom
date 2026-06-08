@@ -367,7 +367,7 @@ function validatePromptFacingContamination(snapshot: ValidationSnapshot): readon
 }
 
 function validateGenerationContextRows(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const context = snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context[0];
+  const context = snapshot.generationSession.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
   const handoff = snapshot.generationSession.immediate_handoff;
 
   if (!context || !handoff) {

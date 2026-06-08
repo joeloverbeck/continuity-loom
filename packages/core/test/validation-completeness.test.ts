@@ -238,6 +238,20 @@ describe("universal completeness validation", () => {
     expect(codes).not.toContain("missing-stop-guidance");
   });
 
+  it("does not throw when validation focus tags are absent", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus = {} as BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"];
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+  });
+
+  it("does not throw when generation context is absent from validation focus tags", () => {
+    const input = cleanInput();
+    delete input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context;
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+  });
+
   it("blocks continuation generation without a complete handoff", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
