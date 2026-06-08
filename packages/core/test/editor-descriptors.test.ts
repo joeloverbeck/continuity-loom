@@ -116,6 +116,26 @@ describe("record editor descriptors", () => {
     });
   });
 
+  it("classifies event causes and effects as record-link reference lists", () => {
+    const eventFields = new Map(getEditorDescriptor("EVENT")?.fields.map((field) => [field.name, field]));
+
+    expect(eventFields.get("causes")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "record_link"
+      }
+    });
+    expect(eventFields.get("effects")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "record_link"
+      }
+    });
+    expect(eventFields.get("known_by")?.kind).not.toBe("list");
+  });
+
   it("classifies non-holder protection as sentinels or an entity reference list", () => {
     expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
       kind: "sentinel_reference_list",

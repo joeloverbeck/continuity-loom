@@ -245,6 +245,20 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     };
   }
 
+  if (isRecordLinkListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "list",
+      itemDescriptor: {
+        ...base,
+        name,
+        kind: "reference",
+        required: true,
+        referenceRole: roleForField(name)
+      }
+    };
+  }
+
   if (schemaType(unwrapped) === "array") {
     const element = arrayElement(unwrapped);
     return {
@@ -385,6 +399,20 @@ function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean
   const hasSentinels = enumValuesForSchema(schema).length > 0;
 
   return hasReferenceArray && hasSentinels;
+}
+
+function isRecordLinkListSchema(schema: z.ZodType, name: string): boolean {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasReferenceArray = options.some(
+    (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
+  );
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasReferenceArray && !hasSentinels;
 }
 
 function isSentinelReferenceSchema(schema: z.ZodType, name: string): boolean {

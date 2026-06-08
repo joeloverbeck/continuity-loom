@@ -415,6 +415,37 @@ describe("RecordEditor", () => {
     });
   });
 
+  it("stores EVENT causes as record-link arrays from reference pickers", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="EVENT" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    expect(screen.queryByRole("textbox", { name: /^causes/ })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: /^effects/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add causes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add causes" }));
+
+    const firstCause = screen.getByLabelText<HTMLSelectElement>(/^causes 1/);
+    const secondCause = screen.getByLabelText<HTMLSelectElement>(/^causes 2/);
+    expect(firstCause.tagName).toBe("SELECT");
+    expect(within(firstCause).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(firstCause).getByRole<HTMLOptionElement>("option", { name: "Vault" }).value).toBe(idB);
+
+    fireEvent.change(firstCause, { target: { value: idA } });
+    fireEvent.change(secondCause, { target: { value: idB } });
+    fireEvent.change(screen.getByLabelText(/^description/), {
+      target: { value: "The vault door opens under pressure." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      causes: [idA, idB],
+      effects: []
+    });
+  });
+
   it("stores specific SECRET protected non-holders as selected entity ids", async () => {
     const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
 
