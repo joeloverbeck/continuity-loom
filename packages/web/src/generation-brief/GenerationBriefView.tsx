@@ -2,7 +2,8 @@ import {
   activeWorkingSetSchema,
   generationSessionDraftSchema
 } from "@loom/core";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import type { z } from "zod";
 
 import {
@@ -65,7 +66,27 @@ function BriefFieldHelp({ path, label }: { path: string; label: string }): React
   return <FieldHelp fieldPath={`GENERATION BRIEF.${path}`} fieldLabel={label} />;
 }
 
+function focusableElement(element: HTMLElement): HTMLElement | undefined {
+  return element.matches("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ? element : undefined;
+}
+
+function firstFocusableChild(element: HTMLElement): HTMLElement | undefined {
+  return element.querySelector<HTMLElement>("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ?? undefined;
+}
+
+function briefFieldTarget(
+  scrollTarget: HTMLElement,
+  focusTarget: HTMLElement | undefined
+): { scrollTarget: HTMLElement; focusTarget?: HTMLElement } {
+  return focusTarget ? { scrollTarget, focusTarget } : { scrollTarget };
+}
+
+function escapeSelectorValue(value: string): string {
+  return globalThis.CSS?.escape(value) ?? value.replace(/["\\]/g, "\\$&");
+}
+
 export function GenerationBriefView(): React.JSX.Element {
+  const [searchParams] = useSearchParams();
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
   const [briefDefaults, setBriefDefaults] = useState<GenerationBriefDefaults | null>(null);
   const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
@@ -74,6 +95,7 @@ export function GenerationBriefView(): React.JSX.Element {
   const [shapeIssues, setShapeIssues] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [validationKey, setValidationKey] = useState(0);
+  const focusedFieldParamRef = useRef<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -112,6 +134,17 @@ export function GenerationBriefView(): React.JSX.Element {
       active = false;
     };
   }, []);
+
+  const fieldParam = searchParams.get("field");
+
+  useEffect(() => {
+    if (!fieldParam || !briefDefaults || focusedFieldParamRef.current === fieldParam) {
+      return;
+    }
+
+    focusedFieldParamRef.current = fieldParam;
+    focusBriefField(fieldParam);
+  }, [briefDefaults, fieldParam]);
 
   const activeWorkingSet = {
     selected_records: [],
@@ -250,11 +283,37 @@ export function GenerationBriefView(): React.JSX.Element {
   }
 
   function focusBriefField(field: string): void {
-    const input = document.querySelector<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>(
-      `[name="${CSS.escape(field)}"], [data-field="${CSS.escape(field)}"]`
+    const target = resolveBriefFieldTarget(field);
+
+    if (!target) {
+      return;
+    }
+
+    target.scrollTarget.scrollIntoView({ block: "center" });
+    target.focusTarget?.focus();
+  }
+
+  function resolveBriefFieldTarget(field: string): { scrollTarget: HTMLElement; focusTarget?: HTMLElement } | null {
+    const escapedField = escapeSelectorValue(field);
+    const exact = document.querySelector<HTMLElement>(
+      `[name="${escapedField}"], [data-field="${escapedField}"]`
     );
 
-    input?.focus();
+    if (exact) {
+      return briefFieldTarget(exact, focusableElement(exact) ?? firstFocusableChild(exact));
+    }
+
+    const section = Array.from(document.querySelectorAll<HTMLElement>("section[data-field]")).find((element) => {
+      const fieldAnchor = element.dataset.field;
+
+      return !!fieldAnchor && (field === fieldAnchor || field.startsWith(`${fieldAnchor}.`));
+    });
+
+    if (!section) {
+      return null;
+    }
+
+    return briefFieldTarget(section, firstFocusableChild(section));
   }
 
   return (
