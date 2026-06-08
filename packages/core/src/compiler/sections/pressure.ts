@@ -10,12 +10,12 @@ type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot
 
 const pressureResolvers: ResolverMap = {
   active_action_pressure: (snapshot) =>
-    pressureFromRecords(
+    renderRecords(
       snapshot,
       ["INTENTION", "PLAN", "OPEN THREAD", "VISIBLE AFFORDANCE"],
-      (record, payload) => firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"]),
-      "active_action_pressure"
-    ),
+      () => true,
+      (payload, record) => actionPressureLine(snapshot, record, payload)
+    ) || EMPTY_STATE_CONSTANTS.active_action_pressure,
   active_knowledge_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
@@ -156,6 +156,20 @@ function renderRecords(
 
 function payloadOf(record: ValidationRecord): JsonRecord {
   return record.payload && typeof record.payload === "object" ? (record.payload as JsonRecord) : {};
+}
+
+function actionPressureLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
+  const line = compactSummaryLine(
+    displayLabel(record),
+    firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"])
+  );
+
+  if (record.type !== "INTENTION" && record.type !== "PLAN") {
+    return line;
+  }
+
+  const holder = labelReference(snapshot, payload.holder);
+  return holder ? `${holder}: ${line}` : line;
 }
 
 function firstText(payload: JsonRecord, keys: readonly string[]): string {

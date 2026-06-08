@@ -197,8 +197,8 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 
 <active_working_set>
 Action pressure:
-- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
+- Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
 - Missing ledger page; The scene may hint at the ledger without naming the culprit or page.
 - listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 

@@ -261,6 +261,10 @@ function absentReferenceRecords(): ValidationRecord[] {
   });
 }
 
+function absentActionHolderRecords(): ValidationRecord[] {
+  return pressureRecords().filter((record) => record.id !== holderAId);
+}
+
 function knowledgePressureRecords(): ValidationRecord[] {
   return [
     {
@@ -416,6 +420,38 @@ describe("compiler pressure-section resolvers", () => {
     expect(sectionBody(populated, "active_obligations_and_consequences")).toContain("cause: The missing ledger.");
     expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain(`owed by: ${absentReferenceId}`);
     expect(sectionBody(fallback, "active_obligations_and_consequences")).toContain("owed to: institution");
+  });
+
+  it("prefixes intention and plan action-pressure summaries with holder labels", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- Niko: Keep the guard calm.; Speak softly and keep moving.");
+    expect(activeWorkingSet).toContain(
+      "- Niko: Get the ledger out of the archive.; Distract the guard at the side door."
+    );
+  });
+
+  it("does not invent holder prefixes for holder-less action-pressure records", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- Who moved the ledger?; A denial would matter.");
+    expect(activeWorkingSet).toContain("- Loose latch; The latch can be slipped quietly.");
+    expect(activeWorkingSet).not.toContain("- Niko: Who moved the ledger?");
+    expect(activeWorkingSet).not.toContain("- Niko: Loose latch");
+  });
+
+  it("falls back to the raw holder id in action-pressure summaries when the holder record is absent", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(absentActionHolderRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain(
+      `- ${holderAId}: Keep the guard calm.; Speak softly and keep moving.`
+    );
+    expect(activeWorkingSet).toContain(
+      `- ${holderAId}: Get the ledger out of the archive.; Distract the guard at the side door.`
+    );
   });
 
   it("deduplicates knowledge-pressure labels that match projected text", () => {
