@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-007: Register active specs in ACTIVE-DOCS.md
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — `docs/ACTIVE-DOCS.md` ("Active tickets and specs" section); no production behavior change.
@@ -70,3 +70,18 @@ In `docs/ACTIVE-DOCS.md` "Active tickets and specs":
 
 1. `grep -nE "Active tickets and specs|specs/" docs/ACTIVE-DOCS.md` — confirm the active specs are registered and the stale claim is corrected.
 2. `ls specs/` cross-checked against the registered list — confirm the index matches the actual active `specs/` contents (the correct boundary — index-vs-filesystem agreement).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/ACTIVE-DOCS.md` to remove the stale "no active specs directory" claim and register the current active specs directory with `SPEC-foundational-doc-amendments-for-generation-readiness.md`, `SPEC-implementation-order-and-regression-plan.md`, and `IMPLEMENTATION-ORDER.md`.
+
+Deviations from original plan: none. No specs were moved or edited.
+
+Verification:
+
+- `grep -c "no active .specs. directory" docs/ACTIVE-DOCS.md` returned `0`
+- `grep -nE "SPEC-foundational-doc-amendments|SPEC-implementation-order-and-regression-plan|IMPLEMENTATION-ORDER" docs/ACTIVE-DOCS.md`
+- `ls specs/` matched the registered list
+- Manual review confirmed completed behavioral predecessor specs remain historical under `archive/specs/`, not listed as active.
