@@ -1,6 +1,6 @@
 # SPECREADIATHR-003: Shared `ReadinessChecklist` UI component
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `packages/web/src/readiness/ReadinessChecklist.tsx` and its test; no production behavior change to existing pages until they adopt it (SPECREADIATHR-004–006).
@@ -81,3 +81,23 @@ Covers the four Verification Layers against a fixture `GenerationReadiness`.
 1. `npm test -- packages/web/src/readiness/ReadinessChecklist.test.tsx`
 2. `npm run typecheck && npm run lint`
 3. Component-level test is the correct boundary; end-to-end cross-page consistency is exercised by the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added `packages/web/src/readiness/ReadinessChecklist.tsx`, a fetch-free presentational renderer for `GenerationReadiness` with ordered groups, status summary, blocker/warning counts, user-facing actions, affected labels, and collapsed technical details.
+- Added `packages/web/src/readiness/ReadinessChecklist.test.tsx` covering group order, default-collapsed technical diagnostics, author-facing action labels, accessibility/focus behavior through callbacks, action callback dispatch, and no-fetch behavior.
+- Added scoped CSS for the checklist, diagnostic cards, actions, affected targets, and technical details.
+
+Deviations from original plan:
+
+- None. Page adoption and `ValidationResultView` retirement remain out of scope for later tickets.
+
+Verification:
+
+- `npm test -- packages/web/src/readiness/ReadinessChecklist.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
