@@ -1,6 +1,6 @@
 # SECRETDIAG-001: Active-secret blocker does not name which reveal-boundary field is missing
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/validation/rules/universal-completeness.ts` (`validateActiveSecrets` message + `field`); coverage in `packages/core/test/validation-clarity-invariants.test.ts` / `validation-blockers.test.ts`
@@ -105,3 +105,22 @@ if (missing.length > 0) {
 
 1. `npm test -- validation-clarity-invariants validation-blockers`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completion date: 2026-06-08
+
+What changed:
+- Active-secret completeness diagnostics now enumerate the exact missing reveal-boundary fields.
+- The diagnostic target now points at the first missing schema field through the existing `affected[0].field` diagnostic contract instead of falling back to `SECRET` for most cases.
+- Regression coverage now proves the single-missing-field case, the fully populated no-blocker case, and the multi-missing-field message.
+
+Deviations from original plan:
+- Tests were added to `packages/core/test/validation-completeness.test.ts`, where active-secret completeness coverage already lives.
+- The live diagnostic shape stores the targeted field in `affected[0].field`, not a top-level `field` property.
+
+Verification results:
+- `npm test -- validation-clarity-invariants validation-blockers validation-completeness` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

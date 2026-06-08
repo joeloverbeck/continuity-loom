@@ -4,7 +4,8 @@ import {
   DIAGNOSTIC_CODES,
   buildValidationSnapshot,
   runValidation,
-  type BuildValidationSnapshotInput
+  type BuildValidationSnapshotInput,
+  type Diagnostic
 } from "../src/index.js";
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
@@ -302,6 +303,87 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
   });
 
+  it("names the specific active-secret field that is missing", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "partially_revealed",
+          holders: [povId],
+          non_holders_to_protect: "none",
+          forbidden_reveals: [],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["A flinch at the old name."]
+        }
+      }
+    ];
+    selectRecord(input, secretId);
+
+    const diagnostic = activeSecretBlocker(input);
+
+    expect(diagnostic?.affected[0]?.field).toBe("forbidden_reveals");
+    expect(diagnostic?.message).toContain("forbidden reveals");
+    expect(diagnostic?.message).not.toContain("holders");
+    expect(diagnostic?.message).not.toContain("protected non-holders");
+    expect(diagnostic?.message).not.toContain("reveal permission");
+    expect(diagnostic?.message).not.toContain("allowed surface cues");
+  });
+
+  it("does not block a fully populated active secret", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: [entityId],
+          forbidden_reveals: ["Do not state the true name."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["A flinch at the old name."]
+        }
+      }
+    ];
+    selectRecord(input, secretId);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
+  });
+
+  it("lists every missing active-secret reveal-boundary field", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "hidden",
+          holders: [],
+          non_holders_to_protect: [],
+          forbidden_reveals: [],
+          reveal_permission: "",
+          allowed_surface_cues: ["A flinch at the old name."]
+        }
+      }
+    ];
+    selectRecord(input, secretId);
+
+    const diagnostic = activeSecretBlocker(input);
+
+    expect(diagnostic?.affected[0]?.field).toBe("holders");
+    expect(diagnostic?.message).toBe(
+      "Active secret is missing: holders, protected non-holders, forbidden reveals, reveal permission."
+    );
+  });
+
   it("requires allowed cues when clue pressure is active", () => {
     const input = cleanInput();
     input.records = [
@@ -376,6 +458,16 @@ describe("universal completeness validation", () => {
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function activeSecretBlocker(input: BuildValidationSnapshotInput): Diagnostic | undefined {
+  return runValidation(buildValidationSnapshot(input)).blockers.find(
+    (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.activeSecretIncomplete
+  );
+}
+
+function selectRecord(input: BuildValidationSnapshotInput, recordId: string): void {
+  input.generationSession.active_working_set!.selected_records.push(recordId);
 }
 
 function fullCastPayload(entityIdValue: string) {
