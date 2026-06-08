@@ -75,7 +75,7 @@ describe("deriveReadiness", () => {
     expect(readiness.provider.blockers[0]?.affected[0]?.kind).toBe("provider-setting");
   });
 
-  it("falls back deterministically for unmapped diagnostic codes", () => {
+  it("routes fallback blockers to required readiness items", () => {
     const validation = validationResult({
       blockers: [diagnostic("blocker", "new-validator-code", "versions")]
     });
@@ -85,11 +85,25 @@ describe("deriveReadiness", () => {
     expect(readiness.blockers[0]).toMatchObject({
       code: "new-validator-code",
       title: "New Validator Code",
-      group: "technical-diagnostics",
+      group: "required-before-prompt-generation",
       technical: {
         legacyCode: "new-validator-code",
         rawPaths: ["versions"]
       }
+    });
+  });
+
+  it("routes fallback warnings to recommended readiness items", () => {
+    const validation = validationResult({
+      warnings: [diagnostic("warning", "new-warning-code", "versions")]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.warnings[0]).toMatchObject({
+      code: "new-warning-code",
+      title: "New Warning Code",
+      group: "recommended-for-stronger-output"
     });
   });
 

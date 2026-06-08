@@ -5,8 +5,7 @@ export type ReadinessStatus = "draft" | "blocked" | "ready-with-warnings" | "rea
 export type ReadinessDiagnosticGroup =
   | "required-before-prompt-generation"
   | "recommended-for-stronger-output"
-  | "prompt-length-salience-risk"
-  | "technical-diagnostics";
+  | "prompt-length-salience-risk";
 
 export interface AffectedTarget {
   kind: "generation-field" | "record" | "provider-setting" | "project" | "technical";
@@ -430,7 +429,7 @@ function fallbackCopy(diagnostic: Diagnostic): DiagnosticCopy {
   return {
     code: diagnostic.code,
     title,
-    group: diagnostic.severity === "warning" ? "recommended-for-stronger-output" : "technical-diagnostics",
+    group: diagnostic.severity === "warning" ? "recommended-for-stronger-output" : "required-before-prompt-generation",
     summary: diagnostic.message,
     whyItMatters: diagnostic.whyItMatters,
     fastestFix: diagnostic.suggestedActions.length > 0 ? `Use suggested action: ${diagnostic.suggestedActions[0]}.` : "Review the technical diagnostic details."
@@ -464,8 +463,6 @@ function groupSortIndex(group: ReadinessDiagnosticGroup): number {
       return 1;
     case "prompt-length-salience-risk":
       return 2;
-    case "technical-diagnostics":
-      return 3;
   }
 }
 

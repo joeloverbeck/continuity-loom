@@ -12,25 +12,22 @@ afterEach(() => {
 });
 
 describe("ReadinessChecklist", () => {
-  it("renders groups in spec order and keeps technical diagnostics collapsed by default", () => {
+  it("renders active groups in spec order without the retired technical diagnostics bucket", () => {
     renderChecklist();
 
     const groupLabels = [
-      screen.getByRole("heading", { name: "Required before prompt generation (2)" }),
+      screen.getByRole("heading", { name: "Required before prompt generation (3)" }),
       screen.getByRole("heading", { name: "Recommended for stronger output (1)" }),
-      screen.getByRole("heading", { name: "Prompt length / salience risks (1)" }),
-      screen.getByText("Technical diagnostics (1)")
+      screen.getByRole("heading", { name: "Prompt length / salience risks (1)" })
     ];
 
     expect(groupLabels.map((label) => label.textContent)).toEqual([
-      "Required before prompt generation (2)",
+      "Required before prompt generation (3)",
       "Recommended for stronger output (1)",
-      "Prompt length / salience risks (1)",
-      "Technical diagnostics (1)"
+      "Prompt length / salience risks (1)"
     ]);
-    const technicalGroup = groupLabels[3]?.closest("details");
-    expect(technicalGroup).toBeTruthy();
-    expect(technicalGroup?.hasAttribute("open")).toBe(false);
+    expect(screen.queryByText(/^Technical diagnostics \(/)).toBeNull();
+    expect(screen.getByRole("heading", { name: "New Validator Code" })).toBeTruthy();
   });
 
   it("uses author-facing titles and actions instead of raw codes as primary labels", () => {
@@ -50,7 +47,7 @@ describe("ReadinessChecklist", () => {
     renderChecklist({ actions });
 
     expect(screen.getByRole("status").textContent).toContain("Preview is blocked");
-    expect(screen.getByRole("heading", { name: "Required before prompt generation (2)" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Required before prompt generation (3)" })).toBeTruthy();
 
     const editButton = screen.getByRole("button", { name: "Edit launch directive" });
     editButton.focus();
@@ -165,7 +162,7 @@ function readinessFixture(): GenerationReadiness {
     code: "new-validator-code",
     legacyCode: "new-validator-code",
     title: "New Validator Code",
-    group: "technical-diagnostics"
+    group: "required-before-prompt-generation"
   });
   const provider = diagnostic({
     severity: "blocker",
@@ -182,8 +179,8 @@ function readinessFixture(): GenerationReadiness {
     canSaveDraft: true,
     canPreview: false,
     canGenerate: false,
-    blockers: [blocker],
-    warnings: [recommendation, salience, technical],
+    blockers: [blocker, technical],
+    warnings: [recommendation, salience],
     provider: {
       configured: false,
       blockers: [provider]

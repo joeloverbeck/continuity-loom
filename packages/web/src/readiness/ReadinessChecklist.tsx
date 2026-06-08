@@ -38,11 +38,6 @@ const groups: readonly {
     id: "prompt-length-salience-risk",
     title: "Prompt length / salience risks",
     empty: "No prompt length or salience risks."
-  },
-  {
-    id: "technical-diagnostics",
-    title: "Technical diagnostics",
-    empty: "No technical diagnostics."
   }
 ];
 
@@ -66,24 +61,15 @@ export function ReadinessChecklist({ readiness, actions }: ReadinessChecklistPro
         {groups.map((group) => {
           const groupDiagnostics = diagnostics.filter((diagnostic) => diagnostic.group === group.id);
           const heading = `${group.title} (${groupDiagnostics.length})`;
-          const content = (
-            <DiagnosticGroup
-              groupId={group.id}
-              diagnostics={groupDiagnostics}
-              empty={group.empty}
-              actions={actions}
-            />
-          );
 
-          return group.id === "technical-diagnostics" ? (
-            <details className="readinessGroup" key={group.id}>
-              <summary>{heading}</summary>
-              {content}
-            </details>
-          ) : (
+          return (
             <section className="readinessGroup" aria-labelledby={`readiness-group-${group.id}`} key={group.id}>
               <h4 id={`readiness-group-${group.id}`}>{heading}</h4>
-              {content}
+              <DiagnosticGroup
+                diagnostics={groupDiagnostics}
+                empty={group.empty}
+                actions={actions}
+              />
             </section>
           );
         })}
@@ -93,12 +79,10 @@ export function ReadinessChecklist({ readiness, actions }: ReadinessChecklistPro
 }
 
 function DiagnosticGroup({
-  groupId,
   diagnostics,
   empty,
   actions
 }: {
-  groupId: ReadinessDiagnosticGroup;
   diagnostics: readonly ReadinessDiagnostic[];
   empty: string;
   actions: ReadinessChecklistActions;
@@ -111,7 +95,7 @@ function DiagnosticGroup({
     <ul className="readinessDiagnosticList">
       {diagnostics.map((diagnostic) => (
         <li key={diagnostic.dedupeKey}>
-          <DiagnosticCard diagnostic={diagnostic} actions={actions} technicalGroup={groupId === "technical-diagnostics"} />
+          <DiagnosticCard diagnostic={diagnostic} actions={actions} />
         </li>
       ))}
     </ul>
@@ -120,12 +104,10 @@ function DiagnosticGroup({
 
 function DiagnosticCard({
   diagnostic,
-  actions,
-  technicalGroup
+  actions
 }: {
   diagnostic: ReadinessDiagnostic;
   actions: ReadinessChecklistActions;
-  technicalGroup: boolean;
 }): React.JSX.Element {
   return (
     <article className={`readinessDiagnostic readinessDiagnostic-${diagnostic.severity}`}>
@@ -156,7 +138,7 @@ function DiagnosticCard({
 
       {diagnostic.affected.length > 0 ? <AffectedTargets affected={diagnostic.affected} /> : null}
       <DiagnosticActions diagnostic={diagnostic} actions={actions} />
-      <TechnicalDetails diagnostic={diagnostic} open={technicalGroup} onCopy={actions.onCopyTechnicalJson} />
+      <TechnicalDetails diagnostic={diagnostic} onCopy={actions.onCopyTechnicalJson} />
     </article>
   );
 }
@@ -202,15 +184,13 @@ function DiagnosticActions({
 
 function TechnicalDetails({
   diagnostic,
-  open,
   onCopy
 }: {
   diagnostic: ReadinessDiagnostic;
-  open: boolean;
   onCopy: (diagnostic: ReadinessDiagnostic) => void;
 }): React.JSX.Element {
   return (
-    <details className="readinessTechnical" open={open}>
+    <details className="readinessTechnical">
       <summary>Technical details</summary>
       <dl>
         <div>
