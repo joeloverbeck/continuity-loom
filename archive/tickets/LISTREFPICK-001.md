@@ -1,6 +1,6 @@
 # LISTREFPICK-001: List-item reference fields render as raw UUID text inputs instead of name pickers
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/records/editor-descriptors.ts` (`roleForField` ordering); regression coverage in `packages/core/test/editor-descriptors.test.ts` and `packages/web/src/records/RecordEditor.test.tsx`
@@ -102,3 +102,21 @@ function roleForField(name: string): string {
 
 1. `npm test -- editor-descriptors RecordEditor`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completion date: 2026-06-08
+
+What changed:
+- `roleForField` now strips list-item `[]` suffixes before applying reference-role remaps, so list items such as `holders[]`, `participants[]`, `causes[]`, and `effects[]` resolve to registered reference roles.
+- Core descriptor regression coverage now asserts SECRET `holders` and EVENT `participants` list items are reference fields.
+- The RecordEditor regression suite now verifies SECRET holders render as an ENTITY picker, exclude non-eligible targets, and submit the selected entity id.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm test -- editor-descriptors RecordEditor` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

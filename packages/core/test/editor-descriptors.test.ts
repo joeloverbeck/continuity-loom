@@ -86,6 +86,23 @@ describe("record editor descriptors", () => {
     });
   });
 
+  it("classifies remapped list item references as reference fields", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "holders")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "secret_holder"
+      }
+    });
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "participants")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "participant"
+      }
+    });
+  });
+
   it("covers CAST MEMBER core and extended nested fields", () => {
     const descriptor = getEditorDescriptor("CAST MEMBER");
     const fieldsByName = new Map(descriptor?.fields.map((field) => [field.name, field]));

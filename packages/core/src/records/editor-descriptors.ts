@@ -344,23 +344,21 @@ function unionOptions(schema: z.ZodType): z.ZodType[] {
 }
 
 function roleForField(name: string): string {
-  if (name === "holders") {
+  const bare = name.replace(/\[\]$/, "");
+
+  if (bare === "holders") {
     return "secret_holder";
   }
 
-  if (name === "participants") {
+  if (bare === "participants") {
     return "participant";
   }
 
-  if (name === "location") {
-    return "location";
-  }
-
-  if (name === "causes" || name === "effects" || name === "cause") {
+  if (bare === "causes" || bare === "effects" || bare === "cause") {
     return "record_link";
   }
 
-  return name.replace(/\[\]$/, "");
+  return bare;
 }
 
 function stringFieldKind(name: string): FieldKind {

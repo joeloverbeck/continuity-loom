@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/core/src/records/editor-descriptors.ts` (union-with-reference-array classification) and `packages/web/src/records/RecordEditor.tsx` (union widget); coverage in `packages/core/test/editor-descriptors.test.ts` and `packages/web/src/records/RecordEditor.test.tsx`
-**Deps**: None (independent of `LISTREFPICK-001`, but shares the entity-reference-picker infrastructure)
+**Deps**: None (independent of `archive/tickets/LISTREFPICK-001.md`, but shares the entity-reference-picker infrastructure)
 
 ## Problem
 
@@ -27,10 +27,10 @@ Live-confirmed: project `red-bunny`, SECRET *"Ane Arrieta…"* shows `non_holder
 ## Assumption Reassessment (2026-06-08)
 
 1. `describeField` routes `non_holders_to_protect` to the enum branch (`packages/core/src/records/editor-descriptors.ts:231-234` via `enumValuesForSchema` union-flattening at `:319-321`); the `array[recordId]` option is never surfaced as a list/reference. Confirmed by live DOM (2-option select) and by reading the function.
-2. `referenceTargetsByRole` registers `non_holder_to_protect` (singular, `editor-descriptors.ts:101`) but `roleForField` would compute `non_holders_to_protect` (plural) for this field — mismatch must be resolved (add a remap `non_holders_to_protect`→`non_holder_to_protect`, consistent with the `holders`→`secret_holder` style, and note `LISTREFPICK-001` reorders `roleForField` to strip `[]` first).
+2. `referenceTargetsByRole` registers `non_holder_to_protect` (singular, `editor-descriptors.ts:101`) but `roleForField` would compute `non_holders_to_protect` (plural) for this field — mismatch must be resolved (add a remap `non_holders_to_protect`→`non_holder_to_protect`, consistent with the `holders`→`secret_holder` style, and note `archive/tickets/LISTREFPICK-001.md` reorders `roleForField` to strip `[]` first).
 3. Shared boundary under audit: the descriptor→render contract for **union** fields. There is currently **no** descriptor `FieldKind` for "either a sentinel enum or a reference list". This ticket introduces handling for that discriminated shape; confirm no other union field relies on the current enum-flattening behavior before changing it — grep `z.union` across `packages/core/src/records/*.ts` and classify each (e.g. `causal-pressure.ts:15` `recordLinkList` is a `union(array[recordId], array[nonemptyString])`, a different shape).
 4. Schema-extension classification: this is **additive, presentation-only** — the stored value remains `array[recordId] | "all_except_holders" | "none"`; compiler consumption (`docs/compiler-contract.md:129`) is unchanged. No story-record schema field is added, renamed, or removed.
-5. Adjacent contradiction: `LISTREFPICK-001` fixes plain `array[recordId]` reference list items; this ticket handles the union variant. Keep them separate — different root cause (union routing vs `[]`-suffix role resolution).
+5. Adjacent contradiction: `archive/tickets/LISTREFPICK-001.md` fixes plain `array[recordId]` reference list items; this ticket handles the union variant. Keep them separate — different root cause (union routing vs `[]`-suffix role resolution).
 
 ## Architecture Check
 
@@ -63,7 +63,7 @@ In `packages/web/src/records/RecordEditor.tsx`, add a `FieldRenderer` branch for
 
 ## Out of Scope
 
-- The holders picker (`LISTREFPICK-001`) and the active-secret diagnostic message (`SECRETDIAG-001`).
+- The holders picker (`archive/tickets/LISTREFPICK-001.md`) and the active-secret diagnostic message (`SECRETDIAG-001`).
 - Generalizing the union widget to all union fields — scope strictly to the sentinel-or-reference-array shape used by `non_holders_to_protect`. Other unions (e.g. `recordLinkList`) keep current behavior.
 - Any change to stored data shape, validation predicates, or prompt compilation.
 

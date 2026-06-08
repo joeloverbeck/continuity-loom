@@ -199,6 +199,31 @@ describe("RecordEditor", () => {
     expect((picker as HTMLSelectElement).value).toBe(idA);
   });
 
+  it("renders SECRET holders as entity pickers and stores selected ids", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Add holders" }));
+
+    const picker = screen.getByLabelText(/^holders 1/);
+    expect(picker.tagName).toBe("SELECT");
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(picker).queryByRole("option", { name: "Vault" })).toBeNull();
+    expect(screen.queryByRole("textbox", { name: /^holders 1/ })).toBeNull();
+
+    fireEvent.change(picker, { target: { value: idA } });
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), {
+      target: { value: "Aster carries the hidden seal." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      holders: [idA]
+    });
+  });
+
   it("rejects invalid values client-side before submit", async () => {
     render(<RecordEditor recordType="ENTITY" />);
 

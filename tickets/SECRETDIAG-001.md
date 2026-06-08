@@ -80,7 +80,7 @@ if (missing.length > 0) {
 
 - Changing *which* conditions block an active secret (the predicate stays identical).
 - Editor-side rendering of `forbidden_reveals` (it already renders an "Add forbidden_reveals" control; making empty-but-required list fields more visually prominent is a separate UX concern, not part of this diagnostic fix).
-- The holders picker (`LISTREFPICK-001`) and `non_holders_to_protect` selection (`NONHOLDPICK-001`).
+- The holders picker (`archive/tickets/LISTREFPICK-001.md`) and `non_holders_to_protect` selection (`NONHOLDPICK-001`).
 
 ## Acceptance Criteria
 
