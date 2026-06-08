@@ -94,7 +94,6 @@ Active specs live in:
 
 Current active specs:
 
-- `specs/SPEC-foundational-doc-amendments-for-generation-readiness.md`
 - `specs/SPEC-implementation-order-and-regression-plan.md`
 - `specs/IMPLEMENTATION-ORDER.md`
 

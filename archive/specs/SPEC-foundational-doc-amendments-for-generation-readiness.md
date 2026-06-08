@@ -1,6 +1,6 @@
 # SPEC: Foundational Document Amendments for Generation Readiness
 
-Status: proposed doc-amendment spec  
+Status: COMPLETED
 Repository: `joeloverbeck/continuity-loom`  
 Baseline commit used for this review: `e1df2d032c7ae7976108f70cafa5802a7398ce39`  
 Purpose: describe precise amendments to the existing active Markdown documents; do **not** provide replacement documents.  
@@ -1231,3 +1231,17 @@ Use this rule of thumb:
 - **Sequencing dependency (resolved — predecessors landed).** These amendments are Phase 7 ("Active docs and user guide") of `IMPLEMENTATION-ORDER.md`, scheduled after the behavioral specs (Draftability/Save → Validation Taxonomy → Readiness/Three-Page UX). All three behavioral specs are now completed and archived under `archive/specs/` (`IMPLEMENTATION-ORDER.md` lines 11–13), so the behavior they describe exists and this doc work is unblocked. The section 6 ticket boundaries are the decomposition of that one phase, not a parallel track. Index-side follow-up (out of scope here): `IMPLEMENTATION-ORDER.md` line 12 still lists the validation-gating spec with a bare path and no "completed and archived" marker, and neither the index nor the regression-plan spec names *this* spec as Phase 7's decomposition — both should be reconciled when the index is next touched.
 - **§29 preservation (checked).** Every amendment was checked against FOUNDATIONS §29; none trips a hard fail. The amendments sharpen the warnings-vs-blockers distinction (§29.5), preserve deterministic compilation with no LLM intermediary (§29.4), keep the no-accepted-prose-in-prompts rule (§29.1 / §10), preserve the secret firewall (§29.6), and context-gate — rather than drop — physical continuity (§29.7). Note: a prior draft of this spec assumed `FOUNDATIONS.md` §11 carried a removable `missing stop guidance;` hard-fail bullet. It does not (verified — zero matches); the blank-stop-guidance over-gating lives only in `story-record-schema.md` §3.8 and the `missing-stop-guidance` validation code in `stress-coverage-matrix.md` Cases 7/26. There is no orphaned constitution bullet to leave behind; see sections 4.2 and 5.1.
 - **Open questions:** none remaining at reassessment time.
+
+## Outcome
+
+Completed on 2026-06-08.
+
+The Phase 7 foundational documentation amendments were implemented through archived tickets `SPECFOUDOCAME-001` through `SPECFOUDOCAME-008`. The active docs now document draft persistence versus readiness, true blockers versus advisory warnings, normalized generation context, blank `soft_unit_guidance`, context-gated current state, optional current cast voice pressure, shared readiness surfaces, author-facing diagnostics, and the updated stress/readiness coverage.
+
+Deviations from original plan: none in scope. During the final consistency gate, two small active-doc consistency fixes were made: one negated warning sentence in `FOUNDATIONS.md` was rephrased to avoid the retired `warnings block` wording, and `prompt-template.md` received a preservation heading for the heading-preservation check.
+
+Verification:
+
+- All eight `SPECFOUDOCAME-*` tickets were completed, archived, and committed individually.
+- The `SPECFOUDOCAME-008` gate verified the retired-phrase sweeps, heading preservation, prompt/template checks, and §29 hard-fail intent preservation.
+- Active-doc references were updated so this completed spec can move to `archive/specs/`.
