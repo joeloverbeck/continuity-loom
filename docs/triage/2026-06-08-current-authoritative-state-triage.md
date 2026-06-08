@@ -47,7 +47,7 @@ The block is a flat `SECTION_TEMPLATES` entry rendered by unconditional placehol
 | Finding | Type | Deliverable |
 |---|---|---|
 | O1 | bug | `tickets/CURSTATELABEL-001.md` |
-| O2 | gap | `tickets/CURSTATEEDIT-001.md` |
+| O2 | gap | `archive/tickets/CURSTATEEDIT-001.md` |
 | O3 | token economy | `tickets/CURSTATEOMIT-001.md` |
 
 ## Named assumptions

@@ -1,6 +1,6 @@
 # CURSTATEEDIT-001: Add editor widgets for the 11 missing authoritative-state fields
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/web/src/generation-brief/GenerationBriefView.tsx` editor surface
@@ -96,3 +96,22 @@ In the `CURRENT AUTHORITATIVE STATE` section (`<section ... aria-labelledby="cur
 
 1. `npm test`
 2. `npm run lint && npm run typecheck`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+- Added generation-brief editor controls for the eleven previously unreachable `current_authoritative_state` fields.
+- Reused existing entity multi-select, plain input, and textarea patterns; free-text union fields author the string variant.
+- Added component coverage that all 15 documented current-state fields render as editable widgets with help controls.
+- Added save/reload coverage for `routes_and_exits`, including validation against the existing draft schema.
+
+Deviations from original plan:
+- No field-help registry change was needed because guidance entries for the new field paths already existed in `@loom/core`.
+
+Verification:
+- `npm exec -- vitest run packages/web/src/generation-brief/GenerationBriefView.test.tsx` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.

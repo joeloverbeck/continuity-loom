@@ -57,6 +57,79 @@ function renderView(): void {
 }
 
 describe("GenerationBriefView", () => {
+  it("renders editable widgets for every current authoritative state field", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    for (const field of [
+      "current_time",
+      "current_location",
+      "onstage_entities",
+      "immediate_situation_summary",
+      "offstage_pressuring_entities",
+      "positions",
+      "possessions",
+      "visible_conditions",
+      "environmental_conditions",
+      "entity_statuses",
+      "line_of_sight_and_visibility",
+      "routes_and_exits",
+      "available_time",
+      "consent_or_force_conditions",
+      "current_locks"
+    ]) {
+      expect(screen.getByLabelText(new RegExp(`^${field}`))).toBeTruthy();
+      expect(screen.getByRole("button", { name: `Help for ${field}` })).toBeTruthy();
+    }
+  });
+
+  it("persists a new current-state array field and displays it after reload", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const routesAndExits = await screen.findByLabelText(/^routes_and_exits/);
+    fireEvent.change(routesAndExits, { target: { value: "cellar stairs\nblocked delivery hatch" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      current_authoritative_state: {
+        routes_and_exits: ["cellar stairs", "blocked delivery hatch"]
+      }
+    });
+    expect(() => generationSessionDraftSchema.parse(payload)).not.toThrow();
+
+    cleanup();
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        current_authoritative_state: {
+          routes_and_exits: ["cellar stairs", "blocked delivery hatch"]
+        }
+      },
+      defaults: briefDefaults
+    });
+
+    renderView();
+
+    const reloadedRoutes = await screen.findByLabelText(/^routes_and_exits/);
+    expect((reloadedRoutes as HTMLTextAreaElement).value).toBe("cellar stairs\nblocked delivery hatch");
+  });
+
   it("edits all eight surfaces and persists them through the brief client", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });

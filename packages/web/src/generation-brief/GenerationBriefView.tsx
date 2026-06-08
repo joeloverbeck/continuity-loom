@@ -40,6 +40,10 @@ function normalizeLines(values: readonly string[]): string[] {
   return values.map((line) => line.trim()).filter(Boolean);
 }
 
+function editableLines(value: string | readonly string[] | undefined): string {
+  return typeof value === "string" ? value : (value ?? []).join("\n");
+}
+
 function proseLikePaste(value: string): boolean {
   const trimmed = value.trim();
   return trimmed.length > 240 || trimmed.split(/[.!?]\s+/).length >= 4 || /\n\n/.test(trimmed);
@@ -422,6 +426,126 @@ export function GenerationBriefView(): React.JSX.Element {
             path="current_authoritative_state.immediate_situation_summary"
             label="immediate_situation_summary"
           />
+          <label>
+            offstage_pressuring_entities
+            <select
+              multiple
+              name="generationSession.current_authoritative_state.offstage_pressuring_entities"
+              value={session.current_authoritative_state?.offstage_pressuring_entities ?? []}
+              onChange={(event) =>
+                updateCurrentAuthoritativeState({
+                  offstage_pressuring_entities: Array.from(event.currentTarget.selectedOptions, (option) => option.value)
+                })
+              }
+            >
+              {povEntities.map((entity) => (
+                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              ))}
+            </select>
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.offstage_pressuring_entities[]"
+            label="offstage_pressuring_entities"
+          />
+          <label>
+            positions
+            <textarea
+              name="generationSession.current_authoritative_state.positions"
+              value={editableLines(session.current_authoritative_state?.positions)}
+              onChange={(event) => updateCurrentAuthoritativeState({ positions: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.positions" label="positions" />
+          <label>
+            possessions
+            <textarea
+              name="generationSession.current_authoritative_state.possessions"
+              value={editableLines(session.current_authoritative_state?.possessions)}
+              onChange={(event) => updateCurrentAuthoritativeState({ possessions: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.possessions" label="possessions" />
+          <label>
+            visible_conditions
+            <textarea
+              name="generationSession.current_authoritative_state.visible_conditions"
+              value={(session.current_authoritative_state?.visible_conditions ?? []).join("\n")}
+              onChange={(event) => updateCurrentAuthoritativeState({ visible_conditions: splitLines(event.target.value) })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.visible_conditions[]" label="visible_conditions" />
+          <label>
+            environmental_conditions
+            <textarea
+              name="generationSession.current_authoritative_state.environmental_conditions"
+              value={session.current_authoritative_state?.environmental_conditions ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ environmental_conditions: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.environmental_conditions"
+            label="environmental_conditions"
+          />
+          <label>
+            entity_statuses
+            <textarea
+              name="generationSession.current_authoritative_state.entity_statuses"
+              value={editableLines(session.current_authoritative_state?.entity_statuses)}
+              onChange={(event) => updateCurrentAuthoritativeState({ entity_statuses: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.entity_statuses" label="entity_statuses" />
+          <label>
+            line_of_sight_and_visibility
+            <textarea
+              name="generationSession.current_authoritative_state.line_of_sight_and_visibility"
+              value={session.current_authoritative_state?.line_of_sight_and_visibility ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ line_of_sight_and_visibility: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.line_of_sight_and_visibility"
+            label="line_of_sight_and_visibility"
+          />
+          <label>
+            routes_and_exits
+            <textarea
+              name="generationSession.current_authoritative_state.routes_and_exits"
+              value={(session.current_authoritative_state?.routes_and_exits ?? []).join("\n")}
+              onChange={(event) => updateCurrentAuthoritativeState({ routes_and_exits: splitLines(event.target.value) })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.routes_and_exits[]" label="routes_and_exits" />
+          <label>
+            available_time
+            <input
+              name="generationSession.current_authoritative_state.available_time"
+              value={session.current_authoritative_state?.available_time ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ available_time: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.available_time" label="available_time" />
+          <label>
+            consent_or_force_conditions
+            <input
+              name="generationSession.current_authoritative_state.consent_or_force_conditions"
+              value={session.current_authoritative_state?.consent_or_force_conditions ?? "none"}
+              onChange={(event) => updateCurrentAuthoritativeState({ consent_or_force_conditions: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.consent_or_force_conditions"
+            label="consent_or_force_conditions"
+          />
+          <label>
+            current_locks
+            <textarea
+              name="generationSession.current_authoritative_state.current_locks"
+              value={(session.current_authoritative_state?.current_locks ?? []).join("\n")}
+              onChange={(event) => updateCurrentAuthoritativeState({ current_locks: splitLines(event.target.value) })}
+            />
+          </label>
+          <BriefFieldHelp path="current_authoritative_state.current_locks[]" label="current_locks" />
         </section>
 
         <section className="configPanel" aria-labelledby="handoff-brief">
