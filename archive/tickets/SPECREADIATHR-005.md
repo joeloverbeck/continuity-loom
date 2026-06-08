@@ -1,6 +1,6 @@
 # SPECREADIATHR-005: Prompt Preview page readiness wiring
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — modify `packages/web/src/preview/PromptPreviewView.tsx` to render the shared readiness checklist for gating/warnings while keeping the compiled prompt body from `/api/compile`. No change to the deterministic compiler or prompt content.
@@ -76,3 +76,25 @@ Cover the three states and the §10 body-equality assertion.
 1. `npm test -- packages/web/src/preview/PromptPreviewView.test.tsx`
 2. `npm run typecheck && npm run lint`
 3. Page-level component test is the correct boundary; cross-page consistency is the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Updated `PromptPreviewView` to fetch `readiness()` alongside `compile()` and gate preview rendering on `readiness.canPreview`.
+- Replaced the blocked raw `ValidationResultView` branch with `ReadinessChecklist`.
+- Added warning-only rendering under `Recommended before sending` while keeping `PromptInspector` body content byte-for-byte from `compile().prompt`.
+- Added clean-state `Ready to generate.` affordance and readiness action callbacks.
+- Updated `PromptPreviewView.test.tsx` for blocked, warning-only, clean, refresh, copy/search/clear, structured-error, and prompt-body isolation behavior.
+
+Deviations from original plan:
+
+- None. Compiler behavior and prompt content remain unchanged.
+
+Verification:
+
+- `npm test -- packages/web/src/preview/PromptPreviewView.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
