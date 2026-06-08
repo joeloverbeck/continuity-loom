@@ -8,6 +8,7 @@ export type FieldKind =
   | "enum"
   | "reference"
   | "sentinel_reference_list"
+  | "sentinel_prose_list"
   | "list"
   | "nested_group"
   | "boolean"
@@ -160,12 +161,16 @@ export function getEditorFormSchema(recordType: string): z.ZodType | undefined {
 }
 
 export function deriveDisplayLabel(recordType: string, payload: unknown): string {
+  return truncateLabel(deriveFullDisplayLabel(recordType, payload));
+}
+
+export function deriveFullDisplayLabel(recordType: string, payload: unknown): string {
   const label = labelFieldsByType[recordType]
     ?.map((path) => valueAtPath(payload, path))
     .find((value): value is string => typeof value === "string" && value.trim().length > 0);
 
   if (label) {
-    return truncateLabel(label);
+    return normalizeLabel(label);
   }
 
   return titleCase(recordType);
@@ -218,6 +223,15 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
       kind: "sentinel_reference_list",
       enumValues: enumValuesForSchema(unwrapped),
       referenceRole: roleForField(name)
+    };
+  }
+
+  if (isSentinelProseListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_prose_list",
+      enumValues: enumValuesForSchema(unwrapped),
+      itemDescriptor: describeListItem(name, sentinelListArrayElement(unwrapped), recordType)
     };
   }
 
@@ -363,6 +377,29 @@ function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean
   return hasReferenceArray && hasSentinels;
 }
 
+function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {
+  if (schemaType(schema) !== "union" || referenceTargetsByRole[roleForField(name)]) {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const arrayOption = options.find((option) => schemaType(option) === "array");
+  const hasProseArray = Boolean(arrayOption && stringFieldKind(`${name}[]`) === "prose");
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasProseArray && hasSentinels;
+}
+
+function sentinelListArrayElement(schema: z.ZodType): z.ZodType {
+  const arrayOption = unionOptions(schema).find((option) => schemaType(option) === "array");
+
+  if (!arrayOption) {
+    throw new Error("Sentinel list schema is missing an array option.");
+  }
+
+  return arrayElement(arrayOption);
+}
+
 function unionOptions(schema: z.ZodType): z.ZodType[] {
   return (schemaDefinition(schema).options as z.ZodType[] | undefined) ?? [];
 }
@@ -404,8 +441,12 @@ function valueAtPath(value: unknown, path: string): unknown {
 }
 
 function truncateLabel(label: string): string {
-  const trimmed = label.trim().replace(/\s+/g, " ");
+  const trimmed = normalizeLabel(label);
   return trimmed.length <= 80 ? trimmed : `${trimmed.slice(0, 77)}...`;
+}
+
+function normalizeLabel(label: string): string {
+  return label.trim().replace(/\s+/g, " ");
 }
 
 function titleCase(recordType: string): string {

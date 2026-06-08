@@ -12,6 +12,7 @@ const holderId = "019b0298-5c00-7000-8000-000000000002";
 const factId = "019b0298-5c00-7000-8000-000000000003";
 const secretId = "019b0298-5c00-7000-8000-000000000004";
 const beliefId = "019b0298-5c00-7000-8000-000000000005";
+const danglingHolderId = "019b0298-5c00-7000-8000-000000000006";
 
 function populatedInput(): BuildValidationSnapshotInput {
   return {
@@ -26,6 +27,18 @@ function populatedInput(): BuildValidationSnapshotInput {
           status: "active",
           entity_kind: "person",
           canonical_summary: "Jon watches the archive door."
+        }
+      },
+      {
+        id: holderId,
+        type: "ENTITY",
+        metadata: metadata(holderId, "Mara Lorne"),
+        payload: {
+          id: holderId,
+          display_name: "Mara Lorne",
+          status: "active",
+          entity_kind: "person",
+          canonical_summary: "Mara keeps secrets behind procedural calm."
         }
       },
       {
@@ -56,6 +69,7 @@ function populatedInput(): BuildValidationSnapshotInput {
         payload: {
           id: secretId,
           status: "hidden",
+          secret_kind: "other",
           secret_claim: "Mara stole the archive key.",
           holders: [holderId],
           non_holders_to_protect: [povId],
@@ -70,7 +84,7 @@ function populatedInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [povId, factId, beliefId, secretId],
+        selected_records: [povId, holderId, factId, beliefId, secretId],
         active_onstage_cast_full: [],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],
@@ -244,12 +258,167 @@ describe("compiler front-section resolvers", () => {
     const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
     const audienceSection = sectionBody(prompt, "audience_knowledge");
 
-    expect(secretSection).toContain("Mara stole the archive key.");
-    expect(secretSection).toContain(holderId);
-    expect(secretSection).toContain(povId);
+    expect(secretSection).toContain("[other] Mara stole the archive key.");
+    expect(secretSection).toContain("Secret holders:\n- Mara Lorne");
+    expect(secretSection).toContain("Characters who must not know yet:\n- Jon Vale");
+    expect(secretSection).not.toContain(holderId);
+    expect(secretSection).not.toContain(povId);
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("falls back to a raw secret holder id when no matching record is selected", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              holders: [danglingHolderId]
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+      `Secret holders:\n- ${danglingHolderId}`
+    );
+  });
+
+  it("renders protected non-holder sentinel values as deterministic phrases", () => {
+    for (const [sentinel, phrase] of [
+      ["all_except_holders", "Everyone except the secret holders"],
+      ["none", "No protected non-holders"]
+    ] as const) {
+      const input = populatedInput();
+      input.records = input.records.map((record) =>
+        record.id === secretId
+          ? {
+              ...record,
+              payload: {
+                ...(record.payload as Record<string, unknown>),
+                non_holders_to_protect: sentinel
+              }
+            }
+          : record
+      );
+
+      const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+      expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+        `Characters who must not know yet:\n- ${phrase}`
+      );
+      expect(sectionBody(prompt, "secrets_and_reveal_constraints")).not.toContain(`- ${sentinel}`);
+    }
+  });
+
+  it("renders available clue carrier text alongside authored surface cues without discovered-by ids", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              clue_carriers: [
+                {
+                  clue_text: "A clean scrape marks the drawer edge.",
+                  clue_strength: "suggestive",
+                  discovered_by: povId,
+                  audience_visible: "visible",
+                  status: "available"
+                },
+                {
+                  clue_text: "A broken lock hidden under the papers.",
+                  clue_strength: "confirming",
+                  discovered_by: holderId,
+                  audience_visible: "hidden",
+                  status: "suppressed"
+                }
+              ]
+            }
+          }
+        : record
+    );
+
+    const secretSection = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).toContain("Allowed clues and surface cues now:\n- Mara avoids the desk drawer., A clean scrape marks the drawer edge.");
+    expect(secretSection).not.toContain("A broken lock hidden under the papers.");
+    expect(secretSection).not.toContain(`discovered_by`);
+    expect(secretSection).not.toContain(povId);
+    expect(secretSection).not.toContain(holderId);
+  });
+
+  it("renders the existing clue empty state when no surface cues or available carriers exist", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              allowed_surface_cues: [],
+              clue_carriers: [
+                {
+                  clue_text: "A broken lock hidden under the papers.",
+                  clue_strength: "confirming",
+                  discovered_by: holderId,
+                  audience_visible: "hidden",
+                  status: "suppressed"
+                }
+              ]
+            }
+          }
+        : record
+    );
+
+    expect(sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints")).toContain(
+      `Allowed clues and surface cues now:\n${EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues}`
+    );
+  });
+
+  it("renders affirmative no-forbidden-reveals secrets without using the empty state", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              id: secretId,
+              status: "hidden",
+              secret_kind: "other",
+              secret_claim: "Mara stole the archive key.",
+              holders: [holderId],
+              non_holders_to_protect: [povId],
+              audience_visibility: "explicit",
+              pov_access: "can_suspect",
+              allowed_surface_cues: ["Mara avoids the desk drawer."],
+              forbidden_reveals: "none",
+              reveal_permission: "clue_only",
+              reveal_triggers: ["Only if Mara is directly searched."]
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).toContain("- No reveals are forbidden beyond the stated reveal permission.");
+    expect(secretSection).not.toContain(`Forbidden reveals:\n${EMPTY_STATE_CONSTANTS.forbidden_reveals}`);
+  });
+
+  it("still renders populated forbidden reveals as a list", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+      "- Do not state that Mara has the key."
+    );
   });
 
   it("renders only the user-authored handoff note or the no-accepted-prose constant", () => {

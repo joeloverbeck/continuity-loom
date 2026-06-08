@@ -1,4 +1,5 @@
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
+import { resolveRecordLabel } from "../labels.js";
 import { orderCompilerRecords } from "../ordering.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
@@ -160,20 +161,20 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {
     snapshot,
     ["ENTITY STATUS", "LOCATION", "OBJECT", "VISIBLE AFFORDANCE"],
     () => true,
-    (payload, record) => compactParts([displayLabel(record), physicalRecordText(record, payload)])
+    (payload, record) => physicalRecordText(snapshot, record, payload)
   );
   const lines = [...stateLines.map((line) => `- ${line}`), recordLines].filter(Boolean);
 
   return lines.join("\n") || EMPTY_STATE_CONSTANTS.physical_continuity;
 }
 
-function physicalRecordText(record: ValidationRecord, payload: JsonRecord): string {
+function physicalRecordText(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
   if (record.type === "ENTITY STATUS") {
     return compactParts([
-      labelValue("entity", payload.entity_id),
+      labelValue("entity", resolveRecordLabel(snapshot, payload.entity_id)),
       labelValue("life", payload.life),
       labelValue("agency", payload.agency),
-      labelValue("location", payload.location),
+      labelValue("location", resolveRecordLabel(snapshot, payload.location)),
       labelValue("visibility", payload.visibility_to_pov),
       labelValue("activity", payload.current_activity)
     ]);
@@ -244,8 +245,4 @@ function renderValue(value: unknown): string {
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function displayLabel(record: ValidationRecord): string {
-  return record.metadata?.displayLabel ?? record.id;
 }

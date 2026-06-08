@@ -57,6 +57,62 @@ describe("knowledge/secret/POV matrix validation", () => {
     );
   });
 
+  it("accepts an affirmative no-forbidden-reveals sentinel under secret clue pressure", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "secret_or_clue_pressure"
+    ];
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              id: secretId,
+              status: "hidden",
+              secret_claim: "The watcher is behind the glass.",
+              holders: [nonPovId],
+              non_holders_to_protect: [povId],
+              pov_access: "can_suspect",
+              audience_visibility: "ambiguous",
+              allowed_surface_cues: ["A faint reflection."],
+              forbidden_reveals: "none",
+              reveal_permission: "clue_only"
+            }
+          }
+        : record
+    );
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixSecretClueIncomplete);
+  });
+
+  it("still blocks a blank forbidden-reveals list under secret clue pressure", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "secret_or_clue_pressure"
+    ];
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              id: secretId,
+              status: "hidden",
+              secret_claim: "The watcher is behind the glass.",
+              holders: [nonPovId],
+              non_holders_to_protect: [povId],
+              pov_access: "can_suspect",
+              audience_visibility: "ambiguous",
+              allowed_surface_cues: ["A faint reflection."],
+              forbidden_reveals: [],
+              reveal_permission: "clue_only"
+            }
+          }
+        : record
+    );
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixSecretClueIncomplete);
+  });
+
   it.each([
     [
       "introspection_expected",

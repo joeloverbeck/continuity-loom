@@ -270,6 +270,89 @@ describe("RecordEditor", () => {
     });
   });
 
+  it("stores SECRET forbidden-reveal sentinel values verbatim", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.change(screen.getByLabelText(/^forbidden_reveals mode/), {
+      target: { value: "none" }
+    });
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), {
+      target: { value: "Aster carries the hidden seal." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      forbidden_reveals: "none"
+    });
+  });
+
+  it("switches SECRET forbidden reveals back to an editable prose list", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    const mode = screen.getByLabelText<HTMLSelectElement>(/^forbidden_reveals mode/);
+    expect(mode.value).toBe("specific_reveals");
+    expect(screen.getByRole("button", { name: "Add forbidden_reveals" })).toBeTruthy();
+
+    fireEvent.change(mode, { target: { value: "none" } });
+    expect(mode.value).toBe("none");
+    expect(screen.queryByRole("button", { name: "Add forbidden_reveals" })).toBeNull();
+
+    fireEvent.change(mode, { target: { value: "specific_reveals" } });
+    expect(mode.value).toBe("specific_reveals");
+    expect(screen.getByRole("button", { name: "Add forbidden_reveals" })).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), {
+      target: { value: "Aster carries the hidden seal." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      forbidden_reveals: []
+    });
+  });
+
+  it("loads SECRET forbidden-reveal sentinel values in sentinel mode", () => {
+    const record: RecordDetail = {
+      id: idA,
+      type: "SECRET",
+      displayLabel: "Hidden seal",
+      status: "hidden",
+      salience: "critical",
+      urgency: null,
+      archived: false,
+      userOrder: null,
+      createdAt: "2026-06-05T00:00:00.000Z",
+      updatedAt: "2026-06-05T00:00:00.000Z",
+      payload: {
+        id: idA,
+        status: "hidden",
+        secret_kind: "identity",
+        secret_claim: "Aster carries the hidden seal.",
+        holders: [],
+        non_holders_to_protect: "none",
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "critical",
+        allowed_surface_cues: [],
+        forbidden_reveals: "none",
+        reveal_permission: "natural_reveal_allowed",
+        reveal_triggers: [],
+        clue_carriers: []
+      }
+    };
+
+    render(<RecordEditor recordType="SECRET" record={record} referenceRecords={entityRecords} />);
+
+    expect(screen.getByLabelText<HTMLSelectElement>(/^forbidden_reveals mode/).value).toBe("none");
+    expect(screen.queryByRole("button", { name: "Add forbidden_reveals" })).toBeNull();
+  });
+
   it("rejects invalid values client-side before submit", async () => {
     render(<RecordEditor recordType="ENTITY" />);
 

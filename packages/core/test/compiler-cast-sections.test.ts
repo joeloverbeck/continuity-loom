@@ -11,6 +11,8 @@ const activeCastId = "019b0298-5c00-7000-8000-000000000301";
 const presentCastId = "019b0298-5c00-7000-8000-000000000302";
 const offstageCastId = "019b0298-5c00-7000-8000-000000000303";
 const entityId = "019b0298-5c00-7000-8000-000000000304";
+const longCastOneLine =
+  "Jon Ureña is a wary witness at the archive door whose clipped silence hides fear, resentment, and a precise memory of the stolen ledger.";
 
 function castPayload() {
   return {
@@ -288,8 +290,46 @@ describe("compiler cast-section resolvers", () => {
 
     expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
     expect(sectionBody(populated, "present_minor_cast")).toContain("Keep him silent unless directly addressed.");
-    expect(sectionBody(populated, "offstage_relevance")).toContain("Guard");
+    expect(sectionBody(populated, "offstage_relevance")).toContain("The guard may return soon.");
     expect(sectionBody(empty, "present_minor_cast")).toContain(EMPTY_STATE_CONSTANTS.present_minor_cast_notes);
     expect(sectionBody(empty, "offstage_relevance")).toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
   });
+
+  it("renders long cast labels fully in voice pins and once in compressed notes", () => {
+    const records = castRecords().map((record) =>
+      record.id === presentCastId
+        ? {
+            ...record,
+            metadata: metadata(presentCastId, `${longCastOneLine.slice(0, 77)}...`),
+            payload: {
+              ...castPayload(),
+              identity: { one_line: longCastOneLine },
+              voice_anchor: { core_voice: "Plainspoken and wary." }
+            }
+          }
+        : record.id === activeCastId
+          ? {
+              ...record,
+              metadata: metadata(activeCastId, `${longCastOneLine.slice(0, 77)}...`),
+              payload: {
+                ...castPayload(),
+                identity: { ...castPayload().identity, one_line: longCastOneLine }
+              }
+            }
+          : record
+    );
+    const prompt = compilePrompt(buildValidationSnapshot(input(records))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+    const presentMinor = sectionBody(prompt, "present_minor_cast");
+
+    expect(activeWorkingSet).toContain(longCastOneLine);
+    expect(activeWorkingSet).not.toContain(`${longCastOneLine.slice(0, 77)}...`);
+    expect(presentMinor).toContain(longCastOneLine);
+    expect(presentMinor).not.toContain(`${longCastOneLine.slice(0, 77)}...`);
+    expect(presentMinor.match(new RegExp(escapeRegExp(longCastOneLine), "g"))).toHaveLength(1);
+  });
 });
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

@@ -3,6 +3,7 @@ import type { z } from "zod";
 
 import {
   deriveDisplayLabel,
+  deriveFullDisplayLabel,
   eligibleReferenceTargets,
   getEditorDescriptor,
   getEditorFormSchema,
@@ -17,6 +18,7 @@ const knownKinds = new Set([
   "enum",
   "reference",
   "sentinel_reference_list",
+  "sentinel_prose_list",
   "list",
   "nested_group",
   "boolean",
@@ -121,6 +123,21 @@ describe("record editor descriptors", () => {
     });
   });
 
+  it("classifies forbidden reveals as sentinels or a prose list", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "forbidden_reveals")).toMatchObject({
+      kind: "sentinel_prose_list",
+      enumValues: ["none"],
+      itemDescriptor: {
+        kind: "prose"
+      }
+    });
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["all_except_holders", "none"],
+      referenceRole: "non_holder_to_protect"
+    });
+  });
+
   it("covers CAST MEMBER core and extended nested fields", () => {
     const descriptor = getEditorDescriptor("CAST MEMBER");
     const fieldsByName = new Map(descriptor?.fields.map((field) => [field.name, field]));
@@ -191,6 +208,14 @@ describe("record editor descriptors", () => {
       "A very old promise controls the west gate."
     );
     expect(deriveDisplayLabel("UNKNOWN", {})).toBe("Unknown");
+  });
+
+  it("keeps editor labels truncated while exposing full labels for compiler use", () => {
+    const longTerms =
+      "Do not abandon the apprentice while the archive stair is flooding and every witness expects a public explanation before the bell stops.";
+
+    expect(deriveDisplayLabel("OBLIGATION", { terms: longTerms })).toBe(`${longTerms.slice(0, 77)}...`);
+    expect(deriveFullDisplayLabel("OBLIGATION", { terms: longTerms })).toBe(longTerms);
   });
 
   it("returns eligible reference targets by role in stable order", () => {

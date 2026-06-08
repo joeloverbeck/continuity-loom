@@ -9,10 +9,15 @@ import { describe, expect, it } from "vitest";
 
 const povId = "019b0298-5c00-7000-8000-000000000401";
 const nonPovId = "019b0298-5c00-7000-8000-000000000402";
+const physicalEntityId = "019b0298-5c00-7000-8000-000000000413";
+const physicalLocationId = "019b0298-5c00-7000-8000-000000000414";
+const missingPhysicalEntityId = "019b0298-5c00-7000-8000-000000000416";
 const povLongBeliefClaim =
   "The guard is bluffing about the archive lock because he keeps touching the wrong key ring before answering.";
 const nonPovLongBeliefClaim =
   "The archive door is watched by someone above the landing even though the stairwell sounds empty from below.";
+const longPhysicalActivity =
+  "Jon has just bought a Cormac McCarthy novel from the corner shop and is trying to hide the receipt from everyone nearby.";
 
 function tailRecords(): ValidationRecord[] {
   return [
@@ -86,6 +91,29 @@ function tailRecords(): ValidationRecord[] {
       action_families: ["move"],
       available_to: "any_onstage",
       risk: "physical"
+    }),
+    record(physicalEntityId, "ENTITY", "Jon Ureña", {
+      id: physicalEntityId,
+      display_name: "Jon Ureña",
+      entity_kind: "person",
+      roles_in_story: ["primary_actor"],
+      short_description: "A watchful man in the archive."
+    }),
+    record(physicalLocationId, "LOCATION", "Jon Ureña's home...", {
+      status: "active",
+      label: "Jon Ureña's home",
+      description: "A narrow apartment above the shop.",
+      layout_relevant_now: "The stairs turn tightly.",
+      access_routes: ["street door"],
+      visibility_and_sound: "Neighbors can hear raised voices."
+    }),
+    record("019b0298-5c00-7000-8000-000000000415", "ENTITY STATUS", `${longPhysicalActivity.slice(0, 77)}...`, {
+      entity_id: physicalEntityId,
+      life: "alive",
+      agency: "free",
+      location: physicalLocationId,
+      visibility_to_pov: "visible",
+      current_activity: longPhysicalActivity
     })
   ];
 }
@@ -228,5 +256,48 @@ describe("compiler tail-section resolvers", () => {
     );
     expect(facts).not.toContain(`${povLongBeliefClaim.slice(0, 80)}...`);
     expect(facts).not.toContain(`${nonPovLongBeliefClaim.slice(0, 80)}...`);
+  });
+
+  it("resolves physical continuity entity and location references to display labels", () => {
+    const physicalContinuity = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "physical_continuity");
+
+    expect(physicalContinuity).toContain(
+      `- entity: Jon Ureña; life: alive; agency: free; location: Jon Ureña's home; visibility: visible; activity: ${longPhysicalActivity}`
+    );
+    expect(physicalContinuity).not.toContain(`entity: ${physicalEntityId}`);
+    expect(physicalContinuity).not.toContain(`location: ${physicalLocationId}`);
+  });
+
+  it("renders physical continuity location labels once and without editor truncation markers", () => {
+    const physicalContinuity = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "physical_continuity");
+    const locationLine = physicalContinuity
+      .split("\n")
+      .find((line) => line.includes("A narrow apartment above the shop."));
+
+    expect(locationLine).toBe(
+      "- Jon Ureña's home; A narrow apartment above the shop.; status: active"
+    );
+    expect(locationLine?.match(/Jon Ureña's home/g)).toHaveLength(1);
+    expect(physicalContinuity.split("\n").some((line) => line.endsWith("..."))).toBe(false);
+  });
+
+  it("falls back to raw ids when physical continuity references are absent from the snapshot", () => {
+    const records = tailRecords().map((item) =>
+      item.id === "019b0298-5c00-7000-8000-000000000415"
+        ? record(item.id, item.type, item.metadata?.displayLabel ?? item.id, {
+            entity_id: missingPhysicalEntityId,
+            life: "alive",
+            agency: "free",
+            location: "offstage",
+            visibility_to_pov: "hidden",
+            current_activity: "Waiting beyond the visible room."
+          })
+        : item
+    );
+    const physicalContinuity = sectionBody(compilePrompt(buildValidationSnapshot(input(records))).prompt, "physical_continuity");
+
+    expect(physicalContinuity).toContain(
+      `- entity: ${missingPhysicalEntityId}; life: alive; agency: free; location: offstage; visibility: hidden; activity: Waiting beyond the visible room.`
+    );
   });
 });

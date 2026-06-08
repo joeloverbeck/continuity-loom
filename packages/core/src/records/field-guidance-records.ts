@@ -115,7 +115,9 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
   ["SECRET.forbidden_reveals[]", {
     short: "Secret content that must not be revealed.",
     examples: ["Do not name the real parent."],
-    antiExamples: ["Hint so strongly that the secret is effectively solved."]
+    antiExamples: ["Hint so strongly that the secret is effectively solved."],
+    authoringAdvice:
+      "Use the literal none to affirm that no reveals are forbidden beyond the stated reveal permission; do not leave an active secret blank."
   }],
   ["RELATIONSHIP.pressure_text", {
     short: "The live relational pressure that can bend behavior now.",

@@ -1,4 +1,5 @@
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
+import { displayLabel } from "../labels.js";
 import { orderCompilerRecords } from "../ordering.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
@@ -86,7 +87,6 @@ function renderCompressedCastBand(
     .map((record) => {
       const payload = payloadOf(record);
       return compactParts([
-        displayLabel(record),
         nestedString(payload.identity, "one_line"),
         labelValue("voice", nestedString(payload.voice_anchor, "core_voice")),
         ...overrideLines(snapshot.generationSession, record.id, castBand)
@@ -231,8 +231,4 @@ function labelValue(label: string, value: unknown): string {
 
 function asString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function displayLabel(record: ValidationRecord): string {
-  return record.metadata?.displayLabel ?? record.id;
 }
