@@ -1,6 +1,6 @@
 # REFTARGET-002: Preserve a stored reference value the picker cannot resolve to an eligible target
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `@loom/web` `RecordEditor` reference picker components only. No schema, storage, validation, or compiler change.
@@ -79,3 +79,24 @@ In `packages/web/src/records/RecordEditor.tsx`, for both `ReferencePicker` (`:23
 
 1. `npm test --workspace @loom/web` (targeted; requires `npm run build --workspace @loom/core` first because `@loom/web` resolves `@loom/core` through `packages/core/dist`).
 2. `npm run typecheck && npm run lint && npm test` (full pipeline).
+
+## Outcome
+
+Completion date: 2026-06-08
+
+What changed:
+- Added a single-value reference fallback option in `RecordEditor` for non-empty stored values that are absent from eligible reference targets and sentinel values.
+- Known-but-archived stored references now render as selected options marked `unresolved/archived`.
+- Missing stored references now render as selected raw-id options marked `unresolved/missing`.
+- Added RTL coverage for archived sentinel references, missing pure references, preservation on save, and the inert eligible-value path.
+
+Deviations from original plan:
+- None.
+
+Verification results:
+- `npm run build --workspace @loom/core` passed.
+- `npm test --workspace @loom/web` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
+- `npm run build` passed with Vite's existing large-chunk warning.

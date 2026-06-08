@@ -197,6 +197,38 @@ function inputOptions(field: FieldDescriptor) {
   };
 }
 
+type ReferenceOptionRecord = {
+  id: string;
+  displayLabel: string;
+  archived?: boolean;
+};
+
+function unresolvedReferenceOption(
+  value: unknown,
+  options: readonly ReferenceOptionRecord[],
+  referenceRecords: readonly ReferenceOptionRecord[],
+  sentinelValues: readonly string[] = []
+): { value: string; label: string } | null {
+  if (typeof value !== "string" || value === "") {
+    return null;
+  }
+
+  const knownValues = new Set([...sentinelValues, ...options.map((record) => record.id)]);
+  if (knownValues.has(value)) {
+    return null;
+  }
+
+  const knownRecord = referenceRecords.find((record) => record.id === value);
+  if (knownRecord) {
+    return {
+      value,
+      label: `${knownRecord.displayLabel} (${knownRecord.archived ? "unresolved/archived" : "unresolved"})`
+    };
+  }
+
+  return { value, label: `${value} (unresolved/missing)` };
+}
+
 function FieldShell({
   field,
   path,
@@ -247,10 +279,14 @@ function ReferencePicker({
   referenceRecords: readonly RecordSummary[];
 }): React.JSX.Element {
   const options = eligibleReferenceTargets(field.referenceRole ?? "", referenceRecords);
+  const fallbackOption = unresolvedReferenceOption(form.watch(path), options, referenceRecords);
 
   return (
     <select {...form.register(path, inputOptions(field))}>
       <option value="">Select record</option>
+      {fallbackOption ? (
+        <option value={fallbackOption.value}>{fallbackOption.label}</option>
+      ) : null}
       {options.map((record) => (
         <option key={record.id} value={record.id}>
           {record.displayLabel}
@@ -272,11 +308,16 @@ function SentinelReferencePicker({
   referenceRecords: readonly RecordSummary[];
 }): React.JSX.Element {
   const options = eligibleReferenceTargets(field.referenceRole ?? "", referenceRecords);
+  const enumValues = field.enumValues ?? [];
+  const fallbackOption = unresolvedReferenceOption(form.watch(path), options, referenceRecords, enumValues);
 
   return (
     <select {...form.register(path, inputOptions(field))}>
       {!field.required ? <option value="">Select record</option> : null}
-      {(field.enumValues ?? []).map((option) => (
+      {fallbackOption ? (
+        <option value={fallbackOption.value}>{fallbackOption.label}</option>
+      ) : null}
+      {enumValues.map((option) => (
         <option key={option} value={option}>
           {option}
         </option>

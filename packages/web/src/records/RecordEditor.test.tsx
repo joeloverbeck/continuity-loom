@@ -13,6 +13,8 @@ vi.mock("../api.js", () => ({
 
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
+const archivedEntityId = "019b0298-5c00-7000-8000-000000000003";
+const missingEntityId = "019b0298-5c00-7000-8000-000000000004";
 
 const entityRecords: RecordSummary[] = [
   {
@@ -40,7 +42,7 @@ const entityRecords: RecordSummary[] = [
     updatedAt: "2026-06-05T00:00:00.000Z"
   },
   {
-    id: "019b0298-5c00-7000-8000-000000000003",
+    id: archivedEntityId,
     type: "ENTITY",
     displayLabel: "Archived entity",
     status: null,
@@ -75,6 +77,58 @@ const factRecord: RecordDetail = {
     salience: "medium"
   }
 };
+
+const archivedOwnerObjectRecord: RecordDetail = {
+  id: "019b0298-5c00-7000-8000-000000000005",
+  type: "OBJECT",
+  displayLabel: "Archived-owner letter",
+  status: "active",
+  salience: null,
+  urgency: null,
+  archived: false,
+  userOrder: null,
+  createdAt: "2026-06-05T00:00:00.000Z",
+  updatedAt: "2026-06-05T00:00:00.000Z",
+  payload: {
+    status: "active",
+    label: "Archived-owner letter",
+    description: "A letter whose owner was archived.",
+    owner: archivedEntityId,
+    carried_by: "none",
+    current_location: idB,
+    visibility_to_pov: "visible",
+    usable_affordances: [],
+    constraints: [],
+    durability: "continuity_relevant"
+  }
+};
+
+const missingEntityStatusRecord: RecordDetail = {
+  id: "019b0298-5c00-7000-8000-000000000006",
+  type: "ENTITY STATUS",
+  displayLabel: "Missing entity status",
+  status: null,
+  salience: null,
+  urgency: null,
+  archived: false,
+  userOrder: null,
+  createdAt: "2026-06-05T00:00:00.000Z",
+  updatedAt: "2026-06-05T00:00:00.000Z",
+  payload: {
+    entity_id: missingEntityId,
+    life: "alive",
+    agency: "free",
+    location: "unknown",
+    visibility_to_pov: "visible",
+    current_activity: "Waiting outside the vault."
+  }
+};
+
+function optionValues(select: HTMLElement): string[] {
+  return within(select)
+    .getAllByRole<HTMLOptionElement>("option")
+    .map((option) => option.value);
+}
 
 afterEach(() => {
   cleanup();
@@ -197,6 +251,82 @@ describe("RecordEditor", () => {
 
     fireEvent.change(picker, { target: { value: idA } });
     expect((picker as HTMLSelectElement).value).toBe(idA);
+    expect(optionValues(picker).filter((value) => value === idA)).toHaveLength(1);
+    expect(within(picker).queryByText(/unresolved/)).toBeNull();
+  });
+
+  it("shows and preserves an archived stored value in a sentinel reference picker", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <RecordEditor
+        recordType="OBJECT"
+        record={archivedOwnerObjectRecord}
+        referenceRecords={entityRecords}
+        onSubmitPayload={onSubmitPayload}
+      />
+    );
+
+    const owner = screen.getByLabelText<HTMLSelectElement>(/^owner/);
+    expect(within(owner).getByRole<HTMLOptionElement>("option", { name: "Archived entity (unresolved/archived)" }).value)
+      .toBe(archivedEntityId);
+    expect(owner.value).toBe(archivedEntityId);
+    expect(optionValues(owner).filter((value) => value === archivedEntityId)).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      owner: archivedEntityId
+    });
+  });
+
+  it("shows and preserves a missing stored value in a pure reference picker", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <RecordEditor
+        recordType="ENTITY STATUS"
+        record={missingEntityStatusRecord}
+        referenceRecords={entityRecords}
+        onSubmitPayload={onSubmitPayload}
+      />
+    );
+
+    const entityPicker = screen.getByLabelText<HTMLSelectElement>(/^entity_id/);
+    expect(within(entityPicker).getByRole<HTMLOptionElement>("option", {
+      name: `${missingEntityId} (unresolved/missing)`
+    }).value).toBe(missingEntityId);
+    expect(entityPicker.value).toBe(missingEntityId);
+    expect(optionValues(entityPicker).filter((value) => value === missingEntityId)).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      entity_id: missingEntityId
+    });
+  });
+
+  it("does not render a fallback option when the stored reference is eligible", () => {
+    render(
+      <RecordEditor
+        recordType="ENTITY STATUS"
+        record={{
+          ...missingEntityStatusRecord,
+          payload: {
+            ...(missingEntityStatusRecord.payload as Record<string, unknown>),
+            entity_id: idA
+          }
+        }}
+        referenceRecords={entityRecords}
+      />
+    );
+
+    const entityPicker = screen.getByLabelText<HTMLSelectElement>(/^entity_id/);
+    expect(entityPicker.value).toBe(idA);
+    expect(optionValues(entityPicker).filter((value) => value === idA)).toHaveLength(1);
+    expect(within(entityPicker).queryByText(/unresolved/)).toBeNull();
   });
 
   it("stores VISIBLE AFFORDANCE availability sentinel values from a single select", async () => {
