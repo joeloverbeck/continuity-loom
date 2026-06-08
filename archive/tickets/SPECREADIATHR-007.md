@@ -1,6 +1,6 @@
 # SPECREADIATHR-007: Cross-page readiness capstone and `ValidationResultView` retirement
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new cross-page readiness test exercising the spec's §Test requirements end-to-end; removes the now-orphaned `ValidationResultView` (+ its test). No production behavior change beyond dead-code removal.
@@ -77,3 +77,26 @@ Delete `packages/web/src/generation-brief/ValidationResultView.tsx` and `package
 1. `npm test -- packages/web/src/readiness/readiness-cross-page.test.tsx`
 2. `grep -rn "ValidationResultView" packages/web/src ; test ! -f packages/web/src/generation-brief/ValidationResultView.tsx`
 3. `npm test && npm run typecheck && npm run lint` — full-suite verification is the correct boundary for a capstone that proves the composed pipeline and confirms the orphan removal broke nothing.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added `packages/web/src/readiness/readiness-cross-page.test.tsx` covering warning-only non-gating across Generation Brief, Preview, and Generate; provider blocking Generate but not Preview; launch directive blockers gating Preview/Generate but not draft Save; stale readiness notices; display labels and technical raw-code/record details; keyboard-reachable field actions; and consistent checklist content across pages.
+- Deleted `packages/web/src/generation-brief/ValidationResultView.tsx` and `packages/web/src/generation-brief/ValidationResultView.test.tsx` after all page consumers migrated.
+
+Deviations from original plan:
+
+- None. No production logic was changed in this capstone.
+
+Verification:
+
+- `npm test -- packages/web/src/readiness/readiness-cross-page.test.tsx` — passed.
+- `rg -n "ValidationResultView" packages/web/src` — no matches.
+- `test ! -f packages/web/src/generation-brief/ValidationResultView.tsx` — passed.
+- `test ! -f packages/web/src/generation-brief/ValidationResultView.test.tsx` — passed.
+- `npm test` — passed, 99 files / 597 tests.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
