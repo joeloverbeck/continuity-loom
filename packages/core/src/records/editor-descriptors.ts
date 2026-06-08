@@ -7,6 +7,7 @@ export type FieldKind =
   | "prose"
   | "enum"
   | "reference"
+  | "sentinel_reference_list"
   | "list"
   | "nested_group"
   | "boolean"
@@ -211,6 +212,15 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     return { ...base, kind: "reference", referenceRole: roleForField(name) };
   }
 
+  if (isSentinelReferenceListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_reference_list",
+      enumValues: enumValuesForSchema(unwrapped),
+      referenceRole: roleForField(name)
+    };
+  }
+
   if (schemaType(unwrapped) === "array") {
     const element = arrayElement(unwrapped);
     return {
@@ -339,6 +349,20 @@ function isReferenceSchema(schema: z.ZodType, name: string): boolean {
   return false;
 }
 
+function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean {
+  if (roleForField(name) !== "non_holder_to_protect" || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasReferenceArray = options.some(
+    (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
+  );
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasReferenceArray && hasSentinels;
+}
+
 function unionOptions(schema: z.ZodType): z.ZodType[] {
   return (schemaDefinition(schema).options as z.ZodType[] | undefined) ?? [];
 }
@@ -352,6 +376,10 @@ function roleForField(name: string): string {
 
   if (bare === "participants") {
     return "participant";
+  }
+
+  if (bare === "non_holders_to_protect") {
+    return "non_holder_to_protect";
   }
 
   if (bare === "causes" || bare === "effects" || bare === "cause") {

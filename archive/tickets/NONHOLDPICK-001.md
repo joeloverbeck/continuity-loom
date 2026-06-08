@@ -1,6 +1,6 @@
 # NONHOLDPICK-001: non_holders_to_protect cannot select specific entities (sentinel-only select)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/core/src/records/editor-descriptors.ts` (union-with-reference-array classification) and `packages/web/src/records/RecordEditor.tsx` (union widget); coverage in `packages/core/test/editor-descriptors.test.ts` and `packages/web/src/records/RecordEditor.test.tsx`
@@ -91,3 +91,22 @@ In `packages/web/src/records/RecordEditor.tsx`, add a `FieldRenderer` branch for
 
 1. `npm test -- editor-descriptors RecordEditor`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completion date: 2026-06-08
+
+What changed:
+- `non_holders_to_protect` now resolves to the registered `non_holder_to_protect` reference role.
+- The SECRET descriptor now exposes `non_holders_to_protect` as a sentinel-or-reference-list field with `all_except_holders` / `none` sentinels and ENTITY reference-list support.
+- The RecordEditor now renders that descriptor as a mode selector and reuses the existing reference-list picker when the author chooses specific entities.
+- Regression tests now prove both specific entity-id array submission and sentinel string submission.
+
+Deviations from original plan:
+- The descriptor classification was intentionally scoped to `non_holders_to_protect` rather than all `array[recordId] | enum` unions, preserving existing behavior for other union fields.
+
+Verification results:
+- `npm test -- editor-descriptors RecordEditor` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

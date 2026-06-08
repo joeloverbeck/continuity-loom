@@ -224,6 +224,52 @@ describe("RecordEditor", () => {
     });
   });
 
+  it("stores specific SECRET protected non-holders as selected entity ids", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.change(screen.getByLabelText(/^non_holders_to_protect mode/), {
+      target: { value: "specific_entities" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add non_holders_to_protect" }));
+
+    const picker = screen.getByLabelText(/^non_holders_to_protect 1/);
+    expect(picker.tagName).toBe("SELECT");
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(picker).queryByRole("option", { name: "Vault" })).toBeNull();
+
+    fireEvent.change(picker, { target: { value: idA } });
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), {
+      target: { value: "Aster carries the hidden seal." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      non_holders_to_protect: [idA]
+    });
+  });
+
+  it("stores SECRET protected non-holder sentinel values verbatim", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="SECRET" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    fireEvent.change(screen.getByLabelText(/^non_holders_to_protect mode/), {
+      target: { value: "none" }
+    });
+    fireEvent.change(screen.getByLabelText(/^secret_claim/), {
+      target: { value: "Aster carries the hidden seal." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      non_holders_to_protect: "none"
+    });
+  });
+
   it("rejects invalid values client-side before submit", async () => {
     render(<RecordEditor recordType="ENTITY" />);
 

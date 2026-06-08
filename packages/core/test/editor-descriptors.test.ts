@@ -11,7 +11,17 @@ import {
 } from "../src/index.js";
 import { recordTypeRegistry } from "../src/records/registry.js";
 
-const knownKinds = new Set(["short_string", "prose", "enum", "reference", "list", "nested_group", "boolean", "number"]);
+const knownKinds = new Set([
+  "short_string",
+  "prose",
+  "enum",
+  "reference",
+  "sentinel_reference_list",
+  "list",
+  "nested_group",
+  "boolean",
+  "number"
+]);
 const nonBeliefVisibilityRecordTypes = ["RELATIONSHIP", "EMOTION", "CLOCK", "OBLIGATION", "CONSEQUENCE"] as const;
 
 function schemaDefinition(schema: z.ZodType): Record<string, unknown> {
@@ -100,6 +110,14 @@ describe("record editor descriptors", () => {
         kind: "reference",
         referenceRole: "participant"
       }
+    });
+  });
+
+  it("classifies non-holder protection as sentinels or an entity reference list", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["all_except_holders", "none"],
+      referenceRole: "non_holder_to_protect"
     });
   });
 
