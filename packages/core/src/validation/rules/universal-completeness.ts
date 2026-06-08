@@ -181,20 +181,15 @@ function validateActiveSecrets(snapshot: ValidationSnapshot): readonly Diagnosti
   return activeSecrets(snapshot).flatMap((record) => {
     const payload = objectPayload(record);
     const missingCues = cluePressure && !hasValue(payload.allowed_surface_cues);
+    const missingFields = activeSecretMissingFields(payload, missingCues);
 
-    if (
-      !hasValue(payload.holders) ||
-      !hasValue(payload.non_holders_to_protect) ||
-      !hasValue(payload.forbidden_reveals) ||
-      !hasText(payload.reveal_permission) ||
-      missingCues
-    ) {
+    if (missingFields.length > 0) {
       return [
         blocker({
           code: DIAGNOSTIC_CODES.activeSecretIncomplete,
           recordId: record.id,
-          field: missingCues ? "allowed_surface_cues" : "SECRET",
-          message: "Active secret is missing required reveal-boundary fields.",
+          field: missingFields[0]?.path ?? "SECRET",
+          message: `Active secret is missing: ${missingFields.map((field) => field.label).join(", ")}.`,
           whyItMatters: "Active secrets need holders, protected non-holders, forbidden reveals, reveal permission, and clue cues when clue pressure is active.",
           suggestedActions: ["add-knowledge-constraint", "add-reveal-permission"]
         })
@@ -203,6 +198,21 @@ function validateActiveSecrets(snapshot: ValidationSnapshot): readonly Diagnosti
 
     return [];
   });
+}
+
+function activeSecretMissingFields(
+  payload: Record<string, unknown>,
+  missingCues: boolean
+): Array<{ path: string; label: string }> {
+  return [
+    ...(!hasValue(payload.holders) ? [{ path: "holders", label: "holders" }] : []),
+    ...(!hasValue(payload.non_holders_to_protect)
+      ? [{ path: "non_holders_to_protect", label: "protected non-holders" }]
+      : []),
+    ...(!hasValue(payload.forbidden_reveals) ? [{ path: "forbidden_reveals", label: "forbidden reveals" }] : []),
+    ...(!hasText(payload.reveal_permission) ? [{ path: "reveal_permission", label: "reveal permission" }] : []),
+    ...(missingCues ? [{ path: "allowed_surface_cues", label: "allowed surface cues" }] : [])
+  ];
 }
 
 function validateActivePhysicalContext(snapshot: ValidationSnapshot): readonly Diagnostic[] {

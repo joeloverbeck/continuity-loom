@@ -3,6 +3,7 @@ import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
+  warnPovCharacterNotSelected,
   warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
@@ -15,6 +16,26 @@ export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnStaleSelectedRecord
 ]);
 
+function warnPovCharacterNotSelected(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const pov = resolvedPov(snapshot);
+
+  if (!pov || pov === "omniscient" || pov === "variable") {
+    return [];
+  }
+
+  if (snapshot.records.some((record) => record.id === pov)) {
+    return [];
+  }
+
+  return [
+    warning(
+      DIAGNOSTIC_CODES.povCharacterNotSelected,
+      `The POV character ${pov} is not in the selected records, so its name cannot render in the prompt; select the POV entity into the active working set.`,
+      "generationSession.active_working_set.selected_pov"
+    )
+  ];
+}
+
 function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return JSON.stringify(snapshot).length > 5000
     ? [
@@ -25,6 +46,10 @@ function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Di
         )
       ]
     : [];
+}
+
+function resolvedPov(snapshot: ValidationSnapshot): string | undefined {
+  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
 }
 
 function warnManyHighSalienceRecords(snapshot: ValidationSnapshot): readonly Diagnostic[] {

@@ -1,4 +1,4 @@
-import { recordEditorDescriptors } from "./editor-descriptors.js";
+import { PROMPT_FACING_FIELD_OVERRIDES, recordEditorDescriptors } from "./editor-descriptors.js";
 import { enumerateCanonicalPaths } from "./field-path-enumeration.js";
 import type { FieldGuidance } from "./field-guidance.js";
 
@@ -197,7 +197,7 @@ function recordEntry(
   override: Partial<FieldGuidance> = {}
 ): FieldGuidance {
   const leafName = fieldPath.split(".").at(-1)?.replace(/\[]$/, "") ?? fieldPath;
-  const isOperational = operationalFields.has(leafName);
+  const isOperational = operationalFields.has(leafName) && !PROMPT_FACING_FIELD_OVERRIDES[recordType]?.has(leafName);
   const promptDestinations = isOperational ? [] : [destinationFamilyByType[recordType]];
 
   return {

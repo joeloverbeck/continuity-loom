@@ -27,14 +27,32 @@ const tailResolvers: ResolverMap = {
       snapshot,
       "BELIEF",
       (payload) => payload.holder === selectedPov(snapshot),
-      (payload) => compactParts([asString(payload.claim), labelValue("truth", payload.truth_relation)])
+      (payload) =>
+        compactParts([
+          asString(payload.claim),
+          labelValue("truth", payload.truth_relation),
+          labelValue("mode", payload.belief_mode),
+          labelValue("confidence", payload.confidence),
+          labelValue("access", payload.access_route),
+          labelValue("behavior", payload.behavioral_effect),
+          labelValue("visibility", payload.visibility)
+        ])
     ) || EMPTY_STATE_CONSTANTS.pov_relevant_beliefs,
   non_pov_behavior_shaping_beliefs: (snapshot) =>
     renderRecords(
       snapshot,
       "BELIEF",
       (payload) => payload.holder !== selectedPov(snapshot),
-      (payload) => compactParts([asString(payload.claim), labelValue("behavior", payload.behavioral_effect)])
+      (payload) =>
+        compactParts([
+          asString(payload.claim),
+          labelValue("behavior", payload.behavioral_effect),
+          labelValue("mode", payload.belief_mode),
+          labelValue("truth", payload.truth_relation),
+          labelValue("confidence", payload.confidence),
+          labelValue("access", payload.access_route),
+          labelValue("visibility", payload.visibility)
+        ])
     ) || EMPTY_STATE_CONSTANTS.non_pov_behavior_shaping_beliefs,
   recent_events: (snapshot) =>
     renderRecords(

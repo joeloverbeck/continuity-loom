@@ -1,6 +1,6 @@
 import {
   activeWorkingSetSchema,
-  generationSessionSchema,
+  generationSessionDraftSchema,
   whatWillCompile
 } from "@loom/core";
 import { useEffect, useMemo, useState } from "react";
@@ -45,6 +45,10 @@ function defaultActiveWorkingSet(selectedRecordIds: readonly string[]): ActiveWo
   };
 }
 
+function loadFailureMessage(surface: string, message: string): string {
+  return `${surface} could not load: ${message}`;
+}
+
 function castBand(recordId: string, activeWorkingSet: ActiveWorkingSet): "none" | "active" | "present_minor" | "offstage" {
   if (activeWorkingSet.active_onstage_cast_full.some((entry) => entry.cast_member_id === recordId)) {
     return "active";
@@ -87,27 +91,35 @@ export function WorkingSetView(): React.JSX.Element {
 
         if (recordsResponse.ok) {
           setRecords(recordsResponse.records);
+        } else {
+          setNotice(loadFailureMessage("Records", recordsResponse.message));
         }
 
         if (workingSetResponse.ok) {
           setSelectedRecordIds(workingSetResponse.selectedRecordIds);
+        } else {
+          setNotice(loadFailureMessage("Working-set membership", workingSetResponse.message));
         }
 
         const selectedIds = workingSetResponse.ok ? workingSetResponse.selectedRecordIds : [];
         if (briefResponse.ok) {
-          const session = generationSessionSchema.parse(briefResponse.session);
+          const session = generationSessionDraftSchema.parse(briefResponse.session);
+          const persistedWorkingSet = session.active_working_set
+            ? activeWorkingSetSchema.parse(session.active_working_set)
+            : undefined;
           setActiveWorkingSet({
             ...defaultActiveWorkingSet(selectedIds),
-            ...(session.active_working_set ?? {}),
+            ...(persistedWorkingSet ?? {}),
             selected_records: selectedIds
           });
         } else {
+          setNotice(loadFailureMessage("Generation brief", briefResponse.message));
           setActiveWorkingSet(defaultActiveWorkingSet(selectedIds));
         }
       })
       .catch(() => {
         if (active) {
-          setNotice("Could not load active working set.");
+          setNotice("Unexpected error while loading active working set.");
         }
       });
 

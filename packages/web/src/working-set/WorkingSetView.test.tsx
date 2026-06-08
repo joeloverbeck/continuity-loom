@@ -119,6 +119,66 @@ describe("WorkingSetView", () => {
     expect(setGenerationBrief).not.toHaveBeenCalled();
   });
 
+  it("surfaces records-list API failures with their own message", async () => {
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: false,
+      kind: "records-unavailable",
+      message: "Records list is unavailable."
+    });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+
+    render(<WorkingSetView />);
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Records could not load: Records list is unavailable.");
+    expect(screen.queryByText("Could not load active working set.")).toBeNull();
+  });
+
+  it("surfaces working-set membership API failures with their own message", async () => {
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
+    vi.mocked(getWorkingSet).mockResolvedValue({
+      ok: false,
+      kind: "working-set-unavailable",
+      message: "Working-set membership is unavailable."
+    });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+
+    render(<WorkingSetView />);
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Working-set membership could not load: Working-set membership is unavailable."
+    );
+    expect(screen.queryByText("Could not load active working set.")).toBeNull();
+  });
+
+  it("surfaces generation brief API failures with their own message", async () => {
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: false,
+      kind: "brief-unavailable",
+      message: "Generation brief is unavailable."
+    });
+
+    render(<WorkingSetView />);
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Generation brief could not load: Generation brief is unavailable."
+    );
+    expect(screen.queryByText("Could not load active working set.")).toBeNull();
+  });
+
+  it("surfaces a distinct fallback for thrown load failures", async () => {
+    vi.mocked(listRecords).mockRejectedValue(new Error("Network unavailable"));
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+
+    render(<WorkingSetView />);
+
+    expect((await screen.findByRole("alert")).textContent).toBe("Unexpected error while loading active working set.");
+    expect(screen.queryByText("Could not load active working set.")).toBeNull();
+  });
+
   it("persists explicit cast bands and local_function through the generation brief client", async () => {
     const castId = "019b0298-5c00-7000-8000-000000000014";
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
@@ -153,6 +213,40 @@ describe("WorkingSetView", () => {
     expect(secondPayload.active_working_set).toMatchObject({
       active_onstage_cast_full: [{ cast_member_id: castId, local_function: "physically_active" }]
     });
+  });
+
+  it("loads persisted working-set metadata from a partially authored generation brief draft", async () => {
+    const castId = "019b0298-5c00-7000-8000-000000000014";
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [castId] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        current_authoritative_state: {
+          current_time: "Before dawn.",
+          immediate_situation_summary: "Aster waits at the west gate."
+        },
+        immediate_handoff: {
+          recent_causal_context: "The door code changed before dawn."
+        },
+        active_working_set: {
+          selected_records: [castId],
+          selected_pov: castId,
+          active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }],
+          present_minor_cast_compressed: [],
+          offstage_relevant_cast: []
+        }
+      },
+      defaults: briefDefaults
+    });
+
+    render(<WorkingSetView />);
+
+    const castBand = await screen.findByLabelText("Cast band for Aster cast");
+    expect((castBand as HTMLSelectElement).value).toBe("active");
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(setWorkingSet).not.toHaveBeenCalled();
+    expect(setGenerationBrief).not.toHaveBeenCalled();
   });
 
   it("renders the conceptual what-will-compile preview without mutating membership", async () => {

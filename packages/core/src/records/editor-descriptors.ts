@@ -7,6 +7,7 @@ export type FieldKind =
   | "prose"
   | "enum"
   | "reference"
+  | "sentinel_reference_list"
   | "list"
   | "nested_group"
   | "boolean"
@@ -82,6 +83,10 @@ const STATUS_OR_VALIDATION_FIELDS = new Set([
   "can_drive_prose"
 ]);
 
+export const PROMPT_FACING_FIELD_OVERRIDES: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({
+  BELIEF: new Set(["visibility"])
+});
+
 const SYSTEM_MANAGED_FIELDS = new Set(["id"]);
 
 const referenceTargetsByRole: Readonly<Record<string, readonly string[]>> = Object.freeze({
@@ -132,7 +137,9 @@ export const recordEditorDescriptors: Readonly<Record<string, RecordEditorDescri
       definition.recordType,
       {
         recordType: definition.recordType,
-        fields: describeObjectFields(definition.payloadSchema).filter((field) => !SYSTEM_MANAGED_FIELDS.has(field.name))
+        fields: describeObjectFields(definition.payloadSchema, definition.recordType).filter(
+          (field) => !SYSTEM_MANAGED_FIELDS.has(field.name)
+        )
       }
     ])
   )
@@ -185,24 +192,33 @@ export function describeSchemaFields(schema: z.ZodType): readonly FieldDescripto
   return describeObjectFields(schema);
 }
 
-function describeObjectFields(schema: z.ZodType): readonly FieldDescriptor[] {
+function describeObjectFields(schema: z.ZodType, recordType?: string): readonly FieldDescriptor[] {
   const unwrapped = unwrapSchema(schema).schema;
   const shape = objectShape(unwrapped);
-  const fields = Object.entries(shape).map(([name, fieldSchema]) => describeField(name, fieldSchema));
+  const fields = Object.entries(shape).map(([name, fieldSchema]) => describeField(name, fieldSchema, recordType));
 
   return [...fields.filter((field) => field.required), ...fields.filter((field) => !field.required)];
 }
 
-function describeField(name: string, schema: z.ZodType): FieldDescriptor {
+function describeField(name: string, schema: z.ZodType, recordType?: string): FieldDescriptor {
   const { schema: unwrapped, required } = unwrapSchema(schema);
   const base = {
     name,
     required,
-    promptFacing: !STATUS_OR_VALIDATION_FIELDS.has(name)
+    promptFacing: isPromptFacingField(name, recordType)
   };
 
   if (isReferenceSchema(unwrapped, name)) {
     return { ...base, kind: "reference", referenceRole: roleForField(name) };
+  }
+
+  if (isSentinelReferenceListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_reference_list",
+      enumValues: enumValuesForSchema(unwrapped),
+      referenceRole: roleForField(name)
+    };
   }
 
   if (schemaType(unwrapped) === "array") {
@@ -210,7 +226,7 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
     return {
       ...base,
       kind: "list",
-      itemDescriptor: describeListItem(name, element)
+      itemDescriptor: describeListItem(name, element, recordType)
     };
   }
 
@@ -218,7 +234,7 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
     return {
       ...base,
       kind: "nested_group",
-      fields: describeObjectFields(unwrapped)
+      fields: describeObjectFields(unwrapped, recordType)
     };
   }
 
@@ -239,14 +255,19 @@ function describeField(name: string, schema: z.ZodType): FieldDescriptor {
   return { ...base, kind: stringFieldKind(name) };
 }
 
-function describeListItem(name: string, schema: z.ZodType): FieldDescriptor {
-  const item = describeField(`${name}[]`, schema);
+function describeListItem(name: string, schema: z.ZodType, recordType?: string): FieldDescriptor {
+  const item = describeField(`${name}[]`, schema, recordType);
 
   return {
     ...item,
     name: name,
     required: true
   };
+}
+
+function isPromptFacingField(name: string, recordType?: string): boolean {
+  return Boolean(recordType && PROMPT_FACING_FIELD_OVERRIDES[recordType]?.has(name))
+    || !STATUS_OR_VALIDATION_FIELDS.has(name);
 }
 
 function unwrapSchema(schema: z.ZodType): { schema: z.ZodType; required: boolean } {
@@ -328,28 +349,44 @@ function isReferenceSchema(schema: z.ZodType, name: string): boolean {
   return false;
 }
 
+function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean {
+  if (roleForField(name) !== "non_holder_to_protect" || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasReferenceArray = options.some(
+    (option) => schemaType(option) === "array" && isReferenceSchema(arrayElement(option), name)
+  );
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasReferenceArray && hasSentinels;
+}
+
 function unionOptions(schema: z.ZodType): z.ZodType[] {
   return (schemaDefinition(schema).options as z.ZodType[] | undefined) ?? [];
 }
 
 function roleForField(name: string): string {
-  if (name === "holders") {
+  const bare = name.replace(/\[\]$/, "");
+
+  if (bare === "holders") {
     return "secret_holder";
   }
 
-  if (name === "participants") {
+  if (bare === "participants") {
     return "participant";
   }
 
-  if (name === "location") {
-    return "location";
+  if (bare === "non_holders_to_protect") {
+    return "non_holder_to_protect";
   }
 
-  if (name === "causes" || name === "effects" || name === "cause") {
+  if (bare === "causes" || bare === "effects" || bare === "cause") {
     return "record_link";
   }
 
-  return name.replace(/\[\]$/, "");
+  return bare;
 }
 
 function stringFieldKind(name: string): FieldKind {

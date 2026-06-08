@@ -29,7 +29,7 @@ const frontResolvers: ResolverMap = {
   setting_baseline: (snapshot) =>
     valueOrEmpty(snapshot.storyConfig.storyContract?.setting_baseline, "setting_baseline"),
 
-  pov_character: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.pov_character, "pov_character"),
+  pov_character: (snapshot) => renderPovCharacter(snapshot),
   person: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.person, "person"),
   tense: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.tense, "tense"),
   psychic_distance: (snapshot) => valueOrEmpty(snapshot.storyConfig.proseMode?.psychic_distance, "psychic_distance"),
@@ -177,6 +177,26 @@ function renderValue(value: unknown): string {
   }
 
   return "";
+}
+
+function renderPovCharacter(snapshot: ValidationSnapshot): string {
+  const povCharacter = renderValue(snapshot.storyConfig.proseMode?.pov_character);
+
+  if (!povCharacter) {
+    return EMPTY_STATE_CONSTANTS.pov_character;
+  }
+
+  if (povCharacter === "omniscient" || povCharacter === "variable") {
+    return povCharacter;
+  }
+
+  const record = snapshot.records.find((item) => item.id === povCharacter);
+  return record ? displayLabel(record) : povCharacter;
+}
+
+function displayLabel(record: ValidationRecord): string {
+  const fixtureLabel = (record as ValidationRecord & { displayLabel?: unknown }).displayLabel;
+  return record.metadata?.displayLabel || asString(fixtureLabel) || record.id;
 }
 
 function bulletRecords(

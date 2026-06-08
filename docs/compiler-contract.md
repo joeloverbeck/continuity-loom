@@ -92,7 +92,8 @@ Requiredness terms:
 | `{title}` | STORY CONTRACT.title | Yes | Block | N/A | Stable story identity. |
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
-| `{pov_character}`, `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Non-omniscient POV requires knowledge profile. |
+| `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank; unresolved selected-record lookup falls back to raw id with a non-blocking `pov-character-not-selected` warning | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity not present in selected records renders as raw id and warns. |
+| `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
 | `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
 | `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
 | `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |
@@ -148,8 +149,8 @@ Requiredness terms:
 | `{offstage_relevance_notes}` | ENTITY/CAST selected offstage + offstage pressure records | Required if offstage interruption/pressure active | Block if interruption lacks route/timing/communication | `None` | No full offstage dossier unless active. |
 | `{pov_accessible_facts}` | Selected FACT known to POV/public | No except when directive depends on them | Block if required fact missing | `None beyond current state and hard canon` | Prevents generic fact leakage. |
 | `{writer_visible_or_non_pov_facts}` | Selected FACT not POV-accessible; SECRET/EVENT-derived writer-visible truth | No | Block if hidden fact lacks reveal constraints | `None` | Not narrator knowledge. |
-| `{pov_relevant_beliefs}` | BELIEF held by POV | No | Warn if POV-heavy scene lacks interpretive pressure | `None specified` | Mark truth relation. |
-| `{non_pov_behavior_shaping_beliefs}` | BELIEF held by non-POV cast | No | Block if used as direct interiority in forbidden prose mode | `None specified` | Render through behavior. |
+| `{pov_relevant_beliefs}` | BELIEF held by POV | No | Warn if POV-heavy scene lacks interpretive pressure | `None specified` | Mark truth relation first; render claim in full plus belief mode, truth relation, confidence, access route, behavioral effect, and visibility. |
+| `{non_pov_behavior_shaping_beliefs}` | BELIEF held by non-POV cast | No | Block if used as direct interiority in forbidden prose mode | `None specified` | Render through behavior first; render claim in full plus behavioral effect, belief mode, truth relation, confidence, access route, and visibility. |
 | `{recent_events}` | Selected EVENT with event_kind immediate_previous/recent_causal | No except when needed | Warn if too many; block if contradictory | `None selected` | No flat archive dump. |
 | `{relevant_backstory}` | Selected EVENT relevant_backstory and selected backstory facts with current relevance | No | Warn if too many/stale | `None selected` | Only current-relevant backstory. |
 | `{offstage_or_withheld_events}` | Selected EVENT offstage/withheld grouped by visibility | No except when offstage/withheld pressure matters | Block if withheld event leaks into POV | `None selected` | Writer-visible does not mean POV-visible. |
@@ -223,7 +224,8 @@ Warnings that must not block:
 - sparse setting texture;
 - low-drama scene may need stronger prose-craft pressure;
 - long active dossier may need stronger current voice/body pressure pin;
-- active/onstage extended dossier is sparse but required core is sufficient.
+- active/onstage extended dossier is sparse but required core is sufficient;
+- POV character id is not present in selected records, so the prompt cannot render its display name.
 
 ## 7. Blocker/warning rendering
 
@@ -266,6 +268,8 @@ Validation-only by default:
 - record IDs unless deliberately exposed for debugging outside the generated prompt;
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
+
+The `{pov_character}` placeholder is the one prompt-facing id-derived value: entity ids are resolved to a selected record's human display label before rendering, while `omniscient` and `variable` render as literals. A raw id in this line means the referenced POV record was not available in the selected snapshot.
 
 Prompt-facing when selected or compiled:
 

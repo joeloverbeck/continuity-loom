@@ -71,6 +71,7 @@ export function fieldDefault(field: FieldDescriptor): unknown {
     case "boolean":
       return false;
     case "enum":
+    case "sentinel_reference_list":
       return field.enumValues?.[0] ?? "";
     case "list":
       return [];
@@ -101,6 +102,14 @@ function pruneFieldValue(field: FieldDescriptor, value: unknown): unknown {
           .map((item: unknown) => (field.itemDescriptor ? pruneFieldValue(field.itemDescriptor, item) : item))
           .filter((item) => !isBlank(item))
       : [];
+  }
+
+  if (field.kind === "sentinel_reference_list") {
+    if (Array.isArray(value)) {
+      return value.filter((item) => !isBlank(item));
+    }
+
+    return value;
   }
 
   if (field.kind === "nested_group") {
@@ -302,6 +311,67 @@ function ListField({
   );
 }
 
+function SentinelReferenceListField({
+  field,
+  path,
+  ownerKind,
+  form,
+  referenceRecords,
+  serverIssues
+}: {
+  field: FieldDescriptor;
+  path: string;
+  ownerKind: string;
+  form: UseFormReturn<FormValues>;
+  referenceRecords: readonly RecordSummary[];
+  serverIssues: Map<string, string>;
+}): React.JSX.Element {
+  const value = form.watch(path) as unknown;
+  const mode = Array.isArray(value) ? "specific_entities" : typeof value === "string" ? value : field.enumValues?.[0] ?? "";
+  const referenceRole = field.referenceRole ?? "";
+  const listField: FieldDescriptor = {
+    ...field,
+    kind: "list",
+    itemDescriptor: {
+      ...field,
+      name: field.name,
+      kind: "reference",
+      required: true,
+      referenceRole
+    }
+  };
+
+  function updateMode(nextMode: string): void {
+    form.setValue(path, nextMode === "specific_entities" ? [] : nextMode, {
+      shouldDirty: true,
+      shouldValidate: true
+    });
+  }
+
+  return (
+    <div className="sentinelReferenceListField">
+      <select aria-label={`${field.name} mode`} value={mode} onChange={(event) => updateMode(event.target.value)}>
+        {(field.enumValues ?? []).map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+        <option value="specific_entities">specific_entities</option>
+      </select>
+      {mode === "specific_entities" ? (
+        <ListField
+          field={listField}
+          path={path}
+          ownerKind={ownerKind}
+          form={form}
+          referenceRecords={referenceRecords}
+          serverIssues={serverIssues}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 function registerText(
   register: UseFormRegister<FormValues>,
   path: string,
@@ -375,6 +445,17 @@ export function FieldRenderer({
         return <textarea {...registerText(form.register, path, field)} />;
       case "reference":
         return <ReferencePicker field={field} path={path} form={form} referenceRecords={referenceRecords} />;
+      case "sentinel_reference_list":
+        return (
+          <SentinelReferenceListField
+            field={field}
+            path={path}
+            ownerKind={ownerKind}
+            form={form}
+            referenceRecords={referenceRecords}
+            serverIssues={serverIssues}
+          />
+        );
       case "short_string":
         return <input type="text" {...registerText(form.register, path, field)} />;
     }

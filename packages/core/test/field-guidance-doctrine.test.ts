@@ -60,7 +60,7 @@ describe("field guidance doctrine", () => {
         records: structuredClone(demoRecords),
         generationSession: structuredClone(demoGenerationSession),
         storyConfig: structuredClone(demoStoryConfig),
-        versions: { template: "1.0.0", compiler: "1.1.0", contract: "1.1.0" }
+        versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
       })
     ).prompt;
 

@@ -76,6 +76,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   povKnowledgeMissing: "pov-knowledge-missing",
   promptMiddleSalienceRisk: "prompt-middle-salience-risk",
   promptFacingProseContamination: "prompt-facing-prose-contamination",
+  povCharacterNotSelected: "pov-character-not-selected",
   secretRevealContradiction: "secret-reveal-contradiction",
   manyHighSalienceRecords: "many-high-salience-records",
   noActiveClockPressure: "no-active-clock-pressure",

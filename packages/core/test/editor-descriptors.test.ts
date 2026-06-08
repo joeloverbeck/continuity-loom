@@ -11,7 +11,18 @@ import {
 } from "../src/index.js";
 import { recordTypeRegistry } from "../src/records/registry.js";
 
-const knownKinds = new Set(["short_string", "prose", "enum", "reference", "list", "nested_group", "boolean", "number"]);
+const knownKinds = new Set([
+  "short_string",
+  "prose",
+  "enum",
+  "reference",
+  "sentinel_reference_list",
+  "list",
+  "nested_group",
+  "boolean",
+  "number"
+]);
+const nonBeliefVisibilityRecordTypes = ["RELATIONSHIP", "EMOTION", "CLOCK", "OBLIGATION", "CONSEQUENCE"] as const;
 
 function schemaDefinition(schema: z.ZodType): Record<string, unknown> {
   return (schema as unknown as { _def?: Record<string, unknown>; def?: Record<string, unknown> })._def
@@ -85,6 +96,31 @@ describe("record editor descriptors", () => {
     });
   });
 
+  it("classifies remapped list item references as reference fields", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "holders")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "secret_holder"
+      }
+    });
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "participants")).toMatchObject({
+      kind: "list",
+      itemDescriptor: {
+        kind: "reference",
+        referenceRole: "participant"
+      }
+    });
+  });
+
+  it("classifies non-holder protection as sentinels or an entity reference list", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["all_except_holders", "none"],
+      referenceRole: "non_holder_to_protect"
+    });
+  });
+
   it("covers CAST MEMBER core and extended nested fields", () => {
     const descriptor = getEditorDescriptor("CAST MEMBER");
     const fieldsByName = new Map(descriptor?.fields.map((field) => [field.name, field]));
@@ -128,6 +164,18 @@ describe("record editor descriptors", () => {
 
     for (const recordType of recordTypes) {
       getEditorDescriptor(recordType)?.fields.forEach(visit);
+    }
+  });
+
+  it("classifies only BELIEF visibility as prompt-facing", () => {
+    expect(getEditorDescriptor("BELIEF")?.fields.find((field) => field.name === "visibility")).toMatchObject({
+      promptFacing: true
+    });
+
+    for (const recordType of nonBeliefVisibilityRecordTypes) {
+      expect(getEditorDescriptor(recordType)?.fields.find((field) => field.name === "visibility")).toMatchObject({
+        promptFacing: false
+      });
     }
   });
 
