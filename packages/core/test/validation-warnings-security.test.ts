@@ -80,6 +80,9 @@ describe("warnings and security validation", () => {
     }],
     [DIAGNOSTIC_CODES.staleSelectedRecord, (input: BuildValidationSnapshotInput) => {
       input.records = [record("old", "EVENT", { status: "resolved" })];
+    }],
+    [DIAGNOSTIC_CODES.povCharacterNotSelected, (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode = proseMode("missing-pov");
     }]
   ])("emits non-blocking warning %s", (code, mutate) => {
     const input = baseInput();
@@ -90,6 +93,61 @@ describe("warnings and security validation", () => {
     expect(result.blockers).toEqual([]);
     expect(result.isBlocked).toBe(false);
     expect(result.warnings.every((warning) => warning.severity === "warning")).toBe(true);
+  });
+
+  it("warns once without blocking when the resolved POV id is not selected", () => {
+    const input = baseInput();
+    input.generationSession.active_working_set = {
+      selected_records: [],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: [],
+      selected_pov: "missing-pov"
+    };
+    input.storyConfig.proseMode = proseMode("fallback-pov");
+
+    const result = runValidation(buildValidationSnapshot(input), warningRules);
+    const warnings = result.warnings.filter((warning) => warning.code === DIAGNOSTIC_CODES.povCharacterNotSelected);
+
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]?.severity).toBe("warning");
+    expect(warnings[0]?.message).toContain("missing-pov");
+    expect(result.blockers).toEqual([]);
+    expect(result.isBlocked).toBe(false);
+  });
+
+  it("does not warn when the resolved POV is selected, literal, or undefined", () => {
+    const selected = baseInput();
+    selected.records = [record("pov", "ENTITY", { display_name: "Mara" })];
+    selected.generationSession.active_working_set = {
+      selected_records: ["pov"],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: [],
+      selected_pov: "pov"
+    };
+    selected.storyConfig.proseMode = proseMode("fallback-pov");
+
+    const omniscient = baseInput();
+    omniscient.generationSession.active_working_set = {
+      selected_records: [],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: [],
+      selected_pov: "omniscient"
+    };
+    omniscient.storyConfig.proseMode = proseMode("fallback-pov");
+
+    const variable = baseInput();
+    variable.storyConfig.proseMode = proseMode("variable");
+
+    const undefinedPov = baseInput();
+
+    for (const input of [selected, omniscient, variable, undefinedPov]) {
+      const result = runValidation(buildValidationSnapshot(input), warningRules);
+
+      expect(result.warnings.map((warning) => warning.code)).not.toContain(DIAGNOSTIC_CODES.povCharacterNotSelected);
+    }
   });
 
   it("groups multiple long active cast dossier salience risks into one warning", () => {
@@ -144,6 +202,20 @@ function manualDirective(mustRender: string) {
     must_render: [mustRender],
     may_render_if_naturally_caused: [],
     do_not_force: []
+  };
+}
+
+function proseMode(pov_character: string): NonNullable<BuildValidationSnapshotInput["storyConfig"]["proseMode"]> {
+  return {
+    pov_character,
+    person: "third",
+    tense: "past",
+    psychic_distance: "close",
+    interiority_mode: "filtered",
+    dialogue_density: "balanced",
+    paragraphing: "mixed",
+    language_output: "English",
+    special_style_constraints: []
   };
 }
 
