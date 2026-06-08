@@ -1,5 +1,6 @@
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
+import { displayLabel, resolveRecordLabel } from "../labels.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
 
@@ -198,11 +199,6 @@ function renderPovCharacter(snapshot: ValidationSnapshot): string {
   return record ? displayLabel(record) : povCharacter;
 }
 
-function displayLabel(record: ValidationRecord): string {
-  const fixtureLabel = (record as ValidationRecord & { displayLabel?: unknown }).displayLabel;
-  return record.metadata?.displayLabel || asString(fixtureLabel) || record.id;
-}
-
 function bulletRecords(
   snapshot: ValidationSnapshot,
   type: string,
@@ -254,13 +250,7 @@ function resolveEntityLabels(snapshot: ValidationSnapshot, value: unknown): stri
 }
 
 function resolveEntityLabel(snapshot: ValidationSnapshot, value: unknown): string {
-  const id = asString(value);
-  if (!id) {
-    return "";
-  }
-
-  const record = snapshot.records.find((item) => item.id === id);
-  return record ? displayLabel(record) : id;
+  return resolveRecordLabel(snapshot, value);
 }
 
 function allowedClueLines(payload: JsonRecord): string[] {

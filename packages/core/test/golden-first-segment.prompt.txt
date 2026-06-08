@@ -348,12 +348,12 @@ Current bodies, posture, distance, routes, objects, exits, visibility, and envir
 - available time: One short exchange before footsteps or the shop bell may interrupt.
 - consent/force: No one is restrained; Elin can block access by position and refusal, not force.
 - locks: cellar latch is closed but not barred, letter seal is intact, non-POV interiority must not be rendered directly
-- 019b0298-5c00-7000-8000-013000000008; sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active
-- 019b0298-5c00-7000-8000-013000000009; shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: active
-- 019b0298-5c00-7000-8000-013000000010; old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active
-- 019b0298-5c00-7000-8000-013000000011; cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active
-- 019b0298-5c00-7000-8000-013000000012; Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: active
-- 019b0298-5c00-7000-8000-013000000013; listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; status: available
+- sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active
+- shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: active
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active
+- Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: active
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; status: available
 
 Do not move characters or objects without plausible action, route, time, consent/force where relevant, and physical possibility.
 </physical_continuity>
