@@ -1,4 +1,4 @@
-import type { CompileResult, OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
+import type { CompileResult, GenerationReadiness, OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
 
 export interface HealthResponse {
   status: "ok";
@@ -342,6 +342,10 @@ export async function setGenerationBrief(surfaces: Record<string, unknown>): Pro
 
 export async function validate(): Promise<ValidationResult | ApiFailure> {
   return postJson<ValidationResult | ApiFailure>("/api/validate");
+}
+
+export async function readiness(): Promise<GenerationReadiness | ApiFailure> {
+  return postJson<GenerationReadiness | ApiFailure>("/api/readiness");
 }
 
 export async function compile(): Promise<CompileResponse> {

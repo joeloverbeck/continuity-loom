@@ -1,6 +1,6 @@
 # SPECREADIATHR-002: `/api/readiness` route and web client
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/server/src/readiness-routes.ts` (`POST /api/readiness`), registration in `packages/server/src/server.ts`, new `readiness()` client in `packages/web/src/api.ts`. No change to `/api/validate`, `/api/compile`, or `/api/generate`.
@@ -83,3 +83,24 @@ Add `export async function readiness(): Promise<GenerationReadiness | ApiFailure
 1. `npm test -- packages/server/src/readiness-routes.test.ts`
 2. `npm run typecheck && npm run lint`
 3. Server-route test is the correct boundary; cross-page end-to-end behavior is exercised by the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added `packages/server/src/readiness-routes.ts` with `POST /api/readiness`, reusing `buildSnapshotFromOpenProject`, `runValidation`, `readOpenRouterSettings().hasOpenRouterCredential`, and core `deriveReadiness`.
+- Registered the readiness route in `packages/server/src/server.ts`.
+- Added the typed `readiness()` web client in `packages/web/src/api.ts`.
+- Added `packages/server/src/readiness-routes.test.ts` covering provider present/absent state, no-open-project and malformed snapshot passthrough, display-label enrichment, and negative assertions against API-key/payload leakage.
+
+Deviations from original plan:
+
+- None. Existing `/api/validate`, `/api/compile`, and `/api/generate` behavior was left unchanged.
+
+Verification:
+
+- `npm test -- packages/server/src/readiness-routes.test.ts` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
