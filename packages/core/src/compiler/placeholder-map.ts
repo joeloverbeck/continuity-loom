@@ -22,6 +22,7 @@ export type PlaceholderName =
   | "allowed_content_scope"
   | "audience_does_not_know"
   | "audience_knows"
+  | "audience_perception_ambiguous"
   | "available_time"
   | "begin_after"
   | "character_bias_handling"

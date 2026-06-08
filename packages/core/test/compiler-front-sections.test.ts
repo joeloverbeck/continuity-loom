@@ -376,6 +376,57 @@ describe("compiler front-section resolvers", () => {
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
   });
 
+  it("renders ambiguous audience perception without placing the secret in existing audience lanes", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              status: "partially_revealed",
+              audience_visibility: "ambiguous"
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const audienceSection = sectionBody(prompt, "audience_knowledge");
+
+    expect(audienceSection).toContain(
+      "Audience may be inferring (ambiguous - not established reader knowledge):\n- Mara stole the archive key."
+    );
+    expect(audienceSection).toContain(
+      "Treat these as unresolved: shape suspense and surface cues, but do not write as if the audience has confirmed them."
+    );
+    expect(audienceSection).not.toContain("Audience already knows:\n- Mara stole the archive key.");
+    expect(audienceSection).not.toContain("Audience does not know:\n- Mara stole the archive key.");
+    expect(audienceSection).not.toContain("Dramatic irony allowed now:\n- Mara stole the archive key.");
+  });
+
+  it("omits the ambiguous audience perception block when no active ambiguous secret exists", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+    const audienceSection = sectionBody(prompt, "audience_knowledge");
+
+    expect(audienceSection).not.toContain("Audience may be inferring");
+    expect(audienceSection).not.toContain("Treat these as unresolved:");
+    expect(audienceSection).toContain(
+      [
+        "Audience already knows:",
+        "- Mara stole the archive key.",
+        "",
+        "Audience does not know:",
+        "None specified",
+        "",
+        "Dramatic irony allowed now:",
+        "- Mara stole the archive key.",
+        "",
+        "If the audience knows something the POV does not, you may let that truth shape surface cues and tension. Do not grant the POV forbidden knowledge."
+      ].join("\n")
+    );
+  });
+
   it("falls back to a raw secret holder id when no matching record is selected", () => {
     const input = populatedInput();
     input.records = input.records.map((record) =>

@@ -163,6 +163,12 @@ Audience does not know:
 Dramatic irony allowed now:
 {dramatic_irony_permissions}
 
+Rendered only when an active secret has `audience_visibility: "ambiguous"`:
+Audience may be inferring (ambiguous - not established reader knowledge):
+{audience_perception_ambiguous}
+
+Treat these as unresolved: shape suspense and surface cues, but do not write as if the audience has confirmed them.
+
 If the audience knows something the POV does not, you may let that truth shape surface cues and tension. Do not grant the POV forbidden knowledge.
 </audience_knowledge>
 

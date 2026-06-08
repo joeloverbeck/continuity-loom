@@ -1,4 +1,5 @@
 import type { ValidationSnapshot } from "../validation/snapshot.js";
+import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
 import { estimatePromptTokens, fingerprintPrompt } from "./fingerprint.js";
 import { resolvePlaceholder, type PlaceholderName } from "./placeholder-map.js";
 import {
@@ -112,14 +113,16 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
     return renderManualDirectiveSection(snapshot);
   }
 
+  if (sectionId === "audience_knowledge") {
+    return renderAudienceKnowledgeSection(snapshot);
+  }
+
   if (sectionId === "stop_rule") {
     return renderStopRuleSection(snapshot);
   }
 
   const template = SECTION_TEMPLATES[sectionId];
-  return template.replace(placeholderPattern, (_match, placeholder: string) =>
-    resolvePlaceholder(placeholder, snapshot)
-  );
+  return renderTemplate(template, snapshot);
 }
 
 function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): string {
@@ -159,6 +162,39 @@ function renderStopRuleSection(snapshot: ValidationSnapshot): string {
   }
 
   return template.replace("\n\nStop as soon as one of these occurs:", `\n\nSoft unit: ${guidance}\n\nStop as soon as one of these occurs:`);
+}
+
+function renderAudienceKnowledgeSection(snapshot: ValidationSnapshot): string {
+  const ambiguousAudiencePerception = resolvePlaceholder("audience_perception_ambiguous", snapshot).trim();
+  const template = SECTION_TEMPLATES.audience_knowledge;
+
+  if (
+    !ambiguousAudiencePerception ||
+    ambiguousAudiencePerception === EMPTY_STATE_CONSTANTS.audience_perception_ambiguous
+  ) {
+    return renderTemplate(template, snapshot);
+  }
+
+  const ambiguousBlock = [
+    "Audience may be inferring (ambiguous - not established reader knowledge):",
+    ambiguousAudiencePerception,
+    "",
+    "Treat these as unresolved: shape suspense and surface cues, but do not write as if the audience has confirmed them."
+  ].join("\n");
+
+  return renderTemplate(
+    template.replace(
+      "\n\nIf the audience knows something the POV does not,",
+      `\n\n${ambiguousBlock}\n\nIf the audience knows something the POV does not,`
+    ),
+    snapshot
+  );
+}
+
+function renderTemplate(template: string, snapshot: ValidationSnapshot): string {
+  return template.replace(placeholderPattern, (_match, placeholder: string) =>
+    resolvePlaceholder(placeholder, snapshot)
+  );
 }
 
 function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {

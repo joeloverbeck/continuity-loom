@@ -15,6 +15,7 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   allowed_content_scope: "None specified",
   audience_does_not_know: "None specified",
   audience_knows: "No audience knowledge distinct from POV specified",
+  audience_perception_ambiguous: "None specified",
   available_time: "None currently specified",
   begin_after: "None specified",
   character_bias_handling: "None specified",

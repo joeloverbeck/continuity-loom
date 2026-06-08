@@ -131,6 +131,7 @@ const frontResolvers: ResolverMap = {
   audience_knows: (snapshot) => renderAudienceKnows(snapshot),
   audience_does_not_know: (snapshot) => renderAudienceDoesNotKnow(snapshot),
   dramatic_irony_permissions: (snapshot) => renderDramaticIrony(snapshot),
+  audience_perception_ambiguous: (snapshot) => renderAudiencePerceptionAmbiguous(snapshot),
 
   writer_visible_hidden_truths: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, renderWriterVisibleHiddenTruth).join("\n") ||
@@ -386,6 +387,17 @@ function renderDramaticIrony(snapshot: ValidationSnapshot): string {
   );
 
   return lines.join("\n") || EMPTY_STATE_CONSTANTS.dramatic_irony_permissions;
+}
+
+function renderAudiencePerceptionAmbiguous(snapshot: ValidationSnapshot): string {
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) => isActiveSecret(payload) && payload.audience_visibility === "ambiguous",
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.audience_perception_ambiguous;
 }
 
 function knownBy(knownByValue: unknown, pov: string | undefined): boolean {
