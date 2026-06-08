@@ -398,7 +398,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Soft unit: Soft unit: No additional user narrowing; use the universal local stop rule above.
+Soft unit: Stop at the first new response point: a sound above, Niko's unanswered direct question, or Elin's decision to show only the sealed outside.
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

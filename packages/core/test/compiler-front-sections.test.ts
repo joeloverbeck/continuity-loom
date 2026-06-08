@@ -284,7 +284,7 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 
     expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
-      "Soft unit: No additional user narrowing; use the universal local stop rule above."
+      "No additional user narrowing; use the universal local stop rule above."
     );
     expect(sectionBody(prompt, "content_policy")).toContain(`RATING: ${EMPTY_STATE_CONSTANTS.rating_label}`);
     expect(sectionBody(prompt, "story_contract")).toContain(`Title: ${EMPTY_STATE_CONSTANTS.title}`);
@@ -296,10 +296,41 @@ describe("compiler front-section resolvers", () => {
     );
     expect(sectionBody(prompt, "immediate_handoff")).not.toContain(EMPTY_STATE_CONSTANTS.begin_after);
     expect(sectionBody(prompt, "manual_directive")).toContain(EMPTY_STATE_CONSTANTS.manual_must_render);
-    expect(sectionBody(prompt, "stop_rule")).toContain(EMPTY_STATE_CONSTANTS.soft_unit_guidance);
+    expect(sectionBody(prompt, "stop_rule")).not.toContain("Soft unit:");
+    expect(sectionBody(prompt, "stop_rule")).not.toContain("Additional user stop guidance");
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
     );
+  });
+
+  it("renders supplied soft-unit guidance once and omits it when blank", () => {
+    const withGuidance = compilePrompt(
+      buildValidationSnapshot({
+        ...populatedInput(),
+        generationSession: {
+          ...populatedInput().generationSession,
+          stop_guidance: {
+            soft_unit_guidance: "Stop after she refuses."
+          }
+        }
+      })
+    ).prompt;
+    const blank = compilePrompt(
+      buildValidationSnapshot({
+        ...populatedInput(),
+        generationSession: {
+          ...populatedInput().generationSession,
+          stop_guidance: {
+            soft_unit_guidance: ""
+          }
+        }
+      })
+    ).prompt;
+
+    expect(sectionBody(withGuidance, "stop_rule").match(/Soft unit:/g)).toHaveLength(1);
+    expect(sectionBody(withGuidance, "stop_rule")).toContain("Soft unit: Stop after she refuses.");
+    expect(sectionBody(blank, "stop_rule")).not.toContain("Soft unit:");
+    expect(sectionBody(blank, "stop_rule")).toContain("Stop as soon as one of these occurs:");
   });
 
   it("records the deliberate compiler and contract version bump", () => {

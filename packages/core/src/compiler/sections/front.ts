@@ -118,6 +118,7 @@ const frontResolvers: ResolverMap = {
     ),
   manual_do_not_force: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.manual_moment_directive?.do_not_force, "manual_do_not_force"),
+  soft_unit_guidance: (snapshot) => snapshot.generationSession.stop_guidance?.soft_unit_guidance?.trim() ?? "",
 
   pov_knows: (snapshot) => renderPovKnows(snapshot),
   pov_believes_suspects_misreads: (snapshot) => renderPovBeliefs(snapshot),

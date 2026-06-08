@@ -382,7 +382,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Conditional soft-unit narrowing: if `{soft_unit_guidance}` is supplied, render `Soft unit: {soft_unit_guidance}`. If it is blank, omit that line; if conditional omission is unavailable, render `Additional user stop guidance: None supplied.`
+Conditional soft-unit narrowing: if `{soft_unit_guidance}` is supplied, render `Soft unit: {soft_unit_guidance}`. If it is blank, omit that line.
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

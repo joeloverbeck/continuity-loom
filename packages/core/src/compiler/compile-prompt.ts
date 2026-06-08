@@ -112,6 +112,10 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
     return renderManualDirectiveSection(snapshot);
   }
 
+  if (sectionId === "stop_rule") {
+    return renderStopRuleSection(snapshot);
+  }
+
   const template = SECTION_TEMPLATES[sectionId];
   return template.replace(placeholderPattern, (_match, placeholder: string) =>
     resolvePlaceholder(placeholder, snapshot)
@@ -144,6 +148,17 @@ function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
     .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
 
   return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
+}
+
+function renderStopRuleSection(snapshot: ValidationSnapshot): string {
+  const guidance = resolvePlaceholder("soft_unit_guidance", snapshot).trim();
+  const template = SECTION_TEMPLATES.stop_rule;
+
+  if (!guidance) {
+    return template;
+  }
+
+  return template.replace("\n\nStop as soon as one of these occurs:", `\n\nSoft unit: ${guidance}\n\nStop as soon as one of these occurs:`);
 }
 
 function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {

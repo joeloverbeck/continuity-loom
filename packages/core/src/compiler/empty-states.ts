@@ -75,7 +75,7 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   secret_holders: "No active secrets or reveal locks selected",
   secret_non_holders_to_protect: "No active secrets or reveal locks selected",
   setting_baseline: "None specified",
-  soft_unit_guidance: "Soft unit: No additional user narrowing; use the universal local stop rule above.",
+  soft_unit_guidance: "No additional user narrowing; use the universal local stop rule above.",
   special_style_constraints: "None specified",
   tense: "None specified",
   title: "None specified",
