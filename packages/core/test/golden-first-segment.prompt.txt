@@ -301,10 +301,10 @@ Writer-visible or non-POV facts:
 None
 
 POV-relevant beliefs:
-- Niko will be safer if he knows a letter exists but not what it says.; truth: contested
+- Niko will be safer if he knows a letter exists but not what it says.; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.
 
 Non-POV behavior-shaping beliefs:
-- Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.
+- Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace
 
 Recent events:
 - The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace

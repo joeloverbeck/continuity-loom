@@ -9,6 +9,10 @@ import { describe, expect, it } from "vitest";
 
 const povId = "019b0298-5c00-7000-8000-000000000401";
 const nonPovId = "019b0298-5c00-7000-8000-000000000402";
+const povLongBeliefClaim =
+  "The guard is bluffing about the archive lock because he keeps touching the wrong key ring before answering.";
+const nonPovLongBeliefClaim =
+  "The archive door is watched by someone above the landing even though the stairwell sounds empty from below.";
 
 function tailRecords(): ValidationRecord[] {
   return [
@@ -22,12 +26,20 @@ function tailRecords(): ValidationRecord[] {
     }),
     record("019b0298-5c00-7000-8000-000000000405", "BELIEF", "POV belief", {
       holder: povId,
-      claim: "The guard is bluffing.",
-      truth_relation: "unknown"
+      claim: povLongBeliefClaim,
+      belief_mode: "suspects",
+      truth_relation: "unknown",
+      confidence: "medium",
+      access_route: "inference",
+      behavioral_effect: "Keeps pressure on the guard instead of retreating."
     }),
     record("019b0298-5c00-7000-8000-000000000406", "BELIEF", "Non-POV belief", {
       holder: nonPovId,
-      claim: "The archive door is watched.",
+      claim: nonPovLongBeliefClaim,
+      belief_mode: "believes",
+      truth_relation: "partly_true",
+      confidence: "high",
+      access_route: "direct_observation",
       behavioral_effect: "Keeps glancing toward the landing."
     }),
     record("019b0298-5c00-7000-8000-000000000407", "EVENT", "Recent event", {
@@ -195,5 +207,24 @@ describe("compiler tail-section resolvers", () => {
     expect(facts).not.toContain("POV-accessible facts:\n- The guard has a second key.");
     expect(facts).toContain("Writer-visible or non-POV facts:\n- The guard has a second key.");
     expect(facts).toContain("Offstage or withheld events:\n- The guard already sent a warning.");
+  });
+
+  it("renders all prompt-facing belief fields without truncating long claims", () => {
+    const facts = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "relevant_facts_beliefs_events");
+
+    expect(facts).toContain(
+      [
+        "POV-relevant beliefs:",
+        `- ${povLongBeliefClaim}; truth: unknown; mode: suspects; confidence: medium; access: inference; behavior: Keeps pressure on the guard instead of retreating.`
+      ].join("\n")
+    );
+    expect(facts).toContain(
+      [
+        "Non-POV behavior-shaping beliefs:",
+        `- ${nonPovLongBeliefClaim}; behavior: Keeps glancing toward the landing.; mode: believes; truth: partly_true; confidence: high; access: direct_observation`
+      ].join("\n")
+    );
+    expect(facts).not.toContain(`${povLongBeliefClaim.slice(0, 80)}...`);
+    expect(facts).not.toContain(`${nonPovLongBeliefClaim.slice(0, 80)}...`);
   });
 });

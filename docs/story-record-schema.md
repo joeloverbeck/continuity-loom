@@ -602,7 +602,7 @@ Prompt treatment:
 
 - Group by holder.
 - Separate POV beliefs from non-POV behavior-shaping beliefs.
-- Mark truth relation clearly.
+- Render all prompt-facing belief fields in both groups: claim in full, belief_mode, truth_relation, confidence, access_route, and behavioral_effect. Lead POV beliefs with truth relation; lead non-POV beliefs with behavioral effect. No field is trimmed. `visibility` is handled separately.
 
 ### 6.3 SECRET
 
