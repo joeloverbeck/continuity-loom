@@ -8,6 +8,7 @@ export type FieldKind =
   | "enum"
   | "reference"
   | "sentinel_reference_list"
+  | "sentinel_prose_list"
   | "list"
   | "nested_group"
   | "boolean"
@@ -221,6 +222,15 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     };
   }
 
+  if (isSentinelProseListSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_prose_list",
+      enumValues: enumValuesForSchema(unwrapped),
+      itemDescriptor: describeListItem(name, sentinelListArrayElement(unwrapped), recordType)
+    };
+  }
+
   if (schemaType(unwrapped) === "array") {
     const element = arrayElement(unwrapped);
     return {
@@ -361,6 +371,29 @@ function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean
   const hasSentinels = enumValuesForSchema(schema).length > 0;
 
   return hasReferenceArray && hasSentinels;
+}
+
+function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {
+  if (schemaType(schema) !== "union" || referenceTargetsByRole[roleForField(name)]) {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const arrayOption = options.find((option) => schemaType(option) === "array");
+  const hasProseArray = Boolean(arrayOption && stringFieldKind(`${name}[]`) === "prose");
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasProseArray && hasSentinels;
+}
+
+function sentinelListArrayElement(schema: z.ZodType): z.ZodType {
+  const arrayOption = unionOptions(schema).find((option) => schemaType(option) === "array");
+
+  if (!arrayOption) {
+    throw new Error("Sentinel list schema is missing an array option.");
+  }
+
+  return arrayElement(arrayOption);
 }
 
 function unionOptions(schema: z.ZodType): z.ZodType[] {

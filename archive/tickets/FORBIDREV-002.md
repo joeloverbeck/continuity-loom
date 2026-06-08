@@ -1,6 +1,6 @@
 # FORBIDREV-002: Editor affordance to set `forbidden_reveals: none`
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/records/editor-descriptors.ts` (field-descriptor derivation), `packages/web/src/records/RecordEditor.tsx` (field rendering); coverage in `packages/web/src/records/RecordEditor.test.tsx`
@@ -80,3 +80,25 @@ Either extend `SentinelReferenceListField` to build a **text** item descriptor w
 
 1. `npm test -- editor-descriptors RecordEditor`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Added the additive `sentinel_prose_list` editor descriptor kind for prose-list-or-sentinel fields.
+- Classified SECRET `forbidden_reveals` as a sentinel prose list with the `none` sentinel while keeping `non_holders_to_protect` on the existing `sentinel_reference_list` path.
+- Added a RecordEditor control that switches `forbidden_reveals` between the exact string `"none"` and an editable prose list, preserving blank list mode by default.
+- Added descriptor and editor regression tests for classification, selecting `none`, switching back to list mode, and loading an existing `"none"` value.
+
+Deviations from original plan:
+
+- None. The implementation used a sibling `SentinelProseListField` rather than changing the reference-specific sentinel renderer.
+
+Verification results:
+
+- `npm test -- editor-descriptors RecordEditor` — passed, 2 files / 24 tests.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 99 files / 653 tests.

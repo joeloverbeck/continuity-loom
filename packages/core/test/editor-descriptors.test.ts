@@ -17,6 +17,7 @@ const knownKinds = new Set([
   "enum",
   "reference",
   "sentinel_reference_list",
+  "sentinel_prose_list",
   "list",
   "nested_group",
   "boolean",
@@ -114,6 +115,21 @@ describe("record editor descriptors", () => {
   });
 
   it("classifies non-holder protection as sentinels or an entity reference list", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
+      kind: "sentinel_reference_list",
+      enumValues: ["all_except_holders", "none"],
+      referenceRole: "non_holder_to_protect"
+    });
+  });
+
+  it("classifies forbidden reveals as sentinels or a prose list", () => {
+    expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "forbidden_reveals")).toMatchObject({
+      kind: "sentinel_prose_list",
+      enumValues: ["none"],
+      itemDescriptor: {
+        kind: "prose"
+      }
+    });
     expect(getEditorDescriptor("SECRET")?.fields.find((field) => field.name === "non_holders_to_protect")).toMatchObject({
       kind: "sentinel_reference_list",
       enumValues: ["all_except_holders", "none"],
