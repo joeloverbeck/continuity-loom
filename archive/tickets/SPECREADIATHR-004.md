@@ -1,6 +1,6 @@
 # SPECREADIATHR-004: Generation Brief page readiness wiring
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — modify `packages/web/src/generation-brief/ValidationPanel.tsx` to consume `/api/readiness` and render `ReadinessChecklist`, and `GenerationBriefView.tsx` to feed it unsaved-draft state; no change to draft-save semantics.
@@ -78,3 +78,23 @@ Pass `hasUnsavedChanges` into `<ValidationPanel>`. Keep the existing save-status
 1. `npm test -- packages/web/src/generation-brief/ValidationPanel.test.tsx packages/web/src/generation-brief/GenerationBriefView.test.tsx`
 2. `npm run typecheck && npm run lint`
 3. Page-level component tests are the correct boundary; cross-page consistency is the SPECREADIATHR-007 capstone.
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- Updated `ValidationPanel` to fetch `readiness()` from `/api/readiness`, hold `GenerationReadiness`, render `ReadinessChecklist`, and wire field, record, settings, working-set, and copy-technical actions.
+- Passed `hasUnsavedChanges` from `GenerationBriefView` into `ValidationPanel` so the checklist reflects stale readiness while preserving the existing page-level stale notice.
+- Updated Generation Brief tests to mock readiness results, assert checklist rendering and navigation/focus callbacks, and preserve draft save behavior while blockers exist.
+
+Deviations from original plan:
+
+- None. The draft save path remains unchanged.
+
+Verification:
+
+- `npm test -- packages/web/src/generation-brief/ValidationPanel.test.tsx packages/web/src/generation-brief/GenerationBriefView.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.

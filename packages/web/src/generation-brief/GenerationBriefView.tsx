@@ -237,7 +237,7 @@ export function GenerationBriefView(): React.JSX.Element {
       ) : null}
 
       <div className="briefStack">
-        <ValidationPanel validationKey={validationKey} onFocusField={focusBriefField} />
+        <ValidationPanel validationKey={validationKey} hasUnsavedChanges={hasUnsavedChanges} onFocusField={focusBriefField} />
 
         <section className="configPanel" aria-labelledby="active-working-set-brief">
           <h3 id="active-working-set-brief">ACTIVE WORKING SET</h3>
