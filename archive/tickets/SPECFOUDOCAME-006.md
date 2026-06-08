@@ -1,6 +1,6 @@
 # SPECFOUDOCAME-006: Amend stress-coverage-matrix.md and stress-suite.md
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/stress-coverage-matrix.md` (Cases 7/12/15/26 + new readiness sub-section) and `docs/stress-suite.md` (Cases 7/8/12/14/15/21/26 + new cases 27–31); no production behavior change.
@@ -83,3 +83,21 @@ The stress docs cite codes this correction reclassifies — `missing-stop-guidan
 1. `grep -nE "missing-stop-guidance|long-dossier-needs-pin|sparse-voice-pressure" docs/stress-coverage-matrix.md` — confirm each stale code is reframed (warning, not blocker capability).
 2. `grep -c "^## Case" docs/stress-suite.md` — confirm ≥ 31 cases.
 3. Manual review of the matrix capability rows against the suite case outcomes for Cases 7/12/15/26 (the correct boundary — cross-row consistency is not a single greppable count; the full sweep is SPECFOUDOCAME-008).
+
+## Outcome
+
+Completed on 2026-06-08.
+
+Changed `docs/stress-coverage-matrix.md` to remove stale `missing-stop-guidance`, `long-dossier-needs-pin`, and `sparse-voice-pressure` blocker framing, reclassify long-dossier and current-pin issues as grouped salience warnings, and add a separate `Readiness and draftability coverage` table.
+
+Changed `docs/stress-suite.md` to add readiness outcomes to Cases 7, 8, 12, 14, 15, 21, and 26, and added Cases 27-31 for draft saving with blockers, generation-context normalization, continuation defaulting, provider-only Generate blocking, and deduplicated long-dossier warnings.
+
+Deviations from original plan: none. Existing Cases 1-26 were preserved; the suite now has 31 cases.
+
+Verification:
+
+- `grep -nE "Readiness and draftability coverage" docs/stress-coverage-matrix.md`
+- `grep -nF "| Coverage area | Required proof |" docs/stress-coverage-matrix.md`
+- `grep -nE "missing-stop-guidance|long-dossier-needs-pin|sparse-voice-pressure" docs/stress-coverage-matrix.md` returned no matches
+- `grep -c "^## Case" docs/stress-suite.md` returned `31`
+- Manual review confirmed matrix rows agree with suite outcomes for Cases 7, 12, 14, 15, 21, and 26.

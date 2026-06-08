@@ -21,7 +21,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 |---|---|---|
 | No accepted prose in prompts / continuation handoff | 8 | Handoff must be user-authored and represented in records/current state. |
 | First segment empty-state correctness | 7 | First segment must be self-sufficient without accepted prose. |
-| Local-prose-only stop boundary | 13, 26 | Stop guidance must define a response point, not a chapter or downstream package. |
+| Local-prose-only stop boundary | 13, 26 | The universal stop rule must define a response point; optional stop guidance may narrow it but is not required. |
 | Dialogue voice distinction | 1, 12, 14, 15, 20 | Covers two-speaker, ensemble, present-minor, and large-cast voice risks. |
 | Active silent cast / body presence | 21 | Prevents silent active characters from disappearing. |
 | POV/audience/secrets separation | 1, 6, 9, 19, 22, 23 | Covers hidden truths, non-POV behavior shaping, multi-POV projects, and ambiguous perception. |
@@ -241,9 +241,8 @@ Required records:
 - UNIVERSAL CONTENT POLICY.
 - PROSE MODE.
 - CURRENT AUTHORITATIVE STATE.
-- IMMEDIATE HANDOFF with no accepted prose.
 - MANUAL DIRECTIVE.
-- STOP GUIDANCE.
+- Optional STOP GUIDANCE.
 - At least one active CAST MEMBER core dossier if a person-like character is materially onstage.
 
 Validation focus tags:
@@ -255,8 +254,12 @@ Expected blockers:
 
 - Missing current state.
 - Missing manual directive.
-- Missing stop guidance.
 - Active speaker lacks core voice anchor.
+
+Expected readiness outcome:
+
+- Passes with blank stop guidance and blank continuation handoff when current-state floor and manual directive are present.
+- Blocks only true missing readiness items such as current state, manual directive, or required cast authority.
 
 Prompt-quality risk:
 
@@ -281,9 +284,15 @@ Validation focus tags:
 
 Expected blockers:
 
+- Missing user-authored continuation handoff.
 - Verbatim accepted prose in handoff.
 - Automatic prose-derived summary.
 - Handoff says object changed hands but OBJECT/current possessions still disagree.
+
+Expected readiness outcome:
+
+- Blocks when continuation handoff is missing.
+- Never includes accepted prose, rejected candidates, superseded candidates, or automatic prose summaries in prompt-facing fields.
 
 Prompt-quality risk:
 
@@ -383,7 +392,7 @@ Stress target: long prompt with many onstage people.
 Required records:
 
 - Full active dossiers for all materially active characters.
-- Current voice pressure pins for each likely speaker.
+- Durable voice anchors for likely speakers; current voice pressure pins are recommended local salience, not universal blockers.
 - Relationship/status notes to prevent generic group speech.
 - Present-minor compression for silent/backgrounded characters.
 
@@ -403,6 +412,12 @@ Warnings:
 - Prompt length.
 - Lost-in-the-middle risk.
 - Too many high-salience records for one local unit.
+- Grouped salience warning when long dossiers may need local pins.
+
+Expected readiness outcome:
+
+- Missing optional current pins warn when durable anchors are sufficient.
+- Missing durable voice anchors or material speaker authority still blocks.
 
 Prompt-quality risk:
 
@@ -449,7 +464,7 @@ Stress target: two or three speakers are physically static; the output must dist
 Required records:
 
 - Active CAST MEMBER core dossiers with distinct rhythm, diction, tactics, taboos, and anti-repetition warnings.
-- Current voice pressure pins for each likely speaker.
+- Current voice pressure pins for each likely speaker are optional local emphasis.
 - Relationship/status pressure and turn-taking/silence behavior.
 - Current knowledge boundaries for what each speaker can say.
 
@@ -462,6 +477,10 @@ Expected blockers:
 
 - A likely speaker has only a personality label and no voice anchor.
 - Dialogue requires knowledge the speaker lacks.
+
+Expected readiness outcome:
+
+- Durable anchors satisfy readiness; current pins may warn but are optional.
 
 Prompt-quality risk:
 
@@ -478,8 +497,9 @@ Stress target: many characters speak in the same social class/register but must 
 Required records:
 
 - Voice anchors emphasizing micro-differences: sentence length, address habits, hedging, interruption, metaphor pool, politeness strategy, profanity intensity.
-- Current voice pressure pins that do not merely repeat the durable anchor.
+- Current voice pressure pins that do not merely repeat the durable anchor are recommended for salience.
 - Relationship/status context among speakers.
+- Physical/auditory state showing who can hear or interrupt whom.
 
 Validation focus tags:
 
@@ -488,8 +508,14 @@ Validation focus tags:
 
 Expected blockers:
 
-- Voice pins repeat generic moods only.
+- Missing durable/compressed voice authority for material speakers.
 - Relationship/status pressure absent in a scene where speakers respond to each other.
+- Missing audibility or turn-taking state when the ensemble exchange depends on it.
+
+Warnings:
+
+- Current pins repeat generic moods only.
+- Long dossiers may need grouped salience warnings.
 
 Prompt-quality risk:
 
@@ -650,7 +676,7 @@ Required records:
 - Active/onstage CAST MEMBER full dossier.
 - `active_silent` local function.
 - Body_presence_core, pressure behavior, current position/visibility.
-- Current nonverbal_or_silence_pressure pin.
+- Current nonverbal_or_silence_pressure pin is recommended local emphasis.
 - POV access limits.
 
 Validation focus tags:
@@ -661,8 +687,12 @@ Validation focus tags:
 
 Expected blockers:
 
-- Silent active character lacks body presence or current nonverbal pressure.
+- Silent active character lacks body presence, current position/visibility, or allowed-action authority when their silent presence materially affects prose.
 - POV narrates the silent character’s thoughts directly in close mode.
+
+Expected readiness outcome:
+
+- Current silence pressure is recommended, not universal.
 
 Prompt-quality risk:
 
@@ -795,7 +825,7 @@ Stress target: the external prose writer must stop at the first new response poi
 
 Required records:
 
-- STOP GUIDANCE with a concrete `soft_unit_guidance`, such as one approach, one refusal, one short exchange, one object offer, or one reveal-withheld.
+- Optional STOP GUIDANCE with concrete `soft_unit_guidance`, such as one approach, one refusal, one short exchange, one object offer, or one reveal-withheld, when the author wants extra narrowing.
 - MANUAL DIRECTIVE that fits the same local unit.
 - CURRENT AUTHORITATIVE STATE sufficient for the local action.
 - At least one pressure source: INTENTION, OPEN THREAD, RELATIONSHIP, EMOTION, CLOCK, OBLIGATION, SECRET, AFFORDANCE, or immediate handoff pressure.
@@ -807,12 +837,161 @@ Validation focus tags:
 
 Expected blockers:
 
-- STOP GUIDANCE is blank.
 - Stop guidance asks for a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points.
 - Manual directive and stop guidance disagree about whether the prose should stop after the first response point or continue through later consequences.
+
+Expected readiness outcome:
+
+- Blank soft guidance still enforces the universal stop rule and does not block.
 
 Prompt-quality risk:
 
 - The model keeps writing after the first refusal/question/reveal-withheld.
 - The model summarizes future consequences instead of stopping.
 - The model treats the stop rule as a target length rather than a causal boundary.
+
+---
+
+## Case 27 — Draft save despite readiness blockers
+
+Stress target: draft persistence separate from Preview/Generate readiness.
+
+Required records:
+
+- A structurally saveable Generation Brief draft with a blank manual directive or missing current-state floor.
+- Existing project/story configuration sufficient to keep the draft form meaningful.
+
+Validation focus tags:
+
+- Any; this case tests persistence/readiness separation.
+
+Expected blockers:
+
+- `missing-manual-directive` or `missing-current-authoritative-state` blocks Preview/Generate.
+
+Expected readiness outcome:
+
+- Draft save succeeds.
+- Prompt preview and Generate remain blocked until required readiness items are fixed.
+
+Prompt-quality risk:
+
+- Treating ordinary authoring incompleteness as a storage failure.
+
+---
+
+## Case 28 — Generation-context default mismatch prevention
+
+Stress target: no false `focus-tag-count-invalid` when project state can normalize context.
+
+Required records:
+
+- Generation Brief draft with omitted or stale `generation_context`.
+- Accepted segment count available from project state.
+
+Validation focus tags:
+
+- Normalization resolves exactly one context from accepted-segment count.
+
+Expected blockers:
+
+- None solely because the draft omitted `generation_context`.
+
+Expected readiness outcome:
+
+- No false `focus-tag-count-invalid` after normalization.
+- The resolved context remains visible and editable.
+
+Prompt-quality risk:
+
+- UI-only defaults drift from server readiness and block valid prompt preview.
+
+---
+
+## Case 29 — Continuation default from accepted-segment count
+
+Stress target: continuation readiness when accepted prose exists but prose text remains excluded.
+
+Required records:
+
+- At least one accepted segment in the archive.
+- Generation context normalized to `continuation_after_accepted_segment`.
+- User-authored immediate handoff.
+- Current state updated for the continuation start.
+
+Validation focus tags:
+
+- `continuation_after_accepted_segment`
+
+Expected blockers:
+
+- Missing user-authored handoff.
+- Accepted prose, rejected candidate text, superseded regeneration text, or automatic prose-derived summary in prompt-facing fields.
+
+Expected readiness outcome:
+
+- Continuation requires handoff but never includes accepted prose text.
+
+Prompt-quality risk:
+
+- Prose archive treated as canon or style context.
+
+---
+
+## Case 30 — Provider-only Generate block
+
+Stress target: provider configuration is separate from story/compiler readiness.
+
+Required records:
+
+- Story/compiler readiness passes.
+- OpenRouter provider configuration is missing.
+
+Validation focus tags:
+
+- Any local mode whose story readiness passes.
+
+Expected blockers:
+
+- `provider-configuration-missing` blocks Generate.
+
+Expected readiness outcome:
+
+- Prompt Preview remains available.
+- Generate is disabled until provider settings are configured.
+
+Prompt-quality risk:
+
+- Confusing transport setup with story readiness.
+
+---
+
+## Case 31 — Deduplicated long-dossier warning
+
+Stress target: grouped salience warnings for long active cast dossiers.
+
+Required records:
+
+- Several active/onstage CAST MEMBER dossiers with rich populated fields.
+- Durable voice/body anchors present.
+- Optional current voice pins missing or sparse.
+
+Validation focus tags:
+
+- `dialogue_expected` or `ensemble_dialogue_expected` if speech matters.
+
+Expected blockers:
+
+- None when durable voice/body authority is sufficient.
+
+Warnings:
+
+- One grouped `cast-salience-risk` or related salience warning, not repeated per-record blocker spam.
+
+Expected readiness outcome:
+
+- Preview/Generate remain available with advisory warning.
+
+Prompt-quality risk:
+
+- Long-context salience degradation if the user ignores optional local pins.
