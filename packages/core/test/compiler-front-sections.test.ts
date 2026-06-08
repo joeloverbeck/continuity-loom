@@ -315,6 +315,72 @@ describe("compiler front-section resolvers", () => {
     }
   });
 
+  it("renders available clue carrier text alongside authored surface cues without discovered-by ids", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              clue_carriers: [
+                {
+                  clue_text: "A clean scrape marks the drawer edge.",
+                  clue_strength: "suggestive",
+                  discovered_by: povId,
+                  audience_visible: "visible",
+                  status: "available"
+                },
+                {
+                  clue_text: "A broken lock hidden under the papers.",
+                  clue_strength: "confirming",
+                  discovered_by: holderId,
+                  audience_visible: "hidden",
+                  status: "suppressed"
+                }
+              ]
+            }
+          }
+        : record
+    );
+
+    const secretSection = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).toContain("Allowed clues and surface cues now:\n- Mara avoids the desk drawer., A clean scrape marks the drawer edge.");
+    expect(secretSection).not.toContain("A broken lock hidden under the papers.");
+    expect(secretSection).not.toContain(`discovered_by`);
+    expect(secretSection).not.toContain(povId);
+    expect(secretSection).not.toContain(holderId);
+  });
+
+  it("renders the existing clue empty state when no surface cues or available carriers exist", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              allowed_surface_cues: [],
+              clue_carriers: [
+                {
+                  clue_text: "A broken lock hidden under the papers.",
+                  clue_strength: "confirming",
+                  discovered_by: holderId,
+                  audience_visible: "hidden",
+                  status: "suppressed"
+                }
+              ]
+            }
+          }
+        : record
+    );
+
+    expect(sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints")).toContain(
+      `Allowed clues and surface cues now:\n${EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues}`
+    );
+  });
+
   it("renders affirmative no-forbidden-reveals secrets without using the empty state", () => {
     const input = populatedInput();
     input.records = input.records.map((record) =>

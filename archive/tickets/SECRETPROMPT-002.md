@@ -1,6 +1,6 @@
 # SECRETPROMPT-002: Reconcile SECRET `clue_carriers` with the compiled `{allowed_clues_and_surface_cues}` placeholder
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/compiler/sections/front.ts` (`allowed_clues_and_surface_cues` resolver) and/or `docs/compiler-contract.md` row 130; regression coverage in `packages/core/test/compiler-front-sections.test.ts`. No schema or stored-data change.
@@ -86,3 +86,27 @@ The audit's verdict: `clue_carriers` *should* be used, because a doc authority (
 
 1. `npm test --workspace @loom/core -- compiler-front-sections` (targeted proof).
 2. `npm run lint && npm run typecheck && npm test` (full-pipeline gate).
+
+## Outcome
+
+Completed: 2026-06-08
+
+What changed:
+
+- `{allowed_clues_and_surface_cues}` now appends each active SECRET clue carrier's `clue_text` when `status === "available"`, after existing `allowed_surface_cues`.
+- Non-available clue carriers are excluded.
+- The compiler does not render `discovered_by`, audience metadata, or entity ids from clue carriers in the allowed-clues lane.
+- The golden demo prompt now includes the available flour-dust hinge clue carrier.
+- `docs/compiler-contract.md` row 130 now states the available-carrier filter and `clue_text`-only projection.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test --workspace @loom/core -- compiler-front-sections` passed.
+- `npm test --workspace @loom/core -- compiler-golden` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 99 files, 657 tests.

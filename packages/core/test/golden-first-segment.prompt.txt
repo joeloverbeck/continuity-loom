@@ -184,7 +184,7 @@ Characters who must not know yet:
 - Niko Bram
 
 Allowed clues and surface cues now:
-- Elin guards the flour bin too carefully., Niko may notice the letter exists but not read or infer its contents.
+- Elin guards the flour bin too carefully., Niko may notice the letter exists but not read or infer its contents., A clean scrape in flour dust around the rear hinge.
 
 Forbidden reveals now:
 - Do not state the exact ledger page or culprit., Do not let Niko learn the letter's contents in this segment.

@@ -135,7 +135,7 @@ const frontResolvers: ResolverMap = {
       resolveEntityLabels(snapshot, payload.non_holders_to_protect)
     ).join("\n") || EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
   allowed_clues_and_surface_cues: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(payload.allowed_surface_cues)).join("\n") ||
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(allowedClueLines(payload))).join("\n") ||
     EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues,
   forbidden_reveals: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
@@ -261,6 +261,20 @@ function resolveEntityLabel(snapshot: ValidationSnapshot, value: unknown): strin
 
   const record = snapshot.records.find((item) => item.id === id);
   return record ? displayLabel(record) : id;
+}
+
+function allowedClueLines(payload: JsonRecord): string[] {
+  const surfaceCues = Array.isArray(payload.allowed_surface_cues)
+    ? payload.allowed_surface_cues.map(asString).filter(Boolean)
+    : [];
+  const carriers = Array.isArray(payload.clue_carriers) ? payload.clue_carriers : [];
+  const availableCarrierTexts = carriers
+    .map((carrier) => (carrier && typeof carrier === "object" ? (carrier as JsonRecord) : {}))
+    .filter((carrier) => carrier.status === "available")
+    .map((carrier) => asString(carrier.clue_text))
+    .filter(Boolean);
+
+  return [...surfaceCues, ...availableCarrierTexts];
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
