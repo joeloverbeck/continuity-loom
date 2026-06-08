@@ -199,6 +199,67 @@ describe("RecordEditor", () => {
     expect((picker as HTMLSelectElement).value).toBe(idA);
   });
 
+  it("stores VISIBLE AFFORDANCE availability sentinel values from a single select", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <RecordEditor recordType="VISIBLE AFFORDANCE" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />
+    );
+
+    const picker = screen.getByLabelText<HTMLSelectElement>(/^available_to/);
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "group" }).value).toBe("group");
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "any_onstage" }).value).toBe("any_onstage");
+    expect(within(picker).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(picker).queryByRole("option", { name: "Vault" })).toBeNull();
+    expect(within(picker).queryByRole("option", { name: "Select record" })).toBeNull();
+
+    fireEvent.change(picker, { target: { value: "any_onstage" } });
+    fireEvent.change(picker, { target: { value: "group" } });
+    fireEvent.change(screen.getByLabelText(/^label/), { target: { value: "Shared ladder" } });
+    fireEvent.change(screen.getByLabelText(/^prompt_text/), {
+      target: { value: "The ladder can be raised against the wall." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      available_to: "group"
+    });
+  });
+
+  it("renders OBJECT sentinel references while preserving entity-owner saves", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="OBJECT" referenceRecords={entityRecords} onSubmitPayload={onSubmitPayload} />);
+
+    const owner = screen.getByLabelText<HTMLSelectElement>(/^owner/);
+    const carriedBy = screen.getByLabelText<HTMLSelectElement>(/^carried_by/);
+    const currentLocation = screen.getByLabelText<HTMLSelectElement>(/^current_location/);
+
+    expect(within(owner).getByRole<HTMLOptionElement>("option", { name: "none" }).value).toBe("none");
+    expect(within(owner).getByRole<HTMLOptionElement>("option", { name: "unknown" }).value).toBe("unknown");
+    expect(within(owner).getByRole<HTMLOptionElement>("option", { name: "Aster" }).value).toBe(idA);
+    expect(within(owner).queryByRole("option", { name: "Vault" })).toBeNull();
+    expect(within(carriedBy).getByRole<HTMLOptionElement>("option", { name: "none" }).value).toBe("none");
+    expect(within(currentLocation).getByRole<HTMLOptionElement>("option", { name: "carried_by_holder" }).value)
+      .toBe("carried_by_holder");
+    expect(within(currentLocation).getByRole<HTMLOptionElement>("option", { name: "unknown" }).value).toBe("unknown");
+    expect(within(currentLocation).getByRole<HTMLOptionElement>("option", { name: "offstage" }).value).toBe("offstage");
+    expect(within(currentLocation).getByRole<HTMLOptionElement>("option", { name: "Vault" }).value).toBe(idB);
+
+    fireEvent.change(screen.getByLabelText(/^label/), { target: { value: "Lantern" } });
+    fireEvent.change(screen.getByLabelText(/^description/), { target: { value: "A smoky hand lantern." } });
+    fireEvent.change(owner, { target: { value: idA } });
+    fireEvent.change(currentLocation, { target: { value: idB } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalled());
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      owner: idA,
+      current_location: idB
+    });
+  });
+
   it("renders SECRET holders as entity pickers and stores selected ids", async () => {
     const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
 

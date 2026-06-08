@@ -7,6 +7,7 @@ export type FieldKind =
   | "prose"
   | "enum"
   | "reference"
+  | "sentinel_reference"
   | "sentinel_reference_list"
   | "sentinel_prose_list"
   | "list"
@@ -213,10 +214,6 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     promptFacing: isPromptFacingField(name, recordType)
   };
 
-  if (isReferenceSchema(unwrapped, name)) {
-    return { ...base, kind: "reference", referenceRole: roleForField(name) };
-  }
-
   if (isSentinelReferenceListSchema(unwrapped, name)) {
     return {
       ...base,
@@ -224,6 +221,19 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
       enumValues: enumValuesForSchema(unwrapped),
       referenceRole: roleForField(name)
     };
+  }
+
+  if (isSentinelReferenceSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_reference",
+      enumValues: enumValuesForSchema(unwrapped),
+      referenceRole: roleForField(name)
+    };
+  }
+
+  if (isReferenceSchema(unwrapped, name)) {
+    return { ...base, kind: "reference", referenceRole: roleForField(name) };
   }
 
   if (isSentinelProseListSchema(unwrapped, name)) {
@@ -375,6 +385,18 @@ function isSentinelReferenceListSchema(schema: z.ZodType, name: string): boolean
   const hasSentinels = enumValuesForSchema(schema).length > 0;
 
   return hasReferenceArray && hasSentinels;
+}
+
+function isSentinelReferenceSchema(schema: z.ZodType, name: string): boolean {
+  if (!referenceTargetsByRole[roleForField(name)] || schemaType(schema) !== "union") {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasReference = options.some((option) => isReferenceSchema(option, name));
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+
+  return hasReference && hasSentinels;
 }
 
 function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {

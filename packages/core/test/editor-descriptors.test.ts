@@ -17,6 +17,7 @@ const knownKinds = new Set([
   "prose",
   "enum",
   "reference",
+  "sentinel_reference",
   "sentinel_reference_list",
   "sentinel_prose_list",
   "list",
@@ -120,6 +121,33 @@ describe("record editor descriptors", () => {
       kind: "sentinel_reference_list",
       enumValues: ["all_except_holders", "none"],
       referenceRole: "non_holder_to_protect"
+    });
+  });
+
+  it("classifies single reference-or-sentinel fields as sentinel references", () => {
+    expect(getEditorDescriptor("VISIBLE AFFORDANCE")?.fields.find((field) => field.name === "available_to"))
+      .toMatchObject({
+        kind: "sentinel_reference",
+        enumValues: ["group", "any_onstage"],
+        referenceRole: "available_to"
+      });
+
+    const objectFields = new Map(getEditorDescriptor("OBJECT")?.fields.map((field) => [field.name, field]));
+
+    expect(objectFields.get("owner")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["none", "unknown"],
+      referenceRole: "owner"
+    });
+    expect(objectFields.get("carried_by")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["none", "unknown"],
+      referenceRole: "carried_by"
+    });
+    expect(objectFields.get("current_location")).toMatchObject({
+      kind: "sentinel_reference",
+      enumValues: ["carried_by_holder", "unknown", "offstage"],
+      referenceRole: "current_location"
     });
   });
 

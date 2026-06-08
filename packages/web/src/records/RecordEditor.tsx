@@ -71,6 +71,7 @@ export function fieldDefault(field: FieldDescriptor): unknown {
     case "boolean":
       return false;
     case "enum":
+    case "sentinel_reference":
     case "sentinel_reference_list":
       return field.enumValues?.[0] ?? "";
     case "sentinel_prose_list":
@@ -250,6 +251,36 @@ function ReferencePicker({
   return (
     <select {...form.register(path, inputOptions(field))}>
       <option value="">Select record</option>
+      {options.map((record) => (
+        <option key={record.id} value={record.id}>
+          {record.displayLabel}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function SentinelReferencePicker({
+  field,
+  path,
+  form,
+  referenceRecords
+}: {
+  field: FieldDescriptor;
+  path: string;
+  form: UseFormReturn<FormValues>;
+  referenceRecords: readonly RecordSummary[];
+}): React.JSX.Element {
+  const options = eligibleReferenceTargets(field.referenceRole ?? "", referenceRecords);
+
+  return (
+    <select {...form.register(path, inputOptions(field))}>
+      {!field.required ? <option value="">Select record</option> : null}
+      {(field.enumValues ?? []).map((option) => (
+        <option key={option} value={option}>
+          {option}
+        </option>
+      ))}
       {options.map((record) => (
         <option key={record.id} value={record.id}>
           {record.displayLabel}
@@ -502,6 +533,15 @@ export function FieldRenderer({
         return <textarea {...registerText(form.register, path, field)} />;
       case "reference":
         return <ReferencePicker field={field} path={path} form={form} referenceRecords={referenceRecords} />;
+      case "sentinel_reference":
+        return (
+          <SentinelReferencePicker
+            field={field}
+            path={path}
+            form={form}
+            referenceRecords={referenceRecords}
+          />
+        );
       case "sentinel_reference_list":
         return (
           <SentinelReferenceListField
