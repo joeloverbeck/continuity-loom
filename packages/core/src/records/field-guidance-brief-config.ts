@@ -236,6 +236,22 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   brief("current_authoritative_state.line_of_sight_and_visibility", "What can and cannot be seen now.", [
     "{line_of_sight_and_visibility}"
   ], contextGatedCurrentStateOpts),
+  brief(
+    "current_authoritative_state.pov_cannot_perceive_now",
+    "Specific things the POV is barred from perceiving right now.",
+    ["{pov_cannot_perceive_now}"],
+    {
+      ...contextGatedCurrentStateOpts,
+      doctrineWarnings: [
+        "Use only intentional perception limits; do not paste general line-of-sight geometry here."
+      ],
+      examples: ["Mara cannot hear the courier behind the locked pantry door."],
+      antiExamples: ["The pantry door is west of the kitchen and the hallway is dim."],
+      authoringAdvice:
+        "Name the forbidden perception directly: what the POV cannot see, hear, smell, touch, or otherwise know from the local moment.",
+      relatedFields: ["GENERATION BRIEF.current_authoritative_state.line_of_sight_and_visibility"]
+    }
+  ),
   brief("current_authoritative_state.routes_and_exits[]", "Available routes, exits, and movement constraints.", [
     "{routes_and_exits}"
   ], contextGatedCurrentStateOpts),

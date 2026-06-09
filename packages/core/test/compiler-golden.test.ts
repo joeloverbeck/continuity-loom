@@ -181,4 +181,20 @@ describe("compiler golden prompt", () => {
     expect(first.prompt).toContain("The archive key cannot duplicate itself.");
     expect(first.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" });
   });
+
+  it("omits the hard-canon section without leaving an extra blank line when no hard canon is selected", () => {
+    const input = goldenInput();
+    input.records = input.records.filter((record) => record.type !== "FACT");
+    input.generationSession.active_working_set!.selected_records =
+      input.generationSession.active_working_set!.selected_records.filter(
+        (recordId) => recordId !== "019b0298-5c00-7000-8000-000000000503"
+      );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(prompt).not.toContain("<hard_canon>");
+    expect(prompt).not.toContain("None selected for this generation");
+    expect(prompt).toContain("</prose_mode>\n\n<current_authoritative_state>");
+    expect(prompt).not.toContain("</prose_mode>\n\n\n<current_authoritative_state>");
+  });
 });

@@ -73,18 +73,12 @@ Special style constraints: Keep the prose local to the cellar exchange.
 Do not reveal the letter's contents.
 </prose_mode>
 
-<hard_canon>
-None selected for this generation
-</hard_canon>
-
 <current_authoritative_state>
 Time: Late morning, minutes after the market bell rang early.
 Location: 019b0298-5c00-7000-8000-013000000012
-Onstage entities: Elin Vale
-Niko Bram
+Onstage entities: Elin Vale, Niko Bram
 Immediate situation: Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.
-Offstage but pressuring entities: Mara Venn
-Orin Ward
+Offstage but pressuring entities: Mara Venn, Orin Ward
 Current physical positions: Elin stands beside the flour bin with the shuttered lantern in hand.
 Niko stands near the stair door and can see Elin, the latch, and the flour dust.
 Current agency/status: 019b0298-5c00-7000-8000-013000000001
@@ -147,12 +141,6 @@ POV knows:
 POV believes, suspects, or misreads:
 - Niko will be safer if he knows a letter exists but not what it says.
 
-POV does not know:
-None specified
-
-POV cannot perceive right now:
-Elin and Niko can see each other; the letter itself is not visible.
-
 Prompt-label rule:
 Prompt labels, dossier headings, and entity names are writer-facing handles. They do not grant the POV knowledge of names, identities, secrets, motives, backstory, or offstage facts.
 
@@ -200,6 +188,7 @@ Action pressure:
 - Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
 - Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
 - Missing ledger page; The scene may hint at the ledger without naming the culprit or page.
+- If Niko reads or carries the letter, he becomes harder to shield from the audit. [consequence pending]; Orin could treat him as a participant rather than a witness.
 - listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Knowledge pressure:
@@ -212,7 +201,7 @@ Knowledge pressure:
 Relationship and emotion pressure:
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
 - Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
-- They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.
+- They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
 
 Material pressure:
 - sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.
@@ -284,7 +273,7 @@ None active
 <offstage_relevance>
 Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
 
-None
+Offstage pressure or interruption is active, but no offstage cast slice has been authored. Establish why the offstage party matters now, whether and how it can interrupt (entrance, communication, timing, or route), and what must not be revealed or assumed.
 </offstage_relevance>
 
 <relevant_facts_beliefs_events>

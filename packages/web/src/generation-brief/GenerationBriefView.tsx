@@ -274,6 +274,7 @@ export function GenerationBriefView(): React.JSX.Element {
       environmental_conditions: session.current_authoritative_state?.environmental_conditions ?? "",
       entity_statuses: session.current_authoritative_state?.entity_statuses ?? "",
       line_of_sight_and_visibility: session.current_authoritative_state?.line_of_sight_and_visibility ?? "",
+      pov_cannot_perceive_now: session.current_authoritative_state?.pov_cannot_perceive_now ?? "",
       routes_and_exits: session.current_authoritative_state?.routes_and_exits ?? [],
       available_time: session.current_authoritative_state?.available_time ?? "",
       consent_or_force_conditions: session.current_authoritative_state?.consent_or_force_conditions ?? "none",
@@ -557,6 +558,22 @@ export function GenerationBriefView(): React.JSX.Element {
           <BriefFieldHelp
             path="current_authoritative_state.line_of_sight_and_visibility"
             label="line_of_sight_and_visibility"
+          />
+          <label>
+            <BriefLabel
+              path="current_authoritative_state.pov_cannot_perceive_now"
+              label="pov_cannot_perceive_now"
+              generationContext={generationContext}
+            />
+            <textarea
+              name="generationSession.current_authoritative_state.pov_cannot_perceive_now"
+              value={session.current_authoritative_state?.pov_cannot_perceive_now ?? ""}
+              onChange={(event) => updateCurrentAuthoritativeState({ pov_cannot_perceive_now: event.target.value })}
+            />
+          </label>
+          <BriefFieldHelp
+            path="current_authoritative_state.pov_cannot_perceive_now"
+            label="pov_cannot_perceive_now"
           />
           <label>
             <BriefLabel

@@ -52,6 +52,7 @@ describe("field guidance for brief and story config", () => {
         "GENERATION BRIEF.current_authoritative_state.environmental_conditions",
         "GENERATION BRIEF.current_authoritative_state.entity_statuses",
         "GENERATION BRIEF.current_authoritative_state.line_of_sight_and_visibility",
+        "GENERATION BRIEF.current_authoritative_state.pov_cannot_perceive_now",
         "GENERATION BRIEF.current_authoritative_state.routes_and_exits[]",
         "GENERATION BRIEF.current_authoritative_state.available_time",
         "GENERATION BRIEF.current_authoritative_state.consent_or_force_conditions",
@@ -143,6 +144,18 @@ describe("field guidance for brief and story config", () => {
     expect(beginAfter?.continuityRole).toContain("Imperative cut-point");
     expect(beginAfter?.authoringAdvice).toContain("use last_visible_moment for the descriptive image");
     expect(beginAfter?.relatedFields).toContain("GENERATION BRIEF.immediate_handoff.last_visible_moment");
+  });
+
+  it("distinguishes POV perception limits from line-of-sight geometry", () => {
+    const perception = getFieldGuidance("GENERATION BRIEF.current_authoritative_state.pov_cannot_perceive_now");
+
+    expect(perception?.promptDestinations).toEqual(["{pov_cannot_perceive_now}"]);
+    expect(perception?.requiredness).toBe("conditional");
+    expect(perception?.doctrineWarnings?.join(" ")).toContain("do not paste general line-of-sight geometry");
+    expect(perception?.antiExamples?.join(" ")).toContain("hallway is dim");
+    expect(perception?.relatedFields).toContain(
+      "GENERATION BRIEF.current_authoritative_state.line_of_sight_and_visibility"
+    );
   });
 
   it("keeps prior accepted prose guidance as None or a user-authored bridge", () => {

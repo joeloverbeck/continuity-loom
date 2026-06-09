@@ -222,6 +222,28 @@ function emptyInput(): BuildValidationSnapshotInput {
   };
 }
 
+function currentStateWithOffstagePressure(): NonNullable<
+  BuildValidationSnapshotInput["generationSession"]["current_authoritative_state"]
+> {
+  return {
+    current_time: "Night.",
+    current_location: "Archive.",
+    onstage_entities: [],
+    immediate_situation_summary: "The archive door is closed while pressure builds outside.",
+    offstage_pressuring_entities: ["The guard is nearing the archive door."],
+    positions: "No one else is onstage.",
+    possessions: "None relevant.",
+    visible_conditions: [],
+    environmental_conditions: "Quiet hallway.",
+    entity_statuses: "The guard is offstage.",
+    line_of_sight_and_visibility: "The guard is not visible from inside.",
+    routes_and_exits: ["archive door"],
+    available_time: "A few seconds.",
+    consent_or_force_conditions: "none",
+    current_locks: ["The guard cannot be seen until the door opens."]
+  };
+}
+
 function sectionBody(prompt: string, section: string): string {
   const pattern = new RegExp(`<${section}(?:\\s[^>]*)?>([\\s\\S]*?)</${section}>`);
   return prompt.match(pattern)?.[1] ?? "";
@@ -294,7 +316,7 @@ describe("compiler cast-section resolvers", () => {
     expect(JSON.stringify(snapshot.records)).toBe(before);
   });
 
-  it("omits empty present-minor and offstage compressed cast sections", () => {
+  it("omits empty present-minor and gate-closed offstage compressed cast sections", () => {
     const prompt = compilePrompt(buildValidationSnapshot(emptyInput())).prompt;
 
     expect(prompt).not.toContain("<present_minor_cast>");
@@ -308,10 +330,12 @@ describe("compiler cast-section resolvers", () => {
 
     expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
     expect(sectionBody(populated, "present_minor_cast")).toContain("Keep him silent unless directly addressed.");
-    expect(sectionBody(populated, "offstage_relevance")).toContain("The guard may return soon.");
+    const offstageRelevance = sectionBody(populated, "offstage_relevance");
+    expect(offstageRelevance).toContain("The guard may return soon.");
+    expect(offstageRelevance).not.toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
   });
 
-  it("keeps offstage relevance present when offstage interruption focus is active", () => {
+  it("renders the offstage relevance directive when interruption focus opens the gate with no offstage cast", () => {
     const prompt = compilePrompt(
       buildValidationSnapshot({
         ...emptyInput(),
@@ -330,6 +354,24 @@ describe("compiler cast-section resolvers", () => {
 
     expect(prompt).toContain("<offstage_relevance>");
     expect(sectionBody(prompt, "offstage_relevance")).toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
+    expect(sectionBody(prompt, "offstage_relevance")).not.toContain(">None<");
+  });
+
+  it("renders the offstage relevance directive when offstage pressure opens the gate with no offstage cast", () => {
+    const prompt = compilePrompt(
+      buildValidationSnapshot({
+        ...emptyInput(),
+        generationSession: {
+          ...emptyInput().generationSession,
+          current_authoritative_state: currentStateWithOffstagePressure()
+        }
+      })
+    ).prompt;
+
+    const offstageRelevance = sectionBody(prompt, "offstage_relevance");
+    expect(prompt).toContain("<offstage_relevance>");
+    expect(offstageRelevance).toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
+    expect(offstageRelevance).not.toBe("None");
   });
 
   it("renders long cast labels fully in voice pins and once in compressed notes", () => {

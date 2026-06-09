@@ -218,6 +218,23 @@ describe("compiler front-section resolvers", () => {
     expect(currentState).not.toContain(`Offstage but pressuring entities: ${holderId}`);
   });
 
+  it("renders multiple current-state entity references as comma-joined single lines", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.onstage_entities = [povId, holderId];
+    input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [holderId, povId];
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionLines(prompt, "current_authoritative_state")).toContain("Onstage entities: Jon Vale, Mara Lorne");
+    expect(sectionLines(prompt, "current_authoritative_state")).toContain(
+      "Offstage but pressuring entities: Mara Lorne, Jon Vale"
+    );
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain("Onstage entities: Jon Vale\nMara Lorne");
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain(
+      "Offstage but pressuring entities: Mara Lorne\nJon Vale"
+    );
+  });
+
   it("falls back to a raw current-state entity id when no matching record is selected", () => {
     const input = populatedInput();
     input.generationSession.current_authoritative_state!.onstage_entities = [danglingHolderId];
@@ -282,13 +299,15 @@ describe("compiler front-section resolvers", () => {
 
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
 
     expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
       "No additional user narrowing; use the universal local stop rule above."
     );
     expect(sectionBody(prompt, "content_policy")).toContain(`RATING: ${EMPTY_STATE_CONSTANTS.rating_label}`);
     expect(sectionBody(prompt, "story_contract")).toContain(`Title: ${EMPTY_STATE_CONSTANTS.title}`);
-    expect(sectionBody(prompt, "hard_canon")).toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
+    expect(prompt).not.toContain("<hard_canon>");
+    expect(prompt).not.toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(EMPTY_STATE_CONSTANTS.current_time);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.recent_causal_context);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(
@@ -301,6 +320,14 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
     );
+    expect(prompt).toContain("<pov_knowledge_constraints>");
+    expect(povSection).toContain("Prompt-label rule:");
+    expect(povSection).toContain("Non-POV interiority rule:");
+    expect(povSection).not.toContain("POV knows:");
+    expect(povSection).not.toContain("POV believes, suspects, or misreads:");
+    expect(povSection).not.toContain("POV does not know:");
+    expect(povSection).not.toContain("POV cannot perceive right now:");
+    expect(povSection).not.toContain(EMPTY_STATE_CONSTANTS.pov_knows);
   });
 
   it("renders supplied soft-unit guidance once and omits it when blank", () => {
@@ -374,6 +401,61 @@ describe("compiler front-section resolvers", () => {
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("does not reuse line-of-sight state as POV cannot-perceive text", () => {
+    const input = populatedInput();
+    input.records = input.records.filter((record) => record.id === povId || record.id === factId);
+    input.generationSession.active_working_set!.selected_records = [povId, factId];
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility =
+      "Jon can see Mara but not inside the drawer.";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(
+      "Line of sight / visibility: Jon can see Mara but not inside the drawer."
+    );
+    expect(sectionBody(prompt, "pov_knowledge_constraints")).not.toContain("POV cannot perceive right now:");
+    expect(sectionBody(prompt, "pov_knowledge_constraints")).not.toContain(
+      "Jon can see Mara but not inside the drawer."
+    );
+  });
+
+  it("renders authored POV cannot-perceive text independently of line-of-sight state", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility =
+      "Jon can see Mara but not inside the drawer.";
+    input.generationSession.current_authoritative_state!.pov_cannot_perceive_now =
+      "Jon cannot hear the messenger behind the archive door.";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(
+      "Line of sight / visibility: Jon can see Mara but not inside the drawer."
+    );
+    expect(povSection).toContain(
+      "POV cannot perceive right now:\nJon cannot hear the messenger behind the archive door."
+    );
+    expect(povSection).not.toContain("Jon can see Mara but not inside the drawer.");
+  });
+
+  it("renders populated POV knowledge lines while omitting empty sibling lines", () => {
+    const input = populatedInput();
+    input.records = input.records.filter((record) => record.id === povId || record.id === factId);
+    input.generationSession.active_working_set!.selected_records = [povId, factId];
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility = "";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
+
+    expect(povSection).toContain("POV knows:\n- The tower bell never rings after midnight.");
+    expect(povSection).not.toContain("POV believes, suspects, or misreads:");
+    expect(povSection).not.toContain("POV does not know:");
+    expect(povSection).not.toContain("POV cannot perceive right now:");
+    expect(povSection).not.toContain("None specified");
+    expect(povSection).toContain("Prompt-label rule:");
+    expect(povSection).toContain("Non-POV interiority rule:");
   });
 
   it("renders ambiguous audience perception without placing the secret in existing audience lanes", () => {

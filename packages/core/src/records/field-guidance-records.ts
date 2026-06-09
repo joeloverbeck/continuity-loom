@@ -128,11 +128,113 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     authoringAdvice:
       "Use the literal none to affirm that no reveals are forbidden beyond the stated reveal permission; do not leave an active secret blank."
   }],
+  ["RELATIONSHIP.status", {
+    short: "Whether the relationship is eligible to pressure new prose.",
+    enumValues: {
+      active: { short: "Live; selected active relationships can compile into pressure." },
+      resolved: { short: "Settled; should not drive new relationship pressure." },
+      abandoned: { short: "Intentionally dropped by the author." }
+    }
+  }],
+  ["RELATIONSHIP.axis", {
+    short: "The dimension of the bond. Pick the single axis the pressure runs along; nuance goes in prose fields.",
+    enumValues: {
+      trust: { short: "One party relies on the other's honesty, care, or steadiness." },
+      fear: { short: "One party is afraid of the other or what the other may do." },
+      desire: { short: "One party wants closeness, approval, possession, or response from the other." },
+      debt: { short: "One party owes the other and feels the weight of owing." },
+      intimacy: { short: "Private closeness, familiarity, or vulnerability shapes the bond." },
+      loyalty: { short: "Allegiance or chosen faithfulness pressures action." },
+      resentment: { short: "Old or current grievance sharpens the bond." },
+      power_imbalance: { short: "One party holds leverage or authority over the other." },
+      attention: { short: "Notice, neglect, watching, or being watched defines the pressure." },
+      familiarity: { short: "Shared history or practiced knowledge changes how they read each other." },
+      approval: { short: "One party wants or withholds approval." },
+      respect: { short: "Esteem, contempt, or earned regard shapes behavior." },
+      obligation: { short: "Duty inside the relationship presses on choice." },
+      hostility: { short: "Open dislike or antagonism shapes the interaction." },
+      dependency: { short: "One party needs the other materially, emotionally, or socially." },
+      rivalry: { short: "Competition between them drives comparison or opposition." },
+      protectiveness: { short: "One party feels responsible for shielding the other." },
+      other: { short: "None of the listed axes fit; explain the bond in description." }
+    }
+  }],
+  ["RELATIONSHIP.direction_kind", {
+    short: "Whether the quality flows one way or both.",
+    relatedFields: ["RELATIONSHIP.from", "RELATIONSHIP.to"],
+    enumValues: {
+      directed: { short: "From -> to only." },
+      bidirectional: { short: "Held by both parties." }
+    }
+  }],
+  ["RELATIONSHIP.from", {
+    short: "The entity who holds this relationship quality: the one who trusts, fears, owes, wants, or resents.",
+    authoringAdvice: "For a directed axis, from is the subject of the feeling; to is its target.",
+    relatedFields: ["RELATIONSHIP.to", "RELATIONSHIP.direction_kind"]
+  }],
+  ["RELATIONSHIP.to", {
+    short: "The entity the relationship is directed at: the one trusted, feared, owed, wanted, or resented.",
+    authoringAdvice: "For bidirectional relationships, still choose the clearest anchor pair and explain reciprocity in prose.",
+    relatedFields: ["RELATIONSHIP.from", "RELATIONSHIP.direction_kind"]
+  }],
+  ["RELATIONSHIP.value", {
+    short: "Intensity of the bond on its axis.",
+    enumValues: {
+      none: { short: "Effectively absent." },
+      trace: { short: "Barely present." },
+      low: { short: "Light pressure; easy to override." },
+      medium: { short: "Noticeable pressure that can shape the moment." },
+      high: { short: "Strong pressure that is hard to ignore." },
+      extreme: { short: "Dominates how this party acts toward the other." }
+    }
+  }],
+  ["RELATIONSHIP.valence", {
+    short: "The shape of reciprocity or stability between the two parties.",
+    enumValues: {
+      symmetric: { short: "Both feel it similarly." },
+      asymmetric: { short: "One party feels it far more than the other." },
+      bidirectional: { short: "Mutual but not necessarily equal." },
+      adversarial: { short: "Opposed or hostile." },
+      unstable: { short: "Fluctuating or contested." }
+    }
+  }],
+  ["RELATIONSHIP.visibility", {
+    short: "Who can perceive this relationship.",
+    enumValues: {
+      private: { short: "Not visible to others." },
+      shared: { short: "Known to some involved parties." },
+      public: { short: "Widely known in-world." },
+      hidden: { short: "Actively concealed." },
+      audience_only: { short: "Visible to the reader but not to characters; use for dramatic irony." }
+    }
+  }],
+  ["RELATIONSHIP.description", {
+    short: "What the bond is: its nature, history, and stakes. Also used as the record's display label in the prompt.",
+    details:
+      "This is the stable relationship premise the prose writer sees before the live pressure. It should explain why this bond matters across segments.",
+    examples: ["They were close before the trial, but each now treats honesty as a different kind of risk."],
+    antiExamples: ["She is angry at him right now."],
+    authoringAdvice:
+      "State the relationship and why it matters; keep it stable across segments. Pressure that changes now goes in pressure_text or current_expression.",
+    relatedFields: ["RELATIONSHIP.pressure_text", "RELATIONSHIP.current_expression"]
+  }],
   ["RELATIONSHIP.pressure_text", {
     short: "The live relational pressure that can bend behavior now.",
+    details:
+      "The internal or relational charge that pushes a choice, word, silence, refusal, or concession in the next segment. This is distinct from how that pressure visibly shows.",
     examples: ["Trust is brittle: she wants his help but expects a betrayal."],
     antiExamples: ["They have a complicated relationship."],
-    authoringAdvice: "Name the actionable pressure, not just the relationship label."
+    authoringAdvice: "Name the actionable pressure, not just the relationship label.",
+    relatedFields: ["RELATIONSHIP.current_expression", "RELATIONSHIP.description"]
+  }],
+  ["RELATIONSHIP.current_expression", {
+    short: "How the relationship visibly shows right now: the behavior the POV and others can perceive.",
+    details:
+      "The observable, embodied manifestation: tone, body language, distance, touch, eye contact, hesitation, warmth, or coldness. It answers what a camera would catch, while pressure_text names the unseen charge driving it. It compiles into the relationship pressure line alongside pressure_text.",
+    examples: ["They stand close but leave a careful inch between them; his voice flattens whenever she decides without asking."],
+    antiExamples: ["He resents needing her."],
+    authoringAdvice: "Write what is seen or heard, not what is felt.",
+    relatedFields: ["RELATIONSHIP.pressure_text", "RELATIONSHIP.description"]
   }],
   ["EMOTION.behavioral_pressure[]", {
     short: "Closed selection of behaviors this emotion pressures.",

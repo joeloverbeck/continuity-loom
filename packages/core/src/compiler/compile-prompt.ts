@@ -64,6 +64,16 @@ const manualDirectiveBlocks: readonly {
   { label: "Do not force", placeholder: "manual_do_not_force" }
 ];
 
+const povKnowledgeConstraintBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+}[] = [
+  { label: "POV knows", placeholder: "pov_knows" },
+  { label: "POV believes, suspects, or misreads", placeholder: "pov_believes_suspects_misreads" },
+  { label: "POV does not know", placeholder: "pov_does_not_know" },
+  { label: "POV cannot perceive right now", placeholder: "pov_cannot_perceive_now" }
+];
+
 export { SECTION_ORDER };
 
 export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
@@ -89,6 +99,10 @@ function renderPrompt(snapshot: ValidationSnapshot): string {
 }
 
 function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot): string | null {
+  if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
+    return null;
+  }
+
   if (sectionId === "present_minor_cast" && !hasSelectedCastBand(snapshot, "present_minor_cast_compressed")) {
     return null;
   }
@@ -111,6 +125,10 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
 
   if (sectionId === "manual_directive") {
     return renderManualDirectiveSection(snapshot);
+  }
+
+  if (sectionId === "pov_knowledge_constraints") {
+    return renderPovKnowledgeConstraintsSection(snapshot);
   }
 
   if (sectionId === "audience_knowledge") {
@@ -151,6 +169,21 @@ function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
     .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
 
   return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
+}
+
+function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): string {
+  const renderedBlocks = povKnowledgeConstraintBlocks
+    .map((block) => {
+      const value = resolvePlaceholder(block.placeholder, snapshot).trim();
+      return value && value !== EMPTY_STATE_CONSTANTS[block.placeholder] ? `${block.label}:\n${value}` : "";
+    })
+    .filter(Boolean);
+  const staticRules = SECTION_TEMPLATES.pov_knowledge_constraints
+    .replace("<pov_knowledge_constraints>\n", "")
+    .replace("\n</pov_knowledge_constraints>", "");
+  const body = [...renderedBlocks, staticRules].join("\n\n");
+
+  return `<pov_knowledge_constraints>\n${body}\n</pov_knowledge_constraints>`;
 }
 
 function renderStopRuleSection(snapshot: ValidationSnapshot): string {
@@ -267,6 +300,10 @@ function hasSelectedCastBand(
   castBand: "present_minor_cast_compressed" | "offstage_relevant_cast"
 ): boolean {
   return snapshot.records.some((record) => record.castBand === castBand);
+}
+
+function hasHardCanon(snapshot: ValidationSnapshot): boolean {
+  return resolvePlaceholder("hard_canon_bullets", snapshot).trim() !== EMPTY_STATE_CONSTANTS.hard_canon_bullets;
 }
 
 function shouldRenderOffstageRelevance(snapshot: ValidationSnapshot): boolean {

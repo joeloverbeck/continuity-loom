@@ -125,7 +125,7 @@ const frontResolvers: ResolverMap = {
   pov_does_not_know: (snapshot) => renderPovDoesNotKnow(snapshot),
   pov_cannot_perceive_now: (snapshot) =>
     valueOrEmpty(
-      snapshot.generationSession.current_authoritative_state?.line_of_sight_and_visibility,
+      snapshot.generationSession.current_authoritative_state?.pov_cannot_perceive_now,
       "pov_cannot_perceive_now"
     ),
   audience_knows: (snapshot) => renderAudienceKnows(snapshot),
@@ -197,7 +197,7 @@ function renderEntityReferenceList(snapshot: ValidationSnapshot, value: unknown)
     return "";
   }
 
-  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join("\n");
+  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join(", ");
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {

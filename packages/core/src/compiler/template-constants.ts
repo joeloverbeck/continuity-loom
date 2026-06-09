@@ -130,18 +130,6 @@ Special style constraints: {special_style_constraints}
 {hard_canon_bullets}
 </hard_canon>`,
   pov_knowledge_constraints: `<pov_knowledge_constraints>
-POV knows:
-{pov_knows}
-
-POV believes, suspects, or misreads:
-{pov_believes_suspects_misreads}
-
-POV does not know:
-{pov_does_not_know}
-
-POV cannot perceive right now:
-{pov_cannot_perceive_now}
-
 Prompt-label rule:
 Prompt labels, dossier headings, and entity names are writer-facing handles. They do not grant the POV knowledge of names, identities, secrets, motives, backstory, or offstage facts.
 

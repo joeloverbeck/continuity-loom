@@ -82,6 +82,7 @@ describe("GenerationBriefView", () => {
       "environmental_conditions",
       "entity_statuses",
       "line_of_sight_and_visibility",
+      "pov_cannot_perceive_now",
       "routes_and_exits",
       "available_time",
       "consent_or_force_conditions",
