@@ -299,6 +299,7 @@ describe("compiler front-section resolvers", () => {
 
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
 
     expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
       "No additional user narrowing; use the universal local stop rule above."
@@ -318,6 +319,14 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
     );
+    expect(prompt).toContain("<pov_knowledge_constraints>");
+    expect(povSection).toContain("Prompt-label rule:");
+    expect(povSection).toContain("Non-POV interiority rule:");
+    expect(povSection).not.toContain("POV knows:");
+    expect(povSection).not.toContain("POV believes, suspects, or misreads:");
+    expect(povSection).not.toContain("POV does not know:");
+    expect(povSection).not.toContain("POV cannot perceive right now:");
+    expect(povSection).not.toContain(EMPTY_STATE_CONSTANTS.pov_knows);
   });
 
   it("renders supplied soft-unit guidance once and omits it when blank", () => {
@@ -391,6 +400,24 @@ describe("compiler front-section resolvers", () => {
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("renders populated POV knowledge lines while omitting empty sibling lines", () => {
+    const input = populatedInput();
+    input.records = input.records.filter((record) => record.id === povId || record.id === factId);
+    input.generationSession.active_working_set!.selected_records = [povId, factId];
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility = "";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
+
+    expect(povSection).toContain("POV knows:\n- The tower bell never rings after midnight.");
+    expect(povSection).not.toContain("POV believes, suspects, or misreads:");
+    expect(povSection).not.toContain("POV does not know:");
+    expect(povSection).not.toContain("POV cannot perceive right now:");
+    expect(povSection).not.toContain("None specified");
+    expect(povSection).toContain("Prompt-label rule:");
+    expect(povSection).toContain("Non-POV interiority rule:");
   });
 
   it("renders ambiguous audience perception without placing the secret in existing audience lanes", () => {

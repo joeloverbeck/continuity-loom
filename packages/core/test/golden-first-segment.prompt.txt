@@ -145,9 +145,6 @@ POV knows:
 POV believes, suspects, or misreads:
 - Niko will be safer if he knows a letter exists but not what it says.
 
-POV does not know:
-None specified
-
 POV cannot perceive right now:
 Elin and Niko can see each other; the letter itself is not visible.
 

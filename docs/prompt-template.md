@@ -134,16 +134,16 @@ Do not force (omit this label and value when empty):
 </manual_directive>
 
 <pov_knowledge_constraints>
-POV knows:
+POV knows (omit this label and value when empty):
 {pov_knows}
 
-POV believes, suspects, or misreads:
+POV believes, suspects, or misreads (omit this label and value when empty):
 {pov_believes_suspects_misreads}
 
-POV does not know:
+POV does not know (omit this label and value when empty):
 {pov_does_not_know}
 
-POV cannot perceive right now:
+POV cannot perceive right now (omit this label and value when empty):
 {pov_cannot_perceive_now}
 
 Prompt-label rule:

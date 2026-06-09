@@ -1,6 +1,6 @@
 # POVEMPTYLINE-001: Omit empty value-lines in `<pov_knowledge_constraints>`
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/core/src/compiler/compile-prompt.ts` (new section renderer), `docs/compiler-contract.md` (§4 rows + §8), `docs/prompt-template.md` (conditional-line note)
@@ -98,3 +98,28 @@ Adjust `template-constants.ts` `pov_knowledge_constraints` so the conditional va
 1. `npm test -- compiler-front-sections`
 2. `npm test -- validation-matrix-knowledge`
 3. `npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added a dedicated `<pov_knowledge_constraints>` renderer that conditionally renders the four POV value-lines only when their resolved values are non-empty and not equal to their deterministic empty-state constants.
+- Kept the `<pov_knowledge_constraints>` section tag plus the static Prompt-label and Non-POV interiority rules always present.
+- Removed the POV value-lines from the static template constant, updated the compiler contract and prompt template conditional-line documentation, and refreshed the frozen prompt golden for the intentional omission of an empty `POV does not know` block.
+- Added compiler front-section coverage for all-empty POV constraints and populated `POV knows` with empty sibling-line omission.
+
+Deviations from original plan:
+
+- None. `pov_cannot_perceive_now` source behavior remains unchanged and is still left to POVPERCEIVE-001.
+
+Verification:
+
+- `npm test -- compiler-front-sections` passed.
+- `npm test -- compiler-golden` passed.
+- `npm test -- validation-matrix-knowledge` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed, with the existing Vite chunk-size warning.

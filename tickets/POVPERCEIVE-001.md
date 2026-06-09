@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — generation-brief schema/draft/readiness, placeholder/empty-state maps, field-guidance, compiler `front.ts`, web editor, `docs/compiler-contract.md`, `docs/story-record-schema.md` (if it documents the brief), demo fixture
-**Deps**: Composes with POVEMPTYLINE-001 (omit-when-empty) but is independently mergeable
+**Deps**: Composes with archived `archive/tickets/POVEMPTYLINE-001.md` (omit-when-empty) but is independently mergeable
 
 ## Problem
 
@@ -76,14 +76,14 @@ Add an editor control in `GenerationBriefView.tsx` with a label/help that clearl
 ## Out of Scope
 
 - Aggregating `visibility_to_pov` from ENTITY STATUS / OBJECT / EVENT records into this field (possible future enhancement; not required here).
-- Empty-line omission of the POV lines (POVEMPTYLINE-001 handles that and composes with the new field).
+- Empty-line omission of the POV lines (completed in `archive/tickets/POVEMPTYLINE-001.md` and composes with the new field).
 - Any change to `line_of_sight_and_visibility` rendering in `<current_authoritative_state>`.
 
 ## Acceptance Criteria
 
 ### Tests That Must Pass
 
-1. A brief with `line_of_sight_and_visibility` set and `pov_cannot_perceive_now` empty: the visibility text appears exactly once (under `Line of sight / visibility:`), and `POV cannot perceive right now:` renders the empty state (or is omitted per POVEMPTYLINE-001).
+1. A brief with `line_of_sight_and_visibility` set and `pov_cannot_perceive_now` empty: the visibility text appears exactly once (under `Line of sight / visibility:`), and `POV cannot perceive right now:` is omitted per archived `archive/tickets/POVEMPTYLINE-001.md`.
 2. A brief with a populated `pov_cannot_perceive_now`: that text renders under `POV cannot perceive right now:` and is independent of `line_of_sight_and_visibility`.
 3. Readiness/draft: the new field is saveable-when-blank and does not introduce a universal blocker.
 4. `guidance-coverage` / `field-guidance-brief-config` tests confirm `{pov_cannot_perceive_now}` has a guidance source.

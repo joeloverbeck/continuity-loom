@@ -64,6 +64,16 @@ const manualDirectiveBlocks: readonly {
   { label: "Do not force", placeholder: "manual_do_not_force" }
 ];
 
+const povKnowledgeConstraintBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+}[] = [
+  { label: "POV knows", placeholder: "pov_knows" },
+  { label: "POV believes, suspects, or misreads", placeholder: "pov_believes_suspects_misreads" },
+  { label: "POV does not know", placeholder: "pov_does_not_know" },
+  { label: "POV cannot perceive right now", placeholder: "pov_cannot_perceive_now" }
+];
+
 export { SECTION_ORDER };
 
 export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
@@ -113,6 +123,10 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
     return renderManualDirectiveSection(snapshot);
   }
 
+  if (sectionId === "pov_knowledge_constraints") {
+    return renderPovKnowledgeConstraintsSection(snapshot);
+  }
+
   if (sectionId === "audience_knowledge") {
     return renderAudienceKnowledgeSection(snapshot);
   }
@@ -151,6 +165,21 @@ function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
     .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
 
   return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
+}
+
+function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): string {
+  const renderedBlocks = povKnowledgeConstraintBlocks
+    .map((block) => {
+      const value = resolvePlaceholder(block.placeholder, snapshot).trim();
+      return value && value !== EMPTY_STATE_CONSTANTS[block.placeholder] ? `${block.label}:\n${value}` : "";
+    })
+    .filter(Boolean);
+  const staticRules = SECTION_TEMPLATES.pov_knowledge_constraints
+    .replace("<pov_knowledge_constraints>\n", "")
+    .replace("\n</pov_knowledge_constraints>", "");
+  const body = [...renderedBlocks, staticRules].join("\n\n");
+
+  return `<pov_knowledge_constraints>\n${body}\n</pov_knowledge_constraints>`;
 }
 
 function renderStopRuleSection(snapshot: ValidationSnapshot): string {
