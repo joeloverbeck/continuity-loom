@@ -7,6 +7,7 @@ import {
 } from "../src/index.js";
 import { enumerateCanonicalPaths } from "../src/records/field-path-enumeration.js";
 import { recordGuidance } from "../src/records/field-guidance-records.js";
+import { relationshipSchema } from "../src/records/relationship-emotion.js";
 
 const recordTypes = [
   "FACT",
@@ -123,6 +124,23 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
     });
   });
 
+  it("gives every author-facing RELATIONSHIP field specific guidance and full enum coverage", () => {
+    const relationshipFields = enumerateCanonicalPaths("RELATIONSHIP", recordEditorDescriptors.RELATIONSHIP!.fields);
+    const enumFields = ["axis", "value", "valence", "direction_kind", "visibility", "status"] as const;
+
+    for (const path of relationshipFields.filter((fieldPath) => fieldPath !== "RELATIONSHIP.id")) {
+      const leafName = path.split(".").at(-1) ?? path;
+      const genericShort = `${leafName.replace(/_/g, " ")} for the RELATIONSHIP record.`;
+      expect(getFieldGuidance(path)?.short, path).not.toBe(genericShort);
+    }
+
+    for (const field of enumFields) {
+      expect(Object.keys(getFieldGuidance(`RELATIONSHIP.${field}`)?.enumValues ?? {}).sort(), field).toEqual(
+        enumOptions(field)
+      );
+    }
+  });
+
   it("partitions OPEN THREAD prose fields and keeps known answers out of prompts", () => {
     expect(getFieldGuidance("OPEN THREAD.summary")).toMatchObject({
       examples: ["Someone inside the chapel is still hiding the stolen ledger."],
@@ -147,3 +165,7 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
     });
   });
 });
+
+function enumOptions(field: "axis" | "value" | "valence" | "direction_kind" | "visibility" | "status"): string[] {
+  return [...((relationshipSchema.shape[field] as { options?: readonly string[] }).options ?? [])].sort();
+}
