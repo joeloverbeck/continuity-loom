@@ -27,7 +27,11 @@ const pressureResolvers: ResolverMap = {
     pressureFromRecords(
       snapshot,
       ["RELATIONSHIP", "EMOTION"],
-      (record, payload) => firstText(payload, ["pressure_text", "surface_expression", "description"]),
+      (record, payload) =>
+        compactParts([
+          firstText(payload, ["pressure_text", "surface_expression", "description"]),
+          asString(payload.current_expression)
+        ]),
       "relationship_emotion_pressure"
     ),
   material_pressure: (snapshot) =>

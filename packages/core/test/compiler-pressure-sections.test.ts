@@ -113,7 +113,8 @@ function pressureRecords(): ValidationRecord[] {
       metadata: metadata(relationshipId, "Relationship A"),
       payload: {
         status: "active",
-        pressure_text: "Old resentment makes every favor feel costly."
+        pressure_text: "Old resentment makes every favor feel costly.",
+        current_expression: "They trade polite favors without meeting each other's eyes."
       }
     },
     {
@@ -387,6 +388,9 @@ describe("compiler pressure-section resolvers", () => {
 
     expect(sectionBody(prompt, "active_working_set")).toContain("Distract the guard at the side door.");
     expect(sectionBody(prompt, "active_working_set")).toContain("Old resentment makes every favor feel costly.");
+    expect(sectionBody(prompt, "active_working_set")).toContain(
+      "They trade polite favors without meeting each other's eyes."
+    );
     expect(sectionBody(prompt, "active_working_set")).toContain("The stair turns sharply before the landing.");
     expect(sectionBody(prompt, "active_working_set")).toContain("Keep replies clipped and guarded.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("Keep the guard calm.");
