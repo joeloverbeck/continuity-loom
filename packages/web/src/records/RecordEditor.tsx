@@ -73,6 +73,7 @@ export function fieldDefault(field: FieldDescriptor): unknown {
     case "enum":
     case "sentinel_reference":
     case "sentinel_reference_list":
+    case "sentinel_prose":
       return field.enumValues?.[0] ?? "";
     case "sentinel_prose_list":
       return [];
@@ -501,6 +502,42 @@ function SentinelProseListField({
   );
 }
 
+function SentinelProseField({
+  field,
+  path,
+  form
+}: {
+  field: FieldDescriptor;
+  path: string;
+  form: UseFormReturn<FormValues>;
+}): React.JSX.Element {
+  const proseMode = "specific_prose";
+  const value = form.watch(path) as unknown;
+  const enumValues = field.enumValues ?? [];
+  const mode = typeof value === "string" && enumValues.includes(value) ? value : proseMode;
+
+  function updateMode(nextMode: string): void {
+    form.setValue(path, nextMode === proseMode ? "" : nextMode, {
+      shouldDirty: true,
+      shouldValidate: true
+    });
+  }
+
+  return (
+    <div className="sentinelProseField">
+      <select aria-label={`${field.name} mode`} value={mode} onChange={(event) => updateMode(event.target.value)}>
+        {enumValues.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+        <option value={proseMode}>{proseMode}</option>
+      </select>
+      {mode === proseMode ? <textarea aria-label={field.name} {...registerText(form.register, path, field)} /> : null}
+    </div>
+  );
+}
+
 function registerText(
   register: UseFormRegister<FormValues>,
   path: string,
@@ -605,6 +642,8 @@ export function FieldRenderer({
             serverIssues={serverIssues}
           />
         );
+      case "sentinel_prose":
+        return <SentinelProseField field={field} path={path} form={form} />;
       case "short_string":
         return <input type="text" {...registerText(form.register, path, field)} />;
     }

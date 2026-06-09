@@ -9,6 +9,7 @@ export type FieldKind =
   | "reference"
   | "sentinel_reference"
   | "sentinel_reference_list"
+  | "sentinel_prose"
   | "sentinel_prose_list"
   | "list"
   | "nested_group"
@@ -245,6 +246,14 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     };
   }
 
+  if (isSentinelProseSchema(unwrapped, name)) {
+    return {
+      ...base,
+      kind: "sentinel_prose",
+      enumValues: enumValuesForSchema(unwrapped)
+    };
+  }
+
   if (isRecordLinkListSchema(unwrapped, name)) {
     return {
       ...base,
@@ -445,6 +454,22 @@ function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {
   const hasSentinels = enumValuesForSchema(schema).length > 0;
 
   return hasProseArray && hasSentinels;
+}
+
+function isSentinelProseSchema(schema: z.ZodType, name: string): boolean {
+  if (schemaType(schema) !== "union" || referenceTargetsByRole[roleForField(name)]) {
+    return false;
+  }
+
+  const options = unionOptions(schema);
+  const hasSentinels = enumValuesForSchema(schema).length > 0;
+  if (!hasSentinels) {
+    return false;
+  }
+
+  const nonSentinelArms = options.filter((option) => enumValuesForSchema(option).length === 0);
+
+  return nonSentinelArms.length === 1 && schemaType(nonSentinelArms[0]!) === "string";
 }
 
 function sentinelListArrayElement(schema: z.ZodType): z.ZodType {
