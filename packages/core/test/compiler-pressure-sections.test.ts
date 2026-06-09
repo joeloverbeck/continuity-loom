@@ -308,6 +308,16 @@ function nonActiveActionPressureRecords(): ValidationRecord[] {
       };
     }
 
+    if (record.id === consequenceId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          status: "resolved"
+        }
+      };
+    }
+
     return record;
   });
 }
@@ -488,8 +498,10 @@ describe("compiler pressure-section resolvers", () => {
 
     expect(activeWorkingSet).toContain("- Who moved the ledger?; A denial would matter.");
     expect(activeWorkingSet).toContain("- Loose latch; The latch can be slipped quietly.");
+    expect(activeWorkingSet).toContain("- The office is under inspection.; The side door may be watched.");
     expect(activeWorkingSet).not.toContain("- Niko: Who moved the ledger?");
     expect(activeWorkingSet).not.toContain("- Niko: Loose latch");
+    expect(activeWorkingSet).not.toContain("- Niko: The office is under inspection.");
   });
 
   it("falls back to the raw holder id in action-pressure summaries when the holder record is absent", () => {
@@ -514,6 +526,9 @@ describe("compiler pressure-section resolvers", () => {
     );
     expect(activeWorkingSet).toContain("- Who moved the ledger? [open thread answered]; A denial would matter.");
     expect(activeWorkingSet).toContain("- Loose latch [affordance unavailable]; The latch can be slipped quietly.");
+    expect(activeWorkingSet).toContain(
+      "- The office is under inspection. [consequence resolved]; The side door may be watched."
+    );
   });
 
   it("omits action-pressure status tags for active and available records", () => {
@@ -526,10 +541,12 @@ describe("compiler pressure-section resolvers", () => {
     );
     expect(activeWorkingSet).toContain("- Who moved the ledger?; A denial would matter.");
     expect(activeWorkingSet).toContain("- Loose latch; The latch can be slipped quietly.");
+    expect(activeWorkingSet).toContain("- The office is under inspection.; The side door may be watched.");
     expect(activeWorkingSet).not.toContain("[intention active]");
     expect(activeWorkingSet).not.toContain("[plan active]");
     expect(activeWorkingSet).not.toContain("[open thread active]");
     expect(activeWorkingSet).not.toContain("[affordance available]");
+    expect(activeWorkingSet).not.toContain("[consequence active]");
   });
 
   it("deduplicates knowledge-pressure labels that match projected text", () => {

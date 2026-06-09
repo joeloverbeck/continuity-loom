@@ -17,14 +17,15 @@ const actionPressureStatusDescriptors: Readonly<Record<string, ActionPressureSta
   INTENTION: { word: "intention", statusField: "status", activeStatus: "active" },
   PLAN: { word: "plan", statusField: "plan_status", activeStatus: "active" },
   "OPEN THREAD": { word: "open thread", statusField: "status", activeStatus: "active" },
-  "VISIBLE AFFORDANCE": { word: "affordance", statusField: "status", activeStatus: "available" }
+  "VISIBLE AFFORDANCE": { word: "affordance", statusField: "status", activeStatus: "available" },
+  CONSEQUENCE: { word: "consequence", statusField: "status", activeStatus: "active" }
 });
 
 const pressureResolvers: ResolverMap = {
   active_action_pressure: (snapshot) =>
     renderRecords(
       snapshot,
-      ["INTENTION", "PLAN", "OPEN THREAD", "VISIBLE AFFORDANCE"],
+      ["INTENTION", "PLAN", "OPEN THREAD", "VISIBLE AFFORDANCE", "CONSEQUENCE"],
       () => true,
       (payload, record) => actionPressureLine(snapshot, record, payload)
     ) || EMPTY_STATE_CONSTANTS.active_action_pressure,
@@ -177,7 +178,13 @@ function payloadOf(record: ValidationRecord): JsonRecord {
 function actionPressureLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
   const line = compactSummaryLine(
     displayLabel(record) + actionPressureStatusTag(record, payload),
-    firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"])
+    firstText(payload, [
+      "behavioral_pressure",
+      "current_step",
+      "possible_pressure_now",
+      "prompt_text",
+      "possible_next_effect"
+    ])
   );
 
   if (record.type !== "INTENTION" && record.type !== "PLAN") {
