@@ -46,7 +46,7 @@ Render the marker inside/next to each `<label>` in the generation-brief sections
 
 ## Out of Scope
 
-- Popup requiredness (BRIEFGUIDE-003).
+- Popup requiredness (completed in `archive/tickets/BRIEFGUIDE-003.md`).
 - Populating requiredness data (completed in `archive/tickets/BRIEFGUIDE-001.md`).
 - Any change to save behavior, the readiness API, or the `ValidationPanel`/`ReadinessChecklist`.
 - Markers on story-config or record-editor surfaces (record editors already show them).

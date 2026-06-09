@@ -1,6 +1,6 @@
 # BRIEFGUIDE-003: Surface requiredness in the field-help popup
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/web/src/field-help/FieldHelp.tsx` reads the new `requiredness`/`requirednessNote` from `FieldGuidance` and renders it. No core/compiler/validation changes.
@@ -62,3 +62,26 @@ Add a `requirednessLabel(requiredness)` mapping: `always` → "Required", `conti
 
 1. `npm test -w @loom/web`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Field-help popovers now render a visible requiredness block when `FieldGuidance.requiredness` is populated.
+- Requiredness labels map to author-facing text: required, required for continuations, required when relevant, and optional.
+- Continuation and conditional tiers point authors back to the readiness checklist for the actual gate, while optional notes from core metadata render alongside the label.
+- Added web tests for always, continuation, optional, and absent-requiredness cases.
+
+Deviations from original plan:
+
+- No a11y test change was needed; the existing popover dialog/trigger association remains unchanged.
+
+Verification:
+
+- `npm test -w @loom/web` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
+- `rg -n "readiness|ValidationPanel|save|compile|generate" packages/web/src/field-help/FieldHelp.tsx` showed only author-facing readiness copy and an existing prompt-description sentence, not gate/save imports or behavior.

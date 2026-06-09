@@ -1028,6 +1028,20 @@ button:disabled:hover {
   font-weight: 800;
 }
 
+.fieldHelpRequiredness {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+  border-left: 3px solid #245a8d;
+  padding-left: 8px;
+  color: #39445a;
+  font-size: 0.82rem;
+}
+
+.fieldHelpRequiredness strong {
+  color: #202124;
+}
+
 .fieldHelpPopover p,
 .fieldHelpPopover ul,
 .fieldHelpEnumList {
