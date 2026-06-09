@@ -4,23 +4,23 @@
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds the `SectionRail` component and mounts it into `GenerationBriefView`, plus rail/scroll-spy CSS; no validation, save, or gating change
-**Deps**: SPEC017GENBRIVIS-002, SPEC017GENBRIVIS-003
+**Deps**: SPEC017GENBRIVIS-002, `archive/tickets/SPEC017GENBRIVIS-003.md`
 
 ## Problem
 
-The generation brief is ~7,900 px of scroll with no in-page navigation and no way to tell from anywhere which sections still have unfilled required fields, so fields get overlooked (SPEC-017 Problem Statement §2). This ticket adds a sticky in-page section rail — anchor jumps, scroll-spy highlight, and a quiet per-section draft-fill chip — using the section-fill logic from SPEC017GENBRIVIS-003 and the restructured section cards from SPEC017GENBRIVIS-002.
+The generation brief is ~7,900 px of scroll with no in-page navigation and no way to tell from anywhere which sections still have unfilled required fields, so fields get overlooked (SPEC-017 Problem Statement §2). This ticket adds a sticky in-page section rail — anchor jumps, scroll-spy highlight, and a quiet per-section draft-fill chip — using the section-fill logic from `archive/tickets/SPEC017GENBRIVIS-003.md` and the restructured section cards from SPEC017GENBRIVIS-002.
 
 ## Assumption Reassessment (2026-06-10)
 
 1. The 8 section headings already carry ids the rail anchors to: `active-working-set-brief`, `current-state-brief`, `handoff-brief`, `directive-brief`, `voice-pressure-brief`, `override-brief`, `validation-focus-brief`, `stop-guidance-brief` (`packages/web/src/generation-brief/GenerationBriefView.tsx`, the `aria-labelledby` h3 ids). `focusBriefField`/`resolveBriefFieldTarget` (`:318–350`) already resolve targets and `scrollIntoView`; anchor jumps reuse these ids with `scroll-margin-top`. The restructured cards (SPEC017GENBRIVIS-002) keep these ids stable.
 2. SPEC-017 D3: the rail lists Validation plus the 8 sections; each entry is an anchor jump + scroll-spy active highlight (IntersectionObserver) + a per-section fill chip ("3/3 required" success, "1 required empty" amber, "n filled" neutral). It degrades to a horizontal jump bar under the page header at narrow widths. Two open questions stand (SPEC-017 Risks): rail placement (right-edge assumed; flip if it crowds the 1280 px layout) and final section-description copy (review against `docs/prompt-template.md` destination names) — both are implementation-time decisions, not blockers.
-3. Shared boundary under audit: the rail consumes the section-fill helper + `isRequiredNow` from SPEC017GENBRIVIS-003 (chip data) and the section cards/heading ids from SPEC017GENBRIVIS-002 (jump targets). IntersectionObserver lives behind a small seam so the chip/anchor logic is unit-testable while scroll-spy is covered by the manual pass (SPEC017GENBRIVIS-006); jsdom cannot exercise IntersectionObserver directly.
+3. Shared boundary under audit: the rail consumes the section-fill helper + `isRequiredNow` from `archive/tickets/SPEC017GENBRIVIS-003.md` (chip data) and the section cards/heading ids from SPEC017GENBRIVIS-002 (jump targets). IntersectionObserver lives behind a small seam so the chip/anchor logic is unit-testable while scroll-spy is covered by the manual pass (SPEC017GENBRIVIS-006); jsdom cannot exercise IntersectionObserver directly.
 4. FOUNDATIONS §11 / §29.5: the chips render the section-fill helper's advisory output ("filled"/"empty"), gate nothing, and never use "valid"/"ready"; the readiness panel (`ValidationPanel`) remains first on the page and the sole diagnostic authority.
 5. §27 (UI/workflow): a sticky in-page section nav with anchor links and scroll-spy is the research-backed pattern for a long page an expert revisits with a specific target — it makes the brief legible without accordions or a mode switch, satisfying §27's "pleasant, fast, tractable" intent. This stays within the brief surface (no §6 five-surface boundary change).
 
 ## Architecture Check
 
-1. A dedicated `SectionRail` component keeps navigation/scroll-spy concerns out of the already-large `GenerationBriefView`; it reuses the existing heading ids and `focusBriefField` rather than inventing a parallel anchor scheme, and reuses the SPEC017GENBRIVIS-003 chip logic rather than recomputing fill state. Putting IntersectionObserver behind a seam isolates the one untestable piece.
+1. A dedicated `SectionRail` component keeps navigation/scroll-spy concerns out of the already-large `GenerationBriefView`; it reuses the existing heading ids and `focusBriefField` rather than inventing a parallel anchor scheme, and reuses the `archive/tickets/SPEC017GENBRIVIS-003.md` chip logic rather than recomputing fill state. Putting IntersectionObserver behind a seam isolates the one untestable piece.
 2. No backwards-compatibility aliasing/shims: the rail is additive navigation; no existing anchor or focus path is duplicated or aliased.
 
 ## Verification Layers
@@ -34,7 +34,7 @@ The generation brief is ~7,900 px of scroll with no in-page navigation and no wa
 
 ### 1. `SectionRail` component (new)
 
-Create `packages/web/src/generation-brief/SectionRail.tsx`: a labeled `nav` listing Validation + the 8 sections. Each entry renders an anchor jump (reusing the heading ids / `focusBriefField`, relying on `scroll-margin-top`), a scroll-spy active class driven by an IntersectionObserver behind a small injectable seam, and the fill chip from the SPEC017GENBRIVIS-003 helper. Provide the narrow-viewport horizontal jump-bar layout.
+Create `packages/web/src/generation-brief/SectionRail.tsx`: a labeled `nav` listing Validation + the 8 sections. Each entry renders an anchor jump (reusing the heading ids / `focusBriefField`, relying on `scroll-margin-top`), a scroll-spy active class driven by an IntersectionObserver behind a small injectable seam, and the fill chip from the `archive/tickets/SPEC017GENBRIVIS-003.md` helper. Provide the narrow-viewport horizontal jump-bar layout.
 
 ### 2. Mount into the view
 
@@ -54,7 +54,7 @@ Add rail container, sticky positioning, scroll-spy active state, chip tones (suc
 ## Out of Scope
 
 - The contextual save bar (SPEC017GENBRIVIS-005).
-- The section-fill / `isRequiredNow` computation itself (SPEC017GENBRIVIS-003 owns it).
+- The section-fill / `isRequiredNow` computation itself (`archive/tickets/SPEC017GENBRIVIS-003.md` owns it).
 - A GOV.UK-style "check your answers" read-mode (SPEC-017 Out of Scope).
 - Any readiness/validation/gating change.
 

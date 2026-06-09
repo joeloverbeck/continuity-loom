@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-003: Fill-chip helper and shared `isRequiredNow` predicate
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds two pure helpers (`isRequiredNow`, section fill computation) and refactors `RequirednessMarker` onto the shared predicate; no validation, gating, or behavior change
@@ -82,3 +82,20 @@ Update `RequirednessMarker.tsx` so its `*`-required branches call `isRequiredNow
 1. `npm test --workspace @loom/web -- section-fill`
 2. `npm test --workspace @loom/web -- RequirednessMarker`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed 2026-06-10.
+
+Added the shared `isRequiredNow` predicate, a pure section-fill calculator for the eight generation-brief sections, advisory fill-label data that uses "filled"/"empty"/"required" wording only, and regression tests for the requiredness truth table, continuation context switching, and `RequirednessMarker` output.
+
+Deviation from original plan: none.
+
+Verification:
+
+- `npm test --workspace @loom/web -- section-fill` passed.
+- `npm test --workspace @loom/web -- RequirednessMarker` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `rg -n "requiredness ===|continuation_after_accepted_segment|isRequiredNow" packages/web/src/generation-brief` confirmed `RequirednessMarker` and `section-fill` consume the shared predicate for the current-required rule.
