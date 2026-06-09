@@ -215,7 +215,10 @@ const generationBriefEntries: readonly GuidanceInput[] = [
       ...alwaysRequiredCurrentStateOpts,
       doctrineWarnings: ["Do not derive this from accepted prose, candidate prose, or automatic summaries."],
       examples: ["Elin and Niko are in the cellar while she guards the hidden flour bin."],
-      authoringAdvice: "Keep it local, state-like, and prose-neutral; describe the starting situation, not an outline."
+      antiExamples: ["Elin hid the flour yesterday, Niko followed her, and that is why they are arguing now."],
+      authoringAdvice:
+        "Write a prose-neutral state-now snapshot: what is true at the start, not how the moment got here.",
+      relatedFields: ["GENERATION BRIEF.immediate_handoff.recent_causal_context"]
     }
   ),
   brief("current_authoritative_state.offstage_pressuring_entities[]", "Offstage entities exerting immediate pressure.", [
@@ -250,15 +253,30 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   ], {
     requiredness: "continuation",
     requirednessNote: "Required for continuations; optional for a first segment.",
+    continuityRole:
+      "Launches the segment with recent cause. It is writer-visible context, not automatically POV knowledge.",
+    doctrineWarnings: ["Do not paste or summarize accepted prose here."],
     examples: ["Mara just saw the seal crack and has not warned Ivo yet."],
     antiExamples: ["A recap of the entire previous chapter."],
-    authoringAdvice: "Keep this as causal context, not a transcript or summary archive."
+    authoringAdvice: "Name the immediate causal bridge into this segment; keep current facts in current state.",
+    relatedFields: [
+      "GENERATION BRIEF.current_authoritative_state.immediate_situation_summary",
+      "GENERATION BRIEF.immediate_handoff.last_visible_moment",
+      "GENERATION BRIEF.immediate_handoff.begin_after"
+    ]
   }),
   brief("immediate_handoff.last_visible_moment", "The last visible action or image before generation begins.", [
     "{last_visible_moment}"
   ], {
     requiredness: "continuation",
-    requirednessNote: "For continuations, this or begin_after is required."
+    requirednessNote: "For continuations, this or begin_after is required.",
+    continuityRole:
+      "Gives the concrete final image or action the prose renders from, distinct from the abstract situation summary.",
+    examples: ["The candle gutters as Mara's hand stops on the latch."],
+    antiExamples: ["They are in danger because the guards are coming."],
+    authoringAdvice:
+      "Use a visible sensory anchor or final action, not a causal explanation or broad state summary.",
+    relatedFields: ["GENERATION BRIEF.immediate_handoff.begin_after"]
   }),
   brief("immediate_handoff.prior_accepted_prose_status_or_handoff_note", "A handoff note about accepted prose status, not prose authority.", [
     "{prior_accepted_prose_status_or_handoff_note}"
@@ -267,16 +285,20 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     requirednessNote: "Always renders; leave as None unless you have a user-authored handoff bridge.",
     criticalVisibleHint: "Accepted prose is readable output, not continuity authority.",
     doctrineWarnings: ["Do not use accepted prose as canon for future prompt context."],
-    examples: ["Previous segment accepted; durable changes still need manual record updates."],
-    antiExamples: ["Use the accepted segment as the source of current canon."],
-    authoringAdvice: "State the operational handoff; put durable facts in records."
+    examples: ["None.", "User-authored bridge: after the interrupted toast, Mara is still holding the sealed glass."],
+    antiExamples: ["Previous segment accepted.", "Use the accepted segment as the source of current canon."],
+    authoringAdvice:
+      "Use None for a first segment or when no bridge is needed; otherwise write a short user-authored continuity bridge."
   }),
   brief("immediate_handoff.begin_after", "The exact point where new prose should begin.", ["{begin_after}"], {
     requiredness: "continuation",
     requirednessNote: "For continuations, this or last_visible_moment is required.",
+    continuityRole:
+      "Imperative cut-point: begin prose exactly after this point so the writer does not re-narrate or skip the next decision.",
     examples: ["Begin after the door shuts behind Lio."],
     antiExamples: ["Begin somewhere later after the argument resolves."],
-    authoringAdvice: "Anchor a local start point; do not skip over the next decision."
+    authoringAdvice: "Write the exact start instruction; use last_visible_moment for the descriptive image.",
+    relatedFields: ["GENERATION BRIEF.immediate_handoff.last_visible_moment"]
   }),
   brief("manual_moment_directive.must_render[]", "Required local pressure the next segment must render.", [
     "{manual_must_render}"

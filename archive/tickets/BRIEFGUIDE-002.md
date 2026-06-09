@@ -1,6 +1,6 @@
 # BRIEFGUIDE-002: Make the state/handoff field guidance unmistakable
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — rewrites the guidance prose (semantic help) for five generation-brief fields in `packages/core/src/records/field-guidance-brief-config.ts`, including new `relatedFields` cross-links. No schema, prompt-compilation, or validation behavior changes.
@@ -84,3 +84,25 @@ Rewrite `authoringAdvice`/`examples` so the recommended content is **`None`** (f
 
 1. `npm test -w @loom/core`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Rewrote guidance for the five ambiguous generation-brief fields so current state, recent causal context, last visible moment, begin-after, and prior accepted prose handoff each explain their distinct role.
+- Added related-field cross-links between state/handoff fields and between `last_visible_moment` and `begin_after`.
+- Replaced the old `Previous segment accepted` recommendation with `None` / user-authored bridge examples and kept acceptance bookkeeping only as an anti-example.
+- Added tests that assert the new distinctions, cross-links, and accepted-prose firewall wording.
+
+Deviations from original plan:
+
+- None. Prompt destinations, field paths, compiler behavior, and validation behavior were unchanged.
+
+Verification:
+
+- `npm test -w @loom/core` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.

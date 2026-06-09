@@ -112,6 +112,49 @@ describe("field guidance for brief and story config", () => {
     ).toContain("leave as None");
   });
 
+  it("distinguishes state snapshot guidance from causal handoff guidance", () => {
+    const state = getFieldGuidance("GENERATION BRIEF.current_authoritative_state.immediate_situation_summary");
+    const handoff = getFieldGuidance("GENERATION BRIEF.immediate_handoff.recent_causal_context");
+
+    expect(state?.authoringAdvice).toContain("what is true at the start");
+    expect(state?.antiExamples?.join(" ")).toContain("why they are arguing now");
+    expect(state?.relatedFields).toContain("GENERATION BRIEF.immediate_handoff.recent_causal_context");
+
+    expect(handoff?.continuityRole).toContain("not automatically POV knowledge");
+    expect(handoff?.doctrineWarnings?.join(" ")).toContain("Do not paste or summarize accepted prose");
+    expect(handoff?.relatedFields).toEqual(
+      expect.arrayContaining([
+        "GENERATION BRIEF.current_authoritative_state.immediate_situation_summary",
+        "GENERATION BRIEF.immediate_handoff.last_visible_moment",
+        "GENERATION BRIEF.immediate_handoff.begin_after"
+      ])
+    );
+  });
+
+  it("separates last visible moment from begin-after guidance", () => {
+    const lastVisible = getFieldGuidance("GENERATION BRIEF.immediate_handoff.last_visible_moment");
+    const beginAfter = getFieldGuidance("GENERATION BRIEF.immediate_handoff.begin_after");
+
+    expect(lastVisible?.continuityRole).toContain("concrete final image or action");
+    expect(lastVisible?.examples?.length).toBeGreaterThan(0);
+    expect(lastVisible?.antiExamples?.length).toBeGreaterThan(0);
+    expect(lastVisible?.relatedFields).toContain("GENERATION BRIEF.immediate_handoff.begin_after");
+
+    expect(beginAfter?.continuityRole).toContain("Imperative cut-point");
+    expect(beginAfter?.authoringAdvice).toContain("use last_visible_moment for the descriptive image");
+    expect(beginAfter?.relatedFields).toContain("GENERATION BRIEF.immediate_handoff.last_visible_moment");
+  });
+
+  it("keeps prior accepted prose guidance as None or a user-authored bridge", () => {
+    const entry = getFieldGuidance("GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note");
+
+    expect(entry?.doctrineWarnings?.join(" ")).toContain("Do not use accepted prose as canon");
+    expect(entry?.examples?.join(" ")).toContain("None");
+    expect(entry?.examples?.join(" ")).toContain("User-authored bridge");
+    expect(entry?.examples?.join(" ")).not.toContain("Previous segment accepted");
+    expect(entry?.antiExamples).toContain("Previous segment accepted.");
+  });
+
   it("gives high-risk handoff, directive, and stop fields examples and anti-examples", () => {
     for (const path of [
       "GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note",
