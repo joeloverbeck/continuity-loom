@@ -19,6 +19,8 @@ const knownKinds = new Set([
   "reference",
   "sentinel_reference",
   "sentinel_reference_list",
+  "sentinel_short_string",
+  "sentinel_prose",
   "sentinel_prose_list",
   "list",
   "nested_group",
@@ -210,6 +212,23 @@ describe("record editor descriptors", () => {
       enumValues: ["all_except_holders", "none"],
       referenceRole: "non_holder_to_protect"
     });
+  });
+
+  it("classifies open-thread answers as scalar sentinel prose without broadening event ordering", () => {
+    expect(getEditorDescriptor("OPEN THREAD")?.fields.find((field) => field.name === "answer_if_known"))
+      .toMatchObject({
+        kind: "sentinel_prose",
+        enumValues: ["none"]
+      });
+    expect(getEditorDescriptor("OPEN THREAD")?.fields.find((field) => field.name === "answer_if_known")?.kind)
+      .not.toBe("enum");
+
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "sequence_order")).toMatchObject({
+      kind: "sentinel_short_string",
+      enumValues: ["unknown"]
+    });
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "sequence_order")?.kind)
+      .not.toBe("enum");
   });
 
   it("covers CAST MEMBER core and extended nested fields", () => {

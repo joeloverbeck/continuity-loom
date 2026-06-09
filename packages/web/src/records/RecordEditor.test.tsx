@@ -602,6 +602,144 @@ describe("RecordEditor", () => {
     expect(screen.queryByRole("button", { name: "Add forbidden_reveals" })).toBeNull();
   });
 
+  it("edits OPEN THREAD answer_if_known as prose and can return it to none", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(<RecordEditor recordType="OPEN THREAD" onSubmitPayload={onSubmitPayload} />);
+
+    const answerMode = screen.getByLabelText<HTMLSelectElement>("answer_if_known mode");
+    expect(answerMode.value).toBe("none");
+    expect(screen.queryByRole("textbox", { name: /^answer_if_known/ })).toBeNull();
+
+    fireEvent.change(answerMode, { target: { value: "specific_prose" } });
+    const answer = screen.getByRole<HTMLTextAreaElement>("textbox", { name: /^answer_if_known/ });
+    expect(answer.tagName).toBe("TEXTAREA");
+
+    fireEvent.change(screen.getByLabelText(/^title/), { target: { value: "Who has the ledger?" } });
+    fireEvent.change(screen.getByLabelText(/^summary/), {
+      target: { value: "The stolen ledger has not been traced." }
+    });
+    fireEvent.change(screen.getByLabelText(/^possible_pressure_now/), {
+      target: { value: "The missing ledger can pull suspicion into the next scene." }
+    });
+    fireEvent.change(answer, { target: { value: "Mara hid it beneath the chapel floor." } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalledTimes(1));
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      answer_if_known: "Mara hid it beneath the chapel floor."
+    });
+
+    cleanup();
+    onSubmitPayload.mockClear();
+
+    render(
+      <RecordEditor
+        recordType="OPEN THREAD"
+        payload={{
+          type: "mystery",
+          status: "active",
+          title: "Who has the ledger?",
+          summary: "The stolen ledger has not been traced.",
+          audience_visibility: "explicit",
+          urgency: "high",
+          current_relevance: "high",
+          possible_pressure_now: "The missing ledger can pull suspicion into the next scene.",
+          answer_if_known: "Mara hid it beneath the chapel floor."
+        }}
+        onSubmitPayload={onSubmitPayload}
+      />
+    );
+
+    const loadedAnswerMode = screen.getByLabelText<HTMLSelectElement>("answer_if_known mode");
+    expect(loadedAnswerMode.value).toBe("specific_prose");
+    fireEvent.change(loadedAnswerMode, { target: { value: "none" } });
+    expect(screen.queryByRole("textbox", { name: /^answer_if_known/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalledTimes(1));
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      answer_if_known: "none"
+    });
+  });
+
+  it("edits EVENT sequence_order as text and can return it to unknown", async () => {
+    const onSubmitPayload = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <RecordEditor
+        recordType="EVENT"
+        referenceRecords={entityRecords}
+        onSubmitPayload={onSubmitPayload}
+      />
+    );
+
+    const sequenceMode = screen.getByLabelText<HTMLSelectElement>("sequence_order mode");
+    expect(sequenceMode.value).toBe("unknown");
+    expect(screen.queryByRole("textbox", { name: /^sequence_order/ })).toBeNull();
+
+    fireEvent.change(sequenceMode, { target: { value: "specific_prose" } });
+    const sequenceOrder = screen.getByRole<HTMLInputElement>("textbox", { name: /^sequence_order/ });
+    expect(sequenceOrder.tagName).toBe("INPUT");
+
+    fireEvent.change(screen.getByLabelText(/^status/), { target: { value: "active" } });
+    fireEvent.change(screen.getByLabelText(/^event_kind/), { target: { value: "recent_causal" } });
+    fireEvent.change(sequenceOrder, { target: { value: "2" } });
+    fireEvent.change(screen.getByLabelText(/^description/), {
+      target: { value: "Mara reached the chapel after sundown." }
+    });
+    fireEvent.change(screen.getByLabelText(/^location/), { target: { value: idB } });
+    fireEvent.change(screen.getByLabelText(/^pov_visibility/), { target: { value: "reported" } });
+    fireEvent.change(screen.getByLabelText(/^audience_visibility/), { target: { value: "explicit" } });
+    fireEvent.change(screen.getByLabelText(/^known_by mode/), { target: { value: "public" } });
+    fireEvent.change(screen.getByLabelText(/^current_relevance/), { target: { value: "high" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalledTimes(1));
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      sequence_order: "2"
+    });
+
+    cleanup();
+    onSubmitPayload.mockClear();
+
+    render(
+      <RecordEditor
+        recordType="EVENT"
+        referenceRecords={entityRecords}
+        payload={{
+          status: "active",
+          event_kind: "recent_causal",
+          sequence_order: "After the chapel bell",
+          description: "Mara reached the chapel after sundown.",
+          participants: [],
+          location: idB,
+          pov_visibility: "reported",
+          audience_visibility: "explicit",
+          known_by: "public",
+          causes: [],
+          effects: [],
+          current_relevance: "high"
+        }}
+        onSubmitPayload={onSubmitPayload}
+      />
+    );
+
+    const loadedSequenceMode = screen.getByLabelText<HTMLSelectElement>("sequence_order mode");
+    expect(loadedSequenceMode.value).toBe("specific_prose");
+    expect(screen.getByRole<HTMLInputElement>("textbox", { name: /^sequence_order/ }).value)
+      .toBe("After the chapel bell");
+
+    fireEvent.change(loadedSequenceMode, { target: { value: "unknown" } });
+    expect(screen.queryByRole("textbox", { name: /^sequence_order/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(onSubmitPayload).toHaveBeenCalledTimes(1));
+    expect(onSubmitPayload.mock.calls[0]?.[0]).toMatchObject({
+      sequence_order: "unknown"
+    });
+  });
+
   it("rejects invalid values client-side before submit", async () => {
     render(<RecordEditor recordType="ENTITY" />);
 

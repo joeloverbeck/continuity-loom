@@ -56,6 +56,15 @@ const secretAudienceVisibilityGuidance = {
 };
 
 const specificGuidance = new Map<string, Partial<FieldGuidance>>([
+  ["EVENT.sequence_order", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Authoring note for where the event falls in sequence: a number, prose note, or unknown.",
+    validationRole:
+      "Authoring metadata for continuity review; it is not sent to the prose prompt and does not control compiled event ordering.",
+    authoringAdvice:
+      "Use this as a private ordering note; prompt event ordering is controlled separately by record order, destination family, salience, urgency, label, and id."
+  }],
   ["FACT.audience_visibility", {
     promptFacing: "conditional",
     promptDestinations: ["facts_beliefs_events"],
@@ -174,10 +183,86 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     examples: ["If he hides the tremor, Mira may misread it as fear."],
     antiExamples: ["This opens a larger arc unrelated to the current pressure."]
   }],
+  ["OPEN THREAD.type", {
+    short: "The kind of unresolved thread this record tracks.",
+    enumValues: {
+      question: { short: "A specific unanswered question remains live." },
+      promise: { short: "A made promise still has to be kept, broken, or tested." },
+      unresolved_setup: { short: "A planted setup has not paid off or been dismissed." },
+      tension: { short: "An unresolved strain can affect choices or speech." },
+      mystery: { short: "A hidden cause, identity, or mechanism remains unknown." },
+      risk: { short: "A known danger remains possible but not yet settled." }
+    }
+  }],
+  ["OPEN THREAD.status", {
+    short: "Whether the thread is still active for selection and compilation.",
+    details: "Only status active threads are eligible to compile into the open-thread prompt section.",
+    enumValues: {
+      active: { short: "Still unresolved; selected active threads compile into the prompt." },
+      answered: { short: "The answer is known, but follow-through may still matter elsewhere." },
+      resolved: { short: "The thread is closed and should not pressure new prose." },
+      escalated: { short: "The thread changed into a larger or sharper unresolved pressure." },
+      abandoned: { short: "The author has intentionally dropped the thread." },
+      superseded: { short: "Another record now carries the live version of this thread." }
+    }
+  }],
+  ["OPEN THREAD.title", {
+    short: "The display label and first compiled line for this open thread."
+  }],
+  ["OPEN THREAD.summary", {
+    short: "What the unresolved thread is, in present-tense prose.",
+    details:
+      "Describe the live question, promise, risk, mystery, or tension itself; do not recap prior events, predict consequences, or reveal the answer.",
+    examples: ["Someone inside the chapel is still hiding the stolen ledger."],
+    antiExamples: [
+      "A full recap of how the ledger was stolen, chased, and hidden.",
+      "The missing ledger will make Mara accuse Ivo next."
+    ],
+    relatedFields: ["OPEN THREAD.possible_pressure_now", "OPEN THREAD.answer_if_known"]
+  }],
+  ["OPEN THREAD.audience_visibility", {
+    short: "How visible the unresolved thread is to the audience.",
+    validationRole: "Operational metadata for visibility review; it is not sent to the prose prompt.",
+    enumValues: secretAudienceVisibilityGuidance
+  }],
+  ["OPEN THREAD.urgency", {
+    short: "How sharply this open thread should press on the next local unit.",
+    details: "Compiled active threads include this as the urgency value.",
+    enumValues: {
+      low: { short: "Background pressure; present but not urgent." },
+      medium: { short: "Relevant pressure that may shape choices." },
+      high: { short: "Strong pressure likely to affect the next unit." },
+      critical: { short: "Immediate pressure that should be hard to ignore." }
+    }
+  }],
+  ["OPEN THREAD.current_relevance", {
+    short: "How useful this thread is for current active-working-set selection.",
+    validationRole: "Operational metadata for selection salience; it is not sent to the prose prompt.",
+    enumValues: {
+      none: { short: "Not useful for the current local unit." },
+      low: { short: "Only lightly relevant right now." },
+      medium: { short: "Relevant enough to consider selecting." },
+      high: { short: "Strongly relevant to the current local unit." },
+      critical: { short: "Central to the current local unit." }
+    }
+  }],
   ["OPEN THREAD.possible_pressure_now", {
     short: "How the unresolved thread can matter in the next local moment.",
     examples: ["The unanswered bell can interrupt before the confession finishes."],
     antiExamples: ["Resolve the mystery completely."]
+  }],
+  ["OPEN THREAD.answer_if_known", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Private authoring note for the answer, or none while the answer is unknown.",
+    validationRole: "Authoring metadata for continuity review; it is not sent to the prose prompt.",
+    examples: [
+      "Mara hid the ledger under the chapel floor.",
+      "none: the answer is not yet decided."
+    ],
+    authoringAdvice:
+      "Use this for private resolution tracking only; it cannot pressure closure because it never reaches the writer.",
+    relatedFields: ["OPEN THREAD.summary", "OPEN THREAD.possible_pressure_now"]
   }]
 ]);
 
