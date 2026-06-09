@@ -748,6 +748,8 @@ current_relevance: none | low | medium | high | critical
 status: active | resolved | background | abandoned
 ```
 
+`sequence_order` is authoring metadata only. It is not sent to the prose prompt and does not control compiled event ordering.
+
 ### 8.2 INTENTION
 
 ```yaml

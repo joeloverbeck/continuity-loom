@@ -137,4 +137,13 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
       relatedFields: ["OPEN THREAD.summary", "OPEN THREAD.possible_pressure_now"]
     });
   });
+
+  it("keeps EVENT sequence ordering as authoring-only metadata", () => {
+    expect(getFieldGuidance("EVENT.sequence_order")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: [],
+      validationRole:
+        "Authoring metadata for continuity review; it is not sent to the prose prompt and does not control compiled event ordering."
+    });
+  });
 });

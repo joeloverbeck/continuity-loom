@@ -73,6 +73,7 @@ export function fieldDefault(field: FieldDescriptor): unknown {
     case "enum":
     case "sentinel_reference":
     case "sentinel_reference_list":
+    case "sentinel_short_string":
     case "sentinel_prose":
       return field.enumValues?.[0] ?? "";
     case "sentinel_prose_list":
@@ -505,11 +506,13 @@ function SentinelProseListField({
 function SentinelProseField({
   field,
   path,
-  form
+  form,
+  multiline
 }: {
   field: FieldDescriptor;
   path: string;
   form: UseFormReturn<FormValues>;
+  multiline: boolean;
 }): React.JSX.Element {
   const proseMode = "specific_prose";
   const value = form.watch(path) as unknown;
@@ -533,7 +536,11 @@ function SentinelProseField({
         ))}
         <option value={proseMode}>{proseMode}</option>
       </select>
-      {mode === proseMode ? <textarea aria-label={field.name} {...registerText(form.register, path, field)} /> : null}
+      {mode === proseMode
+        ? multiline
+          ? <textarea aria-label={field.name} {...registerText(form.register, path, field)} />
+          : <input type="text" aria-label={field.name} {...registerText(form.register, path, field)} />
+        : null}
     </div>
   );
 }
@@ -642,8 +649,10 @@ export function FieldRenderer({
             serverIssues={serverIssues}
           />
         );
+      case "sentinel_short_string":
+        return <SentinelProseField field={field} path={path} form={form} multiline={false} />;
       case "sentinel_prose":
-        return <SentinelProseField field={field} path={path} form={form} />;
+        return <SentinelProseField field={field} path={path} form={form} multiline />;
       case "short_string":
         return <input type="text" {...registerText(form.register, path, field)} />;
     }

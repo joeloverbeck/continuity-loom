@@ -1,6 +1,6 @@
 # EVENTSEQ-001: Fix the EVENT.sequence_order editor control and correct its prompt-facing classification
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — generalizes the `@loom/core` sentinel-scalar descriptor/renderer (introduced in OPENTHREAD-001) to the `number | string | sentinel` shape; reclassifies `EVENT.sequence_order` guidance as non-prompt-facing. No schema, validation, or compiler-ordering changes.
@@ -99,3 +99,26 @@ Per `docs/**`, the compiler omitting `sequence_order` does not violate `docs/com
 
 1. `npm test -- editor-descriptors RecordEditor field-guidance`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Generalized scalar sentinel descriptor handling so `EVENT.sequence_order` classifies as `sentinel_short_string` with `unknown`, not a single-option enum.
+- Updated the record editor to render short sentinel scalars as a single-line text input while preserving `OPEN THREAD.answer_if_known` as a textarea sentinel field.
+- Added explicit `EVENT.sequence_order` guidance marking it authoring-only metadata that is not sent to the prose prompt and does not control compiled event ordering.
+- Added a schema note documenting that `sequence_order` is authoring metadata only.
+
+Deviations from original plan:
+
+- The implementation introduced a distinct `sentinel_short_string` field kind rather than overloading `sentinel_prose`, so the renderer can choose the control from the descriptor without reimplementing core field-name heuristics in the web package.
+
+Verification results:
+
+- `npm test -- editor-descriptors RecordEditor field-guidance` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.

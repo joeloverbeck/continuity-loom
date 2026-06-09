@@ -19,6 +19,7 @@ const knownKinds = new Set([
   "reference",
   "sentinel_reference",
   "sentinel_reference_list",
+  "sentinel_short_string",
   "sentinel_prose",
   "sentinel_prose_list",
   "list",
@@ -223,9 +224,11 @@ describe("record editor descriptors", () => {
       .not.toBe("enum");
 
     expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "sequence_order")).toMatchObject({
-      kind: "enum",
+      kind: "sentinel_short_string",
       enumValues: ["unknown"]
     });
+    expect(getEditorDescriptor("EVENT")?.fields.find((field) => field.name === "sequence_order")?.kind)
+      .not.toBe("enum");
   });
 
   it("covers CAST MEMBER core and extended nested fields", () => {

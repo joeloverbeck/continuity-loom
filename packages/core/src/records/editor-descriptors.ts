@@ -9,6 +9,7 @@ export type FieldKind =
   | "reference"
   | "sentinel_reference"
   | "sentinel_reference_list"
+  | "sentinel_short_string"
   | "sentinel_prose"
   | "sentinel_prose_list"
   | "list"
@@ -67,6 +68,7 @@ const PROSE_FIELD_HINTS = [
   "notes",
   "cues",
   "reveals",
+  "answer",
   "triggers"
 ] as const;
 
@@ -246,10 +248,10 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     };
   }
 
-  if (isSentinelProseSchema(unwrapped, name)) {
+  if (isSentinelScalarSchema(unwrapped, name)) {
     return {
       ...base,
-      kind: "sentinel_prose",
+      kind: stringFieldKind(name) === "prose" ? "sentinel_prose" : "sentinel_short_string",
       enumValues: enumValuesForSchema(unwrapped)
     };
   }
@@ -456,7 +458,7 @@ function isSentinelProseListSchema(schema: z.ZodType, name: string): boolean {
   return hasProseArray && hasSentinels;
 }
 
-function isSentinelProseSchema(schema: z.ZodType, name: string): boolean {
+function isSentinelScalarSchema(schema: z.ZodType, name: string): boolean {
   if (schemaType(schema) !== "union" || referenceTargetsByRole[roleForField(name)]) {
     return false;
   }
@@ -469,7 +471,10 @@ function isSentinelProseSchema(schema: z.ZodType, name: string): boolean {
 
   const nonSentinelArms = options.filter((option) => enumValuesForSchema(option).length === 0);
 
-  return nonSentinelArms.length === 1 && schemaType(nonSentinelArms[0]!) === "string";
+  return (
+    nonSentinelArms.length > 0 &&
+    nonSentinelArms.every((option) => schemaType(option) === "string" || schemaType(option) === "number")
+  );
 }
 
 function sentinelListArrayElement(schema: z.ZodType): z.ZodType {

@@ -56,6 +56,15 @@ const secretAudienceVisibilityGuidance = {
 };
 
 const specificGuidance = new Map<string, Partial<FieldGuidance>>([
+  ["EVENT.sequence_order", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Authoring note for where the event falls in sequence: a number, prose note, or unknown.",
+    validationRole:
+      "Authoring metadata for continuity review; it is not sent to the prose prompt and does not control compiled event ordering.",
+    authoringAdvice:
+      "Use this as a private ordering note; prompt event ordering is controlled separately by record order, destination family, salience, urgency, label, and id."
+  }],
   ["FACT.audience_visibility", {
     promptFacing: "conditional",
     promptDestinations: ["facts_beliefs_events"],
