@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-006: Pre-flight console integration verification
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: None — verification-only capstone; exercises SPEC017GENBRIVIS-001–005 end-to-end via the existing gate plus a manual runbook, adds no code/test/doc surface
@@ -76,3 +76,35 @@ Open a real project (the red-bunny reproduction) via the standard Open Project f
 1. `npm run lint && npm run typecheck && npm test`
 2. `npm test --workspace @loom/web -- GenerationBriefView` and `npm test --workspace @loom/web -- section-fill` (the CI-runnable regressions backing runbook steps 3 and 6).
 3. Manual runbook above — the non-CI visual smoke (scroll-spy, scroll height, jump-below-chrome) that has no browser-automation harness in this project.
+
+## Outcome
+
+Completed 2026-06-10.
+
+No production or test code changed for this ticket.
+
+Automated verification:
+
+- `npm test --workspace @loom/web -- GenerationBriefView section-fill` — passed (2 files, 35 tests).
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed (103 files, 777 tests).
+
+Browser smoke:
+
+- Started the local app with `npm run dev`; verified it bound to `127.0.0.1` (`5173` UI, `5174` API).
+- Opened the existing demo project at `/tmp/letter-under-flour-bin-demo` via the standard Open Project flow after the Create Demo Project path reported an expected `folder-exists` 409 for that existing folder.
+- On `/generation-brief`, confirmed Validation renders first and visually distinct, followed by the eight brief section cards with human section titles/descriptions.
+- Confirmed the rail lists Validation plus all eight sections and fill chips; first-segment rail included `Handoff 4 filled`; switching `generation_context` to `continuation_after_accepted_segment` changed the Handoff chip to `3/3 required`; switching back restored the first-segment chip behavior.
+- Confirmed field rows show human labels, requiredness markers, muted schema paths, inline help buttons in the label row, helper text, and the visible prior-accepted-prose hint.
+- Clicked the Stop guidance rail entry and confirmed the URL hash became `#stop-guidance-brief`; DOM metrics showed the Stop Guidance heading visible in the viewport (`stopHeadingVisible: true`, `stopTop: 1733`, `viewportHeight: 2053`). The scroll-spy active class moved off Validation while scrolling.
+- Edited Stop guidance and confirmed the contextual save bar appeared, the readiness panel switched to `Draft has unsaved changes`, saving dismissed the bar, displayed `Draft saved.`, and refreshed readiness to `Ready with recommendations`.
+- Restored the demo project to first-segment context and the original stop-guidance text, then saved; final DOM check showed `hasSaveBar: false`, `generationContext: "first_segment"`, and the original stop-guidance text.
+
+Measurement note:
+
+- The live browser reported `scrollHeight: 7843` for the populated demo brief. There was no preserved pre-change browser measurement in this run, so the exact "materially shorter than pre-change" delta could not be proven numerically. The direct compactness observable did hold: empty optional textareas used compact two-row controls and did not dominate the page.
+
+Cleanup:
+
+- Closed the Playwright browser, stopped the dev server, and removed the temporary `.playwright-cli/` artifacts.
