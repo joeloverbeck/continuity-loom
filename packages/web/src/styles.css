@@ -472,9 +472,25 @@ button:disabled:hover {
 }
 
 .recordTable {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: #ffffff;
+}
+
+.recordTable thead,
+.recordTable tbody,
+.recordTable tr {
+  min-width: max-content;
+}
+
+.recordTable tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .recordTable th,
@@ -483,12 +499,56 @@ button:disabled:hover {
   padding: 9px 10px;
   text-align: left;
   vertical-align: top;
+  background: #ffffff;
+}
+
+.recordTable th:nth-child(1),
+.recordTable td:nth-child(1) {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 112px;
+  min-width: 112px;
+}
+
+.recordTable th:nth-child(2),
+.recordTable td:nth-child(2) {
+  position: sticky;
+  left: 112px;
+  z-index: 2;
+  width: clamp(280px, 34vw, 440px);
+  min-width: 280px;
+  max-width: 440px;
+}
+
+.recordTable th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
 }
 
 .recordTable th {
   color: #5c677d;
   font-size: 0.78rem;
   text-transform: uppercase;
+}
+
+.recordTable th:nth-child(1),
+.recordTable th:nth-child(2) {
+  z-index: 4;
+}
+
+.recordTable .compactCell {
+  white-space: nowrap;
+}
+
+.recordTable td:nth-child(2) .linkButton {
+  display: -webkit-box;
+  width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .linkButton {

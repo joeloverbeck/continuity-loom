@@ -1,6 +1,6 @@
 # SPEC016RECGRITYP-005: Records grid presentation / CSS
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — adds records-grid presentation rules to `packages/web/src/styles.css` (label line-clamp + bounded width, horizontal-scroll container, sticky primary columns + sticky header). Styling only; no logic/schema change.
@@ -73,3 +73,22 @@ Wrap-container selector with `overflow-x: auto`; `position: sticky` (with approp
 1. `npm run lint`
 2. `npm run build`
 3. A visual/manual check is the correct boundary for CSS because the project has no browser-automation harness for layout assertions; the clip/clamp behavior is confirmed in the SPEC016RECGRITYP-006 manual runbook against the red-bunny project.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Added records-table horizontal scrolling.
+- Added sticky Working Set and Label columns plus sticky table headers.
+- Added compact cell styling and a two-line optical clamp for the primary label button while preserving the full `displayLabel` string in the DOM/title.
+
+Deviations from original plan:
+- Kept this ticket CSS-only by making `.recordTable` the scroll container instead of adding a new wrapper element in `RecordBrowser.tsx`.
+
+Verification:
+- `npm run lint` — passed.
+- `npm run build` — passed.
+- `npm test` — passed.
+- `rg -n --fixed-strings -- "-webkit-line-clamp: 2" packages/web/src/styles.css` — found the clamp rule.
+- `rg -n "\\.slice\\(|substring\\(|substr\\(" packages/web/src/records/RecordBrowser.tsx packages/web/src/styles.css` — no matches.
