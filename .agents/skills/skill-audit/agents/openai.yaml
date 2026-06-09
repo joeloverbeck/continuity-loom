@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Audit"
+  short_description: "Audit and improve Codex skills."
+  default_prompt: "$skill-audit Audit .agents/skills/SKILL_NAME against how it was used in this session, then report issues, improvements, and features without editing unless asked."

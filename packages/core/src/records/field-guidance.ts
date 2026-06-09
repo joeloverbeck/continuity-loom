@@ -9,6 +9,7 @@ import { recordGuidance } from "./field-guidance-records.js";
 import { assertCanonical, normalizeListIndices } from "./field-paths.js";
 
 export type PromptFacing = "always" | "conditional" | "never";
+export type FieldRequiredness = "always" | "continuation" | "conditional" | "optional";
 
 export interface EnumValueGuidance {
   short: string;
@@ -24,6 +25,8 @@ export interface FieldGuidance {
   short: string;
   details?: string;
   promptFacing: PromptFacing;
+  requiredness?: FieldRequiredness;
+  requirednessNote?: string;
   promptDestinations?: string[];
   validationRole?: string;
   continuityRole?: string;

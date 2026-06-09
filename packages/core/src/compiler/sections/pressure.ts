@@ -1,6 +1,6 @@
 import { orderCompilerRecords } from "../ordering.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
-import { displayLabel } from "../labels.js";
+import { displayLabel, resolveRecordLabel } from "../labels.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
@@ -10,17 +10,17 @@ type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot
 
 const pressureResolvers: ResolverMap = {
   active_action_pressure: (snapshot) =>
-    pressureFromRecords(
+    renderRecords(
       snapshot,
       ["INTENTION", "PLAN", "OPEN THREAD", "VISIBLE AFFORDANCE"],
-      (record, payload) => firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"]),
-      "active_action_pressure"
-    ),
+      () => true,
+      (payload, record) => actionPressureLine(snapshot, record, payload)
+    ) || EMPTY_STATE_CONSTANTS.active_action_pressure,
   active_knowledge_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
       ["SECRET", "BELIEF", "FACT", "EVENT"],
-      (record, payload) => firstText(payload, ["secret_claim", "claim", "statement", "current_relevance", "description"]),
+      (record, payload) => firstText(payload, ["secret_claim", "claim", "statement", "description"]),
       "active_knowledge_pressure"
     ),
   relationship_emotion_pressure: (snapshot) =>
@@ -50,7 +50,7 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "INTENTION", isActiveIntention, (payload) =>
       compactParts([
         asString(payload.intent),
-        labelValue("holder", payload.holder),
+        labelValue("holder", labelReference(snapshot, payload.holder)),
         labelValue("urgency", payload.urgency),
         asString(payload.behavioral_pressure)
       ])
@@ -59,6 +59,7 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "PLAN", isActivePlan, (payload) =>
       compactParts([
         asString(payload.objective),
+        labelValue("holder", labelReference(snapshot, payload.holder)),
         labelValue("current step", payload.current_step),
         labelValue("resources", payload.resources),
         labelValue("blockers", payload.blockers),
@@ -79,8 +80,8 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "OBLIGATION", isOpenObligation, (payload) =>
       compactParts([
         asString(payload.terms),
-        labelValue("owed by", payload.owed_by),
-        labelValue("owed to", payload.owed_to),
+        labelValue("owed by", labelReference(snapshot, payload.owed_by)),
+        labelValue("owed to", labelReference(snapshot, payload.owed_to)),
         labelValue("urgency", payload.urgency),
         labelValue("if broken", payload.consequence_if_broken)
       ])
@@ -89,8 +90,8 @@ const pressureResolvers: ResolverMap = {
     renderRecords(snapshot, "CONSEQUENCE", isActiveConsequence, (payload) =>
       compactParts([
         asString(payload.current_effect),
-        labelValue("target", payload.holder_or_target),
-        labelValue("cause", payload.cause),
+        labelValue("target", labelReference(snapshot, payload.holder_or_target)),
+        labelValue("cause", labelReference(snapshot, payload.cause)),
         labelValue("urgency", payload.urgency),
         labelValue("possible next effect", payload.possible_next_effect)
       ])
@@ -132,7 +133,7 @@ function pressureFromRecords(
     snapshot,
     types,
     () => true,
-    (payload, record) => compactParts([displayLabel(record), project(record, payload)])
+    (payload, record) => compactSummaryLine(displayLabel(record), project(record, payload))
   ) || EMPTY_STATE_CONSTANTS[placeholder];
 }
 
@@ -157,6 +158,20 @@ function payloadOf(record: ValidationRecord): JsonRecord {
   return record.payload && typeof record.payload === "object" ? (record.payload as JsonRecord) : {};
 }
 
+function actionPressureLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
+  const line = compactSummaryLine(
+    displayLabel(record),
+    firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"])
+  );
+
+  if (record.type !== "INTENTION" && record.type !== "PLAN") {
+    return line;
+  }
+
+  const holder = labelReference(snapshot, payload.holder);
+  return holder ? `${holder}: ${line}` : line;
+}
+
 function firstText(payload: JsonRecord, keys: readonly string[]): string {
   for (const key of keys) {
     const rendered = renderValue(payload[key]);
@@ -177,8 +192,20 @@ function renderValue(value: unknown): string {
   return asString(value);
 }
 
+function labelReference(snapshot: ValidationSnapshot, value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((item) => labelReference(snapshot, item)).filter(Boolean).join(", ");
+  }
+
+  return resolveRecordLabel(snapshot, value);
+}
+
 function compactParts(parts: readonly string[]): string {
   return parts.filter(Boolean).join("; ");
+}
+
+function compactSummaryLine(label: string, projectedText: string): string {
+  return compactParts(label === projectedText ? [label] : [label, projectedText]);
 }
 
 function labelValue(label: string, value: unknown): string {

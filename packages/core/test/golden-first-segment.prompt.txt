@@ -80,11 +80,11 @@ None selected for this generation
 <current_authoritative_state>
 Time: Late morning, minutes after the market bell rang early.
 Location: 019b0298-5c00-7000-8000-013000000012
-Onstage entities: 019b0298-5c00-7000-8000-013000000001
-019b0298-5c00-7000-8000-013000000002
+Onstage entities: Elin Vale
+Niko Bram
 Immediate situation: Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.
-Offstage but pressuring entities: 019b0298-5c00-7000-8000-013000000003
-019b0298-5c00-7000-8000-013000000004
+Offstage but pressuring entities: Mara Venn
+Orin Ward
 Current physical positions: Elin stands beside the flour bin with the shuttered lantern in hand.
 Niko stands near the stair door and can see Elin, the latch, and the flour dust.
 Current agency/status: 019b0298-5c00-7000-8000-013000000001
@@ -197,17 +197,17 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 
 <active_working_set>
 Action pressure:
-- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
+- Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
 - Missing ledger page; The scene may hint at the ledger without naming the culprit or page.
 - listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Knowledge pressure:
-- The sealed letter says a market ledger page was replaced before Orin's audit.; The sealed letter says a market ledger page was replaced before Orin's audit.
-- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; high
-- Niko followed flour smears to the cellar after seeing Elin close the shop early.; critical
-- Niko will be safer if he knows a letter exists but not what it says.; Niko will be safer if he knows a letter exists but not what it says.
-- Elin hid something connected to the audit, but he does not know it is a letter.; Elin hid something connected to the audit, but he does not know it is a letter.
+- The sealed letter says a market ledger page was replaced before Orin's audit.
+- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.
+- Niko followed flour smears to the cellar after seeing Elin close the shop early.
+- Niko will be safer if he knows a letter exists but not what it says.
+- Elin hid something connected to the audit, but he does not know it is a letter.
 
 Relationship and emotion pressure:
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
@@ -234,8 +234,8 @@ Voice pressure pins are current-generation salience duplicates for dialogue, POV
 
 <active_plans_and_intentions>
 Intentions:
-- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: 019b0298-5c00-7000-8000-013000000001; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- Make Elin admit what kind of danger she has pulled him near.; holder: 019b0298-5c00-7000-8000-013000000002; urgency: high; He presses for truth without grabbing the hidden object.
+- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: Elin Vale; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- Make Elin admit what kind of danger she has pulled him near.; holder: Niko Bram; urgency: high; He presses for truth without grabbing the hidden object.
 
 Plans:
 None active
@@ -254,7 +254,7 @@ Obligations:
 None active
 
 Consequences:
-- If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: 019b0298-5c00-7000-8000-013000000002; cause: 019b0298-5c00-7000-8000-013000000007; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
+- If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: Niko Bram; cause: The sealed letter says a market ledger page was replaced before Orin's audit.; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
 
 Use obligations and consequences as constraints on plausible choice and as causes for escalation or durable change.
 </active_obligations_and_consequences>
@@ -280,12 +280,6 @@ If sample utterances are included, treat them as annotated short examples of spe
 
 None active
 </active_cast_full_dossiers>
-
-<present_minor_cast>
-Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation. Temporary voice overrides, when present here, are current-generation only and do not rewrite durable identity.
-
-None
-</present_minor_cast>
 
 <offstage_relevance>
 Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
@@ -404,7 +398,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Soft unit: Soft unit: No additional user narrowing; use the universal local stop rule above.
+Soft unit: Stop at the first new response point: a sound above, Niko's unanswered direct question, or Elin's decision to show only the sealed outside.
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

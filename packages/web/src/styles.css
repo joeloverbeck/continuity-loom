@@ -584,6 +584,30 @@ button:disabled:hover {
   margin-bottom: 16px;
 }
 
+.briefRequirednessLegend,
+.briefFieldLabelText {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.briefRequirednessLegend {
+  margin: 0;
+  color: #39445a;
+  font-size: 0.86rem;
+}
+
+.briefRequirednessTag {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  background: #f3f6fa;
+  color: #39445a;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
 .configPanel {
   border-top: 1px solid #d8dee8;
   padding-top: 20px;
@@ -1026,6 +1050,20 @@ button:disabled:hover {
   padding: 3px 8px;
   font-size: 0.72rem;
   font-weight: 800;
+}
+
+.fieldHelpRequiredness {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+  border-left: 3px solid #245a8d;
+  padding-left: 8px;
+  color: #39445a;
+  font-size: 0.82rem;
+}
+
+.fieldHelpRequiredness strong {
+  color: #202124;
 }
 
 .fieldHelpPopover p,

@@ -89,6 +89,8 @@ Time: {current_time}
 Location: {current_location}
 Onstage entities: {onstage_entities}
 Immediate situation: {immediate_situation_summary}
+
+Conditional lines: if any of the following fields is populated, render the whole line; if blank, omit the whole line. Treat consent_or_force_conditions="none" as blank.
 Offstage but pressuring entities: {offstage_pressuring_entities}
 Current physical positions: {positions}
 Current agency/status: {entity_statuses}
@@ -106,16 +108,16 @@ Current continuity locks: {current_locks}
 Recent causal context (writer-visible; not automatically POV knowledge):
 {recent_causal_context}
 
-Last visible moment:
+Last visible moment (omit this label and value when empty):
 {last_visible_moment}
 
 Prior accepted prose status / user-authored continuity handoff:
 {prior_accepted_prose_status_or_handoff_note}
 
-Begin prose exactly after this point:
+Begin prose exactly after this point (omit this label and value when empty):
 {begin_after}
 
-For first segments, missing handoff fields render deterministic empty states and do not imply missing required context. For continuations after an accepted segment, the handoff must be user-authored and must not include accepted prose text.
+For first segments, missing `recent_causal_context` renders its deterministic empty state and does not imply missing required context. Missing `last_visible_moment` and `begin_after` omit their labels and values. For continuations after an accepted segment, the handoff must be user-authored and must not include accepted prose text.
 
 Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
 </immediate_handoff>
@@ -124,10 +126,10 @@ Do not include or quote accepted prose. Do not infer canon from archived prose. 
 Must render:
 {manual_must_render}
 
-May render if naturally caused:
+May render if naturally caused (omit this label and value when empty):
 {manual_may_render_if_naturally_caused}
 
-Do not force:
+Do not force (omit this label and value when empty):
 {manual_do_not_force}
 </manual_directive>
 
@@ -160,6 +162,12 @@ Audience does not know:
 
 Dramatic irony allowed now:
 {dramatic_irony_permissions}
+
+Rendered only when an active secret has `audience_visibility: "ambiguous"`:
+Audience may be inferring (ambiguous - not established reader knowledge):
+{audience_perception_ambiguous}
+
+Treat these as unresolved: shape suspense and surface cues, but do not write as if the audience has confirmed them.
 
 If the audience knows something the POV does not, you may let that truth shape surface cues and tension. Do not grant the POV forbidden knowledge.
 </audience_knowledge>
@@ -258,11 +266,15 @@ If sample utterances are included, treat them as annotated short examples of spe
 {active_onstage_full_cast_dossiers}
 </active_cast_full_dossiers>
 
+The `<present_minor_cast>` section is omitted when no present-minor cast is selected.
+
 <present_minor_cast>
 Present but minor/silent/backgrounded cast. Use these compressed notes for physical continuity, voice avoidance, and plausible action only. If a present-minor cast member must speak materially, their compressed note must include enough voice guidance to avoid generic dialogue; otherwise keep them silent or promote them to active/onstage in a later generation. Temporary voice overrides, when present here, are current-generation only and do not rewrite durable identity.
 
 {present_minor_cast_notes}
 </present_minor_cast>
+
+The `<offstage_relevance>` section is omitted when no offstage cast is selected and no offstage pressure/interruption is active.
 
 <offstage_relevance>
 Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
@@ -376,7 +388,7 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 <stop_rule>
 Render only the next local unit of causally connected forward motion.
 
-Conditional soft-unit narrowing: if `{soft_unit_guidance}` is supplied, render `Soft unit: {soft_unit_guidance}`. If it is blank, omit that line; if conditional omission is unavailable, render `Additional user stop guidance: None supplied.`
+Conditional soft-unit narrowing: if `{soft_unit_guidance}` is supplied, render `Soft unit: {soft_unit_guidance}`. If it is blank, omit that line.
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

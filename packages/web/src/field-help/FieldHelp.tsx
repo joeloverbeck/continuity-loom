@@ -2,7 +2,8 @@ import * as Popover from "@radix-ui/react-popover";
 import {
   getFieldGuidance,
   type EnumValueGuidance,
-  type FieldGuidance
+  type FieldGuidance,
+  type FieldRequiredness
 } from "@loom/core";
 import { useState } from "react";
 
@@ -24,6 +25,7 @@ export function FieldHelp({ fieldPath, fieldLabel, listContext }: FieldHelpProps
 
   const contentId = fieldHelpId(guidance.fieldPath, listContext);
   const descriptionId = `${contentId}-summary`;
+  const requiredness = requirednessText(guidance.requiredness);
 
   return (
     <span className="fieldHelp">
@@ -60,6 +62,13 @@ export function FieldHelp({ fieldPath, fieldLabel, listContext }: FieldHelpProps
               <strong>{fieldLabel}</strong>
               <span className="fieldHelpBadge">{statusLabel(guidance)}</span>
             </div>
+            {requiredness ? (
+              <div className="fieldHelpRequiredness">
+                <strong>{requiredness.label}</strong>
+                {requiredness.note ? <span>{requiredness.note}</span> : null}
+                {guidance.requirednessNote ? <span>{guidance.requirednessNote}</span> : null}
+              </div>
+            ) : null}
             <p id={descriptionId}>{guidance.short}</p>
             <GuidanceSection title="Prompt" items={promptItems(guidance)} />
             <GuidanceSection title="Validation" items={[guidance.validationRole]} />
@@ -91,6 +100,23 @@ function statusLabel(guidance: FieldGuidance): string {
   }
 
   return "Prompt";
+}
+
+function requirednessText(
+  requiredness: FieldRequiredness | undefined
+): { label: string; note?: string } | undefined {
+  switch (requiredness) {
+    case "always":
+      return { label: "Required" };
+    case "continuation":
+      return { label: "Required for continuations", note: "The readiness checklist confirms exactly when." };
+    case "conditional":
+      return { label: "Required when relevant", note: "The readiness checklist confirms exactly when." };
+    case "optional":
+      return { label: "Optional" };
+    default:
+      return undefined;
+  }
 }
 
 function promptItems(guidance: FieldGuidance): string[] {

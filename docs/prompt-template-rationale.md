@@ -121,6 +121,8 @@ The template keeps separate lanes for writer-visible hidden truths, holders, pro
 
 Audience knowledge can differ from POV knowledge. Dramatic irony is allowed, but it must not become POV leakage. The audience-knowledge section tells the prose writer which truths can shape reader-facing tension while remaining unavailable to the narrator or current POV.
 
+Ambiguous audience perception is a third audience state between hidden and known, so it is preserved as unresolved reader inference instead of being collapsed into either binary lane.
+
 ## 15. Why facts and events are grouped by prompt function
 
 A flat event archive makes the writer guess what matters. Events therefore compile by function: immediate previous, recent causal, relevant backstory, offstage, or withheld.

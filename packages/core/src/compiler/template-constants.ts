@@ -57,7 +57,12 @@ export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
 
 export type CompositeSectionId = keyof typeof COMPOSITE_SECTION_TEMPLATES;
 
-export const SECTION_TEMPLATES: Readonly<Record<PromptSectionId, string>> = Object.freeze({
+export type StaticSectionId = Exclude<
+  PromptSectionId,
+  CompositeSectionId | "current_authoritative_state" | "immediate_handoff" | "manual_directive"
+>;
+
+export const SECTION_TEMPLATES: Readonly<Record<StaticSectionId, string>> = Object.freeze({
   role: `<role>
 You are the external prose writer for a continuity-first fiction system.
 Render the next local prose segment from the provided story records and the current manual directive.
@@ -124,48 +129,6 @@ Special style constraints: {special_style_constraints}
   hard_canon: `<hard_canon>
 {hard_canon_bullets}
 </hard_canon>`,
-  current_authoritative_state: `<current_authoritative_state>
-Time: {current_time}
-Location: {current_location}
-Onstage entities: {onstage_entities}
-Immediate situation: {immediate_situation_summary}
-Offstage but pressuring entities: {offstage_pressuring_entities}
-Current physical positions: {positions}
-Current agency/status: {entity_statuses}
-Current possessions: {possessions}
-Visible injuries/conditions: {visible_conditions}
-Environmental conditions: {environmental_conditions}
-Line of sight / visibility: {line_of_sight_and_visibility}
-Routes and exits: {routes_and_exits}
-Available time: {available_time}
-Consent or force conditions: {consent_or_force_conditions}
-Current continuity locks: {current_locks}
-</current_authoritative_state>`,
-  immediate_handoff: `<immediate_handoff>
-Recent causal context (writer-visible; not automatically POV knowledge):
-{recent_causal_context}
-
-Last visible moment:
-{last_visible_moment}
-
-Prior accepted prose status / user-authored continuity handoff:
-{prior_accepted_prose_status_or_handoff_note}
-
-Begin prose exactly after this point:
-{begin_after}
-
-Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
-</immediate_handoff>`,
-  manual_directive: `<manual_directive priority="high">
-Must render:
-{manual_must_render}
-
-May render if naturally caused:
-{manual_may_render_if_naturally_caused}
-
-Do not force:
-{manual_do_not_force}
-</manual_directive>`,
   pov_knowledge_constraints: `<pov_knowledge_constraints>
 POV knows:
 {pov_knows}
@@ -387,8 +350,6 @@ Do not chase closure. The prose may stop mid-conversation, after a refusal, afte
 </prose_craft>`,
   stop_rule: `<stop_rule>
 Render only the next local unit of causally connected forward motion.
-
-Soft unit: {soft_unit_guidance}
 
 Stop as soon as one of these occurs:
 - a character makes a decision that creates new immediate pressure

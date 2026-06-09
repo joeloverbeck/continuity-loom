@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ticket Series"
+  short_description: "Implement Continuity Loom ticket series."
+  default_prompt: "$ticket-series Implement the ticket series TICKETS_GLOB in dependency order. Use SPEC_GLOB if provided, and align the work with the active Continuity Loom docs."

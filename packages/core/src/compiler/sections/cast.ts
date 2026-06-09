@@ -10,7 +10,6 @@ type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
 
 const activeDossierFieldOrder = [
-  "entity_id",
   "identity",
   "voice_anchor",
   "voice_extended",

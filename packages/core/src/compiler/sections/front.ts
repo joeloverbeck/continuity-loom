@@ -51,7 +51,10 @@ const frontResolvers: ResolverMap = {
   current_location: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.current_authoritative_state?.current_location, "current_location"),
   onstage_entities: (snapshot) =>
-    valueOrEmpty(snapshot.generationSession.current_authoritative_state?.onstage_entities, "onstage_entities"),
+    valueOrEmpty(
+      renderEntityReferenceList(snapshot, snapshot.generationSession.current_authoritative_state?.onstage_entities),
+      "onstage_entities"
+    ),
   immediate_situation_summary: (snapshot) =>
     valueOrEmpty(
       snapshot.generationSession.current_authoritative_state?.immediate_situation_summary,
@@ -59,7 +62,10 @@ const frontResolvers: ResolverMap = {
     ),
   offstage_pressuring_entities: (snapshot) =>
     valueOrEmpty(
-      snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities,
+      renderEntityReferenceList(
+        snapshot,
+        snapshot.generationSession.current_authoritative_state?.offstage_pressuring_entities
+      ),
       "offstage_pressuring_entities"
     ),
   positions: (snapshot) => valueOrEmpty(snapshot.generationSession.current_authoritative_state?.positions, "positions"),
@@ -112,6 +118,7 @@ const frontResolvers: ResolverMap = {
     ),
   manual_do_not_force: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.manual_moment_directive?.do_not_force, "manual_do_not_force"),
+  soft_unit_guidance: (snapshot) => snapshot.generationSession.stop_guidance?.soft_unit_guidance?.trim() ?? "",
 
   pov_knows: (snapshot) => renderPovKnows(snapshot),
   pov_believes_suspects_misreads: (snapshot) => renderPovBeliefs(snapshot),
@@ -124,6 +131,7 @@ const frontResolvers: ResolverMap = {
   audience_knows: (snapshot) => renderAudienceKnows(snapshot),
   audience_does_not_know: (snapshot) => renderAudienceDoesNotKnow(snapshot),
   dramatic_irony_permissions: (snapshot) => renderDramaticIrony(snapshot),
+  audience_perception_ambiguous: (snapshot) => renderAudiencePerceptionAmbiguous(snapshot),
 
   writer_visible_hidden_truths: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, renderWriterVisibleHiddenTruth).join("\n") ||
@@ -182,6 +190,14 @@ function renderValue(value: unknown): string {
   }
 
   return "";
+}
+
+function renderEntityReferenceList(snapshot: ValidationSnapshot, value: unknown): string {
+  if (!Array.isArray(value)) {
+    return "";
+  }
+
+  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join("\n");
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {
@@ -371,6 +387,17 @@ function renderDramaticIrony(snapshot: ValidationSnapshot): string {
   );
 
   return lines.join("\n") || EMPTY_STATE_CONSTANTS.dramatic_irony_permissions;
+}
+
+function renderAudiencePerceptionAmbiguous(snapshot: ValidationSnapshot): string {
+  const lines = bulletRecords(
+    snapshot,
+    "SECRET",
+    (payload) => isActiveSecret(payload) && payload.audience_visibility === "ambiguous",
+    (payload) => asString(payload.secret_claim)
+  );
+
+  return lines.join("\n") || EMPTY_STATE_CONSTANTS.audience_perception_ambiguous;
 }
 
 function knownBy(knownByValue: unknown, pov: string | undefined): boolean {

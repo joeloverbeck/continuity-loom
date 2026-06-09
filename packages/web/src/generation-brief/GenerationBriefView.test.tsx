@@ -57,6 +57,195 @@ function renderView(): void {
 }
 
 describe("GenerationBriefView", () => {
+  it("renders editable widgets for every current authoritative state field", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    for (const field of [
+      "current_time",
+      "current_location",
+      "onstage_entities",
+      "immediate_situation_summary",
+      "offstage_pressuring_entities",
+      "positions",
+      "possessions",
+      "visible_conditions",
+      "environmental_conditions",
+      "entity_statuses",
+      "line_of_sight_and_visibility",
+      "routes_and_exits",
+      "available_time",
+      "consent_or_force_conditions",
+      "current_locks"
+    ]) {
+      expect(screen.getByLabelText(new RegExp(`^${field}`))).toBeTruthy();
+      expect(screen.getByRole("button", { name: `Help for ${field}` })).toBeTruthy();
+    }
+  });
+
+  it("shows an always-required marker on required generation-brief fields", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const immediateSituationLabel = labelFor(/^immediate_situation_summary/);
+
+    expect(within(immediateSituationLabel).getByLabelText("required")).toBeTruthy();
+  });
+
+  it("flips continuation-field markers from first-segment optional to continuation required locally", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    expect(within(labelFor(/^recent_causal_context/)).getByText("Optional for a first segment")).toBeTruthy();
+
+    vi.mocked(readiness).mockClear();
+    fireEvent.change(screen.getByLabelText(/^generation_context/), {
+      target: { value: "continuation_after_accepted_segment" }
+    });
+
+    const recentCausalContextLabel = labelFor(/^recent_causal_context/);
+    expect(within(recentCausalContextLabel).getByLabelText("required")).toBeTruthy();
+    expect(within(recentCausalContextLabel).queryByText("Optional for a first segment")).toBeNull();
+    expect(readiness).not.toHaveBeenCalled();
+  });
+
+  it("shows conditional and optional markers without treating conditional fields as required", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const positionsLabel = labelFor(/^positions/);
+    expect(within(positionsLabel).getByLabelText("conditional")).toBeTruthy();
+    expect(within(positionsLabel).queryByLabelText("required")).toBeNull();
+
+    expect(within(labelFor(/^soft_unit_guidance/)).getByText("Optional")).toBeTruthy();
+  });
+
+  it("persists a new current-state array field and displays it after reload", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const routesAndExits = await screen.findByLabelText(/^routes_and_exits/);
+    fireEvent.change(routesAndExits, { target: { value: "cellar stairs\nblocked delivery hatch" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      current_authoritative_state: {
+        routes_and_exits: ["cellar stairs", "blocked delivery hatch"]
+      }
+    });
+    expect(() => generationSessionDraftSchema.parse(payload)).not.toThrow();
+
+    cleanup();
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        current_authoritative_state: {
+          routes_and_exits: ["cellar stairs", "blocked delivery hatch"]
+        }
+      },
+      defaults: briefDefaults
+    });
+
+    renderView();
+
+    const reloadedRoutes = await screen.findByLabelText(/^routes_and_exits/);
+    expect((reloadedRoutes as HTMLTextAreaElement).value).toBe("cellar stairs\nblocked delivery hatch");
+  });
+
+  it("edits and reloads all handoff and directive detail fields", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const lastVisibleMoment = await screen.findByLabelText(/^last_visible_moment/);
+    const beginAfter = screen.getByLabelText(/^begin_after/);
+    const mayRender = screen.getByLabelText(/^may_render_if_naturally_caused/);
+    const doNotForce = screen.getByLabelText(/^do_not_force/);
+
+    fireEvent.change(lastVisibleMoment, { target: { value: "Mara lowers the lamp." } });
+    fireEvent.change(beginAfter, { target: { value: "Begin after Jon hears the latch." } });
+    fireEvent.change(mayRender, { target: { value: "  Rain may interrupt.\n\nThe latch may stick.  " } });
+    fireEvent.change(doNotForce, { target: { value: "  Do not reveal the caller.\n\tDo not leave the room.  " } });
+
+    expect((lastVisibleMoment as HTMLTextAreaElement).value).toBe("Mara lowers the lamp.");
+    expect((beginAfter as HTMLTextAreaElement).value).toBe("Begin after Jon hears the latch.");
+    expect((mayRender as HTMLTextAreaElement).value).toBe("  Rain may interrupt.\n\nThe latch may stick.  ");
+    expect((doNotForce as HTMLTextAreaElement).value).toBe("  Do not reveal the caller.\n\tDo not leave the room.  ");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      immediate_handoff: {
+        last_visible_moment: "Mara lowers the lamp.",
+        begin_after: "Begin after Jon hears the latch."
+      },
+      manual_moment_directive: {
+        may_render_if_naturally_caused: ["Rain may interrupt.", "The latch may stick."],
+        do_not_force: ["Do not reveal the caller.", "Do not leave the room."]
+      }
+    });
+    expect(() => generationSessionDraftSchema.parse(payload)).not.toThrow();
+
+    cleanup();
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        immediate_handoff: {
+          last_visible_moment: "Mara lowers the lamp.",
+          begin_after: "Begin after Jon hears the latch."
+        },
+        manual_moment_directive: {
+          may_render_if_naturally_caused: ["Rain may interrupt.", "The latch may stick."],
+          do_not_force: ["Do not reveal the caller.", "Do not leave the room."]
+        }
+      },
+      defaults: briefDefaults
+    });
+
+    renderView();
+
+    expect(await screen.findByLabelText(/^last_visible_moment/)).toMatchObject({ value: "Mara lowers the lamp." });
+    expect(screen.getByLabelText(/^begin_after/)).toMatchObject({ value: "Begin after Jon hears the latch." });
+    expect(screen.getByLabelText(/^may_render_if_naturally_caused/)).toMatchObject({
+      value: "Rain may interrupt.\nThe latch may stick."
+    });
+    expect(screen.getByLabelText(/^do_not_force/)).toMatchObject({
+      value: "Do not reveal the caller.\nDo not leave the room."
+    });
+  });
+
   it("edits all eight surfaces and persists them through the brief client", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
@@ -77,7 +266,11 @@ describe("GenerationBriefView", () => {
 
     expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for prior_accepted_prose_status_or_handoff_note" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for last_visible_moment" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for begin_after" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for must_render" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for may_render_if_naturally_caused" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for do_not_force" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for generation_context" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for soft_unit_guidance" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for current_location" })).toBeTruthy();
@@ -96,8 +289,12 @@ describe("GenerationBriefView", () => {
       target: { value: "Jon is at the loading dock with the door half open." }
     });
     fireEvent.change(screen.getByLabelText(/^recent_causal_context/), { target: { value: "A reached the gate." } });
+    fireEvent.change(screen.getByLabelText(/^last_visible_moment/), { target: { value: "A stood at the gate." } });
     fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
+    fireEvent.change(screen.getByLabelText(/^begin_after/), { target: { value: "Begin with the gate latch." } });
     fireEvent.change(screen.getByLabelText(/^must_render/), { target: { value: "The lock opens." } });
+    fireEvent.change(screen.getByLabelText(/^may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
+    fireEvent.change(screen.getByLabelText(/^do_not_force/), { target: { value: "Do not leave the dock." } });
     fireEvent.change(screen.getByLabelText(/^cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
     fireEvent.change(screen.getByLabelText(/^local_function/), { target: { value: "present_minor_speaker" } });
     fireEvent.change(screen.getByLabelText(/^current_voice_pressure/), { target: { value: "clipped and wary" } });
@@ -126,8 +323,16 @@ describe("GenerationBriefView", () => {
         onstage_entities: [jonId],
         immediate_situation_summary: "Jon is at the loading dock with the door half open."
       },
-      immediate_handoff: { recent_causal_context: "A reached the gate." },
-      manual_moment_directive: { must_render: ["The lock opens."] },
+      immediate_handoff: {
+        recent_causal_context: "A reached the gate.",
+        last_visible_moment: "A stood at the gate.",
+        begin_after: "Begin with the gate latch."
+      },
+      manual_moment_directive: {
+        must_render: ["The lock opens."],
+        may_render_if_naturally_caused: ["The hinge complains."],
+        do_not_force: ["Do not leave the dock."]
+      },
       current_cast_voice_pressure: [{ local_function: "present_minor_speaker", current_voice_pressure: "clipped and wary" }],
       cast_voice_overrides: [{ scope: "current_generation_only", override_text: "shorter answers only" }],
       generation_validation_focus: {
@@ -416,6 +621,16 @@ describe("GenerationBriefView", () => {
     expect(screen.queryByText("Displayed readiness may be stale until you save this draft.")).toBeNull();
   });
 });
+
+function labelFor(name: RegExp): HTMLLabelElement {
+  const label = screen.getByLabelText(name).closest("label");
+
+  if (!(label instanceof HTMLLabelElement)) {
+    throw new Error(`Could not find label for ${name}`);
+  }
+
+  return label;
+}
 
 function readinessFixture(input: {
   blockers?: readonly ReadinessDiagnostic[];

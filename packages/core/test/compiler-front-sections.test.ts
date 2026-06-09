@@ -187,6 +187,10 @@ function sectionBody(prompt: string, section: string): string {
   return prompt.match(pattern)?.[1] ?? "";
 }
 
+function sectionLines(prompt: string, section: string): string[] {
+  return sectionBody(prompt, section).split("\n").filter((line) => line.trim().length > 0);
+}
+
 describe("compiler front-section resolvers", () => {
   it("renders populated content policy, story contract, prose mode, state, handoff, and directive fields", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
@@ -204,11 +208,83 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "manual_directive")).toContain("Jon asks about the drawer.");
   });
 
+  it("resolves current-state onstage and offstage entity ids to display labels", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+    const currentState = sectionBody(prompt, "current_authoritative_state");
+
+    expect(currentState).toContain("Onstage entities: Jon Vale");
+    expect(currentState).toContain("Offstage but pressuring entities: Mara Lorne");
+    expect(currentState).not.toContain(`Onstage entities: ${povId}`);
+    expect(currentState).not.toContain(`Offstage but pressuring entities: ${holderId}`);
+  });
+
+  it("falls back to a raw current-state entity id when no matching record is selected", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.onstage_entities = [danglingHolderId];
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(`Onstage entities: ${danglingHolderId}`);
+  });
+
+  it("always renders the four required current-state lines and omits empty optional lines", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state = {
+      current_time: "After midnight.",
+      current_location: "North archive.",
+      onstage_entities: [povId],
+      immediate_situation_summary: "Jon waits at the archive door.",
+      offstage_pressuring_entities: [],
+      positions: [],
+      possessions: [],
+      visible_conditions: [],
+      environmental_conditions: "",
+      entity_statuses: [],
+      line_of_sight_and_visibility: "",
+      routes_and_exits: [],
+      available_time: "",
+      consent_or_force_conditions: "none",
+      current_locks: []
+    };
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const currentState = sectionBody(prompt, "current_authoritative_state");
+
+    expect(sectionLines(prompt, "current_authoritative_state")).toEqual([
+      "Time: After midnight.",
+      "Location: North archive.",
+      "Onstage entities: Jon Vale",
+      "Immediate situation: Jon waits at the archive door."
+    ]);
+    expect(currentState).not.toContain("None currently specified");
+    expect(currentState).not.toContain("Offstage but pressuring entities:");
+    expect(currentState).not.toContain("Routes and exits:");
+  });
+
+  it("renders optional current-state lines only while their values are populated", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.routes_and_exits = ["North stair"];
+
+    const populatedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+    expect(sectionBody(populatedPrompt, "current_authoritative_state")).toContain("Routes and exits: North stair");
+
+    input.generationSession.current_authoritative_state!.routes_and_exits = [];
+    const clearedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(clearedPrompt, "current_authoritative_state")).not.toContain("Routes and exits:");
+  });
+
+  it("omits default none consent or force conditions", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain("Consent or force conditions:");
+  });
+
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 
     expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
-      "Soft unit: No additional user narrowing; use the universal local stop rule above."
+      "No additional user narrowing; use the universal local stop rule above."
     );
     expect(sectionBody(prompt, "content_policy")).toContain(`RATING: ${EMPTY_STATE_CONSTANTS.rating_label}`);
     expect(sectionBody(prompt, "story_contract")).toContain(`Title: ${EMPTY_STATE_CONSTANTS.title}`);
@@ -218,11 +294,43 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "immediate_handoff")).toContain(
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
-    expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.begin_after);
-    expect(sectionBody(prompt, "stop_rule")).toContain(EMPTY_STATE_CONSTANTS.soft_unit_guidance);
+    expect(sectionBody(prompt, "immediate_handoff")).not.toContain(EMPTY_STATE_CONSTANTS.begin_after);
+    expect(sectionBody(prompt, "manual_directive")).toContain(EMPTY_STATE_CONSTANTS.manual_must_render);
+    expect(sectionBody(prompt, "stop_rule")).not.toContain("Soft unit:");
+    expect(sectionBody(prompt, "stop_rule")).not.toContain("Additional user stop guidance");
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
     );
+  });
+
+  it("renders supplied soft-unit guidance once and omits it when blank", () => {
+    const withGuidance = compilePrompt(
+      buildValidationSnapshot({
+        ...populatedInput(),
+        generationSession: {
+          ...populatedInput().generationSession,
+          stop_guidance: {
+            soft_unit_guidance: "Stop after she refuses."
+          }
+        }
+      })
+    ).prompt;
+    const blank = compilePrompt(
+      buildValidationSnapshot({
+        ...populatedInput(),
+        generationSession: {
+          ...populatedInput().generationSession,
+          stop_guidance: {
+            soft_unit_guidance: ""
+          }
+        }
+      })
+    ).prompt;
+
+    expect(sectionBody(withGuidance, "stop_rule").match(/Soft unit:/g)).toHaveLength(1);
+    expect(sectionBody(withGuidance, "stop_rule")).toContain("Soft unit: Stop after she refuses.");
+    expect(sectionBody(blank, "stop_rule")).not.toContain("Soft unit:");
+    expect(sectionBody(blank, "stop_rule")).toContain("Stop as soon as one of these occurs:");
   });
 
   it("records the deliberate compiler and contract version bump", () => {
@@ -266,6 +374,57 @@ describe("compiler front-section resolvers", () => {
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("renders ambiguous audience perception without placing the secret in existing audience lanes", () => {
+    const input = populatedInput();
+    input.records = input.records.map((record) =>
+      record.id === secretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              status: "partially_revealed",
+              audience_visibility: "ambiguous"
+            }
+          }
+        : record
+    );
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const audienceSection = sectionBody(prompt, "audience_knowledge");
+
+    expect(audienceSection).toContain(
+      "Audience may be inferring (ambiguous - not established reader knowledge):\n- Mara stole the archive key."
+    );
+    expect(audienceSection).toContain(
+      "Treat these as unresolved: shape suspense and surface cues, but do not write as if the audience has confirmed them."
+    );
+    expect(audienceSection).not.toContain("Audience already knows:\n- Mara stole the archive key.");
+    expect(audienceSection).not.toContain("Audience does not know:\n- Mara stole the archive key.");
+    expect(audienceSection).not.toContain("Dramatic irony allowed now:\n- Mara stole the archive key.");
+  });
+
+  it("omits the ambiguous audience perception block when no active ambiguous secret exists", () => {
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
+    const audienceSection = sectionBody(prompt, "audience_knowledge");
+
+    expect(audienceSection).not.toContain("Audience may be inferring");
+    expect(audienceSection).not.toContain("Treat these as unresolved:");
+    expect(audienceSection).toContain(
+      [
+        "Audience already knows:",
+        "- Mara stole the archive key.",
+        "",
+        "Audience does not know:",
+        "None specified",
+        "",
+        "Dramatic irony allowed now:",
+        "- Mara stole the archive key.",
+        "",
+        "If the audience knows something the POV does not, you may let that truth shape surface cues and tension. Do not grant the POV forbidden knowledge."
+      ].join("\n")
+    );
   });
 
   it("falls back to a raw secret holder id when no matching record is selected", () => {
@@ -431,6 +590,67 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(empty, "immediate_handoff")).toContain(
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
+  });
+
+  it("omits empty optional handoff and directive blocks while keeping load-bearing defaults", () => {
+    const input = populatedInput();
+    input.generationSession.immediate_handoff = {
+      recent_causal_context: "",
+      last_visible_moment: "",
+      prior_accepted_prose_status_or_handoff_note: "none",
+      begin_after: ""
+    };
+    input.generationSession.manual_moment_directive = {
+      must_render: [],
+      may_render_if_naturally_caused: [],
+      do_not_force: []
+    };
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const handoff = sectionBody(prompt, "immediate_handoff");
+    const directive = sectionBody(prompt, "manual_directive");
+
+    expect(handoff).toContain(`Recent causal context (writer-visible; not automatically POV knowledge):\n${EMPTY_STATE_CONSTANTS.recent_causal_context}`);
+    expect(handoff).toContain(
+      `Prior accepted prose status / user-authored continuity handoff:\n${EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note}`
+    );
+    expect(handoff).toContain(
+      "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context."
+    );
+    expect(handoff).not.toContain("Last visible moment:");
+    expect(handoff).not.toContain("Begin prose exactly after this point:");
+    expect(directive).toContain(`Must render:\n${EMPTY_STATE_CONSTANTS.manual_must_render}`);
+    expect(directive).not.toContain("May render if naturally caused:");
+    expect(directive).not.toContain("Do not force:");
+    expect(prompt).toContain('<manual_directive priority="high">');
+  });
+
+  it("renders optional handoff and directive blocks only while their values are populated", () => {
+    const input = populatedInput();
+    input.generationSession.immediate_handoff!.last_visible_moment = "Mara's hand vanished into her sleeve.";
+    input.generationSession.immediate_handoff!.begin_after = "";
+    input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = ["Mara changes the subject."];
+    input.generationSession.manual_moment_directive!.do_not_force = [];
+
+    const populatedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(populatedPrompt, "immediate_handoff")).toContain(
+      "Last visible moment:\nMara's hand vanished into her sleeve."
+    );
+    expect(sectionBody(populatedPrompt, "immediate_handoff")).not.toContain(
+      "Begin prose exactly after this point:"
+    );
+    expect(sectionBody(populatedPrompt, "manual_directive")).toContain(
+      "May render if naturally caused:\nMara changes the subject."
+    );
+    expect(sectionBody(populatedPrompt, "manual_directive")).not.toContain("Do not force:");
+
+    input.generationSession.immediate_handoff!.last_visible_moment = "";
+    input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = [];
+    const clearedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+
+    expect(sectionBody(clearedPrompt, "immediate_handoff")).not.toContain("Last visible moment:");
+    expect(sectionBody(clearedPrompt, "manual_directive")).not.toContain("May render if naturally caused:");
   });
 
   it("renders deterministic front-section output for identical snapshots", () => {

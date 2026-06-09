@@ -39,8 +39,11 @@ function sectionBody(prompt: string, section: string): string {
 describe("compiler scaffold", () => {
   it("renders all prompt sections in compiler-contract order", () => {
     const result = compilePrompt(buildValidationSnapshot(minimalSnapshotInput()));
+    const expectedRenderedOrder = SECTION_ORDER.filter(
+      (section) => section !== "present_minor_cast" && section !== "offstage_relevance"
+    );
 
-    expect(promptSectionOrder(result.prompt)).toEqual(SECTION_ORDER);
+    expect(promptSectionOrder(result.prompt)).toEqual(expectedRenderedOrder);
   });
 
   it("pins scaffold empty-state constants to their prompt sections", () => {
@@ -66,12 +69,8 @@ describe("compiler scaffold", () => {
     expect(sectionBody(prompt, "active_cast_full_dossiers")).toContain(
       EMPTY_STATE_CONSTANTS.active_onstage_full_cast_dossiers
     );
-    expect(sectionBody(prompt, "present_minor_cast")).toContain(
-      EMPTY_STATE_CONSTANTS.present_minor_cast_notes
-    );
-    expect(sectionBody(prompt, "offstage_relevance")).toContain(
-      EMPTY_STATE_CONSTANTS.offstage_relevance_notes
-    );
+    expect(prompt).not.toContain("<present_minor_cast>");
+    expect(prompt).not.toContain("<offstage_relevance>");
     expect(sectionBody(prompt, "relevant_facts_beliefs_events").trim()).toBe("None specified");
     expect(sectionBody(prompt, "locations_objects_affordances").trim()).toBe("None specified");
     expect(sectionBody(prompt, "physical_continuity")).toContain(
