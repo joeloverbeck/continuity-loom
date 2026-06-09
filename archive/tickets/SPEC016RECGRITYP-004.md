@@ -1,6 +1,6 @@
 # SPEC016RECGRITYP-004: Default type, URL sync, default sort, empty state
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds default-type resolution, `type`↔URL sync, type-scoped default sort, and a three-part empty state to `packages/web/src/records/RecordBrowser.tsx`. UI behavior change on `/records`; no server/schema change.
@@ -79,3 +79,23 @@ When the active scoped type has zero records, render: a status line, one sentenc
 1. `npx vitest run packages/web/src/records/RecordBrowser.test.tsx`
 2. `npm test`
 3. The component test is the correct boundary because default-view, URL sync, sort, and empty state are all client-side; `npm test` confirms the core severity-ordinal import type-checks across packages.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Added `?type=` initialization and synchronization for the records type filter.
+- Added one-time default type resolution from projected record summaries: valid URL type → most-populated projected type → "All types".
+- Added scoped default sort by manifest severity column (`salience`, `urgency`, or `intensity`) using `compareSeverityDesc`, with `updatedAt` descending as fallback.
+- Added a scoped zero-record empty state with status line, type description, and `Create {TYPE}` action.
+
+Deviations from original plan:
+- The new default/sort behavior is gated on summaries carrying `displayValues`. This preserves the optional projection contract and keeps legacy/test fixtures without projected display values on the pre-SPEC-016 path; production list responses from SPEC016RECGRITYP-002 carry `displayValues`.
+- Used `npm exec vitest -- ...` for the targeted component test rather than `npx vitest ...`; the same test file was run.
+
+Verification:
+- `npm exec vitest -- run packages/web/src/records/RecordBrowser.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.

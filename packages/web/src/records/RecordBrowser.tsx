@@ -1,5 +1,6 @@
 import {
   allTypesColumns,
+  compareSeverityDesc,
   getColumnManifest,
   getEditorDescriptor,
   recordTypes,
@@ -11,7 +12,7 @@ import {
   useReactTable,
   type ColumnDef
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -52,6 +53,56 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
   return (["salience", "urgency"] as const).filter((field) =>
     candidateTypes.some((recordType) => descriptorHasField(recordType, field))
   );
+}
+
+function isRecordType(value: string | null): value is string {
+  return value !== null && recordTypes.includes(value);
+}
+
+function mostPopulatedType(records: readonly RecordSummary[]): string {
+  const counts = new Map<string, number>();
+
+  for (const record of records) {
+    counts.set(record.type, (counts.get(record.type) ?? 0) + 1);
+  }
+
+  return recordTypes.reduce(
+    (bestType, recordType) => ((counts.get(recordType) ?? 0) > (counts.get(bestType) ?? 0) ? recordType : bestType),
+    ""
+  );
+}
+
+const severityColumnKeys = new Set(["salience", "urgency", "intensity"]);
+
+function severityColumnForType(recordType: string): string | null {
+  return (
+    getColumnManifest(recordType)?.additionalColumns.find((column) => severityColumnKeys.has(column.fieldKey))?.fieldKey ??
+    null
+  );
+}
+
+function valueForSort(record: RecordSummary, fieldKey: string): string | null {
+  if (fieldKey === "salience" || fieldKey === "urgency") {
+    return record[fieldKey];
+  }
+
+  return record.displayValues?.[fieldKey] ?? null;
+}
+
+function hasProjectedDisplayValues(records: readonly RecordSummary[]): boolean {
+  return records.some((record) => record.displayValues !== undefined);
+}
+
+function recordTypeDescription(recordType: string): string {
+  return `${titleCase(recordType)} records hold the ${recordType.toLowerCase()} continuity details for the current story state.`;
+}
+
+function titleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map((part) => part.replace(/^\w/, (match) => match.toUpperCase()))
+    .join(" ");
 }
 
 function toRecordSummary(record: RecordDetail): RecordSummary {
@@ -134,7 +185,9 @@ function classNameForColumn(typeFilter: string, columnId: string): string | unde
 }
 
 export function RecordBrowser(): React.JSX.Element {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialType = searchParams.get("type");
+  const defaultTypeResolvedRef = useRef(isRecordType(initialType));
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [referenceTargets, setReferenceTargets] = useState<RecordSummary[]>([]);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
@@ -143,7 +196,7 @@ export function RecordBrowser(): React.JSX.Element {
   const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    type: "",
+    type: isRecordType(initialType) ? initialType : "",
     status: "",
     q: "",
     refRole: "",
@@ -216,6 +269,14 @@ export function RecordBrowser(): React.JSX.Element {
 
         setNotice(null);
         setRecords(response.records);
+        if (!defaultTypeResolvedRef.current && hasProjectedDisplayValues(response.records)) {
+          defaultTypeResolvedRef.current = true;
+          const defaultType = mostPopulatedType(response.records);
+
+          if (defaultType) {
+            setFilters((current) => ({ ...current, type: defaultType }));
+          }
+        }
         setSelectedRecord((current) => current ?? response.records[0] ?? null);
       })
       .catch(() => {
@@ -231,11 +292,46 @@ export function RecordBrowser(): React.JSX.Element {
     };
   }, [filters.type, filters.status, filters.q, filters.refRole, filters.targetId]);
 
+  useEffect(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+
+      if (filters.type) {
+        next.set("type", filters.type);
+      } else {
+        next.delete("type");
+      }
+
+      if (next.toString() === current.toString()) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [filters.type, setSearchParams]);
+
   const workingSetIdSet = useMemo(() => new Set(workingSetIds), [workingSetIds]);
   const filteredRecords = useMemo(() => filterLocally(records, filters, workingSetIdSet), [records, filters, workingSetIdSet]);
+  const usesProjectedDisplayValues = hasProjectedDisplayValues(records);
   const groupedRecords = useMemo(() => {
     if (!filters.groupBy) {
-      return filteredRecords;
+      if (!usesProjectedDisplayValues) {
+        return filteredRecords;
+      }
+
+      const severityField = filters.type ? severityColumnForType(filters.type) : null;
+
+      return [...filteredRecords].sort((left, right) => {
+        if (severityField) {
+          const severityComparison = compareSeverityDesc(valueForSort(left, severityField), valueForSort(right, severityField));
+
+          if (severityComparison !== 0) {
+            return severityComparison;
+          }
+        }
+
+        return right.updatedAt.localeCompare(left.updatedAt) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
+      });
     }
 
     return [...filteredRecords].sort((left, right) => {
@@ -243,9 +339,10 @@ export function RecordBrowser(): React.JSX.Element {
       const rightValue = String(right[filters.groupBy as "salience" | "urgency"] ?? "");
       return leftValue.localeCompare(rightValue) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
     });
-  }, [filteredRecords, filters.groupBy]);
+  }, [filteredRecords, filters.groupBy, filters.type, usesProjectedDisplayValues]);
 
   const columns = useMemo(() => buildRecordColumns(filters.type), [filters.type]);
+  const showScopedEmptyState = !notice && filters.type && groupedRecords.length === 0;
 
   const table = useReactTable({
     data: groupedRecords,
@@ -467,47 +564,57 @@ export function RecordBrowser(): React.JSX.Element {
             </p>
           ) : null}
 
-          <table className="recordTable">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  <th>Working Set</th>
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
-                      {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
-                    </button>
-                  </td>
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
-                      {cell.column.id === "displayLabel" ? (
-                        <button
-                          type="button"
-                          className="linkButton"
-                          title={row.original.displayLabel}
-                          onClick={() => void selectRecord(row.original)}
-                        >
-                          {row.original.displayLabel}
-                        </button>
-                      ) : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
-                      )}
+          {showScopedEmptyState ? (
+            <div className="emptyState">
+              <p className="status">No {filters.type} records.</p>
+              <p className="muted">{recordTypeDescription(filters.type)}</p>
+              <button type="button" onClick={() => openCreateForm(filters.type)}>
+                Create {filters.type}
+              </button>
+            </div>
+          ) : (
+            <table className="recordTable">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    <th>Working Set</th>
+                    {headerGroup.headers.map((header) => (
+                      <th key={header.id}>
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody>
+                {table.getRowModel().rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
+                        {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
+                      </button>
                     </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    {row.getVisibleCells().map((cell) => (
+                      <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
+                        {cell.column.id === "displayLabel" ? (
+                          <button
+                            type="button"
+                            className="linkButton"
+                            title={row.original.displayLabel}
+                            onClick={() => void selectRecord(row.original)}
+                          >
+                            {row.original.displayLabel}
+                          </button>
+                        ) : (
+                          flexRender(cell.column.columnDef.cell, cell.getContext())
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <aside className="detailPane" aria-label="Record detail">
