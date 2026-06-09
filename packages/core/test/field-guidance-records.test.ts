@@ -65,6 +65,42 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
     for (const value of ["accommodate", "self_soothe", "ruminate", "withdraw_socially"]) {
       expect(emotionValues[value], value).toBeDefined();
     }
+
+    expect(Object.keys(getFieldGuidance("OPEN THREAD.type")?.enumValues ?? {}).sort()).toEqual([
+      "mystery",
+      "promise",
+      "question",
+      "risk",
+      "tension",
+      "unresolved_setup"
+    ]);
+    expect(Object.keys(getFieldGuidance("OPEN THREAD.status")?.enumValues ?? {}).sort()).toEqual([
+      "abandoned",
+      "active",
+      "answered",
+      "escalated",
+      "resolved",
+      "superseded"
+    ]);
+    expect(Object.keys(getFieldGuidance("OPEN THREAD.audience_visibility")?.enumValues ?? {}).sort()).toEqual([
+      "ambiguous",
+      "explicit",
+      "hidden",
+      "implied"
+    ]);
+    expect(Object.keys(getFieldGuidance("OPEN THREAD.urgency")?.enumValues ?? {}).sort()).toEqual([
+      "critical",
+      "high",
+      "low",
+      "medium"
+    ]);
+    expect(Object.keys(getFieldGuidance("OPEN THREAD.current_relevance")?.enumValues ?? {}).sort()).toEqual([
+      "critical",
+      "high",
+      "low",
+      "medium",
+      "none"
+    ]);
   });
 
   it("uses only valid prompt destinations", () => {
@@ -84,6 +120,21 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
       promptFacing: "never",
       promptDestinations: [],
       validationRole: "Operational metadata for filtering, validation, or UI state."
+    });
+  });
+
+  it("partitions OPEN THREAD prose fields and keeps known answers out of prompts", () => {
+    expect(getFieldGuidance("OPEN THREAD.summary")).toMatchObject({
+      examples: ["Someone inside the chapel is still hiding the stolen ledger."],
+      relatedFields: ["OPEN THREAD.possible_pressure_now", "OPEN THREAD.answer_if_known"]
+    });
+    expect(getFieldGuidance("OPEN THREAD.summary")?.antiExamples ?? []).toHaveLength(2);
+
+    expect(getFieldGuidance("OPEN THREAD.answer_if_known")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: [],
+      validationRole: "Authoring metadata for continuity review; it is not sent to the prose prompt.",
+      relatedFields: ["OPEN THREAD.summary", "OPEN THREAD.possible_pressure_now"]
     });
   });
 });

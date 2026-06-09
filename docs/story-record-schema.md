@@ -841,6 +841,7 @@ Rules:
 
 - Use `OPEN THREAD`, not `dramatic question`.
 - Open threads color local pressure; they do not command closure.
+- `answer_if_known` is authoring-only resolution tracking and is not sent to the prose prompt.
 
 ## 9. Relationship and emotion records
 
