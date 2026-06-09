@@ -127,6 +127,19 @@ describe("GenerationBriefView", () => {
     expect(within(nav).getByRole("link", { name: /current state.*4 required empty/i })).toBeTruthy();
   });
 
+  it("does not render the contextual save bar before edits", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+
+    expect(screen.queryByText("Unsaved changes - readiness shown above may be stale.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save Generation Brief" })).toBeNull();
+  });
+
   it("flips continuation-field markers from first-segment optional to continuation required locally", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
@@ -613,6 +626,7 @@ describe("GenerationBriefView", () => {
     await waitFor(() => expect(readiness).toHaveBeenCalled());
     const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
     expect(screen.getByText("Default: first segment because no accepted prose exists yet.")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after one local beat." } });
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
@@ -641,6 +655,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after one local beat." } });
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
     expect(await screen.findByText("The draft could not be saved because the request shape is invalid.")).toBeTruthy();
@@ -659,13 +674,15 @@ describe("GenerationBriefView", () => {
     await waitFor(() => expect(readiness).toHaveBeenCalled());
     const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop." } });
-    expect(screen.getByText("Displayed readiness may be stale until you save this draft.")).toBeTruthy();
+    expect(screen.getByText("Unsaved changes - readiness shown above may be stale.")).toBeTruthy();
     expect(readiness).toHaveBeenCalledTimes(initialValidationCalls);
 
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
     await waitFor(() => expect(readiness).toHaveBeenCalledTimes(initialValidationCalls + 1));
-    expect(screen.queryByText("Displayed readiness may be stale until you save this draft.")).toBeNull();
+    expect(screen.queryByText("Unsaved changes - readiness shown above may be stale.")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save Generation Brief" })).toBeNull();
+    expect(await screen.findByText("Draft saved.")).toBeTruthy();
   });
 });
 

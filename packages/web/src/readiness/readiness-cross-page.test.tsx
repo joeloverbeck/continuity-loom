@@ -130,9 +130,10 @@ describe("cross-page readiness behavior", () => {
 
     renderBrief();
     expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
-    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save Generation Brief" }).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Save Generation Brief" })).toBeNull();
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop." } });
-    expect(screen.getByText("Displayed readiness may be stale until you save this draft.")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save Generation Brief" }).disabled).toBe(false);
+    expect(screen.getByText("Unsaved changes - readiness shown above may be stale.")).toBeTruthy();
     expect(screen.getByText("This draft has unsaved changes. The readiness checklist may be stale.")).toBeTruthy();
     cleanup();
 

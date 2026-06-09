@@ -378,10 +378,6 @@ export function GenerationBriefView(): React.JSX.Element {
           </ul>
         </details>
       ) : null}
-      {hasUnsavedChanges ? (
-        <p className="status statusWarning">Displayed readiness may be stale until you save this draft.</p>
-      ) : null}
-
       <div className="briefConsoleLayout">
         <SectionRail draft={session} generationContext={generationContext} />
         <div className="briefStack">
@@ -785,7 +781,12 @@ export function GenerationBriefView(): React.JSX.Element {
         </div>
       </div>
 
-      <button type="button" onClick={() => void save()}>Save Generation Brief</button>
+      {hasUnsavedChanges ? (
+        <div className="briefSaveBar" role="status">
+          <p className="briefSaveBarText">Unsaved changes - readiness shown above may be stale.</p>
+          <button type="button" onClick={() => void save()}>Save Generation Brief</button>
+        </div>
+      ) : null}
     </section>
   );
 }

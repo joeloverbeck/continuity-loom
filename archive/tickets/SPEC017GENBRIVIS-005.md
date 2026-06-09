@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-005: Contextual save bar
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — replaces the bottom-only save button and top-only stale notice with a sticky dirty-state save bar plus its CSS; save semantics unchanged
@@ -79,3 +79,22 @@ Add the sticky save-bar container, dirty-state visibility, and button styling to
 1. `npm test --workspace @loom/web -- GenerationBriefView`
 2. `npm run lint && npm run typecheck && npm test`
 3. `grep -n "Save Generation Brief" packages/web/src/generation-brief/GenerationBriefView.tsx` — confirms the single save affordance is the bar (expect the button text to appear once, inside the bar).
+
+## Outcome
+
+Completed 2026-06-10.
+
+- Replaced the top-only stale notice and bottom-only save button with a contextual sticky save bar that renders only when `hasUnsavedChanges` is true.
+- Kept `save()` and the `setGenerationBrief()` payload path unchanged; the bar calls the existing handler and remains informational, not a readiness gate.
+- Updated `GenerationBriefView` tests for no initial bar, appears-on-dirty, hides-on-success, and "Draft saved." confirmation.
+- Updated the cross-page readiness test so launch-directive blockers still gate Preview/Generate but not draft Save after the draft is dirty.
+
+Verification:
+
+- `npm test --workspace @loom/web -- GenerationBriefView` — passed.
+- `npm test --workspace @loom/web -- GenerationBriefView readiness-cross-page` — passed.
+- `grep -n "Save Generation Brief" packages/web/src/generation-brief/GenerationBriefView.tsx` — passed with a single source occurrence (`787`).
+- `rg -n "Displayed readiness may be stale until you save this draft|Unsaved changes - readiness shown above may be stale|briefSaveBar" packages/web/src/generation-brief/GenerationBriefView.tsx packages/web/src/generation-brief/GenerationBriefView.test.tsx packages/web/src/styles.css` — passed; old top-stale text absent from the view.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed (103 files, 777 tests).
