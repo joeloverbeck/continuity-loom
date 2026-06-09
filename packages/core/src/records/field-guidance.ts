@@ -23,6 +23,7 @@ export interface FieldGuidance {
   surface: "story_config" | "generation_brief" | "record";
   ownerKind: string;
   short: string;
+  displayLabel?: string;
   details?: string;
   promptFacing: PromptFacing;
   requiredness?: FieldRequiredness;

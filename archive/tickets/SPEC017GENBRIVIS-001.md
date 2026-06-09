@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-001: Add `displayLabel` to core field guidance
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds optional `displayLabel?: string` to the `FieldGuidance` interface (`@loom/core` guidance metadata) and populates it for all generation-brief entries; no prompt/compiler/validation behavior change
@@ -79,3 +79,20 @@ Extend `packages/core/test/field-guidance-coverage.test.ts` with an `it(...)` as
 1. `npm test --workspace @loom/core -- field-guidance-coverage`
 2. `npm run lint && npm run typecheck && npm test`
 3. `grep -rn "displayLabel" packages/core/src/compiler` — must print nothing (narrow proof that the label is non-compiled; the compiler subtree is the correct boundary since it is the only path into prompt output).
+
+## Outcome
+
+Completed 2026-06-10.
+
+Added optional `displayLabel` metadata to `FieldGuidance`, centralized explicit display labels for every generation-brief guidance entry in `field-guidance-brief-config.ts`, and added a coverage test asserting every `generationBriefFieldPaths()` entry resolves to a non-empty label.
+
+Deviation from original plan: the ticket's broad `grep -rn "displayLabel" packages/core/src/compiler` proof was stale because the compiler already had unrelated record-display-label helpers before this ticket. The relevant compiler-boundary proof used `rg -n "field-guidance|getFieldGuidance|FieldGuidance" packages/core/src/compiler`, which returned no matches, proving the new guidance metadata is not read by compilation.
+
+Verification:
+
+- `npm test --workspace @loom/core -- field-guidance-coverage` passed.
+- `npm test --workspace @loom/core` passed.
+- `rg -n "field-guidance|getFieldGuidance|FieldGuidance" packages/core/src/compiler` returned no matches.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.

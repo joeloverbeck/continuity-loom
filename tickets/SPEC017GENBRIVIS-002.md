@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — restructures `GenerationBriefView` markup into section cards, introduces a `BriefFieldRow` component, adds card/field-row/helper/textarea CSS; no schema, save, validation, or compiler change
-**Deps**: SPEC017GENBRIVIS-001
+**Deps**: `archive/tickets/SPEC017GENBRIVIS-001.md`
 
 ## Problem
 
@@ -14,7 +14,7 @@ The generation brief renders its 8 sections as one continuous wall of `configPan
 
 1. Current structure (verified in `packages/web/src/generation-brief/GenerationBriefView.tsx`): `BriefLabel` (`:76–93`) renders label + `RequirednessMarker`; `BriefFieldHelp` (`:72–74`) renders `<FieldHelp>` *after* each `</label>` (the orphaned ⓘ). There are exactly 8 `configPanel` sections at h3 ids `active-working-set-brief` (:385), `current-state-brief` (:412), `handoff-brief` (:628), `directive-brief` (:681), `voice-pressure-brief` (:729), `override-brief` (:773), `validation-focus-brief` (:785), `stop-guidance-brief` (:824); `current_authoritative_state` carries `data-field` (:410) and STOP GUIDANCE carries `stopGuidancePanel` (:823). ~30 fields render. `.configPanel` styling is bare `border-top` at `styles.css:662`.
 2. **`FieldHelp` already renders `guidance.criticalVisibleHint` always-visible *outside* the popover** (`packages/web/src/field-help/FieldHelp.tsx:32–34`, `<span className="fieldHelpCriticalHint">`; `Popover.Root` opens at :35) — so the SPEC-017 premise was corrected to "mostly popover-only, criticalVisibleHint excepted." Among rendered brief fields it surfaces on `prior_accepted_prose_status_or_handoff_note`, `stop_guidance.soft_unit_guidance`, `current_cast_voice_pressure[].current_voice_pressure`, and `generation_context`. SPEC-017 D2 requires the rework to **preserve** this always-visible rendering.
-3. Shared boundaries under audit: (a) the deep-link contract — `focusBriefField` / `resolveBriefFieldTarget` (`:318–350`) resolve `?field=` by exact `[name=…]` / `[data-field=…]` then by `section[data-field]`; the restructure must keep heading ids, `name`, and `data-field` anchors stable. (b) The `FieldGuidance` contract — `BriefFieldRow` reads `displayLabel` (added in SPEC017GENBRIVIS-001) with fallback to the schema leaf, and `short` for helper text.
+3. Shared boundaries under audit: (a) the deep-link contract — `focusBriefField` / `resolveBriefFieldTarget` (`:318–350`) resolve `?field=` by exact `[name=…]` / `[data-field=…]` then by `section[data-field]`; the restructure must keep heading ids, `name`, and `data-field` anchors stable. (b) The `FieldGuidance` contract — `BriefFieldRow` reads `displayLabel` (added by `archive/tickets/SPEC017GENBRIVIS-001.md`) with fallback to the schema leaf, and `short` for helper text.
 4. FOUNDATIONS §10 / §28.1: `prior_accepted_prose_status_or_handoff_note`'s `criticalVisibleHint` ("Accepted prose is readable output, not continuity authority.") is a §10-aligned always-visible safeguard; it must remain visible without opening the popover. §27 (make high-friction continuity work pleasant, fast, tractable; readiness checklist drives diagnostics) motivates the restructure — not the §6 five-surfaces-distinctness clause (this stays *within* the brief surface; SPEC-017 M1).
 5. Adjacent-behavior classification: the always-visible `criticalVisibleHint` is **existing** behavior the rework must carry forward, not new behavior — a required consequence of restructuring the field row, not a separate bug or future cleanup. No `configPanel` consumer outside this page depends on the brief's class usage (`BriefLabel`/`BriefFieldHelp` are local to `GenerationBriefView.tsx`; verified no external importers).
 
@@ -63,7 +63,7 @@ Update `GenerationBriefView.test.tsx` queries to the new labels/markup (query by
 ## Out of Scope
 
 - The sticky section rail and fill chips (SPEC017GENBRIVIS-004) and the contextual save bar (SPEC017GENBRIVIS-005).
-- The core `displayLabel` field and its population (SPEC017GENBRIVIS-001).
+- The core `displayLabel` field and its population (`archive/tickets/SPEC017GENBRIVIS-001.md`).
 - Any change to readiness/validation logic, stored draft shape, the save payload, or routes.
 - Accordion/collapse machinery and reorderable sections (documented anti-patterns — SPEC-017 Out of Scope).
 
