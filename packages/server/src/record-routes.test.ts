@@ -67,6 +67,20 @@ function entityPayloadWithoutId(displayName: string) {
   };
 }
 
+function emotionPayload(id: string, holder: string, intensity = "high") {
+  return {
+    id,
+    status: "active",
+    holder,
+    description: "Mara is furious that the door was sealed.",
+    affect_kind: "anger",
+    intensity,
+    behavioral_pressure: ["attack", "reject"],
+    visibility: "visible",
+    surface_expression: "Her hands shake against the latch."
+  };
+}
+
 function castMemberPayload(entityId: string) {
   return {
     entity_id: entityId,
@@ -148,10 +162,24 @@ describe("record routes", () => {
     });
     expect(createFact.statusCode).toBe(201);
     expect(createFact.json()).toMatchObject({ ok: true, record: { id: idA, type: "FACT" } });
+    expect(createFact.json().record.displayValues).toEqual({
+      status: "active",
+      fact_kind: "current_state",
+      scope: "entity",
+      salience: "medium",
+      audience_visibility: "explicit"
+    });
 
     const listFact = await fastify.inject({ method: "GET", url: "/api/records?type=FACT&q=door" });
     expect(listFact.json()).toMatchObject({ ok: true, records: [{ id: idA, displayLabel: "Initial fact" }] });
     expect(listFact.json().records[0]).not.toHaveProperty("payload");
+    expect(listFact.json().records[0].displayValues).toEqual({
+      status: "active",
+      fact_kind: "current_state",
+      scope: "entity",
+      salience: "medium",
+      audience_visibility: "explicit"
+    });
 
     const updateFact = await fastify.inject({
       method: "PUT",
@@ -163,6 +191,7 @@ describe("record routes", () => {
     });
     expect(updateFact.statusCode).toBe(200);
     expect(updateFact.json()).toMatchObject({ ok: true, record: { displayLabel: "Updated fact", salience: "high" } });
+    expect(updateFact.json().record.displayValues.salience).toBe("high");
 
     const archiveFact = await fastify.inject({ method: "POST", url: `/api/records/${idA}/archive` });
     expect(archiveFact.json()).toEqual({ ok: true });
@@ -185,6 +214,58 @@ describe("record routes", () => {
     expect((await fastify.inject({ method: "GET", url: `/api/records/${castRecord.id}` })).json()).toMatchObject({
       ok: true,
       record: { type: "CAST MEMBER", payload: { entity_id: idB } }
+    });
+  });
+
+  it("emits manifest display values on list and detail projections", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: { type: "ENTITY", displayLabel: "Mara", payload: entityPayload(idA, "Mara") }
+    });
+    const createEmotion = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: { type: "EMOTION", displayLabel: "Mara's anger", payload: emotionPayload(idB, idA) }
+    });
+    expect(createEmotion.statusCode).toBe(201);
+    expect(createEmotion.json().record.displayValues).toEqual({
+      status: "active",
+      affect_kind: "anger",
+      intensity: "high",
+      visibility: "visible"
+    });
+
+    const listEmotion = await fastify.inject({ method: "GET", url: "/api/records?type=EMOTION" });
+    expect(listEmotion.json().records).toHaveLength(1);
+    expect(listEmotion.json().records[0]).not.toHaveProperty("payload");
+    expect(listEmotion.json().records[0].displayValues).toEqual({
+      status: "active",
+      affect_kind: "anger",
+      intensity: "high",
+      visibility: "visible"
+    });
+
+    const detailEmotion = await fastify.inject({ method: "GET", url: `/api/records/${idB}` });
+    expect(detailEmotion.json()).toMatchObject({
+      ok: true,
+      record: {
+        id: idB,
+        type: "EMOTION",
+        displayValues: {
+          status: "active",
+          affect_kind: "anger",
+          intensity: "high",
+          visibility: "visible"
+        },
+        payload: {
+          holder: idA,
+          intensity: "high"
+        }
+      }
     });
   });
 

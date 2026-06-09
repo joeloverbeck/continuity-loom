@@ -111,11 +111,15 @@ describe("record data model", () => {
         status: "active",
         salience: "high",
         urgency: "medium",
+        displayValues: {
+          fact_kind: "current_state",
+          salience: "high"
+        },
         createdAt: "2026-06-05T00:00:00.000Z",
         updatedAt: "2026-06-05T00:00:00.000Z",
         archived: false
       })
-    ).toMatchObject({ id: idA });
+    ).toMatchObject({ id: idA, displayValues: { fact_kind: "current_state", salience: "high" } });
 
     expect(() =>
       recordMetadataSchema.parse({

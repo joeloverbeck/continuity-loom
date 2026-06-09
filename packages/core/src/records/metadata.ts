@@ -8,6 +8,7 @@ export const recordMetadataSchema = z
     status: z.string().min(1).nullable().optional(),
     salience: z.string().min(1).nullable().optional(),
     urgency: z.string().min(1).nullable().optional(),
+    displayValues: z.record(z.string(), z.string().nullable()).optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     archived: z.boolean(),

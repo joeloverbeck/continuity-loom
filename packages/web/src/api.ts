@@ -136,6 +136,7 @@ export type RecordSummary = {
   status: string | null;
   salience: string | null;
   urgency: string | null;
+  displayValues?: Record<string, string | null>;
   archived: boolean;
   userOrder: number | null;
   createdAt: string;

@@ -1,6 +1,6 @@
 # SPEC016RECGRITYP-002: `displayValues` summary projection
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends `RecordMetadata` (`packages/core/src/records/metadata.ts`) with an optional `displayValues`; wires the server `metadata(...)`/detail projection (`packages/server/src/record-routes.ts`) to emit it via the core manifest; extends web `RecordSummary`/`RecordDetail` (`packages/web/src/api.ts`). Additive-only; no existing field changes type.
@@ -82,3 +82,24 @@ In `packages/web/src/api.ts`, add `displayValues?: Record<string, string | null>
 1. `npx vitest run packages/server/src/record-routes.test.ts`
 2. `npm test`
 3. The server route test is the correct boundary because `metadata(...)` is server-side and exercises the manifest→projection seam against a real repository record; `npm test` then confirms core typecheck/boundary across packages.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Extended `RecordMetadata` with optional `displayValues?: Record<string, string | null>`.
+- Added `displayValues` to the web `RecordSummary`/`RecordDetail` contract.
+- Wired server list metadata plus get/create/update record responses to project display values through `projectDisplayValues(record.type, record.payload)`.
+- Extended route tests for FACT and EMOTION display values and added a core metadata schema assertion for optional `displayValues`.
+
+Deviations from original plan:
+- Used `npm exec vitest -- ...` for targeted Vitest commands rather than `npx vitest ...`; the same affected test files were run.
+- No query-count harness exists in the route tests; the no-extra-query invariant is enforced by the implementation shape and import sweep: the projection reads the already-loaded `record.payload` and does not call repository or database APIs.
+
+Verification:
+- `npm exec vitest -- run packages/core/test/records.test.ts packages/server/src/record-routes.test.ts` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
+- `rg -n "projectDisplayValues" packages/core/src packages/server/src packages/web/src` — only core export/definition and `packages/server/src/record-routes.ts`; no compiler import.
