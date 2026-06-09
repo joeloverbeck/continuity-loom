@@ -471,26 +471,17 @@ button:disabled:hover {
   font-size: 0.82rem;
 }
 
-.recordTable {
-  display: block;
+.recordTableScroll {
   max-width: 100%;
   overflow-x: auto;
+}
+
+.recordTable {
   width: 100%;
+  min-width: 760px;
   border-collapse: separate;
   border-spacing: 0;
   background: #ffffff;
-}
-
-.recordTable thead,
-.recordTable tbody,
-.recordTable tr {
-  min-width: max-content;
-}
-
-.recordTable tr {
-  display: table;
-  width: 100%;
-  table-layout: fixed;
 }
 
 .recordTable th,

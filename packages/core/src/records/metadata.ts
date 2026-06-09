@@ -5,6 +5,7 @@ export const recordMetadataSchema = z
     id: z.uuid(),
     type: z.string().min(1),
     displayLabel: z.string().min(1),
+    fullDisplayLabel: z.string().min(1).optional(),
     status: z.string().min(1).nullable().optional(),
     salience: z.string().min(1).nullable().optional(),
     urgency: z.string().min(1).nullable().optional(),

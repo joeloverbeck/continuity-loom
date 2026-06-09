@@ -1,9 +1,9 @@
 # SPEC016RECGRITYP-006: Capstone — web grid tests, manual smoke, docs
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
-**Engine Changes**: Yes — adds per-type/All-types/default-type/empty-state coverage to `packages/web/src/records/RecordBrowser.test.tsx` and verifies/updates `docs/user-guide.md`; no production behavior change (exercises the surfaces built by 001–005).
+**Engine Changes**: Yes — adds per-type/All-types/default-type/empty-state coverage to `packages/web/src/records/RecordBrowser.test.tsx`, verifies `docs/user-guide.md`, and makes two narrow presentation/projection corrections found during the capstone smoke: the records table uses a real scroll wrapper instead of `display: block` on the table, and record API responses expose a derived optional `fullDisplayLabel` for label tooltips/detail headings.
 **Deps**: SPEC016RECGRITYP-004, SPEC016RECGRITYP-005
 
 ## Problem
@@ -15,7 +15,7 @@ SPEC-016's §Verification requires that the reworked records grid be proven end-
 1. The CI-runnable web tests live in `packages/web/src/records/RecordBrowser.test.tsx` (existing; fixtures at lines 29, 86, `filterFixtures`/`denseRecordFixtures` helpers) — this ticket extends them. The behaviors under test are produced by SPEC016RECGRITYP-003 (per-type columns, All-types minimal set, "—" cells) and -004 (default type, URL sync, default sort, empty state); -005 ships the CSS verified by manual runbook.
 2. `docs/user-guide.md` was confirmed during `/reassess-spec` this session to contain **no** column/grid enumeration (grep for `column|grid|salience|urgency|all types` → 0 hits), so the SPEC-016 D6 doc edit is expected to be a **no-op**; this ticket re-verifies that and only adds a records-browsing line if the verification now finds an enumerated column list to correct.
 3. Cross-artifact boundary under audit: the component behaviors (003/004) ↔ the test assertions here. The tests must re-enumerate expected columns from the manifest/fixtures at test start rather than hardcoding a column list that would go stale if the manifest changes.
-4. This ticket modifies test/doc surfaces only and asserts no production behavior change — it exercises the pipeline 001–005 composed. The red-bunny smoke is a manual runbook because there is no browser-automation harness in the project (consistent with the capstone manual-runbook variant).
+4. Original scope expected test/doc surfaces only. Reassessment against the interrupted work and live `red-bunny` smoke found two required consequences of the SPEC-016 presentation acceptance: `archive/tickets/SPEC016RECGRITYP-005.md` recorded a CSS-only table-as-scroll-container plan, but normal table layout plus a `.recordTableScroll` wrapper is needed to preserve table semantics while scrolling; and stored `displayLabel` values are already truncated by `deriveDisplayLabel(...)`, so the tooltip/detail requirement needs a derived `fullDisplayLabel` projection from `deriveFullDisplayLabel(...)`. Both corrections are display-only and do not change stored record payloads, prompt compilation, validation, working-set membership, or OpenRouter behavior.
 
 ## Architecture Check
 
@@ -53,12 +53,18 @@ Re-grep for an enumerated column list; if present and now inaccurate, update the
 
 ## Files to Touch
 
+- `packages/core/src/records/metadata.ts` (modify)
+- `packages/server/src/record-routes.ts` (modify)
+- `packages/server/src/record-routes.test.ts` (modify)
+- `packages/web/src/api.ts` (modify)
+- `packages/web/src/records/RecordBrowser.tsx` (modify)
 - `packages/web/src/records/RecordBrowser.test.tsx` (modify)
-- `docs/user-guide.md` (modify)
+- `packages/web/src/styles.css` (modify)
+- `docs/user-guide.md` (verified no-op; no stale column enumeration found)
 
 ## Out of Scope
 
-- All production logic (built in SPEC016RECGRITYP-001…005) — this ticket adds no runtime behavior.
+- New production behavior beyond the narrow display/projection corrections listed above.
 - Reference-field resolution, user-configurable columns, saved views — spec §Out of Scope.
 
 ## Acceptance Criteria
@@ -73,17 +79,36 @@ Re-grep for an enumerated column list; if present and now inaccurate, update the
 
 1. Expected column sets in the tests are derived from the core manifest/fixtures, not hardcoded, so they track manifest changes.
 2. `docs/user-guide.md` contains no stale column enumeration after this ticket (verified-empty or corrected).
-3. No production behavior is added by this ticket; it only exercises and documents 001–005.
+3. No stored record, compiler, validation, working-set, prompt, or OpenRouter behavior is changed by this ticket; the only production changes are display-only projection/presentation corrections.
 
 ## Test Plan
 
 ### New/Modified Tests
 
-1. `packages/web/src/records/RecordBrowser.test.tsx` (modify) — per-type columns, All-types minimal set, default-type-on-load + URL override, empty state, preserved Working Set/search/group.
-2. `docs/user-guide.md` (modify) — records-browsing description verification (expected no-op).
+1. `packages/web/src/records/RecordBrowser.test.tsx` (modify) — per-type columns, All-types minimal set, default-type-on-load + URL override, empty state, full-label tooltip/detail presentation, preserved Working Set/search/group.
+2. `packages/server/src/record-routes.test.ts` (modify) — list/create/detail responses include derived `fullDisplayLabel` along with manifest display values.
+3. `docs/user-guide.md` — records-browsing description verification (no-op; no stale column list exists).
 
 ### Commands
 
 1. `npx vitest run packages/web/src/records/RecordBrowser.test.tsx`
 2. `npm test`
 3. The component test plus the manual runbook is the correct verification boundary: the CI-runnable behaviors are asserted in Vitest, while the CSS clip/clamp and the live red-bunny reproduction have no automation harness and are confirmed by the runbook.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Added capstone `RecordBrowser.test.tsx` coverage for EMOTION manifest columns, the explicit All types minimal columns, most-populated default type and URL override behavior, scoped empty state, and existing Working Set/search/group behavior.
+- Added server/web coverage and implementation for an optional derived `fullDisplayLabel`, used by the Records grid tooltip and detail heading so visually shortened labels still expose the full schema-derived label.
+- Kept normal table layout by moving horizontal scrolling to `.recordTableScroll`, preserving sticky Working Set/Label/header behavior and the two-line label clamp.
+- Verified `docs/user-guide.md` has no records-grid column enumeration to update.
+
+Deviations from original plan:
+- The ticket originally expected no production changes. Live smoke found the full-label tooltip and scroll-container details were not actually satisfied by 001–005, so this capstone includes those narrow display-only corrections.
+
+Verification:
+- `npx vitest run packages/web/src/records/RecordBrowser.test.tsx` — passed.
+- `npx vitest run packages/server/src/record-routes.test.ts` — passed.
+- Live localhost smoke against `/home/joeloverbeck/stories/red-bunny` on `npm run dev` — passed: default type opened as `BELIEF`; EMOTION showed `Description`, `Status`, `Affect kind`, `Intensity`, `Visibility` with no `Salience`/`Urgency`; label tooltip/detail heading used the full label while the cell stayed visually clamped; table wrapper had horizontal scroll with sticky Working Set, Label, and header cells; All types showed only `Working Set`, `Type`, `Label`, `Status`, `Updated`.

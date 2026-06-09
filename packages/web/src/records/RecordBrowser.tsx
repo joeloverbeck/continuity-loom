@@ -110,6 +110,7 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
     id: record.id,
     type: record.type,
     displayLabel: record.displayLabel,
+    ...(record.fullDisplayLabel === undefined ? {} : { fullDisplayLabel: record.fullDisplayLabel }),
     status: record.status,
     salience: record.salience,
     urgency: record.urgency,
@@ -119,6 +120,10 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
+}
+
+function fullDisplayLabel(record: RecordDetail | RecordSummary): string {
+  return record.fullDisplayLabel ?? record.displayLabel;
 }
 
 function displayCell(value: unknown): string {
@@ -573,47 +578,49 @@ export function RecordBrowser(): React.JSX.Element {
               </button>
             </div>
           ) : (
-            <table className="recordTable">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    <th>Working Set</th>
-                    {headerGroup.headers.map((header) => (
-                      <th key={header.id}>
-                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-              <tbody>
-                {table.getRowModel().rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>
-                      <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
-                        {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
-                      </button>
-                    </td>
-                    {row.getVisibleCells().map((cell) => (
-                      <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
-                        {cell.column.id === "displayLabel" ? (
+            <div className="recordTableScroll">
+              <table className="recordTable">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      <th>Working Set</th>
+                      {headerGroup.headers.map((header) => (
+                        <th key={header.id}>
+                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        </th>
+                      ))}
+                    </tr>
+                  ))}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
+                          {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
+                        </button>
+                      </td>
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
+                          {cell.column.id === "displayLabel" ? (
                           <button
                             type="button"
                             className="linkButton"
-                            title={row.original.displayLabel}
+                            title={fullDisplayLabel(row.original)}
                             onClick={() => void selectRecord(row.original)}
                           >
-                            {row.original.displayLabel}
-                          </button>
-                        ) : (
-                          flexRender(cell.column.columnDef.cell, cell.getContext())
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                              {row.original.displayLabel}
+                            </button>
+                          ) : (
+                            flexRender(cell.column.columnDef.cell, cell.getContext())
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 
@@ -621,7 +628,7 @@ export function RecordBrowser(): React.JSX.Element {
           {selectedRecord ? (
             <>
               <p className="eyebrow">{selectedRecord.type}</p>
-              <h3>{selectedRecord.displayLabel}</h3>
+              <h3>{fullDisplayLabel(selectedRecord)}</h3>
               <dl className="runtimeGrid">
                 <div>
                   <dt>ID</dt>

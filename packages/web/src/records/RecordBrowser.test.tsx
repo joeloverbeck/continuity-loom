@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { recordTypes } from "@loom/core";
+import { allTypesColumns, recordColumnManifest, recordTypes } from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -71,6 +71,122 @@ const fixtures: RecordSummary[] = [
     salience: "low",
     urgency: null,
     archived: true,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z"
+  }
+];
+
+const fullEmotionLabel =
+  "Mara is furious that the cellar door was sealed before she arrived and that everyone pretended the lock was harmless.";
+
+const projectedFixtures: RecordSummary[] = [
+  {
+    id: "fact-a",
+    type: "FACT",
+    displayLabel: "Critical fact",
+    status: "active",
+    salience: "critical",
+    urgency: null,
+    displayValues: {
+      status: "active",
+      fact_kind: "current_state",
+      scope: "entity",
+      salience: "critical",
+      audience_visibility: "explicit"
+    },
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:05:00.000Z"
+  },
+  {
+    id: "fact-b",
+    type: "FACT",
+    displayLabel: "Low fact",
+    status: "active",
+    salience: "low",
+    urgency: null,
+    displayValues: {
+      status: "active",
+      fact_kind: "setting_fact",
+      scope: "global",
+      salience: "low",
+      audience_visibility: "implied"
+    },
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:04:00.000Z"
+  },
+  {
+    id: "fact-c",
+    type: "FACT",
+    displayLabel: "Medium fact",
+    status: "active",
+    salience: "medium",
+    urgency: null,
+    displayValues: {
+      status: "active",
+      fact_kind: "hard_canon",
+      scope: "current_segment",
+      salience: "medium",
+      audience_visibility: "explicit"
+    },
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:03:00.000Z"
+  },
+  {
+    id: "emotion-a",
+    type: "EMOTION",
+    displayLabel: "Mara is furious...",
+    fullDisplayLabel: fullEmotionLabel,
+    status: "active",
+    salience: null,
+    urgency: null,
+    displayValues: {
+      status: "active",
+      affect_kind: "anger",
+      intensity: "high",
+      visibility: "visible"
+    },
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:02:00.000Z"
+  },
+  {
+    id: "emotion-b",
+    type: "EMOTION",
+    displayLabel: "Mara hides a low dread under practiced calm",
+    status: "active",
+    salience: null,
+    urgency: null,
+    displayValues: {
+      status: "active",
+      affect_kind: "dread",
+      intensity: "low",
+      visibility: "private"
+    },
+    archived: false,
+    userOrder: null,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:01:00.000Z"
+  },
+  {
+    id: "entity-a",
+    type: "ENTITY",
+    displayLabel: "Mara",
+    status: null,
+    salience: null,
+    urgency: null,
+    displayValues: {
+      entity_kind: "person",
+      roles_in_story: "viewpoint, primary_actor"
+    },
+    archived: false,
     userOrder: null,
     createdAt: "2026-06-05T00:00:00.000Z",
     updatedAt: "2026-06-05T00:00:00.000Z"
@@ -164,6 +280,22 @@ function tableLabels(): string[] {
     .filter((label) => label !== "Add" && label !== "Selected");
 }
 
+function tableHeaders(): string[] {
+  return within(screen.getByRole("table"))
+    .getAllByRole("columnheader")
+    .map((header) => header.textContent ?? "");
+}
+
+function expectedHeadersForType(recordType: string): string[] {
+  const manifest = recordColumnManifest[recordType]!;
+
+  return ["Working Set", manifest.primaryLabelHeader, ...manifest.additionalColumns.map((column) => column.header)];
+}
+
+function expectedAllTypesHeaders(): string[] {
+  return ["Working Set", ...allTypesColumns.map((column) => column.header)];
+}
+
 function denseRecordFixtures(count: number): RecordSummary[] {
   const recordTypeCycle = ["FACT", "INTENTION", "ENTITY"] as const;
   const salienceCycle = ["critical", "high", "low"] as const;
@@ -212,6 +344,111 @@ function mockWorkingSet(ids: string[] = []): void {
 }
 
 describe("RecordBrowser", () => {
+  it("renders per-type EMOTION columns from the manifest", async () => {
+    mockWorkingSet();
+    vi.mocked(getRecord).mockImplementation((id: string) =>
+      Promise.resolve({
+        ok: true,
+        record: {
+          ...projectedFixtures.find((record) => record.id === id)!,
+          payload: { inspected: id }
+        }
+      })
+    );
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(projectedFixtures, filters)
+      })
+    );
+
+    renderBrowser("/records?type=EMOTION");
+
+    const emotionButton = await screen.findByRole("button", { name: "Mara is furious..." });
+    expect(tableHeaders()).toEqual(expectedHeadersForType("EMOTION"));
+    expect(tableHeaders()).toContain("Affect kind");
+    expect(tableHeaders()).toContain("Intensity");
+    expect(tableHeaders()).not.toContain("Salience");
+    expect(tableHeaders()).not.toContain("Urgency");
+    expect(emotionButton.getAttribute("title")).toBe(fullEmotionLabel);
+    expect(screen.getByText("anger")).toBeTruthy();
+    expect(screen.getByText("high")).toBeTruthy();
+
+    fireEvent.click(emotionButton);
+    expect(await screen.findByRole("heading", { name: fullEmotionLabel })).toBeTruthy();
+  });
+
+  it("renders the explicit All types view with the minimal shared manifest columns", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(projectedFixtures, filters)
+      })
+    );
+
+    renderBrowser("/records?type=FACT");
+    await waitFor(() => expect(tableHeaders()).toEqual(expectedHeadersForType("FACT")));
+
+    fireEvent.change(screen.getByLabelText("Type"), { target: { value: "" } });
+
+    await waitFor(() => expect(tableHeaders()).toEqual(expectedAllTypesHeaders()));
+    expect(tableHeaders()).not.toContain("Thread kind");
+    expect(tableHeaders()).not.toContain("Salience");
+    expect(tableHeaders()).not.toContain("Urgency");
+  });
+
+  it("defaults to the most-populated projected type and lets URL type override it", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(projectedFixtures, filters)
+      })
+    );
+
+    renderBrowser();
+
+    await waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>("Type").value).toBe("FACT"));
+    expect(tableLabels()).toEqual(["Critical fact", "Medium fact", "Low fact"]);
+    expect(tableHeaders()).toEqual(expectedHeadersForType("FACT"));
+    expect(vi.mocked(listRecords)).toHaveBeenLastCalledWith({ type: "FACT" });
+
+    cleanup();
+    vi.clearAllMocks();
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(projectedFixtures, filters)
+      })
+    );
+
+    renderBrowser("/records?type=EMOTION");
+
+    await waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>("Type").value).toBe("EMOTION"));
+    expect(tableLabels()).toEqual(["Mara is furious...", "Mara hides a low dread under practiced calm"]);
+    expect(tableHeaders()).toEqual(expectedHeadersForType("EMOTION"));
+    expect(vi.mocked(listRecords)).toHaveBeenLastCalledWith({ type: "EMOTION" });
+  });
+
+  it("renders a scoped empty state for a projected type with no records", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      Promise.resolve({
+        ok: true,
+        records: filterRecords(projectedFixtures, filters)
+      })
+    );
+
+    renderBrowser("/records?type=LOCATION");
+
+    expect(await screen.findByText("No LOCATION records.")).toBeTruthy();
+    expect(screen.getByText(/Location records hold the location continuity details/)).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Create LOCATION" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("table")).toBeNull();
+  });
+
   it("keeps dense record filtering, search, and grouping correct without throwing", async () => {
     const denseRecords = denseRecordFixtures(500);
     const workingSetIds = denseRecords

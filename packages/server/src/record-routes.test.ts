@@ -238,10 +238,12 @@ describe("record routes", () => {
       intensity: "high",
       visibility: "visible"
     });
+    expect(createEmotion.json().record.fullDisplayLabel).toBe("Mara is furious that the door was sealed.");
 
     const listEmotion = await fastify.inject({ method: "GET", url: "/api/records?type=EMOTION" });
     expect(listEmotion.json().records).toHaveLength(1);
     expect(listEmotion.json().records[0]).not.toHaveProperty("payload");
+    expect(listEmotion.json().records[0].fullDisplayLabel).toBe("Mara is furious that the door was sealed.");
     expect(listEmotion.json().records[0].displayValues).toEqual({
       status: "active",
       affect_kind: "anger",

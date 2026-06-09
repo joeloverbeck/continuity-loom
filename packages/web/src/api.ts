@@ -133,6 +133,7 @@ export type RecordSummary = {
   id: string;
   type: string;
   displayLabel: string;
+  fullDisplayLabel?: string;
   status: string | null;
   salience: string | null;
   urgency: string | null;

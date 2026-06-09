@@ -1,4 +1,4 @@
-import { projectDisplayValues } from "@loom/core";
+import { deriveFullDisplayLabel, projectDisplayValues } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
@@ -27,6 +27,7 @@ interface RecordMetadataResponse {
   id: string;
   type: string;
   displayLabel: string;
+  fullDisplayLabel: string;
   status: string | null;
   salience: string | null;
   urgency: string | null;
@@ -63,6 +64,7 @@ function metadata(record: RecordRepositoryRecord): RecordMetadataResponse {
     id: record.id,
     type: record.type,
     displayLabel: record.displayLabel,
+    fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
     status: record.status,
     salience: record.salience,
     urgency: record.urgency,
@@ -74,9 +76,12 @@ function metadata(record: RecordRepositoryRecord): RecordMetadataResponse {
   };
 }
 
-function recordDetail(record: RecordRepositoryRecord): RecordRepositoryRecord & { displayValues: Record<string, string | null> } {
+function recordDetail(
+  record: RecordRepositoryRecord
+): RecordRepositoryRecord & { displayValues: Record<string, string | null>; fullDisplayLabel: string } {
   return {
     ...record,
+    fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
     displayValues: projectDisplayValues(record.type, record.payload)
   };
 }
