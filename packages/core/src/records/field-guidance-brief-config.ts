@@ -49,6 +49,56 @@ const optionalOpts = {
   requiredness: "optional"
 } satisfies Partial<GuidanceInput>;
 
+const generationBriefDisplayLabels: Record<string, string> = {
+  "active_working_set.selected_records[]": "Selected records",
+  "active_working_set.active_onstage_cast_full[].cast_member_id": "Full active cast member",
+  "active_working_set.active_onstage_cast_full[].local_function": "Local function",
+  "active_working_set.present_minor_cast_compressed[]": "Present minor cast compressed",
+  "active_working_set.offstage_relevant_cast[]": "Offstage relevant cast",
+  "active_working_set.selected_pov": "Selected POV",
+  "active_working_set.manual_directive_id": "Manual directive link",
+  "current_authoritative_state.current_time": "Current time",
+  "current_authoritative_state.current_location": "Current location",
+  "current_authoritative_state.onstage_entities[]": "Onstage entities",
+  "current_authoritative_state.immediate_situation_summary": "Immediate situation summary",
+  "current_authoritative_state.offstage_pressuring_entities[]": "Offstage pressuring entities",
+  "current_authoritative_state.positions": "Positions",
+  "current_authoritative_state.possessions": "Possessions",
+  "current_authoritative_state.visible_conditions[]": "Visible conditions",
+  "current_authoritative_state.environmental_conditions": "Environmental conditions",
+  "current_authoritative_state.entity_statuses": "Entity statuses",
+  "current_authoritative_state.line_of_sight_and_visibility": "Line of sight and visibility",
+  "current_authoritative_state.pov_cannot_perceive_now": "POV cannot perceive right now",
+  "current_authoritative_state.routes_and_exits[]": "Routes and exits",
+  "current_authoritative_state.available_time": "Available time",
+  "current_authoritative_state.consent_or_force_conditions": "Consent or force conditions",
+  "current_authoritative_state.current_locks[]": "Current locks",
+  "immediate_handoff.recent_causal_context": "Recent causal context",
+  "immediate_handoff.last_visible_moment": "Last visible moment",
+  "immediate_handoff.prior_accepted_prose_status_or_handoff_note": "Prior accepted-prose status / handoff note",
+  "immediate_handoff.begin_after": "Begin after",
+  "manual_moment_directive.must_render[]": "Must render",
+  "manual_moment_directive.may_render_if_naturally_caused[]": "May render if naturally caused",
+  "manual_moment_directive.do_not_force[]": "Do not force",
+  "current_cast_voice_pressure[].cast_member_id": "Cast member",
+  "current_cast_voice_pressure[].local_function": "Local function",
+  "current_cast_voice_pressure[].current_voice_pressure": "Current voice pressure",
+  "current_cast_voice_pressure[].dialogue_pressure": "Dialogue pressure",
+  "current_cast_voice_pressure[].pov_narration_pressure": "POV narration pressure",
+  "current_cast_voice_pressure[].nonverbal_or_silence_pressure": "Nonverbal or silence pressure",
+  "current_cast_voice_pressure[].current_must_preserve[]": "Current must preserve",
+  "current_cast_voice_pressure[].current_must_avoid[]": "Current must avoid",
+  "cast_voice_overrides[].cast_member_id": "Cast member",
+  "cast_voice_overrides[].scope": "Scope",
+  "cast_voice_overrides[].reason": "Reason",
+  "cast_voice_overrides[].applies_to[]": "Applies to",
+  "cast_voice_overrides[].override_text": "Override text",
+  "generation_validation_focus.validation_focus_tags.generation_context[]": "Generation context checks",
+  "generation_validation_focus.validation_focus_tags.expected_local_modes[]": "Expected local-mode checks",
+  "generation_validation_focus.validation_focus_tags.possible_durable_changes[]": "Possible durable-change checks",
+  "stop_guidance.soft_unit_guidance": "Soft unit guidance"
+};
+
 const psychicDistanceGuidance = {
   close: { short: "Stay near the viewpoint's immediate perception and thought." },
   medium: { short: "Balance interior access with observable action." },
@@ -411,10 +461,21 @@ function brief(
     ownerKind: "GENERATION BRIEF",
     surface: "generation_brief",
     short,
+    displayLabel: generationBriefDisplayLabel(fieldPath),
     promptFacing: promptDestinations.length > 0 ? "conditional" : "never",
     promptDestinations,
     ...options
   };
+}
+
+function generationBriefDisplayLabel(fieldPath: string): string {
+  const displayLabel = generationBriefDisplayLabels[fieldPath];
+
+  if (!displayLabel) {
+    throw new Error(`Missing generation-brief display label for ${fieldPath}`);
+  }
+
+  return displayLabel;
 }
 
 function validationFocus(fieldPath: string, short: string): GuidanceInput {

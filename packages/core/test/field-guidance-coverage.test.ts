@@ -57,6 +57,15 @@ describe("field guidance coverage", () => {
       expect(Object.keys(getFieldGuidance(path)?.enumValues ?? {}).length, path).toBeGreaterThan(0);
     }
   });
+
+  it("carries display labels for every generation-brief field", () => {
+    for (const path of generationBriefFieldPaths()) {
+      const label = getFieldGuidance(path)?.displayLabel;
+
+      expect(typeof label, path).toBe("string");
+      expect(label?.trim().length, path).toBeGreaterThan(0);
+    }
+  });
 });
 
 function allCoveredFieldPaths(): readonly string[] {

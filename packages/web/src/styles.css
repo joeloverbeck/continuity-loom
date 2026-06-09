@@ -629,14 +629,88 @@ button:disabled:hover {
   gap: 28px;
 }
 
+.briefConsoleLayout {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
 .briefStack {
   display: grid;
   gap: 16px;
   margin-bottom: 16px;
 }
 
+.briefSectionRail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+}
+
+.briefSectionRail ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.briefSectionRailLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  border-radius: 6px;
+  color: #39445a;
+  padding: 6px 8px;
+  text-decoration: none;
+}
+
+.briefSectionRailLink:hover,
+.briefSectionRailLink:focus-visible,
+.briefSectionRailLink-active {
+  background: #eef3f8;
+  color: #182033;
+}
+
+.briefSectionRailLink span:first-child {
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.briefFillChip {
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f7f9fc;
+  color: #4f5b70;
+  padding: 2px 6px;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.briefFillChip-success {
+  border-color: #9cc8b0;
+  background: #eaf7ef;
+  color: #27613f;
+}
+
+.briefFillChip-amber {
+  border-color: #e7c56e;
+  background: #fff5d9;
+  color: #755100;
+}
+
 .briefRequirednessLegend,
-.briefFieldLabelText {
+.briefFieldLabelRow {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -659,9 +733,116 @@ button:disabled:hover {
   font-weight: 800;
 }
 
-.configPanel {
-  border-top: 1px solid #d8dee8;
-  padding-top: 20px;
+.briefSection {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.briefSectionHeader {
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid #e5e9f0;
+  padding-bottom: 12px;
+}
+
+.briefSectionHeader h3,
+.briefSectionHeader p {
+  margin: 0;
+}
+
+.briefSectionHeader h3 {
+  scroll-margin-top: 20px;
+  color: #182033;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.briefSectionHeader p {
+  color: #5c677d;
+  font-size: 0.9rem;
+}
+
+.briefSectionBody,
+.briefFieldRow {
+  display: grid;
+  gap: 12px;
+}
+
+.briefFieldRow {
+  align-items: start;
+}
+
+.briefFieldLabelRow {
+  gap: 8px;
+}
+
+.briefFieldControlLabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.briefFieldHumanLabel {
+  color: #182033;
+  font-weight: 800;
+}
+
+.briefFieldSchemaPath {
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #f7f9fc;
+  color: #5c677d;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.briefFieldHelperText {
+  color: #4f5b70;
+  font-size: 0.88rem;
+}
+
+.briefFieldCriticalHint {
+  display: inline-block;
+}
+
+.briefFieldRow textarea {
+  max-height: 320px;
+  resize: vertical;
+  field-sizing: content;
+}
+
+.briefSaveBar {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e7c56e;
+  border-radius: 8px;
+  background: #fff8e6;
+  box-shadow: 0 10px 28px rgb(24 32 51 / 16%);
+  margin-top: 16px;
+  padding: 12px 14px;
+}
+
+.briefSaveBarText {
+  margin: 0;
+  color: #4f3f18;
+  font-weight: 800;
+}
+
+#validation-panel-title {
+  scroll-margin-top: 20px;
 }
 
 .readinessChecklist {
@@ -1216,6 +1397,19 @@ button:disabled:hover {
 
   .promptPreviewLayout {
     grid-template-columns: 1fr;
+  }
+
+  .briefConsoleLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .briefSectionRail {
+    position: static;
+    max-height: none;
+  }
+
+  .briefSectionRail ul {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 
   .acceptedArchiveToolbar {

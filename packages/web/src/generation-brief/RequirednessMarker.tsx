@@ -1,6 +1,6 @@
 import type { FieldRequiredness } from "@loom/core";
 
-type GenerationContext = "first_segment" | "continuation_after_accepted_segment";
+import { isRequiredNow, type GenerationContext } from "./requiredness-now.js";
 
 export function RequirednessMarker({
   requiredness,
@@ -13,14 +13,12 @@ export function RequirednessMarker({
     return null;
   }
 
-  if (requiredness === "always") {
+  if (isRequiredNow(requiredness, generationContext)) {
     return <strong aria-label="required"> *</strong>;
   }
 
   if (requiredness === "continuation") {
-    return generationContext === "continuation_after_accepted_segment"
-      ? <strong aria-label="required"> *</strong>
-      : <span className="briefRequirednessTag">Optional for a first segment</span>;
+    return <span className="briefRequirednessTag">Optional for a first segment</span>;
   }
 
   if (requiredness === "conditional") {

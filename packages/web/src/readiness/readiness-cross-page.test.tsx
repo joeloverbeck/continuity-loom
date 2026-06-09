@@ -130,9 +130,10 @@ describe("cross-page readiness behavior", () => {
 
     renderBrief();
     expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Save Generation Brief" })).toBeNull();
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop." } });
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save Generation Brief" }).disabled).toBe(false);
-    fireEvent.change(screen.getByLabelText(/^soft_unit_guidance/), { target: { value: "Stop." } });
-    expect(screen.getByText("Displayed readiness may be stale until you save this draft.")).toBeTruthy();
+    expect(screen.getByText("Unsaved changes - readiness shown above may be stale.")).toBeTruthy();
     expect(screen.getByText("This draft has unsaved changes. The readiness checklist may be stale.")).toBeTruthy();
     cleanup();
 
@@ -204,9 +205,9 @@ describe("cross-page readiness behavior", () => {
     expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
     fireEvent.click(await screen.findByRole("button", { name: "Edit current state" }));
 
-    const currentStateSection = screen.getByRole("heading", { name: "CURRENT AUTHORITATIVE STATE" }).closest("section");
+    const currentStateSection = screen.getByRole("heading", { name: "Current Authoritative State" }).closest("section");
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
-    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(document.activeElement).toBe(screen.getByLabelText(/current_time/));
     expect(currentStateSection?.contains(document.activeElement)).toBe(true);
   });
 
@@ -224,7 +225,7 @@ describe("cross-page readiness behavior", () => {
     expect(screen.getByTestId("route-location").textContent).toBe(
       "/generation-brief?field=generationSession.current_authoritative_state"
     );
-    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(document.activeElement).toBe(screen.getByLabelText(/current_time/));
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });
 
@@ -242,7 +243,7 @@ describe("cross-page readiness behavior", () => {
     expect(screen.getByTestId("route-location").textContent).toBe(
       "/generation-brief?field=generationSession.current_authoritative_state"
     );
-    expect(document.activeElement).toBe(screen.getByLabelText(/^current_time/));
+    expect(document.activeElement).toBe(screen.getByLabelText(/current_time/));
     expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });
 });
