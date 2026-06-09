@@ -1,6 +1,6 @@
 # SPEC-016 — Records Grid Per-Type Columns and Presentation
 
-**Status:** DRAFT
+**Status:** COMPLETED
 **Feature name:** Per-Type Records Grid
 **Classification:** product-behavior (UI/workflow over the *All story records* surface, §6.1; read-only display projection over the record metadata layer)
 **Governing authority:** `docs/FOUNDATIONS.md`
@@ -169,3 +169,27 @@ No FOUNDATIONS principle is contradicted, so **no amendment is required**. (Opti
 - **`displayValues` shape.** Settled: a generic, **optional** `Record<string, string | null>` map keyed by field name, formatted to strings in the projection (array columns join-formatted), keeping the metadata schema stable as the manifest evolves. Populated on both the list projection and the detail/saved-record path (see Deliverable 2).
 - **Default = most-populated type** is a deterministic heuristic; "last-used" persistence beyond the URL param is out of scope. Open question only if the user later wants sticky last-used across sessions.
 - **Named assumptions:** (1) ordinal severity enums are rendered as plain compact cells, not a new badge component (avoid scope creep) — assuming plain cells; (2) the "Updated" column in the minimal view uses the existing `updatedAt` — assuming a date/relative-time render consistent with the rest of the app.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Added a pure `@loom/core` per-type record-column manifest, All types minimal column set, severity ordering, display-value projection helpers, and manifest completeness/schema tests.
+- Extended record metadata/list/detail responses with manifest-driven `displayValues`, plus a derived optional `fullDisplayLabel` used for tooltips/detail headings when stored labels are visually shortened.
+- Reworked the Records grid to render per-type columns, keep All types as an explicit minimal view, default to the most-populated record type unless the URL overrides it, apply type-scoped severity/date sorting, and show scoped empty states.
+- Added records-grid presentation fixes: two-line primary-label clamp, horizontal scroll wrapper, sticky Working Set/Label columns, sticky header, and compact cells.
+- Added capstone web/server tests and completed the live `red-bunny` smoke; `docs/user-guide.md` required no edit because it does not enumerate grid columns.
+
+Deviations from original plan:
+- The final capstone added `fullDisplayLabel` as an optional derived projection after live smoke showed stored `displayLabel` values were already truncated. This preserves stored record data and prompt/validation behavior while satisfying the full-label tooltip/detail requirement.
+- The final CSS shape uses a `.recordTableScroll` wrapper around a normal table instead of making the table itself `display: block`, preserving table semantics while providing horizontal scrolling.
+
+Verification:
+- `npx vitest run packages/web/src/records/RecordBrowser.test.tsx` — passed.
+- `npx vitest run packages/server/src/record-routes.test.ts` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 100 test files and 746 tests.
+- `npm run build` — passed, with the existing Vite chunk-size warning.
+- Live localhost smoke against `/home/joeloverbeck/stories/red-bunny` — passed for default type, EMOTION columns, full-label tooltip/detail, horizontal scroll/sticky columns, and All types minimal columns.
