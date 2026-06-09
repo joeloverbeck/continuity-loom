@@ -1,6 +1,6 @@
 ---
 name: ticket-series
-description: Use in Continuity Loom for goals that implement a glob or series of tickets from tickets/ in dependency order, align each ticket with active docs under docs/ except docs/triage/, verify acceptance, archive completed tickets/specs, repair active references, and commit completed work one ticket at a time.
+description: Use in Continuity Loom for goals that implement a glob or series of tickets from tickets/ in dependency order, align each ticket with active docs under docs/ except triage/, verify acceptance, archive completed tickets/specs, repair active references, and commit completed work one ticket at a time.
 ---
 
 # Ticket Series
@@ -29,7 +29,7 @@ families plausibly match.
    - `tickets/README.md`
    - `docs/archival-workflow.md`
 2. Resolve the ticket and spec selectors to concrete paths.
-3. Read the resolved tickets and active spec, if any. Ignore `docs/triage/**`
+3. Read the resolved tickets and active spec, if any. Ignore `triage/**`
    unless the user or an active ticket explicitly names a triage file as
    evidence.
 4. Select the active domain docs from `docs/ACTIVE-DOCS.md` for the touched
@@ -94,7 +94,10 @@ npm run build
 8. Sweep active docs, specs, ledgers, indexes, and tickets for stale live ticket
    paths. Update references that should now point to `archive/tickets/`.
 9. Review the diff for unrelated changes.
-10. Commit the completed ticket work before moving on unless the user explicitly
+10. Inspect `git diff --cached --name-status` before committing. If unrelated
+    pre-existing changes are staged, unstage only those unrelated entries before
+    committing the ticket.
+11. Commit the completed ticket work before moving on unless the user explicitly
     asked not to commit. Use a concise message naming the ticket.
 
 Do not advance on plausible implementation alone. Acceptance criteria must pass,
