@@ -1,4 +1,10 @@
-import { getEditorDescriptor, recordTypes } from "@loom/core";
+import {
+  allTypesColumns,
+  getColumnManifest,
+  getEditorDescriptor,
+  recordTypes,
+  type ColumnDescriptor
+} from "@loom/core";
 import {
   flexRender,
   getCoreRowModel,
@@ -18,19 +24,6 @@ import {
 } from "../api.js";
 import { CastMemberEditor } from "./CastMemberEditor.js";
 import { RecordEditor } from "./RecordEditor.js";
-
-const columns: Array<ColumnDef<RecordSummary>> = [
-  { accessorKey: "type", header: "Type" },
-  { accessorKey: "displayLabel", header: "Label" },
-  { accessorKey: "status", header: "Status" },
-  { accessorKey: "salience", header: "Salience" },
-  { accessorKey: "urgency", header: "Urgency" },
-  {
-    accessorKey: "archived",
-    header: "Archived",
-    cell: ({ row }) => (row.original.archived ? "yes" : "no")
-  }
-];
 
 function descriptorHasField(recordType: string, fieldName: "salience" | "urgency"): boolean {
   return getEditorDescriptor(recordType)?.fields.some((field) => field.name === fieldName) ?? false;
@@ -69,11 +62,75 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
     status: record.status,
     salience: record.salience,
     urgency: record.urgency,
+    ...(record.displayValues === undefined ? {} : { displayValues: record.displayValues }),
     archived: record.archived,
     userOrder: record.userOrder,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
   };
+}
+
+function displayCell(value: unknown): string {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return "—";
+}
+
+function columnClassName(column: ColumnDescriptor): string | undefined {
+  if (column.align === "right") {
+    return "numericCell";
+  }
+
+  if (column.kind === "boolean" || column.kind === "ordinal") {
+    return "compactCell";
+  }
+
+  return undefined;
+}
+
+function buildDisplayValueColumn(column: ColumnDescriptor): ColumnDef<RecordSummary> {
+  return {
+    id: column.fieldKey,
+    header: column.header,
+    accessorFn: (record) => record.displayValues?.[column.fieldKey] ?? null,
+    cell: ({ getValue }) => displayCell(getValue())
+  };
+}
+
+function buildRecordColumns(typeFilter: string): Array<ColumnDef<RecordSummary>> {
+  if (!typeFilter) {
+    return allTypesColumns.map((column) => ({
+      id: column.fieldKey,
+      header: column.header,
+      accessorFn: (record) => record[column.fieldKey as keyof RecordSummary] ?? null,
+      cell: ({ getValue }) => displayCell(getValue())
+    }));
+  }
+
+  const manifest = getColumnManifest(typeFilter);
+
+  return [
+    {
+      id: "displayLabel",
+      accessorKey: "displayLabel",
+      header: manifest?.primaryLabelHeader ?? "Label",
+      cell: ({ row }) => row.original.displayLabel
+    },
+    ...(manifest?.additionalColumns.map(buildDisplayValueColumn) ?? [])
+  ];
+}
+
+function classNameForColumn(typeFilter: string, columnId: string): string | undefined {
+  const sourceColumns = typeFilter ? getColumnManifest(typeFilter)?.additionalColumns ?? [] : allTypesColumns;
+  const descriptor = sourceColumns.find((column) => column.fieldKey === columnId);
+
+  return descriptor ? columnClassName(descriptor) : undefined;
 }
 
 export function RecordBrowser(): React.JSX.Element {
@@ -187,6 +244,8 @@ export function RecordBrowser(): React.JSX.Element {
       return leftValue.localeCompare(rightValue) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
     });
   }, [filteredRecords, filters.groupBy]);
+
+  const columns = useMemo(() => buildRecordColumns(filters.type), [filters.type]);
 
   const table = useReactTable({
     data: groupedRecords,
@@ -430,9 +489,14 @@ export function RecordBrowser(): React.JSX.Element {
                     </button>
                   </td>
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>
+                    <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
                       {cell.column.id === "displayLabel" ? (
-                        <button type="button" className="linkButton" onClick={() => void selectRecord(row.original)}>
+                        <button
+                          type="button"
+                          className="linkButton"
+                          title={row.original.displayLabel}
+                          onClick={() => void selectRecord(row.original)}
+                        >
                           {row.original.displayLabel}
                         </button>
                       ) : (

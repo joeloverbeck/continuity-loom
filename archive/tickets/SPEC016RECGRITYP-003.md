@@ -1,6 +1,6 @@
 # SPEC016RECGRITYP-003: Grid renders columns from the manifest
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — reworks the records grid rendering in `packages/web/src/records/RecordBrowser.tsx` to build TanStack columns from the `@loom/core` manifest per active type. UI behavior change on the `/records` surface; no server/schema change.
@@ -79,3 +79,23 @@ In `toRecordSummary` (lines 64–77), copy `record.displayValues` onto the const
 1. `npx vitest run packages/web/src/records/RecordBrowser.test.tsx`
 2. `npm test`
 3. The component test is the correct boundary because the rework is web-only rendering; `npm test` confirms cross-package typecheck against the core manifest export.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Replaced the hardcoded records-grid data columns with manifest-derived columns: `allTypesColumns` for "All types" and the selected record type's manifest entry for scoped views.
+- Preserved the Working Set leading column, filters, search, and grouping controls.
+- Rendered null/empty additional-column values as `—` and kept the primary label as a clickable detail button with a `title`.
+- Passed `displayValues` through `toRecordSummary` so newly saved records can render projected columns without a reload.
+
+Deviations from original plan:
+- Used a local class lookup for compact/numeric cell classes instead of TanStack `columnDef.meta`, because this app does not augment TanStack's `ColumnMeta` type.
+- Used `npm exec vitest -- ...` for the targeted component test rather than `npx vitest ...`; the same test file was run.
+
+Verification:
+- `npm exec vitest -- run packages/web/src/records/RecordBrowser.test.tsx` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.
