@@ -1,5 +1,7 @@
 # Prompt Duplication Verdict and Selective-Refinement Mini-Spec
 
+**Status**: ✅ COMPLETED
+
 ## Verdict
 
 I am not verifying that this commit is the current `main`. I am using your supplied commit as the target of record and fetching files only by exact commit URL from `joeloverbeck/continuity-loom`.
@@ -570,6 +572,32 @@ That protects the project’s core prose-quality doctrine while removing the cle
 - [x] No foundations amendment is proposed; §29/§29.4 alignment is shown inline.
 - [x] Validation, stress-suite, golden-prompt, and token-budget impacts are stated.
 - [x] No external repository context is assumed beyond the uploaded brief, uploaded manifest, and exact-commit URL fetches listed in the ledger.
+
+---
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Implemented FACT/EVENT narrowing and BELIEF behavior-first formatting for `active_knowledge_pressure`.
+- Removed VISIBLE AFFORDANCE action text from `material_pressure` while preserving it in Action pressure and detail/physical-continuity surfaces.
+- Updated compiler contract, prompt template, prompt-template rationale, pressure-section tests, golden prompt baseline, stress-suite Case 32, and the stress coverage matrix.
+- Archived the implementation tickets as `archive/tickets/PRODUPVERSPE-001.md` through `archive/tickets/PRODUPVERSPE-004.md`.
+
+Deviations from original plan:
+
+- The optional warning for ordinary FACT/backstory EVENT selections remained deferred as planned.
+- Coverage-matrix rows for Cases 27-31 remain out of scope, with the pre-existing gap documented in the Case 32 matrix note.
+
+Verification:
+
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 99 files / 734 tests.
+- `npm run build` — passed; Vite reported the existing large-chunk warning.
+- Focused ticket checks passed during implementation: `npm test -- compiler-pressure-sections`, `npm test -- compiler-golden`, and the Case 32/template grep proofs.
 
 ---
 
