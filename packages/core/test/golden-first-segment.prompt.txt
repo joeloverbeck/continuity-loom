@@ -209,7 +209,6 @@ Material pressure:
 - old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
 - cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
 - Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Voice pressure:
 - Elin narrates through practical details and controlled evasions.

@@ -1,6 +1,6 @@
 # PRODUPVERSPE-002: Remove VISIBLE AFFORDANCE action text from `material_pressure`
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — modifies the `@loom/core` compiler `material_pressure` resolver in `packages/core/src/compiler/sections/pressure.ts`; amends `docs/compiler-contract.md` §4 `{material_pressure}` and `{active_action_pressure}` rows; production prompt output changes (golden baseline regenerates).
@@ -90,3 +90,26 @@ Regenerate the baseline. The demo fixture's `Material pressure:` block currently
 1. `npm test -- compiler-pressure-sections`
 2. `npm test`
 3. `npm run typecheck` — confirm the resolver edit type-checks under strict TS.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Removed `VISIBLE AFFORDANCE` from the `material_pressure` resolver source list.
+- Preserved VISIBLE AFFORDANCE action text in `active_action_pressure`.
+- Updated `docs/compiler-contract.md` so `{material_pressure}` covers LOCATION/OBJECT/ENTITY STATUS only, and `{active_action_pressure}` is documented as the affordance action-text surface.
+- Added a focused unit test that slices the active working-set sub-blocks and proves the affordance appears under Action pressure but not Material pressure.
+- Updated the frozen first-segment golden baseline to remove the demo affordance line from Material pressure only.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test -- compiler-pressure-sections` — passed.
+- `npm test -- compiler-golden` — passed.
+- `npm test` — passed, 99 files / 734 tests.
+- `npm run typecheck` — passed for core, server, and web.

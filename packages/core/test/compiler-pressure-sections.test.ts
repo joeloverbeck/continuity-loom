@@ -539,6 +539,12 @@ function sectionBody(prompt: string, section: string): string {
   return prompt.match(pattern)?.[1] ?? "";
 }
 
+function activeWorkingSetSubBlock(prompt: string, label: string): string {
+  const activeWorkingSet = sectionBody(prompt, "active_working_set");
+  const pattern = new RegExp(`${label}:\\n([\\s\\S]*?)(?:\\n\\n[A-Z][A-Za-z ]+:|\\n\\nActive cast voice pressure pins:|$)`);
+  return activeWorkingSet.match(pattern)?.[1] ?? "";
+}
+
 function payloadOf(record: ValidationRecord): Record<string, unknown> {
   return record.payload && typeof record.payload === "object" ? (record.payload as Record<string, unknown>) : {};
 }
@@ -652,6 +658,16 @@ describe("compiler pressure-section resolvers", () => {
     expect(activeWorkingSet).not.toContain("[open thread active]");
     expect(activeWorkingSet).not.toContain("[affordance available]");
     expect(activeWorkingSet).not.toContain("[consequence active]");
+  });
+
+  it("keeps affordance action text in Action pressure and out of Material pressure", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
+    const actionPressure = activeWorkingSetSubBlock(prompt, "Action pressure");
+    const materialPressure = activeWorkingSetSubBlock(prompt, "Material pressure");
+
+    expect(actionPressure).toContain("- Loose latch; The latch can be slipped quietly.");
+    expect(materialPressure).not.toContain("Loose latch");
+    expect(materialPressure).not.toContain("The latch can be slipped quietly.");
   });
 
   it("deduplicates knowledge-pressure labels that match projected text", () => {

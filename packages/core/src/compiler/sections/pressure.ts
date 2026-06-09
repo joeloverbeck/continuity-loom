@@ -50,7 +50,7 @@ const pressureResolvers: ResolverMap = {
   material_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
-      ["LOCATION", "OBJECT", "VISIBLE AFFORDANCE", "ENTITY STATUS"],
+      ["LOCATION", "OBJECT", "ENTITY STATUS"],
       (record, payload) =>
         firstText(payload, ["layout_relevant_now", "description", "prompt_text", "constraints", "visible_conditions"]),
       "material_pressure"
