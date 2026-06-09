@@ -266,6 +266,52 @@ function absentActionHolderRecords(): ValidationRecord[] {
   return pressureRecords().filter((record) => record.id !== holderAId);
 }
 
+function nonActiveActionPressureRecords(): ValidationRecord[] {
+  return pressureRecords().map((record) => {
+    if (record.id === intentionId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          status: "blocked"
+        }
+      };
+    }
+
+    if (record.id === planId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          plan_status: "suspended"
+        }
+      };
+    }
+
+    if (record.id === threadId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          status: "answered"
+        }
+      };
+    }
+
+    if (record.id === affordanceId) {
+      return {
+        ...record,
+        payload: {
+          ...payloadOf(record),
+          status: "unavailable"
+        }
+      };
+    }
+
+    return record;
+  });
+}
+
 function knowledgePressureRecords(): ValidationRecord[] {
   return [
     {
@@ -456,6 +502,34 @@ describe("compiler pressure-section resolvers", () => {
     expect(activeWorkingSet).toContain(
       `- ${holderAId}: Get the ledger out of the archive.; Distract the guard at the side door.`
     );
+  });
+
+  it("annotates non-active action-pressure records with deterministic status tags", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(nonActiveActionPressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- Niko: Keep the guard calm. [intention blocked]; Speak softly and keep moving.");
+    expect(activeWorkingSet).toContain(
+      "- Niko: Get the ledger out of the archive. [plan suspended]; Distract the guard at the side door."
+    );
+    expect(activeWorkingSet).toContain("- Who moved the ledger? [open thread answered]; A denial would matter.");
+    expect(activeWorkingSet).toContain("- Loose latch [affordance unavailable]; The latch can be slipped quietly.");
+  });
+
+  it("omits action-pressure status tags for active and available records", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain("- Niko: Keep the guard calm.; Speak softly and keep moving.");
+    expect(activeWorkingSet).toContain(
+      "- Niko: Get the ledger out of the archive.; Distract the guard at the side door."
+    );
+    expect(activeWorkingSet).toContain("- Who moved the ledger?; A denial would matter.");
+    expect(activeWorkingSet).toContain("- Loose latch; The latch can be slipped quietly.");
+    expect(activeWorkingSet).not.toContain("[intention active]");
+    expect(activeWorkingSet).not.toContain("[plan active]");
+    expect(activeWorkingSet).not.toContain("[open thread active]");
+    expect(activeWorkingSet).not.toContain("[affordance available]");
   });
 
   it("deduplicates knowledge-pressure labels that match projected text", () => {

@@ -7,6 +7,18 @@ import type { ValidationRecord, ValidationSnapshot } from "../../validation/snap
 
 type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+type ActionPressureStatusDescriptor = {
+  word: string;
+  statusField: string;
+  activeStatus: string;
+};
+
+const actionPressureStatusDescriptors: Readonly<Record<string, ActionPressureStatusDescriptor>> = Object.freeze({
+  INTENTION: { word: "intention", statusField: "status", activeStatus: "active" },
+  PLAN: { word: "plan", statusField: "plan_status", activeStatus: "active" },
+  "OPEN THREAD": { word: "open thread", statusField: "status", activeStatus: "active" },
+  "VISIBLE AFFORDANCE": { word: "affordance", statusField: "status", activeStatus: "available" }
+});
 
 const pressureResolvers: ResolverMap = {
   active_action_pressure: (snapshot) =>
@@ -164,7 +176,7 @@ function payloadOf(record: ValidationRecord): JsonRecord {
 
 function actionPressureLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
   const line = compactSummaryLine(
-    displayLabel(record),
+    displayLabel(record) + actionPressureStatusTag(record, payload),
     firstText(payload, ["behavioral_pressure", "current_step", "possible_pressure_now", "prompt_text"])
   );
 
@@ -174,6 +186,17 @@ function actionPressureLine(snapshot: ValidationSnapshot, record: ValidationReco
 
   const holder = labelReference(snapshot, payload.holder);
   return holder ? `${holder}: ${line}` : line;
+}
+
+function actionPressureStatusTag(record: ValidationRecord, payload: JsonRecord): string {
+  const descriptor = actionPressureStatusDescriptors[record.type];
+
+  if (!descriptor) {
+    return "";
+  }
+
+  const status = asString(payload[descriptor.statusField]);
+  return status && status !== descriptor.activeStatus ? ` [${descriptor.word} ${status}]` : "";
 }
 
 function firstText(payload: JsonRecord, keys: readonly string[]): string {
