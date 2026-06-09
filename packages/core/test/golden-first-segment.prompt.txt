@@ -184,6 +184,8 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 </secrets_and_reveal_constraints>
 
 <active_working_set>
+These are current-pressure summaries. They are not exhaustive record dossiers. Use them to keep causal, knowledge, material, and voice pressure salient; use the later detail sections for full authority and metadata.
+
 Action pressure:
 - Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
 - Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
@@ -210,6 +212,8 @@ Material pressure:
 - cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
 - Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
 
+Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
+
 Voice pressure:
 - Elin narrates through practical details and controlled evasions.
 - Niko starts lightly but presses with hurt precision.
@@ -217,7 +221,7 @@ Voice pressure:
 Active cast voice pressure pins:
 None active
 
-Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
+Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
 </active_working_set>
 
 <active_plans_and_intentions>

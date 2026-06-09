@@ -292,3 +292,5 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 ## 10. Change-control rule
 
 Any change to a prompt placeholder, template section, schema field used for compilation, requiredness rule, empty-state rendering rule, validation focus tag, blocker/warning row, Red Bunny generated prompt surface, or stress-suite assumption must update this compiler contract in the same document revision.
+
+Changes to pressure-predicate inclusion, pressure-summary field precedence, or VISIBLE AFFORDANCE placement must update compiler tests, the golden prompt baseline, `docs/prompt-template.md`, and `docs/prompt-template-rationale.md` in the same revision.

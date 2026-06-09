@@ -1,6 +1,6 @@
 # PRODUPVERSPE-003: Salience-duplicate doctrine prose — template, rationale, and change-control
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — modifies the `@loom/core` `active_working_set` static template text in `packages/core/src/compiler/template-constants.ts` (production prompt output changes; golden baseline regenerates) and the governing docs `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/compiler-contract.md` §10; no compiler logic change.
@@ -96,3 +96,29 @@ Regenerate: the three static notes now render inside `<active_working_set>` in e
 1. `npm test -- compiler-golden`
 2. `npm test`
 3. `grep -Fc "These are current-pressure summaries" packages/core/src/compiler/template-constants.ts docs/prompt-template.md` — template↔doc sync proof (extend to the material-pressure and dual-frame strings).
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added current-pressure summary framing to the compiled active working-set template and `docs/prompt-template.md`.
+- Added the Material-pressure note clarifying that affordance action possibilities belong under Action pressure and the affordance/location detail sections.
+- Extended the voice-pin salience note with the explicit dual-frame doctrine in both template surfaces.
+- Added rationale coverage for salience duplicates versus redundant restatement and protected voice-pin salience duplicates.
+- Added the compiler-contract change-control rule for pressure predicates, pressure-summary field precedence, and VISIBLE AFFORDANCE placement.
+- Updated the frozen first-segment golden baseline for the new static template prose.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test -- compiler-golden` — passed.
+- `npm test` — passed, 99 files / 734 tests.
+- `grep -Fc "These are current-pressure summaries" packages/core/src/compiler/template-constants.ts docs/prompt-template.md` — one match in each file.
+- `grep -Fc "Material pressure covers location, object, and entity-status constraints" packages/core/src/compiler/template-constants.ts docs/prompt-template.md` — one match in each file.
+- `grep -Fc "This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later." packages/core/src/compiler/template-constants.ts docs/prompt-template.md` — one match in each file.
+- `grep -F "Salience duplicates vs redundant restatement" docs/prompt-template-rationale.md`, `grep -F "Voice pins remain protected salience duplicates" docs/prompt-template-rationale.md`, and `grep -F "Changes to pressure-predicate inclusion" docs/compiler-contract.md` — all passed.
