@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-002: Section cards and field-row component
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — restructures `GenerationBriefView` markup into section cards, introduces a `BriefFieldRow` component, adds card/field-row/helper/textarea CSS; no schema, save, validation, or compiler change
@@ -92,3 +92,21 @@ Update `GenerationBriefView.test.tsx` queries to the new labels/markup (query by
 1. `npm test --workspace @loom/web -- GenerationBriefView`
 2. `npm test --workspace @loom/web -- FieldHelp.a11y`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed 2026-06-10.
+
+Reworked the generation brief into section cards with human titles and one-line descriptions, added `BriefFieldRow` for human display labels, requiredness chips, schema path context, inline help triggers, always-visible helper text, and preserved always-visible critical hints. The row uses explicit `htmlFor` wiring so the help trigger is inline without being nested inside the field label. Textareas now receive right-sized row defaults and page-local auto-sizing styles.
+
+Deviation from original plan: the field-help trigger is visually inside the field label row but not nested inside the `<label>` element, because nesting an interactive help button inside a label caused focus and accessible-name resolution to target the help button instead of the input.
+
+Verification:
+
+- `npm test --workspace @loom/web -- GenerationBriefView` passed.
+- `npm test --workspace @loom/web -- FieldHelp.a11y` passed.
+- `npm test --workspace @loom/web -- readiness-cross-page` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `rg -n "active-working-set-brief|current-state-brief|handoff-brief|directive-brief|voice-pressure-brief|override-brief|validation-focus-brief|stop-guidance-brief|data-field=\"generationSession.current_authoritative_state\"|name=\"generationSession.current_authoritative_state.current_time\"" packages/web/src/generation-brief/GenerationBriefView.tsx` confirmed the section ids, current-state deep-link anchor, and representative field name are present.

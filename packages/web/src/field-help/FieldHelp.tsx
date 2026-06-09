@@ -13,9 +13,10 @@ export interface FieldHelpProps {
   fieldPath: string;
   fieldLabel: string;
   listContext?: string;
+  showCriticalHint?: boolean;
 }
 
-export function FieldHelp({ fieldPath, fieldLabel, listContext }: FieldHelpProps) {
+export function FieldHelp({ fieldPath, fieldLabel, listContext, showCriticalHint = true }: FieldHelpProps) {
   const guidance = getFieldGuidance(fieldPath);
   const [open, setOpen] = useState(false);
 
@@ -29,7 +30,7 @@ export function FieldHelp({ fieldPath, fieldLabel, listContext }: FieldHelpProps
 
   return (
     <span className="fieldHelp">
-      {guidance.criticalVisibleHint ? (
+      {showCriticalHint && guidance.criticalVisibleHint ? (
         <span className="fieldHelpCriticalHint">{guidance.criticalVisibleHint}</span>
       ) : null}
       <Popover.Root open={open} onOpenChange={setOpen}>

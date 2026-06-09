@@ -1,7 +1,6 @@
 import {
   activeWorkingSetSchema,
-  generationSessionDraftSchema,
-  getFieldGuidance
+  generationSessionDraftSchema
 } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -15,13 +14,11 @@ import {
   listStoryConfig,
   setGenerationBrief
 } from "../api.js";
-import { FieldHelp } from "../field-help/FieldHelp.js";
-import { RequirednessMarker } from "./RequirednessMarker.js";
+import { BriefFieldRow } from "./BriefFieldRow.js";
 import { ValidationPanel } from "./ValidationPanel.js";
 
 type GenerationSession = z.infer<typeof generationSessionDraftSchema>;
 type ActiveWorkingSet = z.infer<typeof activeWorkingSetSchema>;
-type GenerationContext = "first_segment" | "continuation_after_accepted_segment";
 
 const currentCastLocalFunctions = [
   "pov_narrator",
@@ -69,35 +66,14 @@ function issuePath(issue: unknown): string {
   return "(unknown path)";
 }
 
-function BriefFieldHelp({ path, label }: { path: string; label: string }): React.JSX.Element {
-  return <FieldHelp fieldPath={`GENERATION BRIEF.${path}`} fieldLabel={label} />;
-}
-
-function BriefLabel({
-  path,
-  label,
-  generationContext
-}: {
-  path: string;
-  label: string;
-  generationContext: GenerationContext;
-}): React.JSX.Element {
-  const requiredness = getFieldGuidance(`GENERATION BRIEF.${path}`)?.requiredness;
-
-  return (
-    <span className="briefFieldLabelText">
-      <span>{label}</span>
-      <RequirednessMarker requiredness={requiredness} generationContext={generationContext} />
-    </span>
-  );
-}
-
 function focusableElement(element: HTMLElement): HTMLElement | undefined {
   return element.matches("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ? element : undefined;
 }
 
 function firstFocusableChild(element: HTMLElement): HTMLElement | undefined {
-  return element.querySelector<HTMLElement>("input, textarea, select, button, [tabindex]:not([tabindex='-1'])") ?? undefined;
+  return element.querySelector<HTMLElement>("input, textarea, select")
+    ?? element.querySelector<HTMLElement>("button, [tabindex]:not([tabindex='-1'])")
+    ?? undefined;
 }
 
 function briefFieldTarget(
@@ -109,6 +85,36 @@ function briefFieldTarget(
 
 function escapeSelectorValue(value: string): string {
   return globalThis.CSS?.escape(value) ?? value.replace(/["\\]/g, "\\$&");
+}
+
+function BriefSection({
+  title,
+  headingId,
+  description,
+  className = "",
+  dataField,
+  children
+}: {
+  title: string;
+  headingId: string;
+  description: string;
+  className?: string;
+  dataField?: string;
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <section
+      className={["briefSection", className].filter(Boolean).join(" ")}
+      aria-labelledby={headingId}
+      data-field={dataField}
+    >
+      <div className="briefSectionHeader">
+        <h3 id={headingId}>{title}</h3>
+        <p>{description}</p>
+      </div>
+      <div className="briefSectionBody">{children}</div>
+    </section>
+  );
 }
 
 export function GenerationBriefView(): React.JSX.Element {
@@ -381,11 +387,13 @@ export function GenerationBriefView(): React.JSX.Element {
           <strong aria-label="required"> *</strong> required · <span>Conditional</span> · <span>Optional</span>
         </p>
 
-        <section className="configPanel" aria-labelledby="active-working-set-brief">
-          <h3 id="active-working-set-brief">ACTIVE WORKING SET</h3>
+        <BriefSection
+          title="Active Working Set"
+          headingId="active-working-set-brief"
+          description="Selected viewpoint and record authority for the next prompt."
+        >
           <p className="muted">PROSE MODE source: {proseModeSummary}</p>
-          <label>
-            <BriefLabel path="active_working_set.selected_pov" label="selected_pov" generationContext={generationContext} />
+          <BriefFieldRow path="active_working_set.selected_pov" schemaLabel="selected_pov" generationContext={generationContext}>
             <select
               name="generationSession.active_working_set.selected_pov"
               value={selectedPov ?? ""}
@@ -400,36 +408,30 @@ export function GenerationBriefView(): React.JSX.Element {
                 <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
               ))}
             </select>
-          </label>
-          <BriefFieldHelp path="active_working_set.selected_pov" label="selected_pov" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section
-          className="configPanel"
-          aria-labelledby="current-state-brief"
-          data-field="generationSession.current_authoritative_state"
+        <BriefSection
+          title="Current Authoritative State"
+          headingId="current-state-brief"
+          description="Binding where-things-stand-now facts: time, place, bodies, visibility, constraints, and hard limits."
+          dataField="generationSession.current_authoritative_state"
         >
-          <h3 id="current-state-brief">CURRENT AUTHORITATIVE STATE</h3>
-          <label>
-            <BriefLabel path="current_authoritative_state.current_time" label="current_time" generationContext={generationContext} />
+          <BriefFieldRow path="current_authoritative_state.current_time" schemaLabel="current_time" generationContext={generationContext}>
             <input
               name="generationSession.current_authoritative_state.current_time"
               value={session.current_authoritative_state?.current_time ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ current_time: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.current_time" label="current_time" />
-          <label>
-            <BriefLabel path="current_authoritative_state.current_location" label="current_location" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.current_location" schemaLabel="current_location" generationContext={generationContext}>
             <input
               name="generationSession.current_authoritative_state.current_location"
               value={session.current_authoritative_state?.current_location ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ current_location: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.current_location" label="current_location" />
-          <label>
-            <BriefLabel path="current_authoritative_state.onstage_entities[]" label="onstage_entities" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.onstage_entities[]" schemaLabel="onstage_entities" generationContext={generationContext}>
             <select
               multiple
               name="generationSession.current_authoritative_state.onstage_entities"
@@ -444,30 +446,23 @@ export function GenerationBriefView(): React.JSX.Element {
                 <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
               ))}
             </select>
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.onstage_entities[]" label="onstage_entities" />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.immediate_situation_summary"
-              label="immediate_situation_summary"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.immediate_situation_summary"
+            schemaLabel="immediate_situation_summary"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.immediate_situation_summary"
               value={session.current_authoritative_state?.immediate_situation_summary ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ immediate_situation_summary: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.immediate_situation_summary"
-            label="immediate_situation_summary"
-          />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.offstage_pressuring_entities[]"
-              label="offstage_pressuring_entities"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.offstage_pressuring_entities[]"
+            schemaLabel="offstage_pressuring_entities"
+            generationContext={generationContext}
+          >
             <select
               multiple
               name="generationSession.current_authoritative_state.offstage_pressuring_entities"
@@ -482,174 +477,134 @@ export function GenerationBriefView(): React.JSX.Element {
                 <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
               ))}
             </select>
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.offstage_pressuring_entities[]"
-            label="offstage_pressuring_entities"
-          />
-          <label>
-            <BriefLabel path="current_authoritative_state.positions" label="positions" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.positions" schemaLabel="positions" generationContext={generationContext}>
             <textarea
               name="generationSession.current_authoritative_state.positions"
               value={editableLines(session.current_authoritative_state?.positions)}
               onChange={(event) => updateCurrentAuthoritativeState({ positions: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.positions" label="positions" />
-          <label>
-            <BriefLabel path="current_authoritative_state.possessions" label="possessions" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.possessions" schemaLabel="possessions" generationContext={generationContext}>
             <textarea
               name="generationSession.current_authoritative_state.possessions"
               value={editableLines(session.current_authoritative_state?.possessions)}
               onChange={(event) => updateCurrentAuthoritativeState({ possessions: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.possessions" label="possessions" />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.visible_conditions[]"
-              label="visible_conditions"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.visible_conditions[]"
+            schemaLabel="visible_conditions"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.visible_conditions"
               value={(session.current_authoritative_state?.visible_conditions ?? []).join("\n")}
               onChange={(event) => updateCurrentAuthoritativeState({ visible_conditions: splitLines(event.target.value) })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.visible_conditions[]" label="visible_conditions" />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.environmental_conditions"
-              label="environmental_conditions"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.environmental_conditions"
+            schemaLabel="environmental_conditions"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.environmental_conditions"
               value={session.current_authoritative_state?.environmental_conditions ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ environmental_conditions: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.environmental_conditions"
-            label="environmental_conditions"
-          />
-          <label>
-            <BriefLabel path="current_authoritative_state.entity_statuses" label="entity_statuses" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.entity_statuses" schemaLabel="entity_statuses" generationContext={generationContext}>
             <textarea
               name="generationSession.current_authoritative_state.entity_statuses"
               value={editableLines(session.current_authoritative_state?.entity_statuses)}
               onChange={(event) => updateCurrentAuthoritativeState({ entity_statuses: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.entity_statuses" label="entity_statuses" />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.line_of_sight_and_visibility"
-              label="line_of_sight_and_visibility"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.line_of_sight_and_visibility"
+            schemaLabel="line_of_sight_and_visibility"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.line_of_sight_and_visibility"
               value={session.current_authoritative_state?.line_of_sight_and_visibility ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ line_of_sight_and_visibility: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.line_of_sight_and_visibility"
-            label="line_of_sight_and_visibility"
-          />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.pov_cannot_perceive_now"
-              label="pov_cannot_perceive_now"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.pov_cannot_perceive_now"
+            schemaLabel="pov_cannot_perceive_now"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.pov_cannot_perceive_now"
               value={session.current_authoritative_state?.pov_cannot_perceive_now ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ pov_cannot_perceive_now: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.pov_cannot_perceive_now"
-            label="pov_cannot_perceive_now"
-          />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.routes_and_exits[]"
-              label="routes_and_exits"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.routes_and_exits[]"
+            schemaLabel="routes_and_exits"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.current_authoritative_state.routes_and_exits"
               value={(session.current_authoritative_state?.routes_and_exits ?? []).join("\n")}
               onChange={(event) => updateCurrentAuthoritativeState({ routes_and_exits: splitLines(event.target.value) })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.routes_and_exits[]" label="routes_and_exits" />
-          <label>
-            <BriefLabel path="current_authoritative_state.available_time" label="available_time" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.available_time" schemaLabel="available_time" generationContext={generationContext}>
             <input
               name="generationSession.current_authoritative_state.available_time"
               value={session.current_authoritative_state?.available_time ?? ""}
               onChange={(event) => updateCurrentAuthoritativeState({ available_time: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.available_time" label="available_time" />
-          <label>
-            <BriefLabel
-              path="current_authoritative_state.consent_or_force_conditions"
-              label="consent_or_force_conditions"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_authoritative_state.consent_or_force_conditions"
+            schemaLabel="consent_or_force_conditions"
+            generationContext={generationContext}
+          >
             <input
               name="generationSession.current_authoritative_state.consent_or_force_conditions"
               value={session.current_authoritative_state?.consent_or_force_conditions ?? "none"}
               onChange={(event) => updateCurrentAuthoritativeState({ consent_or_force_conditions: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp
-            path="current_authoritative_state.consent_or_force_conditions"
-            label="consent_or_force_conditions"
-          />
-          <label>
-            <BriefLabel path="current_authoritative_state.current_locks[]" label="current_locks" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_authoritative_state.current_locks[]" schemaLabel="current_locks" generationContext={generationContext}>
             <textarea
               name="generationSession.current_authoritative_state.current_locks"
               value={(session.current_authoritative_state?.current_locks ?? []).join("\n")}
               onChange={(event) => updateCurrentAuthoritativeState({ current_locks: splitLines(event.target.value) })}
             />
-          </label>
-          <BriefFieldHelp path="current_authoritative_state.current_locks[]" label="current_locks" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section className="configPanel" aria-labelledby="handoff-brief">
-          <h3 id="handoff-brief">IMMEDIATE HANDOFF</h3>
-          <label>
-            <BriefLabel path="immediate_handoff.recent_causal_context" label="recent_causal_context" generationContext={generationContext} />
+        <BriefSection
+          title="Immediate Handoff"
+          headingId="handoff-brief"
+          description="User-authored launch context, final visible moment, and exact begin-after instruction."
+        >
+          <BriefFieldRow path="immediate_handoff.recent_causal_context" schemaLabel="recent_causal_context" generationContext={generationContext}>
             <textarea
               name="generationSession.immediate_handoff.recent_causal_context"
               value={immediateHandoff.recent_causal_context}
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, recent_causal_context: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="immediate_handoff.recent_causal_context" label="recent_causal_context" />
-          <label>
-            <BriefLabel path="immediate_handoff.last_visible_moment" label="last_visible_moment" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="immediate_handoff.last_visible_moment" schemaLabel="last_visible_moment" generationContext={generationContext}>
             <textarea
               name="generationSession.immediate_handoff.last_visible_moment"
               value={immediateHandoff.last_visible_moment}
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, last_visible_moment: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="immediate_handoff.last_visible_moment" label="last_visible_moment" />
-          <label>
-            <BriefLabel
-              path="immediate_handoff.prior_accepted_prose_status_or_handoff_note"
-              label="prior_accepted_prose_status_or_handoff_note"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="immediate_handoff.prior_accepted_prose_status_or_handoff_note"
+            schemaLabel="prior_accepted_prose_status_or_handoff_note"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note"
               value={immediateHandoff.prior_accepted_prose_status_or_handoff_note}
@@ -660,40 +615,34 @@ export function GenerationBriefView(): React.JSX.Element {
                 })
               }
             />
-          </label>
-          <BriefFieldHelp
-            path="immediate_handoff.prior_accepted_prose_status_or_handoff_note"
-            label="prior_accepted_prose_status_or_handoff_note"
-          />
+          </BriefFieldRow>
           {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use a user-authored handoff note instead.</p> : null}
-          <label>
-            <BriefLabel path="immediate_handoff.begin_after" label="begin_after" generationContext={generationContext} />
+          <BriefFieldRow path="immediate_handoff.begin_after" schemaLabel="begin_after" generationContext={generationContext}>
             <textarea
               name="generationSession.immediate_handoff.begin_after"
               value={immediateHandoff.begin_after}
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, begin_after: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="immediate_handoff.begin_after" label="begin_after" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section className="configPanel" aria-labelledby="directive-brief">
-          <h3 id="directive-brief">MANUAL MOMENT DIRECTIVE</h3>
-          <label>
-            <BriefLabel path="manual_moment_directive.must_render[]" label="must_render" generationContext={generationContext} />
+        <BriefSection
+          title="Manual Moment Directive"
+          headingId="directive-brief"
+          description="Authorial local pressure: what must render, what may render, and what must not be forced."
+        >
+          <BriefFieldRow path="manual_moment_directive.must_render[]" schemaLabel="must_render" generationContext={generationContext}>
             <textarea
               name="generationSession.manual_moment_directive.must_render"
               value={manualDirective.must_render.join("\n")}
               onChange={(event) => updateSurface("manual_moment_directive", { ...manualDirective, must_render: splitLines(event.target.value) })}
             />
-          </label>
-          <BriefFieldHelp path="manual_moment_directive.must_render[]" label="must_render" />
-          <label>
-            <BriefLabel
-              path="manual_moment_directive.may_render_if_naturally_caused[]"
-              label="may_render_if_naturally_caused"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="manual_moment_directive.may_render_if_naturally_caused[]"
+            schemaLabel="may_render_if_naturally_caused"
+            generationContext={generationContext}
+          >
             <textarea
               name="generationSession.manual_moment_directive.may_render_if_naturally_caused"
               value={manualDirective.may_render_if_naturally_caused.join("\n")}
@@ -704,13 +653,8 @@ export function GenerationBriefView(): React.JSX.Element {
                 })
               }
             />
-          </label>
-          <BriefFieldHelp
-            path="manual_moment_directive.may_render_if_naturally_caused[]"
-            label="may_render_if_naturally_caused"
-          />
-          <label>
-            <BriefLabel path="manual_moment_directive.do_not_force[]" label="do_not_force" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="manual_moment_directive.do_not_force[]" schemaLabel="do_not_force" generationContext={generationContext}>
             <textarea
               name="generationSession.manual_moment_directive.do_not_force"
               value={manualDirective.do_not_force.join("\n")}
@@ -721,25 +665,26 @@ export function GenerationBriefView(): React.JSX.Element {
                 })
               }
             />
-          </label>
-          <BriefFieldHelp path="manual_moment_directive.do_not_force[]" label="do_not_force" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section className="configPanel" aria-labelledby="voice-pressure-brief">
-          <h3 id="voice-pressure-brief">CURRENT CAST VOICE PRESSURE</h3>
-          <label>
-            <BriefLabel path="current_cast_voice_pressure[].cast_member_id" label="cast_member_id" generationContext={generationContext} />
+        <BriefSection
+          title="Current Cast Voice Pressure"
+          headingId="voice-pressure-brief"
+          description="Temporary voice, dialogue, narration, and silence pressure for this generation only."
+        >
+          <BriefFieldRow path="current_cast_voice_pressure[].cast_member_id" schemaLabel="cast_member_id" generationContext={generationContext}>
             <input
+              name="generationSession.current_cast_voice_pressure.0.cast_member_id"
               value={currentVoicePressure.cast_member_id}
               onChange={(event) =>
                 updateSurface("current_cast_voice_pressure", [{ ...currentVoicePressure, cast_member_id: event.target.value }])
               }
             />
-          </label>
-          <BriefFieldHelp path="current_cast_voice_pressure[].cast_member_id" label="cast_member_id" />
-          <label>
-            <BriefLabel path="current_cast_voice_pressure[].local_function" label="local_function" generationContext={generationContext} />
+          </BriefFieldRow>
+          <BriefFieldRow path="current_cast_voice_pressure[].local_function" schemaLabel="local_function" generationContext={generationContext}>
             <select
+              name="generationSession.current_cast_voice_pressure.0.local_function"
               value={currentVoicePressure.local_function}
               onChange={(event) =>
                 updateSurface("current_cast_voice_pressure", [
@@ -751,45 +696,48 @@ export function GenerationBriefView(): React.JSX.Element {
                 <option key={value} value={value}>{value}</option>
               ))}
             </select>
-          </label>
-          <BriefFieldHelp path="current_cast_voice_pressure[].local_function" label="local_function" />
-          <label>
-            <BriefLabel
-              path="current_cast_voice_pressure[].current_voice_pressure"
-              label="current_voice_pressure"
-              generationContext={generationContext}
-            />
+          </BriefFieldRow>
+          <BriefFieldRow
+            path="current_cast_voice_pressure[].current_voice_pressure"
+            schemaLabel="current_voice_pressure"
+            generationContext={generationContext}
+          >
             <textarea
+              name="generationSession.current_cast_voice_pressure.0.current_voice_pressure"
               value={currentVoicePressure.current_voice_pressure}
               onChange={(event) =>
                 updateSurface("current_cast_voice_pressure", [{ ...currentVoicePressure, current_voice_pressure: event.target.value }])
               }
             />
-          </label>
-          <BriefFieldHelp path="current_cast_voice_pressure[].current_voice_pressure" label="current_voice_pressure" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section className="configPanel" aria-labelledby="override-brief">
-          <h3 id="override-brief">CAST VOICE OVERRIDES</h3>
-          <label>
-            <BriefLabel path="cast_voice_overrides[].override_text" label="override_text" generationContext={generationContext} />
+        <BriefSection
+          title="Cast Voice Overrides"
+          headingId="override-brief"
+          description="Current-generation-only override instructions that never update durable cast records."
+        >
+          <BriefFieldRow path="cast_voice_overrides[].override_text" schemaLabel="override_text" generationContext={generationContext}>
             <textarea
+              name="generationSession.cast_voice_overrides.0.override_text"
               value={voiceOverride.override_text}
               onChange={(event) => updateSurface("cast_voice_overrides", [{ ...voiceOverride, override_text: event.target.value }])}
             />
-          </label>
-          <BriefFieldHelp path="cast_voice_overrides[].override_text" label="override_text" />
-        </section>
+          </BriefFieldRow>
+        </BriefSection>
 
-        <section className="configPanel" aria-labelledby="validation-focus-brief">
-          <h3 id="validation-focus-brief">GENERATION VALIDATION FOCUS</h3>
-          <label>
-            <BriefLabel
-              path="generation_validation_focus.validation_focus_tags.generation_context[]"
-              label="generation_context"
-              generationContext={generationContext}
-            />
+        <BriefSection
+          title="Generation Validation Focus"
+          headingId="validation-focus-brief"
+          description="Deterministic validation focus tags; these are checks, not story beats."
+        >
+          <BriefFieldRow
+            path="generation_validation_focus.validation_focus_tags.generation_context[]"
+            schemaLabel="generation_context"
+            generationContext={generationContext}
+          >
             <select
+              name="generationSession.generation_validation_focus.validation_focus_tags.generation_context"
               value={generationContext}
               onChange={(event) =>
                 updateSurface("generation_validation_focus", {
@@ -803,11 +751,7 @@ export function GenerationBriefView(): React.JSX.Element {
               <option value="first_segment">first_segment</option>
               <option value="continuation_after_accepted_segment">continuation_after_accepted_segment</option>
             </select>
-          </label>
-          <BriefFieldHelp
-            path="generation_validation_focus.validation_focus_tags.generation_context[]"
-            label="generation_context"
-          />
+          </BriefFieldRow>
           {briefDefaults ? (
             <p className="muted">
               Default: {briefDefaults.generation_context.value === "first_segment" ? "first segment" : "continuation after accepted segment"}
@@ -818,21 +762,23 @@ export function GenerationBriefView(): React.JSX.Element {
                 : " from the saved draft."}
             </p>
           ) : null}
-        </section>
+        </BriefSection>
 
-        <section className="configPanel stopGuidancePanel" aria-labelledby="stop-guidance-brief">
-          <h3 id="stop-guidance-brief">STOP GUIDANCE</h3>
-          <label>
-            <BriefLabel path="stop_guidance.soft_unit_guidance" label="soft_unit_guidance" generationContext={generationContext} />
+        <BriefSection
+          title="Stop Guidance"
+          headingId="stop-guidance-brief"
+          description="Local stopping point for the next response decision; not downstream plot consequences."
+          className="stopGuidancePanel"
+        >
+          <BriefFieldRow path="stop_guidance.soft_unit_guidance" schemaLabel="soft_unit_guidance" generationContext={generationContext}>
             <textarea
               name="generationSession.stop_guidance.soft_unit_guidance"
               value={stopGuidance.soft_unit_guidance}
               onChange={(event) => updateSurface("stop_guidance", { soft_unit_guidance: event.target.value })}
             />
-          </label>
-          <BriefFieldHelp path="stop_guidance.soft_unit_guidance" label="soft_unit_guidance" />
+          </BriefFieldRow>
           {nonLocalStopWarning ? <p className="status statusWarning">This sounds non-local. Keep stop guidance to the next local prose unit.</p> : null}
-        </section>
+        </BriefSection>
       </div>
 
       <button type="button" onClick={() => void save()}>Save Generation Brief</button>

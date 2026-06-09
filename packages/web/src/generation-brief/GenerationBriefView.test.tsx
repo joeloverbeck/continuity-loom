@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
+import { BriefFieldRow } from "./BriefFieldRow.js";
 import { getGenerationBrief, listRecords, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
 
 vi.mock("../api.js", () => ({
@@ -88,8 +89,7 @@ describe("GenerationBriefView", () => {
       "consent_or_force_conditions",
       "current_locks"
     ]) {
-      expect(screen.getByLabelText(new RegExp(`^${field}`))).toBeTruthy();
-      expect(screen.getByRole("button", { name: `Help for ${field}` })).toBeTruthy();
+      expect(screen.getByLabelText(new RegExp(field))).toBeTruthy();
     }
   });
 
@@ -101,7 +101,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    const immediateSituationLabel = labelFor(/^immediate_situation_summary/);
+    const immediateSituationLabel = labelFor(/immediate_situation_summary/);
 
     expect(within(immediateSituationLabel).getByLabelText("required")).toBeTruthy();
   });
@@ -114,14 +114,14 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    expect(within(labelFor(/^recent_causal_context/)).getByText("Optional for a first segment")).toBeTruthy();
+    expect(within(labelFor(/recent_causal_context/)).getByText("Optional for a first segment")).toBeTruthy();
 
     vi.mocked(readiness).mockClear();
-    fireEvent.change(screen.getByLabelText(/^generation_context/), {
+    fireEvent.change(screen.getByLabelText(/generation_context/), {
       target: { value: "continuation_after_accepted_segment" }
     });
 
-    const recentCausalContextLabel = labelFor(/^recent_causal_context/);
+    const recentCausalContextLabel = labelFor(/recent_causal_context/);
     expect(within(recentCausalContextLabel).getByLabelText("required")).toBeTruthy();
     expect(within(recentCausalContextLabel).queryByText("Optional for a first segment")).toBeNull();
     expect(readiness).not.toHaveBeenCalled();
@@ -135,11 +135,11 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    const positionsLabel = labelFor(/^positions/);
+    const positionsLabel = labelFor(/positions/);
     expect(within(positionsLabel).getByLabelText("conditional")).toBeTruthy();
     expect(within(positionsLabel).queryByLabelText("required")).toBeNull();
 
-    expect(within(labelFor(/^soft_unit_guidance/)).getByText("Optional")).toBeTruthy();
+    expect(within(labelFor(/soft_unit_guidance/)).getByText("Optional")).toBeTruthy();
   });
 
   it("persists a new current-state array field and displays it after reload", async () => {
@@ -150,7 +150,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const routesAndExits = await screen.findByLabelText(/^routes_and_exits/);
+    const routesAndExits = await screen.findByLabelText(/routes_and_exits/);
     fireEvent.change(routesAndExits, { target: { value: "cellar stairs\nblocked delivery hatch" } });
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
@@ -176,7 +176,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const reloadedRoutes = await screen.findByLabelText(/^routes_and_exits/);
+    const reloadedRoutes = await screen.findByLabelText(/routes_and_exits/);
     expect((reloadedRoutes as HTMLTextAreaElement).value).toBe("cellar stairs\nblocked delivery hatch");
   });
 
@@ -188,10 +188,10 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const lastVisibleMoment = await screen.findByLabelText(/^last_visible_moment/);
-    const beginAfter = screen.getByLabelText(/^begin_after/);
-    const mayRender = screen.getByLabelText(/^may_render_if_naturally_caused/);
-    const doNotForce = screen.getByLabelText(/^do_not_force/);
+    const lastVisibleMoment = await screen.findByLabelText(/last_visible_moment/);
+    const beginAfter = screen.getByLabelText(/begin_after/);
+    const mayRender = screen.getByLabelText(/may_render_if_naturally_caused/);
+    const doNotForce = screen.getByLabelText(/do_not_force/);
 
     fireEvent.change(lastVisibleMoment, { target: { value: "Mara lowers the lamp." } });
     fireEvent.change(beginAfter, { target: { value: "Begin after Jon hears the latch." } });
@@ -237,12 +237,12 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    expect(await screen.findByLabelText(/^last_visible_moment/)).toMatchObject({ value: "Mara lowers the lamp." });
-    expect(screen.getByLabelText(/^begin_after/)).toMatchObject({ value: "Begin after Jon hears the latch." });
-    expect(screen.getByLabelText(/^may_render_if_naturally_caused/)).toMatchObject({
+    expect(await screen.findByLabelText(/last_visible_moment/)).toMatchObject({ value: "Mara lowers the lamp." });
+    expect(screen.getByLabelText(/begin_after/)).toMatchObject({ value: "Begin after Jon hears the latch." });
+    expect(screen.getByLabelText(/may_render_if_naturally_caused/)).toMatchObject({
       value: "Rain may interrupt.\nThe latch may stick."
     });
-    expect(screen.getByLabelText(/^do_not_force/)).toMatchObject({
+    expect(screen.getByLabelText(/do_not_force/)).toMatchObject({
       value: "Do not reveal the caller.\nDo not leave the room."
     });
   });
@@ -266,42 +266,42 @@ describe("GenerationBriefView", () => {
     renderView();
 
     expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for prior_accepted_prose_status_or_handoff_note" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for last_visible_moment" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for begin_after" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for must_render" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for may_render_if_naturally_caused" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for do_not_force" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for generation_context" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for soft_unit_guidance" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for current_location" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for onstage_entities" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for immediate_situation_summary" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Last visible moment" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Begin after" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Must render" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for May render if naturally caused" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Do not force" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Generation context checks" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Soft unit guidance" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Current location" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Onstage entities" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Immediate situation summary" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
     expect(screen.getByRole("option", { name: "Omniscient" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(/^selected_pov/), { target: { value: "omniscient" } });
-    fireEvent.change(screen.getByLabelText(/^current_time/), { target: { value: "midnight" } });
-    fireEvent.change(screen.getByLabelText(/^current_location/), { target: { value: "loading dock" } });
-    const onstageEntities = screen.getByLabelText(/^onstage_entities/);
+    fireEvent.change(screen.getByLabelText(/selected_pov/), { target: { value: "omniscient" } });
+    fireEvent.change(screen.getByLabelText(/current_time/), { target: { value: "midnight" } });
+    fireEvent.change(screen.getByLabelText(/current_location/), { target: { value: "loading dock" } });
+    const onstageEntities = screen.getByLabelText(/onstage_entities/);
     const jonOption = within(onstageEntities).getByRole<HTMLOptionElement>("option", { name: "Jon Ureña" });
     jonOption.selected = true;
     fireEvent.change(onstageEntities);
-    fireEvent.change(screen.getByLabelText(/^immediate_situation_summary/), {
+    fireEvent.change(screen.getByLabelText(/immediate_situation_summary/), {
       target: { value: "Jon is at the loading dock with the door half open." }
     });
-    fireEvent.change(screen.getByLabelText(/^recent_causal_context/), { target: { value: "A reached the gate." } });
-    fireEvent.change(screen.getByLabelText(/^last_visible_moment/), { target: { value: "A stood at the gate." } });
-    fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
-    fireEvent.change(screen.getByLabelText(/^begin_after/), { target: { value: "Begin with the gate latch." } });
-    fireEvent.change(screen.getByLabelText(/^must_render/), { target: { value: "The lock opens." } });
-    fireEvent.change(screen.getByLabelText(/^may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
-    fireEvent.change(screen.getByLabelText(/^do_not_force/), { target: { value: "Do not leave the dock." } });
-    fireEvent.change(screen.getByLabelText(/^cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
-    fireEvent.change(screen.getByLabelText(/^local_function/), { target: { value: "present_minor_speaker" } });
-    fireEvent.change(screen.getByLabelText(/^current_voice_pressure/), { target: { value: "clipped and wary" } });
-    fireEvent.change(screen.getByLabelText(/^override_text/), { target: { value: "shorter answers only" } });
-    fireEvent.change(screen.getByLabelText(/^generation_context/), { target: { value: "continuation_after_accepted_segment" } });
-    fireEvent.change(screen.getByLabelText(/^soft_unit_guidance/), { target: { value: "Stop after the reply." } });
+    fireEvent.change(screen.getByLabelText(/recent_causal_context/), { target: { value: "A reached the gate." } });
+    fireEvent.change(screen.getByLabelText(/last_visible_moment/), { target: { value: "A stood at the gate." } });
+    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
+    fireEvent.change(screen.getByLabelText(/begin_after/), { target: { value: "Begin with the gate latch." } });
+    fireEvent.change(screen.getByLabelText(/must_render/), { target: { value: "The lock opens." } });
+    fireEvent.change(screen.getByLabelText(/may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
+    fireEvent.change(screen.getByLabelText(/do_not_force/), { target: { value: "Do not leave the dock." } });
+    fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
+    fireEvent.change(screen.getByLabelText(/local_function/), { target: { value: "present_minor_speaker" } });
+    fireEvent.change(screen.getByLabelText(/current_voice_pressure/), { target: { value: "clipped and wary" } });
+    fireEvent.change(screen.getByLabelText(/override_text/), { target: { value: "shorter answers only" } });
+    fireEvent.change(screen.getByLabelText(/generation_context/), { target: { value: "continuation_after_accepted_segment" } });
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after the reply." } });
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
@@ -366,7 +366,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const selectedPov = await screen.findByLabelText(/^selected_pov/);
+    const selectedPov = await screen.findByLabelText(/selected_pov/);
     expect(within(selectedPov).getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
     expect(within(selectedPov).getByRole("option", { name: "Omniscient" })).toBeTruthy();
     expect(within(selectedPov).getByRole("option", { name: "Ane Arrieta" })).toBeTruthy();
@@ -437,7 +437,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const selectedPov = await screen.findByLabelText(/^selected_pov/);
+    const selectedPov = await screen.findByLabelText(/selected_pov/);
     expect((selectedPov as HTMLSelectElement).value).toBe(missingId);
     expect(within(selectedPov).getByRole("option", { name: `Unknown entity (${missingId.slice(0, 8)})` })).toBeTruthy();
   });
@@ -450,7 +450,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    const handoffHelp = screen.getByRole("button", { name: "Help for prior_accepted_prose_status_or_handoff_note" });
+    const handoffHelp = screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" });
 
     expect(handoffHelp.getAttribute("aria-controls")).toBe(
       "field-help-generation-brief-immediate-handoff-prior-accepted-prose-status-or-handoff-note"
@@ -461,8 +461,33 @@ describe("GenerationBriefView", () => {
 
     fireEvent.click(handoffHelp);
 
-    expect(await screen.findByText("A handoff note about accepted prose status, not prose authority.")).toBeTruthy();
+    expect(screen.getAllByText("A handoff note about accepted prose status, not prose authority.").length).toBeGreaterThan(1);
     expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
+  });
+
+  it("renders helper text inline and wires controls with aria-describedby", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const summary = await screen.findByLabelText(/immediate_situation_summary/);
+    const helperId = summary.getAttribute("aria-describedby");
+
+    expect(helperId).toBeTruthy();
+    expect(document.getElementById(helperId!)?.textContent).toBe("Short user-authored summary of the immediate local situation.");
+  });
+
+  it("falls back to the schema leaf when displayLabel metadata is absent", () => {
+    render(
+      <BriefFieldRow path="unknown_branch.fallback_label" schemaLabel="fallback_label" generationContext="first_segment">
+        <input />
+      </BriefFieldRow>
+    );
+
+    expect(screen.getByLabelText(/fallback_label/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Help for/ })).toBeNull();
   });
 
   it("preserves in-progress trailing spaces while editing must_render", async () => {
@@ -472,7 +497,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const mustRender = await screen.findByLabelText(/^must_render/);
+    const mustRender = await screen.findByLabelText(/must_render/);
     fireEvent.change(mustRender, { target: { value: "door closing " } });
 
     expect((mustRender as HTMLTextAreaElement).value).toBe("door closing ");
@@ -486,7 +511,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const mustRender = await screen.findByLabelText(/^must_render/);
+    const mustRender = await screen.findByLabelText(/must_render/);
     fireEvent.change(mustRender, {
       target: {
         value: "  the door closing  \n\n  the candle guttering\t\n   "
@@ -520,12 +545,12 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    fireEvent.change(screen.getByLabelText(/^prior_accepted_prose_status_or_handoff_note/), {
+    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), {
       target: {
         value: "This is a long paragraph. It reads like finished prose. It keeps going. It should be summarized instead."
       }
     });
-    fireEvent.change(screen.getByLabelText(/^soft_unit_guidance/), { target: { value: "Write the whole chapter." } });
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Write the whole chapter." } });
 
     expect(screen.getByText(/looks like pasted prose/i)).toBeTruthy();
     expect(screen.getByText(/sounds non-local/i)).toBeTruthy();
@@ -542,7 +567,7 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    const selector = await screen.findByLabelText(/^local_function/);
+    const selector = await screen.findByLabelText(/local_function/);
     expect(within(selector).getByRole("option", { name: "present_minor_speaker" })).toBeTruthy();
     expect(within(selector).getAllByRole("option")).toHaveLength(7);
   });
@@ -612,7 +637,7 @@ describe("GenerationBriefView", () => {
 
     await waitFor(() => expect(readiness).toHaveBeenCalled());
     const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
-    fireEvent.change(screen.getByLabelText(/^soft_unit_guidance/), { target: { value: "Stop." } });
+    fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop." } });
     expect(screen.getByText("Displayed readiness may be stale until you save this draft.")).toBeTruthy();
     expect(readiness).toHaveBeenCalledTimes(initialValidationCalls);
 
@@ -624,7 +649,8 @@ describe("GenerationBriefView", () => {
 });
 
 function labelFor(name: RegExp): HTMLLabelElement {
-  const label = screen.getByLabelText(name).closest("label");
+  const control = screen.getByLabelText(name);
+  const label = control.id ? document.querySelector(`label[for="${control.id}"]`) : control.closest("label");
 
   if (!(label instanceof HTMLLabelElement)) {
     throw new Error(`Could not find label for ${name}`);

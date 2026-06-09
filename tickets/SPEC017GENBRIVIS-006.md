@@ -12,7 +12,7 @@ SPEC-017's §Verification includes a manual pass that cannot run in the project'
 
 ## Assumption Reassessment (2026-06-10)
 
-1. The five implementation tickets compose in `packages/web/src/generation-brief/GenerationBriefView.tsx`: SPEC017GENBRIVIS-002 (section cards + `BriefFieldRow`), -004 (`SectionRail` + scroll-spy + chips), -005 (contextual save bar), over -001 (core `displayLabel`) and -003 (fill-chip logic). The automated gate is `npm run lint`, `npm run typecheck`, `npm test` (root `test` builds `@loom/core` then runs `vitest run`); web tests are jsdom. The `?field=` deep-link path is `focusBriefField`/`resolveBriefFieldTarget` (`:318–350`), regression-covered by SPEC017GENBRIVIS-002's updated `GenerationBriefView.test.tsx`.
+1. The five implementation tickets compose in `packages/web/src/generation-brief/GenerationBriefView.tsx`: `archive/tickets/SPEC017GENBRIVIS-002.md` (section cards + `BriefFieldRow`), -004 (`SectionRail` + scroll-spy + chips), -005 (contextual save bar), over -001 (core `displayLabel`) and -003 (fill-chip logic). The automated gate is `npm run lint`, `npm run typecheck`, `npm test` (root `test` builds `@loom/core` then runs `vitest run`); web tests are jsdom. The `?field=` deep-link path is `focusBriefField`/`resolveBriefFieldTarget` (`:318–350`), regression-covered by `archive/tickets/SPEC017GENBRIVIS-002.md`'s updated `GenerationBriefView.test.tsx`.
 2. SPEC-017 §Verification items: (1) lint/typecheck/test pass; (2) `?field=` focus/scroll verified by existing tests (updated for markup); (3) manual Puppeteer pass against the red-bunny reproduction — sections render as distinct cards with titles/descriptions, rail jumps land with the heading visible below any sticky chrome, editing summons the save bar, saving dismisses it and refreshes readiness, empty optional textareas no longer dominate scroll height, ⓘ sits in the label row; (4) fill-chip correctness with `generation_context = continuation_after_accepted_segment` (continuation-required fields count) vs `first_segment` (they do not).
 3. Cross-artifact boundary: this capstone exercises the pipeline the upstream tickets composed; it modifies none of their files. `Deps` is the leaf set {004, 005}, whose transitive `Deps` cover 001/002/003.
 4. FOUNDATIONS §27: the manual smoke confirms the restructured brief is legible and that the readiness panel (`ValidationPanel`) remains first and the sole diagnostic surface — chips and the save bar are advisory, not diagnostic.
@@ -25,7 +25,7 @@ SPEC-017's §Verification includes a manual pass that cannot run in the project'
 ## Verification Layers
 
 1. Full automated gate green across the integrated surface → `npm run lint && npm run typecheck && npm test`.
-2. `?field=` deep-link still focuses/scrolls and lands below sticky chrome → SPEC017GENBRIVIS-002's `GenerationBriefView.test.tsx` (CI) + manual confirm of the visible-below-chrome behavior (runbook).
+2. `?field=` deep-link still focuses/scrolls and lands below sticky chrome → `archive/tickets/SPEC017GENBRIVIS-002.md`'s `GenerationBriefView.test.tsx` (CI) + manual confirm of the visible-below-chrome behavior (runbook).
 3. Visual restructure smoke — cards distinct, rail jumps, save-bar summon/dismiss, reduced scroll height, inline ⓘ → manual Puppeteer runbook (no CI harness).
 4. Fill-chip continuation correctness → SPEC017GENBRIVIS-003 `section-fill.test.ts` (CI) + manual spot-check toggling `generation_context` (runbook).
 

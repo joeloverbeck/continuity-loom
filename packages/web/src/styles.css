@@ -636,7 +636,7 @@ button:disabled:hover {
 }
 
 .briefRequirednessLegend,
-.briefFieldLabelText {
+.briefFieldLabelRow {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -659,9 +659,88 @@ button:disabled:hover {
   font-weight: 800;
 }
 
-.configPanel {
-  border-top: 1px solid #d8dee8;
-  padding-top: 20px;
+.briefSection {
+  display: grid;
+  gap: 18px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px;
+}
+
+.briefSectionHeader {
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid #e5e9f0;
+  padding-bottom: 12px;
+}
+
+.briefSectionHeader h3,
+.briefSectionHeader p {
+  margin: 0;
+}
+
+.briefSectionHeader h3 {
+  color: #182033;
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.briefSectionHeader p {
+  color: #5c677d;
+  font-size: 0.9rem;
+}
+
+.briefSectionBody,
+.briefFieldRow {
+  display: grid;
+  gap: 12px;
+}
+
+.briefFieldRow {
+  align-items: start;
+}
+
+.briefFieldLabelRow {
+  gap: 8px;
+}
+
+.briefFieldControlLabel {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.briefFieldHumanLabel {
+  color: #182033;
+  font-weight: 800;
+}
+
+.briefFieldSchemaPath {
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #f7f9fc;
+  color: #5c677d;
+  padding: 2px 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.briefFieldHelperText {
+  color: #4f5b70;
+  font-size: 0.88rem;
+}
+
+.briefFieldCriticalHint {
+  display: inline-block;
+}
+
+.briefFieldRow textarea {
+  max-height: 320px;
+  resize: vertical;
+  field-sizing: content;
 }
 
 .readinessChecklist {
