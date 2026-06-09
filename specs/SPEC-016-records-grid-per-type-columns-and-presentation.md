@@ -47,7 +47,7 @@
 The `/records` grid uses a single fixed column set (`type, label, status, salience, urgency, archived`) for all 18 record types. This produces three defects:
 
 1. **Meaningless union / default.** The default "All types" view mixes heterogeneous types under one column set. Industry practice (Notion, Airtable, Linear, Jira) and design guidance (NN/G, Shopify Polaris, IBM Carbon) is to scope columns to a type/view and avoid a union grid; a union grid guarantees many irrelevant cells.
-2. **Irrelevant columns.** Only 5 types carry `urgency` and 5 carry `salience`; the rest render those columns empty. Types that lack them have their genuinely useful fields (e.g. EMOTION `intensity`/`affect_kind`) shown nowhere.
+2. **Irrelevant columns.** Only 4 types carry `urgency` and 5 carry `salience`; the rest render those columns empty. Types that lack them have their genuinely useful fields (e.g. EMOTION `intensity`/`affect_kind`) shown nowhere.
 3. **Long primary field rendered as a block.** 12 of 18 types are prose-keyed (their identifying field is a paragraph). With no width cap, line-clamp, or tooltip, the Label cell wraps into a tall, narrow block. The side detail pane further squeezes the table so columns clip.
 
 This is a presentation-layer problem on the **All story records** browsing surface. It does not touch prompt compilation, validation gating, working-set membership semantics, stored record payloads, or OpenRouter behavior.
@@ -98,10 +98,12 @@ Every view keeps the always-present leading **Working Set** toggle column and a 
 
 **"All types" minimal shared columns:** Working Set, Type, Label, Status, Updated. No `salience`/`urgency` (sparse across types). This view exists only for occasional full-store scanning, not as the default.
 
+**Header disambiguation:** the OPEN THREAD `type` payload key (its *thread kind*: question/promise/…) is rendered under a **"Thread kind"** header and its display value reads `payload.type` — this avoids any collision with the record-`type` "Type" column shown in the "All types" minimal set.
+
 ### Default view, sorting, and empty state
 
 - On load, resolve the active type as: URL `type` query param if present and valid → else the **most-populated** type among existing records → else fall back to "All types". The type filter is mirrored to the URL `type` search param (the component already uses `useSearchParams`) so the choice is restorable and shareable.
-- Default sort within a scoped view: by the type's severity column (`salience`/`urgency`/`intensity`) descending when it has one, else by `updatedAt` descending. (Existing "Group by" controls remain.)
+- Default sort within a scoped view (applied when **Group by** is "None"): by the type's severity column (`salience`/`urgency`/`intensity`) descending when it has one, else by `updatedAt` descending. Severity enums must sort by an explicit ordinal (`low < medium < high < critical`; intensity `low < medium < high < extreme`), **not** lexicographically — the existing `groupBy` sort compares the raw enum string with `localeCompare` (`RecordBrowser.tsx:184–188`), which orders alphabetically (`critical/high/low/medium`); the new default sort uses a manifest-provided ordinal instead. (Existing "Group by" controls remain.)
 - When the active type has zero records, render a three-part empty state: status line, one sentence on what the type holds, and the matching "Create {TYPE}" action.
 
 ### Primary-label and layout fixes
@@ -117,11 +119,11 @@ Every view keeps the always-present leading **Working Set** toggle column and a 
 Grouped as reviewable diffs (one ticket per group is the expected decomposition):
 
 1. **Core column manifest.** New `@loom/core` module defining the per-type column registry (primary field + ordered additional columns, each with field key, header, kind/alignment) and the minimal "All types" column set. Pure data + typed accessors; unit-tested for completeness (a manifest entry for every `recordTypes` member) and for referencing only fields that exist on each type's schema.
-2. **Summary projection extension.** Extend `RecordMetadata` (`packages/core/src/records/metadata.ts`) and the server `metadata(...)` projection (`packages/server/src/record-routes.ts`) so the summary carries the manifest-declared scalar/enum display values per record (e.g. a `displayValues: Record<string, string | null>` map). Driven by the manifest; no new DB queries. Update `RecordSummary`/`RecordDetail` in `packages/web/src/api.ts` accordingly.
+2. **Summary projection extension.** Extend `RecordMetadata` (`packages/core/src/records/metadata.ts`) and the server `metadata(...)` projection (`packages/server/src/record-routes.ts`) so the summary carries the manifest-declared scalar/enum display values per record as an **optional** `displayValues?: Record<string, string | null>` map. Optionality is deliberate, to bound blast radius: `RecordSummary` is also constructed by `GenerationBriefView`, `StoryConfigEditor`, `WorkingSetView`, and the `*.test.tsx` fixtures, none of which should be forced to populate it. Driven by the manifest; no new DB queries (the payload is already loaded — `record-repository.ts:306–317` maps every row through `getRecord`). Array-valued columns (e.g. ENTITY `roles_in_story`, a `string[]`) are join-formatted to a single string in the projection. Update `RecordSummary`/`RecordDetail` in `packages/web/src/api.ts` accordingly, and populate `displayValues` on the detail/saved-record path too — either emit it from the detail projection, or recompute it from the payload via the `@loom/core` manifest inside `toRecordSummary` (`RecordBrowser.tsx:64`) — so a freshly-saved row is not blank until the next reload.
 3. **Grid rendering from the manifest.** Rework `RecordBrowser.tsx` to build its columns from the manifest for the active type, or the minimal shared set for "All types"; render the primary label per the new rules; render "—" for empty cells. Preserve the Working Set toggle column and all existing filters/search/grouping.
 4. **Default view, URL sync, empty state.** Default-type resolution on load, `type`↔URL sync, type-scoped default sort, and the three-part empty state.
 5. **Presentation/CSS.** Label line-clamp + bounded width, horizontal-scroll container with sticky primary columns and sticky header, in `packages/web/src/styles.css`.
-6. **Tests + docs.** Update `RecordBrowser.test.tsx` for per-type columns, the minimal "All types" set, default-type-on-load, and empty state; add the core manifest unit test. Update `docs/user-guide.md` records-browsing description if it specifies columns.
+6. **Tests + docs.** Update `RecordBrowser.test.tsx` for per-type columns, the minimal "All types" set, default-type-on-load, and empty state; add the core manifest unit test. Update `docs/user-guide.md` records-browsing description only if it enumerates columns — verified at reassessment that it currently does **not** (no column/grid enumeration), so this is expected to be a no-op.
 
 ---
 
@@ -164,6 +166,6 @@ No FOUNDATIONS principle is contradicted, so **no amendment is required**. (Opti
 
 - **Manifest drift vs. schema.** If a record type gains/loses a field, the manifest can reference a stale key. Mitigation: the core completeness/field-existence test fails closed when a manifest field key is absent from the type's schema.
 - **Exact column lists are design intent, not final.** The manifest table above should be confirmed field-by-field against the schema files during implementation; column counts may be trimmed for density (Carbon/NN/G favor fewer, important columns).
-- **`displayValues` shape.** Whether to use a generic `Record<string,string|null>` map vs. typed per-type fields. Recommendation: generic map keyed by field name, formatted to strings in the projection, to keep the metadata schema stable as the manifest evolves.
+- **`displayValues` shape.** Settled: a generic, **optional** `Record<string, string | null>` map keyed by field name, formatted to strings in the projection (array columns join-formatted), keeping the metadata schema stable as the manifest evolves. Populated on both the list projection and the detail/saved-record path (see Deliverable 2).
 - **Default = most-populated type** is a deterministic heuristic; "last-used" persistence beyond the URL param is out of scope. Open question only if the user later wants sticky last-used across sessions.
 - **Named assumptions:** (1) ordinal severity enums are rendered as plain compact cells, not a new badge component (avoid scope creep) — assuming plain cells; (2) the "Updated" column in the minimal view uses the existing `updatedAt` — assuming a date/relative-time render consistent with the rest of the app.
