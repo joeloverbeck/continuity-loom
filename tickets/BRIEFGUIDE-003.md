@@ -4,16 +4,16 @@
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — `packages/web/src/field-help/FieldHelp.tsx` reads the new `requiredness`/`requirednessNote` from `FieldGuidance` and renders it. No core/compiler/validation changes.
-**Deps**: BRIEFGUIDE-001 (provides `FieldGuidance.requiredness`)
+**Deps**: `archive/tickets/BRIEFGUIDE-001.md` (completed; provides `FieldGuidance.requiredness`)
 
 ## Problem
 
-The "i" popup shows a single badge derived only from `promptFacing` (`FieldHelp.tsx:81-94`: "Prompt" / "Validation only" / "Current generation only"). It never tells the author whether the field is **required**. SPEC-015's own doctrine (`archive/specs/SPEC-015-field-guidance-and-contextual-help.md:150,229`) is that requiredness must stay visible and may be *supplemented* — not replaced — by popovers. With BRIEFGUIDE-001 supplying a deterministic tier, the popup should state it.
+The "i" popup shows a single badge derived only from `promptFacing` (`FieldHelp.tsx:81-94`: "Prompt" / "Validation only" / "Current generation only"). It never tells the author whether the field is **required**. SPEC-015's own doctrine (`archive/specs/SPEC-015-field-guidance-and-contextual-help.md:150,229`) is that requiredness must stay visible and may be *supplemented* — not replaced — by popovers. With `archive/tickets/BRIEFGUIDE-001.md` supplying a deterministic tier, the popup should state it.
 
 ## Assumption Reassessment (2026-06-09)
 
-1. `FieldHelp.tsx` renders a header badge via `statusLabel(guidance)` (`FieldHelp.tsx:60-62,81-94`) and a stack of `GuidanceSection`s (`:64-72`). It consumes `FieldGuidance` from `@loom/core` (`:2-6`). After BRIEFGUIDE-001, `guidance.requiredness` / `guidance.requirednessNote` are available; this ticket is blocked until that lands.
-2. The requiredness tier semantics (`always` / `continuation` / `conditional` / `optional`) and authority are defined in BRIEFGUIDE-001 from `docs/compiler-contract.md:98-116`. The popup must phrase them in author language and must reference the readiness checklist as the gate, consistent with `docs/user-guide.md:28-30`.
+1. `FieldHelp.tsx` renders a header badge via `statusLabel(guidance)` (`FieldHelp.tsx:60-62,81-94`) and a stack of `GuidanceSection`s (`:64-72`). It consumes `FieldGuidance` from `@loom/core` (`:2-6`). After `archive/tickets/BRIEFGUIDE-001.md`, `guidance.requiredness` / `guidance.requirednessNote` are available.
+2. The requiredness tier semantics (`always` / `continuation` / `conditional` / `optional`) and authority are defined in `archive/tickets/BRIEFGUIDE-001.md` from `docs/compiler-contract.md:98-116`. The popup must phrase them in author language and must reference the readiness checklist as the gate, consistent with `docs/user-guide.md:28-30`.
 3. Shared boundary: the `FieldGuidance` contract (core) ↔ `FieldHelp` (web). This ticket only reads the new optional fields; it must no-op gracefully when `requiredness` is absent (story-config/record surfaces, which BRIEFGUIDE-001 leaves unpopulated).
 4. FOUNDATIONS principle restated: validation is the fail-closed gate (`docs/ACTIVE-DOCS.md` invariant). The popup must present requiredness as guidance and point to readiness for the actual gate — it must not imply the popup itself enforces anything.
 
@@ -37,7 +37,7 @@ Add a `requirednessLabel(requiredness)` mapping: `always` → "Required", `conti
 ## Out of Scope
 
 - Inline markers on the brief page (BRIEFGUIDE-004).
-- Populating requiredness data (BRIEFGUIDE-001).
+- Populating requiredness data (completed in `archive/tickets/BRIEFGUIDE-001.md`).
 - Changing the existing `promptFacing` badge.
 
 ## Acceptance Criteria

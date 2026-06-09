@@ -21,7 +21,7 @@ A user authoring a real scene could not tell five generation-brief fields apart,
 2. Authorities for the corrected prose: `docs/prompt-template-rationale.md:38-56` (§5 state-vs-handoff separation, §6 why `prior_accepted…` stays narrow), `docs/prompt-template.md:107-122`, `docs/story-record-schema.md:184-209`, `docs/FOUNDATIONS.md:333-339` (§10 the correct field is `prior_accepted_prose_status_or_handoff_note`, `None`-or-bridge, never prose-mined).
 3. Shared boundary: the `FieldGuidance` registry consumed by `FieldHelp` and asserted by `packages/core/test/field-guidance-brief-config.test.ts` / `guidance-coverage-sources.test.ts`. Prose edits must keep `promptDestinations`/`promptFacing` and `fieldPath` unchanged so coverage tests stay valid.
 4. FOUNDATIONS principle restated: no accepted prose, rejected candidate, superseded candidate, or automatic prose-derived summary becomes prompt context (`docs/ACTIVE-DOCS.md` non-negotiable invariant; FOUNDATIONS §10). The new prose must reinforce this, never soften it — `prior_accepted…` guidance must keep its `doctrineWarnings` against prose-mining.
-5. Adjacent observation: requiredness wording belongs to BRIEFGUIDE-001 (`requirednessNote`), not here; this ticket only sharpens semantic distinctions. Kept separate to keep each diff reviewable.
+5. Adjacent observation: requiredness wording belongs to archived BRIEFGUIDE-001 (`archive/tickets/BRIEFGUIDE-001.md`, `requirednessNote`), not here; this ticket only sharpens semantic distinctions. Kept separate to keep each diff reviewable.
 
 ## Architecture Check
 
@@ -57,7 +57,7 @@ Rewrite `authoringAdvice`/`examples` so the recommended content is **`None`** (f
 
 ## Out of Scope
 
-- Requiredness metadata/notes (BRIEFGUIDE-001).
+- Requiredness metadata/notes (completed in `archive/tickets/BRIEFGUIDE-001.md`).
 - Any rendering change in `FieldHelp.tsx` or the brief page.
 - Changing prompt template, schema, or compiler behavior, or any `fieldPath`/`promptDestinations`.
 

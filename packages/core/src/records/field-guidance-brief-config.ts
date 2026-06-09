@@ -13,6 +13,18 @@ const currentStateOpts = {
   authoringAdvice: "Write the current fact directly; do not rely on prior prose to imply it."
 } satisfies Partial<GuidanceInput>;
 
+const alwaysRequiredCurrentStateOpts = {
+  ...currentStateOpts,
+  requiredness: "always",
+  requirednessNote: "Required before preview or generation."
+} satisfies Partial<GuidanceInput>;
+
+const contextGatedCurrentStateOpts = {
+  ...currentStateOpts,
+  requiredness: "conditional",
+  requirednessNote: "Required when relevant; the readiness checklist confirms exactly when."
+} satisfies Partial<GuidanceInput>;
+
 const directiveOpts = {
   continuityRole: "Applies authorial pressure within the selected records and current state.",
   doctrineWarnings: ["Manual directives cannot override hard canon, physical state, POV knowledge, reveal locks, or policy."],
@@ -21,10 +33,20 @@ const directiveOpts = {
   authoringAdvice: "Use this as local causal pressure, not as a mini-outline."
 } satisfies Partial<GuidanceInput>;
 
+const optionalDirectiveOpts = {
+  ...directiveOpts,
+  requiredness: "optional"
+} satisfies Partial<GuidanceInput>;
+
 const voicePressureOpts = {
   continuityRole: "Temporary pressure for this generation; durable identity belongs in CAST MEMBER records.",
   criticalVisibleHint: "Current-generation pressure only; update CAST MEMBER records manually for durable changes.",
-  authoringAdvice: "Name the pressure that matters now without rewriting the character's permanent dossier."
+  authoringAdvice: "Name the pressure that matters now without rewriting the character's permanent dossier.",
+  requiredness: "optional"
+} satisfies Partial<GuidanceInput>;
+
+const optionalOpts = {
+  requiredness: "optional"
 } satisfies Partial<GuidanceInput>;
 
 const psychicDistanceGuidance = {
@@ -156,39 +178,41 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   brief("active_working_set.selected_records[]", "Records selected as authority for this generation.", [
     "active_working_set"
   ], {
+    ...optionalOpts,
     continuityRole: "The active working set is explicit and user-controlled; omitted records are not silently added."
   }),
   brief("active_working_set.active_onstage_cast_full[].cast_member_id", "Cast member receiving a full active dossier.", [
     "rich_active_cast_dossiers",
     "{active_onstage_full_cast_dossiers}"
-  ]),
+  ], optionalOpts),
   brief("active_working_set.active_onstage_cast_full[].local_function", "Why this cast member matters locally.", [
     "{active_onstage_full_cast_dossiers}"
-  ], { enumValues: localFunctionGuidance }),
+  ], { ...optionalOpts, enumValues: localFunctionGuidance }),
   brief("active_working_set.present_minor_cast_compressed[]", "Present cast kept intentionally compressed.", [
     "present_minor_cast",
     "{present_minor_cast_notes}"
-  ]),
+  ], optionalOpts),
   brief("active_working_set.offstage_relevant_cast[]", "Offstage cast allowed to pressure the scene.", [
     "offstage_relevance",
     "{offstage_relevance_notes}"
-  ]),
-  brief("active_working_set.selected_pov", "Selected viewpoint for this generation.", ["{pov_character}"]),
+  ], optionalOpts),
+  brief("active_working_set.selected_pov", "Selected viewpoint for this generation.", ["{pov_character}"], optionalOpts),
   brief("active_working_set.manual_directive_id", "Operational link to the current manual directive.", [], {
+    ...optionalOpts,
     promptFacing: "never",
     validationRole: "Used to connect UI state; it is not sent to the prose prompt."
   }),
-  brief("current_authoritative_state.current_time", "The exact current story time.", ["{current_time}"], currentStateOpts),
-  brief("current_authoritative_state.current_location", "The current location authority.", ["{current_location}"], currentStateOpts),
+  brief("current_authoritative_state.current_time", "The exact current story time.", ["{current_time}"], alwaysRequiredCurrentStateOpts),
+  brief("current_authoritative_state.current_location", "The current location authority.", ["{current_location}"], alwaysRequiredCurrentStateOpts),
   brief("current_authoritative_state.onstage_entities[]", "Entities physically or narratively onstage now.", [
     "{onstage_entities}"
-  ], currentStateOpts),
+  ], alwaysRequiredCurrentStateOpts),
   brief(
     "current_authoritative_state.immediate_situation_summary",
     "Short user-authored summary of the immediate local situation.",
     ["{immediate_situation_summary}"],
     {
-      ...currentStateOpts,
+      ...alwaysRequiredCurrentStateOpts,
       doctrineWarnings: ["Do not derive this from accepted prose, candidate prose, or automatic summaries."],
       examples: ["Elin and Niko are in the cellar while she guards the hidden flour bin."],
       authoringAdvice: "Keep it local, state-like, and prose-neutral; describe the starting situation, not an outline."
@@ -196,44 +220,51 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   ),
   brief("current_authoritative_state.offstage_pressuring_entities[]", "Offstage entities exerting immediate pressure.", [
     "{offstage_pressuring_entities}"
-  ], currentStateOpts),
-  brief("current_authoritative_state.positions", "Where bodies and important things are positioned.", ["{positions}"], currentStateOpts),
-  brief("current_authoritative_state.possessions", "Who has or controls important objects now.", ["{possessions}"], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
+  brief("current_authoritative_state.positions", "Where bodies and important things are positioned.", ["{positions}"], contextGatedCurrentStateOpts),
+  brief("current_authoritative_state.possessions", "Who has or controls important objects now.", ["{possessions}"], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.visible_conditions[]", "Conditions visible in the local scene.", [
     "{visible_conditions}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.environmental_conditions", "Environmental facts currently shaping action.", [
     "{environmental_conditions}"
-  ], currentStateOpts),
-  brief("current_authoritative_state.entity_statuses", "Current state of relevant entities.", ["{entity_statuses}"], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
+  brief("current_authoritative_state.entity_statuses", "Current state of relevant entities.", ["{entity_statuses}"], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.line_of_sight_and_visibility", "What can and cannot be seen now.", [
     "{line_of_sight_and_visibility}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.routes_and_exits[]", "Available routes, exits, and movement constraints.", [
     "{routes_and_exits}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.available_time", "How much time is available before pressure changes.", [
     "{available_time}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.consent_or_force_conditions", "Current consent, coercion, restraint, or force constraints.", [
     "{consent_or_force_conditions}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("current_authoritative_state.current_locks[]", "Current locked doors, blocked options, or hard limits.", [
     "{current_locks}"
-  ], currentStateOpts),
+  ], contextGatedCurrentStateOpts),
   brief("immediate_handoff.recent_causal_context", "User-authored recent cause that launches the next segment.", [
     "{recent_causal_context}"
   ], {
+    requiredness: "continuation",
+    requirednessNote: "Required for continuations; optional for a first segment.",
     examples: ["Mara just saw the seal crack and has not warned Ivo yet."],
     antiExamples: ["A recap of the entire previous chapter."],
     authoringAdvice: "Keep this as causal context, not a transcript or summary archive."
   }),
   brief("immediate_handoff.last_visible_moment", "The last visible action or image before generation begins.", [
     "{last_visible_moment}"
-  ]),
+  ], {
+    requiredness: "continuation",
+    requirednessNote: "For continuations, this or begin_after is required."
+  }),
   brief("immediate_handoff.prior_accepted_prose_status_or_handoff_note", "A handoff note about accepted prose status, not prose authority.", [
     "{prior_accepted_prose_status_or_handoff_note}"
   ], {
+    requiredness: "optional",
+    requirednessNote: "Always renders; leave as None unless you have a user-authored handoff bridge.",
     criticalVisibleHint: "Accepted prose is readable output, not continuity authority.",
     doctrineWarnings: ["Do not use accepted prose as canon for future prompt context."],
     examples: ["Previous segment accepted; durable changes still need manual record updates."],
@@ -241,23 +272,29 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     authoringAdvice: "State the operational handoff; put durable facts in records."
   }),
   brief("immediate_handoff.begin_after", "The exact point where new prose should begin.", ["{begin_after}"], {
+    requiredness: "continuation",
+    requirednessNote: "For continuations, this or last_visible_moment is required.",
     examples: ["Begin after the door shuts behind Lio."],
     antiExamples: ["Begin somewhere later after the argument resolves."],
     authoringAdvice: "Anchor a local start point; do not skip over the next decision."
   }),
   brief("manual_moment_directive.must_render[]", "Required local pressure the next segment must render.", [
     "{manual_must_render}"
-  ], directiveOpts),
+  ], {
+    ...directiveOpts,
+    requiredness: "always",
+    requirednessNote: "Required before preview or generation."
+  }),
   brief("manual_moment_directive.may_render_if_naturally_caused[]", "Optional pressure allowed only if the selected state causes it.", [
     "{manual_may_render_if_naturally_caused}"
-  ], directiveOpts),
-  brief("manual_moment_directive.do_not_force[]", "Outcomes or moves the prose must not force.", ["{manual_do_not_force}"], directiveOpts),
+  ], optionalDirectiveOpts),
+  brief("manual_moment_directive.do_not_force[]", "Outcomes or moves the prose must not force.", ["{manual_do_not_force}"], optionalDirectiveOpts),
   brief("current_cast_voice_pressure[].cast_member_id", "Cast member receiving current-generation voice pressure.", [
     "{active_cast_voice_pressure_pins}"
-  ]),
+  ], optionalOpts),
   brief("current_cast_voice_pressure[].local_function", "The cast member's local function in this generation.", [
     "{active_cast_voice_pressure_pins}"
-  ], { enumValues: localFunctionGuidance }),
+  ], { ...optionalOpts, enumValues: localFunctionGuidance }),
   brief("current_cast_voice_pressure[].current_voice_pressure", "Temporary voice pressure for this immediate moment.", [
     "{voice_pressure}",
     "{active_cast_voice_pressure_pins}"
@@ -277,13 +314,15 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   ], voicePressureOpts),
   brief("cast_voice_overrides[].cast_member_id", "Cast member receiving a current-generation-only override.", [
     "{voice_pressure}"
-  ]),
+  ], optionalOpts),
   brief("cast_voice_overrides[].scope", "The override scope; v1 supports current generation only.", ["{voice_pressure}"], {
+    ...optionalOpts,
     criticalVisibleHint: "Current-generation only; never written back to CAST MEMBER records."
   }),
-  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", ["{voice_pressure}"]),
-  brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", ["{voice_pressure}"]),
+  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", ["{voice_pressure}"], optionalOpts),
+  brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", ["{voice_pressure}"], optionalOpts),
   brief("cast_voice_overrides[].override_text", "The exact temporary voice instruction.", ["{voice_pressure}"], {
+    ...optionalOpts,
     examples: ["For this confrontation only, his register becomes clipped and formal."],
     antiExamples: ["Change his permanent voice anchor from now on."]
   }),
@@ -293,6 +332,7 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   brief("stop_guidance.soft_unit_guidance", "Where the prose should stop for the user's next decision.", [
     "{soft_unit_guidance}"
   ], {
+    ...optionalOpts,
     criticalVisibleHint: "Stop at the next local response point; do not ask for downstream consequences.",
     examples: ["Stop when Mara has to decide whether to open the sealed letter."],
     antiExamples: ["Continue through the whole investigation and show the fallout."],
@@ -341,6 +381,7 @@ function brief(
 
 function validationFocus(fieldPath: string, short: string): GuidanceInput {
   return brief(fieldPath, short, [], {
+    ...optionalOpts,
     promptFacing: "never",
     validationRole: "Activates deterministic validation checks; it is not sent to the prose prompt.",
     criticalVisibleHint: "Completeness checks, not plot beats.",

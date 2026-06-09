@@ -1,6 +1,6 @@
 # BRIEFGUIDE-001: Add a deterministic requiredness tier to field guidance
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends the `FieldGuidance` type (`packages/core/src/records/field-guidance.ts`) and populates a new `requiredness` field across the generation-brief guidance entries (`packages/core/src/records/field-guidance-brief-config.ts`). No prompt-compilation or validation-gate behavior changes.
@@ -88,3 +88,25 @@ Story-config and record-surface guidance entries are **out of scope** (no requir
 
 1. `npm test -w @loom/core`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added additive `FieldRequiredness`, `FieldGuidance.requiredness`, and `FieldGuidance.requirednessNote` metadata in `@loom/core`.
+- Populated requiredness only for generation-brief guidance entries, matching the compiler-contract tiers: always-required current-state/directive fields, continuation handoff fields, context-gated current-state fields, and optional active-working-set/voice/directive/stop/validation-focus fields.
+- Added core tests that assert the requiredness table, continuation either/or notes, the `prior_accepted...` `None` guidance note, and that story-config guidance remains unpopulated.
+
+Deviations from original plan:
+
+- None. The metadata remains descriptive only; compiler and validation code do not reference `requiredness`.
+
+Verification:
+
+- `npm test -w @loom/core` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
+- `rg -n "requiredness" packages/core/src/validation packages/core/src/compiler` returned no matches.

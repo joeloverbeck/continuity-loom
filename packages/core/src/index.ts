@@ -91,6 +91,7 @@ export {
 export type {
   EnumValueGuidance,
   FieldGuidance,
+  FieldRequiredness,
   PromptFacing
 } from "./records/field-guidance.js";
 export {

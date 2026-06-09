@@ -30,6 +30,88 @@ describe("field guidance for brief and story config", () => {
     }
   });
 
+  it("classifies generation-brief requiredness from the compiler contract", () => {
+    const cases = {
+      always: [
+        "GENERATION BRIEF.current_authoritative_state.current_time",
+        "GENERATION BRIEF.current_authoritative_state.current_location",
+        "GENERATION BRIEF.current_authoritative_state.onstage_entities[]",
+        "GENERATION BRIEF.current_authoritative_state.immediate_situation_summary",
+        "GENERATION BRIEF.manual_moment_directive.must_render[]"
+      ],
+      continuation: [
+        "GENERATION BRIEF.immediate_handoff.recent_causal_context",
+        "GENERATION BRIEF.immediate_handoff.last_visible_moment",
+        "GENERATION BRIEF.immediate_handoff.begin_after"
+      ],
+      conditional: [
+        "GENERATION BRIEF.current_authoritative_state.offstage_pressuring_entities[]",
+        "GENERATION BRIEF.current_authoritative_state.positions",
+        "GENERATION BRIEF.current_authoritative_state.possessions",
+        "GENERATION BRIEF.current_authoritative_state.visible_conditions[]",
+        "GENERATION BRIEF.current_authoritative_state.environmental_conditions",
+        "GENERATION BRIEF.current_authoritative_state.entity_statuses",
+        "GENERATION BRIEF.current_authoritative_state.line_of_sight_and_visibility",
+        "GENERATION BRIEF.current_authoritative_state.routes_and_exits[]",
+        "GENERATION BRIEF.current_authoritative_state.available_time",
+        "GENERATION BRIEF.current_authoritative_state.consent_or_force_conditions",
+        "GENERATION BRIEF.current_authoritative_state.current_locks[]"
+      ],
+      optional: [
+        "GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note",
+        "GENERATION BRIEF.stop_guidance.soft_unit_guidance",
+        "GENERATION BRIEF.manual_moment_directive.may_render_if_naturally_caused[]",
+        "GENERATION BRIEF.manual_moment_directive.do_not_force[]",
+        "GENERATION BRIEF.active_working_set.selected_records[]",
+        "GENERATION BRIEF.active_working_set.active_onstage_cast_full[].cast_member_id",
+        "GENERATION BRIEF.active_working_set.active_onstage_cast_full[].local_function",
+        "GENERATION BRIEF.active_working_set.present_minor_cast_compressed[]",
+        "GENERATION BRIEF.active_working_set.offstage_relevant_cast[]",
+        "GENERATION BRIEF.active_working_set.selected_pov",
+        "GENERATION BRIEF.active_working_set.manual_directive_id",
+        "GENERATION BRIEF.current_cast_voice_pressure[].cast_member_id",
+        "GENERATION BRIEF.current_cast_voice_pressure[].local_function",
+        "GENERATION BRIEF.current_cast_voice_pressure[].current_voice_pressure",
+        "GENERATION BRIEF.current_cast_voice_pressure[].dialogue_pressure",
+        "GENERATION BRIEF.current_cast_voice_pressure[].pov_narration_pressure",
+        "GENERATION BRIEF.current_cast_voice_pressure[].nonverbal_or_silence_pressure",
+        "GENERATION BRIEF.current_cast_voice_pressure[].current_must_preserve[]",
+        "GENERATION BRIEF.current_cast_voice_pressure[].current_must_avoid[]",
+        "GENERATION BRIEF.cast_voice_overrides[].cast_member_id",
+        "GENERATION BRIEF.cast_voice_overrides[].scope",
+        "GENERATION BRIEF.cast_voice_overrides[].reason",
+        "GENERATION BRIEF.cast_voice_overrides[].applies_to[]",
+        "GENERATION BRIEF.cast_voice_overrides[].override_text",
+        "GENERATION BRIEF.generation_validation_focus.validation_focus_tags.generation_context[]",
+        "GENERATION BRIEF.generation_validation_focus.validation_focus_tags.expected_local_modes[]",
+        "GENERATION BRIEF.generation_validation_focus.validation_focus_tags.possible_durable_changes[]"
+      ]
+    } as const;
+
+    for (const [requiredness, paths] of Object.entries(cases)) {
+      for (const path of paths) {
+        expect(getFieldGuidance(path)?.requiredness, path).toBe(requiredness);
+      }
+    }
+  });
+
+  it("keeps requiredness unpopulated outside the generation-brief surface", () => {
+    expect(getFieldGuidance("STORY CONTRACT.title")?.requiredness).toBeUndefined();
+  });
+
+  it("adds requiredness notes for continuation either-or and always-render handoff fields", () => {
+    expect(getFieldGuidance("GENERATION BRIEF.immediate_handoff.last_visible_moment")?.requirednessNote).toContain(
+      "this or begin_after"
+    );
+    expect(getFieldGuidance("GENERATION BRIEF.immediate_handoff.begin_after")?.requirednessNote).toContain(
+      "this or last_visible_moment"
+    );
+    expect(
+      getFieldGuidance("GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note")
+        ?.requirednessNote
+    ).toContain("leave as None");
+  });
+
   it("gives high-risk handoff, directive, and stop fields examples and anti-examples", () => {
     for (const path of [
       "GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note",

@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/web/src/generation-brief/GenerationBriefView.tsx` renders a per-field requiredness marker next to each field label. No core/compiler/validation changes.
-**Deps**: BRIEFGUIDE-001 (provides `FieldGuidance.requiredness`)
+**Deps**: `archive/tickets/BRIEFGUIDE-001.md` (completed; provides `FieldGuidance.requiredness`)
 
 ## Problem
 
@@ -14,7 +14,7 @@ On `/generation-brief` there is no requiredness signal next to any field name. T
 
 1. `GenerationBriefView.tsx` renders each field as `<label>{name}<control/></label>` followed by `<BriefFieldHelp path=… label=…/>` (e.g. `:386-394`, `:422-433`, `:558-602`). There is no requiredness marker anywhere on the page (grep `required` in `packages/web/src/generation-brief/` returns only `ValidationPanel`/`ReadinessChecklist` references). The record-editor idiom to mirror is `RecordEditor.tsx:256`.
 2. The live generation context is already in the component: the selected value is `validationFocusTags.generation_context?.[0] ?? defaultGenerationContext` (`:706`), and `defaultGenerationContext = briefDefaults?.generation_context.value ?? "first_segment"` (`:212`). This lets the marker resolve the `continuation` tier against the *current* context without new data.
-3. Requiredness tiers come from `getFieldGuidance("GENERATION BRIEF." + path).requiredness` (BRIEFGUIDE-001); `BriefFieldHelp` already builds that exact path (`:69-71`). Blocked until BRIEFGUIDE-001 lands.
+3. Requiredness tiers come from `getFieldGuidance("GENERATION BRIEF." + path).requiredness` (`archive/tickets/BRIEFGUIDE-001.md`); `BriefFieldHelp` already builds that exact path (`:69-71`).
 4. FOUNDATIONS principle restated: validation **fails closed** and is the gate (`docs/ACTIVE-DOCS.md` invariant). The marker is an authoring affordance only — it must **not** block Save, must not call readiness, and must not fork the gate logic. The existing `ValidationPanel` remains the authority.
 5. Enforcement surface: this is a render-only change in one web component. It does not touch the readiness API, blocker rules, or compile path; verified by leaving `packages/server`, `packages/core/src/validation`, and `packages/core/src/compiler` unedited.
 
@@ -47,7 +47,7 @@ Render the marker inside/next to each `<label>` in the generation-brief sections
 ## Out of Scope
 
 - Popup requiredness (BRIEFGUIDE-003).
-- Populating requiredness data (BRIEFGUIDE-001).
+- Populating requiredness data (completed in `archive/tickets/BRIEFGUIDE-001.md`).
 - Any change to save behavior, the readiness API, or the `ValidationPanel`/`ReadinessChecklist`.
 - Markers on story-config or record-editor surfaces (record editors already show them).
 
