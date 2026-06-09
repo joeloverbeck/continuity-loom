@@ -99,6 +99,10 @@ function renderPrompt(snapshot: ValidationSnapshot): string {
 }
 
 function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot): string | null {
+  if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
+    return null;
+  }
+
   if (sectionId === "present_minor_cast" && !hasSelectedCastBand(snapshot, "present_minor_cast_compressed")) {
     return null;
   }
@@ -296,6 +300,10 @@ function hasSelectedCastBand(
   castBand: "present_minor_cast_compressed" | "offstage_relevant_cast"
 ): boolean {
   return snapshot.records.some((record) => record.castBand === castBand);
+}
+
+function hasHardCanon(snapshot: ValidationSnapshot): boolean {
+  return resolvePlaceholder("hard_canon_bullets", snapshot).trim() !== EMPTY_STATE_CONSTANTS.hard_canon_bullets;
 }
 
 function shouldRenderOffstageRelevance(snapshot: ValidationSnapshot): boolean {

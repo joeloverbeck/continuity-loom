@@ -1,6 +1,6 @@
 # HARDCANONOMIT-001: Omit `<hard_canon>` when empty (requires FOUNDATIONS amendment)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small (code) + constitutional amendment (sign-off-gated)
 **Engine Changes**: Yes — `docs/FOUNDATIONS.md` (§9 + §29.4 amendment), `packages/core/src/compiler/compile-prompt.ts`, `docs/compiler-contract.md`, `docs/prompt-template.md`
@@ -129,3 +129,26 @@ Apply §A1 and §A2 to `docs/FOUNDATIONS.md`.
 
 1. `npm test -- compiler-golden`
 2. `npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Applied the approved `FOUNDATIONS.md` §9 and §29.4 amendment atomically with the compiler change.
+- Updated the compiler to omit `<hard_canon>` when the resolved hard-canon bullets are empty, using the existing deterministic optional-section path so no extra blank line is left between `<prose_mode>` and `<current_authoritative_state>`.
+- Updated `docs/compiler-contract.md` and `docs/prompt-template.md` so `<hard_canon>` is listed as a designated optional section.
+- Updated compiler golden/scaffold/front-section tests and refreshed the frozen first-segment prompt fixture.
+
+Deviations from original plan:
+
+- No separate immutable-lock transport was added. The omission predicate follows the existing `hard_canon_bullets` resolver, which is the current compiler authority for whether hard-canon content exists.
+
+Verification results:
+
+- `npm test -- compiler-golden compiler-scaffold compiler-front-sections` passed: 3 files, 34 tests.
+- `npm test` passed: 99 files, 727 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm run build` passed.

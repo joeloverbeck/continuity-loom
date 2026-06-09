@@ -271,7 +271,7 @@ The universal prompt must preserve these conceptual sections:
 - content policy;
 - story contract;
 - prose mode;
-- hard canon;
+- hard canon, except that this designated optional section may be deterministically omitted when no hard-canon FACT is selected and no immutable story lock is active;
 - current authoritative state;
 - immediate handoff;
 - manual directive;
@@ -907,7 +907,7 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it make prompt output nondeterministic for identical inputs and versions?
 - Does it include accepted prose in generated prompts?
 - Does it preserve provider-specific prompt hacks as v1 core behavior?
-- Does it omit one of the universal prompt contract sections other than the designated optional cast-band sections without constitutional amendment, or omit even a designated optional section nondeterministically?
+- Does it omit one of the universal prompt contract sections other than the designated optional sections enumerated in §9 (present minor cast, offstage relevance, hard canon) without constitutional amendment, or omit even a designated optional section nondeterministically?
 
 ### 29.5 Validation hard fails
 

@@ -43,7 +43,7 @@ The compiler renders sections in this order:
 3. `<content_policy>`
 4. `<story_contract>`
 5. `<prose_mode>`
-6. `<hard_canon>`
+6. `<hard_canon>` when at least one hard-canon FACT is selected
 7. `<current_authoritative_state>`
 8. `<immediate_handoff>`
 9. `<manual_directive>`
@@ -94,7 +94,7 @@ Requiredness terms:
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
 | `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank; unresolved selected-record lookup falls back to raw id with a non-blocking `pov-character-not-selected` warning | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity not present in selected records renders as raw id and warns. |
 | `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
-| `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | `None selected for this generation` | Do not silently include unselected facts except story configuration constants. |
+| `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | Omit whole `<hard_canon>` section when empty | Do not silently include unselected facts except story configuration constants. |
 | `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
 | `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |
 | `{onstage_entities}` | CURRENT AUTHORITATIVE STATE.onstage_entities + ENTITY/CAST selected active or present-minor | Readiness required for material prose | Block if directive requires an entity but none selected/onstage | `None onstage` only for abstract/nonphysical prose | Person-like material entities require cast handling. |
@@ -262,7 +262,7 @@ Repeated warnings should deduplicate by affected field/record group and present 
 - `<immediate_handoff>` always renders the section tag, `recent_causal_context`, `prior_accepted_prose_status_or_handoff_note`, and the accepted-prose firewall instruction text. `last_visible_moment` and `begin_after` omit both label and value when empty.
 - `<manual_directive priority="high">` always renders the section tag and `must_render`. `may_render_if_naturally_caused` and `do_not_force` omit both label and value when empty.
 - `<pov_knowledge_constraints>` always renders the section tag and the static prompt-label and non-POV interiority rules. `pov_knows`, `pov_believes_suspects_misreads`, `pov_does_not_know`, and `pov_cannot_perceive_now` omit both label and value when empty.
-- `<present_minor_cast>` and `<offstage_relevance>` are the only designated optional universal-prompt cast-band sections. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
+- `<hard_canon>`, `<present_minor_cast>`, and `<offstage_relevance>` are the designated optional universal-prompt sections. `<hard_canon>` omits the entire section when no hard-canon FACT is selected and no immutable story lock is active. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
 - Optional list sub-blocks inside `<relevant_facts_beliefs_events>` and `<locations_objects_affordances>` omit both the sub-block header and value when empty. If all sibling sub-blocks in one of those composite sections are empty, the section tag remains and renders the single deterministic section-level empty state `None specified`.
 
 ## 9. Prompt-facing vs validation-only fields

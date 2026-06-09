@@ -73,10 +73,6 @@ Special style constraints: Keep the prose local to the cellar exchange.
 Do not reveal the letter's contents.
 </prose_mode>
 
-<hard_canon>
-None selected for this generation
-</hard_canon>
-
 <current_authoritative_state>
 Time: Late morning, minutes after the market bell rang early.
 Location: 019b0298-5c00-7000-8000-013000000012

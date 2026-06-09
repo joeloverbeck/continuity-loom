@@ -80,6 +80,8 @@ Language output: {language_output}
 Special style constraints: {special_style_constraints}
 </prose_mode>
 
+The `<hard_canon>` section is omitted when no hard-canon FACT is selected.
+
 <hard_canon>
 {hard_canon_bullets}
 </hard_canon>

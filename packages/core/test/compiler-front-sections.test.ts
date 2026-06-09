@@ -306,7 +306,8 @@ describe("compiler front-section resolvers", () => {
     );
     expect(sectionBody(prompt, "content_policy")).toContain(`RATING: ${EMPTY_STATE_CONSTANTS.rating_label}`);
     expect(sectionBody(prompt, "story_contract")).toContain(`Title: ${EMPTY_STATE_CONSTANTS.title}`);
-    expect(sectionBody(prompt, "hard_canon")).toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
+    expect(prompt).not.toContain("<hard_canon>");
+    expect(prompt).not.toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(EMPTY_STATE_CONSTANTS.current_time);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.recent_causal_context);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(

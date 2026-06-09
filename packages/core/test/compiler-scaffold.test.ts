@@ -40,7 +40,7 @@ describe("compiler scaffold", () => {
   it("renders all prompt sections in compiler-contract order", () => {
     const result = compilePrompt(buildValidationSnapshot(minimalSnapshotInput()));
     const expectedRenderedOrder = SECTION_ORDER.filter(
-      (section) => section !== "present_minor_cast" && section !== "offstage_relevance"
+      (section) => section !== "hard_canon" && section !== "present_minor_cast" && section !== "offstage_relevance"
     );
 
     expect(promptSectionOrder(result.prompt)).toEqual(expectedRenderedOrder);
@@ -49,7 +49,8 @@ describe("compiler scaffold", () => {
   it("pins scaffold empty-state constants to their prompt sections", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(minimalSnapshotInput()));
 
-    expect(sectionBody(prompt, "hard_canon")).toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
+    expect(prompt).not.toContain("<hard_canon>");
+    expect(prompt).not.toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(
       EMPTY_STATE_CONSTANTS.positions
     );
