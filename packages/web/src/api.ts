@@ -133,9 +133,11 @@ export type RecordSummary = {
   id: string;
   type: string;
   displayLabel: string;
+  fullDisplayLabel?: string;
   status: string | null;
   salience: string | null;
   urgency: string | null;
+  displayValues?: Record<string, string | null>;
   archived: boolean;
   userOrder: number | null;
   createdAt: string;

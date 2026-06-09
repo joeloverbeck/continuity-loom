@@ -1,3 +1,4 @@
+import { deriveFullDisplayLabel, projectDisplayValues } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
@@ -26,9 +27,11 @@ interface RecordMetadataResponse {
   id: string;
   type: string;
   displayLabel: string;
+  fullDisplayLabel: string;
   status: string | null;
   salience: string | null;
   urgency: string | null;
+  displayValues: Record<string, string | null>;
   archived: boolean;
   userOrder: number | null;
   createdAt: string;
@@ -61,13 +64,25 @@ function metadata(record: RecordRepositoryRecord): RecordMetadataResponse {
     id: record.id,
     type: record.type,
     displayLabel: record.displayLabel,
+    fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
     status: record.status,
     salience: record.salience,
     urgency: record.urgency,
+    displayValues: projectDisplayValues(record.type, record.payload),
     archived: record.archived,
     userOrder: record.userOrder,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt
+  };
+}
+
+function recordDetail(
+  record: RecordRepositoryRecord
+): RecordRepositoryRecord & { displayValues: Record<string, string | null>; fullDisplayLabel: string } {
+  return {
+    ...record,
+    fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
+    displayValues: projectDisplayValues(record.type, record.payload)
   };
 }
 
@@ -174,7 +189,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
       return reply.code(result.kind === "not-found" ? 404 : 422).send(result);
     }
 
-    return { ok: true, record: result.record };
+    return { ok: true, record: recordDetail(result.record) };
   });
 
   app.post("/api/records", (request, reply) => {
@@ -204,7 +219,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
       const record = repo.createRecord({
         ...input
       });
-      return reply.code(201).send({ ok: true, record });
+      return reply.code(201).send({ ok: true, record: recordDetail(record) });
     } catch (error) {
       if (error instanceof ZodError) {
         return reply.code(400).send(malformedPayload(error));
@@ -238,7 +253,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
         ...(body.userOrder !== undefined ? { userOrder: body.userOrder } : {})
       };
       const record = repo.updateRecord(input);
-      return { ok: true, record };
+      return { ok: true, record: recordDetail(record) };
     } catch (error) {
       if (error instanceof ZodError) {
         return reply.code(400).send(malformedPayload(error));

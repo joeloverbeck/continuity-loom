@@ -1,11 +1,18 @@
-import { getEditorDescriptor, recordTypes } from "@loom/core";
+import {
+  allTypesColumns,
+  compareSeverityDesc,
+  getColumnManifest,
+  getEditorDescriptor,
+  recordTypes,
+  type ColumnDescriptor
+} from "@loom/core";
 import {
   flexRender,
   getCoreRowModel,
   useReactTable,
   type ColumnDef
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import {
@@ -18,19 +25,6 @@ import {
 } from "../api.js";
 import { CastMemberEditor } from "./CastMemberEditor.js";
 import { RecordEditor } from "./RecordEditor.js";
-
-const columns: Array<ColumnDef<RecordSummary>> = [
-  { accessorKey: "type", header: "Type" },
-  { accessorKey: "displayLabel", header: "Label" },
-  { accessorKey: "status", header: "Status" },
-  { accessorKey: "salience", header: "Salience" },
-  { accessorKey: "urgency", header: "Urgency" },
-  {
-    accessorKey: "archived",
-    header: "Archived",
-    cell: ({ row }) => (row.original.archived ? "yes" : "no")
-  }
-];
 
 function descriptorHasField(recordType: string, fieldName: "salience" | "urgency"): boolean {
   return getEditorDescriptor(recordType)?.fields.some((field) => field.name === fieldName) ?? false;
@@ -61,14 +55,66 @@ function groupingOptions(typeFilter: string): Array<"salience" | "urgency"> {
   );
 }
 
+function isRecordType(value: string | null): value is string {
+  return value !== null && recordTypes.includes(value);
+}
+
+function mostPopulatedType(records: readonly RecordSummary[]): string {
+  const counts = new Map<string, number>();
+
+  for (const record of records) {
+    counts.set(record.type, (counts.get(record.type) ?? 0) + 1);
+  }
+
+  return recordTypes.reduce(
+    (bestType, recordType) => ((counts.get(recordType) ?? 0) > (counts.get(bestType) ?? 0) ? recordType : bestType),
+    ""
+  );
+}
+
+const severityColumnKeys = new Set(["salience", "urgency", "intensity"]);
+
+function severityColumnForType(recordType: string): string | null {
+  return (
+    getColumnManifest(recordType)?.additionalColumns.find((column) => severityColumnKeys.has(column.fieldKey))?.fieldKey ??
+    null
+  );
+}
+
+function valueForSort(record: RecordSummary, fieldKey: string): string | null {
+  if (fieldKey === "salience" || fieldKey === "urgency") {
+    return record[fieldKey];
+  }
+
+  return record.displayValues?.[fieldKey] ?? null;
+}
+
+function hasProjectedDisplayValues(records: readonly RecordSummary[]): boolean {
+  return records.some((record) => record.displayValues !== undefined);
+}
+
+function recordTypeDescription(recordType: string): string {
+  return `${titleCase(recordType)} records hold the ${recordType.toLowerCase()} continuity details for the current story state.`;
+}
+
+function titleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(" ")
+    .map((part) => part.replace(/^\w/, (match) => match.toUpperCase()))
+    .join(" ");
+}
+
 function toRecordSummary(record: RecordDetail): RecordSummary {
   return {
     id: record.id,
     type: record.type,
     displayLabel: record.displayLabel,
+    ...(record.fullDisplayLabel === undefined ? {} : { fullDisplayLabel: record.fullDisplayLabel }),
     status: record.status,
     salience: record.salience,
     urgency: record.urgency,
+    ...(record.displayValues === undefined ? {} : { displayValues: record.displayValues }),
     archived: record.archived,
     userOrder: record.userOrder,
     createdAt: record.createdAt,
@@ -76,8 +122,77 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
   };
 }
 
+function fullDisplayLabel(record: RecordDetail | RecordSummary): string {
+  return record.fullDisplayLabel ?? record.displayLabel;
+}
+
+function displayCell(value: unknown): string {
+  if (value === null || value === undefined || value === "") {
+    return "—";
+  }
+
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  return "—";
+}
+
+function columnClassName(column: ColumnDescriptor): string | undefined {
+  if (column.align === "right") {
+    return "numericCell";
+  }
+
+  if (column.kind === "boolean" || column.kind === "ordinal") {
+    return "compactCell";
+  }
+
+  return undefined;
+}
+
+function buildDisplayValueColumn(column: ColumnDescriptor): ColumnDef<RecordSummary> {
+  return {
+    id: column.fieldKey,
+    header: column.header,
+    accessorFn: (record) => record.displayValues?.[column.fieldKey] ?? null,
+    cell: ({ getValue }) => displayCell(getValue())
+  };
+}
+
+function buildRecordColumns(typeFilter: string): Array<ColumnDef<RecordSummary>> {
+  if (!typeFilter) {
+    return allTypesColumns.map((column) => ({
+      id: column.fieldKey,
+      header: column.header,
+      accessorFn: (record) => record[column.fieldKey as keyof RecordSummary] ?? null,
+      cell: ({ getValue }) => displayCell(getValue())
+    }));
+  }
+
+  const manifest = getColumnManifest(typeFilter);
+
+  return [
+    {
+      id: "displayLabel",
+      accessorKey: "displayLabel",
+      header: manifest?.primaryLabelHeader ?? "Label",
+      cell: ({ row }) => row.original.displayLabel
+    },
+    ...(manifest?.additionalColumns.map(buildDisplayValueColumn) ?? [])
+  ];
+}
+
+function classNameForColumn(typeFilter: string, columnId: string): string | undefined {
+  const sourceColumns = typeFilter ? getColumnManifest(typeFilter)?.additionalColumns ?? [] : allTypesColumns;
+  const descriptor = sourceColumns.find((column) => column.fieldKey === columnId);
+
+  return descriptor ? columnClassName(descriptor) : undefined;
+}
+
 export function RecordBrowser(): React.JSX.Element {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialType = searchParams.get("type");
+  const defaultTypeResolvedRef = useRef(isRecordType(initialType));
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [referenceTargets, setReferenceTargets] = useState<RecordSummary[]>([]);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
@@ -86,7 +201,7 @@ export function RecordBrowser(): React.JSX.Element {
   const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
-    type: "",
+    type: isRecordType(initialType) ? initialType : "",
     status: "",
     q: "",
     refRole: "",
@@ -159,6 +274,14 @@ export function RecordBrowser(): React.JSX.Element {
 
         setNotice(null);
         setRecords(response.records);
+        if (!defaultTypeResolvedRef.current && hasProjectedDisplayValues(response.records)) {
+          defaultTypeResolvedRef.current = true;
+          const defaultType = mostPopulatedType(response.records);
+
+          if (defaultType) {
+            setFilters((current) => ({ ...current, type: defaultType }));
+          }
+        }
         setSelectedRecord((current) => current ?? response.records[0] ?? null);
       })
       .catch(() => {
@@ -174,11 +297,46 @@ export function RecordBrowser(): React.JSX.Element {
     };
   }, [filters.type, filters.status, filters.q, filters.refRole, filters.targetId]);
 
+  useEffect(() => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+
+      if (filters.type) {
+        next.set("type", filters.type);
+      } else {
+        next.delete("type");
+      }
+
+      if (next.toString() === current.toString()) {
+        return current;
+      }
+
+      return next;
+    });
+  }, [filters.type, setSearchParams]);
+
   const workingSetIdSet = useMemo(() => new Set(workingSetIds), [workingSetIds]);
   const filteredRecords = useMemo(() => filterLocally(records, filters, workingSetIdSet), [records, filters, workingSetIdSet]);
+  const usesProjectedDisplayValues = hasProjectedDisplayValues(records);
   const groupedRecords = useMemo(() => {
     if (!filters.groupBy) {
-      return filteredRecords;
+      if (!usesProjectedDisplayValues) {
+        return filteredRecords;
+      }
+
+      const severityField = filters.type ? severityColumnForType(filters.type) : null;
+
+      return [...filteredRecords].sort((left, right) => {
+        if (severityField) {
+          const severityComparison = compareSeverityDesc(valueForSort(left, severityField), valueForSort(right, severityField));
+
+          if (severityComparison !== 0) {
+            return severityComparison;
+          }
+        }
+
+        return right.updatedAt.localeCompare(left.updatedAt) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
+      });
     }
 
     return [...filteredRecords].sort((left, right) => {
@@ -186,7 +344,10 @@ export function RecordBrowser(): React.JSX.Element {
       const rightValue = String(right[filters.groupBy as "salience" | "urgency"] ?? "");
       return leftValue.localeCompare(rightValue) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
     });
-  }, [filteredRecords, filters.groupBy]);
+  }, [filteredRecords, filters.groupBy, filters.type, usesProjectedDisplayValues]);
+
+  const columns = useMemo(() => buildRecordColumns(filters.type), [filters.type]);
+  const showScopedEmptyState = !notice && filters.type && groupedRecords.length === 0;
 
   const table = useReactTable({
     data: groupedRecords,
@@ -408,49 +569,66 @@ export function RecordBrowser(): React.JSX.Element {
             </p>
           ) : null}
 
-          <table className="recordTable">
-            <thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <tr key={headerGroup.id}>
-                  <th>Working Set</th>
-                  {headerGroup.headers.map((header) => (
-                    <th key={header.id}>
-                      {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    </th>
+          {showScopedEmptyState ? (
+            <div className="emptyState">
+              <p className="status">No {filters.type} records.</p>
+              <p className="muted">{recordTypeDescription(filters.type)}</p>
+              <button type="button" onClick={() => openCreateForm(filters.type)}>
+                Create {filters.type}
+              </button>
+            </div>
+          ) : (
+            <div className="recordTableScroll">
+              <table className="recordTable">
+                <thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <tr key={headerGroup.id}>
+                      <th>Working Set</th>
+                      {headerGroup.headers.map((header) => (
+                        <th key={header.id}>
+                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        </th>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody>
-              {table.getRowModel().rows.map((row) => (
-                <tr key={row.id}>
-                  <td>
-                    <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
-                      {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
-                    </button>
-                  </td>
-                  {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id}>
-                      {cell.column.id === "displayLabel" ? (
-                        <button type="button" className="linkButton" onClick={() => void selectRecord(row.original)}>
-                          {row.original.displayLabel}
+                </thead>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <tr key={row.id}>
+                      <td>
+                        <button type="button" onClick={() => void toggleWorkingSet(row.original.id)}>
+                          {workingSetIdSet.has(row.original.id) ? "Selected" : "Add"}
                         </button>
-                      ) : (
-                        flexRender(cell.column.columnDef.cell, cell.getContext())
-                      )}
-                    </td>
+                      </td>
+                      {row.getVisibleCells().map((cell) => (
+                        <td key={cell.id} className={classNameForColumn(filters.type, cell.column.id)}>
+                          {cell.column.id === "displayLabel" ? (
+                          <button
+                            type="button"
+                            className="linkButton"
+                            title={fullDisplayLabel(row.original)}
+                            onClick={() => void selectRecord(row.original)}
+                          >
+                              {row.original.displayLabel}
+                            </button>
+                          ) : (
+                            flexRender(cell.column.columnDef.cell, cell.getContext())
+                          )}
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         <aside className="detailPane" aria-label="Record detail">
           {selectedRecord ? (
             <>
               <p className="eyebrow">{selectedRecord.type}</p>
-              <h3>{selectedRecord.displayLabel}</h3>
+              <h3>{fullDisplayLabel(selectedRecord)}</h3>
               <dl className="runtimeGrid">
                 <div>
                   <dt>ID</dt>
