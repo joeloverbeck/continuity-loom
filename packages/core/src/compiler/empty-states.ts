@@ -48,7 +48,8 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   objects: "None specified",
   offstage_or_withheld_events: "None selected",
   offstage_pressuring_entities: "None specified",
-  offstage_relevance_notes: "None",
+  offstage_relevance_notes:
+    "Offstage pressure or interruption is active, but no offstage cast slice has been authored. Establish why the offstage party matters now, whether and how it can interrupt (entrance, communication, timing, or route), and what must not be revealed or assumed.",
   onstage_entities: "None onstage",
   paragraphing: "None specified",
   person: "None specified",

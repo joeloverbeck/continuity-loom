@@ -272,7 +272,7 @@ None active
 <offstage_relevance>
 Offstage cast/entities. Include only why they matter now, what pressure they exert, whether they can interrupt, and what must not be revealed or assumed.
 
-None
+Offstage pressure or interruption is active, but no offstage cast slice has been authored. Establish why the offstage party matters now, whether and how it can interrupt (entrance, communication, timing, or route), and what must not be revealed or assumed.
 </offstage_relevance>
 
 <relevant_facts_beliefs_events>
