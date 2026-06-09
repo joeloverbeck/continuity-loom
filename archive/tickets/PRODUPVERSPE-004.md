@@ -1,6 +1,6 @@
 # PRODUPVERSPE-004: Stress coverage — Case 32 cross-segment salience-duplicate calibration
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — new conceptual stress case in `docs/stress-suite.md` and a new coverage-matrix row in `docs/stress-coverage-matrix.md`; no production behavior change.
@@ -75,3 +75,23 @@ Add the Case 32 row in the table's 4-column `| Case 32 | <name> | <risk area> | 
 1. `grep -Fq "## Case 32 — Cross-segment salience duplicate calibration" docs/stress-suite.md && grep -Fq "| Case 32 |" docs/stress-coverage-matrix.md`
 2. `npm test`
 3. A narrower command is the correct boundary here: the deliverable is conceptual documentation with no executable assertion, so grep-proofs plus a full-suite no-regression run are the complete verification surface.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added stress-suite Case 32 for cross-segment salience duplicate calibration.
+- Documented the expected behavior that behavioral-effect BELIEF pressure, current/critical FACT pressure, immediate/recent EVENT pressure, secret lane separation, affordance action placement, and voice-pin salience remain calibrated.
+- Added the Case 32 row to `docs/stress-coverage-matrix.md` using the existing four-column `| Case N |` table format.
+- Added the note that Cases 27-31 are a pre-existing coverage-matrix gap and are out of scope for this ticket.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `grep -Fq "## Case 32 — Cross-segment salience duplicate calibration" docs/stress-suite.md && grep -Fq "| Case 32 |" docs/stress-coverage-matrix.md && test "$(grep -Fc "| 32 |" docs/stress-coverage-matrix.md)" -eq 0 && grep -Fq "predates Cases 27-31" docs/stress-coverage-matrix.md` — passed.
+- `npm test` — passed, 99 files / 734 tests.

@@ -995,3 +995,43 @@ Expected readiness outcome:
 Prompt-quality risk:
 
 - Long-context salience degradation if the user ignores optional local pins.
+
+---
+
+## Case 32 — Cross-segment salience duplicate calibration
+
+Stress target: pressure summaries must preserve useful salience duplicates without copying inert archive text forward.
+
+Required records:
+
+- One high-salience BELIEF with populated behavioral effect.
+- One ordinary low-salience setting FACT.
+- One critical current-state FACT.
+- One `immediate_previous` EVENT with high current relevance.
+- One `relevant_backstory` EVENT with low current relevance.
+- One SECRET with holders, protected non-holders, allowed cues, forbidden reveals, and locked or clue-only reveal permission.
+- One VISIBLE AFFORDANCE that can drive action.
+- One active/onstage cast member with a long full dossier and a current voice pressure pin.
+
+Validation focus tags:
+
+- `dialogue_expected`, `introspection_expected`, `secret_or_clue_pressure`, or another local mode that makes the selected pressure records relevant.
+
+Expected blockers:
+
+- None solely because ordinary FACT or backstory EVENT records are absent from active knowledge pressure.
+
+Expected prompt behavior:
+
+- BELIEF appears as behavior/interiority pressure in active knowledge pressure and as full metadata in belief details.
+- Ordinary low-salience setting FACT does not appear in active knowledge pressure, but remains in detail facts.
+- Critical/current FACT appears in active knowledge pressure and in detail or hard canon as applicable.
+- Immediate/recent high-relevance EVENT appears in active knowledge pressure and event details.
+- Low-relevance backstory does not appear in active knowledge pressure.
+- SECRET lanes remain separate; only lane-specific text repeats.
+- VISIBLE AFFORDANCE action text appears in active action pressure and detail/physical continuity, not material pressure.
+- Voice pin remains before the full cast dossier.
+
+Prompt-quality risk:
+
+- Future token-budget cleanup could mistake deliberate pressure/detail dual framing for redundant restatement, or copy ordinary archive facts/events into the prompt front edge.

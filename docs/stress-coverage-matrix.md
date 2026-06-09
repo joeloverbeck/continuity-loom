@@ -33,6 +33,9 @@ This is conceptual coverage. The demo does not instantiate every stress case; it
 | Case 24 | Object use without transfer | Object use and transfer | `matrix-object-use-incomplete`, `object-current-holder-contradiction`; object state plus visible `use` affordance. |
 | Case 25 | Location change under route/time constraints | Physical continuity; clocks/obligations/consequences | `matrix-location-change-incomplete`, `matrix-clock-tick-incomplete`, `inactive-plan-holder`; route/time/destination and movement-constraint locks. |
 | Case 26 | Stop-rule response point without over-continuation | Local-prose-only stop boundary | `local-prose-scope-violation`, `directive-stop-guidance-disagreement`; blank `soft_unit_guidance` still uses the universal local stop rule and does not block. |
+| Case 32 | Cross-segment salience duplicate calibration | Prompt salience vs redundant restatement; long-context placement; duplicate-noise control | Active working set predicates (`fact_kind`/`scope`/`salience` FACT gate, `event_kind`/`current_relevance` EVENT gate), belief behavior-first pressure, affordance removal from `material_pressure`, voice-pin preservation; golden prompt diff plus compiler pressure tests prove current-pressure summaries remain dual-frame while inert archive text is not copied forward. |
+
+Note: this numbered table predates Cases 27-31 in `docs/stress-suite.md`; backfilling those rows is pre-existing matrix-maintenance drift and is out of scope for Case 32.
 
 ## Readiness and draftability coverage
 
