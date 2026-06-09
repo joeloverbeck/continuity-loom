@@ -218,6 +218,8 @@ A default design doc consolidates all approved sections into a clean document wi
 
 If working in a git worktree, resolve every output path against the **worktree root**, not the main repo root, and confirm the file landed there before the Step 6 menu.
 
+When persisting ≥3 deliverable files, track one task per file so progress stays visible (per `references/triage-and-deliverables.md` §Deliverable classification).
+
 Do NOT commit the file. Leave it for user review.
 
 ## Step 6: Next-steps menu
