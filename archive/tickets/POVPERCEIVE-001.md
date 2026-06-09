@@ -1,6 +1,6 @@
 # POVPERCEIVE-001: Decouple `pov_cannot_perceive_now` from line-of-sight; add a dedicated authored field
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — generation-brief schema/draft/readiness, placeholder/empty-state maps, field-guidance, compiler `front.ts`, web editor, `docs/compiler-contract.md`, `docs/story-record-schema.md` (if it documents the brief), demo fixture
@@ -109,3 +109,34 @@ Add an editor control in `GenerationBriefView.tsx` with a label/help that clearl
 1. `npm test -- compiler-front-sections`
 2. `npm test -- generation-brief-readiness`
 3. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added optional `current_authoritative_state.pov_cannot_perceive_now` support to the strict generation session schema, draft schema, and readiness-normalized schema.
+- Rewired `{pov_cannot_perceive_now}` so it reads only the new authored field, while `{line_of_sight_and_visibility}` continues to read only line-of-sight state.
+- Added Generation Brief editor support and field guidance for the new authored POV perception-limit field.
+- Updated `docs/compiler-contract.md` and `docs/story-record-schema.md` so the prompt contract and generation-time field catalog name the dedicated source and warn against treating line-of-sight geometry as a POV perception limit.
+- Updated compiler, schema, guidance, web, and golden tests. The demo golden now omits the old line-of-sight text from `<pov_knowledge_constraints>`.
+
+Deviations from original plan:
+
+- The optional demo fixture was not populated with the new field; the golden intentionally proves blank authored POV perception limits are omitted after the decoupling.
+
+Verification:
+
+- `npm test -- compiler-front-sections` passed.
+- `npm test -- generation-brief-readiness` passed.
+- `npm test -- generation-brief-draft` passed.
+- `npm test -- field-guidance-brief-config` passed.
+- `npm test -- guidance-coverage-sources` passed.
+- `npm test -- compiler-golden` passed.
+- `npm test -- GenerationBriefView` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed, with the existing Vite chunk-size warning.
+- Browser smoke against `http://127.0.0.1:4173/generation-brief` passed: opened a demo project, confirmed the new `pov_cannot_perceive_now` field rendered as conditional, entered text, saved, and saw `Draft saved.` with no blockers.

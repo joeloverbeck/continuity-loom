@@ -45,6 +45,7 @@ const currentAuthoritativeStateDraftSchema = z
     environmental_conditions: draftString.optional(),
     entity_statuses: z.union([draftString, z.array(recordId)]).optional(),
     line_of_sight_and_visibility: draftString.optional(),
+    pov_cannot_perceive_now: draftString.optional(),
     routes_and_exits: z.array(draftString).optional(),
     available_time: draftString.optional(),
     consent_or_force_conditions: z.union([draftString, z.literal("none")]).optional(),

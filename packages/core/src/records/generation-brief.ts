@@ -40,6 +40,7 @@ export const currentAuthoritativeStateSchema = z
     environmental_conditions: nonemptyString,
     entity_statuses: z.union([nonemptyString, z.array(recordId)]),
     line_of_sight_and_visibility: nonemptyString,
+    pov_cannot_perceive_now: nonemptyString.optional(),
     routes_and_exits: z.array(nonemptyString),
     available_time: nonemptyString,
     consent_or_force_conditions: z.union([nonemptyString, z.literal("none")]),

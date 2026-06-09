@@ -103,6 +103,38 @@ describe("generation brief draft schema", () => {
     ).toBe(true);
   });
 
+  it("accepts optional POV cannot-perceive drafts without requiring the field", () => {
+    expect(
+      generationSessionDraftSchema.safeParse({
+        current_authoritative_state: {
+          line_of_sight_and_visibility: "The pantry door is visible.",
+          pov_cannot_perceive_now: ""
+        }
+      }).success
+    ).toBe(true);
+    expect(
+      generationSessionSchema.safeParse({
+        current_authoritative_state: {
+          current_time: "late morning",
+          current_location: "bakery cellar",
+          onstage_entities: [idA],
+          immediate_situation_summary: "Elin is guarding the flour bin while Niko waits nearby.",
+          offstage_pressuring_entities: [],
+          positions: "Elin stands by the flour bin.",
+          possessions: "The letter is hidden.",
+          visible_conditions: [],
+          environmental_conditions: "The cellar is cold.",
+          entity_statuses: "Elin is present.",
+          line_of_sight_and_visibility: "The bin is visible.",
+          routes_and_exits: ["stairs"],
+          available_time: "One exchange.",
+          consent_or_force_conditions: "none",
+          current_locks: []
+        }
+      }).success
+    ).toBe(true);
+  });
+
   it("rejects unknown keys, invalid enum values, and invalid record IDs", () => {
     expect(
       generationSessionDraftSchema.safeParse({

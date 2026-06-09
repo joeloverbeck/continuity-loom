@@ -19,6 +19,7 @@ describe("generation brief readiness normalization", () => {
         immediate_situation_summary: "  Mara is at the turnstile while the offered key changes the conversation. ",
         positions: ["  Mara is at the turnstile.  ", ""],
         visible_conditions: ["", "  coat soaked  "],
+        pov_cannot_perceive_now: "  Mara cannot see the caller behind the smoked glass.  ",
         routes_and_exits: []
       },
       manual_moment_directive: {
@@ -68,7 +69,8 @@ describe("generation brief readiness normalization", () => {
         onstage_entities: [idA],
         immediate_situation_summary: "Mara is at the turnstile while the offered key changes the conversation.",
         positions: ["Mara is at the turnstile."],
-        visible_conditions: ["coat soaked"]
+        visible_conditions: ["coat soaked"],
+        pov_cannot_perceive_now: "Mara cannot see the caller behind the smoked glass."
       },
       manual_moment_directive: {
         must_render: ["Mara refuses the offered key."],
@@ -134,6 +136,35 @@ describe("generation brief readiness normalization", () => {
     });
     expect(ready.manual_moment_directive?.must_render).toBeUndefined();
     expect(ready.immediate_handoff).toBeUndefined();
+  });
+
+  it("omits blank POV cannot-perceive text without adding a readiness blocker", () => {
+    const ready = normalizeGenerationSessionForReadiness(
+      {
+        current_authoritative_state: {
+          immediate_situation_summary: "Mara waits at the turnstile.",
+          line_of_sight_and_visibility: "The caller is visible through glass.",
+          pov_cannot_perceive_now: "   "
+        }
+      },
+      { acceptedSegmentCount: 0 }
+    );
+
+    expect(ready).toEqual({
+      current_authoritative_state: {
+        immediate_situation_summary: "Mara waits at the turnstile.",
+        line_of_sight_and_visibility: "The caller is visible through glass."
+      },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      },
+      stop_guidance: {
+        soft_unit_guidance: ""
+      }
+    });
+    expect(generationSessionReadySchema.parse(ready)).toEqual(ready);
   });
 
   it("preserves explicit generation context and parses through the ready schema", () => {

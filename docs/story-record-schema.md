@@ -156,6 +156,7 @@ Context-gated fields:
 - `environmental_conditions` is required when environment constrains action, perception, tone, danger, route, or affordance.
 - `entity_statuses` is required for materially involved entities whose agency, consciousness, availability, captivity, injury, age/status, or presence matters.
 - `line_of_sight_and_visibility` is required when perception, secrecy, ambiguous perception, violence, intimacy, interruption, or who-can-see/hear-whom matters.
+- `pov_cannot_perceive_now` is required when a POV-specific perception limit matters. It is not a duplicate of line-of-sight geometry.
 - `routes_and_exits` is required when movement, pursuit, escape, entrance, interruption, location change, or containment matters.
 - `available_time` is required when a clock, interruption, deadline, pursuit, timed action, or temporal impossibility can matter.
 - `consent_or_force_conditions` is required when intimacy, sex, restraint, coercion, object seizure, rescue movement, violence, captivity, or power-limited agency can matter.
@@ -175,6 +176,7 @@ visible_conditions: prose list
 environmental_conditions: prose
 entity_statuses: prose or compiled ENTITY STATUS list
 line_of_sight_and_visibility: prose
+pov_cannot_perceive_now: prose
 routes_and_exits: prose list
 available_time: prose
 consent_or_force_conditions: prose | none
@@ -637,7 +639,7 @@ Rules:
 
 ### 6.4 POV KNOWLEDGE PROFILE
 
-Compiled generation-time profile derived from PROSE MODE, FACT, BELIEF, SECRET, EVENT, and ENTITY STATUS.
+Compiled generation-time profile derived from PROSE MODE, FACT, BELIEF, SECRET, EVENT, ENTITY STATUS, and user-authored generation-time POV perception limits.
 
 ```yaml
 pov_knows: prose list

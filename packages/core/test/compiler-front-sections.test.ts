@@ -402,6 +402,43 @@ describe("compiler front-section resolvers", () => {
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
   });
 
+  it("does not reuse line-of-sight state as POV cannot-perceive text", () => {
+    const input = populatedInput();
+    input.records = input.records.filter((record) => record.id === povId || record.id === factId);
+    input.generationSession.active_working_set!.selected_records = [povId, factId];
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility =
+      "Jon can see Mara but not inside the drawer.";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(
+      "Line of sight / visibility: Jon can see Mara but not inside the drawer."
+    );
+    expect(sectionBody(prompt, "pov_knowledge_constraints")).not.toContain("POV cannot perceive right now:");
+    expect(sectionBody(prompt, "pov_knowledge_constraints")).not.toContain(
+      "Jon can see Mara but not inside the drawer."
+    );
+  });
+
+  it("renders authored POV cannot-perceive text independently of line-of-sight state", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.line_of_sight_and_visibility =
+      "Jon can see Mara but not inside the drawer.";
+    input.generationSession.current_authoritative_state!.pov_cannot_perceive_now =
+      "Jon cannot hear the messenger behind the archive door.";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    const povSection = sectionBody(prompt, "pov_knowledge_constraints");
+
+    expect(sectionBody(prompt, "current_authoritative_state")).toContain(
+      "Line of sight / visibility: Jon can see Mara but not inside the drawer."
+    );
+    expect(povSection).toContain(
+      "POV cannot perceive right now:\nJon cannot hear the messenger behind the archive door."
+    );
+    expect(povSection).not.toContain("Jon can see Mara but not inside the drawer.");
+  });
+
   it("renders populated POV knowledge lines while omitting empty sibling lines", () => {
     const input = populatedInput();
     input.records = input.records.filter((record) => record.id === povId || record.id === factId);

@@ -145,9 +145,6 @@ POV knows:
 POV believes, suspects, or misreads:
 - Niko will be safer if he knows a letter exists but not what it says.
 
-POV cannot perceive right now:
-Elin and Niko can see each other; the letter itself is not visible.
-
 Prompt-label rule:
 Prompt labels, dossier headings, and entity names are writer-facing handles. They do not grant the POV knowledge of names, identities, secrets, motives, backstory, or offstage facts.
 
