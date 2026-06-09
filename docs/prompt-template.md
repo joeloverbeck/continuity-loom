@@ -197,6 +197,8 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 </secrets_and_reveal_constraints>
 
 <active_working_set>
+These are current-pressure summaries. They are not exhaustive record dossiers. Use them to keep causal, knowledge, material, and voice pressure salient; use the later detail sections for full authority and metadata.
+
 Action pressure:
 {active_action_pressure}
 
@@ -209,6 +211,8 @@ Relationship and emotion pressure:
 Material pressure:
 {material_pressure}
 
+Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
+
 Voice pressure:
 {voice_pressure}
 
@@ -217,7 +221,7 @@ Active cast voice pressure pins:
 
 If no current voice pressure pins are supplied, omit the pins sub-block or render a concise deterministic empty state. Do not treat missing pins as an instruction to invent current voice pressure.
 
-Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
+Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
 </active_working_set>
 
 <active_plans_and_intentions>

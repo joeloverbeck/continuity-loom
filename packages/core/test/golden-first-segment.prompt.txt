@@ -184,6 +184,8 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 </secrets_and_reveal_constraints>
 
 <active_working_set>
+These are current-pressure summaries. They are not exhaustive record dossiers. Use them to keep causal, knowledge, material, and voice pressure salient; use the later detail sections for full authority and metadata.
+
 Action pressure:
 - Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
 - Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
@@ -195,8 +197,8 @@ Knowledge pressure:
 - The sealed letter says a market ledger page was replaced before Orin's audit.
 - The market bell rang early, warning Elin that Orin's audit rounds may start before noon.
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.
-- Niko will be safer if he knows a letter exists but not what it says.
-- Elin hid something connected to the audit, but he does not know it is a letter.
+- Elin blocks Niko from touching the flour bin while trying not to lie outright.; Niko will be safer if he knows a letter exists but not what it says.
+- Niko challenges her evasions and watches the flour bin.; Elin hid something connected to the audit, but he does not know it is a letter.
 
 Relationship and emotion pressure:
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
@@ -209,7 +211,8 @@ Material pressure:
 - old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
 - cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
 - Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
+
+Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
 
 Voice pressure:
 - Elin narrates through practical details and controlled evasions.
@@ -218,7 +221,7 @@ Voice pressure:
 Active cast voice pressure pins:
 None active
 
-Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
+Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
 </active_working_set>
 
 <active_plans_and_intentions>

@@ -52,6 +52,12 @@ Grep for each type, interface, or schema field. Confirm existence and current sh
 - **Enum / table exhaustiveness** — if the spec includes a lookup keyed by a string enum (e.g. validation focus tag → check), verify it covers all current values.
 - **Schema fidelity** — if the spec proposes a JSON/YAML schema, verify against `docs/story-record-schema.md` and any existing schema file.
 
+**Doc-amendment edit-instruction fidelity** (doc-amendment specs — see SKILL.md Pre-Process "Documentation / amendment specs"): a doc-amendment spec prescribes *edits* (replace this row, append this note, add this table row), not just quoted current text. A stale quote is one failure mode; these three are the others, each easy to miss because the spec reads internally coherent while the target doc tells a different story. For every prescribed edit, read the target region and check:
+
+- **Replace-target existence** — for an edit phrased "replace / remove / modify X," grep the target doc to confirm X is actually there. A "replace any language that implies Y" instruction whose target has no such language (e.g. a bare `{placeholder}` with no note) presupposes content that does not exist; reframe it as an *add* (Issue, MEDIUM).
+- **Replacement content preservation** — for a full-row or full-block replacement, diff the spec's replacement text against the live block and flag any still-accurate clause the replacement drops without intending to (e.g. a contract row that silently loses an "EVENT … renders X" behavioral note). A silent drop of valid content is an Issue (MEDIUM); cite the dropped clause.
+- **Inserted-artifact shape match** — for a prescribed table row, list item, or code block to be *inserted*, verify it matches the destination structure: column count, key/format convention (`| Case N |` vs bare `| N |`), and heading level (a `### x.y` inserted into a doc that is flat `## N`). A malformed artifact decomposes into a broken edit (Issue, MEDIUM). While here, note any pre-existing drift the insertion exposes (e.g. the destination table already missing earlier rows) as out-of-scope context, not as this spec's defect.
+
 ## 3.3 Functions and Exports
 
 Grep for each function or command; confirm signature, location, and export status. Line-number references are informational — verify they point to the claimed content; if drifted, correct them or replace with grep-stable symbol names. Check:

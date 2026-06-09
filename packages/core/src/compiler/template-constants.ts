@@ -170,6 +170,8 @@ Reveal permission:
 A secret may be revealed only if its reveal permission allows reveal in this generation. \`locked\` means no reveal even if the moment would become more dramatic. \`clue_only\` permits clues but not confirmation. \`natural_reveal_allowed\` permits reveal only when immediate causality earns it. \`directive_required\` permits reveal only when the manual directive explicitly requires or permits it. The manual directive cannot override locked secrets or higher-priority continuity constraints. Otherwise, use surface action, evasions, misdirection, timing, omissions, object handling, charged silence, or clue pressure without leaking the hidden truth into the wrong mind or narrator.
 </secrets_and_reveal_constraints>`,
   active_working_set: `<active_working_set>
+These are current-pressure summaries. They are not exhaustive record dossiers. Use them to keep causal, knowledge, material, and voice pressure salient; use the later detail sections for full authority and metadata.
+
 Action pressure:
 {active_action_pressure}
 
@@ -182,13 +184,15 @@ Relationship and emotion pressure:
 Material pressure:
 {material_pressure}
 
+Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
+
 Voice pressure:
 {voice_pressure}
 
 Active cast voice pressure pins:
 {active_cast_voice_pressure_pins}
 
-Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there.
+Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
 </active_working_set>`,
   active_plans_and_intentions: `<active_plans_and_intentions>
 Intentions:

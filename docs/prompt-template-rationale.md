@@ -63,6 +63,10 @@ Reason: active cast dossiers can be long. If causal pressure is placed after sev
 
 This is not plot machinery. These sections do not define arcs, acts, beats, or future structure. They define local causal pressure.
 
+### 7.x Salience duplicates vs redundant restatement
+
+The active working set is a salience device, not a duplicate archive. A record may appear in the active working set and later in its full detail section when the two renderings perform different jobs: current causal pressure, behavior/interiority pressure, reveal safety, physical constraint, or voice salience. The compiler should avoid same-framing repeats where a front pressure line merely repeats an ordinary fact, event description, or affordance action text already rendered later with no additional current-pressure function.
+
 ## 8. Why active/onstage cast gets rich dossiers
 
 Active/onstage cast should not be reduced to role labels, moods, diagnoses, or one-line goals. Dialogue and behavior need stable character-specific resources: rhythm and syntax, register and diction, vocabulary and metaphor pools, profanity behavior, taboo and avoidance patterns, address/naming habits, silence/interruption/turn-taking behavior, evasion style, pressure behavior, body, social presentation, perception, agency, and anti-generic warnings.
@@ -90,6 +94,8 @@ The corrected shape separates:
 - compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, local function, and any temporary override.
 
 The pin does not replace the full dossier. It prevents generic dialogue and generic close narration when the full dossier is long.
+
+Voice pins remain protected salience duplicates. They should not be removed for token-budget reasons while active/onstage cast dossiers are long. The pin is the current-generation voice pressure; the dossier is the durable character authority.
 
 Durable CAST MEMBER fields are the primary voice authority. Current voice pressure pins are optional scene-specific emphasis. Missing pins are usually salience warnings, not blockers, when durable voice anchors and body/behavior dossiers are sufficient. A missing pin becomes blocking only when the selected local mode needs voice/body authority and no durable, compressed, or current source can supply it, or when supplied current pressure contradicts higher authority.
 
