@@ -15,6 +15,7 @@ import {
   setGenerationBrief
 } from "../api.js";
 import { BriefFieldRow } from "./BriefFieldRow.js";
+import { SectionRail } from "./SectionRail.js";
 import { ValidationPanel } from "./ValidationPanel.js";
 
 type GenerationSession = z.infer<typeof generationSessionDraftSchema>;
@@ -381,11 +382,13 @@ export function GenerationBriefView(): React.JSX.Element {
         <p className="status statusWarning">Displayed readiness may be stale until you save this draft.</p>
       ) : null}
 
-      <div className="briefStack">
-        <ValidationPanel validationKey={validationKey} hasUnsavedChanges={hasUnsavedChanges} onFocusField={focusBriefField} />
-        <p className="briefRequirednessLegend">
-          <strong aria-label="required"> *</strong> required · <span>Conditional</span> · <span>Optional</span>
-        </p>
+      <div className="briefConsoleLayout">
+        <SectionRail draft={session} generationContext={generationContext} />
+        <div className="briefStack">
+          <ValidationPanel validationKey={validationKey} hasUnsavedChanges={hasUnsavedChanges} onFocusField={focusBriefField} />
+          <p className="briefRequirednessLegend">
+            <strong aria-label="required"> *</strong> required · <span>Conditional</span> · <span>Optional</span>
+          </p>
 
         <BriefSection
           title="Active Working Set"
@@ -779,6 +782,7 @@ export function GenerationBriefView(): React.JSX.Element {
           </BriefFieldRow>
           {nonLocalStopWarning ? <p className="status statusWarning">This sounds non-local. Keep stop guidance to the next local prose unit.</p> : null}
         </BriefSection>
+        </div>
       </div>
 
       <button type="button" onClick={() => void save()}>Save Generation Brief</button>

@@ -629,10 +629,84 @@ button:disabled:hover {
   gap: 28px;
 }
 
+.briefConsoleLayout {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
 .briefStack {
   display: grid;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.briefSectionRail {
+  position: sticky;
+  top: 16px;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 8px;
+}
+
+.briefSectionRail ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.briefSectionRailLink {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  border-radius: 6px;
+  color: #39445a;
+  padding: 6px 8px;
+  text-decoration: none;
+}
+
+.briefSectionRailLink:hover,
+.briefSectionRailLink:focus-visible,
+.briefSectionRailLink-active {
+  background: #eef3f8;
+  color: #182033;
+}
+
+.briefSectionRailLink span:first-child {
+  overflow-wrap: anywhere;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.briefFillChip {
+  border: 1px solid #d8dee8;
+  border-radius: 999px;
+  background: #f7f9fc;
+  color: #4f5b70;
+  padding: 2px 6px;
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.briefFillChip-success {
+  border-color: #9cc8b0;
+  background: #eaf7ef;
+  color: #27613f;
+}
+
+.briefFillChip-amber {
+  border-color: #e7c56e;
+  background: #fff5d9;
+  color: #755100;
 }
 
 .briefRequirednessLegend,
@@ -681,6 +755,7 @@ button:disabled:hover {
 }
 
 .briefSectionHeader h3 {
+  scroll-margin-top: 20px;
   color: #182033;
   font-size: 1rem;
   letter-spacing: 0;
@@ -741,6 +816,10 @@ button:disabled:hover {
   max-height: 320px;
   resize: vertical;
   field-sizing: content;
+}
+
+#validation-panel-title {
+  scroll-margin-top: 20px;
 }
 
 .readinessChecklist {
@@ -1295,6 +1374,19 @@ button:disabled:hover {
 
   .promptPreviewLayout {
     grid-template-columns: 1fr;
+  }
+
+  .briefConsoleLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .briefSectionRail {
+    position: static;
+    max-height: none;
+  }
+
+  .briefSectionRail ul {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 
   .acceptedArchiveToolbar {

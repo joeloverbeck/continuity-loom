@@ -106,6 +106,27 @@ describe("GenerationBriefView", () => {
     expect(within(immediateSituationLabel).getByLabelText("required")).toBeTruthy();
   });
 
+  it("renders a section rail whose links resolve to the brief headings", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const nav = screen.getByRole("navigation", { name: "Generation brief sections" });
+    const links = within(nav).getAllByRole("link");
+
+    expect(links).toHaveLength(9);
+    for (const link of links) {
+      const targetId = link.getAttribute("href")?.replace(/^#/, "");
+
+      expect(targetId).toBeTruthy();
+      expect(document.getElementById(targetId!)).not.toBeNull();
+    }
+    expect(within(nav).getByRole("link", { name: /current state.*4 required empty/i })).toBeTruthy();
+  });
+
   it("flips continuation-field markers from first-segment optional to continuation required locally", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });

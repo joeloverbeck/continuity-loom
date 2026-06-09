@@ -1,6 +1,6 @@
 # SPEC017GENBRIVIS-004: Sticky section rail with scroll-spy and fill chips
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds the `SectionRail` component and mounts it into `GenerationBriefView`, plus rail/scroll-spy CSS; no validation, save, or gating change
@@ -82,3 +82,21 @@ Add rail container, sticky positioning, scroll-spy active state, chip tones (suc
 1. `npm test --workspace @loom/web -- SectionRail`
 2. `npm run lint && npm run typecheck && npm test`
 3. `grep -nE "active-working-set-brief|stop-guidance-brief" packages/web/src/generation-brief/GenerationBriefView.tsx` — confirms the anchor target ids the rail depends on still exist (narrow proof scoped to the jump-target contract).
+
+## Outcome
+
+Completed 2026-06-10.
+
+- Added `SectionRail` as a labeled in-page `nav` with Validation plus all eight generation-brief sections, hash anchors to the existing heading ids, and IntersectionObserver-driven active state.
+- Reused `computeSectionFill()` / `sectionFillLabel()` for advisory fill chips, with the Validation entry intentionally unchipped because it is not a brief section. The chips use only filled/empty/required wording and do not gate save, validation, preview, or generation.
+- Mounted the rail into `GenerationBriefView` beside the brief stack and added desktop sticky styling plus a narrow-width horizontal fallback.
+- Added `SectionRail.test.tsx` and a `GenerationBriefView.test.tsx` integration assertion proving all rendered rail hrefs resolve to page headings.
+
+Verification:
+
+- `npm test --workspace @loom/web -- SectionRail` — passed.
+- `npm test --workspace @loom/web -- SectionRail GenerationBriefView` — passed.
+- `grep -nE "active-working-set-brief|stop-guidance-brief" packages/web/src/generation-brief/GenerationBriefView.tsx` — passed (`395`, `772`).
+- `npm run lint` — passed.
+- `npm run typecheck` — passed after narrowing the Validation rail entry out of the `BriefSectionId` fill lookup.
+- `npm test` — passed (103 files, 776 tests).
