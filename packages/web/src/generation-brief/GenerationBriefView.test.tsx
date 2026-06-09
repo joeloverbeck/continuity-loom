@@ -92,6 +92,55 @@ describe("GenerationBriefView", () => {
     }
   });
 
+  it("shows an always-required marker on required generation-brief fields", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const immediateSituationLabel = labelFor(/^immediate_situation_summary/);
+
+    expect(within(immediateSituationLabel).getByLabelText("required")).toBeTruthy();
+  });
+
+  it("flips continuation-field markers from first-segment optional to continuation required locally", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    expect(within(labelFor(/^recent_causal_context/)).getByText("Optional for a first segment")).toBeTruthy();
+
+    vi.mocked(readiness).mockClear();
+    fireEvent.change(screen.getByLabelText(/^generation_context/), {
+      target: { value: "continuation_after_accepted_segment" }
+    });
+
+    const recentCausalContextLabel = labelFor(/^recent_causal_context/);
+    expect(within(recentCausalContextLabel).getByLabelText("required")).toBeTruthy();
+    expect(within(recentCausalContextLabel).queryByText("Optional for a first segment")).toBeNull();
+    expect(readiness).not.toHaveBeenCalled();
+  });
+
+  it("shows conditional and optional markers without treating conditional fields as required", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    const positionsLabel = labelFor(/^positions/);
+    expect(within(positionsLabel).getByLabelText("conditional")).toBeTruthy();
+    expect(within(positionsLabel).queryByLabelText("required")).toBeNull();
+
+    expect(within(labelFor(/^soft_unit_guidance/)).getByText("Optional")).toBeTruthy();
+  });
+
   it("persists a new current-state array field and displays it after reload", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
@@ -572,6 +621,16 @@ describe("GenerationBriefView", () => {
     expect(screen.queryByText("Displayed readiness may be stale until you save this draft.")).toBeNull();
   });
 });
+
+function labelFor(name: RegExp): HTMLLabelElement {
+  const label = screen.getByLabelText(name).closest("label");
+
+  if (!(label instanceof HTMLLabelElement)) {
+    throw new Error(`Could not find label for ${name}`);
+  }
+
+  return label;
+}
 
 function readinessFixture(input: {
   blockers?: readonly ReadinessDiagnostic[];

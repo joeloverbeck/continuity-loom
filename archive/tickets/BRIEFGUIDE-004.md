@@ -1,6 +1,6 @@
 # BRIEFGUIDE-004: Inline required/optional markers on the Generation Brief page
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `packages/web/src/generation-brief/GenerationBriefView.tsx` renders a per-field requiredness marker next to each field label. No core/compiler/validation changes.
@@ -76,3 +76,27 @@ Render the marker inside/next to each `<label>` in the generation-brief sections
 
 1. `npm test -w @loom/web`
 2. `npm run typecheck && npm run lint && npm test`
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Added inline requiredness markers to Generation Brief field labels using the core `FieldGuidance.requiredness` registry.
+- Added a small `RequirednessMarker` component that renders required `*`, first-segment optional hints for continuation-only fields, conditional tags, and optional tags.
+- Added a brief marker legend near the top of the Generation Brief page.
+- Made continuation markers react locally to the generation-context selector without calling readiness or save.
+- Added web tests for always-required markers, context-reactive continuation markers, conditional markers, optional markers, and the no-readiness-round-trip invariant.
+
+Deviations from original plan:
+
+- The marker component lives in `packages/web/src/generation-brief/RequirednessMarker.tsx` and is used by a local `BriefLabel` helper to keep the hand-rolled page labels consistent.
+
+Verification:
+
+- `npm test -w @loom/web` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed.
+- `rg -n "^import|setGenerationBrief|ValidationPanel|readiness\\(|save\\(" packages/web/src/generation-brief/RequirednessMarker.tsx` showed only the core type import.
