@@ -1,6 +1,6 @@
 # PRODUPVERSPE-001: Narrow `active_knowledge_pressure` — FACT/EVENT predicates + BELIEF behavior-first
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — modifies the `@loom/core` compiler `active_knowledge_pressure` resolver in `packages/core/src/compiler/sections/pressure.ts`; amends `docs/compiler-contract.md` §3/§4/§8 placeholder mapping; production prompt output changes (golden baseline regenerates).
@@ -98,3 +98,26 @@ Regenerate the baseline. If the demo fixture's `active_knowledge_pressure` outpu
 1. `npm test -- compiler-pressure-sections`
 2. `npm test`
 3. `npm run typecheck` — confirm the per-type narrowing type-checks under strict TS.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+
+- Split `active_knowledge_pressure` into deterministic per-type handling for SECRET, BELIEF, FACT, and EVENT records.
+- BELIEF pressure now leads with `behavioral_effect` when present and falls back to the claim when absent.
+- FACT pressure is limited to hard-canon/current-state/current-segment/high-or-critical facts, and EVENT pressure is limited to immediate/recent causal events with relevance plus high/critical offstage events.
+- Updated `docs/compiler-contract.md` to name FACT in the knowledge-pressure source row, document the predicate behavior, clarify detail-row authority for beliefs/secrets, and record the predicate-filtered empty-state rule.
+- Added focused pressure-section tests and updated the frozen first-segment golden baseline for the intentional belief pressure ordering shift.
+
+Deviations from original plan:
+
+- None.
+
+Verification:
+
+- `npm test -- compiler-pressure-sections` — passed.
+- `npm test -- compiler-golden` — passed.
+- `npm test` — passed, 99 files / 733 tests.
+- `npm run typecheck` — passed for core, server, and web.

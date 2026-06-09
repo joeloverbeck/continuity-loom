@@ -345,6 +345,7 @@ function knowledgePressureRecords(): ValidationRecord[] {
       type: "FACT",
       metadata: metadata("019b0298-5c00-7000-8000-000000000303", "Fact A"),
       payload: {
+        fact_kind: "current_state",
         statement: "The stair bell rings before the upper door opens."
       }
     },
@@ -353,6 +354,7 @@ function knowledgePressureRecords(): ValidationRecord[] {
       type: "EVENT",
       metadata: metadata("019b0298-5c00-7000-8000-000000000304", "Event A"),
       payload: {
+        event_kind: "immediate_previous",
         description: "Niko saw Mara hide the ledger under the oilcloth.",
         current_relevance: "critical"
       }
@@ -365,6 +367,109 @@ function knowledgePressureRecords(): ValidationRecord[] {
         status: "active",
         intent: "Keep the guard calm.",
         behavioral_pressure: "Speak softly and keep moving."
+      }
+    }
+  ];
+}
+
+function gatedKnowledgePressureRecords(): ValidationRecord[] {
+  return [
+    {
+      id: "019b0298-5c00-7000-8000-000000000401",
+      type: "FACT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000401", "Ordinary setting fact"),
+      payload: {
+        fact_kind: "setting_fact",
+        salience: "medium",
+        statement: "The archive windows face east."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000402",
+      type: "FACT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000402", "Current state fact"),
+      payload: {
+        fact_kind: "current_state",
+        salience: "low",
+        statement: "The stair bell is already trembling."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000403",
+      type: "FACT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000403", "Segment scope fact"),
+      payload: {
+        fact_kind: "discovered_fact",
+        scope: "current_segment",
+        salience: "low",
+        statement: "The rain has made the side steps slick."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000404",
+      type: "FACT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000404", "High salience fact"),
+      payload: {
+        fact_kind: "setting_fact",
+        salience: "high",
+        statement: "The east window is the only one not barred."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000405",
+      type: "EVENT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000405", "Backstory event"),
+      payload: {
+        event_kind: "relevant_backstory",
+        current_relevance: "critical",
+        description: "Mara trained in the archive years ago."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000406",
+      type: "EVENT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000406", "Recent event"),
+      payload: {
+        event_kind: "recent_causal",
+        current_relevance: "high",
+        description: "The guard heard the bell stutter."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000407",
+      type: "EVENT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000407", "Low offstage event"),
+      payload: {
+        event_kind: "offstage",
+        current_relevance: "low",
+        description: "A clerk coughed in the courtyard."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000408",
+      type: "EVENT",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000408", "High offstage event"),
+      payload: {
+        event_kind: "offstage",
+        current_relevance: "critical",
+        description: "The captain is already crossing the courtyard."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000409",
+      type: "BELIEF",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000409", "Belief with behavior"),
+      payload: {
+        claim: "Mara thinks the guard will choose the rain door.",
+        behavioral_effect: "Mara keeps her hand on the latch instead of running."
+      }
+    },
+    {
+      id: "019b0298-5c00-7000-8000-000000000410",
+      type: "BELIEF",
+      metadata: metadata("019b0298-5c00-7000-8000-000000000410", "Belief without behavior"),
+      payload: {
+        claim: "Niko believes the apprentice can keep quiet."
       }
     }
   ];
@@ -573,6 +678,31 @@ describe("compiler pressure-section resolvers", () => {
 
     expect(activeWorkingSet).toContain("- Niko saw Mara hide the ledger under the oilcloth.");
     expect(activeWorkingSet).not.toContain("- Niko saw Mara hide the ledger under the oilcloth.; critical");
+  });
+
+  it("narrows FACT and EVENT active knowledge pressure to current pressure predicates", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(gatedKnowledgePressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).not.toContain("The archive windows face east.");
+    expect(activeWorkingSet).toContain("- The stair bell is already trembling.");
+    expect(activeWorkingSet).toContain("- The rain has made the side steps slick.");
+    expect(activeWorkingSet).toContain("- The east window is the only one not barred.");
+    expect(activeWorkingSet).not.toContain("Mara trained in the archive years ago.");
+    expect(activeWorkingSet).toContain("- The guard heard the bell stutter.");
+    expect(activeWorkingSet).not.toContain("A clerk coughed in the courtyard.");
+    expect(activeWorkingSet).toContain("- The captain is already crossing the courtyard.");
+  });
+
+  it("renders BELIEF active knowledge pressure as behavior-first with claim fallback", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(populatedInput(gatedKnowledgePressureRecords()))).prompt;
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(activeWorkingSet).toContain(
+      "- Mara keeps her hand on the latch instead of running.; Mara thinks the guard will choose the rain door."
+    );
+    expect(activeWorkingSet).not.toContain("- Belief with behavior; Mara thinks the guard will choose the rain door.");
+    expect(activeWorkingSet).toContain("- Niko believes the apprentice can keep quiet.");
   });
 
   it("preserves distinct compact pressure-summary parts", () => {

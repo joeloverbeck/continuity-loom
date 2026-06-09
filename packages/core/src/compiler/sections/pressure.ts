@@ -30,12 +30,12 @@ const pressureResolvers: ResolverMap = {
       (payload, record) => actionPressureLine(snapshot, record, payload)
     ) || EMPTY_STATE_CONSTANTS.active_action_pressure,
   active_knowledge_pressure: (snapshot) =>
-    pressureFromRecords(
+    renderRecords(
       snapshot,
       ["SECRET", "BELIEF", "FACT", "EVENT"],
-      (record, payload) => firstText(payload, ["secret_claim", "claim", "statement", "description"]),
-      "active_knowledge_pressure"
-    ),
+      (payload, record) => isActiveKnowledgePressureRecord(record, payload),
+      (payload, record) => activeKnowledgePressureLine(record, payload)
+    ) || EMPTY_STATE_CONSTANTS.active_knowledge_pressure,
   relationship_emotion_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
@@ -204,6 +204,73 @@ function actionPressureStatusTag(record: ValidationRecord, payload: JsonRecord):
 
   const status = asString(payload[descriptor.statusField]);
   return status && status !== descriptor.activeStatus ? ` [${descriptor.word} ${status}]` : "";
+}
+
+function isActiveKnowledgePressureRecord(record: ValidationRecord, payload: JsonRecord): boolean {
+  switch (record.type) {
+    case "SECRET":
+    case "BELIEF":
+      return true;
+    case "FACT":
+      return isPressureFact(record, payload);
+    case "EVENT":
+      return isPressureEvent(payload);
+    default:
+      return false;
+  }
+}
+
+function activeKnowledgePressureText(record: ValidationRecord, payload: JsonRecord): string {
+  switch (record.type) {
+    case "SECRET":
+      return firstText(payload, ["secret_claim"]);
+    case "BELIEF":
+      return firstText(payload, ["behavioral_effect", "claim"]);
+    case "FACT":
+      return firstText(payload, ["statement"]);
+    case "EVENT":
+      return firstText(payload, ["description"]);
+    default:
+      return "";
+  }
+}
+
+function activeKnowledgePressureLine(record: ValidationRecord, payload: JsonRecord): string {
+  if (record.type !== "BELIEF") {
+    return compactSummaryLine(displayLabel(record), activeKnowledgePressureText(record, payload));
+  }
+
+  const behavioralEffect = asString(payload.behavioral_effect);
+  if (!behavioralEffect) {
+    return compactSummaryLine(displayLabel(record), asString(payload.claim));
+  }
+
+  return compactParts([behavioralEffect, displayLabel(record)]);
+}
+
+function isPressureFact(record: ValidationRecord, payload: JsonRecord): boolean {
+  const factKind = asString(payload.fact_kind);
+  const scope = asString(payload.scope);
+  const salience = asString(payload.salience) || asString(record.metadata?.salience);
+
+  return (
+    factKind === "hard_canon" ||
+    factKind === "current_state" ||
+    scope === "current_segment" ||
+    salience === "high" ||
+    salience === "critical"
+  );
+}
+
+function isPressureEvent(payload: JsonRecord): boolean {
+  const eventKind = asString(payload.event_kind);
+  const currentRelevance = asString(payload.current_relevance);
+
+  if ((eventKind === "immediate_previous" || eventKind === "recent_causal") && currentRelevance !== "none") {
+    return true;
+  }
+
+  return eventKind === "offstage" && (currentRelevance === "high" || currentRelevance === "critical");
 }
 
 function firstText(payload: JsonRecord, keys: readonly string[]): string {
