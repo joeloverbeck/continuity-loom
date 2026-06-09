@@ -1,6 +1,6 @@
 # SPEC-017 — Generation Brief Visual Structure and Navigation
 
-**Status:** DRAFT
+**Status:** COMPLETED
 **Feature name:** Generation Brief Pre-Flight Console
 **Classification:** product-behavior (UI/workflow over the *Generation-time brief* surface, §6.3; presentation-only — no schema, validation, storage, or compiler changes)
 **Governing authority:** `docs/FOUNDATIONS.md`
@@ -141,3 +141,24 @@ No changes to: schemas, stored draft shape, the `PUT /api/generation-brief` payl
 - **Scroll-spy in jsdom** is untestable directly; keep IntersectionObserver behind a small seam so chip/anchor logic is unit-tested and scroll-spy is covered by the manual Puppeteer pass.
 - **Open question (rail placement):** right-edge rail inside the brief column vs. left beside it (the app shell already owns the far-left nav). Spec assumes right-edge; flip during implementation if it crowds the 1280 px layout.
 - **Open question (section descriptions copy):** final one-liners should be reviewed against `docs/prompt-template.md` destination names during implementation so descriptions never misstate where a field compiles.
+
+## Outcome
+
+Completed 2026-06-10 via archived ticket series:
+
+- `archive/tickets/SPEC017GENBRIVIS-001.md`
+- `archive/tickets/SPEC017GENBRIVIS-002.md`
+- `archive/tickets/SPEC017GENBRIVIS-003.md`
+- `archive/tickets/SPEC017GENBRIVIS-004.md`
+- `archive/tickets/SPEC017GENBRIVIS-005.md`
+- `archive/tickets/SPEC017GENBRIVIS-006.md`
+
+Implemented display labels in core field guidance, shared requiredness/fill helpers, section cards and field rows, sticky section rail with advisory fill chips, contextual dirty-state save bar, and capstone browser verification. No schema, storage, compiler, API-route, validation-gating, or prompt-compilation semantics changed.
+
+Verification completed:
+
+- `npm test --workspace @loom/web -- GenerationBriefView section-fill` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed (103 files, 777 tests).
+- Browser smoke against the local demo project verified cards, rail jumps, fill-chip context switching, inline help placement, contextual save-bar summon/dismiss, readiness refresh, and final restoration of demo draft values. The original pre-change scroll-height delta could not be numerically proven because no preserved pre-change browser measurement was available in this run; compact empty optional textarea behavior was verified directly.
