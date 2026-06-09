@@ -218,6 +218,23 @@ describe("compiler front-section resolvers", () => {
     expect(currentState).not.toContain(`Offstage but pressuring entities: ${holderId}`);
   });
 
+  it("renders multiple current-state entity references as comma-joined single lines", () => {
+    const input = populatedInput();
+    input.generationSession.current_authoritative_state!.onstage_entities = [povId, holderId];
+    input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [holderId, povId];
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(input));
+
+    expect(sectionLines(prompt, "current_authoritative_state")).toContain("Onstage entities: Jon Vale, Mara Lorne");
+    expect(sectionLines(prompt, "current_authoritative_state")).toContain(
+      "Offstage but pressuring entities: Mara Lorne, Jon Vale"
+    );
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain("Onstage entities: Jon Vale\nMara Lorne");
+    expect(sectionBody(prompt, "current_authoritative_state")).not.toContain(
+      "Offstage but pressuring entities: Mara Lorne\nJon Vale"
+    );
+  });
+
   it("falls back to a raw current-state entity id when no matching record is selected", () => {
     const input = populatedInput();
     input.generationSession.current_authoritative_state!.onstage_entities = [danglingHolderId];

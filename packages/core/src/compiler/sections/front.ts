@@ -197,7 +197,7 @@ function renderEntityReferenceList(snapshot: ValidationSnapshot, value: unknown)
     return "";
   }
 
-  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join("\n");
+  return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join(", ");
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {

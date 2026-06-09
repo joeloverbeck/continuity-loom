@@ -80,11 +80,9 @@ None selected for this generation
 <current_authoritative_state>
 Time: Late morning, minutes after the market bell rang early.
 Location: 019b0298-5c00-7000-8000-013000000012
-Onstage entities: Elin Vale
-Niko Bram
+Onstage entities: Elin Vale, Niko Bram
 Immediate situation: Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.
-Offstage but pressuring entities: Mara Venn
-Orin Ward
+Offstage but pressuring entities: Mara Venn, Orin Ward
 Current physical positions: Elin stands beside the flour bin with the shuttered lantern in hand.
 Niko stands near the stair door and can see Elin, the latch, and the flour dust.
 Current agency/status: 019b0298-5c00-7000-8000-013000000001
