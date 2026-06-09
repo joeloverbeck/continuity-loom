@@ -1,6 +1,6 @@
 # SPEC016RECGRITYP-001: Core per-type column manifest
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` module `records/column-manifest.ts` (per-type column registry, typed accessors, `projectDisplayValues`, severity ordinal) exported from `packages/core/src/index.ts`; new unit test `packages/core/test/column-manifest.test.ts`. No runtime behavior change to existing surfaces.
@@ -83,3 +83,23 @@ Add the manifest types, `recordColumnManifest`, `allTypesColumns`, `severityOrdi
 1. `npx vitest run packages/core/test/column-manifest.test.ts`
 2. `npm test`
 3. Targeted vitest is the correct boundary because the manifest is pure core logic with no server/DOM dependency; `npm test` builds `@loom/core` first then runs the suite, covering the boundary rule end-to-end.
+
+## Outcome
+
+Completed: 2026-06-09
+
+What changed:
+- Added `packages/core/src/records/column-manifest.ts` with the per-type column manifest, minimal all-types columns, severity ordering, display-value projection, and typed accessors.
+- Re-exported the manifest API from `packages/core/src/index.ts`.
+- Added `packages/core/test/column-manifest.test.ts` covering manifest completeness, descriptor field existence, all-types columns, display-value formatting, array join formatting, and severity ordering.
+
+Deviations from original plan:
+- Used `npm exec vitest -- ...` for targeted Vitest commands rather than `npx vitest ...`; the same tests were run against the same files.
+- `allTypesColumns` exports the data columns (`Type`, `Label`, `Status`, `Updated`); the Working Set column remains a grid-owned leading column as the ticket described.
+
+Verification:
+- `npm exec vitest -- run packages/core/test/column-manifest.test.ts` — passed.
+- `npm exec vitest -- run packages/core/test/boundary.test.ts` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.

@@ -46,6 +46,21 @@ export type {
   CastMemberSectionId
 } from "./records/cast-member-sections.js";
 export {
+  allTypesColumns,
+  compareSeverityDesc,
+  getAdditionalColumnKeys,
+  getColumnManifest,
+  projectDisplayValues,
+  recordColumnManifest,
+  severityOrdinal
+} from "./records/column-manifest.js";
+export type {
+  ColumnAlignment,
+  ColumnDescriptor,
+  ColumnKind,
+  RecordColumnManifestEntry
+} from "./records/column-manifest.js";
+export {
   whatWillCompile
 } from "./records/compile-destinations.js";
 export { compileDestinationFamilyIds } from "./records/compile-destinations.js";
