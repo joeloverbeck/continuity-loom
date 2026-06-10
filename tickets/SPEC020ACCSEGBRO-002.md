@@ -4,17 +4,17 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/web` `AcceptedSegmentsView` (mount + `hashchange` landing/deep-link effect, per-segment `id` anchors) and its component test; no `@loom/core`/`@loom/server`/schema/storage change
-**Deps**: SPEC020ACCSEGBRO-001
+**Deps**: `archive/tickets/SPEC020ACCSEGBRO-001.md`
 
 ## Problem
 
-After SPEC020ACCSEGBRO-001 the browser collapses by default with the latest segment expanded, but it still lands at `scrollY 0`, so the dominant task — reviewing the most recent segment — costs a full-archive scroll on every visit. There is also no per-segment anchor, so an older segment cannot be linked or returned to directly. This ticket lands the view on the latest segment (scrolled into view and focused) and adds stable `#segment-<sequence>` deep links that take precedence over the latest-default. SPEC-020 Deliverable D2.
+After `archive/tickets/SPEC020ACCSEGBRO-001.md` the browser collapses by default with the latest segment expanded, but it still lands at `scrollY 0`, so the dominant task — reviewing the most recent segment — costs a full-archive scroll on every visit. There is also no per-segment anchor, so an older segment cannot be linked or returned to directly. This ticket lands the view on the latest segment (scrolled into view and focused) and adds stable `#segment-<sequence>` deep links that take precedence over the latest-default. SPEC-020 Deliverable D2.
 
 ## Assumption Reassessment (2026-06-10)
 
-1. Current code checked: `AcceptedSegmentsView` (`packages/web/src/accepted-segments/AcceptedSegmentsView.tsx`) is a self-contained component with no React Router hooks today; it loads segments in a mount `useEffect` (lines 22-24) and renders the list built by SPEC020ACCSEGBRO-001. The "latest" segment is the highest-`sequence` element of the `sortSegments` result (lines 233-235). The route is mounted at `/accepted-segments` in `packages/web/src/shell/AppShell.tsx:125` under `<RequireProject>`; the app uses `react-router-dom` `^7.17.0` (`packages/web/package.json:22`).
+1. Current code checked: `AcceptedSegmentsView` (`packages/web/src/accepted-segments/AcceptedSegmentsView.tsx`) is a self-contained component with no React Router hooks today; it loads segments in a mount `useEffect` (lines 22-24) and renders the list built by `archive/tickets/SPEC020ACCSEGBRO-001.md`. The "latest" segment is the highest-`sequence` element of the `sortSegments` result (lines 233-235). The route is mounted at `/accepted-segments` in `packages/web/src/shell/AppShell.tsx:125` under `<RequireProject>`; the app uses `react-router-dom` `^7.17.0` (`packages/web/package.json:22`).
 2. Current specs/docs checked: `specs/SPEC-020-...md` §Approach (Structure §3-§4), Deliverable D2, and §Risks ("Hash precedence vs. land-on-latest", "Scroll restoration interplay with React Router"); `docs/FOUNDATIONS.md` §21 (segments visible individually and in order — landing on latest makes the dominant review target more visible without hiding the rest).
-3. Shared boundary under audit: this ticket consumes SPEC020ACCSEGBRO-001's programmatic expansion control — landing/deep-linking must be able to force a target segment expanded. It must not regress 001's invariant that every segment stays individually listed in order.
+3. Shared boundary under audit: this ticket consumes `archive/tickets/SPEC020ACCSEGBRO-001.md`'s programmatic expansion control — landing/deep-linking must be able to force a target segment expanded. It must not regress 001's invariant that every segment stays individually listed in order.
 4. FOUNDATIONS principle restated: §21 / §29.8 #4 — moving the viewport/focus to the latest segment and supporting per-segment anchors increases access without removing any segment from the ordered list; nothing is hidden, paginated, or virtualized. No prompt-context or compilation surface is touched.
 5. Mismatch + correction: none — the mount-only-vs-`hashchange` gap was already corrected into SPEC-020 (§Approach §4, Deliverable D2) during the in-session `/reassess-spec`; this ticket implements the corrected, hashchange-reactive behavior.
 
@@ -56,7 +56,7 @@ Drive the landing/deep-link resolution from an effect that responds to `location
 
 ## Out of Scope
 
-- The disclosure unit, expansion state model, stable display index, and filter override — delivered in SPEC020ACCSEGBRO-001.
+- The disclosure unit, expansion state model, stable display index, and filter override — delivered in `archive/tickets/SPEC020ACCSEGBRO-001.md`.
 - Expand all / Collapse all and Jump-to-latest / Back-to-top toolbar/floating controls — SPEC020ACCSEGBRO-003 (this ticket provides the focus-target logic those reuse).
 - Any global React Router scroll-restoration change — explicitly not in scope (SPEC-020 §Risks); the view manages only its own landing.
 - User-guide refresh, verification gate, archival — SPEC020ACCSEGBRO-004.

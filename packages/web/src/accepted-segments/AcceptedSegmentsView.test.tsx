@@ -23,27 +23,35 @@ afterEach(() => {
 });
 
 describe("AcceptedSegmentsView", () => {
-  it("renders accepted segments in sequence order with readable text and metadata", async () => {
+  it("renders summaries in sequence order and opens the latest segment by default", async () => {
     vi.mocked(listAcceptedSegments).mockResolvedValue({
       ok: true,
-      segments: [segment({ id: 30, sequence: 3, text: "Third cloth." }), segment({ id: 10, sequence: 1, text: "First cloth." })]
+      segments: [
+        segment({ id: 30, sequence: 3, text: "Third cloth." }),
+        segment({ id: 10, sequence: 1, text: "First cloth." }),
+        segment({ id: 20, sequence: 2, text: "Second cloth." })
+      ]
     });
 
-    render(<AcceptedSegmentsView />);
+    const { container } = render(<AcceptedSegmentsView />);
 
     expect(await screen.findByRole("heading", { name: "Accepted Segments" })).toBeTruthy();
     expect(screen.getByText("Accepted prose is readable output, not continuity canon.")).toBeTruthy();
-    const renderedSegments = screen.getAllByRole("article");
-    expect(renderedSegments.map((article) => article.textContent)).toEqual([
-      expect.stringContaining("First cloth."),
-      expect.stringContaining("Third cloth.")
+    expect(screen.getAllByRole("button", { name: /Segment \d/ }).map((button) => button.textContent)).toEqual([
+      "Segment 1Expand",
+      "Segment 2Expand",
+      "Segment 3Collapse"
     ]);
-    expect(screen.getAllByText("Stored sequence")).toHaveLength(2);
+    expect(screen.getByRole("button", { name: /Segment 1/ }).getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("button", { name: /Segment 2/ }).getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByRole("button", { name: /Segment 3/ }).getAttribute("aria-expanded")).toBe("true");
+    expect(getRenderedProse(container)).toEqual(["Third cloth."]);
+    expect(screen.getAllByText("Stored sequence")).toHaveLength(1);
     expect(screen.getByText("3")).toBeTruthy();
-    expect(screen.getAllByText("openai/gpt-4.1")).toHaveLength(2);
-    expect(screen.getAllByText("template-1")).toHaveLength(2);
-    expect(screen.getAllByText("compiler-1")).toHaveLength(2);
-    expect(screen.getAllByText("contract-1")).toHaveLength(2);
+    expect(screen.getAllByText("openai/gpt-4.1")).toHaveLength(1);
+    expect(screen.getAllByText("template-1")).toHaveLength(1);
+    expect(screen.getAllByText("compiler-1")).toHaveLength(1);
+    expect(screen.getAllByText("contract-1")).toHaveLength(1);
   });
 
   it("renders the empty archive state", async () => {
@@ -67,19 +75,46 @@ describe("AcceptedSegmentsView", () => {
 
     render(<AcceptedSegmentsView />);
 
-    expect(await screen.findByText("The amber door closes.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /Segment 1/ })).toBeTruthy();
     const filter = screen.getByRole<HTMLInputElement>("searchbox", { name: "Filter archive" });
     fireEvent.change(filter, { target: { value: "blue" } });
 
-    expect(screen.queryByText("The amber door closes.")).toBeNull();
-    expect(screen.getByText("The blue key turns.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Segment 1/ })).toBeNull();
+    expect(getRenderedProse(containerFromDocument())).toEqual(["The blue key turns."]);
     expect(listAcceptedSegments).toHaveBeenCalledTimes(1);
 
     fireEvent.change(filter, { target: { value: "" } });
 
-    expect(screen.getByText("The amber door closes.")).toBeTruthy();
-    expect(screen.getByText("The blue key turns.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Segment 1/ })).toBeTruthy();
+    expect(getRenderedProse(containerFromDocument())).toEqual(["The blue key turns."]);
     expect(listAcceptedSegments).toHaveBeenCalledTimes(1);
+  });
+
+  it("toggles collapsed prose with mouse and keyboard while keeping collapsed prose out of the DOM", async () => {
+    const collapsedText = "First cloth opens with a long corridor before naming the copper hinge at the end.";
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: collapsedText }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    const { container } = render(<AcceptedSegmentsView />);
+
+    const firstToggle = await screen.findByRole("button", { name: /Segment 1/ });
+    expect(firstToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(getRenderedProse(container)).toEqual(["Latest cloth."]);
+
+    fireEvent.click(firstToggle);
+
+    expect(firstToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(getRenderedProse(container)).toEqual([collapsedText, "Latest cloth."]);
+
+    fireEvent.keyDown(firstToggle, { key: "Enter" });
+
+    expect(firstToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(getRenderedProse(container)).toEqual(["Latest cloth."]);
   });
 
   it("requires confirmation before deleting and removes the row on success", async () => {
@@ -91,8 +126,10 @@ describe("AcceptedSegmentsView", () => {
 
     render(<AcceptedSegmentsView />);
 
-    expect(await screen.findByText("Delete this output.")).toBeTruthy();
-    fireEvent.click(screen.getAllByRole("button", { name: "Delete" })[1] ?? failButton());
+    expect(await screen.findByRole("button", { name: /Segment 2/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Segment 1/ }).getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
 
     expect(deleteAcceptedSegment).not.toHaveBeenCalled();
     expect(screen.getByText("Delete removes this readable output only. Records are unchanged.")).toBeTruthy();
@@ -100,7 +137,7 @@ describe("AcceptedSegmentsView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete output" }));
 
     await waitFor(() => expect(screen.queryByText("Delete this output.")).toBeNull());
-    expect(screen.getByText("Keep this output.")).toBeTruthy();
+    expect(getRenderedProse(containerFromDocument())).toEqual(["Keep this output."]);
     expect(deleteAcceptedSegment).toHaveBeenCalledWith(2);
   });
 
@@ -117,13 +154,43 @@ describe("AcceptedSegmentsView", () => {
 
     render(<AcceptedSegmentsView />);
 
-    expect(await screen.findByText("Still readable.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /Segment 1/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete output" }));
 
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toContain("Accepted segment not found: 1.");
-    expect(screen.getByText("Still readable.")).toBeTruthy();
+    expect(getRenderedProse(containerFromDocument())).toEqual(["Still readable."]);
+  });
+
+  it("keeps display indices stable under filters and restores tracked expansion after clearing", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening amber cloth." }),
+        segment({ id: 2, sequence: 2, text: "The quartz key turns in the lock." }),
+        segment({ id: 3, sequence: 3, text: "Closing blue cloth." })
+      ]
+    });
+
+    const { container } = render(<AcceptedSegmentsView />);
+
+    const latestToggle = await screen.findByRole("button", { name: /Segment 3/ });
+    fireEvent.click(latestToggle);
+    expect(latestToggle.getAttribute("aria-expanded")).toBe("false");
+    expect(getRenderedProse(container)).toEqual([]);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter archive" }), { target: { value: "quartz" } });
+
+    expect(screen.getByRole("button", { name: /Segment 2/ }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.queryByRole("button", { name: /Segment 1/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Segment 3/ })).toBeNull();
+    expect(getRenderedProse(container)).toEqual(["The quartz key turns in the lock."]);
+
+    fireEvent.change(screen.getByRole("searchbox", { name: "Filter archive" }), { target: { value: "" } });
+
+    expect(screen.getByRole("button", { name: /Segment 3/ }).getAttribute("aria-expanded")).toBe("false");
+    expect(getRenderedProse(container)).toEqual([]);
   });
 
   it("exports the full archive in sequence order independent of the active filter", async () => {
@@ -154,9 +221,9 @@ describe("AcceptedSegmentsView", () => {
     try {
       render(<AcceptedSegmentsView />);
 
-      expect(await screen.findByText("Hidden by active filter.")).toBeTruthy();
+      expect(await screen.findByRole("button", { name: /Segment 1/ })).toBeTruthy();
       fireEvent.change(screen.getByRole("searchbox", { name: "Filter archive" }), { target: { value: "visible" } });
-      expect(screen.queryByText("Hidden by active filter.")).toBeNull();
+      expect(screen.queryByRole("button", { name: /Segment 1/ })).toBeNull();
 
       fireEvent.click(screen.getByRole("button", { name: "Export Markdown" }));
       fireEvent.click(screen.getByRole("button", { name: "Export text" }));
@@ -187,7 +254,7 @@ describe("AcceptedSegmentsView", () => {
 
     render(<AcceptedSegmentsView />);
 
-    expect(await screen.findByText("Readable only.")).toBeTruthy();
+    expect(await screen.findByRole("button", { name: /Segment 1/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /use as prompt context/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /include in prompt/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /include.*prompt/i })).toBeNull();
@@ -218,8 +285,12 @@ const metadata = {
   }
 } satisfies GenerationMetadata;
 
-function failButton(): HTMLButtonElement {
-  throw new Error("Expected delete button.");
+function getRenderedProse(container: HTMLElement): string[] {
+  return Array.from(container.querySelectorAll(".acceptedSegmentText")).map((node) => node.textContent ?? "");
+}
+
+function containerFromDocument(): HTMLElement {
+  return document.body;
 }
 
 class CapturedBlob {

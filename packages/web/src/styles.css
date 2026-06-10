@@ -1122,23 +1122,70 @@ button:disabled:hover {
   border: 1px solid #d8dee8;
   border-radius: 8px;
   background: #ffffff;
-  padding: 18px;
+  padding: 16px;
 }
 
 .acceptedSegmentHeader {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .acceptedSegmentHeader p {
   margin: 0;
 }
 
+.acceptedSegmentHeading {
+  display: grid;
+  gap: 8px;
+}
+
+.acceptedSegmentHeading h3 {
+  margin: 0;
+}
+
+.acceptedSegmentToggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 0;
+  border-radius: 6px;
+  background: #eef4fa;
+  padding: 12px 14px;
+  color: #1f2a37;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+}
+
+.acceptedSegmentToggle:hover,
+.acceptedSegmentToggle:focus-visible {
+  background: #e2edf7;
+}
+
+.acceptedSegmentChevron {
+  flex: 0 0 auto;
+  color: #536276;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.acceptedSegmentExcerpt {
+  overflow: hidden;
+  color: #3f4c5f;
+  font-size: 0.95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.acceptedSegmentDisclosure {
+  display: grid;
+  gap: 16px;
+  margin-top: 14px;
+}
+
 .acceptedSegmentText {
-  margin: 0 0 16px;
+  margin: 0;
   border: 1px solid #e0e5ee;
   border-radius: 6px;
   background: #fcfdf9;
@@ -1178,6 +1225,11 @@ button:disabled:hover {
 .acceptedMetadataGrid dd {
   overflow-wrap: anywhere;
   font-size: 0.94rem;
+}
+
+.acceptedSegmentActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .acceptedDeleteConfirm {

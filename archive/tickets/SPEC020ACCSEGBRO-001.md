@@ -1,6 +1,6 @@
 # SPEC020ACCSEGBRO-001: Disclosure-based segment list with stable index and filter override
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `@loom/web` `AcceptedSegmentsView` component (disclosure state model, render restructure), `packages/web/src/styles.css` (summary-row/disclosure CSS), and its component test; no `@loom/core`/`@loom/server`/schema/storage change
@@ -96,3 +96,24 @@ Add plain-CSS for the summary row layout, the one-line excerpt truncation (ellip
 1. `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. The targeted vitest run is the correct inner boundary (the change is confined to one `@loom/web` component + its CSS); the full four-command gate is the outer boundary SPEC-020 §Verification requires.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+- Reworked the accepted-segment list into disclosure rows with stable summary labels, accepted timestamp, deterministic excerpt, latest-segment default expansion, and full prose/metadata/delete mounted only while expanded.
+- Added ephemeral per-segment expansion state keyed by accepted-segment id, filter-forced expansion for matched rows, and full-list display-index lookup so filtering no longer renumbers visible segments.
+- Moved Delete into expanded content while preserving the existing two-step confirmation flow.
+- Added CSS for disclosure summary rows, excerpts, expanded content, and action placement.
+- Updated the accepted-segments component suite for latest-open default, collapsed prose absence, mouse/keyboard toggling, delete-behind-expansion, stable filter indices, filter restore behavior, and retained SPEC-011 regressions.
+
+Deviations from original plan:
+- None. The change stayed inside `@loom/web`; no server, core, schema, storage, export-format, prompt, or validation changes were made.
+
+Verification:
+- `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing large-chunk advisory.

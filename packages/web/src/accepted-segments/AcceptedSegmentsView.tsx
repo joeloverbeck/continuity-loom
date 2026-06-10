@@ -18,6 +18,7 @@ export function AcceptedSegmentsView(): React.JSX.Element {
   const [filter, setFilter] = useState("");
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [expandedById, setExpandedById] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     void refreshSegments();
@@ -82,6 +83,34 @@ export function AcceptedSegmentsView(): React.JSX.Element {
     return state.segments.filter((segment) => searchableText(segment).includes(term));
   }, [filter, state]);
 
+  const displayIndexById = useMemo(() => {
+    if (state.status !== "ready") {
+      return new Map<number, number>();
+    }
+
+    return new Map(state.segments.map((segment, index) => [segment.id, index + 1]));
+  }, [state]);
+
+  const latestSegmentId = state.status === "ready" && state.segments.length > 0
+    ? state.segments[state.segments.length - 1]?.id ?? null
+    : null;
+  const filterIsActive = filter.trim() !== "";
+
+  function isSegmentExpanded(segment: AcceptedSegment): boolean {
+    if (filterIsActive) {
+      return true;
+    }
+
+    return expandedById[segment.id] ?? segment.id === latestSegmentId;
+  }
+
+  function toggleSegment(segment: AcceptedSegment): void {
+    setExpandedById((current) => ({
+      ...current,
+      [segment.id]: !isSegmentExpanded(segment)
+    }));
+  }
+
   return (
     <section className="surface acceptedArchiveSurface" aria-labelledby="accepted-segments-title">
       <div className="projectHeader">
@@ -138,8 +167,10 @@ export function AcceptedSegmentsView(): React.JSX.Element {
                 <AcceptedSegmentItem
                   key={segment.id}
                   segment={segment}
-                  displayIndex={index + 1}
+                  displayIndex={displayIndexById.get(segment.id) ?? index + 1}
+                  isExpanded={isSegmentExpanded(segment)}
                   isConfirming={confirmingId === segment.id}
+                  onToggle={() => toggleSegment(segment)}
                   onAskDelete={() => {
                     setDeleteError(null);
                     setConfirmingId(segment.id);
@@ -159,46 +190,77 @@ export function AcceptedSegmentsView(): React.JSX.Element {
 function AcceptedSegmentItem({
   segment,
   displayIndex,
+  isExpanded,
   isConfirming,
+  onToggle,
   onAskDelete,
   onCancelDelete,
   onConfirmDelete
 }: {
   segment: AcceptedSegment;
   displayIndex: number;
+  isExpanded: boolean;
   isConfirming: boolean;
+  onToggle: () => void;
   onAskDelete: () => void;
   onCancelDelete: () => void;
   onConfirmDelete: () => void;
 }): React.JSX.Element {
+  const contentId = `accepted-segment-${segment.id}-content`;
+
   return (
     <li className="acceptedSegmentItem">
       <article className="acceptedSegmentArticle" aria-label={`Accepted segment ${displayIndex}`}>
         <header className="acceptedSegmentHeader">
-          <div>
-            <h3>Segment {displayIndex}</h3>
+          <div className="acceptedSegmentHeading">
+            <h3>
+              <button
+                type="button"
+                className="acceptedSegmentToggle"
+                aria-expanded={isExpanded}
+                aria-controls={contentId}
+                onClick={onToggle}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onToggle();
+                  }
+                }}
+              >
+                <span>Segment {displayIndex}</span>
+                <span className="acceptedSegmentChevron" aria-hidden="true">{isExpanded ? "Collapse" : "Expand"}</span>
+              </button>
+            </h3>
             <p className="muted">Accepted {segment.createdAt}</p>
+            <p className="acceptedSegmentExcerpt">{segmentExcerpt(segment.text)}</p>
           </div>
-          <button type="button" className="secondaryButton" onClick={onAskDelete}>
-            Delete
-          </button>
         </header>
 
-        <pre className="acceptedSegmentText">{segment.text}</pre>
+        {isExpanded ? (
+          <div id={contentId} className="acceptedSegmentDisclosure">
+            <pre className="acceptedSegmentText">{segment.text}</pre>
 
-        <section className="acceptedMetadataPanel" aria-label={`Segment ${displayIndex} metadata`}>
-          <h4>Metadata</h4>
-          <MetadataGrid metadata={segment.metadata} sequence={segment.sequence} />
-        </section>
+            <section className="acceptedMetadataPanel" aria-label={`Segment ${displayIndex} metadata`}>
+              <h4>Metadata</h4>
+              <MetadataGrid metadata={segment.metadata} sequence={segment.sequence} />
+            </section>
 
-        {isConfirming ? (
-          <section className="acceptedDeleteConfirm" aria-label={`Confirm delete segment ${displayIndex}`}>
-            <p>Delete removes this readable output only. Records are unchanged.</p>
-            <div>
-              <button type="button" onClick={onConfirmDelete}>Confirm delete output</button>
-              <button type="button" className="secondaryButton" onClick={onCancelDelete}>Cancel</button>
+            <div className="acceptedSegmentActions">
+              <button type="button" className="secondaryButton" onClick={onAskDelete}>
+                Delete
+              </button>
             </div>
-          </section>
+
+            {isConfirming ? (
+              <section className="acceptedDeleteConfirm" aria-label={`Confirm delete segment ${displayIndex}`}>
+                <p>Delete removes this readable output only. Records are unchanged.</p>
+                <div>
+                  <button type="button" onClick={onConfirmDelete}>Confirm delete output</button>
+                  <button type="button" className="secondaryButton" onClick={onCancelDelete}>Cancel</button>
+                </div>
+              </section>
+            ) : null}
+          </div>
         ) : null}
       </article>
     </li>
@@ -251,6 +313,15 @@ function searchableText(segment: AcceptedSegment): string {
   ]
     .join(" ")
     .toLocaleLowerCase();
+}
+
+function segmentExcerpt(text: string): string {
+  const singleLine = text.replace(/\s+/g, " ").trim();
+  if (singleLine.length <= 140) {
+    return singleLine;
+  }
+
+  return `${singleLine.slice(0, 139).trimEnd()}...`;
 }
 
 function exportArchive(segments: AcceptedSegment[], format: "markdown" | "text"): void {
