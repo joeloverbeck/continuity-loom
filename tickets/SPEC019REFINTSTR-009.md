@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — bumps `contract.version` in `packages/core/src/version.ts`; amends `docs/compiler-contract.md` and `docs/story-record-schema.md`; updates hardcoded `contract: "1.2.0"` assertions in seven test files. No runtime behavior change.
-**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, SPEC019REFINTSTR-003, SPEC019REFINTSTR-004, SPEC019REFINTSTR-005, SPEC019REFINTSTR-006
+**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, `archive/tickets/SPEC019REFINTSTR-003.md`, SPEC019REFINTSTR-004, SPEC019REFINTSTR-005, SPEC019REFINTSTR-006
 
 ## Problem
 

@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-003: Brief-field reference rules
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `referential-brief.ts` blocker rule module + two warning rules in `warnings.ts`; registered in `rules/index.ts`; new `DIAGNOSTIC_CODES` entries (`@loom/core`); `docs/validation-rule-inventory.md` rows; new unit test. Adds blocking validation behavior.
@@ -92,3 +92,24 @@ Add `...referentialBriefRules` to `rules/index.ts`; add all six codes to `DIAGNO
 1. `npm test --workspace @loom/core -- validation-brief-references`
 2. `npm test --workspace @loom/core -- validation-rule-inventory`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-10
+
+Implemented generation-brief referential validation in `packages/core/src/validation/rules/referential-brief.ts` and registered it in the validation rule set. The rule family now blocks dangling, mistyped, and required-lane-unselected references for `onstage_entities`, `offstage_pressuring_entities`, record-id-array `entity_statuses`, and project-record `current_location` values while preserving prose passthrough for `current_location` and string-form `entity_statuses`.
+
+Added optional-lane warnings in `warnings.ts` for unselected offstage pressure and entity-status references when the lane is not context-required. Added diagnostic codes and inventory rows for the four blockers and two warnings.
+
+Added `packages/core/test/validation-brief-references.test.ts` for selected/coherent negatives, dangling/type/unselected blocker cases, optional-lane warning cases, and current-location prose passthrough. Updated existing clean fixtures and demo/server route fixtures so they remain truthfully blocker-free under the new referential checks without changing the frozen demo prompt baseline.
+
+Deviations: the spec's hybrid `…-invalid` concepts were implemented as blocker codes plus separate optional warning codes, as planned in the ticket reassessment.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-brief-references` — passed.
+- `npm test --workspace @loom/core -- validation-rule-inventory` — passed.
+- `npm test --workspace @loom/core -- compiler-golden` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed.

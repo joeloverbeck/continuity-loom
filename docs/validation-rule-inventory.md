@@ -90,6 +90,15 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `matrix-active-silent-presence-incomplete` | blocker | Active silent presence lacks dossier, body presence, position/visibility, allowed actions, or POV access limits. | §11.5 | Case 13 |
 | `matrix-present-minor-speech-incomplete` | blocker | Present-minor speech lacks compressed voice note or promotion to active/onstage status. | §11.5 | Case 13 |
 
+## Referential Integrity
+
+| Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
+|---|---|---|---|---|
+| `onstage-entity-reference-invalid` | blocker | A generation-brief onstage entity id is dangling, mistyped, or not selected for the readiness-required onstage-entities lane. | §11.2 / §11.3 | — |
+| `offstage-entity-reference-invalid` | blocker | A generation-brief offstage pressure id is dangling or mistyped, or is unselected when offstage pressure is context-required. | §11.2 / §11.3 | — |
+| `entity-statuses-reference-invalid` | blocker | A generation-brief entity-status record id is dangling or mistyped, or is unselected when current agency/status is context-required. | §11.2 / §11.3 | — |
+| `current-location-reference-invalid` | blocker | A current-location value that resolves to a project record is mistyped or not selected for the readiness-required current-location lane. | §11.2 / §11.3 | — |
+
 ## Security
 
 | Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
@@ -103,6 +112,8 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `pov-character-not-selected` | warning | POV character is not selected, so the prompt falls back to its raw id/display limits. | Warning; §11 warnings never gate | — |
 | `prompt-middle-salience-risk` | warning | Snapshot is large enough to risk lost-in-the-middle prompt behavior. | Warning; §11 warnings never gate | Cases 31, 32 |
 | `many-high-salience-records` | warning | Many high-salience records are selected for one local unit. | Warning; §11 warnings never gate | Case 32 |
+| `offstage-entity-reference-unselected-optional` | warning | Offstage pressure names an existing ENTITY record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
+| `entity-statuses-reference-unselected-optional` | warning | Current agency/status names an existing ENTITY STATUS record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
 | `no-sample-utterances` | warning | Active cast has no selected sample utterances. | Warning; §11 warnings never gate | Case 8 |
 | `sparse-setting-texture` | warning | Setting texture is sparse for the current local unit. | Warning; §11 warnings never gate | — |
 | `no-active-clock-pressure` | warning | Directive has local pressure but no active clock, obligation, or open thread selected. | Warning; §11 warnings never gate | Case 26 |

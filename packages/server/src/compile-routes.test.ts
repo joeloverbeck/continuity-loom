@@ -46,16 +46,54 @@ async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise
 }
 
 async function putBrief(fastify: ReturnType<typeof createServer>, overrides: Record<string, unknown> = {}): Promise<void> {
+  const entityId = await createCleanEntity(fastify);
   const response = await fastify.inject({
     method: "PUT",
     url: "/api/generation-brief",
     payload: {
-      ...cleanBrief,
+      ...cleanBriefForEntity(entityId),
       ...overrides
     }
   });
 
   expect(response.statusCode).toBe(200);
+}
+
+async function createCleanEntity(fastify: ReturnType<typeof createServer>): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "ENTITY",
+      displayLabel: "A",
+      payload: {
+        display_name: "A",
+        entity_kind: "person",
+        roles_in_story: ["primary_actor"],
+        short_description: "A is present at the loading door."
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
+function cleanBriefForEntity(entityId: string) {
+  return {
+    ...cleanBrief,
+    active_working_set: {
+      selected_records: [entityId],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: []
+    },
+    current_authoritative_state: {
+      ...cleanBrief.current_authoritative_state,
+      onstage_entities: [entityId]
+    }
+  };
 }
 
 function captureProcessWrites(): { restore: () => string } {

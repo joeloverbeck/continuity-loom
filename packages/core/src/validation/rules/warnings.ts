@@ -1,9 +1,16 @@
+import { classifyReference } from "../reference-classification.js";
 import { DIAGNOSTIC_CODES, type Diagnostic } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
+import {
+  isEntityStatusesReferenceRequired,
+  isOffstageEntityReferenceRequired
+} from "./referential-brief.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnPovCharacterNotSelected,
+  warnOffstageEntityReferenceUnselectedOptional,
+  warnEntityStatusesReferenceUnselectedOptional,
   warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
@@ -36,6 +43,48 @@ function warnPovCharacterNotSelected(snapshot: ValidationSnapshot): readonly Dia
   ];
 }
 
+function warnOffstageEntityReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (isOffstageEntityReferenceRequired(snapshot)) {
+    return [];
+  }
+
+  return currentStateArray(snapshot, "offstage_pressuring_entities").flatMap((id) => {
+    const reference = classifyReference(snapshot, id, ["ENTITY"]);
+
+    return reference.classification === "unselected" && reference.typeMatches
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional,
+            `Offstage pressure reference ${id} exists but is not selected, so it will not render unless selected into the active working set.`,
+            "generationSession.current_authoritative_state.offstage_pressuring_entities"
+          )
+        ]
+      : [];
+  });
+}
+
+function warnEntityStatusesReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const entityStatuses = snapshot.generationSession.current_authoritative_state?.entity_statuses;
+
+  if (isEntityStatusesReferenceRequired(snapshot) || !Array.isArray(entityStatuses)) {
+    return [];
+  }
+
+  return entityStatuses.flatMap((id) => {
+    const reference = classifyReference(snapshot, id, ["ENTITY STATUS"]);
+
+    return reference.classification === "unselected" && reference.typeMatches
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional,
+            `Entity status reference ${id} exists but is not selected, so it will not render unless selected into the active working set.`,
+            "generationSession.current_authoritative_state.entity_statuses"
+          )
+        ]
+      : [];
+  });
+}
+
 function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return JSON.stringify(snapshotWithoutProjectRecordIndex(snapshot)).length > 5000
     ? [
@@ -59,6 +108,10 @@ function snapshotWithoutProjectRecordIndex(snapshot: ValidationSnapshot): Omit<V
 
 function resolvedPov(snapshot: ValidationSnapshot): string | undefined {
   return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+}
+
+function currentStateArray(snapshot: ValidationSnapshot, field: "onstage_entities" | "offstage_pressuring_entities"): readonly string[] {
+  return snapshot.generationSession.current_authoritative_state?.[field] ?? [];
 }
 
 function warnManyHighSalienceRecords(snapshot: ValidationSnapshot): readonly Diagnostic[] {
