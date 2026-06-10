@@ -187,6 +187,39 @@ describe("buildSnapshotFromOpenProject generation context defaults", () => {
       [unselectedId]: "LOCATION"
     });
   });
+
+  it("fails closed with every dangling selected record id in the malformed-source body", () => {
+    const selectedId = "019b0298-5c00-7000-8000-000000000111";
+    const missingA = "019b0298-5c00-7000-8000-000000000112";
+    const missingB = "019b0298-5c00-7000-8000-000000000113";
+    const result = buildSnapshotFromOpenProject(
+      managerFor({
+        generationSession: {
+          active_working_set: {
+            selected_records: [selectedId, missingA, missingB],
+            active_onstage_cast_full: [],
+            present_minor_cast_compressed: [],
+            offstage_relevant_cast: []
+          }
+        },
+        records: [record(selectedId, "CAST MEMBER", false)]
+      })
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      status: 422,
+      body: {
+        ok: false,
+        kind: "malformed-validation-source",
+        danglingSelectedRecordIds: [missingA, missingB],
+        suggestedAction: "Remove these ids from the active working set."
+      }
+    });
+    expect(JSON.stringify(result)).toContain(missingA);
+    expect(JSON.stringify(result)).toContain(missingB);
+    expect(JSON.stringify(result)).toContain("Remove these ids from the active working set.");
+  });
 });
 
 function record(id: string, type: string, archived: boolean): RecordRepositoryRecord {

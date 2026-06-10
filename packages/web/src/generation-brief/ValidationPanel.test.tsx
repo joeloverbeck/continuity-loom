@@ -31,6 +31,25 @@ describe("ValidationPanel", () => {
     expect(screen.queryByRole("heading", { name: /Ready to generate/ })).toBeNull();
   });
 
+  it("renders dangling selected-record failures with the ids and working-set fix", async () => {
+    const missingA = "019b0298-5c00-7000-8000-000000000011";
+    const missingB = "019b0298-5c00-7000-8000-000000000012";
+    vi.mocked(readiness).mockResolvedValue({
+      ok: false,
+      kind: "malformed-validation-source",
+      message: "Active working set contains stale selected record ids.",
+      danglingSelectedRecordIds: [missingA, missingB],
+      suggestedAction: "Remove these ids from the active working set."
+    });
+
+    renderPanel();
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      `Active working set contains stale selected record id(s): ${missingA}, ${missingB}. Remove these ids from the active working set.`
+    );
+    expect(screen.queryByRole("heading", { name: /Ready to generate/ })).toBeNull();
+  });
+
   it("fetches readiness and renders the shared checklist", async () => {
     vi.mocked(readiness).mockResolvedValue(readinessFixture({
       blockers: [diagnostic({

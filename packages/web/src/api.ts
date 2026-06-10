@@ -48,6 +48,8 @@ export type ApiFailure = {
   message: string;
   issues?: unknown[];
   referrers?: unknown[];
+  danglingSelectedRecordIds?: string[];
+  suggestedAction?: string;
 };
 
 export type TransportFailure = {

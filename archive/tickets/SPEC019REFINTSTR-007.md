@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-007: Legible snapshot-build failure for dangling selected_records
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — enriches the `SnapshotBuildResult` failure body in `snapshot-builder.ts` (`@loom/server`) and the failure rendering in `ValidationPanel.tsx` (`@loom/web`); server + web tests. Fail-closed behavior is unchanged — only the diagnostic legibility changes.
@@ -79,3 +79,22 @@ Extend `validationFailureMessage` so the `malformed-validation-source` branch su
 1. `npm test --workspace @loom/server -- snapshot-builder`
 2. `npm test --workspace @loom/web -- ValidationPanel`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- Updated snapshot building so dangling `active_working_set.selected_records` ids are collected together instead of stopping at the first missing id.
+- Kept fail-closed behavior unchanged: a stale selected record still returns 422 with `kind: "malformed-validation-source"`.
+- Enriched the malformed validation-source body with `danglingSelectedRecordIds` and `suggestedAction: "Remove these ids from the active working set."`.
+- Updated `ValidationPanel` to render the structured dangling-id failure as an actionable message.
+- Added server and web coverage for multiple dangling ids and the rendered working-set fix.
+
+Verification:
+
+- `npm test --workspace @loom/server -- snapshot-builder`
+- `npm test --workspace @loom/web -- ValidationPanel`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)
