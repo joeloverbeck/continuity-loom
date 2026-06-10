@@ -32,6 +32,10 @@ families plausibly match.
 3. Read the resolved tickets and active spec, if any. Ignore `triage/**`
    unless the user or an active ticket explicitly names a triage file as
    evidence.
+   If `docs/ACTIVE-DOCS.md` says there are no active tickets or specs but the
+   user-named selectors resolve to live files, treat those live files as the
+   current task authority. Note the mismatch only when it affects archive or
+   reference closeout.
 4. Select the active domain docs from `docs/ACTIVE-DOCS.md` for the touched
    surface. Common anchors:
    - prompt/compiler changes: `docs/compiler-contract.md`,
@@ -83,7 +87,11 @@ npm run build
 ```
 
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
-   browser smoke instead of relying only on unit tests.
+   browser smoke instead of relying only on unit tests. Use loopback URLs only;
+   record the project/path and URL used; restore any user or demo data changed
+   during the smoke; stop browser/dev-server processes; remove transient
+   artifacts such as `.playwright-cli/`; and distinguish expected setup console
+   errors from product failures.
 6. Update the ticket with final status and an `Outcome` section following
    `docs/archival-workflow.md`.
 7. Archive the ticket:
@@ -109,8 +117,9 @@ After all tickets in the series are complete:
 
 1. Re-read the reference spec, if any, and verify every acceptance item is done,
    rejected, deferred, or intentionally not implemented.
-2. Run the relevant final gates. For full family completion, prefer the root
-   commands:
+2. Run the relevant final gates. For full family completion, run the root
+   commands below, or explicitly record in the ticket/spec outcome and final
+   response why any listed command was skipped:
 
 ```sh
 npm run lint
