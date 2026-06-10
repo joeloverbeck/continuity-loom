@@ -37,7 +37,7 @@
 - The hard-canon-omission FOUNDATIONS amendment (HARDCANONOMIT-001) is already applied (`docs/FOUNDATIONS.md:274`, `:910`); nothing here re-litigates it.
 - `EVENT.sequence_order` prompt-wiring was explicitly **deferred** to a future spec (open-thread-fields triage, O5). The blocker-roadmap doc (D8) must list it as a known deferred item, not re-propose it.
 
-**Research provenance.** Narrative-theory pass: Trabasso & van den Broek causal networks; Genette focalization/paralepsis; Barthes' hermeneutic code; Swain/Bickham scene–sequel; script-supervisor continuity practice; Re3/DOC/Dramatron/KG-guided generation. Similar-tools pass: novelcrafter, Sudowrite, RaptorWrite, Plottr/Campfire/World Anvil, SillyTavern World Info, NovelAI lorebook, AI Dungeon memory, waterverri/continuum. Headline finding: **no surveyed tool deterministically validates and blocks before generation** — Continuity Loom's fail-closed gate is a deliberate inversion of the field's norm, and the active docs do not currently say so. Docs-practice pass: Diátaxis, Nygard ADRs, arc42, GitHub spec-kit, AGENTS.md progressive-disclosure guidance — unanimous against numbered folders at this scale, in favor of a registry with per-doc status and an explicit precedence ladder. Source URLs are carried into D8 and the D9 amendment rationale.
+**Research provenance.** Narrative-theory pass: Trabasso & van den Broek causal networks; Genette focalization/paralepsis; Barthes' hermeneutic code; Swain/Bickham scene–sequel; script-supervisor continuity practice; Re3/DOC/Dramatron/KG-guided generation. Similar-tools pass: novelcrafter, Sudowrite, RaptorWrite, Plottr/Campfire/World Anvil, SillyTavern World Info, NovelAI lorebook, AI Dungeon memory, waterverri/continuum. Headline finding: **no surveyed tool deterministically validates and blocks before generation** — Continuity Loom's fail-closed gate is a deliberate inversion of the field's norm, and the active docs do not currently say so. Docs-practice pass: Diátaxis, Nygard ADRs, arc42, GitHub spec-kit, AGENTS.md progressive-disclosure guidance — unanimous against numbered folders at this scale, in favor of a registry with per-doc status and an explicit precedence ladder. Source URLs are carried into D8 and, for the similar-tools survey backing §28.8, into FOUNDATIONS `§30 Source notes` via D9c.
 
 ---
 
@@ -66,6 +66,8 @@ Authority: <constitutional | domain authority for <surface> | support> (see docs
 ```
 No `last-reviewed` dates (they rot). Content edits beyond the header are governed by the other deliverables.
 
+**Exemption:** `docs/FOUNDATIONS.md` keeps its existing constitutional header unchanged. Any header change to it is constitutional work under the D9a amendment procedure (exact wording, sign-off-gated) and is deliberately not performed by this deliverable; its constitutional tier is recorded in the D1 registry row instead.
+
 ### D3 — Pin the contract version in `docs/compiler-contract.md`
 Add to the header: the documented contract version (`1.2.0`) with a same-change rule — any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision (this restates FOUNDATIONS §8 drift doctrine at the point of use).
 
@@ -76,16 +78,17 @@ Add to the header: the documented contract version (`1.2.0`) with a same-change 
 ### D5 — Backfill both stress coverage matrices
 - `docs/stress-coverage-matrix.md`: add rows for Cases 27–31 (mapping each to the validation rules / compiler behaviors that cover it, same shape as existing rows); remove the line-38 drift disclaimer.
 - `docs/stress-suite.md` embedded risk-surface matrix (lines 16–37): extend rows to reference Cases 27–32 where they map.
+- Coordinate with the existing `## Readiness and draftability coverage` table in `docs/stress-coverage-matrix.md` (line 40): it already covers Cases 27–31's ground by coverage area, without case numbers. Add case-number references linking that table and the backfilled numbered rows (in whichever direction reads better), and state the relationship between the two tables, so the same coverage is not represented twice with no linkage.
 - Add to both files the same-change maintenance rule: a new stress case must land with its matrix row(s) in the same revision.
 
 ### D6 — Correct `docs/demo-blocker-recipes.md` provenance
 Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived provenance, not current scope: the recipes remain live smoke checks against the existing demo fixture ("The Letter Under the Flour Bin"); their originating spec is archived at `archive/specs/SPEC-013-tame-demo-project-and-stress-coverage.md`.
 
 ### D7 — Create `docs/validation-rule-inventory.md` (+ drift test)
-- One row per diagnostic code in `DIAGNOSTIC_CODES` (`packages/core/src/validation/types.ts`) — all 55 — with: rule ID, severity (blocker/warning, derived from the implementing rule module), one-line description, the FOUNDATIONS §11 taxonomy clause it enforces, and the stress-suite case(s) it covers (or `—` where none).
+- One row per diagnostic code in `DIAGNOSTIC_CODES` (`packages/core/src/validation/types.ts`) — all 55 — with: rule ID, severity (blocker/warning, taken from the explicit `severity` field on the rule definition in the implementing module — e.g. `severity: "blocker"` in `rules/universal-blockers.ts`, `severity: "warning"` in `rules/warnings.ts`), one-line description, the FOUNDATIONS §11 taxonomy clause it enforces, and the stress-suite case(s) it covers (or `—` where none).
 - Group by the implementing module families (universal completeness, universal blockers, voice/knowledge/physical/durable matrix, security, warnings).
 - Same-change rule stated in the doc: adding, removing, or re-severitying a diagnostic code updates this inventory in the same revision.
-- **Drift test:** add a Vitest test in `@loom/core` asserting that the set of rule IDs in the inventory doc equals the values of `DIAGNOSTIC_CODES` exactly (parse the doc's rule-ID column; fail on any asymmetric difference). This is regression armor, not product behavior.
+- **Drift test:** add a Vitest test in `@loom/core` asserting (1) the set of rule IDs in the inventory doc equals the values of `DIAGNOSTIC_CODES` exactly (parse the doc's rule-ID column; fail on any asymmetric difference), and (2) each inventory row's severity matches the registered rule's explicit `severity` field, so a re-severitied rule fails CI until the doc row follows. Reading repo docs from a core test follows the existing convention (`packages/core/test/accepted-prose-exclusion.test.ts` already reads `docs/story-record-schema.md`; the core purity boundary binds `src`, not `test`). This is regression armor, not product behavior.
 
 ### D8 — Create `docs/narrative-theory-blocker-roadmap.md` (non-binding)
 - Status header marks it explicitly **non-binding**: a research-grounded candidate list, not a backlog, not validation authority.
@@ -125,10 +128,12 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 >
 > Compiled prompt size never causes silent eviction. Oversize and salience risks are warning surfaces; the user, not the compiler, decides what leaves the active working set.
 
+**D9c — §30 Source notes addition (part of the D9b sign-off):** append the similar-tools survey anchors backing §28.8 to FOUNDATIONS `§30 Source notes`, matching the doc's existing pattern of recording research anchors there. The exact anchor list is assembled at ticket time from the research provenance above and is covered by the same sign-off gate as D9b (exact list shown for sign-off on the implementing ticket).
+
 ### D10 — Cross-reference sync
-- `CLAUDE.md` and `AGENTS.md` governing-docs tables: add the two new docs (D7 to the validation/stress row; D8 as non-binding research reference).
-- `README.md`: add pointers if it lists active docs.
-- `docs/archival-workflow.md` do-not-archive list: add `docs/validation-rule-inventory.md`; D8 may be archived if ever superseded (note this asymmetry).
+- `CLAUDE.md` governing-docs table and `AGENTS.md` governing-docs bullet list: add the two new docs (D7 to the validation/stress row; D8 as non-binding research reference).
+- `README.md`: add pointers if it lists active docs (it currently lists `docs/user-guide.md`, `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`).
+- `docs/archival-workflow.md` canonical-active-docs enumeration (the prose sentence in paragraph 2 — there is no structured do-not-archive list): add `docs/validation-rule-inventory.md`, and fix the sentence's pre-existing omissions of `docs/ACTIVE-DOCS.md` and `docs/archival-workflow.md` itself in the same edit. D8 may be archived if ever superseded (note this asymmetry).
 - `docs/ACTIVE-DOCS.md` registry (D1) includes both new docs.
 
 ## FOUNDATIONS Alignment
@@ -148,7 +153,7 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 2. Registry completeness: every file in `docs/*.md` appears in the D1 registry table (grep-proof: filename list vs table rows).
 3. Version accuracy: the versions stated in `docs/ACTIVE-DOCS.md` and `docs/compiler-contract.md` match `packages/core/src/version.ts`.
 4. Matrix completeness: every `## Case N` heading in `docs/stress-suite.md` has a corresponding row in `docs/stress-coverage-matrix.md` (grep-proof); the drift disclaimer is gone.
-5. Inventory completeness: the D7 test passes — inventory rule IDs ≡ `DIAGNOSTIC_CODES` values (55/55).
+5. Inventory completeness: the D7 test passes — inventory rule IDs ≡ `DIAGNOSTIC_CODES` values (55/55), and every row's severity matches the registered rule's explicit `severity` field.
 6. No rot-prone snapshot claims remain in `docs/ACTIVE-DOCS.md` (grep for "currently no active").
 7. Cross-references resolve: every `docs/`-internal path mentioned in active docs, `CLAUDE.md`, `AGENTS.md`, and `README.md` exists on disk.
 8. D9 wording in `docs/FOUNDATIONS.md` matches the signed-off wording in this spec exactly.
@@ -165,8 +170,8 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 
 ## Risks & Open Questions
 
-- **Inventory drift** (D7) is the main ongoing risk; mitigated by the same-change rule plus the CI drift test. The test parses a markdown table — keep the rule-ID column format stable (backticked code IDs, one per row).
-- **Severity derivation** (D7): severity is per implementing module (warnings live in `warnings.ts`); if any rule's severity is ambiguous at implementation time, resolve from the rule module, not from stress-suite prose.
+- **Inventory drift** (D7) is the main ongoing risk; mitigated by the same-change rule plus the CI drift test. The test parses a markdown table — keep the rule-ID and severity column formats stable (backticked code IDs, one per row; severity values exactly `blocker` or `warning`).
+- **Severity derivation** (D7): severity is explicit per rule definition — each rule carries a `severity: "blocker" | "warning"` literal in its implementing module (e.g. `rules/universal-blockers.ts`, `rules/warnings.ts`). Derive from that field, never from module location or stress-suite prose; there is no ambiguity to resolve.
 - **D9 sign-off** is a hard gate: if the user revises wording, this spec must be updated to match before the amendment ticket proceeds (§1.1 item 4 discipline applies to itself).
 - **Case 27–31 mapping** (D5): the backfill must map cases to *implemented* rules; if a case turns out to have no covering rule, record the gap honestly in the matrix (coverage note "no deterministic rule; warning-grade gap") rather than inventing coverage — and surface it as a candidate for D8.
 - Open question: should the D2 header standardization eventually be lint-enforced? Out of scope here; revisit if headers drift.
