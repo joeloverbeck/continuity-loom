@@ -147,9 +147,9 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {
   const stateLines = state
     ? [
         labelValue("time", state.current_time),
-        labelValue("location", state.current_location),
+        labelValue("location", resolveRecordLabel(snapshot, state.current_location)),
         labelValue("positions", state.positions),
-        labelValue("statuses", state.entity_statuses),
+        labelValue("statuses", renderEntityStatuses(snapshot, state.entity_statuses)),
         labelValue("possessions", state.possessions),
         labelValue("visibility", state.line_of_sight_and_visibility),
         labelValue("routes/exits", state.routes_and_exits),
@@ -234,6 +234,14 @@ function compactParts(parts: readonly string[]): string {
 function labelValue(label: string, value: unknown): string {
   const rendered = renderValue(value);
   return rendered && rendered !== "none" ? `${label}: ${rendered}` : "";
+}
+
+function renderEntityStatuses(snapshot: ValidationSnapshot, value: unknown): string {
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join(", ");
+  }
+
+  return renderValue(value);
 }
 
 function renderValue(value: unknown): string {

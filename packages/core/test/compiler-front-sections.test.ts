@@ -13,6 +13,10 @@ const factId = "019b0298-5c00-7000-8000-000000000003";
 const secretId = "019b0298-5c00-7000-8000-000000000004";
 const beliefId = "019b0298-5c00-7000-8000-000000000005";
 const danglingHolderId = "019b0298-5c00-7000-8000-000000000006";
+const locationId = "019b0298-5c00-7000-8000-000000000007";
+const entityStatusId = "019b0298-5c00-7000-8000-000000000008";
+const danglingLocationId = "019b0298-5c00-7000-8000-000000000009";
+const danglingStatusId = "019b0298-5c00-7000-8000-000000000010";
 
 function populatedInput(): BuildValidationSnapshotInput {
   return {
@@ -242,6 +246,79 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(input));
 
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(`Onstage entities: ${danglingHolderId}`);
+  });
+
+  it("resolves current-state location ids to display labels while preserving prose and dangling values", () => {
+    const input = populatedInput();
+    input.records = [
+      ...input.records,
+      {
+        id: locationId,
+        type: "LOCATION",
+        metadata: metadata(locationId, "Vale bakery cellar"),
+        payload: {
+          id: locationId,
+          status: "active",
+          label: "Vale bakery cellar",
+          description: "A whitewashed cellar below the bakery."
+        }
+      }
+    ];
+    input.generationSession.active_working_set!.selected_records = [
+      ...input.generationSession.active_working_set!.selected_records,
+      locationId
+    ];
+    input.generationSession.current_authoritative_state!.current_location = locationId;
+
+    const selectedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+    const selectedState = sectionBody(selectedPrompt, "current_authoritative_state");
+    expect(selectedState).toContain("Location: Vale bakery cellar");
+    expect(selectedState).not.toContain(`Location: ${locationId}`);
+
+    input.generationSession.current_authoritative_state!.current_location = "the mill loft at dusk";
+    const proseState = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "current_authoritative_state");
+    expect(proseState).toContain("Location: the mill loft at dusk");
+
+    input.generationSession.current_authoritative_state!.current_location = danglingLocationId;
+    const danglingState = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "current_authoritative_state");
+    expect(danglingState).toContain(`Location: ${danglingLocationId}`);
+  });
+
+  it("resolves current-state entity status arrays to display labels while preserving prose and dangling values", () => {
+    const input = populatedInput();
+    input.records = [
+      ...input.records,
+      {
+        id: entityStatusId,
+        type: "ENTITY STATUS",
+        metadata: metadata(entityStatusId, "Mara is guarding the stair"),
+        payload: {
+          id: entityStatusId,
+          entity_id: holderId,
+          life: "alive",
+          agency: "free",
+          current_activity: "Mara is guarding the stair"
+        }
+      }
+    ];
+    input.generationSession.active_working_set!.selected_records = [
+      ...input.generationSession.active_working_set!.selected_records,
+      entityStatusId
+    ];
+    input.generationSession.current_authoritative_state!.entity_statuses = [entityStatusId];
+
+    const selectedPrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+    const selectedState = sectionBody(selectedPrompt, "current_authoritative_state");
+    expect(selectedState).toContain("Current agency/status: Mara is guarding the stair");
+    expect(selectedState).not.toContain(`Current agency/status: ${entityStatusId}`);
+
+    input.generationSession.current_authoritative_state!.entity_statuses = "Both are awake and free to move.";
+    const proseState = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "current_authoritative_state");
+    expect(proseState).toContain("Current agency/status: Both are awake and free to move.");
+
+    input.generationSession.current_authoritative_state!.entity_statuses = [danglingStatusId];
+    const danglingState = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "current_authoritative_state");
+    expect(danglingState).toContain(`Current agency/status: ${danglingStatusId}`);
   });
 
   it("always renders the four required current-state lines and omits empty optional lines", () => {

@@ -75,16 +75,13 @@ Do not reveal the letter's contents.
 
 <current_authoritative_state>
 Time: Late morning, minutes after the market bell rang early.
-Location: 019b0298-5c00-7000-8000-013000000012
+Location: Vale bakery cellar
 Onstage entities: Elin Vale, Niko Bram
 Immediate situation: Elin and Niko are in the bakery cellar after he followed flour smears downstairs and found her guarding the bin.
 Offstage but pressuring entities: Mara Venn, Orin Ward
 Current physical positions: Elin stands beside the flour bin with the shuttered lantern in hand.
 Niko stands near the stair door and can see Elin, the latch, and the flour dust.
-Current agency/status: 019b0298-5c00-7000-8000-013000000001
-019b0298-5c00-7000-8000-013000000002
-019b0298-5c00-7000-8000-013000000003
-019b0298-5c00-7000-8000-013000000004
+Current agency/status: Elin Vale, Niko Bram, Mara Venn, Orin Ward
 Current possessions: Elin carries the shuttered lantern.
 The sealed letter is hidden inside the flour bin.
 Niko carries no object that gives him access to the letter.
@@ -313,9 +310,9 @@ Unavailable or impossible actions:
 <physical_continuity>
 Current bodies, posture, distance, routes, objects, exits, visibility, and environmental constraints:
 - time: Late morning, minutes after the market bell rang early.
-- location: 019b0298-5c00-7000-8000-013000000012
+- location: Vale bakery cellar
 - positions: Elin stands beside the flour bin with the shuttered lantern in hand., Niko stands near the stair door and can see Elin, the latch, and the flour dust.
-- statuses: 019b0298-5c00-7000-8000-013000000001, 019b0298-5c00-7000-8000-013000000002, 019b0298-5c00-7000-8000-013000000003, 019b0298-5c00-7000-8000-013000000004
+- statuses: Elin Vale, Niko Bram, Mara Venn, Orin Ward
 - possessions: Elin carries the shuttered lantern., The sealed letter is hidden inside the flour bin., Niko carries no object that gives him access to the letter.
 - visibility: Elin and Niko can see each other; the letter itself is not visible.
 - routes/exits: stair to the bakery shop, delivery hatch too small for entry
