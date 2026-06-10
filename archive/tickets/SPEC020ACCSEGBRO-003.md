@@ -1,6 +1,6 @@
 # SPEC020ACCSEGBRO-003: Bulk disclosure and jump/back navigation controls
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/web` `AcceptedSegmentsView` (Expand/Collapse-all toolbar controls, Jump-to-latest / Back-to-top navigation controls), `packages/web/src/styles.css` (floating-nav CSS), and its component test; no `@loom/core`/`@loom/server`/schema/storage change
@@ -82,3 +82,24 @@ Add plain-CSS for the floating/sticky navigation controls and any toolbar-button
 1. `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. The targeted vitest run is the correct inner boundary (single-component control additions); the four-command gate is the outer boundary per SPEC-020 §Verification.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+- Added toolbar `Expand all` and `Collapse all` controls that bulk-write the existing per-segment expansion map.
+- Added conditional accepted-archive navigation with `Back to top` and `Jump to latest` controls when the archive is taller than the viewport or scrolled.
+- Reused the segment scroll/focus helper for Jump-to-latest and added top-section focus for Back-to-top.
+- Added sticky navigation CSS consistent with the existing accepted archive surface.
+- Extended component coverage for expand/collapse-all, hidden navigation on short archives, accessible navigation controls, and focus movement for Back-to-top and Jump-to-latest.
+
+Deviations from original plan:
+- None. The controls are additive read/navigation affordances over the existing expansion and focus state.
+
+Verification:
+- `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing large-chunk advisory.

@@ -1110,6 +1110,23 @@ button:disabled:hover {
   justify-content: flex-end;
 }
 
+.acceptedArchiveNav {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+  pointer-events: none;
+}
+
+.acceptedArchiveNav button {
+  box-shadow: 0 8px 20px rgba(31, 42, 55, 0.18);
+  pointer-events: auto;
+}
+
 .acceptedSegmentList {
   display: grid;
   gap: 18px;

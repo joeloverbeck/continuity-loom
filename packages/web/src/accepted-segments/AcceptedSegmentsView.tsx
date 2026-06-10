@@ -20,6 +20,7 @@ export function AcceptedSegmentsView(): React.JSX.Element {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedById, setExpandedById] = useState<Record<number, boolean>>({});
   const [locationHash, setLocationHash] = useState(() => window.location.hash);
+  const [showArchiveNav, setShowArchiveNav] = useState(false);
 
   useEffect(() => {
     void refreshSegments();
@@ -31,6 +32,26 @@ export function AcceptedSegmentsView(): React.JSX.Element {
     window.addEventListener("hashchange", updateHash);
     return () => window.removeEventListener("hashchange", updateHash);
   }, []);
+
+  useEffect(() => {
+    if (state.status !== "ready" || state.segments.length === 0) {
+      setShowArchiveNav(false);
+      return;
+    }
+
+    const updateVisibility = (): void => {
+      const pageIsTall = document.documentElement.scrollHeight > window.innerHeight + 1;
+      setShowArchiveNav(pageIsTall || window.scrollY > 0);
+    };
+
+    updateVisibility();
+    window.addEventListener("resize", updateVisibility);
+    window.addEventListener("scroll", updateVisibility);
+    return () => {
+      window.removeEventListener("resize", updateVisibility);
+      window.removeEventListener("scroll", updateVisibility);
+    };
+  }, [state]);
 
   async function refreshSegments(): Promise<void> {
     setState({ status: "loading" });
@@ -119,6 +140,40 @@ export function AcceptedSegmentsView(): React.JSX.Element {
     }));
   }
 
+  function expandAllSegments(): void {
+    if (state.status !== "ready") {
+      return;
+    }
+
+    setExpandedById(Object.fromEntries(state.segments.map((segment) => [segment.id, true])));
+  }
+
+  function collapseAllSegments(): void {
+    if (state.status !== "ready") {
+      return;
+    }
+
+    setExpandedById(Object.fromEntries(state.segments.map((segment) => [segment.id, false])));
+  }
+
+  function jumpToLatestSegment(): void {
+    if (state.status !== "ready" || state.segments.length === 0) {
+      return;
+    }
+
+    const latest = state.segments[state.segments.length - 1];
+    if (!latest) {
+      return;
+    }
+
+    setExpandedById((current) => ({ ...current, [latest.id]: true }));
+    scrollAndFocusSegment(latest.sequence);
+  }
+
+  function backToArchiveTop(): void {
+    scrollAndFocusElement("accepted-archive-top");
+  }
+
   useEffect(() => {
     if (state.status !== "ready" || state.segments.length === 0) {
       return;
@@ -143,7 +198,7 @@ export function AcceptedSegmentsView(): React.JSX.Element {
   }, [locationHash, state]);
 
   return (
-    <section className="surface acceptedArchiveSurface" aria-labelledby="accepted-segments-title">
+    <section id="accepted-archive-top" className="surface acceptedArchiveSurface" aria-labelledby="accepted-segments-title" tabIndex={-1}>
       <div className="projectHeader">
         <p className="eyebrow">Readable output archive</p>
         <h2 id="accepted-segments-title">Accepted Segments</h2>
@@ -175,6 +230,12 @@ export function AcceptedSegmentsView(): React.JSX.Element {
               />
             </label>
             <div className="acceptedExportActions" aria-label="Export full archive">
+              <button type="button" className="secondaryButton" onClick={expandAllSegments} disabled={state.segments.length === 0}>
+                Expand all
+              </button>
+              <button type="button" className="secondaryButton" onClick={collapseAllSegments} disabled={state.segments.length === 0}>
+                Collapse all
+              </button>
               <button type="button" onClick={() => exportArchive(state.segments, "markdown")} disabled={state.segments.length === 0}>
                 Export Markdown
               </button>
@@ -211,6 +272,17 @@ export function AcceptedSegmentsView(): React.JSX.Element {
                 />
               ))}
             </ol>
+          ) : null}
+
+          {showArchiveNav ? (
+            <nav className="acceptedArchiveNav" aria-label="Accepted segment navigation">
+              <button type="button" className="secondaryButton" onClick={backToArchiveTop}>
+                Back to top
+              </button>
+              <button type="button" onClick={jumpToLatestSegment}>
+                Jump to latest
+              </button>
+            </nav>
           ) : null}
         </section>
       ) : null}
@@ -365,13 +437,20 @@ function segmentSequenceFromHash(hash: string): number | null {
 }
 
 function scrollAndFocusSegment(sequence: number): void {
-  const element = document.getElementById(`segment-${sequence}`);
+  scrollAndFocusElement(`segment-${sequence}`);
+}
+
+function scrollAndFocusElement(id: string): void {
+  const element = document.getElementById(id);
   if (!element) {
     return;
   }
 
   element.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-  element.querySelector<HTMLButtonElement>(".acceptedSegmentToggle")?.focus({ preventScroll: true });
+  const focusTarget = id.startsWith("segment-")
+    ? element.querySelector<HTMLButtonElement>(".acceptedSegmentToggle") ?? element
+    : element;
+  focusTarget.focus({ preventScroll: true });
 }
 
 function prefersReducedMotion(): boolean {

@@ -15,6 +15,7 @@ let scrollMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/accepted-segments");
+  setPageMetrics({ innerHeight: 800, scrollHeight: 800, scrollY: 0 });
   scrollMock = vi.fn();
   Element.prototype.scrollIntoView = scrollMock as unknown as Element["scrollIntoView"];
   vi.stubGlobal("matchMedia", vi.fn(() => mediaQueryList(false)));
@@ -215,6 +216,73 @@ describe("AcceptedSegmentsView", () => {
     expect(firstToggle.getAttribute("aria-expanded")).toBe("true");
   });
 
+  it("expands and collapses every segment from the toolbar", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Middle cloth." }),
+        segment({ id: 3, sequence: 3, text: "Latest cloth." })
+      ]
+    });
+
+    const { container } = render(<AcceptedSegmentsView />);
+
+    await screen.findByRole("button", { name: /Segment 1/ });
+    expect(getRenderedProse(container)).toEqual(["Latest cloth."]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+
+    expect(getRenderedProse(container)).toEqual(["Opening cloth.", "Middle cloth.", "Latest cloth."]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Collapse all" }));
+
+    expect(getRenderedProse(container)).toEqual([]);
+  });
+
+  it("hides jump navigation until the archive is taller than the viewport", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [segment({ id: 1, sequence: 1, text: "Readable only." })]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    await screen.findByRole("button", { name: /Segment 1/ });
+    expect(screen.getByRole("button", { name: "Expand all" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Collapse all" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Back to top" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Jump to latest" })).toBeNull();
+  });
+
+  it("moves focus with Back to top and Jump to latest controls", async () => {
+    setPageMetrics({ innerHeight: 600, scrollHeight: 1200, scrollY: 120 });
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const latestToggle = await screen.findByRole("button", { name: /Segment 2/ });
+    const topTarget = document.getElementById("accepted-archive-top");
+    expect(topTarget).toBeTruthy();
+    expect(await screen.findByRole("navigation", { name: "Accepted segment navigation" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Back to top" }));
+
+    expect(document.activeElement).toBe(topTarget);
+    expect(scrollIntoViewMock()).toHaveBeenLastCalledWith({ block: "start", behavior: "smooth" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Jump to latest" }));
+
+    expect(document.activeElement).toBe(latestToggle);
+    expect(latestToggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
   it("requires confirmation before deleting and removes the row on success", async () => {
     vi.mocked(listAcceptedSegments).mockResolvedValue({
       ok: true,
@@ -406,6 +474,20 @@ function mediaQueryList(matches: boolean): MediaQueryList {
 
 function scrollIntoViewMock(): ReturnType<typeof vi.fn> {
   return scrollMock;
+}
+
+function setPageMetrics({
+  innerHeight,
+  scrollHeight,
+  scrollY
+}: {
+  innerHeight: number;
+  scrollHeight: number;
+  scrollY: number;
+}): void {
+  Object.defineProperty(window, "innerHeight", { configurable: true, value: innerHeight });
+  Object.defineProperty(window, "scrollY", { configurable: true, value: scrollY });
+  Object.defineProperty(document.documentElement, "scrollHeight", { configurable: true, value: scrollHeight });
 }
 
 class CapturedBlob {

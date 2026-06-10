@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/user-guide.md` (accepted-segments workflow content) and the spec archival move; no production behavior change
-**Deps**: `archive/tickets/SPEC020ACCSEGBRO-001.md`, `archive/tickets/SPEC020ACCSEGBRO-002.md`, SPEC020ACCSEGBRO-003
+**Deps**: `archive/tickets/SPEC020ACCSEGBRO-001.md`, `archive/tickets/SPEC020ACCSEGBRO-002.md`, `archive/tickets/SPEC020ACCSEGBRO-003.md`
 
 ## Problem
 
@@ -65,7 +65,7 @@ After Verification passes, archive the spec per `docs/archival-workflow.md`: `gi
 
 ## Out of Scope
 
-- All implementation of the disclosure unit, landing/deep-links, and navigation controls — `archive/tickets/SPEC020ACCSEGBRO-001.md` / `archive/tickets/SPEC020ACCSEGBRO-002.md` / SPEC020ACCSEGBRO-003 (this ticket exercises them, it does not modify them).
+- All implementation of the disclosure unit, landing/deep-links, and navigation controls — `archive/tickets/SPEC020ACCSEGBRO-001.md` / `archive/tickets/SPEC020ACCSEGBRO-002.md` / `archive/tickets/SPEC020ACCSEGBRO-003.md` (this ticket exercises them, it does not modify them).
 - Any `@loom/core` / `@loom/server` / schema / storage change.
 - Editing `docs/ACTIVE-DOCS.md` — it carries no static active-spec list (directory is the authority).
 
@@ -86,7 +86,7 @@ After Verification passes, archive the spec per `docs/archival-workflow.md`: `gi
 
 ### New/Modified Tests
 
-1. None — verification + documentation + archival ticket; the disclosure / landing / navigation behavior is covered by the tests added in `archive/tickets/SPEC020ACCSEGBRO-001.md` / `archive/tickets/SPEC020ACCSEGBRO-002.md` / SPEC020ACCSEGBRO-003, and the retained SPEC-011 regressions already exist in `packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`. Verification here is command-based plus a manual UI-smoke runbook.
+1. None — verification + documentation + archival ticket; the disclosure / landing / navigation behavior is covered by the tests added in `archive/tickets/SPEC020ACCSEGBRO-001.md` / `archive/tickets/SPEC020ACCSEGBRO-002.md` / `archive/tickets/SPEC020ACCSEGBRO-003.md`, and the retained SPEC-011 regressions already exist in `packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`. Verification here is command-based plus a manual UI-smoke runbook.
 
 ### Commands
 
