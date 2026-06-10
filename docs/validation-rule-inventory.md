@@ -98,6 +98,9 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `cast-band-reference-invalid` | blocker | A working-set cast-band id is not selected or does not resolve to a selected CAST MEMBER record. | §11.2 / §11.3 | — |
 | `selected-pov-reference-invalid` | blocker | Selected POV is dangling, mistyped, or not selected for the readiness-required POV lane. | §11.2 / §11.3 | — |
 | `voice-pressure-attachment-invalid` | blocker | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
+| `record-reference-dangling` | blocker | A selected record's extracted internal reference does not resolve to a project record. | §11.3 | — |
+| `record-reference-type-mismatch` | blocker | A selected record's extracted internal reference resolves to a record outside the lane's expected type family. | §11.3 | — |
+| `record-reference-unselected-required` | blocker | A selected record's extracted internal reference resolves to an unselected record in a required prompt lane. | §11.2 | — |
 | `onstage-entity-reference-invalid` | blocker | A generation-brief onstage entity id is dangling, mistyped, or not selected for the readiness-required onstage-entities lane. | §11.2 / §11.3 | — |
 | `offstage-entity-reference-invalid` | blocker | A generation-brief offstage pressure id is dangling or mistyped, or is unselected when offstage pressure is context-required. | §11.2 / §11.3 | — |
 | `entity-statuses-reference-invalid` | blocker | A generation-brief entity-status record id is dangling or mistyped, or is unselected when current agency/status is context-required. | §11.2 / §11.3 | — |
@@ -118,6 +121,7 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `offstage-entity-reference-unselected-optional` | warning | Offstage pressure names an existing ENTITY record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
 | `entity-statuses-reference-unselected-optional` | warning | Current agency/status names an existing ENTITY STATUS record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
 | `voice-pressure-orphaned-attachment` | warning | Current voice pressure or voice override targets an existing CAST MEMBER that is not in a rendered cast band. | Warning; §11 warnings never gate | — |
+| `record-reference-unselected-optional` | warning | A selected record's extracted internal reference resolves to an unselected record in an optional prompt lane. | Warning; §11 warnings never gate | — |
 | `no-sample-utterances` | warning | Active cast has no selected sample utterances. | Warning; §11 warnings never gate | Case 8 |
 | `sparse-setting-texture` | warning | Setting texture is sparse for the current local unit. | Warning; §11 warnings never gate | — |
 | `no-active-clock-pressure` | warning | Directive has local pressure but no active clock, obligation, or open thread selected. | Warning; §11 warnings never gate | Case 26 |

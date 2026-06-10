@@ -6,12 +6,18 @@ import {
   isEntityStatusesReferenceRequired,
   isOffstageEntityReferenceRequired
 } from "./referential-brief.js";
+import {
+  expectedRecordReferenceTypes,
+  isRecordReferenceRequired,
+  recordInternalReferences
+} from "./record-internal.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnOffstageEntityReferenceUnselectedOptional,
   warnEntityStatusesReferenceUnselectedOptional,
   warnVoicePressureOrphanedAttachment,
+  warnRecordReferenceUnselectedOptional,
   warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
@@ -78,6 +84,24 @@ function warnVoicePressureOrphanedAttachment(snapshot: ValidationSnapshot): read
             DIAGNOSTIC_CODES.voicePressureOrphanedAttachment,
             `Voice-pressure attachment ${id} resolves to a CAST MEMBER but is not attached to any rendered cast band.`,
             field
+          )
+        ]
+      : [];
+  });
+}
+
+function warnRecordReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  return recordInternalReferences(snapshot).flatMap(({ sourceRecord, reference }) => {
+    const classified = classifyReference(snapshot, reference.targetId, expectedRecordReferenceTypes(reference.refRole, sourceRecord));
+
+    return classified.classification === "unselected" &&
+      classified.typeMatches &&
+      !isRecordReferenceRequired(snapshot, sourceRecord, reference.refRole)
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.recordReferenceUnselectedOptional,
+            `Record ${sourceRecord.id} ${reference.refRole} reference ${reference.targetId} exists but is not selected, so it will not render unless selected into the active working set.`,
+            `${sourceRecord.type}.${reference.refRole}`
           )
         ]
       : [];

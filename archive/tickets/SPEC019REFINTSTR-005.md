@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-005: Record-internal reference rules and extraction drift test
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `record-internal.ts` blocker rule module (a first validation consumer of `extractRecordReferences`); one warning rule in `warnings.ts`; `DIAGNOSTIC_CODES` + inventory rows (`@loom/core`); a new drift test locking `extractReferences` completeness. Adds blocking validation behavior; no record-extraction declaration is added (they already exist).
@@ -95,3 +95,24 @@ Add `...recordInternalReferenceRules` to `rules/index.ts`; add the four codes to
 1. `npm test --workspace @loom/core -- "validation-record-internal|validation-record-reference-drift"`
 2. `npm test --workspace @loom/core -- validation-rule-inventory`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- Added `recordInternalReferenceRules` as the first validation consumer of `extractRecordReferences`, with blockers for dangling, type-mismatched, and required-but-unselected internal references.
+- Added `record-reference-unselected-optional` as a warning for optional internal-reference lanes that resolve to unselected records.
+- Registered the four new diagnostic codes and documented them in `docs/validation-rule-inventory.md`.
+- Added `validation-record-internal` coverage for dangling, type mismatch, required unselected, optional unselected, and coherent selected references.
+- Added `validation-record-reference-drift` coverage that walks record payload Zod schemas for UUID-shaped fields and requires each path to be mapped to an extractor role or explicitly exempted.
+- Preserved the existing extraction declarations and server write-time reference guard. The drift test records `SECRET.clue_carriers[].discovered_by` as an explicit non-prompt-facing exemption because compiler-contract guidance surfaces clue text only.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-record-internal`
+- `npm test --workspace @loom/core -- validation-record-reference-drift`
+- `npm test --workspace @loom/core -- validation-rule-inventory`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)
