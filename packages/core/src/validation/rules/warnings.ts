@@ -37,7 +37,7 @@ function warnPovCharacterNotSelected(snapshot: ValidationSnapshot): readonly Dia
 }
 
 function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  return JSON.stringify(snapshot).length > 5000
+  return JSON.stringify(snapshotWithoutProjectRecordIndex(snapshot)).length > 5000
     ? [
         warning(
           DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
@@ -46,6 +46,15 @@ function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Di
         )
       ]
     : [];
+}
+
+function snapshotWithoutProjectRecordIndex(snapshot: ValidationSnapshot): Omit<ValidationSnapshot, "projectRecordIndex"> {
+  return {
+    records: snapshot.records,
+    generationSession: snapshot.generationSession,
+    storyConfig: snapshot.storyConfig,
+    versions: snapshot.versions
+  };
 }
 
 function resolvedPov(snapshot: ValidationSnapshot): string | undefined {

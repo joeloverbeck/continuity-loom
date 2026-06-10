@@ -37,6 +37,7 @@ export interface BuildValidationSnapshotInput {
   generationSession: GenerationSession;
   storyConfig: ValidationStoryConfig;
   versions: ValidationVersions;
+  projectRecordIndex?: Readonly<Record<string, string>>;
 }
 
 export interface ValidationSnapshot {
@@ -44,6 +45,7 @@ export interface ValidationSnapshot {
   generationSession: Readonly<GenerationSession>;
   storyConfig: Readonly<ValidationStoryConfig>;
   versions: Readonly<ValidationVersions>;
+  projectRecordIndex: Readonly<Record<string, string>>;
 }
 
 export function buildValidationSnapshot(input: BuildValidationSnapshotInput): ValidationSnapshot {
@@ -53,7 +55,8 @@ export function buildValidationSnapshot(input: BuildValidationSnapshotInput): Va
       .sort(compareRecords),
     generationSession: deepClone(input.generationSession),
     storyConfig: deepClone(input.storyConfig),
-    versions: deepClone(input.versions)
+    versions: deepClone(input.versions),
+    projectRecordIndex: normalizeProjectRecordIndex(input.projectRecordIndex ?? {})
   });
 }
 
@@ -69,6 +72,10 @@ function compareRecords(left: ValidationRecord, right: ValidationRecord): number
 
 function deepClone<T>(value: T): T {
   return structuredClone(value);
+}
+
+function normalizeProjectRecordIndex(index: Readonly<Record<string, string>>): Record<string, string> {
+  return Object.fromEntries(Object.entries(index).sort(([left], [right]) => left.localeCompare(right)));
 }
 
 function deepFreeze<T>(value: T): T {

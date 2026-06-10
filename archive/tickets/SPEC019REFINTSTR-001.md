@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-001: Project record index in the validation snapshot
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends `ValidationSnapshot` and `BuildValidationSnapshotInput` (`@loom/core`); populates the index in `snapshot-builder.ts` (`@loom/server`); excludes the index from the `prompt-middle-salience-risk` size heuristic in `warnings.ts`; adds snapshot/index-invariance tests. No prompt-compilation behavior change.
@@ -88,3 +88,20 @@ Replace the `JSON.stringify(snapshot).length` measurement at `:40` with a measur
 1. `npm test --workspace @loom/core -- validation-snapshot-index`
 2. `npm test --workspace @loom/server -- snapshot-builder`
 3. `npm run lint && npm run typecheck && npm test` — full gate; proves the optional-input extension broke no existing construction site and the golden baseline is unchanged.
+
+## Outcome
+
+Completed: 2026-06-10
+
+Implemented the validation-only `projectRecordIndex` on `ValidationSnapshot`, with optional input defaulting to an empty frozen index and canonical id ordering. `snapshot-builder.ts` now populates the index from non-archived project records while still resolving selected records separately. The `prompt-middle-salience-risk` warning now measures a snapshot projection that omits `projectRecordIndex`, so the validation-only index cannot inflate the prompt-size proxy.
+
+Added focused proof in `packages/core/test/validation-snapshot-index.test.ts` for field presence/freeze, defaulting, compiler index-invariance, salience carveout, and deterministic snapshot output. Extended `packages/server/src/snapshot-builder.test.ts` to prove non-archived project index population and archived-record exclusion.
+
+Deviations: none.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-snapshot-index` — passed.
+- `npm test --workspace @loom/server -- snapshot-builder` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.

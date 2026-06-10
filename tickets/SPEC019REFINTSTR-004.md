@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `cast-band.ts` blocker rule module; one warning rule added and `pov-character-not-selected` removed in `warnings.ts`; `DIAGNOSTIC_CODES` gains four codes and loses `povCharacterNotSelected` (`@loom/core`); inventory rows added/removed; the existing POV warning test is rewritten. Adds blocking validation behavior and reverses one prior warning.
-**Deps**: SPEC019REFINTSTR-001, SPEC019REFINTSTR-002
+**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, SPEC019REFINTSTR-002
 
 ## Problem
 

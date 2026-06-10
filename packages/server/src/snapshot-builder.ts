@@ -13,7 +13,7 @@ import {
 } from "@loom/core";
 
 import type { ProjectStoreManager } from "./project-store.js";
-import type { RecordRepositoryRecord, StoryConfigKind } from "./record-repository.js";
+import type { RecordReadResult, RecordRepositoryRecord, StoryConfigKind } from "./record-repository.js";
 
 const storyConfigKinds = ["STORY CONTRACT", "UNIVERSAL CONTENT POLICY", "PROSE MODE"] as const;
 
@@ -48,6 +48,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
 
   const storyConfig = loadStoryConfig(repository);
   const records = resolveSelectedRecords(repository, generationSession);
+  const projectRecordIndex = buildProjectRecordIndex(repository);
 
   if (!records.ok) {
     return { ok: false, status: 422, body: malformedDependency(records.message) };
@@ -59,6 +60,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
       records: records.records,
       generationSession,
       storyConfig,
+      projectRecordIndex,
       versions: {
         template: versionInfo.templates.version,
         compiler: versionInfo.compiler.version,
@@ -66,6 +68,14 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
       }
     })
   };
+}
+
+function buildProjectRecordIndex(repository: { listRecords(options: { includeArchived: boolean }): RecordReadResult[] }): Record<string, string> {
+  return Object.fromEntries(
+    repository
+      .listRecords({ includeArchived: false })
+      .flatMap((result) => (result.ok ? [[result.record.id, result.record.type] as const] : []))
+  );
 }
 
 function withSnapshotSessionDefaults(payload: unknown, acceptedSegmentCount: number): GenerationSession {

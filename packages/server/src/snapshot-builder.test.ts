@@ -6,12 +6,13 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { ProjectStoreManager } from "./project-store.js";
-import type { AcceptedSegment } from "./record-repository.js";
+import type { AcceptedSegment, RecordRepositoryRecord } from "./record-repository.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 function managerFor(input: {
   generationSession?: Partial<GenerationSession>;
   acceptedSegmentCount?: number;
+  records?: readonly RecordRepositoryRecord[];
 }): ProjectStoreManager {
   const acceptedSegments = Array.from({ length: input.acceptedSegmentCount ?? 0 }, (_, index) => ({
     id: index + 1,
@@ -29,7 +30,17 @@ function managerFor(input: {
           : { ok: false as const, kind: "not-found" as const, message: "Generation session not found." },
       listAcceptedSegments: () => acceptedSegments,
       getStoryConfig: () => ({ ok: false as const }),
-      getRecord: () => ({ ok: false as const, message: "Record not found." })
+      getRecord: (id: string) => {
+        const record = (input.records ?? []).find((item) => item.id === id && !item.archived);
+
+        return record
+          ? { ok: true as const, record }
+          : { ok: false as const, kind: "not-found" as const, message: `Record not found: ${id}`, id };
+      },
+      listRecords: (options?: { includeArchived?: boolean }) =>
+        (input.records ?? [])
+          .filter((record) => options?.includeArchived || !record.archived)
+          .map((record) => ({ ok: true as const, record }))
     }),
     createProject: async () => {
       throw new Error("not implemented");
@@ -142,4 +153,54 @@ describe("buildSnapshotFromOpenProject generation context defaults", () => {
       DIAGNOSTIC_CODES.focusTagCountInvalid
     );
   });
+
+  it("populates the project record index with non-archived project records only", () => {
+    const selectedId = "019b0298-5c00-7000-8000-000000000101";
+    const unselectedId = "019b0298-5c00-7000-8000-000000000102";
+    const archivedId = "019b0298-5c00-7000-8000-000000000103";
+    const result = buildSnapshotFromOpenProject(
+      managerFor({
+        generationSession: {
+          active_working_set: {
+            selected_records: [selectedId],
+            active_onstage_cast_full: [],
+            present_minor_cast_compressed: [],
+            offstage_relevant_cast: []
+          }
+        },
+        records: [
+          record(selectedId, "CAST MEMBER", false),
+          record(unselectedId, "LOCATION", false),
+          record(archivedId, "ENTITY", true)
+        ]
+      })
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.snapshot.records.map((item) => item.id)).toEqual([selectedId]);
+    expect(result.snapshot.projectRecordIndex).toEqual({
+      [selectedId]: "CAST MEMBER",
+      [unselectedId]: "LOCATION"
+    });
+  });
 });
+
+function record(id: string, type: string, archived: boolean): RecordRepositoryRecord {
+  return {
+    id,
+    type,
+    displayLabel: id,
+    status: "active",
+    salience: null,
+    urgency: null,
+    archived,
+    userOrder: null,
+    createdAt: "2026-06-07T00:00:00.000Z",
+    updatedAt: "2026-06-07T00:00:00.000Z",
+    payload: {}
+  };
+}

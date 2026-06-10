@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — new shared validation helper in `@loom/core` (`reference-classification.ts`) plus its unit test; no production behavior change until the reference rules (003–006) consume it.
-**Deps**: SPEC019REFINTSTR-001
+**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`
 
 ## Problem
 
