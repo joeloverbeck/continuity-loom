@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-008: Stress-case integration capstone
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new stress cases in `docs/stress-suite.md`, matrix rows in `docs/stress-coverage-matrix.md`, and representative case→code assertions in `validation-stress-mapping.test.ts`; no production behavior change.
@@ -78,3 +78,20 @@ Add the matching `| Case N | … |` rows in the same revision, naming the implem
 
 1. `npm test --workspace @loom/core -- validation-stress-mapping`
 2. `npm run lint && npm run typecheck && npm test` — full pipeline confirms the stress cases run against the real rule registry assembled by 003–006.
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- Extended `validation-stress-mapping.test.ts` with deterministic blocker rows for the referential/structural codes from 003–006 and warning rows for optional/unselected/orphaned reference cases.
+- Added stress-suite Cases 33–39 covering generation-brief reference drift, cast/voice reference integrity, record-internal references, migration fail-closed friction, onstage state contradictions, object holder/location incoherence, and relationship self-reference.
+- Added matching coverage-matrix rows for Cases 33–39 in the same revision.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-stress-mapping`
+- Case/matrix sync check for Cases 33–39 with `rg`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)
