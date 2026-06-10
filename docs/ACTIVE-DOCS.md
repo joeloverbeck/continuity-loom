@@ -1,7 +1,7 @@
 # Active Docs Map — Continuity Loom
 
-Status: active post-v1 agent map  
-Scope: authority hierarchy, active-vs-archive boundaries, and change-intake rules for future coding agents
+Status: active reference — authority registry, active-vs-archive boundaries, and change-intake rules for coding agents
+Authority: support (see docs/ACTIVE-DOCS.md)
 
 ## Purpose
 

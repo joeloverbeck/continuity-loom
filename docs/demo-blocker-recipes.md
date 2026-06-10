@@ -1,7 +1,9 @@
 # Demo Blocker Recipes
 
-Status: active  
-Scope: SPEC-013 demo validation smoke recipes for *The Letter Under the Flour Bin*
+Status: active how-to — live demo-fixture smoke recipes for *The Letter Under the Flour Bin*
+Authority: support (see docs/ACTIVE-DOCS.md)
+
+Origin: these recipes were introduced by SPEC-013, now archived at `archive/specs/SPEC-013-tame-demo-project-and-stress-coverage.md`.
 
 These recipes start from a freshly created demo project. They intentionally change ordinary project data through normal edits; there are no pre-broken fixtures and no demo-only toggles.
 

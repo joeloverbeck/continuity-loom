@@ -1,6 +1,8 @@
 # Stress Coverage Matrix
 
-Status: active SPEC-013 coverage audit  
+Status: active audit — stress-case coverage matrix tying cases to validation rules, compiler behavior, and regression surfaces
+Authority: support (see docs/ACTIVE-DOCS.md)
+
 Source: `docs/stress-suite.md`
 
 This is conceptual coverage. The demo does not instantiate every stress case; it gives a normal local project baseline while the validation/compiler capability tests assert representative v1 support for each risk area.

@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-005: Standardize doc headers and apply in-place corrections
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — header standardization across 10 active docs plus three in-place corrections (contract-version pin, schema storage-note contextualization, demo-recipes provenance); no production behavior change
@@ -103,3 +103,28 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 1. `for f in docs/*.md; do [ "$f" = "docs/FOUNDATIONS.md" ] && continue; grep -L "see docs/ACTIVE-DOCS.md" "$f"; done` (expect no output once 003/004 docs also exist; before then, expect only the not-yet-created docs)
 2. `npm run lint && npm run typecheck && npm test`
 3. Per-file grep-proofs are the correct verification boundary: the deliverable is header/provenance text; the pipeline run only proves no collateral damage.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Standardized the two-line `Status` / `Authority` header on the 10 non-FOUNDATIONS active docs owned by this ticket.
+- Added the `docs/compiler-contract.md` contract-version pin for `1.2.0` and its same-change rule.
+- Reframed the `SPEC004RECCRUBAS-002` storage note in `docs/story-record-schema.md` as implemented archived provenance.
+- Reframed the SPEC-013 note in `docs/demo-blocker-recipes.md` as archived provenance while keeping the recipes active.
+
+Deviations from original plan:
+
+- None. `docs/FOUNDATIONS.md` and the two new docs from 003/004 were left untouched by this ticket.
+
+Verification results:
+
+- Header grep over the 10 listed docs printed no missing `see docs/ACTIVE-DOCS.md` lines.
+- `grep -n "1.2.0\|contract.version\|compiler.version" docs/compiler-contract.md` confirmed the pin and same-change rule.
+- Archived provenance greps found `archive/tickets/SPEC004RECCRUBAS-002.md` and `archive/specs/SPEC-013-tame-demo-project-and-stress-coverage.md`.
+- `rg -n "last-reviewed|Last reviewed|last reviewed" ...` returned no matches for the standardized docs.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 104 test files, 778 tests.

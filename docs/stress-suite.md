@@ -1,7 +1,7 @@
 # Continuity Loom Prompt/Schema Stress Suite
 
-Status: conceptual prompt/schema-facing stress suite  
-Scope: not implementation tests, not tickets, not UI design
+Status: active audit — canonical stress cases for validation, compiler, prompt, and demo regression coverage
+Authority: domain authority for validation stress cases (see docs/ACTIVE-DOCS.md)
 
 ---
 
