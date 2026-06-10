@@ -13,7 +13,7 @@ Active docs carry ad-hoc, drifting headers and three verified in-place defects: 
 ## Assumption Reassessment (2026-06-10)
 
 1. Verified against the working tree 2026-06-10: `docs/compiler-contract.md:1-5` has `Status:`/`Scope:`/`Non-scope:` lines and no version pin; `packages/core/src/version.ts` holds `contract: 1.2.0`, `compiler: 1.2.0`. `docs/story-record-schema.md:124-129` carries the `SPEC004RECCRUBAS-002` storage note with no archived-context marker; the ticket is archived at `archive/tickets/SPEC004RECCRUBAS-002.md` (file exists). `docs/demo-blocker-recipes.md:3-4` reads `Status: active` / `Scope: SPEC-013 demo validation smoke recipes …`; SPEC-013 is archived at `archive/specs/SPEC-013-tame-demo-project-and-stress-coverage.md` (file exists).
-2. SPEC-018 D2 (as reassessed 2026-06-10) **exempts `docs/FOUNDATIONS.md`**: its constitutional header stays unchanged; any header change to it is D9a-gated constitutional work. This ticket therefore touches exactly the 10 non-FOUNDATIONS active docs. The two new docs (inventory, roadmap) are created with conforming headers by `archive/tickets/SPEC018FOUDOCCON-003.md` / SPEC018FOUDOCCON-004 and are not touched here.
+2. SPEC-018 D2 (as reassessed 2026-06-10) **exempts `docs/FOUNDATIONS.md`**: its constitutional header stays unchanged; any header change to it is D9a-gated constitutional work. This ticket therefore touches exactly the 10 non-FOUNDATIONS active docs. The two new docs (inventory, roadmap) are created with conforming headers by `archive/tickets/SPEC018FOUDOCCON-003.md` / `archive/tickets/SPEC018FOUDOCCON-004.md` and are not touched here.
 3. Cross-artifact boundary under audit: each header's `Authority:` line must agree with the doc's tier row in the `docs/ACTIVE-DOCS.md` registry (002) — the registry is canonical; headers mirror it. The D3 version pin must agree with `packages/core/src/version.ts` — the code is canonical; the pin mirrors it with a same-change rule.
 4. FOUNDATIONS principle restated before trusting the spec narrative: §8 — drift between template, schema, rationale, and contract is a continuity bug; the D3 pin restates that same-change discipline at the point of use. No validation behavior, prompt compilation, or record semantics change; `docs/demo-blocker-recipes.md` stays active (spec-confirmed: keep, do not archive).
 5. Adjacent contradictions classified: the existing `Purpose:`/`Non-scope:` header lines in `docs/compiler-contract.md` and `docs/story-record-schema.md` are not part of the two-line standard; keep any still-accurate content by folding it into the scope one-liner or the doc body rather than deleting information (required consequence of D2's "replacing/normalizing" instruction, applied conservatively).
@@ -72,7 +72,7 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 ## Out of Scope
 
 - `docs/FOUNDATIONS.md` (header explicitly exempt; constitutional work is D9a-gated — `archive/tickets/SPEC018FOUDOCCON-001.md`).
-- The two new docs' headers (created conforming in `archive/tickets/SPEC018FOUDOCCON-003.md` / SPEC018FOUDOCCON-004).
+- The two new docs' headers (created conforming in `archive/tickets/SPEC018FOUDOCCON-003.md` / `archive/tickets/SPEC018FOUDOCCON-004.md`).
 - Stress-matrix body backfill (SPEC018FOUDOCCON-006 — this ticket touches only the headers of those two files).
 - Archiving `docs/demo-blocker-recipes.md` (spec-rejected; it stays active).
 - Lint-enforcing the header format (spec open question, deferred).

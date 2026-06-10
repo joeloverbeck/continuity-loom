@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/stress-coverage-matrix.md` and `docs/stress-suite.md` matrix bodies; conditionally one candidate entry in `docs/narrative-theory-blocker-roadmap.md`; no production behavior change
-**Deps**: SPEC018FOUDOCCON-004 (if a case turns out to have no covering rule, the gap is recorded as a candidate in the roadmap doc that 004 creates). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D5).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-004.md` (if a case turns out to have no covering rule, the gap is recorded as a candidate in the roadmap doc that 004 creates). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D5).
 
 ## Problem
 
@@ -15,7 +15,7 @@
 1. Verified against the working tree 2026-06-10: `docs/stress-suite.md` has `## Case N — …` headings for 1–32 (Case 27 "Draft save despite readiness blockers" at line 855 through Case 31 "Deduplicated long-dossier warning" at line 969; Case 32 at line 1001). `docs/stress-coverage-matrix.md` numbered rows cover 1–26 and 32; the drift disclaimer sits at line 38. The embedded matrix in `docs/stress-suite.md` (lines ~16–37) references cases up to 26 only.
 2. `docs/stress-coverage-matrix.md` also carries a separate `## Readiness and draftability coverage` table (line ~40) that already covers Cases 27–31's ground by coverage area (draft save with blockers, generation-context defaults, provider separation, warning deduplication) — without case numbers. Per the reassessed SPEC-018 D5, the backfill must coordinate with it: add case-number references linking that table and the new numbered rows, and state the relationship between the two tables, so the same coverage is not represented twice with no linkage.
 3. Cross-artifact boundary under audit: matrix rows map cases to *implemented* validation rules / compiler behaviors. Rule IDs cited in new rows must exist in `DIAGNOSTIC_CODES` (`packages/core/src/validation/types.ts`, 55 values); readiness behaviors must match the readiness engine (`packages/core/src/validation/readiness.ts`) and the existing row idiom (rule IDs + schema fields/behavior notes, same shape as Cases 1–26 rows).
-4. FOUNDATIONS principle restated before trusting the spec narrative: §11 — warnings never gate; Cases 27–31 are readiness/draftability cases, so their rows must respect the draft-save-never-blocked and warnings-never-blocking doctrine when describing coverage. §8 drift doctrine motivates the same-change maintenance rule added to both files. If any case has **no** covering implemented rule, record the gap honestly in the matrix ("no deterministic rule; warning-grade gap") rather than inventing coverage — and add it as a candidate to `docs/narrative-theory-blocker-roadmap.md` (exists after SPEC018FOUDOCCON-004), which is why 004 is a Deps.
+4. FOUNDATIONS principle restated before trusting the spec narrative: §11 — warnings never gate; Cases 27–31 are readiness/draftability cases, so their rows must respect the draft-save-never-blocked and warnings-never-blocking doctrine when describing coverage. §8 drift doctrine motivates the same-change maintenance rule added to both files. If any case has **no** covering implemented rule, record the gap honestly in the matrix ("no deterministic rule; warning-grade gap") rather than inventing coverage — and add it as a candidate to `docs/narrative-theory-blocker-roadmap.md` (exists after `archive/tickets/SPEC018FOUDOCCON-004.md`), which is why 004 is a Deps.
 5. Mismatch + correction: none — case headings, row coverage, disclaimer line, and the readiness table all re-verified this session.
 
 ## Architecture Check
@@ -52,7 +52,7 @@ State in each: a new stress case must land with its matrix row(s) in the same re
 
 - `docs/stress-coverage-matrix.md` (modify)
 - `docs/stress-suite.md` (modify)
-- `docs/narrative-theory-blocker-roadmap.md` (modify — only if a no-rule gap is found; created by SPEC018FOUDOCCON-004)
+- `docs/narrative-theory-blocker-roadmap.md` (modify — only if a no-rule gap is found; created by `archive/tickets/SPEC018FOUDOCCON-004.md`)
 
 ## Out of Scope
 

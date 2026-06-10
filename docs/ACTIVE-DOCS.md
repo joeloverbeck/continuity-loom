@@ -32,6 +32,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
 | `docs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | audit | domain authority for implemented validation-rule inventory |
+| `docs/narrative-theory-blocker-roadmap.md` | Non-binding research-grounded candidate list for possible future deterministic validation work. | explanation | support |
 | `docs/stress-suite.md` | Canonical stress cases for validation, compiler, prompt, and demo regression coverage. | audit | domain authority for validation stress cases |
 | `docs/stress-coverage-matrix.md` | Stress-case coverage matrix tying cases to validation rules, compiler behavior, and regression surfaces. | audit | support |
 | `docs/demo-blocker-recipes.md` | Demo-fixture smoke recipes for validation blockers and warnings. | how-to | support |

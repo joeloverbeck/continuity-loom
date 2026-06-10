@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-004: Create docs/narrative-theory-blocker-roadmap.md (non-binding)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new doc `docs/narrative-theory-blocker-roadmap.md`, one registry row in `docs/ACTIVE-DOCS.md`; no production behavior change
@@ -80,3 +80,26 @@ One row for `docs/narrative-theory-blocker-roadmap.md` (scope, genre, tier — `
 1. `grep -ni "non-binding\|sequence_order" docs/narrative-theory-blocker-roadmap.md`
 2. `npm run lint && npm run typecheck && npm test`
 3. Grep-proofs are the correct verification boundary: the deliverable is a non-binding research doc; the pipeline run only proves no collateral damage.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Created `docs/narrative-theory-blocker-roadmap.md` as a non-binding support doc, not backlog and not validation authority.
+- Added the required candidate entries with theory citation, deterministic-checkability, blocker/warning grade, required schema fields, and §12/§29.1 screening notes.
+- Added the known-deferred `EVENT.sequence_order` prompt-wiring note with the 2026-06-09 triage provenance.
+- Added `docs/narrative-theory-blocker-roadmap.md` to the ACTIVE-DOCS registry.
+
+Deviations from original plan:
+
+- None.
+
+Verification results:
+
+- `grep -ni "non-binding\|sequence_order" docs/narrative-theory-blocker-roadmap.md` returned the expected status and deferred-item lines.
+- Candidate-name collision check against `packages/core/src/validation/types.ts` printed no collisions.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 104 test files, 778 tests.
