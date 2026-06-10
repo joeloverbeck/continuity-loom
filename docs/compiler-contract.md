@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.2.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.3.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -96,7 +96,7 @@ Requiredness terms:
 | `{title}` | STORY CONTRACT.title | Yes | Block | N/A | Stable story identity. |
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
-| `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank; unresolved selected-record lookup falls back to raw id with a non-blocking `pov-character-not-selected` warning | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity not present in selected records renders as raw id and warns. |
+| `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank, unresolved, mistyped, or not selected | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity or cast member must resolve to a selected record before compilation. |
 | `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
 | `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | Omit whole `<hard_canon>` section when empty | Do not silently include unselected facts except story configuration constants. |
 | `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
@@ -214,10 +214,34 @@ Generation blocks unless these are satisfied:
 | `clock_tick_possible` | Requires active clock, current pressure, tick trigger, next threshold, possible effects, and concrete event that could visibly cause tick. |
 | `obligation_breach_possible` | Requires obligation terms, owed_by, owed_to, visibility, consequence_if_broken, and current opportunity/pressure to breach or fulfill. |
 
+Reference severity lanes:
+
+| Lane | Dangling or mistyped reference | Existing but unselected reference |
+|---|---|---|
+| Readiness-required brief lanes (`selected_pov`, onstage entities, current location, required offstage pressure, required entity-status records) | Block | Block |
+| Optional brief lanes (optional offstage pressure, optional entity-status records) | Block | Warn |
+| Cast-band and voice attachment lanes | Block when missing or mistyped; duplicate cast-band membership blocks | Warn when a voice-pressure attachment targets an existing cast member outside rendered bands |
+| Required record-internal lanes (active secret holders/protected non-holders; plan holder when prose-driving or hidden-plan focus applies) | Block | Block |
+| Optional record-internal lanes (relationship endpoints, object owner/carrier/location, event participants/known-by/location/record links, affordance availability, belief/emotion/intention holders, obligation/consequence targets) | Block when dangling or mistyped by lane; broad record links may accept any record type | Warn |
+| Structural coherence lanes (onstage/offstage overlap, onstage status/location, object holder/location, relationship endpoints) | N/A | Block on deterministic enum/id contradiction |
+
+Implemented reference and structural blocker codes:
+
+- `selected-pov-reference-invalid`, `onstage-entity-reference-invalid`, `offstage-entity-reference-invalid`, `entity-statuses-reference-invalid`, and `current-location-reference-invalid`;
+- `cast-band-duplicate-membership`, `cast-band-reference-invalid`, and `voice-pressure-attachment-invalid`;
+- `record-reference-dangling`, `record-reference-type-mismatch`, and `record-reference-unselected-required`;
+- `onstage-offstage-entity-overlap`, `onstage-entity-status-contradiction`, `object-location-holder-incoherence`, and `relationship-self-reference`.
+
+Implemented reference warning codes:
+
+- `offstage-entity-reference-unselected-optional`, `entity-statuses-reference-unselected-optional`, `voice-pressure-orphaned-attachment`, and `record-reference-unselected-optional`.
+
 Universal blockers not tied to a single validation focus tag:
 
 - manual directive or stop guidance requesting a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
 - manual directive and stop guidance contradicting each other about the local unit or stop boundary;
+- dangling, mistyped, duplicated, or required-but-unselected references in readiness-required brief, cast-band, voice attachment, or record-internal lanes;
+- deterministic structural contradictions: the same entity both onstage and offstage-pressuring, an onstage entity status placing it offstage/concealed or at a different record-id location, an object whose location is `carried_by_holder` while `carried_by` is `none`, or a relationship whose endpoints are the same id;
 - template, schema, or compiler-contract version mismatch that leaves a prompt placeholder without a deterministic source.
 
 Warnings that must not block:
@@ -230,7 +254,8 @@ Warnings that must not block:
 - low-drama scene may need stronger prose-craft pressure;
 - long active dossier may need stronger current voice/body pressure pin;
 - active/onstage extended dossier is sparse but required core is sufficient;
-- POV character id is not present in selected records, so the prompt cannot render its display name.
+- existing but unselected references in optional brief or record-internal lanes;
+- voice pressure targets an existing cast member outside the rendered cast bands.
 
 ## 7. Blocker/warning rendering
 
@@ -278,10 +303,11 @@ Validation-only by default:
 - validation diagnostics;
 - blocker/warning severity;
 - record IDs unless deliberately exposed for debugging outside the generated prompt;
+- project record index and selected/unselected/dangling reference classifications;
 - source provenance metadata;
 - prompt/template/compiler version metadata unless the user chooses a debug prompt view.
 
-The `{pov_character}`, `{onstage_entities}`, `{offstage_pressuring_entities}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{active_intentions}`, `{active_plans}`, `{active_obligations}`, `{active_consequences}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, object-holder, object-location, affordance availability, plan/intention holder, obligation owed-by/owed-to, and consequence target/cause ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{active_obligations}` renders `public`, `institution`, `self`, and `unknown` as deterministic literals. `{active_consequences}` renders `public` and `unknown` as deterministic literals, and free-text `cause` values pass through verbatim. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. A raw id in these lines means the referenced record was not available in the selected snapshot.
+The `{pov_character}`, `{current_location}`, `{onstage_entities}`, `{offstage_pressuring_entities}`, `{entity_statuses}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{active_intentions}`, `{active_plans}`, `{active_obligations}`, `{active_consequences}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, entity-status array entries, current-location records, object-holder, object-location, affordance availability, plan/intention holder, obligation owed-by/owed-to, and consequence target/cause ids are resolved to selected records' human display labels before rendering. `{pov_character}` also renders `omniscient` and `variable` as literals. `{current_location}` prose values pass through verbatim when they do not match a project record. `{entity_statuses}` resolves only the record-id array branch; prose values pass through verbatim. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{active_obligations}` renders `public`, `institution`, `self`, and `unknown` as deterministic literals. `{active_consequences}` renders `public` and `unknown` as deterministic literals, and free-text `cause` values pass through verbatim. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. Required unresolved references block before compilation. Optional unselected references warn; optional raw-id fallback is permitted only where the lane is explicitly optional and the warning is surfaced.
 
 Prompt-facing when selected or compiled:
 

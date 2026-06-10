@@ -58,6 +58,7 @@ describe("generation brief draftability capstone", () => {
       await openProject(fastify);
       await putStoryConfig(fastify);
       await appendAcceptedSegment(fastify);
+      const entityId = await createCleanEntity(fastify);
 
       const accepted = await fastify.inject({ method: "GET", url: "/api/accepted-segments" });
       const acceptedBody = accepted.json() as { segments: unknown[] };
@@ -68,7 +69,16 @@ describe("generation brief draftability capstone", () => {
         method: "PUT",
         url: "/api/generation-brief",
         payload: {
-          current_authoritative_state: cleanCurrentState,
+          active_working_set: {
+            selected_records: [entityId],
+            active_onstage_cast_full: [],
+            present_minor_cast_compressed: [],
+            offstage_relevant_cast: []
+          },
+          current_authoritative_state: {
+            ...cleanCurrentState,
+            onstage_entities: [entityId]
+          },
           immediate_handoff: {
             ...cleanImmediateHandoff,
             recent_causal_context: draftSaveSentinel
@@ -186,6 +196,27 @@ async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise
   }
 }
 
+async function createCleanEntity(fastify: ReturnType<typeof createServer>): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "ENTITY",
+      displayLabel: "A",
+      payload: {
+        display_name: "A",
+        entity_kind: "person",
+        roles_in_story: ["primary_actor"],
+        short_description: "A is present at the loading door."
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
 async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): Promise<void> {
   const response = await fastify.inject({
     method: "POST",
@@ -197,7 +228,7 @@ async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): 
         provider: "openrouter",
         temperature: 0.2,
         maxOutputTokens: 800,
-        versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
+        versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }
       }
     }
   });

@@ -100,6 +100,10 @@ function validationFailureMessage(failure: ApiFailure): string {
     return "Open a project first.";
   }
 
+  if (failure.kind === "malformed-validation-source" && failure.danglingSelectedRecordIds?.length) {
+    return `Active working set contains stale selected record id(s): ${failure.danglingSelectedRecordIds.join(", ")}. ${failure.suggestedAction ?? "Remove these ids from the active working set."}`;
+  }
+
   return failure.message || "Could not run validation.";
 }
 

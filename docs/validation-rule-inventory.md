@@ -39,8 +39,12 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `local-prose-scope-violation` | blocker | Directive or stop guidance asks for non-local prose scope. | §11.7 | Cases 9, 10 |
 | `directive-stop-guidance-disagreement` | blocker | Manual directive and stop guidance disagree about the local unit boundary. | §11.1 | Case 11 |
 | `handoff-current-state-contradiction` | blocker | Immediate handoff explicitly contradicts current authoritative state. | §11.3 | Case 12 |
+| `onstage-offstage-entity-overlap` | blocker | Current authoritative state places the same entity both onstage and offstage-pressuring. | §11.3 | — |
+| `onstage-entity-status-contradiction` | blocker | An onstage entity's selected status places it offstage, concealed, or at a different record-id current location. | §11.3 | — |
 | `entity-current-location-contradiction` | blocker | Selected records place one entity in more than one current location. | §11.3 | Case 14 |
 | `object-current-holder-contradiction` | blocker | Selected object has two different current holders. | §11.3 | Case 16 |
+| `object-location-holder-incoherence` | blocker | Object location says carried-by-holder while carried_by is none. | §11.3 | — |
+| `relationship-self-reference` | blocker | A selected relationship record uses the same endpoint for from and to. | §11.3 | — |
 | `inactive-plan-holder` | blocker | Active plan is held by an entity that currently cannot plausibly act. | §11.3 | Case 17 |
 | `secret-reveal-contradiction` | blocker | Secret reveal permission conflicts with protected non-holder state or directive pressure. | §11.4 | Case 18 |
 | `hidden-truth-in-pov-knowledge` | blocker | POV knowledge contains a selected hidden truth the POV must not know. | §11.4 | Case 18 |
@@ -90,6 +94,22 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `matrix-active-silent-presence-incomplete` | blocker | Active silent presence lacks dossier, body presence, position/visibility, allowed actions, or POV access limits. | §11.5 | Case 13 |
 | `matrix-present-minor-speech-incomplete` | blocker | Present-minor speech lacks compressed voice note or promotion to active/onstage status. | §11.5 | Case 13 |
 
+## Referential Integrity
+
+| Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
+|---|---|---|---|---|
+| `cast-band-duplicate-membership` | blocker | One cast member id appears in more than one working-set cast band. | §11.3 | — |
+| `cast-band-reference-invalid` | blocker | A working-set cast-band id is not selected or does not resolve to a selected CAST MEMBER record. | §11.2 / §11.3 | — |
+| `selected-pov-reference-invalid` | blocker | Selected POV is dangling, mistyped, or not selected for the readiness-required POV lane. | §11.2 / §11.3 | — |
+| `voice-pressure-attachment-invalid` | blocker | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
+| `record-reference-dangling` | blocker | A selected record's extracted internal reference does not resolve to a project record. | §11.3 | — |
+| `record-reference-type-mismatch` | blocker | A selected record's extracted internal reference resolves to a record outside the lane's expected type family. | §11.3 | — |
+| `record-reference-unselected-required` | blocker | A selected record's extracted internal reference resolves to an unselected record in a required prompt lane. | §11.2 | — |
+| `onstage-entity-reference-invalid` | blocker | A generation-brief onstage entity id is dangling, mistyped, or not selected for the readiness-required onstage-entities lane. | §11.2 / §11.3 | — |
+| `offstage-entity-reference-invalid` | blocker | A generation-brief offstage pressure id is dangling or mistyped, or is unselected when offstage pressure is context-required. | §11.2 / §11.3 | — |
+| `entity-statuses-reference-invalid` | blocker | A generation-brief entity-status record id is dangling or mistyped, or is unselected when current agency/status is context-required. | §11.2 / §11.3 | — |
+| `current-location-reference-invalid` | blocker | A current-location value that resolves to a project record is mistyped or not selected for the readiness-required current-location lane. | §11.2 / §11.3 | — |
+
 ## Security
 
 | Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
@@ -100,9 +120,12 @@ FOUNDATIONS §11 taxonomy clauses used below:
 
 | Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
 |---|---|---|---|---|
-| `pov-character-not-selected` | warning | POV character is not selected, so the prompt falls back to its raw id/display limits. | Warning; §11 warnings never gate | — |
 | `prompt-middle-salience-risk` | warning | Snapshot is large enough to risk lost-in-the-middle prompt behavior. | Warning; §11 warnings never gate | Cases 31, 32 |
 | `many-high-salience-records` | warning | Many high-salience records are selected for one local unit. | Warning; §11 warnings never gate | Case 32 |
+| `offstage-entity-reference-unselected-optional` | warning | Offstage pressure names an existing ENTITY record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
+| `entity-statuses-reference-unselected-optional` | warning | Current agency/status names an existing ENTITY STATUS record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
+| `voice-pressure-orphaned-attachment` | warning | Current voice pressure or voice override targets an existing CAST MEMBER that is not in a rendered cast band. | Warning; §11 warnings never gate | — |
+| `record-reference-unselected-optional` | warning | A selected record's extracted internal reference resolves to an unselected record in an optional prompt lane. | Warning; §11 warnings never gate | — |
 | `no-sample-utterances` | warning | Active cast has no selected sample utterances. | Warning; §11 warnings never gate | Case 8 |
 | `sparse-setting-texture` | warning | Setting texture is sparse for the current local unit. | Warning; §11 warnings never gate | — |
 | `no-active-clock-pressure` | warning | Directive has local pressure but no active clock, obligation, or open thread selected. | Warning; §11 warnings never gate | Case 26 |

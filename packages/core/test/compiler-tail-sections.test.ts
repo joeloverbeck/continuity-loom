@@ -11,8 +11,11 @@ const povId = "019b0298-5c00-7000-8000-000000000401";
 const nonPovId = "019b0298-5c00-7000-8000-000000000402";
 const physicalEntityId = "019b0298-5c00-7000-8000-000000000413";
 const physicalLocationId = "019b0298-5c00-7000-8000-000000000414";
+const physicalStatusId = "019b0298-5c00-7000-8000-000000000415";
 const missingPhysicalEntityId = "019b0298-5c00-7000-8000-000000000416";
 const missingObjectOwnerId = "019b0298-5c00-7000-8000-000000000417";
+const missingStateLocationId = "019b0298-5c00-7000-8000-000000000420";
+const missingStateStatusId = "019b0298-5c00-7000-8000-000000000421";
 const povLongBeliefClaim =
   "The guard is bluffing about the archive lock because he keeps touching the wrong key ring before answering.";
 const nonPovLongBeliefClaim =
@@ -108,7 +111,7 @@ function tailRecords(): ValidationRecord[] {
       access_routes: ["street door"],
       visibility_and_sound: "Neighbors can hear raised voices."
     }),
-    record("019b0298-5c00-7000-8000-000000000415", "ENTITY STATUS", `${longPhysicalActivity.slice(0, 77)}...`, {
+    record(physicalStatusId, "ENTITY STATUS", `${longPhysicalActivity.slice(0, 77)}...`, {
       entity_id: physicalEntityId,
       life: "alive",
       agency: "free",
@@ -372,6 +375,42 @@ describe("compiler tail-section resolvers", () => {
     expect(physicalContinuity).not.toContain(`location: ${physicalLocationId}`);
   });
 
+  it("resolves physical continuity current-state location ids while preserving prose and dangling values", () => {
+    const selectedInput = input();
+    selectedInput.generationSession.current_authoritative_state!.current_location = physicalLocationId;
+    const selectedContinuity = sectionBody(compilePrompt(buildValidationSnapshot(selectedInput)).prompt, "physical_continuity");
+    expect(selectedContinuity).toContain("- location: Jon Ureña's home");
+    expect(selectedContinuity).not.toContain(`- location: ${physicalLocationId}`);
+
+    const proseInput = input();
+    proseInput.generationSession.current_authoritative_state!.current_location = "the mill loft at dusk";
+    const proseContinuity = sectionBody(compilePrompt(buildValidationSnapshot(proseInput)).prompt, "physical_continuity");
+    expect(proseContinuity).toContain("- location: the mill loft at dusk");
+
+    const danglingInput = input();
+    danglingInput.generationSession.current_authoritative_state!.current_location = missingStateLocationId;
+    const danglingContinuity = sectionBody(compilePrompt(buildValidationSnapshot(danglingInput)).prompt, "physical_continuity");
+    expect(danglingContinuity).toContain(`- location: ${missingStateLocationId}`);
+  });
+
+  it("resolves physical continuity current-state entity status arrays while preserving prose and dangling values", () => {
+    const selectedInput = input();
+    selectedInput.generationSession.current_authoritative_state!.entity_statuses = [physicalStatusId];
+    const selectedContinuity = sectionBody(compilePrompt(buildValidationSnapshot(selectedInput)).prompt, "physical_continuity");
+    expect(selectedContinuity).toContain(`- statuses: ${longPhysicalActivity}`);
+    expect(selectedContinuity).not.toContain(`- statuses: ${physicalStatusId}`);
+
+    const proseInput = input();
+    proseInput.generationSession.current_authoritative_state!.entity_statuses = "Everyone is mobile.";
+    const proseContinuity = sectionBody(compilePrompt(buildValidationSnapshot(proseInput)).prompt, "physical_continuity");
+    expect(proseContinuity).toContain("- statuses: Everyone is mobile.");
+
+    const danglingInput = input();
+    danglingInput.generationSession.current_authoritative_state!.entity_statuses = [missingStateStatusId];
+    const danglingContinuity = sectionBody(compilePrompt(buildValidationSnapshot(danglingInput)).prompt, "physical_continuity");
+    expect(danglingContinuity).toContain(`- statuses: ${missingStateStatusId}`);
+  });
+
   it("renders physical continuity location labels once and without editor truncation markers", () => {
     const physicalContinuity = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "physical_continuity");
     const locationLine = physicalContinuity
@@ -387,7 +426,7 @@ describe("compiler tail-section resolvers", () => {
 
   it("falls back to raw ids when physical continuity references are absent from the snapshot", () => {
     const records = tailRecords().map((item) =>
-      item.id === "019b0298-5c00-7000-8000-000000000415"
+      item.id === physicalStatusId
         ? record(item.id, item.type, item.metadata?.displayLabel ?? item.id, {
             entity_id: missingPhysicalEntityId,
             life: "alive",

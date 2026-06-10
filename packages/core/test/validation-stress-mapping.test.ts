@@ -9,6 +9,11 @@ import {
 
 const entityId = "019b0298-5c00-7000-8000-000000000001";
 const povId = "019b0298-5c00-7000-8000-000000000002";
+const locationId = "019b0298-5c00-7000-8000-000000000003";
+const castId = "019b0298-5c00-7000-8000-000000000004";
+const unselectedEntityId = "019b0298-5c00-7000-8000-000000000005";
+const unselectedStatusId = "019b0298-5c00-7000-8000-000000000006";
+const danglingId = "019b0298-5c00-7000-8000-000000000999";
 
 describe("validation stress-suite mapping", () => {
   it.each([
@@ -17,7 +22,22 @@ describe("validation stress-suite mapping", () => {
     ["secret leakage", DIAGNOSTIC_CODES.secretRevealContradiction, secretLeakage],
     ["impossible physical action", DIAGNOSTIC_CODES.impossibleActionPhysicalContext, impossiblePhysicalAction],
     ["non-local directive", DIAGNOSTIC_CODES.localProseScopeViolation, nonLocalDirective],
-    ["accepted-prose contamination", DIAGNOSTIC_CODES.promptFacingProseContamination, acceptedProseContamination]
+    ["accepted-prose contamination", DIAGNOSTIC_CODES.promptFacingProseContamination, acceptedProseContamination],
+    ["dangling onstage entity reference", DIAGNOSTIC_CODES.onstageEntityReferenceInvalid, danglingOnstageEntity],
+    ["dangling offstage pressure reference", DIAGNOSTIC_CODES.offstageEntityReferenceInvalid, danglingOffstageEntity],
+    ["dangling entity-status reference", DIAGNOSTIC_CODES.entityStatusesReferenceInvalid, danglingEntityStatusReference],
+    ["unselected current-location reference", DIAGNOSTIC_CODES.currentLocationReferenceInvalid, unselectedCurrentLocation],
+    ["cast-band duplicate membership", DIAGNOSTIC_CODES.castBandDuplicateMembership, duplicateCastBandMembership],
+    ["cast-band dangling member", DIAGNOSTIC_CODES.castBandReferenceInvalid, danglingCastBandMember],
+    ["selected POV dangling record", DIAGNOSTIC_CODES.selectedPovReferenceInvalid, danglingSelectedPov],
+    ["voice-pressure dangling attachment", DIAGNOSTIC_CODES.voicePressureAttachmentInvalid, danglingVoicePressureAttachment],
+    ["record-internal dangling reference", DIAGNOSTIC_CODES.recordReferenceDangling, danglingRecordInternalReference],
+    ["record-internal type mismatch", DIAGNOSTIC_CODES.recordReferenceTypeMismatch, recordInternalTypeMismatch],
+    ["migration unselected required secret holder", DIAGNOSTIC_CODES.recordReferenceUnselectedRequired, migrationUnselectedRequiredSecretHolder],
+    ["onstage/offstage entity overlap", DIAGNOSTIC_CODES.onstageOffstageEntityOverlap, onstageOffstageOverlap],
+    ["onstage entity status contradiction", DIAGNOSTIC_CODES.onstageEntityStatusContradiction, onstageEntityStatusContradiction],
+    ["object carried-by-holder incoherence", DIAGNOSTIC_CODES.objectLocationHolderIncoherence, objectLocationHolderIncoherence],
+    ["relationship self-reference", DIAGNOSTIC_CODES.relationshipSelfReference, relationshipSelfReference]
   ])("blocks representative hard-fail stress case: %s", (_name, code, mutate) => {
     const input = baseInput();
     mutate(input);
@@ -29,11 +49,28 @@ describe("validation stress-suite mapping", () => {
     expect(first.isBlocked).toBe(true);
     expect(first.blockers.map((diagnostic) => diagnostic.code)).toContain(code);
   });
+
+  it.each([
+    ["optional offstage pressure unselected reference", DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional, optionalOffstageUnselected],
+    ["optional entity-status unselected reference", DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional, optionalEntityStatusUnselected],
+    ["voice pressure orphaned attachment", DIAGNOSTIC_CODES.voicePressureOrphanedAttachment, orphanedVoicePressure],
+    ["record-internal optional unselected reference", DIAGNOSTIC_CODES.recordReferenceUnselectedOptional, optionalRecordInternalUnselected]
+  ])("warns for representative stress case without blocking: %s", (_name, code, mutate) => {
+    const input = warningReadyInput();
+    mutate(input);
+    const snapshot = buildValidationSnapshot(input);
+    const first = runValidation(snapshot);
+    const second = runValidation(snapshot);
+
+    expect(first).toEqual(second);
+    expect(first.isBlocked).toBe(false);
+    expect(first.warnings.map((diagnostic) => diagnostic.code)).toContain(code);
+  });
 });
 
 function baseInput(): BuildValidationSnapshotInput {
   return {
-    records: [],
+    records: [entityRecord(entityId), entityRecord(povId)],
     generationSession: {
       current_authoritative_state: {
         current_time: "Night.",
@@ -111,8 +148,36 @@ function baseInput(): BuildValidationSnapshotInput {
         special_style_constraints: []
       }
     },
-    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" },
+    projectRecordIndex: {
+      [entityId]: "ENTITY",
+      [povId]: "ENTITY"
+    }
   };
+}
+
+function warningReadyInput(): BuildValidationSnapshotInput {
+  const input = baseInput();
+  input.storyConfig.proseMode = {
+    ...input.storyConfig.proseMode!,
+    pov_character: "omniscient"
+  };
+  input.generationSession.current_authoritative_state = {
+    ...input.generationSession.current_authoritative_state!,
+    current_location: locationId,
+    entity_statuses: []
+  };
+  input.records = [entityRecord(entityId), entityRecord(povId), locationRecord(locationId)];
+  input.projectRecordIndex = {
+    [entityId]: "ENTITY",
+    [povId]: "ENTITY",
+    [locationId]: "LOCATION",
+    [unselectedEntityId]: "ENTITY",
+    [unselectedStatusId]: "ENTITY STATUS",
+    [castId]: "CAST MEMBER"
+  };
+
+  return input;
 }
 
 function twoLocations(input: BuildValidationSnapshotInput): void {
@@ -188,6 +253,214 @@ function acceptedProseContamination(input: BuildValidationSnapshotInput): void {
   input.generationSession.immediate_handoff = {
     ...input.generationSession.immediate_handoff!,
     recent_causal_context: "This includes copied accepted prose from the prior candidate."
+  };
+}
+
+function danglingOnstageEntity(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.onstage_entities = [danglingId];
+}
+
+function danglingOffstageEntity(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [danglingId];
+}
+
+function danglingEntityStatusReference(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.entity_statuses = [danglingId];
+}
+
+function unselectedCurrentLocation(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.current_location = locationId;
+  input.projectRecordIndex = {
+    ...input.projectRecordIndex,
+    [locationId]: "LOCATION"
+  };
+}
+
+function duplicateCastBandMembership(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, castRecord(castId)];
+  input.projectRecordIndex = {
+    ...input.projectRecordIndex,
+    [castId]: "CAST MEMBER"
+  };
+  input.generationSession.active_working_set = {
+    selected_records: [castId],
+    active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }],
+    present_minor_cast_compressed: [castId],
+    offstage_relevant_cast: [],
+    selected_pov: "omniscient"
+  };
+}
+
+function danglingCastBandMember(input: BuildValidationSnapshotInput): void {
+  input.generationSession.active_working_set = {
+    selected_records: [],
+    active_onstage_cast_full: [{ cast_member_id: danglingId, local_function: "active_speaker" }],
+    present_minor_cast_compressed: [],
+    offstage_relevant_cast: [],
+    selected_pov: "omniscient"
+  };
+}
+
+function danglingSelectedPov(input: BuildValidationSnapshotInput): void {
+  input.generationSession.active_working_set = {
+    selected_records: [],
+    active_onstage_cast_full: [],
+    present_minor_cast_compressed: [],
+    offstage_relevant_cast: [],
+    selected_pov: danglingId
+  };
+}
+
+function danglingVoicePressureAttachment(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_cast_voice_pressure = [voicePressure(danglingId)];
+}
+
+function danglingRecordInternalReference(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, beliefRecord(danglingId)];
+}
+
+function recordInternalTypeMismatch(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, objectRecord({ current_location: entityId })];
+}
+
+function migrationUnselectedRequiredSecretHolder(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, secretRecord([unselectedEntityId])];
+  input.projectRecordIndex = {
+    ...input.projectRecordIndex,
+    [unselectedEntityId]: "ENTITY"
+  };
+}
+
+function onstageOffstageOverlap(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [entityId];
+}
+
+function onstageEntityStatusContradiction(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, entityStatus("019b0298-5c00-7000-8000-000000000107", "offstage")];
+}
+
+function objectLocationHolderIncoherence(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, objectRecord({ current_location: "carried_by_holder", carried_by: "none" })];
+}
+
+function relationshipSelfReference(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, relationshipRecord(entityId, entityId)];
+}
+
+function optionalOffstageUnselected(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [unselectedEntityId];
+}
+
+function optionalEntityStatusUnselected(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_authoritative_state!.entity_statuses = [unselectedStatusId];
+}
+
+function orphanedVoicePressure(input: BuildValidationSnapshotInput): void {
+  input.generationSession.current_cast_voice_pressure = [voicePressure(castId)];
+}
+
+function optionalRecordInternalUnselected(input: BuildValidationSnapshotInput): void {
+  input.records = [...input.records, relationshipRecord(unselectedEntityId, entityId)];
+}
+
+function entityRecord(id: string) {
+  return {
+    id,
+    type: "ENTITY",
+    payload: {
+      id,
+      display_name: id,
+      entity_kind: "person",
+      roles_in_story: ["primary_actor"],
+      short_description: "A selected entity."
+    }
+  };
+}
+
+function locationRecord(id: string) {
+  return {
+    id,
+    type: "LOCATION",
+    payload: {
+      id,
+      status: "active",
+      label: "Warehouse",
+      description: "A rain-dark warehouse.",
+      layout_relevant_now: "One loading door.",
+      access_routes: [],
+      visibility_and_sound: "Dim.",
+      hazards_or_shelters: [],
+      social_rules: []
+    }
+  };
+}
+
+function castRecord(id: string) {
+  return {
+    id,
+    type: "CAST MEMBER",
+    payload: {
+      entity_id: entityId
+    }
+  };
+}
+
+function beliefRecord(holder: string) {
+  return {
+    id: "019b0298-5c00-7000-8000-000000000108",
+    type: "BELIEF",
+    payload: {
+      holder
+    }
+  };
+}
+
+function secretRecord(holders: string[]) {
+  return {
+    id: "019b0298-5c00-7000-8000-000000000109",
+    type: "SECRET",
+    payload: {
+      status: "hidden",
+      holders,
+      non_holders_to_protect: "none"
+    }
+  };
+}
+
+function objectRecord(overrides: Partial<{ current_location: string; carried_by: string }> = {}) {
+  return {
+    id: "019b0298-5c00-7000-8000-000000000110",
+    type: "OBJECT",
+    payload: {
+      owner: "none",
+      carried_by: "unknown",
+      current_location: locationId,
+      ...overrides
+    }
+  };
+}
+
+function relationshipRecord(from: string, to: string) {
+  return {
+    id: "019b0298-5c00-7000-8000-000000000111",
+    type: "RELATIONSHIP",
+    payload: {
+      from,
+      to
+    }
+  };
+}
+
+function voicePressure(castMemberId: string) {
+  return {
+    cast_member_id: castMemberId,
+    local_function: "active_speaker" as const,
+    current_voice_pressure: "Clipped.",
+    dialogue_pressure: "Direct.",
+    pov_narration_pressure: "none",
+    nonverbal_or_silence_pressure: "none",
+    current_must_preserve: [],
+    current_must_avoid: []
   };
 }
 

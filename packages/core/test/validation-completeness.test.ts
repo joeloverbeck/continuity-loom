@@ -19,6 +19,14 @@ function cleanInput(): BuildValidationSnapshotInput {
   return {
     records: [
       {
+        id: povId,
+        type: "ENTITY",
+        payload: {
+          id: povId,
+          entity_kind: "person"
+        }
+      },
+      {
         id: entityId,
         type: "ENTITY",
         payload: {
@@ -45,7 +53,7 @@ function cleanInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [castId, factId],
+        selected_records: [povId, castId, factId],
         active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],

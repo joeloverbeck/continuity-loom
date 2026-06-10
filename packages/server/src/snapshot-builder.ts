@@ -13,7 +13,7 @@ import {
 } from "@loom/core";
 
 import type { ProjectStoreManager } from "./project-store.js";
-import type { RecordRepositoryRecord, StoryConfigKind } from "./record-repository.js";
+import type { RecordReadResult, RecordRepositoryRecord, StoryConfigKind } from "./record-repository.js";
 
 const storyConfigKinds = ["STORY CONTRACT", "UNIVERSAL CONTENT POLICY", "PROSE MODE"] as const;
 
@@ -25,8 +25,18 @@ function noOpenProject() {
   return { ok: false, kind: "no-open-project", message: "No project is open." };
 }
 
-function malformedDependency(message: string) {
-  return { ok: false, kind: "malformed-validation-source", message };
+function malformedDependency(message: string, details: { danglingSelectedRecordIds?: readonly string[] } = {}) {
+  return {
+    ok: false,
+    kind: "malformed-validation-source",
+    message,
+    ...("danglingSelectedRecordIds" in details
+      ? {
+          danglingSelectedRecordIds: details.danglingSelectedRecordIds,
+          suggestedAction: "Remove these ids from the active working set."
+        }
+      : {})
+  };
 }
 
 export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): SnapshotBuildResult {
@@ -48,9 +58,10 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
 
   const storyConfig = loadStoryConfig(repository);
   const records = resolveSelectedRecords(repository, generationSession);
+  const projectRecordIndex = buildProjectRecordIndex(repository);
 
   if (!records.ok) {
-    return { ok: false, status: 422, body: malformedDependency(records.message) };
+    return { ok: false, status: 422, body: malformedDependency(records.message, records) };
   }
 
   return {
@@ -59,6 +70,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
       records: records.records,
       generationSession,
       storyConfig,
+      projectRecordIndex,
       versions: {
         template: versionInfo.templates.version,
         compiler: versionInfo.compiler.version,
@@ -66,6 +78,14 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
       }
     })
   };
+}
+
+function buildProjectRecordIndex(repository: { listRecords(options: { includeArchived: boolean }): RecordReadResult[] }): Record<string, string> {
+  return Object.fromEntries(
+    repository
+      .listRecords({ includeArchived: false })
+      .flatMap((result) => (result.ok ? [[result.record.id, result.record.type] as const] : []))
+  );
 }
 
 function withSnapshotSessionDefaults(payload: unknown, acceptedSegmentCount: number): GenerationSession {
@@ -118,22 +138,36 @@ function loadStoryConfig(repository: {
 
 function resolveSelectedRecords(
   repository: {
-    getRecord(id: string): { ok: true; record: RecordRepositoryRecord } | { ok: false; message: string };
+    getRecord(id: string): RecordReadResult;
   },
   generationSession: GenerationSession
-): { ok: true; records: readonly ValidationRecord[] } | { ok: false; message: string } {
+): { ok: true; records: readonly ValidationRecord[] } | { ok: false; message: string; danglingSelectedRecordIds?: readonly string[] } {
   const selectedIds = generationSession.active_working_set?.selected_records ?? [];
   const castBands = castBandAssignments(generationSession);
   const records: ValidationRecord[] = [];
+  const danglingSelectedRecordIds: string[] = [];
 
   for (const id of selectedIds) {
     const result = repository.getRecord(id);
 
     if (!result.ok) {
+      if (result.kind === "not-found") {
+        danglingSelectedRecordIds.push(id);
+        continue;
+      }
+
       return { ok: false, message: result.message };
     }
 
     records.push(toValidationRecord(result.record, castBands.get(id)));
+  }
+
+  if (danglingSelectedRecordIds.length > 0) {
+    return {
+      ok: false,
+      message: `Active working set contains stale selected record id(s): ${danglingSelectedRecordIds.join(", ")}. Remove these ids from the active working set.`,
+      danglingSelectedRecordIds
+    };
   }
 
   return { ok: true, records };

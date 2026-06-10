@@ -100,7 +100,16 @@ npm run build
    - Use plain `mv` only for untracked tickets.
    - Confirm the original `tickets/` path is gone.
 8. Sweep active docs, specs, ledgers, indexes, and tickets for stale live ticket
-   paths. Update references that should now point to `archive/tickets/`.
+   paths and bare ticket identifiers. Update references that should now point to
+   `archive/tickets/`. Search active surfaces first; archived historical matches
+   are normally preserved unless an active artifact depends on them or the
+   archive needs a provenance, security, or legal correction.
+
+   Useful sweep pattern after archiving a ticket:
+
+   ```sh
+   rg -n "tickets/TICKET-ID|TICKET-ID" docs specs tickets AGENTS.md CLAUDE.md README.md
+   ```
 9. Review the diff for unrelated changes.
 10. Inspect `git diff --cached --name-status` before committing. If unrelated
     pre-existing changes are staged, unstage only those unrelated entries before
@@ -135,9 +144,27 @@ npm run build
 5. Repair active references and implementation-order/index surfaces found in the
    repo. Do not edit archived historical artifacts after the move unless needed
    for accurate provenance, security, or legal reasons.
-6. Run a final status/diff check and commit the spec archive/truthing work
+6. For docs/spec-heavy families, run any applicable capstone checks from the
+   spec plus lightweight repository truth checks before archiving:
+   - registry completeness for active docs, when `docs/ACTIVE-DOCS.md` is in
+     scope;
+   - stale active-path or snapshot-claim greps named by the spec;
+   - active `docs/*.md` cross-reference resolution for touched entry docs;
+   - old active ticket/spec path absence after archive moves;
+   - matrix, ledger, or implementation-order completeness loops named by the
+     spec.
+
+   Example patterns, adapted to the family:
+
+   ```sh
+   for f in docs/*.md; do base=$(basename "$f"); grep -q "docs/$base" docs/ACTIVE-DOCS.md || echo "MISSING docs/$base"; done
+   for ref in $(rg -o "docs/[A-Za-z0-9._/-]+\\.md" docs AGENTS.md CLAUDE.md README.md | sed 's/^.*docs\\//docs\\//' | sort -u); do test -f "$ref" || echo "MISSING $ref"; done
+   test ! -f specs/SPEC-ID.md && test -f archive/specs/SPEC-ID.md
+   ```
+
+7. Run a final status/diff check and commit the spec archive/truthing work
    unless the user explicitly asked not to commit.
-7. If a `/goal` is active, mark it complete only after implementation,
+8. If a `/goal` is active, mark it complete only after implementation,
    verification, ticket archives, spec archive or documented reason it remains
    active, reference repair, and required commits are done.
 

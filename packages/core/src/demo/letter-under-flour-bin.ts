@@ -609,7 +609,7 @@ export const demoGenerationSession = {
       { cast_member_id: demoRecordIds.nikoCast, local_function: "active_speaker" }
     ],
     present_minor_cast_compressed: [],
-    offstage_relevant_cast: [demoRecordIds.maraEntity, demoRecordIds.orinEntity],
+    offstage_relevant_cast: [],
     selected_pov: demoRecordIds.elinEntity,
     manual_directive_id: demoRecordIds.elinIntention
   },
@@ -631,7 +631,7 @@ export const demoGenerationSession = {
     ],
     visible_conditions: ["lantern light", "flour dust near the bin hinge", "rainwater on Niko's cuffs"],
     environmental_conditions: "The cellar is dry but cold; muffled market noise filters down from above.",
-    entity_statuses: [demoRecordIds.elinEntity, demoRecordIds.nikoEntity, demoRecordIds.maraEntity, demoRecordIds.orinEntity],
+    entity_statuses: "Elin Vale, Niko Bram, Mara Venn, Orin Ward",
     line_of_sight_and_visibility: "Elin and Niko can see each other; the letter itself is not visible.",
     routes_and_exits: ["stair to the bakery shop", "delivery hatch too small for entry"],
     available_time: "One short exchange before footsteps or the shop bell may interrupt.",

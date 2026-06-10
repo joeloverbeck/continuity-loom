@@ -168,6 +168,10 @@ function trimmed(value: string): string {
 function cleanInput(): BuildValidationSnapshotInput {
   return {
     records: [
+      record(povId, "ENTITY", {
+        id: povId,
+        entity_kind: "person"
+      }),
       record(entityId, "ENTITY", {
         id: entityId,
         entity_kind: "person"
@@ -184,7 +188,7 @@ function cleanInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [castId, factId],
+        selected_records: [povId, castId, factId],
         active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],
@@ -195,7 +199,7 @@ function cleanInput(): BuildValidationSnapshotInput {
         current_location: "Warehouse.",
         onstage_entities: [entityId],
         immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
-        offstage_pressuring_entities: ["019b0298-5c00-7000-8000-000000000999"],
+        offstage_pressuring_entities: [],
         positions: "A and B stand near the loading door.",
         possessions: "The key is in A's hand.",
         visible_conditions: ["dim"],

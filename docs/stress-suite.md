@@ -1036,3 +1036,216 @@ Expected prompt behavior:
 Prompt-quality risk:
 
 - Future token-budget cleanup could mistake deliberate pressure/detail dual framing for redundant restatement, or copy ordinary archive facts/events into the prompt front edge.
+
+---
+
+## Case 33 — Generation-brief reference drift
+
+Stress target: generation-brief id lanes must not silently degrade to raw ids.
+
+Required records:
+
+- Current authoritative state names onstage, offstage, entity-status, and current-location ids.
+- Some ids are dangling, mistyped, or present in the project but not selected.
+
+Validation focus tags:
+
+- `offstage_interruption_possible` or a current-status mode when required-lane blocking is expected.
+
+Expected blockers:
+
+- `onstage-entity-reference-invalid`
+- `offstage-entity-reference-invalid`
+- `entity-statuses-reference-invalid`
+- `current-location-reference-invalid`
+
+Warnings:
+
+- `offstage-entity-reference-unselected-optional` when offstage pressure is optional.
+- `entity-statuses-reference-unselected-optional` when current agency/status is optional.
+
+Expected readiness outcome:
+
+- Required brief lanes block Preview/Generate.
+- Optional unselected references warn without blocking.
+
+Prompt-quality risk:
+
+- Prompt lanes render raw UUIDs or omit context that the author believed was active.
+
+---
+
+## Case 34 — Cast-band and local voice reference integrity
+
+Stress target: working-set cast bands, selected POV, and voice-pressure attachments must resolve to the intended selected records.
+
+Required records:
+
+- Active/onstage, present-minor, and offstage cast-band assignments.
+- Selected POV and current voice pressure rows.
+- One missing or mistyped cast id, one duplicate band membership, and one existing cast id outside rendered bands.
+
+Validation focus tags:
+
+- `dialogue_expected` or `ensemble_dialogue_expected`.
+
+Expected blockers:
+
+- `cast-band-duplicate-membership`
+- `cast-band-reference-invalid`
+- `selected-pov-reference-invalid`
+- `voice-pressure-attachment-invalid`
+
+Warnings:
+
+- `voice-pressure-orphaned-attachment`
+
+Expected readiness outcome:
+
+- Broken cast/POV/attachment ids block.
+- Existing but non-rendered voice-pressure attachments warn.
+
+Prompt-quality risk:
+
+- Dialogue or POV authority points at the wrong person, a missing cast member, or a voice pin that cannot be rendered.
+
+---
+
+## Case 35 — Record-internal reference integrity
+
+Stress target: selected durable records must not contain dangling, mistyped, or required-but-unselected references.
+
+Required records:
+
+- BELIEF, SECRET, OBJECT, RELATIONSHIP, and PLAN records with reference fields.
+- One dangling holder, one current-location type mismatch, one hidden secret holder that is present but unselected, and one optional relationship endpoint that is unselected.
+
+Validation focus tags:
+
+- `non_pov_hidden_plan_behavior` when testing hidden-plan requiredness.
+
+Expected blockers:
+
+- `record-reference-dangling`
+- `record-reference-type-mismatch`
+- `record-reference-unselected-required`
+
+Warnings:
+
+- `record-reference-unselected-optional`
+
+Expected readiness outcome:
+
+- Required unresolved internal references block; optional unselected internal references warn.
+
+Prompt-quality risk:
+
+- Compiler-resolved labels fall back to UUIDs or omit important selected-record context.
+
+---
+
+## Case 36 — Migration-selected record now fails closed
+
+Stress target: old projects with previously tolerated unselected required references should fail closed with a legible blocker.
+
+Required records:
+
+- A selected active SECRET from an existing project.
+- Its holder or protected non-holder id exists in the project but is no longer selected into the active working set.
+
+Validation focus tags:
+
+- Any secret or reveal-pressure context.
+
+Expected blockers:
+
+- `record-reference-unselected-required`
+
+Expected readiness outcome:
+
+- Preview/Generate block until the user selects the referenced record or revises the secret lane.
+
+Prompt-quality risk:
+
+- A migration silently compiles without the holder/protected-non-holder authority the author expected.
+
+---
+
+## Case 37 — Onstage state contradiction
+
+Stress target: current authoritative state and selected entity-status records must agree about whether an entity is physically present.
+
+Required records:
+
+- Current authoritative state with an entity in `onstage_entities`.
+- The same entity also appears in `offstage_pressuring_entities`, or a selected ENTITY STATUS places it `offstage`, `concealed`, or at a different record-id location.
+
+Validation focus tags:
+
+- Any local mode with physical or dialogue presence.
+
+Expected blockers:
+
+- `onstage-offstage-entity-overlap`
+- `onstage-entity-status-contradiction`
+
+Expected readiness outcome:
+
+- Preview/Generate block until the current state and entity status agree.
+
+Prompt-quality risk:
+
+- The prompt asks the writer to render an entity as both present and absent.
+
+---
+
+## Case 38 — Object holder/location incoherence
+
+Stress target: object location and holder state must agree before object use or transfer.
+
+Required records:
+
+- A selected OBJECT with `current_location: carried_by_holder`.
+- The same OBJECT has `carried_by: none`.
+
+Validation focus tags:
+
+- `object_transfer_possible` or `object_use_possible`.
+
+Expected blockers:
+
+- `object-location-holder-incoherence`
+
+Expected readiness outcome:
+
+- Preview/Generate block until object location or holder state is corrected.
+
+Prompt-quality risk:
+
+- The prompt instructs a physical action around an object whose holder/location state is impossible.
+
+---
+
+## Case 39 — Relationship self-reference
+
+Stress target: relationship endpoints must be distinct while still allowing bad saved records to load.
+
+Required records:
+
+- A selected RELATIONSHIP with `from` and `to` pointing to the same entity id.
+
+Validation focus tags:
+
+- Dialogue, intimacy, obligation, or other relationship-pressure context.
+
+Expected blockers:
+
+- `relationship-self-reference`
+
+Expected readiness outcome:
+
+- The record loads, validation blocks, and the user can revise the relationship endpoints.
+
+Prompt-quality risk:
+
+- Relationship pressure becomes ambiguous or nonsensical because the source and target are the same.

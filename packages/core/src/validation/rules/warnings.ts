@@ -1,9 +1,23 @@
+import { classifyReference } from "../reference-classification.js";
 import { DIAGNOSTIC_CODES, type Diagnostic } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
+import { castBandMemberIds } from "./cast-band.js";
+import {
+  isEntityStatusesReferenceRequired,
+  isOffstageEntityReferenceRequired
+} from "./referential-brief.js";
+import {
+  expectedRecordReferenceTypes,
+  isRecordReferenceRequired,
+  recordInternalReferences
+} from "./record-internal.js";
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
-  warnPovCharacterNotSelected,
+  warnOffstageEntityReferenceUnselectedOptional,
+  warnEntityStatusesReferenceUnselectedOptional,
+  warnVoicePressureOrphanedAttachment,
+  warnRecordReferenceUnselectedOptional,
   warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
@@ -16,28 +30,86 @@ export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnStaleSelectedRecord
 ]);
 
-function warnPovCharacterNotSelected(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const pov = resolvedPov(snapshot);
-
-  if (!pov || pov === "omniscient" || pov === "variable") {
+function warnOffstageEntityReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  if (isOffstageEntityReferenceRequired(snapshot)) {
     return [];
   }
 
-  if (snapshot.records.some((record) => record.id === pov)) {
+  return currentStateArray(snapshot, "offstage_pressuring_entities").flatMap((id) => {
+    const reference = classifyReference(snapshot, id, ["ENTITY"]);
+
+    return reference.classification === "unselected" && reference.typeMatches
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional,
+            `Offstage pressure reference ${id} exists but is not selected, so it will not render unless selected into the active working set.`,
+            "generationSession.current_authoritative_state.offstage_pressuring_entities"
+          )
+        ]
+      : [];
+  });
+}
+
+function warnEntityStatusesReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const entityStatuses = snapshot.generationSession.current_authoritative_state?.entity_statuses;
+
+  if (isEntityStatusesReferenceRequired(snapshot) || !Array.isArray(entityStatuses)) {
     return [];
   }
 
-  return [
-    warning(
-      DIAGNOSTIC_CODES.povCharacterNotSelected,
-      `The POV character ${pov} is not in the selected records, so its name cannot render in the prompt; select the POV entity into the active working set.`,
-      "generationSession.active_working_set.selected_pov"
-    )
-  ];
+  return entityStatuses.flatMap((id) => {
+    const reference = classifyReference(snapshot, id, ["ENTITY STATUS"]);
+
+    return reference.classification === "unselected" && reference.typeMatches
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional,
+            `Entity status reference ${id} exists but is not selected, so it will not render unless selected into the active working set.`,
+            "generationSession.current_authoritative_state.entity_statuses"
+          )
+        ]
+      : [];
+  });
+}
+
+function warnVoicePressureOrphanedAttachment(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const bandMemberIds = castBandMemberIds(snapshot);
+
+  return voicePressureAttachmentIds(snapshot).flatMap(({ id, field }) => {
+    const reference = classifyReference(snapshot, id, ["CAST MEMBER"]);
+
+    return reference.classification !== "dangling" && reference.typeMatches && !bandMemberIds.has(id)
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.voicePressureOrphanedAttachment,
+            `Voice-pressure attachment ${id} resolves to a CAST MEMBER but is not attached to any rendered cast band.`,
+            field
+          )
+        ]
+      : [];
+  });
+}
+
+function warnRecordReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  return recordInternalReferences(snapshot).flatMap(({ sourceRecord, reference }) => {
+    const classified = classifyReference(snapshot, reference.targetId, expectedRecordReferenceTypes(reference.refRole, sourceRecord));
+
+    return classified.classification === "unselected" &&
+      classified.typeMatches &&
+      !isRecordReferenceRequired(snapshot, sourceRecord, reference.refRole)
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.recordReferenceUnselectedOptional,
+            `Record ${sourceRecord.id} ${reference.refRole} reference ${reference.targetId} exists but is not selected, so it will not render unless selected into the active working set.`,
+            `${sourceRecord.type}.${reference.refRole}`
+          )
+        ]
+      : [];
+  });
 }
 
 function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  return JSON.stringify(snapshot).length > 5000
+  return JSON.stringify(snapshotWithoutProjectRecordIndex(snapshot)).length > 5000
     ? [
         warning(
           DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
@@ -48,8 +120,30 @@ function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Di
     : [];
 }
 
-function resolvedPov(snapshot: ValidationSnapshot): string | undefined {
-  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+function snapshotWithoutProjectRecordIndex(snapshot: ValidationSnapshot): Omit<ValidationSnapshot, "projectRecordIndex"> {
+  return {
+    records: snapshot.records,
+    generationSession: snapshot.generationSession,
+    storyConfig: snapshot.storyConfig,
+    versions: snapshot.versions
+  };
+}
+
+function currentStateArray(snapshot: ValidationSnapshot, field: "onstage_entities" | "offstage_pressuring_entities"): readonly string[] {
+  return snapshot.generationSession.current_authoritative_state?.[field] ?? [];
+}
+
+function voicePressureAttachmentIds(snapshot: ValidationSnapshot): readonly { id: string; field: string }[] {
+  return [
+    ...(snapshot.generationSession.current_cast_voice_pressure ?? []).map((entry) => ({
+      id: entry.cast_member_id,
+      field: "generationSession.current_cast_voice_pressure"
+    })),
+    ...(snapshot.generationSession.cast_voice_overrides ?? []).map((entry) => ({
+      id: entry.cast_member_id,
+      field: "generationSession.cast_voice_overrides"
+    }))
+  ];
 }
 
 function warnManyHighSalienceRecords(snapshot: ValidationSnapshot): readonly Diagnostic[] {
