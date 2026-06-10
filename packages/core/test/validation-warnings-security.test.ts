@@ -7,6 +7,7 @@ import {
   type BuildValidationSnapshotInput,
   type ValidationRecord
 } from "../src/index.js";
+import { castBandRules } from "../src/validation/rules/cast-band.js";
 import { securityRules } from "../src/validation/rules/security.js";
 import { warningRules } from "../src/validation/rules/warnings.js";
 
@@ -80,9 +81,6 @@ describe("warnings and security validation", () => {
     }],
     [DIAGNOSTIC_CODES.staleSelectedRecord, (input: BuildValidationSnapshotInput) => {
       input.records = [record("old", "EVENT", { status: "resolved" })];
-    }],
-    [DIAGNOSTIC_CODES.povCharacterNotSelected, (input: BuildValidationSnapshotInput) => {
-      input.storyConfig.proseMode = proseMode("missing-pov");
     }]
   ])("emits non-blocking warning %s", (code, mutate) => {
     const input = baseInput();
@@ -95,7 +93,7 @@ describe("warnings and security validation", () => {
     expect(result.warnings.every((warning) => warning.severity === "warning")).toBe(true);
   });
 
-  it("warns once without blocking when the resolved POV id is not selected", () => {
+  it("blocks when the resolved POV id is not selected", () => {
     const input = baseInput();
     input.generationSession.active_working_set = {
       selected_records: [],
@@ -105,18 +103,22 @@ describe("warnings and security validation", () => {
       selected_pov: "missing-pov"
     };
     input.storyConfig.proseMode = proseMode("fallback-pov");
+    input.projectRecordIndex = {
+      "missing-pov": "ENTITY",
+      "fallback-pov": "ENTITY"
+    };
 
-    const result = runValidation(buildValidationSnapshot(input), warningRules);
-    const warnings = result.warnings.filter((warning) => warning.code === DIAGNOSTIC_CODES.povCharacterNotSelected);
+    const result = runValidation(buildValidationSnapshot(input), castBandRules);
+    const blockers = result.blockers.filter((blocker) => blocker.code === DIAGNOSTIC_CODES.selectedPovReferenceInvalid);
 
-    expect(warnings).toHaveLength(1);
-    expect(warnings[0]?.severity).toBe("warning");
-    expect(warnings[0]?.message).toContain("missing-pov");
-    expect(result.blockers).toEqual([]);
-    expect(result.isBlocked).toBe(false);
+    expect(blockers).toHaveLength(1);
+    expect(blockers[0]?.severity).toBe("blocker");
+    expect(blockers[0]?.message).toContain("missing-pov");
+    expect(result.warnings).toEqual([]);
+    expect(result.isBlocked).toBe(true);
   });
 
-  it("does not warn when the resolved POV is selected, literal, or undefined", () => {
+  it("does not block when the resolved POV is selected, literal, or undefined", () => {
     const selected = baseInput();
     selected.records = [record("pov", "ENTITY", { display_name: "Mara" })];
     selected.generationSession.active_working_set = {
@@ -144,9 +146,9 @@ describe("warnings and security validation", () => {
     const undefinedPov = baseInput();
 
     for (const input of [selected, omniscient, variable, undefinedPov]) {
-      const result = runValidation(buildValidationSnapshot(input), warningRules);
+      const result = runValidation(buildValidationSnapshot(input), castBandRules);
 
-      expect(result.warnings.map((warning) => warning.code)).not.toContain(DIAGNOSTIC_CODES.povCharacterNotSelected);
+      expect(result.blockers.map((blocker) => blocker.code)).not.toContain(DIAGNOSTIC_CODES.selectedPovReferenceInvalid);
     }
   });
 

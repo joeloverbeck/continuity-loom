@@ -94,6 +94,10 @@ FOUNDATIONS §11 taxonomy clauses used below:
 
 | Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
 |---|---|---|---|---|
+| `cast-band-duplicate-membership` | blocker | One cast member id appears in more than one working-set cast band. | §11.3 | — |
+| `cast-band-reference-invalid` | blocker | A working-set cast-band id is not selected or does not resolve to a selected CAST MEMBER record. | §11.2 / §11.3 | — |
+| `selected-pov-reference-invalid` | blocker | Selected POV is dangling, mistyped, or not selected for the readiness-required POV lane. | §11.2 / §11.3 | — |
+| `voice-pressure-attachment-invalid` | blocker | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
 | `onstage-entity-reference-invalid` | blocker | A generation-brief onstage entity id is dangling, mistyped, or not selected for the readiness-required onstage-entities lane. | §11.2 / §11.3 | — |
 | `offstage-entity-reference-invalid` | blocker | A generation-brief offstage pressure id is dangling or mistyped, or is unselected when offstage pressure is context-required. | §11.2 / §11.3 | — |
 | `entity-statuses-reference-invalid` | blocker | A generation-brief entity-status record id is dangling or mistyped, or is unselected when current agency/status is context-required. | §11.2 / §11.3 | — |
@@ -109,11 +113,11 @@ FOUNDATIONS §11 taxonomy clauses used below:
 
 | Rule ID | Severity | Description | FOUNDATIONS §11 clause | Stress cases |
 |---|---|---|---|---|
-| `pov-character-not-selected` | warning | POV character is not selected, so the prompt falls back to its raw id/display limits. | Warning; §11 warnings never gate | — |
 | `prompt-middle-salience-risk` | warning | Snapshot is large enough to risk lost-in-the-middle prompt behavior. | Warning; §11 warnings never gate | Cases 31, 32 |
 | `many-high-salience-records` | warning | Many high-salience records are selected for one local unit. | Warning; §11 warnings never gate | Case 32 |
 | `offstage-entity-reference-unselected-optional` | warning | Offstage pressure names an existing ENTITY record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
 | `entity-statuses-reference-unselected-optional` | warning | Current agency/status names an existing ENTITY STATUS record that is not selected while the lane is optional. | Warning; §11 warnings never gate | — |
+| `voice-pressure-orphaned-attachment` | warning | Current voice pressure or voice override targets an existing CAST MEMBER that is not in a rendered cast band. | Warning; §11 warnings never gate | — |
 | `no-sample-utterances` | warning | Active cast has no selected sample utterances. | Warning; §11 warnings never gate | Case 8 |
 | `sparse-setting-texture` | warning | Setting texture is sparse for the current local unit. | Warning; §11 warnings never gate | — |
 | `no-active-clock-pressure` | warning | Directive has local pressure but no active clock, obligation, or open thread selected. | Warning; §11 warnings never gate | Case 26 |

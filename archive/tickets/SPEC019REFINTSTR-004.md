@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-004: Working-set and cast-band coherence rules
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `cast-band.ts` blocker rule module; one warning rule added and `pov-character-not-selected` removed in `warnings.ts`; `DIAGNOSTIC_CODES` gains four codes and loses `povCharacterNotSelected` (`@loom/core`); inventory rows added/removed; the existing POV warning test is rewritten. Adds blocking validation behavior and reverses one prior warning.
@@ -90,3 +90,24 @@ Add `...castBandRules` to `rules/index.ts`; add the five new codes and remove `p
 1. `npm test --workspace @loom/core -- validation-cast-band`
 2. `npm test --workspace @loom/core -- "validation-warnings-security|validation-rule-inventory"`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-10
+
+Implemented working-set and cast-band coherence validation in `packages/core/src/validation/rules/cast-band.ts`, registered it in the validation rule set, and added blocker diagnostics for duplicate cast-band membership, invalid cast-band references, invalid selected POV references, and invalid voice-pressure attachments. Removed the old non-blocking `pov-character-not-selected` warning code/rule and added the optional `voice-pressure-orphaned-attachment` warning for valid CAST MEMBER targets outside rendered cast bands.
+
+Updated `docs/validation-rule-inventory.md` and `DIAGNOSTIC_CODES` for the new code set. Added `packages/core/test/validation-cast-band.test.ts` and rewrote the POV coverage in `validation-warnings-security.test.ts`. Updated existing clean fixtures and the demo working set so they remain truthfully blocker-free under the stricter cast-band/POV contract without changing the frozen demo prompt baseline.
+
+Deviations: the docs/compiler-contract side of the POV warning removal remains intentionally deferred to SPEC019REFINTSTR-009, per this ticket's scope.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-cast-band` — passed.
+- `npm test --workspace @loom/core -- validation-warnings-security` — passed.
+- `npm test --workspace @loom/core -- validation-rule-inventory` — passed.
+- `rg -n "pov-character-not-selected|povCharacterNotSelected" packages/core/src packages/core/test docs/validation-rule-inventory.md` — no matches.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed; Vite reported the existing large chunk warning.

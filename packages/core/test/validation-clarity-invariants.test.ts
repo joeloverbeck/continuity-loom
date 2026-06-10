@@ -168,6 +168,10 @@ function trimmed(value: string): string {
 function cleanInput(): BuildValidationSnapshotInput {
   return {
     records: [
+      record(povId, "ENTITY", {
+        id: povId,
+        entity_kind: "person"
+      }),
       record(entityId, "ENTITY", {
         id: entityId,
         entity_kind: "person"
@@ -184,7 +188,7 @@ function cleanInput(): BuildValidationSnapshotInput {
     ],
     generationSession: {
       active_working_set: {
-        selected_records: [castId, factId],
+        selected_records: [povId, castId, factId],
         active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }],
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],

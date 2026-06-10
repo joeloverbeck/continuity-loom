@@ -1,4 +1,5 @@
 import type { ValidationRule } from "./types.js";
+import { castBandRules } from "./cast-band.js";
 import { durableChangeMatrixRules } from "./matrix-durable.js";
 import { knowledgeMatrixRules } from "./matrix-knowledge.js";
 import { physicalMatrixRules } from "./matrix-physical.js";
@@ -17,6 +18,7 @@ export const validationRules: readonly ValidationRule[] = Object.freeze([
   ...physicalMatrixRules,
   ...voiceMatrixRules,
   ...referentialBriefRules,
+  ...castBandRules,
   ...securityRules,
   ...warningRules
 ]);

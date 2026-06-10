@@ -609,7 +609,7 @@ export const demoGenerationSession = {
       { cast_member_id: demoRecordIds.nikoCast, local_function: "active_speaker" }
     ],
     present_minor_cast_compressed: [],
-    offstage_relevant_cast: [demoRecordIds.maraEntity, demoRecordIds.orinEntity],
+    offstage_relevant_cast: [],
     selected_pov: demoRecordIds.elinEntity,
     manual_directive_id: demoRecordIds.elinIntention
   },

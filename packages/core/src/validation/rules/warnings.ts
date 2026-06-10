@@ -1,6 +1,7 @@
 import { classifyReference } from "../reference-classification.js";
 import { DIAGNOSTIC_CODES, type Diagnostic } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
+import { castBandMemberIds } from "./cast-band.js";
 import {
   isEntityStatusesReferenceRequired,
   isOffstageEntityReferenceRequired
@@ -8,9 +9,9 @@ import {
 import type { ValidationRule } from "./types.js";
 
 export const warningRules: readonly ValidationRule[] = Object.freeze([
-  warnPovCharacterNotSelected,
   warnOffstageEntityReferenceUnselectedOptional,
   warnEntityStatusesReferenceUnselectedOptional,
+  warnVoicePressureOrphanedAttachment,
   warnPromptMiddleSalienceRisk,
   warnManyHighSalienceRecords,
   warnNoSampleUtterances,
@@ -22,26 +23,6 @@ export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnLowDramaScenePressure,
   warnStaleSelectedRecord
 ]);
-
-function warnPovCharacterNotSelected(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const pov = resolvedPov(snapshot);
-
-  if (!pov || pov === "omniscient" || pov === "variable") {
-    return [];
-  }
-
-  if (snapshot.records.some((record) => record.id === pov)) {
-    return [];
-  }
-
-  return [
-    warning(
-      DIAGNOSTIC_CODES.povCharacterNotSelected,
-      `The POV character ${pov} is not in the selected records, so its name cannot render in the prompt; select the POV entity into the active working set.`,
-      "generationSession.active_working_set.selected_pov"
-    )
-  ];
-}
 
 function warnOffstageEntityReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   if (isOffstageEntityReferenceRequired(snapshot)) {
@@ -85,6 +66,24 @@ function warnEntityStatusesReferenceUnselectedOptional(snapshot: ValidationSnaps
   });
 }
 
+function warnVoicePressureOrphanedAttachment(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const bandMemberIds = castBandMemberIds(snapshot);
+
+  return voicePressureAttachmentIds(snapshot).flatMap(({ id, field }) => {
+    const reference = classifyReference(snapshot, id, ["CAST MEMBER"]);
+
+    return reference.classification !== "dangling" && reference.typeMatches && !bandMemberIds.has(id)
+      ? [
+          warning(
+            DIAGNOSTIC_CODES.voicePressureOrphanedAttachment,
+            `Voice-pressure attachment ${id} resolves to a CAST MEMBER but is not attached to any rendered cast band.`,
+            field
+          )
+        ]
+      : [];
+  });
+}
+
 function warnPromptMiddleSalienceRisk(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return JSON.stringify(snapshotWithoutProjectRecordIndex(snapshot)).length > 5000
     ? [
@@ -106,12 +105,21 @@ function snapshotWithoutProjectRecordIndex(snapshot: ValidationSnapshot): Omit<V
   };
 }
 
-function resolvedPov(snapshot: ValidationSnapshot): string | undefined {
-  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
-}
-
 function currentStateArray(snapshot: ValidationSnapshot, field: "onstage_entities" | "offstage_pressuring_entities"): readonly string[] {
   return snapshot.generationSession.current_authoritative_state?.[field] ?? [];
+}
+
+function voicePressureAttachmentIds(snapshot: ValidationSnapshot): readonly { id: string; field: string }[] {
+  return [
+    ...(snapshot.generationSession.current_cast_voice_pressure ?? []).map((entry) => ({
+      id: entry.cast_member_id,
+      field: "generationSession.current_cast_voice_pressure"
+    })),
+    ...(snapshot.generationSession.cast_voice_overrides ?? []).map((entry) => ({
+      id: entry.cast_member_id,
+      field: "generationSession.cast_voice_overrides"
+    }))
+  ];
 }
 
 function warnManyHighSalienceRecords(snapshot: ValidationSnapshot): readonly Diagnostic[] {
