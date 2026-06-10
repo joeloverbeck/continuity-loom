@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new doc `docs/validation-rule-inventory.md`, new test `packages/core/test/validation-rule-inventory.test.ts`, one registry row in `docs/ACTIVE-DOCS.md`; no production behavior change
-**Deps**: SPEC018FOUDOCCON-002 (the ACTIVE-DOCS registry must exist to receive this doc's row). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D7).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-002.md` (the ACTIVE-DOCS registry must exist to receive this doc's row). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D7).
 
 ## Problem
 
@@ -48,7 +48,7 @@ The implemented validation taxonomy — 55 diagnostic codes in `DIAGNOSTIC_CODES
 
 ### 3. Add the registry row in `docs/ACTIVE-DOCS.md`
 
-One row for `docs/validation-rule-inventory.md` (scope, genre `audit`, tier per the registry's vocabulary), per the registry-completeness rule introduced in SPEC018FOUDOCCON-002.
+One row for `docs/validation-rule-inventory.md` (scope, genre `audit`, tier per the registry's vocabulary), per the registry-completeness rule introduced in `archive/tickets/SPEC018FOUDOCCON-002.md`.
 
 ## Files to Touch
 

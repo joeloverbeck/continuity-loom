@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — header standardization across 10 active docs plus three in-place corrections (contract-version pin, schema storage-note contextualization, demo-recipes provenance); no production behavior change
-**Deps**: SPEC018FOUDOCCON-002 (headers cite the authority tiers the registry defines). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D2 + D3 + D4 + D6, merged — they edit the same header regions of overlapping files).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-002.md` (headers cite the authority tiers the registry defines). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D2 + D3 + D4 + D6, merged — they edit the same header regions of overlapping files).
 
 ## Problem
 

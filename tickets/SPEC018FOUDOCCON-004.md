@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new doc `docs/narrative-theory-blocker-roadmap.md`, one registry row in `docs/ACTIVE-DOCS.md`; no production behavior change
-**Deps**: SPEC018FOUDOCCON-002 (the ACTIVE-DOCS registry must exist to receive this doc's row). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D8).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-002.md` (the ACTIVE-DOCS registry must exist to receive this doc's row). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D8).
 
 ## Problem
 
@@ -42,7 +42,7 @@ SPEC-018's research pass identified theory-grounded candidates for future determ
 
 ### 2. Add the registry row in `docs/ACTIVE-DOCS.md`
 
-One row for `docs/narrative-theory-blocker-roadmap.md` (scope, genre, tier — `support`, non-binding), per the registry-completeness rule from SPEC018FOUDOCCON-002.
+One row for `docs/narrative-theory-blocker-roadmap.md` (scope, genre, tier — `support`, non-binding), per the registry-completeness rule from `archive/tickets/SPEC018FOUDOCCON-002.md`.
 
 ## Files to Touch
 

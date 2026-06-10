@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-002: Harden docs/ACTIVE-DOCS.md into the authority registry
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/ACTIVE-DOCS.md` (authority registry, precedence ladder, snapshot-claim removal, version-claim fix); no production behavior change
@@ -88,3 +88,28 @@ A new file under `docs/` must be added to the registry in the same change.
 1. `grep -ci "currently no active" docs/ACTIVE-DOCS.md` (expect `0`) and `ls docs/*.md | wc -l` vs registry row count (expect 11/11)
 2. `npm run lint && npm run typecheck && npm test`
 3. Grep-proofs are the correct verification boundary: the deliverable is registry/claim content in one doc; the pipeline run only proves no collateral damage.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Added the active docs registry table for all 11 current `docs/*.md` files.
+- Added the precedence ladder mirroring FOUNDATIONS §1.1.
+- Added the registry-completeness same-change rule.
+- Replaced rot-prone active-ticket/spec snapshot claims with directions to inspect `tickets/` and `specs/` directly.
+- Corrected the version note to cite `packages/core/src/version.ts` and list template `1.0.0`, compiler `1.2.0`, and compiler contract `1.2.0`.
+
+Deviations from original plan:
+
+- None.
+
+Verification results:
+
+- `grep -ci "currently no active" docs/ACTIVE-DOCS.md` returned `0`.
+- Registry completeness check over current `docs/*.md` printed no missing files; registry row count was 11.
+- Version grep showed `packages/core/src/version.ts`, template `1.0.0`, compiler `1.2.0`, and compiler contract `1.2.0`.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 103 test files, 777 tests.

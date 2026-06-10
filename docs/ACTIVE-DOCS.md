@@ -19,6 +19,24 @@ Use it as the starting map before opening tickets or making code changes. It doe
 
 ## Authority hierarchy
 
+On conflict between active documents, precedence is: this document first, then the domain authority that `docs/ACTIVE-DOCS.md` names for the touched surface, then support docs and guides. `docs/ACTIVE-DOCS.md` is the registry of which document is the domain authority for each surface.
+
+Every active `docs/*.md` file must appear in the registry below. A new file under `docs/` must be added to this registry in the same change.
+
+| Doc | Scope | Genre | Authority tier |
+|---|---|---|---|
+| `docs/FOUNDATIONS.md` | Product identity, continuity authority, prompt-compilation doctrine, validation doctrine, workflow doctrine, and future-feature alignment standard. | reference | constitutional |
+| `docs/ACTIVE-DOCS.md` | Authority registry, active-vs-archive boundaries, and change-intake rules for coding agents. | reference | support |
+| `docs/compiler-contract.md` | Deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy. | reference | domain authority for prompt compiler and validation bridge |
+| `docs/prompt-template.md` | Universal prose prompt template text and placeholder structure. | reference | domain authority for universal prompt template |
+| `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
+| `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
+| `docs/stress-suite.md` | Canonical stress cases for validation, compiler, prompt, and demo regression coverage. | audit | domain authority for validation stress cases |
+| `docs/stress-coverage-matrix.md` | Stress-case coverage matrix tying cases to validation rules, compiler behavior, and regression surfaces. | audit | support |
+| `docs/demo-blocker-recipes.md` | Demo-fixture smoke recipes for validation blockers and warnings. | how-to | support |
+| `docs/user-guide.md` | User-facing local install, run, verify, and app workflow guidance. | how-to | support |
+| `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
+
 ### Constitutional authority
 
 - `docs/FOUNDATIONS.md`
@@ -82,7 +100,7 @@ Active implementation tickets live in:
 
 - `tickets/`
 
-There are currently no active implementation tickets.
+Check `tickets/` directly for active implementation tickets. The directory contents are the current task authority, not a point-in-time statement in this map.
 
 The post-v1 cleanup ticket that removed the orphaned validation diagnostic code is complete and archived at:
 
@@ -92,7 +110,7 @@ Active specs live in:
 
 - `specs/`
 
-There are currently no active specs. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
+Check `specs/` directly for active implementation specs. The directory contents are the current spec authority, not a point-in-time statement in this map. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
 
 - `archive/specs/SPEC-implementation-order-and-regression-plan.md`
 - `archive/specs/IMPLEMENTATION-ORDER-2026-06-08.md`
@@ -133,6 +151,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions and are `1.0.0` in `packages/core/src/version.ts`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; as of this writing, template is `1.0.0`, compiler is `1.2.0`, and compiler contract is `1.2.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.
