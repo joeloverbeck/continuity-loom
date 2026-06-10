@@ -27,7 +27,7 @@ Once the SPEC-018 docs land, the repo's entry points must reference them or agen
 ## Verification Layers
 
 1. Spec §Verification checks 1–7 hold end-to-end → command runbook below (each check is a copy-paste command).
-2. §Verification check 8 (D9 wording matches sign-off) → manual review (diff `docs/FOUNDATIONS.md` §1.1/§28.8 against the wording signed off on SPEC018FOUDOCCON-001).
+2. §Verification check 8 (D9 wording matches sign-off) → manual review (diff `docs/FOUNDATIONS.md` §1.1/§28.8 against the wording signed off on `archive/tickets/SPEC018FOUDOCCON-001.md`).
 3. Cross-references resolve → codebase grep-proof (every `docs/`-internal path in active docs, `CLAUDE.md`, `AGENTS.md`, `README.md` exists on disk).
 4. Archival boundary correct → codebase grep-proof (`test ! -f specs/SPEC-018-…md && test -f archive/specs/SPEC-018-…md`; no active doc references the old `specs/` path).
 
@@ -80,7 +80,7 @@ Per `docs/archival-workflow.md`: flip `**Status:** DRAFT` to `**Status**: COMPLE
 4. Matrix completeness (spec §V4): the Case-loop grep from SPEC018FOUDOCCON-006 prints nothing; `grep -c "predates Cases 27" docs/stress-coverage-matrix.md` returns 0.
 5. Snapshot claims gone (spec §V6): `grep -ci "currently no active" docs/ACTIVE-DOCS.md` returns 0.
 6. Cross-references resolve (spec §V7): every `docs/`-internal path mentioned in active docs, `CLAUDE.md`, `AGENTS.md`, `README.md` exists on disk (script the extraction with grep -oE on `docs/[a-z-]+\.md` + `test -f` loop).
-7. D9 wording match (spec §V8): `docs/FOUNDATIONS.md` §1.1/§28.8 text matches the sign-off recorded on SPEC018FOUDOCCON-001 (manual diff).
+7. D9 wording match (spec §V8): `docs/FOUNDATIONS.md` §1.1/§28.8 text matches the sign-off recorded on `archive/tickets/SPEC018FOUDOCCON-001.md` (manual diff).
 8. Archival boundary: `test ! -f specs/SPEC-018-foundational-docs-consolidation-and-hardening.md && test -f archive/specs/SPEC-018-foundational-docs-consolidation-and-hardening.md`.
 
 ### Invariants

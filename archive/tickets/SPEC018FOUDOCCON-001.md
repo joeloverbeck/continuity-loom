@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-001: FOUNDATIONS amendments — §1.1 amendment procedure, §28.8 differentiator, §30 source anchors
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `docs/FOUNDATIONS.md` (constitutional doc, three additive amendments); no production behavior change
@@ -107,3 +107,24 @@ Add the survey sources backing §28.8 to the "Selected reference anchors" list i
 1. `grep -n "### 1.1 Amendment procedure\|### 28.8 Validate-and-block" docs/FOUNDATIONS.md`
 2. `npm run lint && npm run typecheck && npm test`
 3. Targeted greps are the correct verification boundary: the change is additive markdown in one doc; the full pipeline run only proves no collateral damage.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Added signed-off FOUNDATIONS §1.1 amendment procedure and precedence wording.
+- Added signed-off FOUNDATIONS §28.8 validate-and-block differentiator wording.
+- Appended the similar-tools survey anchors to FOUNDATIONS §30 source notes.
+
+Deviations from original plan:
+
+- None. The implementation was documentation-only and did not change §29 or production behavior.
+
+Verification results:
+
+- `grep -n "### 1.1 Amendment procedure and precedence\|### 28.8 Validate-and-block before generation is the differentiator" docs/FOUNDATIONS.md` returned exactly the two expected headings.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 103 test files, 777 tests.

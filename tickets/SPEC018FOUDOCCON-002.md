@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/ACTIVE-DOCS.md` (authority registry, precedence ladder, snapshot-claim removal, version-claim fix); no production behavior change
-**Deps**: SPEC018FOUDOCCON-001 (the precedence ladder must mirror the signed-off §1.1 wording). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D1).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-001.md` (the precedence ladder must mirror the signed-off §1.1 wording). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D1).
 
 ## Problem
 
@@ -14,7 +14,7 @@
 
 1. Verified against the working tree 2026-06-10: `packages/core/src/version.ts` lines 25–37 hold `templates: 1.0.0`, `compiler: 1.2.0`, `contract: 1.2.0`; `docs/ACTIVE-DOCS.md` line ~136 (under `## Version note`, heading at line 134) falsely claims all three "are `1.0.0`"; the snapshot claims sit at lines ~85 and ~95 under `## Active tickets and specs` (heading at line 79). `docs/` currently contains exactly 11 `.md` files.
 2. SPEC-018 D1 was reassessed 2026-06-10 (`/reassess-spec`) with all premises re-verified; the registry covers the 11 existing docs — the two new docs (`docs/validation-rule-inventory.md`, `docs/narrative-theory-blocker-roadmap.md`) add their own rows in SPEC018FOUDOCCON-003/-004 per the registry-completeness rule this ticket introduces (deliberate dogfooding, coordinated under SPEC-018 D10).
-3. Cross-artifact boundary under audit: the precedence-ladder wording mirrors FOUNDATIONS §1.1 as signed off on SPEC018FOUDOCCON-001 — copy that exact ladder ("this document first, then the domain authority that `docs/ACTIVE-DOCS.md` names for the touched surface, then support docs and guides"), do not paraphrase. If 001's sign-off revised the wording, this ticket inherits the revision.
+3. Cross-artifact boundary under audit: the precedence-ladder wording mirrors FOUNDATIONS §1.1 as signed off on `archive/tickets/SPEC018FOUDOCCON-001.md` — copy that exact ladder ("this document first, then the domain authority that `docs/ACTIVE-DOCS.md` names for the touched surface, then support docs and guides"), do not paraphrase. If 001's sign-off revised the wording, this ticket inherits the revision.
 4. FOUNDATIONS principle restated before trusting the spec narrative: §8 treats drift between authority docs as a continuity bug; this ticket removes drift (false version claim) and adds the registry-completeness same-change rule extending that doctrine to the registry itself. No validation gate, compilation behavior, or record authority is touched.
 5. Mismatch + correction: none — all line anchors re-verified this session; treat line numbers as informational and re-locate by heading/text if the file moved since.
 
@@ -60,7 +60,7 @@ A new file under `docs/` must be added to the registry in the same change.
 
 - The two new docs' registry rows (added by SPEC018FOUDOCCON-003/-004 when those files land).
 - Header standardization of `docs/ACTIVE-DOCS.md` per D2 (SPEC018FOUDOCCON-005).
-- Any FOUNDATIONS edit (SPEC018FOUDOCCON-001).
+- Any FOUNDATIONS edit (`archive/tickets/SPEC018FOUDOCCON-001.md`).
 - Numbered folder restructuring or file moves under `docs/` (spec-rejected).
 
 ## Acceptance Criteria

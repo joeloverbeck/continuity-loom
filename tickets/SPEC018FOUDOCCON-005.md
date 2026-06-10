@@ -71,7 +71,7 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 
 ## Out of Scope
 
-- `docs/FOUNDATIONS.md` (header explicitly exempt; constitutional work is D9a-gated — SPEC018FOUDOCCON-001).
+- `docs/FOUNDATIONS.md` (header explicitly exempt; constitutional work is D9a-gated — `archive/tickets/SPEC018FOUDOCCON-001.md`).
 - The two new docs' headers (created conforming in SPEC018FOUDOCCON-003/-004).
 - Stress-matrix body backfill (SPEC018FOUDOCCON-006 — this ticket touches only the headers of those two files).
 - Archiving `docs/demo-blocker-recipes.md` (spec-rejected; it stays active).

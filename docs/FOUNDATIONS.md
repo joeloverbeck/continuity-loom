@@ -24,6 +24,17 @@ The app must protect the author’s continuity from three recurring failure mode
 
 The app’s first obligation is not to make generation effortless. Its first obligation is to make continuity disciplined, legible, and author-owned.
 
+### 1.1 Amendment procedure and precedence
+
+A change to this document is constitutional work. An amendment must:
+
+1. be proposed as an explicitly labeled FOUNDATIONS amendment in a spec or ticket, with the exact wording shown;
+2. receive explicit user sign-off on that wording before implementation;
+3. if coupled to a code or behavior change that depends on it, land in the same revision as that change — never standalone ahead of it;
+4. update the §29 alignment checklist in the same amendment when it changes what proposals must clear.
+
+On conflict between active documents, precedence is: this document first, then the domain authority that `docs/ACTIVE-DOCS.md` names for the touched surface, then support docs and guides. `docs/ACTIVE-DOCS.md` is the registry of which document is the domain authority for each surface.
+
 ---
 
 ## 2. App identity
@@ -869,6 +880,19 @@ Deprecated facts are dangerous prompt-facing material. Resolved and abandoned pr
 
 Rich voice fields preserve character specificity better than generic labels. Sample utterances can help, but too many examples can over-condition outputs and encourage mimicry. Use sparse, annotated, non-copyable speech-function examples.
 
+### 28.8 Validate-and-block before generation is the differentiator
+
+Surveyed story-AI tools maintain story state, but none deterministically validate and block generation on inconsistent state; the field handles consistency probabilistically after generation, or not at all. Continuity Loom's fail-closed pre-generation gate is a deliberate inversion of the field's norm, not an implementation detail.
+
+The industry's recurring failure modes are rejected by name:
+
+- **state laundering** — AI-generated bible entries, automatic prose-derived summaries, or AI-updated profiles quietly becoming canon;
+- **keyword-triggered context activation** — record inclusion decided by string matching against recent text instead of explicit user selection;
+- **token-budget eviction** — silently trimming or dropping selected context to fit a budget;
+- **probabilistic inclusion** — records entering the prompt by chance.
+
+Compiled prompt size never causes silent eviction. Oversize and salience risks are warning surfaces; the user, not the compiler, decides what leaves the active working set.
+
 ---
 
 ## 29. Alignment checklist for future specs and tickets
@@ -1011,3 +1035,13 @@ Selected reference anchors:
 - Kleppmann, Wiggins, van Hardenberg, and McGranaghan, “Local-first software”: https://www.inkandswitch.com/essay/local-first/
 - OpenRouter documentation, “Authentication”: https://openrouter.ai/docs/api/reference/authentication
 - OpenRouter documentation, “Quickstart”: https://openrouter.ai/docs/quickstart
+- Novelcrafter: https://www.novelcrafter.com/
+- Sudowrite: https://www.sudowrite.com/
+- Raptor Write: https://raptorwrite.com/
+- Plottr: https://plottr.com/
+- Campfire: https://www.campfirewriting.com/
+- World Anvil: https://www.worldanvil.com/
+- SillyTavern World Info documentation: https://docs.sillytavern.app/usage/core-concepts/worldinfo/
+- NovelAI Lorebook documentation: https://docs.novelai.net/text/lorebook.html
+- AI Dungeon: https://aidungeon.com/
+- waterverri/continuum: https://github.com/waterverri/continuum
