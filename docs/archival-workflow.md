@@ -1,8 +1,11 @@
 # Archival Workflow
 
+Status: active how-to — repository archival destinations, required closeout steps, and post-archive reference rules
+Authority: support (see docs/ACTIVE-DOCS.md)
+
 Use this as the canonical archival policy for completed, rejected, deferred, or superseded repository work products.
 
-This policy covers tickets, specs, completed requirements sets, brainstorming docs, and reports. It does not authorize archiving active canonical docs such as `docs/FOUNDATIONS.md`, `docs/compiler-contract.md`, `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/story-record-schema.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`, `docs/user-guide.md`, `README.md`, `AGENTS.md`, or `CLAUDE.md` unless a later transition audit or replacement spec explicitly says so.
+This policy covers tickets, specs, completed requirements sets, brainstorming docs, and reports. It does not authorize archiving active canonical docs such as `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`, `docs/archival-workflow.md`, `docs/compiler-contract.md`, `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/story-record-schema.md`, `docs/validation-rule-inventory.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`, `docs/user-guide.md`, `README.md`, `AGENTS.md`, or `CLAUDE.md` unless a later transition audit or replacement spec explicitly says so. `docs/narrative-theory-blocker-roadmap.md` is non-binding support material and may be archived if superseded.
 
 ## Archive destinations
 
@@ -11,7 +14,7 @@ Use these destinations:
 - active tickets → `archive/tickets/`
 - active specs → `archive/specs/`
 - completed requirements sets → `archive/<requirements-folder-name>/`
-  - example: `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` → `archive/requirements-version-1/IMPLEMENTATION-ORDER.md`
+  - example destination: `archive/requirements-version-1/IMPLEMENTATION-ORDER.md`
 - brainstorming docs → `archive/brainstorming/`
 - reports → `archive/reports/`
 

@@ -1,5 +1,8 @@
 # Continuity Loom User Guide
 
+Status: active how-to — user-facing local install, run, verify, and app workflow guidance
+Authority: support (see docs/ACTIVE-DOCS.md)
+
 Continuity Loom is a local-first story-state app. You maintain story records, choose the records that matter for the next local prose segment, inspect the deterministic prompt, and decide whether to send it to OpenRouter.
 
 The records are the continuity authority. Accepted prose is readable output, not canon for future prompts.

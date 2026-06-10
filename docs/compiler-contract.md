@@ -1,14 +1,16 @@
 # Compiler Contract — Continuity Loom
 
-Status: authoritative deterministic prompt-compilation and validation bridge  
-Scope: conceptual compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy  
-Non-scope: code, SQL, API design, migrations, UI mockups, tickets, tests
+Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
+Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
+Contract version: `1.2.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
 ## 1. Purpose
 
 `compiler-contract.md` exists to prevent drift between `FOUNDATIONS.md`, `prompt-template.md`, `prompt-template-rationale.md`, `story-record-schema.md`, stress examples, and generated prompt surfaces.
+
+Non-scope: code, SQL, API design, migrations, UI mockups, tickets, tests.
 
 The compiler is a deterministic renderer. Given the same story configuration, selected records, generation-time fields, template version, compiler version, and compiler contract version, it must produce the same prompt.
 

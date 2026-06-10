@@ -1,9 +1,13 @@
 # Stress Coverage Matrix
 
-Status: active SPEC-013 coverage audit  
+Status: active audit — stress-case coverage matrix tying cases to validation rules, compiler behavior, and regression surfaces
+Authority: support (see docs/ACTIVE-DOCS.md)
+
 Source: `docs/stress-suite.md`
 
 This is conceptual coverage. The demo does not instantiate every stress case; it gives a normal local project baseline while the validation/compiler capability tests assert representative v1 support for each risk area.
+
+Same-change maintenance rule: a new stress case in `docs/stress-suite.md` must land with its numbered matrix row and any relevant readiness/draftability coverage row updates in this file in the same revision.
 
 | # | Stress case | Risk area | Implemented v1 capability |
 |---|---|---|---|
@@ -33,22 +37,27 @@ This is conceptual coverage. The demo does not instantiate every stress case; it
 | Case 24 | Object use without transfer | Object use and transfer | `matrix-object-use-incomplete`, `object-current-holder-contradiction`; object state plus visible `use` affordance. |
 | Case 25 | Location change under route/time constraints | Physical continuity; clocks/obligations/consequences | `matrix-location-change-incomplete`, `matrix-clock-tick-incomplete`, `inactive-plan-holder`; route/time/destination and movement-constraint locks. |
 | Case 26 | Stop-rule response point without over-continuation | Local-prose-only stop boundary | `local-prose-scope-violation`, `directive-stop-guidance-disagreement`; blank `soft_unit_guidance` still uses the universal local stop rule and does not block. |
+| Case 27 | Draft save despite readiness blockers | Readiness vs draft persistence | `missing-manual-directive` and `missing-current-authoritative-state` block Preview/Generate readiness, while draft persistence accepts structurally saveable incomplete generation briefs; see readiness table row "Draft save with blockers". |
+| Case 28 | Generation-context default mismatch prevention | Deterministic readiness normalization | `deriveGenerationContextDefault` and `normalizeGenerationSessionForReadiness` resolve exactly one `generation_context` from accepted-segment count; `focus-tag-count-invalid` covers invalid multi-context state rather than omitted draft context. |
+| Case 29 | Continuation default from accepted-segment count | No accepted prose in prompts / continuation handoff | `deriveGenerationContextDefault` resolves continuation after accepted segments; `missing-immediate-handoff` requires user-authored handoff and `prompt-facing-prose-contamination` blocks accepted prose, rejected candidates, superseded regenerations, and automatic summaries. |
+| Case 30 | Provider-only Generate block | Provider separation from story/compiler readiness | Readiness `provider-configuration-missing` blocks Generate when OpenRouter credentials are missing while prompt Preview can remain available; provider blockers are separate from core story/compiler diagnostics. |
+| Case 31 | Deduplicated long-dossier warning | Warning deduplication; large-context salience | `cast-salience-risk`, `ensemble-voice-distinction-risk`, `local-voice-pressure-may-help`, and `prompt-middle-salience-risk` remain grouped warning surfaces; warnings do not block Preview/Generate when durable/compressed voice authority is sufficient. |
 | Case 32 | Cross-segment salience duplicate calibration | Prompt salience vs redundant restatement; long-context placement; duplicate-noise control | Active working set predicates (`fact_kind`/`scope`/`salience` FACT gate, `event_kind`/`current_relevance` EVENT gate), belief behavior-first pressure, affordance removal from `material_pressure`, voice-pin preservation; golden prompt diff plus compiler pressure tests prove current-pressure summaries remain dual-frame while inert archive text is not copied forward. |
-
-Note: this numbered table predates Cases 27-31 in `docs/stress-suite.md`; backfilling those rows is pre-existing matrix-maintenance drift and is out of scope for Case 32.
 
 ## Readiness and draftability coverage
 
+The numbered table above maps each stress case to implemented behavior. This readiness table cuts across Cases 27-31 by shared product surface so draftability, normalization, warning behavior, and provider separation stay visible without duplicating every case row.
+
 | Coverage area | Required proof |
 |---|---|
-| Draft save with blockers | A structurally saveable generation brief can save while Preview/Generate remain blocked by readiness diagnostics. |
-| Blank stop guidance | Blank `soft_unit_guidance` does not block; supplied nonlocal or contradictory guidance still blocks. |
-| First-segment default | No accepted segments resolves `generation_context` to `first_segment` without requiring continuation handoff. |
-| Continuation default | One or more accepted segments resolves `generation_context` to `continuation_after_accepted_segment` and requires user-authored handoff. |
-| Manual directive required | Blank `manual_moment_directive.must_render` blocks readiness, not draft saving. |
-| Current-state universal floor | Time, location/scene-space, onstage/material entities, and immediate situation summary are the universal floor. |
+| Draft save with blockers | Case 27: a structurally saveable generation brief can save while Preview/Generate remain blocked by readiness diagnostics. |
+| Blank stop guidance | Case 26: blank `soft_unit_guidance` does not block; supplied nonlocal or contradictory guidance still blocks. |
+| First-segment default | Case 28: no accepted segments resolves `generation_context` to `first_segment` without requiring continuation handoff. |
+| Continuation default | Case 29: one or more accepted segments resolves `generation_context` to `continuation_after_accepted_segment` and requires user-authored handoff. |
+| Manual directive required | Case 27: blank `manual_moment_directive.must_render` blocks readiness, not draft saving. |
+| Current-state universal floor | Case 27: time, location/scene-space, onstage/material entities, and immediate situation summary are the universal floor. |
 | Physical context gating | Positions, routes, line of sight, locks, force, objects, and time block only when explicit mode/records/directive make them structurally necessary. |
-| Voice pressure optionality | Durable CAST MEMBER anchors are primary; missing current pins warn unless no durable/compressed authority exists. |
-| Warning deduplication | Long-dossier and optional-pin risks are grouped salience warnings, not repeated blockers. |
-| Three-page shared readiness | Generation Brief, Preview, and Generate use the same readiness model; provider configuration can block Generate without blocking Preview. |
-| Provider separation | Provider configuration blockers are separate from story/compiler readiness blockers. |
+| Voice pressure optionality | Case 31: durable CAST MEMBER anchors are primary; missing current pins warn unless no durable/compressed authority exists. |
+| Warning deduplication | Case 31: long-dossier and optional-pin risks are grouped salience warnings, not repeated blockers. |
+| Three-page shared readiness | Cases 27-31: Generation Brief, Preview, and Generate use the same readiness model; provider configuration can block Generate without blocking Preview. |
+| Provider separation | Case 30: provider configuration blockers are separate from story/compiler readiness blockers. |

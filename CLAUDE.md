@@ -44,7 +44,8 @@ Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domai
 | The deterministic prompt compiler | `docs/compiler-contract.md` |
 | The universal prompt template / its rationale | `docs/prompt-template.md`, `docs/prompt-template-rationale.md` |
 | Story record shape and fields | `docs/story-record-schema.md` |
-| Validation, stress behavior, hard-fail edge cases, or demo blockers | `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md` |
+| Validation, stress behavior, hard-fail edge cases, or demo blockers | `docs/validation-rule-inventory.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md` |
+| Non-binding validation research candidates | `docs/narrative-theory-blocker-roadmap.md` |
 | User-facing local loop and project ownership | `docs/user-guide.md` |
 
 ## Tickets, specs, and archive

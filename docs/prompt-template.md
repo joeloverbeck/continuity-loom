@@ -1,11 +1,12 @@
 # Definitive Universal Prose Prompt Template
 
-Purpose: generated prompt surface for an external LLM prose writer  
-Output expected from external LLM: prose only  
-Style: portable Markdown/XML hybrid  
-Status: corrected implementation baseline
+Status: active reference — universal prose prompt template text and placeholder structure
+Authority: domain authority for universal prompt template (see docs/ACTIVE-DOCS.md)
 
 ---
+
+Output expected from external LLM: prose only.
+Style: portable Markdown/XML hybrid.
 
 ## Template
 

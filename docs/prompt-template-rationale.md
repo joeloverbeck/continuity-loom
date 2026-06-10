@@ -1,7 +1,7 @@
 # Rationale for the Universal Prose Prompt Template
 
-Purpose: durable explanation of the sections, categories, placeholders, and major design decisions in `prompt-template.md`.  
-Status: corrected companion rationale aligned with `FOUNDATIONS.md`, `story-record-schema.md`, and `compiler-contract.md`.
+Status: active explanation — rationale for prompt-template design choices and section ordering
+Authority: support (see docs/ACTIVE-DOCS.md)
 
 ---
 

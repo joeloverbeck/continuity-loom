@@ -1,8 +1,7 @@
 # Definitive Story Record Schema for the Continuity-First Prose App
 
-Status: corrected baseline requirements schema  
-Purpose: conceptual schema, prompt-compilation behavior, validation requirements, and minimal record taxonomy  
-Scope: not SQL, UI design, API design, migrations, tickets, or implementation plan
+Status: active reference — story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy
+Authority: domain authority for story record and generation-time brief schema (see docs/ACTIVE-DOCS.md)
 
 ---
 
@@ -122,11 +121,13 @@ selected_pov: entity_id | omniscient
 manual_directive_id: id
 ```
 
-Storage note: as of SPEC004RECCRUBAS-002 Option A, Phase 4 may persist
-membership-only active working sets containing `selected_records` without a POV
-or manual directive. `selected_pov` and `manual_directive_id` remain
-generation-time-required, but that fail-closed check belongs to the Phase-6
-validation engine rather than the storage schema.
+Storage note: historical provenance from SPEC004RECCRUBAS-002 Option A,
+implemented as designed and archived at
+`archive/tickets/SPEC004RECCRUBAS-002.md`: storage may persist membership-only
+active working sets containing `selected_records` without a POV or manual
+directive. `selected_pov` and `manual_directive_id` remain
+generation-time-required, but that fail-closed check belongs to the validation
+engine rather than the storage schema.
 
 Compiler requirements:
 
