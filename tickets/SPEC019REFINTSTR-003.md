@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `referential-brief.ts` blocker rule module + two warning rules in `warnings.ts`; registered in `rules/index.ts`; new `DIAGNOSTIC_CODES` entries (`@loom/core`); `docs/validation-rule-inventory.md` rows; new unit test. Adds blocking validation behavior.
-**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, SPEC019REFINTSTR-002
+**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, `archive/tickets/SPEC019REFINTSTR-002.md`
 
 ## Problem
 

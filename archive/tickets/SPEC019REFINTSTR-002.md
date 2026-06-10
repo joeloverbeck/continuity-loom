@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-002: Reference classification helper
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — new shared validation helper in `@loom/core` (`reference-classification.ts`) plus its unit test; no production behavior change until the reference rules (003–006) consume it.
@@ -76,3 +76,20 @@ Re-export from `packages/core/src/validation/` as needed so 003–006 can import
 
 1. `npm test --workspace @loom/core -- validation-reference-classification`
 2. `npm run lint && npm run typecheck && npm test --workspace @loom/core` — narrower than the full pipeline because this ticket adds a pure helper with no server/web surface; the cross-package consumers arrive in 003–006.
+
+## Outcome
+
+Completed: 2026-06-10
+
+Implemented `classifyReference` in `packages/core/src/validation/reference-classification.ts`. The helper classifies references as `selected`, `unselected`, or `dangling`, reports the resolved `actualType`, and checks optional expected record-type sets using only snapshot membership and type comparison.
+
+Added `packages/core/test/validation-reference-classification.test.ts` covering the three classification states, selected-record type precedence over the project index, expected-type matches/mismatches, the no-expected-types path, and deterministic repeated calls.
+
+Deviations: none.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-reference-classification` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test --workspace @loom/core` — passed.

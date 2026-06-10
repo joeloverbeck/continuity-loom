@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `record-internal.ts` blocker rule module (a first validation consumer of `extractRecordReferences`); one warning rule in `warnings.ts`; `DIAGNOSTIC_CODES` + inventory rows (`@loom/core`); a new drift test locking `extractReferences` completeness. Adds blocking validation behavior; no record-extraction declaration is added (they already exist).
-**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, SPEC019REFINTSTR-002
+**Deps**: `archive/tickets/SPEC019REFINTSTR-001.md`, `archive/tickets/SPEC019REFINTSTR-002.md`
 
 ## Problem
 
