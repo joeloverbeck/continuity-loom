@@ -136,6 +136,9 @@ Compiler requirements:
 - Do not silently remove or compress selected active/onstage cast.
 - Use `local_function` to determine validation floors and voice/body pin requirements, not to reduce a full active/onstage dossier.
 - Warn about risky omissions or prompt length; block only when minimum completeness or contradiction rules require it.
+- `selected_records` ids must resolve before a validation snapshot can be built; stale ids fail closed with the missing ids and the fix to remove them from the working set.
+- Cast-band ids must resolve to selected CAST MEMBER records and a cast member may appear in only one rendered band.
+- `selected_pov` may be `omniscient` or `variable`; otherwise it must resolve to a selected ENTITY or CAST MEMBER before compilation.
 
 ### 3.2 CURRENT AUTHORITATIVE STATE
 
@@ -190,6 +193,15 @@ Prompt treatment:
 - `immediate_situation_summary` is a short, user-authored, prose-neutral description of the immediate local situation; it must not be generated from accepted prose, candidate prose, or automatic summaries.
 - Overrides older events, older facts, and stale descriptions, but contradictions must be resolved before compilation.
 - Should be compact, explicit, and state-like.
+
+Validation:
+
+- `onstage_entities` ids must resolve to selected ENTITY records.
+- `offstage_pressuring_entities` ids must resolve to ENTITY records; unselected resolved ids warn when the lane is optional and block when offstage interruption pressure is required.
+- `entity_statuses` record-id arrays must resolve to ENTITY STATUS records; unselected resolved ids warn when optional and block when current agency/status is required.
+- `current_location` may be prose. If it resolves to a project record, it must be a selected LOCATION record.
+- The same entity must not appear as both onstage and offstage-pressuring.
+- A selected ENTITY STATUS for an onstage entity must not place it `offstage`, `concealed`, or at a different record-id current location.
 
 ### 3.3 IMMEDIATE HANDOFF
 
@@ -291,7 +303,8 @@ Compiler treatment:
 
 Validation:
 
-- Warn if the override targets a cast member not selected for the current generation.
+- Warn if the override targets an existing cast member not selected for the current generation.
+- Block if the override targets a missing or non-CAST MEMBER record.
 - Block if it contradicts hard canon, current authoritative state, physical continuity, POV constraints, reveal constraints, or governing content policy.
 - Do not block merely because it is stylistic, temporary, or prose-rich.
 
@@ -408,6 +421,12 @@ Prompt treatment:
 - Compiles into current authoritative state and physical continuity.
 - Contradictions with active plans, current state, or location records block when they make the generation impossible or contradictory.
 
+Validation:
+
+- `entity_id` must resolve to an ENTITY record. Dangling or mistyped references block; unselected resolved entity ids warn while optional.
+- Record-id `location` values must resolve to LOCATION records. Dangling or mistyped references block; unselected resolved locations warn while optional.
+- If the entity is listed as onstage in current authoritative state, `location` must not be `offstage`, `concealed`, or a different record-id current location.
+
 ## 5. CAST MEMBER rich dossier
 
 Active/onstage cast need rich dossiers, but not every rich field should be a universal blocker. The corrected shape distinguishes a required voice/behavior core from optional extended richness. The compiler includes all populated active/onstage dossier fields; it must not silently compress them.
@@ -449,6 +468,10 @@ agency_core:
 ```
 
 Core fields are required for materially involved active/onstage person-like cast. They are not all universal blockers for every background mention. A field may be filled with a concise “none / not distinctive” value only when that absence is itself truthful and useful.
+
+Validation:
+
+- `entity_id` must resolve to an ENTITY record. Dangling or mistyped references block; unselected resolved entity ids warn while optional.
 
 ### 5.2 Optional extended fields
 
@@ -523,6 +546,7 @@ Rules:
 - Required for active silent cast when their visible presence, body, gesture, silence, or social pressure materially matters.
 - The compiler may merge fields deterministically; it must not use an LLM to summarize them.
 - The pin is a salience duplicate. It does not replace full dossiers.
+- `cast_member_id` must resolve to a CAST MEMBER record. Missing or mistyped ids block; existing cast members outside the rendered bands warn as orphaned attachments.
 
 ### 5.4 Sample utterance policy
 
@@ -578,6 +602,7 @@ Notes:
 - `deprecated_fact` is not a normal record kind.
 - Supersession is a validation diagnostic, not a persistent FACT status.
 - If a selected fact contradicts current authoritative state, generation blocks until the user revises, removes, or deselects it.
+- Record-id `known_by` entries must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional. `public`, `unknown`, and `not_applicable` remain literals.
 
 ### 6.2 BELIEF
 
@@ -606,6 +631,10 @@ Prompt treatment:
 - Group by holder.
 - Separate POV beliefs from non-POV behavior-shaping beliefs.
 - Render all prompt-facing belief fields in both groups: claim in full, belief_mode, truth_relation, confidence, access_route, behavioral_effect, and visibility. Lead POV beliefs with truth relation; lead non-POV beliefs with behavioral effect. No field is trimmed.
+
+Validation:
+
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block; unselected resolved holders warn while the lane is optional.
 
 ### 6.3 SECRET
 
@@ -637,6 +666,8 @@ Rules:
 
 - `locked` cannot be overridden by manual directive.
 - Hidden truth may shape behavior but must not leak into the wrong narrator or mind.
+- `holders` and record-id `non_holders_to_protect` entries must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block. Active hidden/partially revealed/revealed secrets require those references to be selected; unselected required references block.
+- `clue_carriers[].discovered_by` is not a prompt-facing reference lane; clue carriers surface clue text, not discovery ids.
 
 ### 6.4 POV KNOWLEDGE PROFILE
 
@@ -692,6 +723,12 @@ durability: local_texture | continuity_relevant | major
 status: active | lost | destroyed | transferred | inactive
 ```
 
+Validation:
+
+- `owner` and `carried_by` record ids must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional.
+- `current_location` record ids must resolve to LOCATION or OBJECT records. Dangling or mistyped references block; unselected resolved references warn while optional.
+- `current_location: carried_by_holder` is incoherent when `carried_by: none` and blocks validation.
+
 ### 7.3 VISIBLE AFFORDANCE
 
 ```yaml
@@ -731,6 +768,10 @@ Prompt treatment:
 - Compile visible affordances as possible actions.
 - Compile unavailable/impossible actions when omission would invite continuity errors.
 
+Validation:
+
+- Record-id `available_to` values must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional. `group` and `any_onstage` remain literals.
+
 ## 8. Causal pressure records
 
 ### 8.1 EVENT
@@ -753,6 +794,11 @@ status: active | resolved | background | abandoned
 
 `sequence_order` is authoring metadata only. It is not sent to the prose prompt and does not control compiled event ordering.
 
+Validation:
+
+- `participants`, record-id `known_by`, and record-id `location` values are checked as internal references. Dangling or mistyped references block; unselected resolved references warn while optional.
+- `causes` and `effects` record-id values are checked as broad record links: dangling references block and unselected resolved links warn while optional.
+
 ### 8.2 INTENTION
 
 ```yaml
@@ -763,6 +809,10 @@ urgency: low | medium | high | critical
 behavioral_pressure: prose
 status: active | satisfied | abandoned | blocked
 ```
+
+Validation:
+
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block; unselected resolved holders warn while optional.
 
 ### 8.3 PLAN
 
@@ -779,6 +829,10 @@ visibility_to_pov: visible | hidden | suspected | known
 salience: low | medium | high | critical
 can_drive_prose: true | false
 ```
+
+Validation:
+
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. If the plan can drive prose or hidden-plan behavior is expected, an unselected resolved holder blocks; otherwise it warns.
 
 ### 8.4 CLOCK
 
@@ -813,6 +867,10 @@ consequence_if_broken: prose
 visibility: private | shared | public | hidden
 ```
 
+Validation:
+
+- `owed_by` and record-id `owed_to` entries must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional. `public`, `institution`, `self`, and `unknown` remain literals.
+
 ### 8.6 CONSEQUENCE
 
 ```yaml
@@ -826,6 +884,11 @@ current_effect: prose
 possible_next_effect: prose
 visibility: hidden | holder_specific | public | audience_only
 ```
+
+Validation:
+
+- Record-id `holder_or_target` values must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional.
+- Record-id `cause` values are broad record links: dangling references block and unselected resolved links warn while optional. Prose causes pass through as prose.
 
 ### 8.7 OPEN THREAD
 
@@ -871,6 +934,11 @@ Prompt treatment:
 
 - Compile `description`, `pressure_text`, and `current_expression`, not raw axes alone.
 
+Validation:
+
+- `from` and `to` must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved endpoints warn while optional.
+- `from` and `to` must not be the same id.
+
 ### 9.2 EMOTION
 
 ```yaml
@@ -902,6 +970,10 @@ behavioral_pressure:
 visibility: private | visible | inferred | hidden
 surface_expression: prose
 ```
+
+Validation:
+
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block; unselected resolved holders warn while optional.
 
 Prompt treatment:
 

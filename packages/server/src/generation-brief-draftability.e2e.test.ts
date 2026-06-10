@@ -228,7 +228,7 @@ async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): 
         provider: "openrouter",
         temperature: 0.2,
         maxOutputTokens: 800,
-        versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
+        versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }
       }
     }
   });

@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-009: Contract, schema, and version doc amendments
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — bumps `contract.version` in `packages/core/src/version.ts`; amends `docs/compiler-contract.md` and `docs/story-record-schema.md`; updates hardcoded `contract: "1.2.0"` assertions in seven test files. No runtime behavior change.
@@ -89,3 +89,23 @@ Set `contract.version` to `"1.3.0"`. Update the hardcoded `contract: "1.2.0"` as
 
 1. `grep -rn 'contract: "1.2.0"' packages` (expect no output) and `grep -n '1.3.0' docs/compiler-contract.md packages/core/src/version.ts`
 2. `npm run lint && npm run typecheck && npm test` — full pipeline confirms the doc/version amendments and the reconciled assertions all pass with the rules in place.
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- Bumped `docs/compiler-contract.md` and `packages/core/src/version.ts` contract version to `1.3.0`, leaving template and compiler versions unchanged.
+- Updated version assertions across core/server tests to expect contract `1.3.0`.
+- Updated `compiler-contract.md` to document the POV blocking reversal, reference severity lanes, new referential/structural diagnostic codes, optional-reference warnings, validation-only project record index, and required-vs-optional raw-id behavior.
+- Updated `story-record-schema.md` with validation notes for checked brief fields, cast/voice references, record-internal reference fields, and structural coherence fields.
+
+Verification:
+
+- `rg -n '1\\.3\\.0' docs/compiler-contract.md packages/core/src/version.ts`
+- `rg -n 'pov-character-not-selected' docs/compiler-contract.md packages/core/src packages/core/test docs/validation-rule-inventory.md` returned no matches
+- `rg -n 'contract: "1\\.2\\.0"' packages` returned no matches
+- `rg -n 'Reference severity lanes|record-reference-unselected-required|selected-pov-reference-invalid|object-location-holder-incoherence|record-reference-unselected-optional|project record index' docs/compiler-contract.md docs/story-record-schema.md`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)

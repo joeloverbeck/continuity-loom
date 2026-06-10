@@ -439,7 +439,7 @@ describe("compiler front-section resolvers", () => {
 
   it("records the deliberate compiler and contract version bump", () => {
     expect(versionInfo.compiler.version).toBe("1.2.0");
-    expect(versionInfo.contract.version).toBe("1.2.0");
+    expect(versionInfo.contract.version).toBe("1.3.0");
   });
 
   it("renders literal POV modes without record lookup", () => {

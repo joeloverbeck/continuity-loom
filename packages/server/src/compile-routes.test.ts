@@ -153,7 +153,7 @@ describe("compile routes", () => {
 
     expect(first.statusCode).toBe(200);
     expect(firstBody.prompt).toContain("<final_output_instruction>");
-    expect(firstBody.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" });
+    expect(firstBody.metadata.versions).toEqual({ template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" });
     expect(secondBody.prompt).toBe(firstBody.prompt);
     expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
   });

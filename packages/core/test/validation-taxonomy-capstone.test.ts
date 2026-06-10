@@ -133,7 +133,7 @@ function demoInput(): BuildValidationSnapshotInput {
     records: structuredClone(demoRecords),
     generationSession: structuredClone(demoGenerationSession),
     storyConfig: structuredClone(demoStoryConfig),
-    versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.2.0" }
+    versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }
   };
 }
 
