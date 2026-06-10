@@ -86,6 +86,10 @@ npm test
 npm run build
 ```
 
+   If a broad gate fails only from timeout or resource contention, and the
+   failure is not an assertion, type, lint, build, or product error, rerun the
+   affected targeted tests and then rerun the broad gate once before treating it
+   as a blocker. Report both the original failure and the successful rerun.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used; restore any user or demo data changed
@@ -110,6 +114,9 @@ npm run build
    ```sh
    rg -n "tickets/TICKET-ID|TICKET-ID" docs specs tickets AGENTS.md CLAUDE.md README.md
    ```
+   After repair, active references to `archive/tickets/TICKET-ID.md` are
+   acceptable provenance references. Stale `tickets/TICKET-ID` paths and
+   unqualified live dependency references still need correction.
 9. Review the diff for unrelated changes.
 10. Inspect `git diff --cached --name-status` before committing. If unrelated
     pre-existing changes are staged, unstage only those unrelated entries before
@@ -137,6 +144,10 @@ npm test
 npm run build
 ```
 
+   If a broad final gate fails only from timeout or resource contention, and the
+   failure is not an assertion, type, lint, build, or product error, rerun the
+   affected targeted tests and then rerun the broad gate once before treating it
+   as a blocker. Report both the original failure and the successful rerun.
 3. Update the spec with final status and an `Outcome` section following
    `docs/archival-workflow.md`.
 4. Archive completed active specs to `archive/specs/`, using `git mv` when
@@ -166,7 +177,12 @@ npm run build
    unless the user explicitly asked not to commit.
 8. If a `/goal` is active, mark it complete only after implementation,
    verification, ticket archives, spec archive or documented reason it remains
-   active, reference repair, and required commits are done.
+   active, reference repair, and required commits are done. When resuming after
+   an apparent closeout, re-check that no completed ticket or spec remains at an
+   active path, archived tickets/specs have final status plus an `Outcome`,
+   active reference sweeps are clean or intentionally point to archive paths,
+   final gates are current, and the worktree contains no unreported task
+   residue.
 
 ## Reporting
 
