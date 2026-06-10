@@ -1,6 +1,6 @@
 # SPEC020ACCSEGBRO-004: Verification gate, user-guide refresh, and spec archival
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/user-guide.md` (accepted-segments workflow content) and the spec archival move; no production behavior change
@@ -93,3 +93,34 @@ After Verification passes, archive the spec per `docs/archival-workflow.md`: `gi
 1. `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `test -f archive/specs/SPEC-020-accepted-segment-browser-latest-access-and-disclosure.md && test ! -f specs/SPEC-020-accepted-segment-browser-latest-access-and-disclosure.md` (archival boundary; run after the `git mv`)
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+- Updated `docs/user-guide.md` to describe latest-segment landing, collapsed older summary rows, Expand all / Collapse all, Back to top / Jump to latest, filter/export behavior, and the unchanged no-prompt-context rule.
+- Ran the focused accepted-segments suite and the full root verification gates after the implementation tickets landed.
+- Ran the SPEC-020 browser smoke against a temporary local project at `/tmp/loom-spec020-smoke-parent/spec020-smoke` with three accepted segments.
+- Archived this ticket and SPEC-020 after verification.
+
+Manual smoke results:
+- `http://127.0.0.1:5173/accepted-segments` landed on latest Segment 3, expanded and focused.
+- Older segments rendered as summary rows; expanding Segment 1 showed full prose, metadata, and Delete.
+- Expand all showed all three full prose bodies and metadata; Collapse all returned to collapsed state.
+- Filtering for `elderflower` showed stable `Segment 2`, expanded while the filter was active.
+- Export Markdown with an active filter after Collapse all downloaded `accepted-segments.md` containing all three segments in sequence order.
+- `http://127.0.0.1:5173/accepted-segments#segment-1` expanded and focused Segment 1.
+- Back to top moved focus to the Accepted Segments region; Jump to latest moved focus to Segment 3.
+- Delete required expanding a segment plus the separate `Confirm delete output` action before the temporary segment was removed.
+- Console output contained only the Vite/React DevTools informational message.
+
+Deviations from original plan:
+- The smoke used an API-seeded temporary project rather than a user story project, to avoid touching user data while still exercising the real localhost UI and API.
+
+Verification:
+- `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing large-chunk advisory.

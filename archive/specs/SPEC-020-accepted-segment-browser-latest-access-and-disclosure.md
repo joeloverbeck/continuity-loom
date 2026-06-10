@@ -1,6 +1,6 @@
 # SPEC-020 — Accepted Segment Browser: Latest-Segment Access and Progressive Disclosure
 
-Status: DRAFT
+Status: COMPLETED
 Phase: post-v1 UX refinement (the v1 implementation order is complete and archived; this spec is not gated by an implementation-order phase)
 Depends on: SPEC-011 (Accepted Segment Archive and Browser, COMPLETED — `archive/specs/SPEC-011-accepted-segment-archive-and-browser.md`)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -348,3 +348,26 @@ secrets, or prompt-audit surface is involved (§29.9).
 - **Display-index stability fix changes filtered labels** (filtered views previously
   renumbered from 1). This is a deliberate correction, surfaced during brainstorm,
   required by stable anchors/labels; the old behavior is not preserved behind a flag.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+- Delivered the accepted-segment browser redesign through archived tickets:
+  - `archive/tickets/SPEC020ACCSEGBRO-001.md` — disclosure rows, latest-open default, stable display indices, filter-forced expansion, delete behind expansion.
+  - `archive/tickets/SPEC020ACCSEGBRO-002.md` — `segment-<sequence>` anchors, latest landing, hash deep links, focus/scroll behavior, reduced-motion handling.
+  - `archive/tickets/SPEC020ACCSEGBRO-003.md` — Expand all / Collapse all and Back to top / Jump to latest navigation controls.
+  - `archive/tickets/SPEC020ACCSEGBRO-004.md` — final verification, user-guide refresh, and archival.
+- Updated `docs/user-guide.md` to describe the new accepted-segment workflow while preserving the no-prompt-context framing.
+
+Deviations from original plan:
+- None at the product level. The capstone browser smoke used an API-seeded temporary local project to avoid touching user story data.
+
+Verification:
+- `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing large-chunk advisory.
+- Browser smoke on `http://127.0.0.1:5173/accepted-segments` with temporary project `/tmp/loom-spec020-smoke-parent/spec020-smoke` verified latest landing, older disclosure, expand/collapse all, filter-forced expansion with stable numbering, full-archive export under filter/collapsed state, deep-link landing, jump/back focus, delete confirmation, and no product console errors.

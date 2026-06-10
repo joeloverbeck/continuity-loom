@@ -88,7 +88,11 @@ Rejected and superseded candidates are not stored by default. Only the accepted 
 
 Accepted segments are readable story output. They are not future prompt context.
 
-The accepted segment archive lets you read, filter, delete, and export accepted output. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
+The accepted segment archive lands on the latest segment so you can review the most recent output without scrolling through the whole archive. Older segments remain listed in story order as collapsed summary rows. Expand a segment to read its full prose, inspect metadata, or use the two-step delete flow.
+
+Use "Expand all" when you want whole-story reading or browser find across the full accepted prose text. "Collapse all" returns the archive to summary rows. On long archives, "Back to top" and "Jump to latest" move both the page and keyboard focus.
+
+The archive also lets you filter and export accepted output. Export always uses the complete archive in story order, independent of filters or expansion state. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
 
