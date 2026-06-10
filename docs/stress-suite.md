@@ -15,14 +15,15 @@ Each case lists the stress target, required records or generation-time fields, s
 
 ## Coverage matrix
 
-This matrix exists to prevent drift. It does not replace the cases; it shows whether the suite still covers the major prompt/schema/compiler risks.
+This matrix exists to prevent drift. It does not replace the cases; it shows whether the suite still covers the major prompt/schema/compiler risks. A new stress case must land with updates to this matrix and `docs/stress-coverage-matrix.md` in the same revision.
 
 | Risk / validation surface | Primary cases | Coverage note |
 |---|---|---|
-| No accepted prose in prompts / continuation handoff | 8 | Handoff must be user-authored and represented in records/current state. |
-| First segment empty-state correctness | 7 | First segment must be self-sufficient without accepted prose. |
+| No accepted prose in prompts / continuation handoff | 8, 29 | Handoff must be user-authored and represented in records/current state; accepted prose remains excluded even when accepted segments trigger continuation defaults. |
+| First segment empty-state correctness | 7, 28 | First segment must be self-sufficient without accepted prose; generation context defaults must normalize from project state without UI-only drift. |
+| Draftability and readiness separation | 27, 28, 29, 30, 31 | Draft save, Preview, Generate, provider configuration, and warning-only states remain separate readiness surfaces. |
 | Local-prose-only stop boundary | 13, 26 | The universal stop rule must define a response point; optional stop guidance may narrow it but is not required. |
-| Dialogue voice distinction | 1, 12, 14, 15, 20 | Covers two-speaker, ensemble, present-minor, and large-cast voice risks. |
+| Dialogue voice distinction | 1, 12, 14, 15, 20, 31 | Covers two-speaker, ensemble, present-minor, large-cast voice risks, and deduplicated optional voice-pin warnings. |
 | Active silent cast / body presence | 21 | Prevents silent active characters from disappearing. |
 | POV/audience/secrets separation | 1, 6, 9, 19, 22, 23 | Covers hidden truths, non-POV behavior shaping, multi-POV projects, and ambiguous perception. |
 | Physical continuity | 2, 3, 4, 5, 21, 23, 24, 25 | Covers routes, exits, line of sight, body positions, time, objects, and force/consent. |
@@ -31,7 +32,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 | Mature fiction envelope | 5, 17 | Covers erotic and non-erotic mature material with provider-policy priority. |
 | Clocks, obligations, consequences | 11, 25 | Requires current opportunity and visible cause for ticks/breaches. |
 | Low-drama / minimalist prose quality | 13, 16 | Guards against generic filler and manufactured incident without fake validators. |
-| Large-context salience / cast dossier bloat | 12, 15 | Warnings, voice pins, and core-first dossier order must preserve salience without compression. |
+| Large-context salience / cast dossier bloat | 12, 15, 31, 32 | Warnings, voice pins, and core-first dossier order must preserve salience without compression or repeated warning spam. |
 | False reports and belief truth relations | 10 | Prevents testimony from becoming canon. |
 
 ---

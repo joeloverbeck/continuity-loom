@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-006: Backfill both stress coverage matrices for Cases 27–31
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — `docs/stress-coverage-matrix.md` and `docs/stress-suite.md` matrix bodies; conditionally one candidate entry in `docs/narrative-theory-blocker-roadmap.md`; no production behavior change
@@ -86,3 +86,29 @@ State in each: a new stress case must land with its matrix row(s) in the same re
 1. `for n in $(grep -oE '^## Case [0-9]+' docs/stress-suite.md | grep -oE '[0-9]+'); do grep -q "| Case $n " docs/stress-coverage-matrix.md || echo "MISSING Case $n"; done`
 2. `npm run lint && npm run typecheck && npm test`
 3. The completeness loop is the correct verification boundary — it is the spec's own §Verification check 4; the pipeline run only proves no collateral damage.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Added numbered `docs/stress-coverage-matrix.md` rows for Cases 27-31.
+- Removed the old Case 27-31 drift disclaimer.
+- Linked the readiness/draftability table to Cases 26-31 and stated how it relates to the numbered table.
+- Updated the embedded `docs/stress-suite.md` coverage matrix so Cases 27-32 are represented where they map.
+- Added the same-change maintenance rule to both stress docs.
+
+Deviations from original plan:
+
+- None. No no-rule gap was found, so `docs/narrative-theory-blocker-roadmap.md` did not need an additional candidate entry.
+
+Verification results:
+
+- Case completeness loop printed no missing cases.
+- `grep -c "predates Cases 27" docs/stress-coverage-matrix.md` returned `0`.
+- Same-change maintenance-rule grep found entries in both stress docs.
+- New row implementation references resolved under `packages/`.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 104 test files, 778 tests.

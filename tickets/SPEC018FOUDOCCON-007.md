@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/archival-workflow.md` cross-reference updates; SPEC-018 status flip + archival move; no production behavior change
-**Deps**: `archive/tickets/SPEC018FOUDOCCON-003.md`, `archive/tickets/SPEC018FOUDOCCON-005.md`, SPEC018FOUDOCCON-006 (leaf set — 006 transitively covers 004→002→001; 003 and 005 cover 002→001). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D10 + §Verification + completion bookkeeping).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-003.md`, `archive/tickets/SPEC018FOUDOCCON-005.md`, `archive/tickets/SPEC018FOUDOCCON-006.md` (leaf set — 006 transitively covers 004→002→001; 003 and 005 cover 002→001). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D10 + §Verification + completion bookkeeping).
 
 ## Problem
 
@@ -77,7 +77,7 @@ Per `docs/archival-workflow.md`: flip `**Status:** DRAFT` to `**Status**: COMPLE
 1. `npm run lint && npm run typecheck && npm test` — all pass (spec §V1; includes the 003 drift test, spec §V5).
 2. Registry completeness (spec §V2): every file from `ls docs/*.md` (13 post-batch) appears in the ACTIVE-DOCS registry table.
 3. Version accuracy (spec §V3): versions in `docs/ACTIVE-DOCS.md` and `docs/compiler-contract.md` match `packages/core/src/version.ts` (`1.0.0`/`1.2.0`/`1.2.0`).
-4. Matrix completeness (spec §V4): the Case-loop grep from SPEC018FOUDOCCON-006 prints nothing; `grep -c "predates Cases 27" docs/stress-coverage-matrix.md` returns 0.
+4. Matrix completeness (spec §V4): the Case-loop grep from `archive/tickets/SPEC018FOUDOCCON-006.md` prints nothing; `grep -c "predates Cases 27" docs/stress-coverage-matrix.md` returns 0.
 5. Snapshot claims gone (spec §V6): `grep -ci "currently no active" docs/ACTIVE-DOCS.md` returns 0.
 6. Cross-references resolve (spec §V7): every `docs/`-internal path mentioned in active docs, `CLAUDE.md`, `AGENTS.md`, `README.md` exists on disk (script the extraction with grep -oE on `docs/[a-z-]+\.md` + `test -f` loop).
 7. D9 wording match (spec §V8): `docs/FOUNDATIONS.md` §1.1/§28.8 text matches the sign-off recorded on `archive/tickets/SPEC018FOUDOCCON-001.md` (manual diff).
