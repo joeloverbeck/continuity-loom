@@ -19,9 +19,17 @@ export function AcceptedSegmentsView(): React.JSX.Element {
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [expandedById, setExpandedById] = useState<Record<number, boolean>>({});
+  const [locationHash, setLocationHash] = useState(() => window.location.hash);
 
   useEffect(() => {
     void refreshSegments();
+  }, []);
+
+  useEffect(() => {
+    const updateHash = (): void => setLocationHash(window.location.hash);
+
+    window.addEventListener("hashchange", updateHash);
+    return () => window.removeEventListener("hashchange", updateHash);
   }, []);
 
   async function refreshSegments(): Promise<void> {
@@ -110,6 +118,29 @@ export function AcceptedSegmentsView(): React.JSX.Element {
       [segment.id]: !isSegmentExpanded(segment)
     }));
   }
+
+  useEffect(() => {
+    if (state.status !== "ready" || state.segments.length === 0) {
+      return;
+    }
+
+    const hashSequence = segmentSequenceFromHash(locationHash);
+    const hashTarget = hashSequence === null ? undefined : state.segments.find((segment) => segment.sequence === hashSequence);
+    const target = hashTarget ?? state.segments[state.segments.length - 1];
+
+    if (!target) {
+      return;
+    }
+
+    setExpandedById((current) => {
+      if (current[target.id] === true) {
+        return current;
+      }
+
+      return { ...current, [target.id]: true };
+    });
+    scrollAndFocusSegment(target.sequence);
+  }, [locationHash, state]);
 
   return (
     <section className="surface acceptedArchiveSurface" aria-labelledby="accepted-segments-title">
@@ -210,7 +241,7 @@ function AcceptedSegmentItem({
 
   return (
     <li className="acceptedSegmentItem">
-      <article className="acceptedSegmentArticle" aria-label={`Accepted segment ${displayIndex}`}>
+      <article id={`segment-${segment.sequence}`} className="acceptedSegmentArticle" aria-label={`Accepted segment ${displayIndex}`}>
         <header className="acceptedSegmentHeader">
           <div className="acceptedSegmentHeading">
             <h3>
@@ -322,6 +353,29 @@ function segmentExcerpt(text: string): string {
   }
 
   return `${singleLine.slice(0, 139).trimEnd()}...`;
+}
+
+function segmentSequenceFromHash(hash: string): number | null {
+  const match = /^#segment-(\d+)$/.exec(hash);
+  if (!match) {
+    return null;
+  }
+
+  return Number(match[1]);
+}
+
+function scrollAndFocusSegment(sequence: number): void {
+  const element = document.getElementById(`segment-${sequence}`);
+  if (!element) {
+    return;
+  }
+
+  element.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+  element.querySelector<HTMLButtonElement>(".acceptedSegmentToggle")?.focus({ preventScroll: true });
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
 
 function exportArchive(segments: AcceptedSegment[], format: "markdown" | "text"): void {

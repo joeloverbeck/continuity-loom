@@ -11,7 +11,13 @@ vi.mock("../api.js", () => ({
   listAcceptedSegments: vi.fn()
 }));
 
+let scrollMock: ReturnType<typeof vi.fn>;
+
 beforeEach(() => {
+  window.history.replaceState(null, "", "/accepted-segments");
+  scrollMock = vi.fn();
+  Element.prototype.scrollIntoView = scrollMock as unknown as Element["scrollIntoView"];
+  vi.stubGlobal("matchMedia", vi.fn(() => mediaQueryList(false)));
   vi.mocked(deleteAcceptedSegment).mockReset();
   vi.mocked(listAcceptedSegments).mockReset();
 });
@@ -115,6 +121,98 @@ describe("AcceptedSegmentsView", () => {
 
     expect(firstToggle.getAttribute("aria-expanded")).toBe("false");
     expect(getRenderedProse(container)).toEqual(["Latest cloth."]);
+  });
+
+  it("lands on and focuses the latest segment when no segment hash is present", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const latestToggle = await screen.findByRole("button", { name: /Segment 2/ });
+
+    await waitFor(() => expect(document.activeElement).toBe(latestToggle));
+    expect(scrollIntoViewMock()).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
+    expect(latestToggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("expands and focuses a segment hash target instead of the latest segment", async () => {
+    window.history.replaceState(null, "", "/accepted-segments#segment-1");
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const firstToggle = await screen.findByRole("button", { name: /Segment 1/ });
+
+    await waitFor(() => expect(document.activeElement).toBe(firstToggle));
+    expect(firstToggle.getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("button", { name: /Segment 2/ }).getAttribute("aria-expanded")).toBe("true");
+    expect(scrollIntoViewMock()).toHaveBeenCalledWith({ block: "start", behavior: "smooth" });
+  });
+
+  it("falls back to latest landing for an unknown segment hash", async () => {
+    window.history.replaceState(null, "", "/accepted-segments#segment-999");
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const latestToggle = await screen.findByRole("button", { name: /Segment 2/ });
+
+    await waitFor(() => expect(document.activeElement).toBe(latestToggle));
+    expect(latestToggle.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("uses instant landing when reduced motion is preferred", async () => {
+    vi.mocked(window.matchMedia).mockImplementation(() => mediaQueryList(true));
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [segment({ id: 1, sequence: 1, text: "Readable only." })]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    await screen.findByRole("button", { name: /Segment 1/ });
+
+    await waitFor(() => expect(scrollIntoViewMock()).toHaveBeenCalledWith({ block: "start", behavior: "auto" }));
+  });
+
+  it("reacts to hash changes while the view remains mounted", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const firstToggle = await screen.findByRole("button", { name: /Segment 1/ });
+    const latestToggle = screen.getByRole("button", { name: /Segment 2/ });
+    await waitFor(() => expect(document.activeElement).toBe(latestToggle));
+
+    window.history.replaceState(null, "", "/accepted-segments#segment-1");
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+
+    await waitFor(() => expect(document.activeElement).toBe(firstToggle));
+    expect(firstToggle.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("requires confirmation before deleting and removes the row on success", async () => {
@@ -291,6 +389,23 @@ function getRenderedProse(container: HTMLElement): string[] {
 
 function containerFromDocument(): HTMLElement {
   return document.body;
+}
+
+function mediaQueryList(matches: boolean): MediaQueryList {
+  return {
+    matches,
+    media: "(prefers-reduced-motion: reduce)",
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn()
+  };
+}
+
+function scrollIntoViewMock(): ReturnType<typeof vi.fn> {
+  return scrollMock;
 }
 
 class CapturedBlob {

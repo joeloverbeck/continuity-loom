@@ -1,6 +1,6 @@
 # SPEC020ACCSEGBRO-002: Land-on-latest landing and #segment-<sequence> deep links
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/web` `AcceptedSegmentsView` (mount + `hashchange` landing/deep-link effect, per-segment `id` anchors) and its component test; no `@loom/core`/`@loom/server`/schema/storage change
@@ -87,3 +87,25 @@ Drive the landing/deep-link resolution from an effect that responds to `location
 1. `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. The targeted vitest run is the correct inner boundary (single-component effect change); the four-command gate is the outer boundary per SPEC-020 §Verification.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+- Added stable `id="segment-<sequence>"` anchors to accepted segment articles.
+- Added hash-aware landing behavior that expands, scrolls to, and focuses an incoming `#segment-<sequence>` target, with stale hashes falling back to the latest segment.
+- Added latest-segment landing when no segment hash is present.
+- Added a `hashchange` listener so same-route hash navigation re-resolves without a remount.
+- Honored `prefers-reduced-motion` by using instant scroll behavior when reduced motion is requested.
+- Added jsdom stubs and component tests for latest landing, deep-link precedence, stale-hash fallback, reduced-motion behavior, and hashchange reactivity.
+
+Deviations from original plan:
+- Used a local `hashchange` listener instead of a React Router hook. This keeps the view self-contained and still satisfies the React Router v7 same-route hash re-resolution requirement.
+
+Verification:
+- `npx vitest run packages/web/src/accepted-segments/AcceptedSegmentsView.test.tsx` — passed.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed.
+- `npm run build` — passed, with Vite's existing large-chunk advisory.
