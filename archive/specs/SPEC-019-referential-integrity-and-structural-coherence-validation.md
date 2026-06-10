@@ -1,6 +1,6 @@
 # SPEC-019 — Referential Integrity and Structural Coherence Validation
 
-**Status**: DRAFT
+**Status**: COMPLETED
 **Feature name:** Referential Integrity & Structural Coherence Validation
 **Classification:** product-behavior (new deterministic validation blockers/warnings on the prompt-readiness gate, a validation-snapshot shape extension, and same-revision amendments to the compiler contract, validation rule inventory, story-record schema, and stress docs. No compiler-rendering changes; no FOUNDATIONS amendment.)
 **Governing authority:** `docs/FOUNDATIONS.md`
@@ -156,3 +156,22 @@ The compiler is untouched: raw-id fallback rendering remains for optional lanes 
 3. **Lane-table boundaries.** The exact required-vs-optional grading of every record-internal lane (D5) must be re-derived from the contract §4 requiredness column at decomposition time; this spec fixes the doctrine and the table's authority location, not every cell.
 4. **`known_by` / `causes` / `effects` union ambiguity.** Fields typed `recordId[] | sentinel/prose` can only be reference-checked on values that match the project index; values matching nothing are treated as prose/sentinel and skipped, mirroring D3's `current_location` rule. A collision (prose string that equals a record id) is theoretically possible but practically negligible with generated ids.
 5. **Index size.** The project record index grows with project size; it is ids and type strings only. The existing `prompt-middle-salience-risk` warning keys off snapshot JSON size (`JSON.stringify(snapshot).length > 5000`, `warnings.ts:40`), so the index would otherwise inflate that measurement. **Resolved into D1** as a required salience-size carveout (exclude `projectRecordIndex` from the measured projection, with a regression test); this entry remains only to record the interaction.
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- D1/D2 landed in `archive/tickets/SPEC019REFINTSTR-001.md` and `archive/tickets/SPEC019REFINTSTR-002.md`: validation snapshots now carry a deterministic project record index, salience-size warnings exclude it, and reference classification distinguishes selected, unselected, and dangling ids.
+- D3/D4 landed in `archive/tickets/SPEC019REFINTSTR-003.md` and `archive/tickets/SPEC019REFINTSTR-004.md`: generation-brief, cast-band, selected-POV, and voice-pressure reference validation now blocks or warns by lane requiredness.
+- D5/D6 landed in `archive/tickets/SPEC019REFINTSTR-005.md` and `archive/tickets/SPEC019REFINTSTR-006.md`: record-internal extracted references and deterministic structural contradictions now validate through the core rule registry.
+- D7 landed in `archive/tickets/SPEC019REFINTSTR-007.md`: stale `selected_records` snapshot-build failures remain fail-closed but now enumerate dangling ids and the working-set fix.
+- D8 landed in `archive/tickets/SPEC019REFINTSTR-008.md` and `archive/tickets/SPEC019REFINTSTR-009.md`: stress docs/matrix, compiler contract, story schema notes, and contract version `1.3.0` are updated.
+
+Final verification:
+
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)
+- Active ticket sweep: no `tickets/SPEC019REFINTSTR-*` files remain; archived tickets 001–009 are present.
+- Contract/version grep checks passed: `docs/compiler-contract.md` and `packages/core/src/version.ts` both use contract `1.3.0`; no `pov-character-not-selected` remains in active contract/code/inventory surfaces; no package test assertion remains at `contract: "1.2.0"`.
