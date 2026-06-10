@@ -59,7 +59,7 @@ State in each: a new stress case must land with its matrix row(s) in the same re
 - Adding, removing, or re-grading any validation rule (gaps are recorded, not fixed).
 - Adding new stress cases.
 - Header standardization of these two files (SPEC018FOUDOCCON-005 — disjoint regions of the same files; coordinate mechanically on merge).
-- The validation rule inventory's stress-case column (SPEC018FOUDOCCON-003 owns that doc).
+- The validation rule inventory's stress-case column (`archive/tickets/SPEC018FOUDOCCON-003.md` owns that doc).
 
 ## Acceptance Criteria
 

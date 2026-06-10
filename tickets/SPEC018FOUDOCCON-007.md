@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/archival-workflow.md` cross-reference updates; SPEC-018 status flip + archival move; no production behavior change
-**Deps**: SPEC018FOUDOCCON-003, SPEC018FOUDOCCON-005, SPEC018FOUDOCCON-006 (leaf set — 006 transitively covers 004→002→001; 003 and 005 cover 002→001). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D10 + §Verification + completion bookkeeping).
+**Deps**: `archive/tickets/SPEC018FOUDOCCON-003.md`, SPEC018FOUDOCCON-005, SPEC018FOUDOCCON-006 (leaf set — 006 transitively covers 004→002→001; 003 and 005 cover 002→001). Source spec: `specs/SPEC-018-foundational-docs-consolidation-and-hardening.md` (D10 + §Verification + completion bookkeeping).
 
 ## Problem
 
@@ -92,7 +92,7 @@ Per `docs/archival-workflow.md`: flip `**Status:** DRAFT` to `**Status**: COMPLE
 
 ### New/Modified Tests
 
-1. `None — documentation-only ticket; verification is command-based (the spec's §Verification runbook) and the batch's one test landed with SPEC018FOUDOCCON-003.`
+1. `None — documentation-only ticket; verification is command-based (the spec's §Verification runbook) and the batch's one test landed with the archived SPEC018FOUDOCCON-003 ticket.`
 
 ### Commands
 

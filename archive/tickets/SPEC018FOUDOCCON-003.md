@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-003: Create docs/validation-rule-inventory.md with a CI drift test
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new doc `docs/validation-rule-inventory.md`, new test `packages/core/test/validation-rule-inventory.test.ts`, one registry row in `docs/ACTIVE-DOCS.md`; no production behavior change
@@ -17,7 +17,7 @@ The implemented validation taxonomy — 55 diagnostic codes in `DIAGNOSTIC_CODES
 3. Cross-artifact boundary under audit: the doc's rule-ID and severity columns are a parse contract consumed by the new drift test — backticked kebab-case code IDs, one per row; severity values exactly `blocker` or `warning`. Keep the table format stable; the test fails on any asymmetric ID difference or severity mismatch.
 4. FOUNDATIONS principle restated before trusting the spec narrative: §11 — validation is deterministic and blocking, warnings never gate. This ticket documents the implemented taxonomy without adding, removing, or re-grading any rule; the drift test is regression armor for existing behavior, not product behavior. §8 drift doctrine motivates the same-change rule stated in the doc.
 5. Reading a repo doc from a core test follows the existing convention: `packages/core/test/accepted-prose-exclusion.test.ts:78` already does `readFileSync(new URL("../../../docs/story-record-schema.md", import.meta.url), "utf8")`; the core purity boundary (ESLint `no-restricted-imports`) binds `src`, not `test`.
-6. Mismatch + correction: none — counts, paths, and severity encoding all re-verified this session.
+6. Mismatch + correction: `cast-missing-core-dossier` is present in `DIAGNOSTIC_CODES` and web readiness fixtures but is not emitted by the current validation rule registry; the inventory records it as a reserved blocker-code row, and the drift test includes a narrow reserved-code severity entry while still enforcing the exact ID set and source-derived registered-rule severities.
 
 ## Architecture Check
 
@@ -87,3 +87,25 @@ One row for `docs/validation-rule-inventory.md` (scope, genre `audit`, tier per 
 1. `npm test -- validation-rule-inventory` (targeted; Vitest filters by filename substring)
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted test run is the correct verification boundary for drift armor; the full pipeline proves the new test integrates with the build-then-test flow (`npm test` builds `@loom/core` first).
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Created `docs/validation-rule-inventory.md` with one row per `DIAGNOSTIC_CODES` value, severity, short description, FOUNDATIONS §11 taxonomy mapping, and stress-case coverage notes.
+- Added `packages/core/test/validation-rule-inventory.test.ts` to enforce exact diagnostic-code inventory coverage and severity agreement for registered rules.
+- Added `docs/validation-rule-inventory.md` to the ACTIVE-DOCS registry.
+
+Deviations from original plan:
+
+- Current code has one diagnostic code, `cast-missing-core-dossier`, that is present in `DIAGNOSTIC_CODES` and web fixtures but not emitted by the validation rule registry. The inventory records it as a reserved blocker-code row; the drift test handles it as a narrow reserved-code exception while continuing to enforce all registered rule severities.
+
+Verification results:
+
+- `npm test -- validation-rule-inventory` passed.
+- Mutation check: temporarily removing `stale-selected-record` made `npm test -- validation-rule-inventory` fail with `missing inventory IDs: expected [ 'stale-selected-record' ]`; restoring the row made the targeted test pass.
+- `npm run lint` passed.
+- `npm run typecheck` passed after tightening test regex group typing.
+- `npm test` passed: 104 test files, 778 tests.

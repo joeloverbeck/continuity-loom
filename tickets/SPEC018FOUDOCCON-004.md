@@ -14,7 +14,7 @@ SPEC-018's research pass identified theory-grounded candidates for future determ
 
 1. Verified against the working tree 2026-06-10: `docs/narrative-theory-blocker-roadmap.md` does not exist (no name collision in `docs/`); `EVENT.sequence_order` exists at `docs/story-record-schema.md:740` and is authoring metadata only ("not sent to the prose prompt and does not control compiled event ordering", line 753) — consistent with listing its prompt-wiring as deferred, not re-proposed.
 2. The deferral provenance is real: `triage/2026-06-09-open-thread-fields-triage.md` item O5 explicitly scopes out wiring `sequence_order` into compilation/ordering ("Wiring it into compiled output/ordering would be new behavior needing a spec — out of scope"). This ticket's known-deferred section cites that triage, changing nothing about the deferral.
-3. Cross-artifact boundary under audit: this doc must not become a second validation authority. The boundary with `docs/validation-rule-inventory.md` (SPEC018FOUDOCCON-003) is implemented-vs-candidate: the inventory documents only `DIAGNOSTIC_CODES` members; this roadmap documents only non-implemented candidates. No rule ID may appear in both.
+3. Cross-artifact boundary under audit: this doc must not become a second validation authority. The boundary with `docs/validation-rule-inventory.md` (`archive/tickets/SPEC018FOUDOCCON-003.md`) is implemented-vs-candidate: the inventory documents only `DIAGNOSTIC_CODES` members; this roadmap documents only non-implemented candidates. No rule ID may appear in both.
 4. FOUNDATIONS principles restated before trusting the spec narrative: §11 — semantic prose checks cannot be deterministic blockers (each candidate carries a deterministic-checkability verdict); §12/§29.1 — no plot-rail machinery (candidates that brush structure, e.g. scene-goal absence and plant/payoff linkage, each carry a mandatory screening note explaining why they are causal-state checks, not act-structure machinery). The doc authorizes nothing: promoting any candidate requires its own spec clearing §29.
 5. Mismatch + correction: none — collision, schema-field, and triage references re-verified this session.
 
@@ -53,7 +53,7 @@ One row for `docs/narrative-theory-blocker-roadmap.md` (scope, genre, tier — `
 
 - Implementing any candidate (every D8 candidate is a spec-wide non-goal; each needs its own future spec clearing §29).
 - Wiring `EVENT.sequence_order` into compilation (explicitly deferred by prior triage; listed as deferred only).
-- The validation rule inventory (SPEC018FOUDOCCON-003).
+- The validation rule inventory (`archive/tickets/SPEC018FOUDOCCON-003.md`).
 - Cross-reference sync beyond the single registry row (SPEC018FOUDOCCON-007, including the archival-asymmetry note in `docs/archival-workflow.md`).
 
 ## Acceptance Criteria
