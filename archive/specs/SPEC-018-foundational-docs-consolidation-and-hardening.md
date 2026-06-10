@@ -1,6 +1,6 @@
 # SPEC-018 — Foundational Docs Consolidation and Hardening
 
-**Status:** DRAFT
+**Status**: COMPLETED
 **Feature name:** Foundational Docs Consolidation & Hardening
 **Classification:** product-behavior (a docs-hardening spec that armors FOUNDATIONS-governed surfaces — authority registry, validation taxonomy documentation, constitutional amendments. No runtime behavior, schema, validation, storage, or compiler changes.)
 **Governing authority:** `docs/FOUNDATIONS.md`
@@ -175,3 +175,30 @@ Keep `Status: active`. Reword the scope line so SPEC-013 reads as archived prove
 - **D9 sign-off** is a hard gate: if the user revises wording, this spec must be updated to match before the amendment ticket proceeds (§1.1 item 4 discipline applies to itself).
 - **Case 27–31 mapping** (D5): the backfill must map cases to *implemented* rules; if a case turns out to have no covering rule, record the gap honestly in the matrix (coverage note "no deterministic rule; warning-grade gap") rather than inventing coverage — and surface it as a candidate for D8.
 - Open question: should the D2 header standardization eventually be lint-enforced? Out of scope here; revisit if headers drift.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- D9: FOUNDATIONS gained §1.1 amendment procedure/precedence, §28.8 validate-and-block differentiator, and the similar-tools source anchors.
+- D1: `docs/ACTIVE-DOCS.md` became the active docs registry, removed active-ticket/spec snapshot claims, and corrected template/compiler/contract versions.
+- D7: `docs/validation-rule-inventory.md` and `packages/core/test/validation-rule-inventory.test.ts` now enforce diagnostic-code inventory drift checks.
+- D8: `docs/narrative-theory-blocker-roadmap.md` now captures non-binding research candidates and the deferred `EVENT.sequence_order` note.
+- D2/D3/D4/D6: active doc headers were standardized, compiler-contract version was pinned, and archived provenance was corrected for SPEC004RECCRUBAS-002 and SPEC-013.
+- D5: stress coverage rows for Cases 27-31 were backfilled and both stress docs gained same-change maintenance rules.
+- D10: `CLAUDE.md`, `AGENTS.md`, `README.md`, and `docs/archival-workflow.md` now reference/protect the new docs as appropriate.
+
+Deviations from original plan:
+
+- `cast-missing-core-dossier` is present in `DIAGNOSTIC_CODES` and web fixtures but is not emitted by the current validation rule registry. The inventory records it as a reserved blocker-code row, and the drift test uses a narrow reserved-code exception while still enforcing exact ID-set coverage and source-derived registered-rule severities.
+- One archival-workflow example path was reworded so the final cross-reference resolver would not treat a historical `docs/requirements-version-1/...` example as an active doc link.
+
+Verification results:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 104 test files, 778 tests.
+- `npm run build` passed with only the Vite large-chunk warning.
+- Registry completeness, version accuracy, matrix completeness, snapshot-claim removal, cross-reference resolution, and FOUNDATIONS D9 heading checks all passed during SPEC018FOUDOCCON-007.

@@ -1,6 +1,6 @@
 # SPEC018FOUDOCCON-007: Cross-reference sync, SPEC-018 verification capstone, and spec archival
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — `CLAUDE.md`, `AGENTS.md`, `README.md`, `docs/archival-workflow.md` cross-reference updates; SPEC-018 status flip + archival move; no production behavior change
@@ -99,3 +99,30 @@ Per `docs/archival-workflow.md`: flip `**Status:** DRAFT` to `**Status**: COMPLE
 1. `npm run lint && npm run typecheck && npm test`
 2. `grep -ci "currently no active" docs/ACTIVE-DOCS.md; for n in $(grep -oE '^## Case [0-9]+' docs/stress-suite.md | grep -oE '[0-9]+'); do grep -q "| Case $n " docs/stress-coverage-matrix.md || echo "MISSING Case $n"; done`
 3. The §Verification runbook (Acceptance 1–8) is the correct verification boundary — this ticket IS the spec's verification surface; each check maps to one spec §V item.
+
+## Outcome
+
+Completed: 2026-06-10
+
+What changed:
+
+- Added `docs/validation-rule-inventory.md` and `docs/narrative-theory-blocker-roadmap.md` to `CLAUDE.md`, `AGENTS.md`, and `README.md` where appropriate.
+- Updated `docs/archival-workflow.md` to protect `docs/ACTIVE-DOCS.md`, `docs/archival-workflow.md`, and `docs/validation-rule-inventory.md`, while leaving the non-binding roadmap archivable if superseded.
+- Ran the SPEC-018 verification runbook and archived the completed spec.
+
+Deviations from original plan:
+
+- Reworded one archival-workflow example so the cross-reference resolver did not treat `docs/requirements-version-1/IMPLEMENTATION-ORDER.md` as a live active-doc path.
+
+Verification results:
+
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 104 test files, 778 tests.
+- `npm run build` passed; Vite reported only its large-chunk warning.
+- Registry completeness check found 13 `docs/*.md` files and 13 registry rows, with no missing doc rows.
+- Version checks confirmed template `1.0.0`, compiler `1.2.0`, compiler contract `1.2.0`, and compiler-contract pin `1.2.0`.
+- Matrix completeness loop printed no missing cases; the old "predates Cases 27" disclaimer count was `0`.
+- Snapshot-claim grep for "currently no active" returned `0`.
+- Cross-reference resolver over active docs, `CLAUDE.md`, `AGENTS.md`, and `README.md` printed no missing `docs/*.md` paths after the archival-workflow example correction.
+- D9 heading check found FOUNDATIONS §1.1 and §28.8 in place.

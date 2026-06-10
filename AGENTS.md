@@ -42,7 +42,8 @@ Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domai
 - Prompt compiler: `docs/compiler-contract.md`
 - Universal prompt template: `docs/prompt-template.md` and `docs/prompt-template-rationale.md`
 - Story record shape and fields: `docs/story-record-schema.md`
-- Validation and hard-fail cases: `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, and `docs/demo-blocker-recipes.md`
+- Validation and hard-fail cases: `docs/validation-rule-inventory.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, and `docs/demo-blocker-recipes.md`
+- Non-binding validation research candidates: `docs/narrative-theory-blocker-roadmap.md`
 - User-facing behavior: `docs/user-guide.md`
 
 ## Tickets, Specs, and Archive
