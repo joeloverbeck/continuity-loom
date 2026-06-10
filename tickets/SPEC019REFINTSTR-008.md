@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new stress cases in `docs/stress-suite.md`, matrix rows in `docs/stress-coverage-matrix.md`, and representative case→code assertions in `validation-stress-mapping.test.ts`; no production behavior change.
-**Deps**: `archive/tickets/SPEC019REFINTSTR-003.md`, `archive/tickets/SPEC019REFINTSTR-004.md`, `archive/tickets/SPEC019REFINTSTR-005.md`, SPEC019REFINTSTR-006
+**Deps**: `archive/tickets/SPEC019REFINTSTR-003.md`, `archive/tickets/SPEC019REFINTSTR-004.md`, `archive/tickets/SPEC019REFINTSTR-005.md`, `archive/tickets/SPEC019REFINTSTR-006.md`
 
 ## Problem
 

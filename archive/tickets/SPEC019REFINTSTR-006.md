@@ -1,6 +1,6 @@
 # SPEC019REFINTSTR-006: Structural contradiction rules
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `structural-contradiction.ts` blocker rule module registered in `rules/index.ts`; four `DIAGNOSTIC_CODES` entries (`@loom/core`); inventory rows; new unit test. Adds blocking validation behavior.
@@ -82,3 +82,21 @@ Add `...structuralContradictionRules` to `rules/index.ts`; add the four codes to
 1. `npm test --workspace @loom/core -- validation-structural-contradiction`
 2. `npm test --workspace @loom/core -- validation-rule-inventory`
 3. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed on 2026-06-10.
+
+- Added `structuralContradictionRules` with blockers for onstage/offstage entity overlap, onstage entity-status contradictions, object carried-by-holder incoherence, and relationship self-reference.
+- Registered the four new blocker codes and inventory rows under §11.3.
+- Kept the relationship self-reference check in validation rather than Zod parsing; the test confirms a self-referential relationship payload still parses and then surfaces a blocker.
+- Used direct enum/id comparisons only; no project-index lookup, reference classifier, or content inspection was introduced.
+
+Verification:
+
+- `npm test --workspace @loom/core -- validation-structural-contradiction`
+- `npm test --workspace @loom/core -- validation-rule-inventory`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite large-chunk warning)

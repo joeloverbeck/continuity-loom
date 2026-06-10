@@ -39,8 +39,12 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `local-prose-scope-violation` | blocker | Directive or stop guidance asks for non-local prose scope. | §11.7 | Cases 9, 10 |
 | `directive-stop-guidance-disagreement` | blocker | Manual directive and stop guidance disagree about the local unit boundary. | §11.1 | Case 11 |
 | `handoff-current-state-contradiction` | blocker | Immediate handoff explicitly contradicts current authoritative state. | §11.3 | Case 12 |
+| `onstage-offstage-entity-overlap` | blocker | Current authoritative state places the same entity both onstage and offstage-pressuring. | §11.3 | — |
+| `onstage-entity-status-contradiction` | blocker | An onstage entity's selected status places it offstage, concealed, or at a different record-id current location. | §11.3 | — |
 | `entity-current-location-contradiction` | blocker | Selected records place one entity in more than one current location. | §11.3 | Case 14 |
 | `object-current-holder-contradiction` | blocker | Selected object has two different current holders. | §11.3 | Case 16 |
+| `object-location-holder-incoherence` | blocker | Object location says carried-by-holder while carried_by is none. | §11.3 | — |
+| `relationship-self-reference` | blocker | A selected relationship record uses the same endpoint for from and to. | §11.3 | — |
 | `inactive-plan-holder` | blocker | Active plan is held by an entity that currently cannot plausibly act. | §11.3 | Case 17 |
 | `secret-reveal-contradiction` | blocker | Secret reveal permission conflicts with protected non-holder state or directive pressure. | §11.4 | Case 18 |
 | `hidden-truth-in-pov-knowledge` | blocker | POV knowledge contains a selected hidden truth the POV must not know. | §11.4 | Case 18 |
