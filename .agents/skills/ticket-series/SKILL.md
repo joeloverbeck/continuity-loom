@@ -92,12 +92,18 @@ npm run build
    as a blocker. Report both the original failure and the successful rerun.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
-   record the project/path and URL used; restore any user or demo data changed
+   record the project/path and URL used. When the smoke needs project data
+   creation, mutation, deletion, or export, prefer a disposable temporary
+   project under `/tmp` or another clearly non-user data path, then record that
+   path and cleanup/artifact status. Restore any user or demo data changed
    during the smoke; stop browser/dev-server processes; remove transient
    artifacts such as `.playwright-cli/`; and distinguish expected setup console
-   errors from product failures.
+   errors from product failures. When a browser automation skill such as
+   Playwright is available, follow it for browser driving, prerequisite checks,
+   snapshots, console review, and artifact cleanup.
 6. Update the ticket with final status and an `Outcome` section following
-   `docs/archival-workflow.md`.
+   `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the
+   ticket before moving it, after the existing ticket sections.
 7. Archive the ticket:
    - Create `archive/tickets/` if absent.
    - Use `git mv` for tracked tickets.
@@ -149,7 +155,8 @@ npm run build
    affected targeted tests and then rerun the broad gate once before treating it
    as a blocker. Report both the original failure and the successful rerun.
 3. Update the spec with final status and an `Outcome` section following
-   `docs/archival-workflow.md`.
+   `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the spec
+   before moving it, after the existing spec sections.
 4. Archive completed active specs to `archive/specs/`, using `git mv` when
    tracked.
 5. Repair active references and implementation-order/index surfaces found in the
@@ -190,6 +197,7 @@ Final responses must include:
 
 - Tickets completed and archived.
 - Spec archived, or why no spec was archived.
+- Commits made.
 - Verification commands actually run.
 - Any checks not run and why.
 - Any unrelated pre-existing changes left untouched.
