@@ -1,6 +1,6 @@
 # SPEC-021 — Grounded Ideation Prompt ("What could happen next?")
 
-Status: DRAFT
+Status: COMPLETED
 Phase: post-v1 feature (idea 1 of `brainstorming/2026-06-10-post-v1-feature-brainstorm.md`; not gated by the archived v1 implementation order)
 Depends on: FOUNDATIONS amendments A1 + A2 (proposed below, sign-off-gated; must land in the same revision as the dependent code change per FOUNDATIONS §1.1)
 Governing authority: `docs/FOUNDATIONS.md`
@@ -470,3 +470,34 @@ per-item user action?"
   types plus OBJECT/LOCATION/AFFORDANCE; the dormancy ordering key is the stored
   `updatedAt` field with record-id tie-break (see §B); finalize at ticket
   decomposition.
+
+## Outcome
+
+Completed 2026-06-12.
+
+### Delivered
+
+1. `SPEC021GROIDEPRO-001` landed the FOUNDATIONS amendments for the sanctioned assistance prompt class and assistance-output handling.
+2. `SPEC021GROIDEPRO-002` added deterministic ideation prompt inputs, section structure, operator slot assignment, citation keys, version bumps, and the compiler-contract mapping.
+3. `SPEC021GROIDEPRO-003` added the byte-frozen ideation golden and determinism/prose-regression coverage.
+4. `SPEC021GROIDEPRO-004` made readiness prompt-kind-aware while preserving fail-closed contradiction behavior and updating validation-rule inventory.
+5. `SPEC021GROIDEPRO-005` added `/api/ideate`, `promptKind` compile preview, flat idea parsing, malformed fallback, citation verification, secret-firewall coverage, and no-persistence tests.
+6. `SPEC021GROIDEPRO-006` added the Ideate route, navigation, Generation Brief link, prompt inspection, relaxed readiness, controls, and send lifecycle.
+7. `SPEC021GROIDEPRO-007` added slate card rendering, citation chips, malformed raw scratch rendering, per-slot regeneration request inputs, and session-scoped keepers.
+8. `SPEC021GROIDEPRO-008` added `docs/ideation-prompt-template.md`, registered it in `docs/ACTIVE-DOCS.md`, refreshed compiler/version documentation, and added the user-guide workflow.
+9. `SPEC021GROIDEPRO-009` added the composed server e2e over the demo project and completed the verification gate.
+
+### Deviations
+
+1. The server readiness preview gained a `promptKind` request path during `SPEC021GROIDEPRO-006` so the UI could show ideation readiness without duplicating gate logic.
+2. The manual browser smoke exercised the real Ideate view and raw malformed-output fallback; the live provider response used malformed citation text, so parsed-card behavior is covered by automated component tests and the mocked server e2e.
+3. No production persistence surface was added for ideas or keepers; keepers remain session-scoped scratch as specified.
+
+### Final Verification
+
+1. `npm test -- ideate.e2e` — passed (1 file, 2 tests).
+2. `npm test -- compiler-golden compile-routes` — passed (2 files, 11 tests).
+3. `npm run lint` — passed.
+4. `npm run typecheck` — passed.
+5. `npm test` — passed (121 files, 908 tests).
+6. `npm run build` — passed; Vite reported the existing large-chunk warning.
