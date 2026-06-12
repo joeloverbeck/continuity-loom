@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — changes the ideation citation-key format (`[TYPE: full label]` → `[TYPE-n]`), adds an inline citation key at each operator-eligible record's single render site in the ideation prompt, adds a citation-coverage invariant, and refreshes the ideation golden + server round-trip fixtures + contract/template docs; the prose prompt and server verification logic are unchanged in shape.
-**Deps**: SPEC022IDENATPRO-001
+**Deps**: `archive/tickets/SPEC022IDENATPRO-001.md`
 
 ## Problem
 
@@ -63,7 +63,7 @@ Refresh `golden-ideation.prompt.txt`; add the key-format/coverage/determinism as
 
 ## Out of Scope
 
-- The section restructure / new relationship section / slim physical-continuity (SPEC022IDENATPRO-001 — prerequisite).
+- The section restructure / new relationship section / slim physical-continuity (`archive/tickets/SPEC022IDENATPRO-001.md` — prerequisite).
 - Ideation-framed contract variants and the distinctness instruction (SPEC022IDENATPRO-003).
 - UI grounds provenance — resolving short keys to labels in `SlateCard`/`keepers` (SPEC022IDENATPRO-004).
 - Any change to record selection, slot assignment, operator taxonomy, dormancy logic, or the server's unknown-citation verification logic (only its test fixtures move).

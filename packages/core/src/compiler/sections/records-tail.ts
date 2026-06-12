@@ -7,6 +7,9 @@ import type { ValidationRecord, ValidationSnapshot } from "../../validation/snap
 
 type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+export interface TailRenderOptions {
+  ideation?: boolean;
+}
 
 const tailResolvers: ResolverMap = {
   pov_accessible_facts: (snapshot) =>
@@ -76,29 +79,8 @@ const tailResolvers: ResolverMap = {
       (payload) => payload.event_kind === "offstage" || payload.event_kind === "withheld",
       (payload) => compactParts([asString(payload.description), labelValue("visibility", payload.pov_visibility)])
     ),
-  locations: (snapshot) =>
-    renderRecords(snapshot, "LOCATION", activeStatus, (payload) =>
-      compactParts([
-        asString(payload.label),
-        asString(payload.description),
-        labelValue("layout", payload.layout_relevant_now),
-        labelValue("routes", payload.access_routes),
-        labelValue("visibility/sound", payload.visibility_and_sound)
-      ])
-    ),
-  objects: (snapshot) =>
-    renderRecords(snapshot, "OBJECT", activeStatus, (payload) =>
-      compactParts([
-        asString(payload.label),
-        asString(payload.description),
-        labelValue("owner", resolveRecordLabel(snapshot, payload.owner)),
-        labelValue("carried by", resolveRecordLabel(snapshot, payload.carried_by)),
-        labelValue("location", resolveRecordLabel(snapshot, payload.current_location)),
-        labelValue("visibility", payload.visibility_to_pov),
-        labelValue("affordances", payload.usable_affordances),
-        labelValue("constraints", payload.constraints)
-      ])
-    ),
+  locations: (snapshot) => renderLocations(snapshot),
+  objects: (snapshot) => renderObjects(snapshot),
   visible_affordances: (snapshot) =>
     renderRecords(snapshot, "VISIBLE AFFORDANCE", (payload) => payload.status === "available", (payload) =>
       compactParts([
@@ -131,6 +113,23 @@ export const TAIL_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<PlaceholderName
     ) as Partial<Record<PlaceholderName, PlaceholderResolver>>
   );
 
+export function renderTailPlaceholder(
+  placeholder: PlaceholderName,
+  snapshot: ValidationSnapshot,
+  options: TailRenderOptions = {}
+): string | undefined {
+  switch (placeholder) {
+    case "locations":
+      return renderLocations(snapshot, options);
+    case "objects":
+      return renderObjects(snapshot, options);
+    case "physical_continuity":
+      return renderPhysicalContinuity(snapshot, options);
+    default:
+      return undefined;
+  }
+}
+
 function renderUnavailableActions(snapshot: ValidationSnapshot): string {
   const currentLocks = snapshot.generationSession.current_authoritative_state?.current_locks ?? [];
   const lockLines = currentLocks.map((lock) => `- Current lock: ${lock}`);
@@ -142,7 +141,7 @@ function renderUnavailableActions(snapshot: ValidationSnapshot): string {
   return lines.join("\n");
 }
 
-function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {
+function renderPhysicalContinuity(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
   const state = snapshot.generationSession.current_authoritative_state;
   const stateLines = state
     ? [
@@ -158,6 +157,18 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {
         labelValue("locks", state.current_locks)
       ].filter(Boolean)
     : [];
+  if (options.ideation) {
+    const statusLines = renderRecords(
+      snapshot,
+      ["ENTITY STATUS", "LOCATION", "OBJECT", "VISIBLE AFFORDANCE"],
+      () => true,
+      (payload, record) => physicalStatusLine(snapshot, record, payload)
+    );
+    const lines = [...stateLines.map((line) => `- ${line}`), statusLines].filter(Boolean);
+
+    return lines.join("\n") || EMPTY_STATE_CONSTANTS.physical_continuity;
+  }
+
   const recordLines = renderRecords(
     snapshot,
     ["ENTITY STATUS", "LOCATION", "OBJECT", "VISIBLE AFFORDANCE"],
@@ -167,6 +178,35 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot): string {
   const lines = [...stateLines.map((line) => `- ${line}`), recordLines].filter(Boolean);
 
   return lines.join("\n") || EMPTY_STATE_CONSTANTS.physical_continuity;
+}
+
+function renderLocations(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(snapshot, "LOCATION", options.ideation ? () => true : activeStatus, (payload) =>
+    compactParts([
+      asString(payload.label),
+      asString(payload.description),
+      options.ideation ? labelValue("status", payload.status) : "",
+      labelValue("layout", payload.layout_relevant_now),
+      labelValue("routes", payload.access_routes),
+      labelValue("visibility/sound", payload.visibility_and_sound)
+    ])
+  );
+}
+
+function renderObjects(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(snapshot, "OBJECT", options.ideation ? () => true : activeStatus, (payload) =>
+    compactParts([
+      asString(payload.label),
+      asString(payload.description),
+      options.ideation ? labelValue("status", payload.status) : "",
+      labelValue("owner", resolveRecordLabel(snapshot, payload.owner)),
+      labelValue("carried by", resolveRecordLabel(snapshot, payload.carried_by)),
+      labelValue("location", resolveRecordLabel(snapshot, payload.current_location)),
+      labelValue("visibility", payload.visibility_to_pov),
+      labelValue("affordances", payload.usable_affordances),
+      labelValue("constraints", payload.constraints)
+    ])
+  );
 }
 
 function physicalRecordText(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
@@ -185,6 +225,24 @@ function physicalRecordText(snapshot: ValidationSnapshot, record: ValidationReco
     asString(payload.label),
     asString(payload.description),
     asString(payload.prompt_text),
+    labelValue("status", payload.status)
+  ]);
+}
+
+function physicalStatusLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
+  if (record.type === "ENTITY STATUS") {
+    return compactParts([
+      labelValue("entity", resolveRecordLabel(snapshot, payload.entity_id)),
+      labelValue("life", payload.life),
+      labelValue("agency", payload.agency),
+      labelValue("location", resolveRecordLabel(snapshot, payload.location)),
+      labelValue("visibility", payload.visibility_to_pov),
+      labelValue("activity", payload.current_activity)
+    ]);
+  }
+
+  return compactParts([
+    asString(payload.label),
     labelValue("status", payload.status)
   ]);
 }

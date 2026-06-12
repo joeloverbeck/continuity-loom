@@ -55,7 +55,7 @@ Refresh `golden-ideation.prompt.txt`; update `compiler-ideation-golden.test.ts`.
 
 ## Out of Scope
 
-- The section restructure (SPEC022IDENATPRO-001) and short keys / keyed render sites (SPEC022IDENATPRO-002).
+- The section restructure (`archive/tickets/SPEC022IDENATPRO-001.md`) and short keys / keyed render sites (SPEC022IDENATPRO-002).
 - UI grounds provenance (SPEC022IDENATPRO-004).
 - Any change to the prose `<authority_hierarchy>`, `<content_policy>`, `<immediate_handoff>`, `<manual_directive>` templates/labels, or to the eventfulness/reveal/SKIPPED rules inside `<ideation_quality>`.
 

@@ -1,6 +1,6 @@
 # SPEC022IDENATPRO-001: Ideation section restructure — drop the précis, add the relationship/emotion section
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — restructures ideation prompt compilation (`IDEATION_SECTION_ORDER`, a new `<relationship_and_emotion_pressure>` ideation section, a slim ideation `<physical_continuity>` variant, an ideation-only un-gating of the `locations`/`objects` sub-blocks), refreshes the ideation golden, and co-lands `docs/compiler-contract.md` + `docs/ideation-prompt-template.md`; the prose prompt is unchanged.
@@ -88,3 +88,22 @@ Refresh `golden-ideation.prompt.txt`; update `compiler-ideation-golden.test.ts` 
 1. `npx vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts`
 2. `npm test`
 3. Narrower core-only run (`npx vitest run packages/core/...`) is the correct boundary while iterating because this ticket changes no server/web surface; the full `npm test` is the merge gate.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Restructured the ideation prompt order so `<ideation_role>` renders first and `<active_working_set>` no longer renders in ideation prompts.
+- Added the ideation-only `<relationship_and_emotion_pressure>` section so RELATIONSHIP and EMOTION records remain visible after removing the prose pressure precis.
+- Added an ideation-aware tail render path: ideation `locations`/`objects` render every selected LOCATION/OBJECT regardless of status with a status label, while ideation `<physical_continuity>` renders only current-state physical lines plus status-only physical record lines.
+- Refreshed the ideation golden and updated compiler/template docs to match the new ideation section order and render variants.
+
+Deviations from original plan:
+- None. Short citation keys and inline key prefixes remain out of scope for SPEC022IDENATPRO-002.
+
+Verification:
+- `npm exec -- vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 121 files, 909 tests.
+- `npm run lint` passed.

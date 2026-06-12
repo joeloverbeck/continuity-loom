@@ -13,6 +13,8 @@ import { describe, expect, it } from "vitest";
 function ideationSnapshot() {
   const records = structuredClone(demoRecords);
   const longBelief = records.find((record) => record.id === demoRecordIds.elinBelief);
+  const inactiveObject = records.find((record) => record.id === demoRecordIds.shutteredLantern);
+  const inactiveLocation = records.find((record) => record.id === demoRecordIds.bakeryCellar);
 
   if (longBelief) {
     const fullClaim =
@@ -33,6 +35,18 @@ function ideationSnapshot() {
     });
   }
 
+  if (inactiveObject && inactiveObject.payload && typeof inactiveObject.payload === "object") {
+    Object.assign(inactiveObject, {
+      payload: { ...inactiveObject.payload, status: "inactive" }
+    });
+  }
+
+  if (inactiveLocation && inactiveLocation.payload && typeof inactiveLocation.payload === "object") {
+    Object.assign(inactiveLocation, {
+      payload: { ...inactiveLocation.payload, status: "inactive" }
+    });
+  }
+
   return buildValidationSnapshot({
     records,
     generationSession: demoGenerationSession,
@@ -49,6 +63,10 @@ function expectedIdeationTagOrder(): string[] {
   return IDEATION_SECTION_ORDER.filter((section) => section !== "hard_canon" && section !== "present_minor_cast").map(
     (section) => (section === "ideation_contradiction_prohibitions" ? "contradiction_prohibitions" : section)
   );
+}
+
+function sectionText(prompt: string, section: string): string {
+  return prompt.match(new RegExp(`<${section}(?:\\s[^>]*)?>\\n([\\s\\S]*?)\\n</${section}>`))?.[1] ?? "";
 }
 
 describe("compiler ideation golden prompt", () => {
@@ -76,7 +94,30 @@ describe("compiler ideation golden prompt", () => {
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(promptSectionOrder(first.prompt)).toEqual(expectedIdeationTagOrder());
+    expect(promptSectionOrder(first.prompt)[0]).toBe("ideation_role");
     expect(first.prompt).toContain("<ideation_role>");
+    expect(first.prompt).not.toContain("<active_working_set>");
+    expect(first.prompt).toContain("<relationship_and_emotion_pressure>");
+    expect(sectionText(first.prompt, "relationship_and_emotion_pressure")).toContain(
+      "They trust each other's decency but disagree over whether protection justifies concealment."
+    );
+    expect(sectionText(first.prompt, "relationship_and_emotion_pressure")).toContain(
+      "Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust."
+    );
+    expect(sectionText(first.prompt, "locations_objects_affordances")).toContain(
+      "Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive"
+    );
+    expect(sectionText(first.prompt, "locations_objects_affordances")).toContain(
+      "shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive"
+    );
+    expect(sectionText(first.prompt, "physical_continuity")).toContain("Vale bakery cellar; status: inactive");
+    expect(sectionText(first.prompt, "physical_continuity")).toContain("shuttered lantern; status: inactive");
+    expect(sectionText(first.prompt, "physical_continuity")).not.toContain(
+      "A small tin lantern with a thumb shutter that narrows the light."
+    );
+    expect(sectionText(first.prompt, "physical_continuity")).not.toContain(
+      "A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick."
+    );
     expect(first.prompt).toContain("<ideation_slots>");
     expect(first.prompt).toContain("<ideation_quality>");
     expect(first.prompt).toContain("<ideation_output_format>");

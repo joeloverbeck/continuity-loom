@@ -77,44 +77,47 @@ Active working-set lines are pressure summaries, not archive copies. A record ma
 
 ### 3.2 Ideation Prompt Section Order
 
-The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, selected records, and physical continuity. It replaces prose-only launch/output sections with ideation-specific sections, and renders an ideation-specific continuity-only contradiction-prohibitions body inside the shared `<contradiction_prohibitions>` tag.
+The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, and selected records. It replaces prose-only launch/output sections with ideation-specific sections, renders an ideation-specific continuity-only contradiction-prohibitions body inside the shared `<contradiction_prohibitions>` tag, and uses ideation-only render variants where the assistance task needs less duplicated context.
 
 The compiler renders ideation sections in this order:
 
-1. `<authority_hierarchy>`
-2. `<content_policy>`
-3. `<story_contract>`
-4. `<hard_canon>` when at least one hard-canon FACT is selected
-5. `<current_authoritative_state>`
-6. `<immediate_handoff>`
-7. `<manual_directive>` when at least one manual directive field is supplied
-8. `<pov_knowledge_constraints>`
-9. `<audience_knowledge>`
-10. `<secrets_and_reveal_constraints>`
-11. `<active_working_set>`
+1. `<ideation_role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<hard_canon>` when at least one hard-canon FACT is selected
+6. `<current_authoritative_state>`
+7. `<immediate_handoff>`
+8. `<manual_directive>` when at least one manual directive field is supplied
+9. `<pov_knowledge_constraints>`
+10. `<audience_knowledge>`
+11. `<secrets_and_reveal_constraints>`
 12. `<active_plans_and_intentions>`
 13. `<active_clocks>`
 14. `<active_obligations_and_consequences>`
 15. `<active_open_threads>`
-16. `<active_cast_full_dossiers>`
-17. `<present_minor_cast>` when at least one present-minor cast record is selected
-18. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
-19. `<relevant_facts_beliefs_events>`
-20. `<locations_objects_affordances>`
-21. `<physical_continuity>`
-22. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
-23. `<ideation_role>`
+16. `<relationship_and_emotion_pressure>`
+17. `<active_cast_full_dossiers>`
+18. `<present_minor_cast>` when at least one present-minor cast record is selected
+19. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+20. `<relevant_facts_beliefs_events>`
+21. `<locations_objects_affordances>`
+22. `<physical_continuity>`
+23. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 24. `<ideation_slots>`
 25. `<ideation_quality>`
 26. `<ideation_output_format>`
 
-Ideation prompts do not render `<role>`, `<prose_mode>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
+Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
 
 - `<ideation_role>` from a template constant that frames the model as a story-development consultant, forbids prose/dialogue/scene text/branches/outlines, and labels output as non-canonical scratch.
+- `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
 - `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
 - `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, and skip-if-unsupported rules.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
 - `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
+
+For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
 
 The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus the full display label, not the truncated browse label, with deterministic suffixes for collisions.
 

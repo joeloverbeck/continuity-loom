@@ -32,6 +32,7 @@ export const SECTION_ORDER = Object.freeze([
 export type PromptSectionId = (typeof SECTION_ORDER)[number];
 
 export const IDEATION_SECTION_ORDER = Object.freeze([
+  "ideation_role",
   "authority_hierarchy",
   "content_policy",
   "story_contract",
@@ -42,11 +43,11 @@ export const IDEATION_SECTION_ORDER = Object.freeze([
   "pov_knowledge_constraints",
   "audience_knowledge",
   "secrets_and_reveal_constraints",
-  "active_working_set",
   "active_plans_and_intentions",
   "active_clocks",
   "active_obligations_and_consequences",
   "active_open_threads",
+  "relationship_and_emotion_pressure",
   "active_cast_full_dossiers",
   "present_minor_cast",
   "offstage_relevance",
@@ -54,7 +55,6 @@ export const IDEATION_SECTION_ORDER = Object.freeze([
   "locations_objects_affordances",
   "physical_continuity",
   "ideation_contradiction_prohibitions",
-  "ideation_role",
   "ideation_slots",
   "ideation_quality",
   "ideation_output_format"
@@ -406,6 +406,9 @@ Begin directly with the next sentence of the story.
 });
 
 export const IDEATION_SECTION_TEMPLATES: Readonly<Record<StaticIdeationSectionId, string>> = Object.freeze({
+  relationship_and_emotion_pressure: `<relationship_and_emotion_pressure>
+{relationship_emotion_pressure}
+</relationship_and_emotion_pressure>`,
   ideation_contradiction_prohibitions: `<contradiction_prohibitions>
 Do not:
 - contradict hard canon or current authoritative state

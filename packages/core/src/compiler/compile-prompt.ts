@@ -14,6 +14,7 @@ import {
   type IdeationSectionId,
   type PromptSectionId
 } from "./template-constants.js";
+import { renderTailPlaceholder } from "./sections/records-tail.js";
 import type { CompileResult } from "./types.js";
 
 const placeholderPattern = /\{([a-zA-Z0-9_]+)\}/g;
@@ -138,7 +139,7 @@ function renderSection(
   sectionId: PromptSectionId | IdeationSectionId,
   snapshot: ValidationSnapshot,
   ideationRequest: Partial<IdeationRequest> = {},
-  omitEmptyManualDirective = false
+  isIdeationPrompt = false
 ): string | null {
   if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
     return null;
@@ -153,7 +154,7 @@ function renderSection(
   }
 
   if (isPromptSectionId(sectionId) && isCompositeSectionId(sectionId)) {
-    return renderCompositeSection(sectionId, snapshot);
+    return renderCompositeSection(sectionId, snapshot, isIdeationPrompt);
   }
 
   if (sectionId === "current_authoritative_state") {
@@ -165,7 +166,7 @@ function renderSection(
   }
 
   if (sectionId === "manual_directive") {
-    if (omitEmptyManualDirective && !hasAnyManualDirectiveValue(snapshot)) {
+    if (isIdeationPrompt && !hasAnyManualDirectiveValue(snapshot)) {
       return null;
     }
 
@@ -192,6 +193,10 @@ function renderSection(
     return renderIdeationSlotsSection(snapshot, ideationRequest);
   }
 
+  if (sectionId === "relationship_and_emotion_pressure") {
+    return renderTemplate(IDEATION_SECTION_TEMPLATES.relationship_and_emotion_pressure, snapshot);
+  }
+
   if (isStaticIdeationSectionId(sectionId)) {
     return IDEATION_SECTION_TEMPLATES[sectionId];
   }
@@ -201,7 +206,7 @@ function renderSection(
   }
 
   const template = SECTION_TEMPLATES[sectionId];
-  return renderTemplate(template, snapshot);
+  return renderTemplate(template, snapshot, isIdeationPrompt);
 }
 
 function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): string {
@@ -301,10 +306,21 @@ function renderAudienceKnowledgeSection(snapshot: ValidationSnapshot): string {
   );
 }
 
-function renderTemplate(template: string, snapshot: ValidationSnapshot): string {
+function renderTemplate(template: string, snapshot: ValidationSnapshot, isIdeationPrompt = false): string {
   return template.replace(placeholderPattern, (_match, placeholder: string) =>
-    resolvePlaceholder(placeholder, snapshot)
+    resolveTemplatePlaceholder(placeholder, snapshot, isIdeationPrompt)
   );
+}
+
+function resolveTemplatePlaceholder(placeholder: string, snapshot: ValidationSnapshot, isIdeationPrompt: boolean): string {
+  if (isIdeationPrompt) {
+    const tailValue = renderTailPlaceholder(placeholder as PlaceholderName, snapshot, { ideation: true });
+    if (tailValue !== undefined) {
+      return tailValue;
+    }
+  }
+
+  return resolvePlaceholder(placeholder, snapshot);
 }
 
 function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {
@@ -401,11 +417,11 @@ function shouldRenderOffstageRelevance(snapshot: ValidationSnapshot): boolean {
   );
 }
 
-function renderCompositeSection(sectionId: CompositeSectionId, snapshot: ValidationSnapshot): string {
+function renderCompositeSection(sectionId: CompositeSectionId, snapshot: ValidationSnapshot, isIdeationPrompt: boolean): string {
   const template = COMPOSITE_SECTION_TEMPLATES[sectionId];
   const blocks = template.subBlocks
     .map((block) => {
-      const content = resolvePlaceholder(block.placeholder, snapshot).trim();
+      const content = resolveTemplatePlaceholder(block.placeholder, snapshot, isIdeationPrompt).trim();
       return content ? `${block.label}:\n${content}` : "";
     })
     .filter(Boolean);

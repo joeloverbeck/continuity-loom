@@ -25,40 +25,50 @@ Changing any request field changes the compiled ideation prompt and its fingerpr
 
 The compiler renders ideation sections in this order:
 
-1. `<authority_hierarchy>`
-2. `<content_policy>`
-3. `<story_contract>`
-4. `<hard_canon>` when at least one hard-canon FACT is selected
-5. `<current_authoritative_state>`
-6. `<immediate_handoff>`
-7. `<manual_directive>` when at least one manual directive field is supplied
-8. `<pov_knowledge_constraints>`
-9. `<audience_knowledge>`
-10. `<secrets_and_reveal_constraints>`
-11. `<active_working_set>`
+1. `<ideation_role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<hard_canon>` when at least one hard-canon FACT is selected
+6. `<current_authoritative_state>`
+7. `<immediate_handoff>`
+8. `<manual_directive>` when at least one manual directive field is supplied
+9. `<pov_knowledge_constraints>`
+10. `<audience_knowledge>`
+11. `<secrets_and_reveal_constraints>`
 12. `<active_plans_and_intentions>`
 13. `<active_clocks>`
 14. `<active_obligations_and_consequences>`
 15. `<active_open_threads>`
-16. `<active_cast_full_dossiers>`
-17. `<present_minor_cast>` when at least one present-minor cast record is selected
-18. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
-19. `<relevant_facts_beliefs_events>`
-20. `<locations_objects_affordances>`
-21. `<physical_continuity>`
-22. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
-23. `<ideation_role>`
+16. `<relationship_and_emotion_pressure>`
+17. `<active_cast_full_dossiers>`
+18. `<present_minor_cast>` when at least one present-minor cast record is selected
+19. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+20. `<relevant_facts_beliefs_events>`
+21. `<locations_objects_affordances>`
+22. `<physical_continuity>`
+23. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 24. `<ideation_slots>`
 25. `<ideation_quality>`
 26. `<ideation_output_format>`
 
-Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`.
+Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`.
 
 ## Ideation Sections
 
 ### `<ideation_role>`
 
 Frames the model as a story-development consultant for a continuity-first fiction system. It asks for premise-level ideas or questions and forbids prose, dialogue, scene text, beat sheets, outlines, branches, chapter plans, future summaries, new named entities, new facts, new locations, new objects, new secrets, and new backstory beyond compiled records. It labels the output as AI-suggested scratch, not story state, not a generation-time field, and not prompt context for prose generation.
+
+### `<relationship_and_emotion_pressure>`
+
+Renders RELATIONSHIP and EMOTION records from the deterministic `relationship_emotion_pressure` placeholder. This is the ideation-native replacement for the relationship/emotion lane that prose renders inside `<active_working_set>`; it keeps those selected records visible without carrying the full prose pressure precis.
+
+### Ideation `<locations_objects_affordances>` and `<physical_continuity>`
+
+The ideation prompt renders every selected LOCATION and OBJECT record in `<locations_objects_affordances>` regardless of status, with status shown as a label. This prevents dormant, inactive, transferred, destroyed, or otherwise non-active records from becoming invisible when they can still ground an ideation operator.
+
+The ideation `<physical_continuity>` body is slim: current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines. It does not repeat LOCATION or OBJECT descriptions already rendered in `<locations_objects_affordances>`. The prose prompt keeps the fuller physical-continuity body and the active/available status gate for location/object detail blocks.
 
 ### `<ideation_slots>`
 
@@ -85,7 +95,7 @@ Defines the quality bar:
 
 ### Ideation `<contradiction_prohibitions>`
 
-The ideation prompt renders the same `<contradiction_prohibitions>` tag as the prose prompt at section position 22, but from an ideation-specific template. It keeps continuity, canon, physical-continuity, POV-knowledge, reveal-lock, future-consequence, and no-global-structure prohibitions. It omits prose-craft-only prohibitions such as generic speech, catchphrase reuse, exposition-dialogue, and abstract diagnosis because the ideator must not write prose.
+The ideation prompt renders the same `<contradiction_prohibitions>` tag as the prose prompt at section position 23, but from an ideation-specific template. It keeps continuity, canon, physical-continuity, POV-knowledge, reveal-lock, future-consequence, and no-global-structure prohibitions. It omits prose-craft-only prohibitions such as generic speech, catchphrase reuse, exposition-dialogue, and abstract diagnosis because the ideator must not write prose.
 
 ### `<ideation_output_format>`
 
