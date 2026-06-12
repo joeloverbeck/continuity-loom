@@ -1,6 +1,6 @@
 # SPEC-022 — Ideation-Native Prompt Template (lean grounded ideation prompt)
 
-Status: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 refinement of the SPEC-021 ideation surface (not gated by the archived v1 implementation order)
 Depends on: SPEC-021 (completed, archived), IDEAPROMPT-001 / IDEAPROMPT-002 / SECRETLINE-001 (completed 2026-06-12). No FOUNDATIONS amendment required: §9's universal section list and §29.4's omission hard-fail scope explicitly to the prose prompt class; assistance prompts are governed by §9.1, which mandates determinism, inspectability, validation gating, no-prose output, and quarantine — not a section list.
 Governing authority: `docs/FOUNDATIONS.md`
@@ -382,3 +382,27 @@ No §29 hard-fail question answers "yes". No FOUNDATIONS amendment is required.
   retains prose-flavored phrasing ("do not narrate non-POV thoughts...") by
   deliberate scope decision (user directive to keep dossiers as generated).
   Harmless for ideation; revisit only if observed to leak prose into ideas.
+
+## Outcome
+
+Completed 2026-06-12.
+
+- Implemented the ideation-native prompt shape through
+  `SPEC022IDENATPRO-001` through `SPEC022IDENATPRO-004`: removed the ideation
+  working-set precis, added relationship/emotion pressure, slimmed ideation
+  physical continuity, switched ideation citations to deterministic
+  `[TYPE-n]` keys, rendered each operator-eligible record key at one inline
+  site, added ideation-framed authority/content/handoff/directive text, added
+  mutual-distinctness guidance, and resolved short keys to full labels in the
+  Ideate UI and persisted keepers.
+- Kept the prose prompt, prose section order, cast dossier rendering, record
+  selection, slot assignment, operator taxonomy, dormancy logic, validation
+  gates, and quarantine rules unchanged.
+- Archived implementation tickets:
+  `archive/tickets/SPEC022IDENATPRO-001.md`,
+  `archive/tickets/SPEC022IDENATPRO-002.md`,
+  `archive/tickets/SPEC022IDENATPRO-003.md`, and
+  `archive/tickets/SPEC022IDENATPRO-004.md`.
+- Final verification passed on 2026-06-12: `npm run lint`,
+  `npm run typecheck`, `npm test` (121 files, 910 tests), and
+  `npm run build`.
