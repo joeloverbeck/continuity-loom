@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-009: Capstone — end-to-end ideation smoke + verification gate
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new server-side end-to-end test exercising the composed ideation pipeline against the demo project + a manual UI runbook; no production behavior change (verification-only)
@@ -76,3 +76,22 @@ In this ticket's body (runbook, not CI): against a fresh demo project — (1) op
 1. `npm test -- ideate.e2e`
 2. `npm run lint && npm run typecheck && npm test && npm run build` — the full spec §Verification gate.
 3. `npm test -- compiler-golden compile-routes` — the narrow prose-non-regression proof that ideation work left the prose flow byte-identical.
+
+## Outcome
+
+Completed 2026-06-12.
+
+### Changed
+
+1. Added `packages/server/src/ideate.e2e.test.ts`, a mocked-transport server e2e that drives the demo project through ideation compile and `/api/ideate`.
+2. Covered deterministic ideation compilation, route prompt handoff, unknown-citation flagging, version metadata, secret non-leakage, no project persistence, prose prompt non-regression, relaxed-gate composition for missing manual directive, and hard contradiction blocking.
+3. Manual UI runbook coverage was satisfied by the SPEC021GROIDEPRO-007 browser smoke: Ideate route/navigation, prompt inspector, controls, keeper/session behavior, send lifecycle, and malformed raw-scratch fallback were exercised in a real localhost browser. Parsed-card rendering remains covered by automated view/component tests and this server e2e because the live provider smoke returned malformed citation text.
+
+### Verification
+
+1. `npm test -- ideate.e2e` — passed (1 file, 2 tests).
+2. `npm test -- compiler-golden compile-routes` — passed (2 files, 11 tests).
+3. `npm run lint` — passed.
+4. `npm run typecheck` — passed.
+5. `npm test` — passed (121 files, 908 tests).
+6. `npm run build` — passed; Vite reported the existing large-chunk warning.
