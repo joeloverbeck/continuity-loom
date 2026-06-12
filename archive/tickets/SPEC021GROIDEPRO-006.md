@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-006: Web Ideate view shell — route, nav, brief link, prompt inspection, relaxed readiness
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/web/src/ideate/` view, AppShell nav entry + route, Generation Brief "Stuck? Get ideas" link, `api.ts` ideate/compile-ideation client methods; no production engine, record, or behavior change to existing surfaces
@@ -84,3 +84,26 @@ The author needs a dedicated, quarantined surface to ask "what could happen next
 1. `npm test -- IdeateView GenerationBriefView`
 2. `npm test && npm run typecheck && npm run lint && npm run build`
 3. `npm test -- AppShell` — narrower check that the nav entry + route registered without disturbing sibling routes.
+
+## Outcome
+
+Completed: 2026-06-12
+
+Changed:
+- Added the `/ideate` web shell with ideation prompt preview, ideation readiness rendering, send lifecycle, parsed/malformed scratch placeholder rendering, and persistent "AI-suggested scratch - not story state" labels.
+- Added typed web API helpers for `compileIdeation`, `ideate`, ideation response shapes, and prompt-kind-aware readiness calls.
+- Wired Ideate into the primary nav and guarded route, and added the Generation Brief "Stuck? Get ideas" link.
+- Extended `/api/readiness` to accept an optional `promptKind` body defaulting to `"prose"`, so the Ideate shell can request the relaxed ideation readiness kind without changing existing callers.
+- Added focused tests for the Ideate shell, AppShell route/nav/guard coverage, the Generation Brief link, and readiness route prompt-kind request parsing.
+
+Deviations:
+- Touched `packages/server/src/readiness-routes.ts` and its test even though the original file list focused on web files; this was required to render actual ideation-kind readiness instead of prose readiness.
+- The 006 placeholder renders parsed ideas as a simple scratch list and malformed responses as raw scratch; slate cards, controls, citation chips, regenerate, and keepers remain for SPEC021GROIDEPRO-007.
+
+Verification:
+- `npm test -- IdeateView GenerationBriefView AppShell readiness-routes` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 118 files, 898 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.
+- Browser smoke with a disposable `/tmp/continuity-loom-ideate-smoke-20260612` demo project verified `/ideate` route/nav, prompt inspector, ideation readiness, Generation Brief link to `/ideate`, quarantine labels, and send lifecycle rendering malformed raw scratch as non-story-state output.

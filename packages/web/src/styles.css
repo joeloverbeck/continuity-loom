@@ -197,7 +197,23 @@ body {
 }
 
 .projectHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
+}
+
+.projectHeader .secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 h2 {
@@ -1045,6 +1061,54 @@ button:disabled:hover {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.ideateQuarantine {
+  margin-bottom: 16px;
+}
+
+.ideateScratchPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.ideateRawScratch {
+  display: grid;
+  gap: 12px;
+}
+
+.ideateRawScratch pre {
+  box-sizing: border-box;
+  max-height: 280px;
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #f7f9fc;
+  padding: 14px;
+  color: #202124;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ideateRawList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.ideateRawList article {
+  display: grid;
+  gap: 8px;
+}
+
+.ideateRawList h4,
+.ideateRawList p {
+  margin: 0;
 }
 
 .candidateBody {

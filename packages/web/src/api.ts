@@ -1,4 +1,12 @@
-import type { CompileResult, GenerationReadiness, OpenProjectResult, ProjectStatus, ValidationResult, VersionInfo } from "@loom/core";
+import type {
+  CompileResult,
+  GenerationReadiness,
+  IdeationRequest,
+  OpenProjectResult,
+  ProjectStatus,
+  ValidationResult,
+  VersionInfo
+} from "@loom/core";
 
 export interface HealthResponse {
   status: "ok";
@@ -63,6 +71,7 @@ export type CompileBlocked = {
   ok: false;
   kind: "validation-blocked";
   validation: ValidationResult;
+  readiness?: GenerationReadiness;
 };
 
 export type CompileResponse = CompileResult | CompileBlocked | ApiFailure;
@@ -99,6 +108,23 @@ export interface GenerationMetadata {
 
 export type GenerateResponse =
   | { ok: true; candidate: { text: string }; metadata: GenerationMetadata }
+  | CompileBlocked
+  | ApiFailure
+  | TransportFailure;
+
+export interface ParsedIdeationIdea {
+  slotNumber: number;
+  operator: string;
+  headline?: string;
+  question?: string;
+  why?: string;
+  grounds: readonly string[];
+  unknownCitations: readonly string[];
+}
+
+export type IdeateResponse =
+  | { ok: true; ideas: readonly ParsedIdeationIdea[]; metadata: GenerationMetadata }
+  | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata }
   | CompileBlocked
   | ApiFailure
   | TransportFailure;
@@ -348,13 +374,20 @@ export async function validate(): Promise<ValidationResult | ApiFailure> {
   return postJson<ValidationResult | ApiFailure>("/api/validate");
 }
 
-export async function readiness(): Promise<GenerationReadiness | ApiFailure> {
-  return postJson<GenerationReadiness | ApiFailure>("/api/readiness");
+export async function readiness(input: { promptKind?: "prose" | "ideation" } = {}): Promise<GenerationReadiness | ApiFailure> {
+  return postJson<GenerationReadiness | ApiFailure>("/api/readiness", input);
 }
 
 export async function compile(): Promise<CompileResponse> {
   // A body with ok === false is blocked-or-error; any other body is the bare CompileResult.
   return postJson<CompileResponse>("/api/compile");
+}
+
+export async function compileIdeation(request: Partial<IdeationRequest> = {}): Promise<CompileResponse> {
+  return postJson<CompileResponse>("/api/compile", {
+    promptKind: "ideation",
+    ideationRequest: request
+  });
 }
 
 export async function getOpenRouterSettings(): Promise<OpenRouterSettingsResponse> {
@@ -371,6 +404,10 @@ export async function refreshModels(): Promise<RefreshModelsResponse> {
 
 export async function generate(): Promise<GenerateResponse> {
   return postJson<GenerateResponse>("/api/generate");
+}
+
+export async function ideate(request: Partial<IdeationRequest> = {}): Promise<IdeateResponse> {
+  return postJson<IdeateResponse>("/api/ideate", request);
 }
 
 export async function acceptCandidate(input: {

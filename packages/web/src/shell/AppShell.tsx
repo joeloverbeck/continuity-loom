@@ -7,6 +7,7 @@ import { AcceptedSegmentsView } from "../accepted-segments/AcceptedSegmentsView.
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { GenerateView } from "../generate/GenerateView.js";
+import { IdeateView } from "../ideate/IdeateView.js";
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
@@ -30,6 +31,7 @@ const primaryRoutes = [
   { to: "/generation-brief", label: "Generation Brief", requiresProject: true },
   { to: "/preview", label: "Validation / Prompt Preview", requiresProject: true },
   { to: "/generate", label: "Generate / Candidate", requiresProject: true },
+  { to: "/ideate", label: "Ideate", requiresProject: true },
   { to: "/accepted-segments", label: "Accepted Segments", requiresProject: true },
   { to: "/story-config", label: "Story Configuration", requiresProject: true },
   { to: "/settings", label: "Settings", requiresProject: false }
@@ -122,6 +124,7 @@ function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
               <Route path="/generation-brief" element={<RequireProject><GenerationBriefView /></RequireProject>} />
               <Route path="/preview" element={<RequireProject><PromptPreviewView /></RequireProject>} />
               <Route path="/generate" element={<RequireProject><GenerateView /></RequireProject>} />
+              <Route path="/ideate" element={<RequireProject><IdeateView /></RequireProject>} />
               <Route path="/accepted-segments" element={<RequireProject><AcceptedSegmentsView /></RequireProject>} />
               <Route path="/story-config" element={<RequireProject><StoryConfigEditor /></RequireProject>} />
               <Route path="/settings" element={<SettingsSurface />} />

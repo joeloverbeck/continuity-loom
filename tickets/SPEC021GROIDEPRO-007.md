@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new slate-card / controls / session-keepers components wired into `IdeateView`; no production engine, record, or server change. Keepers are sessionStorage-only.
-**Deps**: SPEC021GROIDEPRO-006 (the Ideate view shell this extends)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-006.md` (the Ideate view shell this extends)
 
 ## Problem
 
@@ -53,11 +53,11 @@ On top of the Ideate shell, the author needs the actual ideation slate: 3–6 ca
 - `packages/web/src/ideate/SlateCard.test.tsx` (new)
 - `packages/web/src/ideate/keepers.test.ts` (new)
 - `packages/web/src/ideate/IdeateView.test.tsx` (modify) — created by 006 (Deps: 006)
-- `packages/web/src/styles.css` (modify) — shared with SPEC021GROIDEPRO-006
+- `packages/web/src/styles.css` (modify) — shared with `archive/tickets/SPEC021GROIDEPRO-006.md`
 
 ## Out of Scope
 
-- The view shell, route, nav, brief link, prompt inspection, readiness — SPEC021GROIDEPRO-006.
+- The view shell, route, nav, brief link, prompt inspection, readiness — `archive/tickets/SPEC021GROIDEPRO-006.md`.
 - Any cross-session / project-store persistence of ideas or keepers — forbidden (spec §Out of Scope; §26.1).
 - Server-side parsing/verification — `archive/tickets/SPEC021GROIDEPRO-005.md`.
 - Any insertion of ideas into records, brief fields, or prompts; any idea→directive path — forbidden everywhere.

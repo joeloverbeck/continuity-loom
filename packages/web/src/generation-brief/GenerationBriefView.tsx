@@ -3,7 +3,7 @@ import {
   generationSessionDraftSchema
 } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import type { z } from "zod";
 
 import {
@@ -359,8 +359,11 @@ export function GenerationBriefView(): React.JSX.Element {
   return (
     <section className="surface generationBriefSurface" aria-labelledby="generation-brief-title">
       <div className="projectHeader">
-        <p className="eyebrow">Generation-time workflow</p>
-        <h2 id="generation-brief-title">Generation Brief</h2>
+        <div>
+          <p className="eyebrow">Generation-time workflow</p>
+          <h2 id="generation-brief-title">Generation Brief</h2>
+        </div>
+        <Link className="secondaryButton" to="/ideate">Stuck? Get ideas</Link>
       </div>
 
       {notice ? (

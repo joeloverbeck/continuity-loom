@@ -14,6 +14,7 @@ const generationBriefMock = vi.hoisted(() => ({
     acceptedSegments: 0,
     generate: 0,
     generationBrief: 0,
+    ideate: 0,
     preview: 0,
     records: 0,
     storyConfig: 0,
@@ -62,6 +63,12 @@ vi.mock("../generate/GenerateView.js", () => ({
     return <h2>Generate / Candidate</h2>;
   }
 }));
+vi.mock("../ideate/IdeateView.js", () => ({
+  IdeateView: () => {
+    generationBriefMock.viewRenders.ideate += 1;
+    return <h2>Ideate</h2>;
+  }
+}));
 vi.mock("../accepted-segments/AcceptedSegmentsView.js", () => ({
   AcceptedSegmentsView: () => {
     generationBriefMock.viewRenders.acceptedSegments += 1;
@@ -95,7 +102,7 @@ afterEach(() => {
 });
 
 describe("AppShell", () => {
-  it("promotes Generate / Candidate and Accepted Segments to enabled routes", async () => {
+  it("promotes Generate / Candidate, Ideate, and Accepted Segments to enabled routes", async () => {
     render(
       <MemoryRouter>
         <AppShell loadState={{ status: "ready", runtime: runtimeStatus }} />
@@ -103,8 +110,10 @@ describe("AppShell", () => {
     );
 
     const generateLink = screen.getByRole("link", { name: "Generate / Candidate" });
+    const ideateLink = screen.getByRole("link", { name: "Ideate" });
     const acceptedSegmentsLink = screen.getByRole("link", { name: "Accepted Segments" });
     expect(generateLink).toBeTruthy();
+    expect(ideateLink).toBeTruthy();
     expect(acceptedSegmentsLink).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Accepted Segments" })).toBeNull();
@@ -112,6 +121,10 @@ describe("AppShell", () => {
     fireEvent.click(generateLink);
 
     expect(await screen.findByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
+
+    fireEvent.click(ideateLink);
+
+    expect(await screen.findByRole("heading", { name: "Ideate" })).toBeTruthy();
 
     fireEvent.click(acceptedSegmentsLink);
 
@@ -168,6 +181,7 @@ describe("AppShell", () => {
       "Generation Brief",
       "Validation / Prompt Preview",
       "Generate / Candidate",
+      "Ideate",
       "Accepted Segments",
       "Story Configuration"
     ].map((name) => within(primaryNav).getByRole("link", { name }));
@@ -194,6 +208,7 @@ describe("AppShell", () => {
     ["/generation-brief", "generationBrief"],
     ["/preview", "preview"],
     ["/generate", "generate"],
+    ["/ideate", "ideate"],
     ["/accepted-segments", "acceptedSegments"],
     ["/story-config", "storyConfig"]
   ] as const)("guards %s when no project is open", async (path, renderKey) => {
@@ -234,6 +249,7 @@ function resetViewRenders(): void {
   generationBriefMock.viewRenders.acceptedSegments = 0;
   generationBriefMock.viewRenders.generate = 0;
   generationBriefMock.viewRenders.generationBrief = 0;
+  generationBriefMock.viewRenders.ideate = 0;
   generationBriefMock.viewRenders.preview = 0;
   generationBriefMock.viewRenders.records = 0;
   generationBriefMock.viewRenders.storyConfig = 0;

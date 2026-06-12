@@ -48,7 +48,7 @@ In this ticket's body (runbook, not CI): against a fresh demo project — (1) op
 
 ## Out of Scope
 
-- Any production logic — owned by `archive/tickets/SPEC021GROIDEPRO-002.md`, `archive/tickets/SPEC021GROIDEPRO-003.md`, `archive/tickets/SPEC021GROIDEPRO-004.md`, `archive/tickets/SPEC021GROIDEPRO-005.md`, and SPEC021GROIDEPRO-006…007.
+- Any production logic — owned by `archive/tickets/SPEC021GROIDEPRO-002.md`, `archive/tickets/SPEC021GROIDEPRO-003.md`, `archive/tickets/SPEC021GROIDEPRO-004.md`, `archive/tickets/SPEC021GROIDEPRO-005.md`, `archive/tickets/SPEC021GROIDEPRO-006.md`, and SPEC021GROIDEPRO-007.
 - Docs — SPEC021GROIDEPRO-008 (runs parallel; not exercised by this smoke).
 - A browser-automation harness — not present in the project; the UI smoke is a manual runbook by design.
 
