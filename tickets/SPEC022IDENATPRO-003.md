@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds ideation-framed variants of `<authority_hierarchy>`, `<content_policy>`, `<immediate_handoff>`, and `<manual_directive>` to the ideation prompt, adds a mutual-distinctness block to `<ideation_quality>`, refreshes the ideation golden, and co-lands the contract/template docs; the prose prompt is unchanged.
-**Deps**: SPEC022IDENATPRO-002
+**Deps**: `archive/tickets/SPEC022IDENATPRO-002.md`
 
 ## Problem
 
@@ -55,7 +55,7 @@ Refresh `golden-ideation.prompt.txt`; update `compiler-ideation-golden.test.ts`.
 
 ## Out of Scope
 
-- The section restructure (`archive/tickets/SPEC022IDENATPRO-001.md`) and short keys / keyed render sites (SPEC022IDENATPRO-002).
+- The section restructure (`archive/tickets/SPEC022IDENATPRO-001.md`) and short keys / keyed render sites (`archive/tickets/SPEC022IDENATPRO-002.md`).
 - UI grounds provenance (SPEC022IDENATPRO-004).
 - Any change to the prose `<authority_hierarchy>`, `<content_policy>`, `<immediate_handoff>`, `<manual_directive>` templates/labels, or to the eventfulness/reveal/SKIPPED rules inside `<ideation_quality>`.
 

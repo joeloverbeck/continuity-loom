@@ -149,7 +149,22 @@ The compiler assigns slots deterministically from selected records only:
 
 ## Citation Keys
 
-Every selected record used for ideation receives a deterministic bracketed citation key derived from record type plus the record's full display label or id, not the truncated browse label, with deterministic suffixes for collisions. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+Every selected record used for ideation receives a deterministic bracketed citation key in the form `[<TYPE>-<n>]`, for example `[BELIEF-1]` or `[VISIBLE AFFORDANCE-1]`. The ordinal is the record's 1-based position among selected records of the same type under the compiler's deterministic full-label sort. Keys are stable for identical selected records and versions, but no cross-session identity is promised after selection or record edits.
+
+Keys render inline once at the record's authoritative ideation section:
+
+| Record type | Inline key render site |
+|---|---|
+| `SECRET` | `<secrets_and_reveal_constraints>` / writer-visible hidden truths |
+| `BELIEF`, `FACT`, `EVENT` | `<relevant_facts_beliefs_events>` |
+| `CLOCK` | `<active_clocks>` |
+| `PLAN`, `INTENTION` | `<active_plans_and_intentions>` |
+| `OBLIGATION`, `CONSEQUENCE` | `<active_obligations_and_consequences>` |
+| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `OPEN THREAD` | `<active_open_threads>` |
+| `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION` | `<locations_objects_affordances>` |
+
+`EMOTION` and `ENTITY STATUS` records render without keys because they do not ground ideation operators. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
 
 ## UI Handling
 

@@ -119,7 +119,28 @@ Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`,
 
 For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
 
-The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus the full display label, not the truncated browse label, with deterministic suffixes for collisions.
+The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
+
+Ideation citation keys render inline at exactly one authoritative site per operator-eligible record:
+
+| Record type | Ideation inline key render site |
+|---|---|
+| `SECRET` | `<secrets_and_reveal_constraints>` / writer-visible hidden truths |
+| `BELIEF` | `<relevant_facts_beliefs_events>` belief sub-blocks |
+| `FACT` | `<relevant_facts_beliefs_events>` fact sub-blocks |
+| `EVENT` | `<relevant_facts_beliefs_events>` event sub-blocks |
+| `CLOCK` | `<active_clocks>` |
+| `PLAN` | `<active_plans_and_intentions>` / Plans |
+| `INTENTION` | `<active_plans_and_intentions>` / Intentions |
+| `OBLIGATION` | `<active_obligations_and_consequences>` / Obligations |
+| `CONSEQUENCE` | `<active_obligations_and_consequences>` / Consequences |
+| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `OPEN THREAD` | `<active_open_threads>` |
+| `VISIBLE AFFORDANCE` | `<locations_objects_affordances>` / Visible affordances |
+| `OBJECT` | `<locations_objects_affordances>` / Objects |
+| `LOCATION` | `<locations_objects_affordances>` / Locations |
+
+`EMOTION` and `ENTITY STATUS` records render unkeyed because they do not ground ideation operators. The prose prompt never renders ideation citation keys.
 
 ## 4. Exhaustive placeholder mapping
 

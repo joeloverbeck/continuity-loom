@@ -7,6 +7,9 @@ import type { ValidationRecord, ValidationSnapshot } from "../../validation/snap
 
 type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+export interface PressureRenderOptions {
+  citationKeys?: ReadonlyMap<string, string> | undefined;
+}
 type ActionPressureStatusDescriptor = {
   word: string;
   statusField: string;
@@ -37,16 +40,7 @@ const pressureResolvers: ResolverMap = {
       (payload, record) => activeKnowledgePressureLine(record, payload)
     ) || EMPTY_STATE_CONSTANTS.active_knowledge_pressure,
   relationship_emotion_pressure: (snapshot) =>
-    pressureFromRecords(
-      snapshot,
-      ["RELATIONSHIP", "EMOTION"],
-      (record, payload) =>
-        compactParts([
-          firstText(payload, ["pressure_text", "surface_expression", "description"]),
-          asString(payload.current_expression)
-        ]),
-      "relationship_emotion_pressure"
-    ),
+    renderRelationshipEmotionPressure(snapshot),
   material_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
@@ -63,65 +57,12 @@ const pressureResolvers: ResolverMap = {
 
     return lines.join("\n") || EMPTY_STATE_CONSTANTS.voice_pressure;
   },
-  active_intentions: (snapshot) =>
-    renderRecords(snapshot, "INTENTION", isActiveIntention, (payload) =>
-      compactParts([
-        asString(payload.intent),
-        labelValue("holder", labelReference(snapshot, payload.holder)),
-        labelValue("urgency", payload.urgency),
-        asString(payload.behavioral_pressure)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_intentions,
-  active_plans: (snapshot) =>
-    renderRecords(snapshot, "PLAN", isActivePlan, (payload) =>
-      compactParts([
-        asString(payload.objective),
-        labelValue("holder", labelReference(snapshot, payload.holder)),
-        labelValue("current step", payload.current_step),
-        labelValue("resources", payload.resources),
-        labelValue("blockers", payload.blockers),
-        labelValue("visibility", payload.visibility_to_pov)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_plans,
-  active_clocks: (snapshot) =>
-    renderRecords(snapshot, "CLOCK", isActiveStatus, (payload) =>
-      compactParts([
-        asString(payload.title),
-        labelValue("pressure", payload.current_pressure),
-        labelValue("tick trigger", payload.tick_trigger),
-        labelValue("next threshold", payload.next_threshold),
-        labelValue("possible effects", payload.possible_effects)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_clocks,
-  active_obligations: (snapshot) =>
-    renderRecords(snapshot, "OBLIGATION", isOpenObligation, (payload) =>
-      compactParts([
-        asString(payload.terms),
-        labelValue("owed by", labelReference(snapshot, payload.owed_by)),
-        labelValue("owed to", labelReference(snapshot, payload.owed_to)),
-        labelValue("urgency", payload.urgency),
-        labelValue("if broken", payload.consequence_if_broken)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_obligations,
-  active_consequences: (snapshot) =>
-    renderRecords(snapshot, "CONSEQUENCE", isActiveConsequence, (payload) =>
-      compactParts([
-        asString(payload.current_effect),
-        labelValue("target", labelReference(snapshot, payload.holder_or_target)),
-        labelValue("cause", labelReference(snapshot, payload.cause)),
-        labelValue("urgency", payload.urgency),
-        labelValue("possible next effect", payload.possible_next_effect)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_consequences,
-  active_open_threads: (snapshot) =>
-    renderRecords(snapshot, "OPEN THREAD", isActiveStatus, (payload) =>
-      compactParts([
-        asString(payload.title),
-        asString(payload.summary),
-        labelValue("urgency", payload.urgency),
-        labelValue("pressure now", payload.possible_pressure_now)
-      ])
-    ) || EMPTY_STATE_CONSTANTS.active_open_threads
+  active_intentions: (snapshot) => renderActiveIntentions(snapshot),
+  active_plans: (snapshot) => renderActivePlans(snapshot),
+  active_clocks: (snapshot) => renderActiveClocks(snapshot),
+  active_obligations: (snapshot) => renderActiveObligations(snapshot),
+  active_consequences: (snapshot) => renderActiveConsequences(snapshot),
+  active_open_threads: (snapshot) => renderActiveOpenThreads(snapshot)
 };
 
 export const PRESSURE_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<PlaceholderName, PlaceholderResolver>>> =
@@ -140,6 +81,31 @@ export const PRESSURE_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<Placeholder
     ) as Partial<Record<PlaceholderName, PlaceholderResolver>>
   );
 
+export function renderPressurePlaceholder(
+  placeholder: PlaceholderName,
+  snapshot: ValidationSnapshot,
+  options: PressureRenderOptions = {}
+): string | undefined {
+  switch (placeholder) {
+    case "relationship_emotion_pressure":
+      return renderRelationshipEmotionPressure(snapshot, options);
+    case "active_intentions":
+      return renderActiveIntentions(snapshot, options);
+    case "active_plans":
+      return renderActivePlans(snapshot, options);
+    case "active_clocks":
+      return renderActiveClocks(snapshot, options);
+    case "active_obligations":
+      return renderActiveObligations(snapshot, options);
+    case "active_consequences":
+      return renderActiveConsequences(snapshot, options);
+    case "active_open_threads":
+      return renderActiveOpenThreads(snapshot, options);
+    default:
+      return undefined;
+  }
+}
+
 function pressureFromRecords(
   snapshot: ValidationSnapshot,
   types: readonly string[],
@@ -152,6 +118,93 @@ function pressureFromRecords(
     () => true,
     (payload, record) => compactSummaryLine(displayLabel(record), project(record, payload))
   ) || EMPTY_STATE_CONSTANTS[placeholder];
+}
+
+function renderRelationshipEmotionPressure(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    ["RELATIONSHIP", "EMOTION"],
+    () => true,
+    (payload, record) =>
+      compactSummaryLine(
+        keyedLabel(displayLabel(record), record, options),
+        compactParts([
+          firstText(payload, ["pressure_text", "surface_expression", "description"]),
+          asString(payload.current_expression)
+        ])
+      )
+  ) || EMPTY_STATE_CONSTANTS.relationship_emotion_pressure;
+}
+
+function renderActiveIntentions(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "INTENTION", isActiveIntention, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.intent), record, options),
+      labelValue("holder", labelReference(snapshot, payload.holder)),
+      labelValue("urgency", payload.urgency),
+      asString(payload.behavioral_pressure)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_intentions;
+}
+
+function renderActivePlans(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "PLAN", isActivePlan, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.objective), record, options),
+      labelValue("holder", labelReference(snapshot, payload.holder)),
+      labelValue("current step", payload.current_step),
+      labelValue("resources", payload.resources),
+      labelValue("blockers", payload.blockers),
+      labelValue("visibility", payload.visibility_to_pov)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_plans;
+}
+
+function renderActiveClocks(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "CLOCK", isActiveStatus, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.title), record, options),
+      labelValue("pressure", payload.current_pressure),
+      labelValue("tick trigger", payload.tick_trigger),
+      labelValue("next threshold", payload.next_threshold),
+      labelValue("possible effects", payload.possible_effects)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_clocks;
+}
+
+function renderActiveObligations(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "OBLIGATION", isOpenObligation, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.terms), record, options),
+      labelValue("owed by", labelReference(snapshot, payload.owed_by)),
+      labelValue("owed to", labelReference(snapshot, payload.owed_to)),
+      labelValue("urgency", payload.urgency),
+      labelValue("if broken", payload.consequence_if_broken)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_obligations;
+}
+
+function renderActiveConsequences(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "CONSEQUENCE", isActiveConsequence, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.current_effect), record, options),
+      labelValue("target", labelReference(snapshot, payload.holder_or_target)),
+      labelValue("cause", labelReference(snapshot, payload.cause)),
+      labelValue("urgency", payload.urgency),
+      labelValue("possible next effect", payload.possible_next_effect)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_consequences;
+}
+
+function renderActiveOpenThreads(snapshot: ValidationSnapshot, options: PressureRenderOptions = {}): string {
+  return renderRecords(snapshot, "OPEN THREAD", isActiveStatus, (payload, record) =>
+    compactParts([
+      keyedText(asString(payload.title), record, options),
+      asString(payload.summary),
+      labelValue("urgency", payload.urgency),
+      labelValue("pressure now", payload.possible_pressure_now)
+    ])
+  ) || EMPTY_STATE_CONSTANTS.active_open_threads;
 }
 
 function renderRecords(
@@ -204,6 +257,19 @@ function actionPressureStatusTag(record: ValidationRecord, payload: JsonRecord):
 
   const status = asString(payload[descriptor.statusField]);
   return status && status !== descriptor.activeStatus ? ` [${descriptor.word} ${status}]` : "";
+}
+
+function keyedLabel(label: string, record: ValidationRecord, options: PressureRenderOptions): string {
+  if (record.type === "EMOTION") {
+    return label;
+  }
+
+  return keyedText(label, record, options);
+}
+
+function keyedText(text: string, record: ValidationRecord, options: PressureRenderOptions): string {
+  const key = options.citationKeys?.get(record.id);
+  return key ? `${key} ${text}` : text;
 }
 
 function isActiveKnowledgePressureRecord(record: ValidationRecord, payload: JsonRecord): boolean {

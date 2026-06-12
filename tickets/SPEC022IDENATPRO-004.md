@@ -4,11 +4,11 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a deterministic `citations` key→label map to the `/api/ideate` response and resolves short citation keys to full record labels in the Ideate UI (`SlateCard` and kept ideas); no change to prompt compilation or the server's unknown-citation verification logic.
-**Deps**: SPEC022IDENATPRO-002
+**Deps**: `archive/tickets/SPEC022IDENATPRO-002.md`
 
 ## Problem
 
-Once citation keys are short `[TYPE-n]` (SPEC022IDENATPRO-002), they are no longer self-describing, so the Ideate UI can no longer show a human-readable record from the key alone. SPEC-022 §A (UI provenance, §26.1) requires `SlateCard` and kept ideas to resolve returned keys to full record labels using the same deterministic key map the server computes. Validation found the gap: `/api/ideate` (`packages/server/src/ideate-routes.ts:79-83`) returns only `{ ideas (grounds: string[], unknownCitations), metadata }` — it computes `citationKeysFor` internally for verification but exposes no key→label map; `ParsedIdeationIdea`/`IdeationKeeper` carry no labels. This ticket adds the server-side map (the expand-scope-in-place disposition of Issue I1) and consumes it in the web UI. It depends on -002 because the labels only matter once keys are short.
+Once citation keys are short `[TYPE-n]` (`archive/tickets/SPEC022IDENATPRO-002.md`), they are no longer self-describing, so the Ideate UI can no longer show a human-readable record from the key alone. SPEC-022 §A (UI provenance, §26.1) requires `SlateCard` and kept ideas to resolve returned keys to full record labels using the same deterministic key map the server computes. Validation found the gap: `/api/ideate` (`packages/server/src/ideate-routes.ts:79-83`) returns only `{ ideas (grounds: string[], unknownCitations), metadata }` — it computes `citationKeysFor` internally for verification but exposes no key→label map; `ParsedIdeationIdea`/`IdeationKeeper` carry no labels. This ticket adds the server-side map (the expand-scope-in-place disposition of Issue I1) and consumes it in the web UI. It depends on -002 because the labels only matter once keys are short.
 
 ## Assumption Reassessment (2026-06-12)
 
@@ -54,7 +54,7 @@ In `api.ts`: add `citations: Record<string,string>` to the success `IdeateRespon
 
 ## Out of Scope
 
-- The citation-key format and inline keyed render sites (SPEC022IDENATPRO-002 — prerequisite).
+- The citation-key format and inline keyed render sites (`archive/tickets/SPEC022IDENATPRO-002.md` — prerequisite).
 - The server's unknown-citation verification logic (unchanged; only the response gains a field).
 - Any change to prompt compilation, the ideation request shape, or the quarantine rules (the citations map is display-only and never enters a prompt/record/brief).
 
@@ -76,7 +76,7 @@ In `api.ts`: add `citations: Record<string,string>` to the success `IdeateRespon
 
 ### New/Modified Tests
 
-1. `packages/server/src/ideate-routes.test.ts` — assert the `citations` map shape and key→label correctness (shares this file with SPEC022IDENATPRO-002, which lands first; this ticket adds the citations assertions).
+1. `packages/server/src/ideate-routes.test.ts` — assert the `citations` map shape and key→label correctness (shares this file with `archive/tickets/SPEC022IDENATPRO-002.md`, which lands first; this ticket adds the citations assertions).
 2. `packages/web/src/ideate/SlateCard.test.tsx` — label resolution + unknown fallback.
 3. `packages/web/src/ideate/keepers.test.ts` — resolved-label persistence + backward-tolerant parse.
 4. `packages/web/src/ideate/IdeateView.test.tsx` — citations threaded from response to `SlateCard` and onto kept ideas.

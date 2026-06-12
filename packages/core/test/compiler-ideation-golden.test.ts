@@ -69,6 +69,14 @@ function sectionText(prompt: string, section: string): string {
   return prompt.match(new RegExp(`<${section}(?:\\s[^>]*)?>\\n([\\s\\S]*?)\\n</${section}>`))?.[1] ?? "";
 }
 
+function groundsKeys(prompt: string): string[] {
+  return Array.from(sectionText(prompt, "ideation_slots").matchAll(/\[[A-Z ]+-\d+\]/g), (match) => match[0] ?? "");
+}
+
+function promptWithoutSection(prompt: string, section: string): string {
+  return prompt.replace(new RegExp(`\\n\\n<${section}(?:\\s[^>]*)?>\\n[\\s\\S]*?\\n</${section}>`), "");
+}
+
 describe("compiler ideation golden prompt", () => {
   it("matches the frozen ideation prompt baseline byte-for-byte", () => {
     const result = compilePrompt(ideationSnapshot(), {
@@ -97,6 +105,7 @@ describe("compiler ideation golden prompt", () => {
     expect(promptSectionOrder(first.prompt)[0]).toBe("ideation_role");
     expect(first.prompt).toContain("<ideation_role>");
     expect(first.prompt).not.toContain("<active_working_set>");
+    expect(first.prompt).not.toMatch(/\[[A-Z ]+:/);
     expect(first.prompt).toContain("<relationship_and_emotion_pressure>");
     expect(sectionText(first.prompt, "relationship_and_emotion_pressure")).toContain(
       "They trust each other's decency but disagree over whether protection justifies concealment."
@@ -105,10 +114,13 @@ describe("compiler ideation golden prompt", () => {
       "Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust."
     );
     expect(sectionText(first.prompt, "locations_objects_affordances")).toContain(
-      "Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive"
+      "[LOCATION-1] Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive"
     );
     expect(sectionText(first.prompt, "locations_objects_affordances")).toContain(
-      "shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive"
+      "[OBJECT-4] shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive"
+    );
+    expect(sectionText(first.prompt, "secrets_and_reveal_constraints")).toContain(
+      "[SECRET-1] [artifact_truth] The sealed letter says a market ledger page was replaced before Orin's audit."
     );
     expect(sectionText(first.prompt, "physical_continuity")).toContain("Vale bakery cellar; status: inactive");
     expect(sectionText(first.prompt, "physical_continuity")).toContain("shuttered lantern; status: inactive");
@@ -128,8 +140,24 @@ describe("compiler ideation golden prompt", () => {
     expect(first.prompt).not.toContain("<stop_rule>");
     expect(first.prompt).not.toContain("<final_output_instruction>");
     expect(first.prompt).toContain("Mode: questions.");
-    expect(first.prompt).toContain("[SECRET: The sealed letter says a market ledger page was replaced before Orin's audit.]");
     expect(first.prompt).toContain("Grounds:");
+    expect(groundsKeys(first.prompt)).toEqual([
+      "[SECRET-1]",
+      "[BELIEF-2]",
+      "[BELIEF-1]",
+      "[EVENT-2]",
+      "[EVENT-1]",
+      "[CLOCK-1]",
+      "[BELIEF-2]"
+    ]);
+    for (const key of groundsKeys(first.prompt)) {
+      const inlinePrompt = promptWithoutSection(first.prompt, "ideation_slots");
+      expect(Array.from(inlinePrompt.matchAll(escapeRegExp(key))).length).toBe(1);
+    }
     expect(first.metadata.versions).toEqual({ template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" });
   });
 });
+
+function escapeRegExp(text: string): RegExp {
+  return new RegExp(text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g");
+}

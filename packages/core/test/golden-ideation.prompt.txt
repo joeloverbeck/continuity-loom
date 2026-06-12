@@ -148,7 +148,7 @@ If the audience knows something the POV does not, you may let that truth shape s
 
 <secrets_and_reveal_constraints>
 Writer-visible hidden truths:
-- [artifact_truth] The sealed letter says a market ledger page was replaced before Orin's audit.
+- [SECRET-1] [artifact_truth] The sealed letter says a market ledger page was replaced before Orin's audit.
 
 Secret holders:
 - Elin Vale
@@ -170,8 +170,8 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 
 <active_plans_and_intentions>
 Intentions:
-- Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: Elin Vale; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
-- Make Elin admit what kind of danger she has pulled him near.; holder: Niko Bram; urgency: high; He presses for truth without grabbing the hidden object.
+- [INTENTION-1] Keep the sealed letter hidden until she knows whether Orin is already on the stair.; holder: Elin Vale; urgency: critical; She delays Niko's reach and tries to move the conversation toward listening at the latch.
+- [INTENTION-2] Make Elin admit what kind of danger she has pulled him near.; holder: Niko Bram; urgency: high; He presses for truth without grabbing the hidden object.
 
 Plans:
 None active
@@ -180,7 +180,7 @@ Active PLAN records strongly drive prose when relevant. Let plans create tactics
 </active_plans_and_intentions>
 
 <active_clocks>
-- Orin's audit round; pressure: Orin may reach the bakery soon because the bell rang early.; tick trigger: The shop door bell rings or footsteps sound above.; next threshold: Someone reaches the cellar stair.; possible effects: Elin must hide the letter more securely or decide whether to trust Niko.
+- [CLOCK-1] Orin's audit round; pressure: Orin may reach the bakery soon because the bell rang early.; tick trigger: The shop door bell rings or footsteps sound above.; next threshold: Someone reaches the cellar stair.; possible effects: Elin must hide the letter more securely or decide whether to trust Niko.
 
 A clock may visibly tick if the current moment strongly triggers it. Do not tick a clock casually for excitement. If prose makes a clock tick, render the concrete event or pressure that made it tick.
 </active_clocks>
@@ -190,13 +190,13 @@ Obligations:
 None active
 
 Consequences:
-- If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: Niko Bram; cause: The sealed letter says a market ledger page was replaced before Orin's audit.; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
+- [CONSEQUENCE-1] If Niko reads or carries the letter, he becomes harder to shield from the audit.; target: Niko Bram; cause: The sealed letter says a market ledger page was replaced before Orin's audit.; urgency: medium; possible next effect: Orin could treat him as a participant rather than a witness.
 
 Use obligations and consequences as constraints on plausible choice and as causes for escalation or durable change.
 </active_obligations_and_consequences>
 
 <active_open_threads>
-- Missing ledger page; Someone replaced a ledger page before Orin's audit; the sealed letter points toward the substitution.; urgency: high; pressure now: The scene may hint at the ledger without naming the culprit or page.
+- [OPEN THREAD-1] Missing ledger page; Someone replaced a ledger page before Orin's audit; the sealed letter points toward the substitution.; urgency: high; pressure now: The scene may hint at the ledger without naming the culprit or page.
 
 Open threads are unresolved pressures, promises, risks, mysteries, or tensions. They are not act-structure instructions. Do not force closure merely because a thread is visible.
 </active_open_threads>
@@ -204,7 +204,7 @@ Open threads are unresolved pressures, promises, risks, mysteries, or tensions. 
 <relationship_and_emotion_pressure>
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
 - Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
-- They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
+- [RELATIONSHIP-1] They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
 </relationship_and_emotion_pressure>
 
 <active_cast_full_dossiers>
@@ -231,28 +231,28 @@ Offstage pressure or interruption is active, but no offstage cast slice has been
 
 <relevant_facts_beliefs_events>
 POV-relevant beliefs:
-- Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
+- [BELIEF-2] Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
 
 Non-POV behavior-shaping beliefs:
-- Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace; visibility: shared
+- [BELIEF-1] Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace; visibility: shared
 
 Recent events:
-- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
-- Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
+- [EVENT-2] The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
+- [EVENT-1] Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>
 Locations:
-- Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.
+- [LOCATION-1] Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.
 
 Objects:
-- sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
-- shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive; owner: Elin Vale; carried by: Elin Vale; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
-- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
-- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
+- [OBJECT-3] sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
+- [OBJECT-4] shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive; owner: Elin Vale; carried by: Elin Vale; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
+- [OBJECT-2] old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
+- [OBJECT-1] cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
 
 Visible affordances:
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
+- [VISIBLE AFFORDANCE-1] listen at the stair door; status: available; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
 
 Unavailable or impossible actions:
 - Current lock: cellar latch is closed but not barred
@@ -301,27 +301,27 @@ Slate contains 5 grounded slots.
 Slot 1: Reveal
 Operator id: reveal
 Definition: Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
-Grounds: [SECRET: The sealed letter says a market ledger page was replaced before Orin's audit.]
+Grounds: [SECRET-1]
 
 Slot 2: Falsify a Belief
 Operator id: falsify_belief
 Definition: Make a selected belief collide with a selected fact or event that can expose its limits.
-Grounds: [BELIEF: Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous], [BELIEF: Elin hid something connected to the audit, but he does not know it is a letter.], [EVENT: The market bell rang early, warning Elin that Orin's audit rounds may start before noon.], [EVENT: Niko followed flour smears to the cellar after seeing Elin close the shop early.]
+Grounds: [BELIEF-2], [BELIEF-1], [EVENT-2], [EVENT-1]
 
 Slot 3: Clock Advances
 Operator id: clock_advances
 Definition: Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.
-Grounds: [CLOCK: Orin's audit round]
+Grounds: [CLOCK-1]
 
 Slot 4: Plan Meets Friction
 Operator id: plan_meets_friction
 Definition: Turn a selected plan or intention into a yes-but or no-and complication.
-Grounds: [INTENTION: Keep the sealed letter hidden until she knows whether Orin is already on the stair.], [INTENTION: Make Elin admit what kind of danger she has pulled him near.]
+Grounds: [INTENTION-1], [INTENTION-2]
 
 Slot 5: Reincorporate the Dormant
 Operator id: reincorporate_dormant
 Definition: Bring back the least-recently-updated selected pressure record as fresh causal pressure.
-Grounds: [BELIEF: Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous]
+Grounds: [BELIEF-2]
 </ideation_slots>
 
 <ideation_quality>

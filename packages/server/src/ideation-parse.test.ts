@@ -10,9 +10,9 @@ describe("ideation response parser", () => {
         "operator: Reveal",
         "headline: Let the sealed letter become visible.",
         "why: The letter and the latch support a pressure move.",
-        "grounds: [SECRET: Letter], [CLOCK: Missing]"
+        "grounds: [SECRET-1], [CLOCK-99]"
       ].join("\n"),
-      new Set(["[SECRET: Letter]"])
+      new Set(["[SECRET-1]"])
     );
 
     expect(parsed).toEqual({
@@ -23,8 +23,8 @@ describe("ideation response parser", () => {
           operator: "Reveal",
           headline: "Let the sealed letter become visible.",
           why: "The letter and the latch support a pressure move.",
-          grounds: ["[SECRET: Letter]", "[CLOCK: Missing]"],
-          unknownCitations: ["[CLOCK: Missing]"]
+          grounds: ["[SECRET-1]", "[CLOCK-99]"],
+          unknownCitations: ["[CLOCK-99]"]
         }
       ]
     });

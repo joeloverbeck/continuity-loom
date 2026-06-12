@@ -46,7 +46,7 @@ describe("ideate routes", () => {
           "operator: Reveal",
           "headline: Let the hidden item pressure the exchange.",
           "why: The selected records support a reveal-adjacent pressure move.",
-          "grounds: [ENTITY: A], [UNKNOWN: no]"
+          "grounds: [SECRET-1], [UNKNOWN-99]"
         ].join("\n")
       }
     });
@@ -60,7 +60,7 @@ describe("ideate routes", () => {
     const body = response.json() as { ideas: { unknownCitations: string[] }[]; metadata: Record<string, unknown> };
 
     expect(response.statusCode).toBe(200);
-    expect(body.ideas[0]?.unknownCitations).toEqual(["[UNKNOWN: no]"]);
+    expect(body.ideas[0]?.unknownCitations).toEqual(["[UNKNOWN-99]"]);
     expect(body.metadata).toMatchObject({
       provider: "openrouter",
       versions: { template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" }
@@ -136,10 +136,11 @@ async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise
 
 async function putBrief(fastify: ReturnType<typeof createServer>): Promise<void> {
   const entityId = await createCleanEntity(fastify);
+  const secretId = await createCleanSecret(fastify, entityId);
   const response = await fastify.inject({
     method: "PUT",
     url: "/api/generation-brief",
-    payload: cleanBriefForEntity(entityId)
+    payload: cleanBriefForEntity(entityId, secretId)
   });
 
   expect(response.statusCode).toBe(200);
@@ -166,11 +167,41 @@ async function createCleanEntity(fastify: ReturnType<typeof createServer>): Prom
   return body.record.id;
 }
 
-function cleanBriefForEntity(entityId: string) {
+async function createCleanSecret(fastify: ReturnType<typeof createServer>, entityId: string): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "SECRET",
+      displayLabel: "Door key is copied",
+      payload: {
+        status: "hidden",
+        secret_kind: "artifact_truth",
+        secret_claim: "The loading-door key has been copied.",
+        holders: [entityId],
+        non_holders_to_protect: "all_except_holders",
+        audience_visibility: "hidden",
+        pov_access: "hidden",
+        salience: "high",
+        allowed_surface_cues: ["The spare key is warm."],
+        forbidden_reveals: "none",
+        reveal_permission: "clue_only",
+        reveal_triggers: ["Only surface clues may appear."],
+        clue_carriers: []
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
+function cleanBriefForEntity(entityId: string, secretId: string) {
   return {
     ...cleanBrief,
     active_working_set: {
-      selected_records: [entityId],
+      selected_records: [entityId, secretId],
       active_onstage_cast_full: [],
       present_minor_cast_compressed: [],
       offstage_relevant_cast: []

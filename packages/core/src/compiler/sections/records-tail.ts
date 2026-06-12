@@ -9,90 +9,20 @@ type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
 export interface TailRenderOptions {
   ideation?: boolean;
+  citationKeys?: ReadonlyMap<string, string> | undefined;
 }
 
 const tailResolvers: ResolverMap = {
-  pov_accessible_facts: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "FACT",
-      (payload) => knownBy(payload.known_by, selectedPov(snapshot)),
-      (payload) => asString(payload.statement)
-    ),
-  writer_visible_or_non_pov_facts: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "FACT",
-      (payload) => !knownBy(payload.known_by, selectedPov(snapshot)),
-      (payload) => asString(payload.statement)
-    ),
-  pov_relevant_beliefs: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "BELIEF",
-      (payload) => payload.holder === selectedPov(snapshot),
-      (payload) =>
-        compactParts([
-          asString(payload.claim),
-          labelValue("truth", payload.truth_relation),
-          labelValue("mode", payload.belief_mode),
-          labelValue("confidence", payload.confidence),
-          labelValue("access", payload.access_route),
-          labelValue("behavior", payload.behavioral_effect),
-          labelValue("visibility", payload.visibility)
-        ])
-    ),
-  non_pov_behavior_shaping_beliefs: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "BELIEF",
-      (payload) => payload.holder !== selectedPov(snapshot),
-      (payload) =>
-        compactParts([
-          asString(payload.claim),
-          labelValue("behavior", payload.behavioral_effect),
-          labelValue("mode", payload.belief_mode),
-          labelValue("truth", payload.truth_relation),
-          labelValue("confidence", payload.confidence),
-          labelValue("access", payload.access_route),
-          labelValue("visibility", payload.visibility)
-        ])
-    ),
-  recent_events: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "EVENT",
-      (payload) => payload.event_kind === "immediate_previous" || payload.event_kind === "recent_causal",
-      (payload) => compactParts([asString(payload.description), labelValue("visibility", payload.pov_visibility)])
-    ),
-  relevant_backstory: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "EVENT",
-      (payload) => payload.event_kind === "relevant_backstory",
-      (payload) => compactParts([asString(payload.description), labelValue("current relevance", payload.current_relevance)])
-    ),
-  offstage_or_withheld_events: (snapshot) =>
-    renderRecords(
-      snapshot,
-      "EVENT",
-      (payload) => payload.event_kind === "offstage" || payload.event_kind === "withheld",
-      (payload) => compactParts([asString(payload.description), labelValue("visibility", payload.pov_visibility)])
-    ),
+  pov_accessible_facts: (snapshot) => renderPovAccessibleFacts(snapshot),
+  writer_visible_or_non_pov_facts: (snapshot) => renderWriterVisibleOrNonPovFacts(snapshot),
+  pov_relevant_beliefs: (snapshot) => renderPovRelevantBeliefs(snapshot),
+  non_pov_behavior_shaping_beliefs: (snapshot) => renderNonPovBehaviorShapingBeliefs(snapshot),
+  recent_events: (snapshot) => renderRecentEvents(snapshot),
+  relevant_backstory: (snapshot) => renderRelevantBackstory(snapshot),
+  offstage_or_withheld_events: (snapshot) => renderOffstageOrWithheldEvents(snapshot),
   locations: (snapshot) => renderLocations(snapshot),
   objects: (snapshot) => renderObjects(snapshot),
-  visible_affordances: (snapshot) =>
-    renderRecords(snapshot, "VISIBLE AFFORDANCE", (payload) => payload.status === "available", (payload) =>
-      compactParts([
-        asString(payload.label),
-        asString(payload.prompt_text),
-        labelValue("available to", resolveRecordLabel(snapshot, payload.available_to)),
-        labelValue("actions", payload.action_families),
-        labelValue("requires", payload.requires),
-        labelValue("risk", payload.risk),
-        labelValue("durability", payload.durability)
-      ])
-    ),
+  visible_affordances: (snapshot) => renderVisibleAffordances(snapshot),
   unavailable_or_impossible_actions: (snapshot) => renderUnavailableActions(snapshot),
   physical_continuity: (snapshot) => renderPhysicalContinuity(snapshot)
 };
@@ -119,10 +49,28 @@ export function renderTailPlaceholder(
   options: TailRenderOptions = {}
 ): string | undefined {
   switch (placeholder) {
+    case "pov_accessible_facts":
+      return renderPovAccessibleFacts(snapshot, options);
+    case "writer_visible_or_non_pov_facts":
+      return renderWriterVisibleOrNonPovFacts(snapshot, options);
+    case "pov_relevant_beliefs":
+      return renderPovRelevantBeliefs(snapshot, options);
+    case "non_pov_behavior_shaping_beliefs":
+      return renderNonPovBehaviorShapingBeliefs(snapshot, options);
+    case "recent_events":
+      return renderRecentEvents(snapshot, options);
+    case "relevant_backstory":
+      return renderRelevantBackstory(snapshot, options);
+    case "offstage_or_withheld_events":
+      return renderOffstageOrWithheldEvents(snapshot, options);
     case "locations":
       return renderLocations(snapshot, options);
     case "objects":
       return renderObjects(snapshot, options);
+    case "visible_affordances":
+      return renderVisibleAffordances(snapshot, options);
+    case "unavailable_or_impossible_actions":
+      return renderUnavailableActions(snapshot);
     case "physical_continuity":
       return renderPhysicalContinuity(snapshot, options);
     default:
@@ -130,11 +78,132 @@ export function renderTailPlaceholder(
   }
 }
 
+function renderPovAccessibleFacts(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "FACT",
+    (payload) => knownBy(payload.known_by, selectedPov(snapshot)),
+    (payload, record) => keyedText(asString(payload.statement), record, options)
+  );
+}
+
+function renderWriterVisibleOrNonPovFacts(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "FACT",
+    (payload) => !knownBy(payload.known_by, selectedPov(snapshot)),
+    (payload, record) => keyedText(asString(payload.statement), record, options)
+  );
+}
+
+function renderPovRelevantBeliefs(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "BELIEF",
+    (payload) => payload.holder === selectedPov(snapshot),
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.claim), record, options),
+        labelValue("truth", payload.truth_relation),
+        labelValue("mode", payload.belief_mode),
+        labelValue("confidence", payload.confidence),
+        labelValue("access", payload.access_route),
+        labelValue("behavior", payload.behavioral_effect),
+        labelValue("visibility", payload.visibility)
+      ])
+  );
+}
+
+function renderNonPovBehaviorShapingBeliefs(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "BELIEF",
+    (payload) => payload.holder !== selectedPov(snapshot),
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.claim), record, options),
+        labelValue("behavior", payload.behavioral_effect),
+        labelValue("mode", payload.belief_mode),
+        labelValue("truth", payload.truth_relation),
+        labelValue("confidence", payload.confidence),
+        labelValue("access", payload.access_route),
+        labelValue("visibility", payload.visibility)
+      ])
+  );
+}
+
+function renderRecentEvents(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "EVENT",
+    (payload) => payload.event_kind === "immediate_previous" || payload.event_kind === "recent_causal",
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.description), record, options),
+        labelValue("visibility", payload.pov_visibility)
+      ])
+  );
+}
+
+function renderRelevantBackstory(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "EVENT",
+    (payload) => payload.event_kind === "relevant_backstory",
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.description), record, options),
+        labelValue("current relevance", payload.current_relevance)
+      ])
+  );
+}
+
+function renderOffstageOrWithheldEvents(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "EVENT",
+    (payload) => payload.event_kind === "offstage" || payload.event_kind === "withheld",
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.description), record, options),
+        labelValue("visibility", payload.pov_visibility)
+      ])
+  );
+}
+
+function renderVisibleAffordances(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
+  return renderRecords(
+    snapshot,
+    "VISIBLE AFFORDANCE",
+    options.ideation ? () => true : (payload) => payload.status === "available",
+    (payload, record) =>
+      compactParts([
+        keyedText(asString(payload.label), record, options),
+        options.ideation ? labelValue("status", payload.status) : "",
+        asString(payload.prompt_text),
+        labelValue("available to", resolveRecordLabel(snapshot, payload.available_to)),
+        labelValue("actions", payload.action_families),
+        labelValue("requires", payload.requires),
+        labelValue("risk", payload.risk),
+        labelValue("durability", payload.durability)
+      ])
+  );
+}
+
 function renderUnavailableActions(snapshot: ValidationSnapshot): string {
   const currentLocks = snapshot.generationSession.current_authoritative_state?.current_locks ?? [];
   const lockLines = currentLocks.map((lock) => `- Current lock: ${lock}`);
-  const affordanceLines = renderRecords(snapshot, "VISIBLE AFFORDANCE", (payload) => payload.status !== "available", (payload) =>
-    compactParts([asString(payload.label), labelValue("status", payload.status), asString(payload.prompt_text), labelValue("requires", payload.requires)])
+  const affordanceLines = renderRecords(
+    snapshot,
+    "VISIBLE AFFORDANCE",
+    (payload) => payload.status !== "available",
+    (payload) =>
+      compactParts([
+        asString(payload.label),
+        labelValue("status", payload.status),
+        asString(payload.prompt_text),
+        labelValue("requires", payload.requires)
+      ])
   );
   const lines = [...lockLines, affordanceLines].filter(Boolean);
 
@@ -181,9 +250,9 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot, options: TailRen
 }
 
 function renderLocations(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
-  return renderRecords(snapshot, "LOCATION", options.ideation ? () => true : activeStatus, (payload) =>
+  return renderRecords(snapshot, "LOCATION", options.ideation ? () => true : activeStatus, (payload, record) =>
     compactParts([
-      asString(payload.label),
+      keyedText(asString(payload.label), record, options),
       asString(payload.description),
       options.ideation ? labelValue("status", payload.status) : "",
       labelValue("layout", payload.layout_relevant_now),
@@ -194,9 +263,9 @@ function renderLocations(snapshot: ValidationSnapshot, options: TailRenderOption
 }
 
 function renderObjects(snapshot: ValidationSnapshot, options: TailRenderOptions = {}): string {
-  return renderRecords(snapshot, "OBJECT", options.ideation ? () => true : activeStatus, (payload) =>
+  return renderRecords(snapshot, "OBJECT", options.ideation ? () => true : activeStatus, (payload, record) =>
     compactParts([
-      asString(payload.label),
+      keyedText(asString(payload.label), record, options),
       asString(payload.description),
       options.ideation ? labelValue("status", payload.status) : "",
       labelValue("owner", resolveRecordLabel(snapshot, payload.owner)),
@@ -283,6 +352,11 @@ function knownBy(knownByValue: unknown, pov: string | undefined): boolean {
 
 function activeStatus(payload: JsonRecord): boolean {
   return payload.status === "active" || payload.status === "available";
+}
+
+function keyedText(text: string, record: ValidationRecord, options: TailRenderOptions): string {
+  const key = options.citationKeys?.get(record.id);
+  return key ? `${key} ${text}` : text;
 }
 
 function compactParts(parts: readonly string[]): string {

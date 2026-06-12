@@ -1,6 +1,6 @@
 # SPEC022IDENATPRO-002: Short deterministic citation keys + keyed inline render sites
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — changes the ideation citation-key format (`[TYPE: full label]` → `[TYPE-n]`), adds an inline citation key at each operator-eligible record's single render site in the ideation prompt, adds a citation-coverage invariant, and refreshes the ideation golden + server round-trip fixtures + contract/template docs; the prose prompt and server verification logic are unchanged in shape.
@@ -94,3 +94,24 @@ Refresh `golden-ideation.prompt.txt`; add the key-format/coverage/determinism as
 1. `npx vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/ideation-slot-assignment.test.ts`
 2. `npx vitest run packages/server/src/ideation-parse.test.ts packages/server/src/ideate-routes.test.ts`
 3. `npm test` — full-pipeline gate (core build + all Vitest), the correct merge boundary since this ticket spans core and server.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Replaced ideation citation keys with deterministic per-type short keys such as `[BELIEF-1]` and `[VISIBLE AFFORDANCE-1]`.
+- Threaded the ideation citation-key map into compiler renderers so each operator-eligible record renders its key inline once at its authoritative ideation section.
+- Kept EMOTION and ENTITY STATUS records unkeyed, and kept the prose prompt unkeyed.
+- Updated golden, slot-assignment, parser, route, and e2e fixtures for the short-key contract.
+- Updated `docs/compiler-contract.md` and `docs/ideation-prompt-template.md` with the key format, ordinal semantics, and inline render-site table.
+
+Deviations from original plan:
+- None. UI label resolution remains out of scope for SPEC022IDENATPRO-004.
+
+Verification:
+- `npm exec -- vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts packages/core/test/ideation-slot-assignment.test.ts packages/server/src/ideation-parse.test.ts packages/server/src/ideate-routes.test.ts` passed.
+- `npm exec -- vitest run packages/server/src/ideate.e2e.test.ts` passed.
+- `npm test` passed: 121 files, 909 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
