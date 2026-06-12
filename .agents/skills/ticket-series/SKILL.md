@@ -64,7 +64,11 @@ families plausibly match.
 
 ## Per-Ticket Loop
 
-Complete exactly one ticket before starting the next.
+Complete exactly one ticket before starting the next, unless active spec or
+ticket authority explicitly requires multiple tickets to land in the same
+revision. For a same-revision exception, finish and archive the coupled tickets
+together, record the coupling reason in each `Outcome`, and use a commit message
+that names every coupled ticket.
 
 For each ticket:
 
@@ -89,7 +93,11 @@ npm run build
    If a broad gate fails only from timeout or resource contention, and the
    failure is not an assertion, type, lint, build, or product error, rerun the
    affected targeted tests and then rerun the broad gate once before treating it
-   as a blocker. Report both the original failure and the successful rerun.
+   as a blocker. If a broad gate fails in an unrelated assertion outside the
+   touched surface after equivalent broad coverage already passed on the current
+   task state, rerun the failing file or filter once and then rerun the broad
+   gate once. Treat a repeat failure as a blocker. Report the original failure,
+   the targeted rerun, and the broad rerun outcome.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used. When the smoke needs project data
@@ -100,7 +108,11 @@ npm run build
    artifacts such as `.playwright-cli/`; and distinguish expected setup console
    errors from product failures. When a browser automation skill such as
    Playwright is available, follow it for browser driving, prerequisite checks,
-   snapshots, console review, and artifact cleanup.
+   snapshots, console review, and artifact cleanup. A later capstone or manual
+   runbook may cite an earlier same-family smoke only when the earlier ticket
+   outcome records the exact covered UI steps, remaining gaps are covered by
+   current automated or manual proof, and the capstone outcome names any
+   live-provider caveat.
 6. Update the ticket with final status and an `Outcome` section following
    `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the
    ticket before moving it, after the existing ticket sections.
@@ -153,7 +165,11 @@ npm run build
    If a broad final gate fails only from timeout or resource contention, and the
    failure is not an assertion, type, lint, build, or product error, rerun the
    affected targeted tests and then rerun the broad gate once before treating it
-   as a blocker. Report both the original failure and the successful rerun.
+   as a blocker. If a broad final gate fails in an unrelated assertion outside
+   the touched surface after equivalent broad coverage already passed on the
+   current task state, rerun the failing file or filter once and then rerun the
+   broad gate once. Treat a repeat failure as a blocker. Report the original
+   failure, the targeted rerun, and the broad rerun outcome.
 3. Update the spec with final status and an `Outcome` section following
    `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the spec
    before moving it, after the existing spec sections.
