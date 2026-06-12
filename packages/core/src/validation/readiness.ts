@@ -1,4 +1,6 @@
 import { DIAGNOSTIC_CODES, type AffectedReference, type Diagnostic, type SuggestedAction, type ValidationResult } from "./types.js";
+import type { PromptKind } from "../compiler/ideation/types.js";
+import { blockerApplies } from "./kind-applicability.js";
 
 export type ReadinessStatus = "draft" | "blocked" | "ready-with-warnings" | "ready";
 
@@ -203,9 +205,14 @@ export function deriveReadiness(
   result: ValidationResult,
   providerState: ReadinessProviderState,
   draftState: ReadinessDraftState,
-  labels: ReadonlyMap<string, string>
+  labels: ReadonlyMap<string, string>,
+  promptKind: PromptKind = "prose"
 ): GenerationReadiness {
-  const blockers = groupDiagnostics(result.blockers.map((diagnostic) => mapDiagnostic(diagnostic, labels)));
+  const blockers = groupDiagnostics(
+    result.blockers
+      .filter((diagnostic) => blockerApplies(diagnostic.code, promptKind))
+      .map((diagnostic) => mapDiagnostic(diagnostic, labels))
+  );
   const warnings = groupDiagnostics(result.warnings.map((diagnostic) => mapDiagnostic(diagnostic, labels)));
   const providerBlockers = providerState.configured ? [] : [providerMissingDiagnostic()];
   const canPreview = blockers.length === 0;

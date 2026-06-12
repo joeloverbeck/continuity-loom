@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `POST /api/ideate` route + idea-block parser/citation-verifier module; `POST /api/compile` accepts optional `promptKind`/`ideationRequest` for preview; new route + secret-leakage tests. No record mutation, no server-side persistence.
-**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation `compilePrompt` + compiled citation-key set), SPEC021GROIDEPRO-004 (kind-aware relaxed gate)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation `compilePrompt` + compiled citation-key set), `archive/tickets/SPEC021GROIDEPRO-004.md` (kind-aware relaxed gate)
 
 ## Problem
 

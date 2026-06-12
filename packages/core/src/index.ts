@@ -199,6 +199,7 @@ export {
 } from "./records/space-material.js";
 export { generateRecordId } from "./records/uuidv7.js";
 export { runValidation } from "./validation/engine.js";
+export { blockerApplies, ideationApplicabilityFor } from "./validation/kind-applicability.js";
 export { deriveReadiness } from "./validation/readiness.js";
 export type {
   AffectedTarget,

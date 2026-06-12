@@ -1,4 +1,4 @@
-import { DIAGNOSTIC_CODES, type Severity } from "../src/index.js";
+import { DIAGNOSTIC_CODES, ideationApplicabilityFor, type Severity } from "../src/index.js";
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 type InventoryRow = {
   id: string;
   severity: Severity;
+  ideationApplicability: "applies" | "prose-only";
 };
 
 const reservedSeverityByCode = new Map<string, Severity>([
@@ -27,6 +28,7 @@ describe("validation rule inventory", () => {
 
     for (const row of rows) {
       expect(row.severity, row.id).toBe(severityByCode.get(row.id));
+      expect(row.ideationApplicability, row.id).toBe(ideationApplicabilityFor(row.id));
     }
   });
 });
@@ -37,9 +39,17 @@ function parseInventoryRows(): InventoryRow[] {
   return inventory
     .split("\n")
     .flatMap((line) => {
-      const match = line.match(/^\|\s*`([^`]+)`\s*\|\s*(blocker|warning)\s*\|/);
+      const match = line.match(/^\|\s*`([^`]+)`\s*\|\s*(blocker|warning)\s*\|\s*(applies|prose-only)\s*\|/);
 
-      return match ? [{ id: match[1]!, severity: match[2] as Severity }] : [];
+      return match
+        ? [
+            {
+              id: match[1]!,
+              severity: match[2] as Severity,
+              ideationApplicability: match[3] as "applies" | "prose-only"
+            }
+          ]
+        : [];
     });
 }
 

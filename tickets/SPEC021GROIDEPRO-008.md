@@ -54,7 +54,7 @@ The ideation feature needs its documentation authorities to land coherently once
 - `docs/compiler-contract.md` ideation mapping — owned by `archive/tickets/SPEC021GROIDEPRO-003.md` (§8 same-change).
 - `docs/FOUNDATIONS.md` amendment — `archive/tickets/SPEC021GROIDEPRO-001.md`.
 - Any code, test, schema, or UI change — this is a documentation-only diff.
-- `docs/validation-rule-inventory.md` ideation column — SPEC021GROIDEPRO-004.
+- `docs/validation-rule-inventory.md` ideation column — `archive/tickets/SPEC021GROIDEPRO-004.md`.
 
 ## Acceptance Criteria
 
