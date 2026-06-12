@@ -2,12 +2,13 @@ import type { ParsedIdeationIdea } from "../api.js";
 
 export interface SlateCardProps {
   idea: ParsedIdeationIdea;
+  citations?: Readonly<Record<string, string>>;
   isKept: boolean;
   onKeep: (idea: ParsedIdeationIdea) => void;
   onRegenerate: (idea: ParsedIdeationIdea) => void;
 }
 
-export function SlateCard({ idea, isKept, onKeep, onRegenerate }: SlateCardProps): React.JSX.Element {
+export function SlateCard({ idea, citations = {}, isKept, onKeep, onRegenerate }: SlateCardProps): React.JSX.Element {
   const title = idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
 
   return (
@@ -20,7 +21,7 @@ export function SlateCard({ idea, isKept, onKeep, onRegenerate }: SlateCardProps
       <div className="citationChipList" aria-label={`Grounds for ${title}`}>
         {idea.grounds.map((ground) => (
           <span className={idea.unknownCitations.includes(ground) ? "citationChip citationChip-warning" : "citationChip"} key={ground}>
-            {ground}
+            {citations[ground] ?? ground}
           </span>
         ))}
       </div>

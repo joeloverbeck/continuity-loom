@@ -1,6 +1,6 @@
 # SPEC022IDENATPRO-004: Grounds provenance — server key→label map + web label resolution
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a deterministic `citations` key→label map to the `/api/ideate` response and resolves short citation keys to full record labels in the Ideate UI (`SlateCard` and kept ideas); no change to prompt compilation or the server's unknown-citation verification logic.
@@ -86,3 +86,23 @@ In `api.ts`: add `citations: Record<string,string>` to the success `IdeateRespon
 1. `npx vitest run packages/server/src/ideate-routes.test.ts`
 2. `npx vitest run packages/web/src/ideate/SlateCard.test.tsx packages/web/src/ideate/keepers.test.ts packages/web/src/ideate/IdeateView.test.tsx`
 3. `npm test` — full-pipeline gate (server + web), the correct boundary since this ticket spans both packages.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added a deterministic `citations` key-to-label map to successful `/api/ideate` responses, derived from `citationKeysFor` and `displayLabel`.
+- Extended web ideation response types and threaded `citations` through the scratch slate.
+- Updated `SlateCard` to render resolved citation labels with raw-key fallback for unknown citations.
+- Extended kept ideas with optional `groundLabels` and rendered resolved labels in the keepers list while preserving older stored keepers.
+- Added focused server and web tests for citation-map emission, slate label resolution, keeper persistence, and backward-compatible keeper parsing.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm run build --workspace @loom/core && npm exec -- vitest run packages/server/src/ideate-routes.test.ts packages/web/src/ideate/SlateCard.test.tsx packages/web/src/ideate/keepers.test.ts packages/web/src/ideate/IdeateView.test.tsx` passed.
+- `npm test` passed: 121 files, 910 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

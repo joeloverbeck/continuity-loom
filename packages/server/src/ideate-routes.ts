@@ -2,9 +2,11 @@ import {
   citationKeysFor,
   compilePrompt,
   deriveReadiness,
+  displayLabel,
   ideationRequestSchema,
   runValidation
 } from "@loom/core";
+import type { ValidationRecord } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 
@@ -62,7 +64,9 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       return transportResult;
     }
 
-    const validCitationKeys = new Set(citationKeysFor(snapshotResult.snapshot.records).values());
+    const citationKeys = citationKeysFor(snapshotResult.snapshot.records);
+    const validCitationKeys = new Set(citationKeys.values());
+    const citations = citationLabels(snapshotResult.snapshot.records, citationKeys);
     const parsed = parseIdeationResponse(transportResult.candidate.text, validCitationKeys);
 
     if (!parsed.ok) {
@@ -77,9 +81,22 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
     return {
       ok: true,
       ideas: parsed.ideas,
+      citations,
       metadata: ideationMetadata(settings, compileResult.metadata.versions)
     };
   });
+}
+
+function citationLabels(
+  records: readonly ValidationRecord[],
+  keys: ReadonlyMap<string, string>
+): Record<string, string> {
+  return Object.fromEntries(
+    records.flatMap((record) => {
+      const key = keys.get(record.id);
+      return key ? [[key, displayLabel(record)] as const] : [];
+    })
+  );
 }
 
 function parseIdeationBody(body: unknown):

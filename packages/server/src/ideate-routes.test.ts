@@ -57,10 +57,15 @@ describe("ideate routes", () => {
     const before = await generationBrief(fastify);
     const response = await fastify.inject({ method: "POST", url: "/api/ideate", payload: { count: 3 } });
     const after = await generationBrief(fastify);
-    const body = response.json() as { ideas: { unknownCitations: string[] }[]; metadata: Record<string, unknown> };
+    const body = response.json() as {
+      ideas: { unknownCitations: string[] }[];
+      citations: Record<string, string>;
+      metadata: Record<string, unknown>;
+    };
 
     expect(response.statusCode).toBe(200);
     expect(body.ideas[0]?.unknownCitations).toEqual(["[UNKNOWN-99]"]);
+    expect(body.citations["[SECRET-1]"]).toBe("The loading-door key has been copied.");
     expect(body.metadata).toMatchObject({
       provider: "openrouter",
       versions: { template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" }

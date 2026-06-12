@@ -25,6 +25,7 @@ export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
 export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
+export { displayLabel } from "./compiler/labels.js";
 export { IDEATION_OPERATORS, REINCORPORATE_DORMANT_OPERATOR } from "./compiler/ideation/operators.js";
 export { assignSlots } from "./compiler/ideation/slot-assignment.js";
 export { ideationModeSchema, ideationRequestSchema, promptKindSchema } from "./compiler/ideation/types.js";

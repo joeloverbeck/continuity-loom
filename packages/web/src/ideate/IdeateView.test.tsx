@@ -79,9 +79,10 @@ describe("IdeateView", () => {
         operator: "Reveal",
         headline: "The sealed letter changes hands.",
         why: "The secret and handoff pressure support it.",
-        grounds: ["[SECRET: Letter]"],
+        grounds: ["[SECRET-1]"],
         unknownCitations: []
       }],
+      citations: { "[SECRET-1]": "The letter names a ledger substitution" },
       metadata: generationMetadata()
     });
 
@@ -91,7 +92,7 @@ describe("IdeateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
 
     expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
-    expect(screen.getByText("[SECRET: Letter]")).toBeTruthy();
+    expect(screen.getByText("The letter names a ledger substitution")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /insert/i })).toBeNull();
     expect(ideate).toHaveBeenCalledWith({
       mode: "ideas",
@@ -106,11 +107,13 @@ describe("IdeateView", () => {
       .mockResolvedValueOnce({
         ok: true,
         ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+        citations: { "[SECRET-1]": "The letter names a ledger substitution" },
         metadata: generationMetadata()
       })
       .mockResolvedValueOnce({
         ok: true,
         ideas: [ideaFixture({ slotNumber: 1, headline: "The latch interrupts the argument." })],
+        citations: { "[SECRET-1]": "The letter names a ledger substitution" },
         metadata: generationMetadata()
       });
 
@@ -135,6 +138,7 @@ describe("IdeateView", () => {
     vi.mocked(ideate).mockResolvedValue({
       ok: true,
       ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      citations: { "[SECRET-1]": "The letter names a ledger substitution" },
       metadata: generationMetadata()
     });
 
@@ -148,6 +152,7 @@ describe("IdeateView", () => {
 
     expect(screen.getByRole("button", { name: "Kept" })).toBeTruthy();
     expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toContain("The sealed letter changes hands.");
+    expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toContain("The letter names a ledger substitution");
 
     fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
 
@@ -221,7 +226,7 @@ function ideaFixture(input: { slotNumber: number; headline: string }) {
     operator: "Reveal",
     headline: input.headline,
     why: "The secret and handoff pressure support it.",
-    grounds: ["[SECRET: Letter]"],
+    grounds: ["[SECRET-1]"],
     unknownCitations: []
   };
 }
