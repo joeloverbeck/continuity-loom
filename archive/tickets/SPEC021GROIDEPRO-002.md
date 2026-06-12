@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-002: Ideation operator taxonomy + deterministic slot-assignment engine
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` `compiler/ideation/` module (prompt-kind + ideation-request types, operator taxonomy data, deterministic slot-assignment, citation-key derivation) + unit tests; no existing prose-compilation file modified, no prose behavior change
@@ -89,3 +89,24 @@ The ideation prompt's distinctiveness comes from assigning each idea slot a diff
 1. `npm test -- ideation-slot-assignment`
 2. `npm test && npm run typecheck && npm run lint && npm run build`
 3. `npm test -- boundary` — the narrower core-purity boundary check is the correct surface for confirming the new module did not breach the `@loom/core` framework-free rule.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added the pure `packages/core/src/compiler/ideation/` module with prompt-kind and ideation-request schemas, frozen operator taxonomy, deterministic slot assignment, and deterministic citation-key derivation.
+- Exported the ideation schemas, assignment API, operator data, citation helpers, and types from `@loom/core`.
+- Added `packages/core/test/ideation-slot-assignment.test.ts` covering request defaults and bounds, operator eligibility, taxonomy-order fill, slate shrink signaling, belief/fact eligibility, deterministic dormancy, question-mode parity, determinism, and citation-key collision suffixes.
+
+Deviations:
+- `assignSlots` returns an `IdeationAssignment` result object rather than a bare slot array so downstream UI/server code can surface `shrunk` without duplicating assignment logic.
+- Citation keys prefer `record.metadata.displayLabel` before falling back to compiler-derived labels, matching existing record-ordering behavior and keeping test fixtures focused.
+
+Verification:
+- `npm test -- ideation-slot-assignment` passed: 7 tests.
+- `npm test -- boundary` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 112 files, 878 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.

@@ -23,6 +23,18 @@ export {
 export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
+export { IDEATION_OPERATORS } from "./compiler/ideation/operators.js";
+export { assignSlots } from "./compiler/ideation/slot-assignment.js";
+export { ideationModeSchema, ideationRequestSchema, promptKindSchema } from "./compiler/ideation/types.js";
+export type {
+  IdeationAssignment,
+  IdeationMode,
+  IdeationOperatorId,
+  IdeationRequest,
+  IdeationSlot,
+  PromptKind
+} from "./compiler/ideation/types.js";
 export { PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
 export type {
   CompileMetadata,

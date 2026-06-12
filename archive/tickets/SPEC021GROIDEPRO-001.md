@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-001: FOUNDATIONS amendments A1+A2 — second sanctioned prompt class
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `docs/FOUNDATIONS.md` §9/§9.1, §11 item 7, §19, §26/§26.1, §29.2/§29.4/§29.5 amended; no production code or behavior change
@@ -86,3 +86,23 @@ Add one hard-fail question: "Does it let assistance output enter a prose prompt,
 1. `grep -nE "9.1 Assistance prompt class|26.1 Assistance-output handling|\(§4.6, §11 item 7, §19, §29.5\)|without explicit per-item user action" docs/FOUNDATIONS.md`
 2. `npm run lint && npm run build`
 3. A narrower per-section grep is the correct boundary here: this ticket adds no executable behavior, so the verification surface is exact-string presence of each amended clause, not a runtime test.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Amended `docs/FOUNDATIONS.md` with the sanctioned §9.1 assistance prompt class, scoped prose-only "no alternatives" language in §11/§19/§29, appended §26.1 assistance-output handling rules, and added the §29.2 hard-fail preventing automatic assistance-output insertion.
+- Co-landed this constitutional amendment with SPEC021GROIDEPRO-002's first dependent core code in the same revision, per §1.1.
+
+Deviations:
+- None.
+
+Verification:
+- `grep -nE "9.1 Assistance prompt class|26.1 Assistance-output handling|\(§4.6, §11 item 7, §19, §29.5\)|without explicit per-item user action" docs/FOUNDATIONS.md` returned the required amendment anchors.
+- `npm test -- ideation-slot-assignment` passed.
+- `npm test -- boundary` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 112 files, 878 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.

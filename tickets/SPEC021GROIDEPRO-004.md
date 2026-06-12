@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `deriveReadiness` becomes prompt-kind aware via a new per-kind blocker-applicability map; `docs/validation-rule-inventory.md` gains an ideation-applicability column; new readiness tests. Prose readiness is unchanged.
-**Deps**: SPEC021GROIDEPRO-002 (imports the `PromptKind` type)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-002.md` (imports the `PromptKind` type)
 
 ## Problem
 

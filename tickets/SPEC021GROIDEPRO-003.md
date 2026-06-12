@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `compilePrompt` gains an ideation kind (new `IDEATION_SECTION_ORDER`, four ideation section templates, citation-key rendering on reused record sections); `version.ts` template/compiler/contract bumps; `docs/compiler-contract.md` ideation mapping; new byte-frozen ideation golden. Prose-prompt behavior is byte-identical (default kind stays `prose`).
-**Deps**: SPEC021GROIDEPRO-002 (consumes `PromptKind`/`IdeationRequest` types, `assignSlots`, `citationKey`)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-002.md` (consumes `PromptKind`/`IdeationRequest` types, `assignSlots`, `citationKey`)
 
 ## Problem
 
@@ -65,7 +65,7 @@ With the operator engine in place (002), this ticket makes a second deterministi
 
 ## Out of Scope
 
-- Operator taxonomy / slot-assignment algorithm — SPEC021GROIDEPRO-002 (consumed here).
+- Operator taxonomy / slot-assignment algorithm — `archive/tickets/SPEC021GROIDEPRO-002.md` (consumed here).
 - Kind-aware readiness / relaxed gate — SPEC021GROIDEPRO-004.
 - Server route, idea-block parsing, server-side citation *verification* — SPEC021GROIDEPRO-005.
 - The new `docs/ideation-prompt-template.md` authority doc, ACTIVE-DOCS registry/version-note, user-guide — SPEC021GROIDEPRO-008.
