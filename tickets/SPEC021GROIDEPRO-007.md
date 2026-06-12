@@ -59,7 +59,7 @@ On top of the Ideate shell, the author needs the actual ideation slate: 3–6 ca
 
 - The view shell, route, nav, brief link, prompt inspection, readiness — SPEC021GROIDEPRO-006.
 - Any cross-session / project-store persistence of ideas or keepers — forbidden (spec §Out of Scope; §26.1).
-- Server-side parsing/verification — SPEC021GROIDEPRO-005.
+- Server-side parsing/verification — `archive/tickets/SPEC021GROIDEPRO-005.md`.
 - Any insertion of ideas into records, brief fields, or prompts; any idea→directive path — forbidden everywhere.
 
 ## Acceptance Criteria

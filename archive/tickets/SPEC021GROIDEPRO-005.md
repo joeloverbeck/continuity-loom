@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-005: Server `/api/ideate` + `promptKind` preview on `/api/compile` + citation verification
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `POST /api/ideate` route + idea-block parser/citation-verifier module; `POST /api/compile` accepts optional `promptKind`/`ideationRequest` for preview; new route + secret-leakage tests. No record mutation, no server-side persistence.
@@ -91,3 +91,24 @@ The Ideate view needs a localhost endpoint that compiles the ideation prompt, ga
 1. `npm test -- ideate-routes`
 2. `npm test -- compile-routes generate-routes.secret-leakage` — confirms preview parity and the mirrored secret posture.
 3. `npm test && npm run typecheck && npm run lint && npm run build`
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added `/api/ideate` with ideation request parsing, kind-aware readiness gating, global OpenRouter send, malformed-output fallback, parsed idea responses, citation-key membership verification, and no project-store persistence.
+- Added `ideation-parse.ts` as a pure flat-block parser/verifier.
+- Extended `/api/compile` to accept optional `promptKind` and `ideationRequest` for ideation preview while preserving prose as the default.
+- Registered the ideate route in the server.
+- Added parser, route, compile-preview, and secret/log leakage coverage.
+
+Deviations:
+- Citation verification uses the deterministic citation-key set derived from the current snapshot records; unknown citations are surfaced per idea in `unknownCitations`.
+
+Verification:
+- `npm test -- ideation-parse ideate-routes compile-routes generate-routes.secret-leakage` passed: 5 files, 16 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 117 files, 891 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.

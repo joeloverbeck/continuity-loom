@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/web/src/ideate/` view, AppShell nav entry + route, Generation Brief "Stuck? Get ideas" link, `api.ts` ideate/compile-ideation client methods; no production engine, record, or behavior change to existing surfaces
-**Deps**: SPEC021GROIDEPRO-005 (`/api/ideate` + `/api/compile` ideation preview)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-005.md` (`/api/ideate` + `/api/compile` ideation preview)
 
 ## Problem
 
@@ -57,7 +57,7 @@ The author needs a dedicated, quarantined surface to ask "what could happen next
 
 - Slate cards, operator badges, citation chips, mode/count/dormant controls, regenerate, session keepers — SPEC021GROIDEPRO-007 (modifies `IdeateView.tsx`).
 - Any insert-into-records / insert-into-brief / use-as-prompt affordance — forbidden anywhere (§26).
-- Server route, parsing, citation verification — SPEC021GROIDEPRO-005.
+- Server route, parsing, citation verification — `archive/tickets/SPEC021GROIDEPRO-005.md`.
 
 ## Acceptance Criteria
 
