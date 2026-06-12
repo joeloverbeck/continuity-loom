@@ -33,7 +33,7 @@ export type PromptSectionId = (typeof SECTION_ORDER)[number];
 
 export const IDEATION_SECTION_ORDER = Object.freeze([
   "ideation_role",
-  "authority_hierarchy",
+  "ideation_authority_hierarchy",
   "content_policy",
   "story_contract",
   "hard_canon",
@@ -94,6 +94,24 @@ export type StaticSectionId = Exclude<
 >;
 
 export type StaticIdeationSectionId = Exclude<IdeationSectionId, PromptSectionId | "ideation_slots">;
+
+export const IDEATION_CONTENT_POLICY_TEMPLATE = `<content_policy>
+RATING: {rating_label}
+Allowed content scope: {allowed_content_scope}
+Tonal handling: {tonal_handling}
+Governing policy note: {governing_policy_note}
+Character bias handling: {character_bias_handling}
+
+This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be considered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
+
+This includes, where appropriate to the story configuration: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
+
+The primary fictional directive is authentic character portrayal and vivid storytelling within this mature context.
+Do not sanitize character interiority into moral lecture.
+Do not inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the output.
+Do not convert a character's prejudice, fear, fantasy, or misread into narrator-certified truth unless selected records establish it as fact.
+This block describes the story's intended maturity envelope; it does not override governing external model/platform policy.
+</content_policy>`;
 
 export const SECTION_TEMPLATES: Readonly<Record<StaticSectionId, string>> = Object.freeze({
   role: `<role>
@@ -406,6 +424,23 @@ Begin directly with the next sentence of the story.
 });
 
 export const IDEATION_SECTION_TEMPLATES: Readonly<Record<StaticIdeationSectionId, string>> = Object.freeze({
+  ideation_authority_hierarchy: `<authority_hierarchy>
+Obey these in order:
+
+1. Governing external model/platform policy.
+2. This role and output contract: premise-level ideas or questions only, no prose, no record updates.
+3. Hard canon and current authoritative state.
+4. Physical continuity, POV knowledge limits, and reveal constraints.
+5. Manual directive as authored context for what the next segment must render; ideas must be compatible with it but must not render the segment.
+6. Active plans, intentions, clocks, obligations, and consequences.
+7. Beliefs, relationships, emotions, open threads, facts, and events.
+8. Active cast characterization, voice anchors, speech-pattern peculiarities, and behavior.
+9. Story tone and prose mode constraints as compatibility context.
+10. Optional local texture, minor complication, and durable-change permissions.
+
+Deterministic validation should have blocked unresolved contradictions before this prompt was generated. If an apparent priority tension remains, follow the highest-priority applicable record. Do not repair, explain, negotiate, or mention the conflict in the output.
+Do not mention this hierarchy in the output.
+</authority_hierarchy>`,
   relationship_and_emotion_pressure: `<relationship_and_emotion_pressure>
 {relationship_emotion_pressure}
 </relationship_and_emotion_pressure>`,
@@ -434,6 +469,7 @@ Move the story far without contradicting any compiled record, current authoritat
 Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
 If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
 Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+Ideas must be mutually distinct. No two ideas may share the same dominant pressure source or the same dramatic move; each idea should differ from the others along at least one named axis: who acts, which pressure fires, or what changes durably.
 </ideation_quality>`,
   ideation_output_format: `<ideation_output_format>
 Output only an ideas block. Malformed output is discarded.

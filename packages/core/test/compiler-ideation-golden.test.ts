@@ -60,9 +60,17 @@ function promptSectionOrder(prompt: string): string[] {
 }
 
 function expectedIdeationTagOrder(): string[] {
-  return IDEATION_SECTION_ORDER.filter((section) => section !== "hard_canon" && section !== "present_minor_cast").map(
-    (section) => (section === "ideation_contradiction_prohibitions" ? "contradiction_prohibitions" : section)
-  );
+  return IDEATION_SECTION_ORDER.filter((section) => section !== "hard_canon" && section !== "present_minor_cast").map((section) => {
+    if (section === "ideation_contradiction_prohibitions") {
+      return "contradiction_prohibitions";
+    }
+
+    if (section === "ideation_authority_hierarchy") {
+      return "authority_hierarchy";
+    }
+
+    return section;
+  });
 }
 
 function sectionText(prompt: string, section: string): string {
@@ -105,6 +113,20 @@ describe("compiler ideation golden prompt", () => {
     expect(promptSectionOrder(first.prompt)[0]).toBe("ideation_role");
     expect(first.prompt).toContain("<ideation_role>");
     expect(first.prompt).not.toContain("<active_working_set>");
+    expect(sectionText(first.prompt, "authority_hierarchy")).not.toContain("prose only");
+    expect(sectionText(first.prompt, "authority_hierarchy")).toContain(
+      "premise-level ideas or questions only, no prose, no record updates"
+    );
+    expect(sectionText(first.prompt, "content_policy")).toContain("RATING: General audience / mild suspense");
+    expect(sectionText(first.prompt, "content_policy")).toContain("into the output");
+    expect(sectionText(first.prompt, "content_policy")).not.toContain("{rating_label}");
+    expect(first.prompt).not.toContain("Begin prose exactly after this point");
+    expect(first.prompt).toContain("The next prose segment will begin after this point");
+    expect(first.prompt).not.toContain("Must render:");
+    expect(first.prompt).toContain(
+      "The author's directive for the next segment (binding context: ideas must be compatible with it):"
+    );
+    expect(sectionText(first.prompt, "ideation_quality")).toContain("Ideas must be mutually distinct.");
     expect(first.prompt).not.toMatch(/\[[A-Z ]+:/);
     expect(first.prompt).toContain("<relationship_and_emotion_pressure>");
     expect(sectionText(first.prompt, "relationship_and_emotion_pressure")).toContain(

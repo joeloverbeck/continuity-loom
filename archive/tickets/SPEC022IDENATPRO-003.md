@@ -1,6 +1,6 @@
 # SPEC022IDENATPRO-003: Ideation-framed contract variants + distinctness instruction
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds ideation-framed variants of `<authority_hierarchy>`, `<content_policy>`, `<immediate_handoff>`, and `<manual_directive>` to the ideation prompt, adds a mutual-distinctness block to `<ideation_quality>`, refreshes the ideation golden, and co-lands the contract/template docs; the prose prompt is unchanged.
@@ -84,3 +84,23 @@ Refresh `golden-ideation.prompt.txt`; update `compiler-ideation-golden.test.ts`.
 1. `npx vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts`
 2. `npm test`
 3. Core-only Vitest is the correct boundary while iterating (no server/web surface changes); `npm test` is the merge gate.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added an ideation-specific `<authority_hierarchy>` variant that frames the output as premise-level ideas/questions only and removes prose-contract residue.
+- Added an ideation-specific placeholder-resolved `<content_policy>` variant that refers to output rather than prose.
+- Changed ideation `<immediate_handoff>` and `<manual_directive>` labels/trailers so they are compatibility context for ideas rather than prose launch commands.
+- Added the mutual-distinctness instruction to `<ideation_quality>`.
+- Refreshed the ideation golden and updated the compiler/template docs to enumerate the variant behavior.
+
+Deviations from original plan:
+- None.
+
+Verification:
+- `npm exec -- vitest run packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts` passed.
+- `npm test` passed: 121 files, 909 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.

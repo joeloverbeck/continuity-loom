@@ -10,6 +10,7 @@ import { renderPressurePlaceholder } from "./sections/pressure.js";
 import { renderTailPlaceholder } from "./sections/records-tail.js";
 import {
   COMPOSITE_SECTION_TEMPLATES,
+  IDEATION_CONTENT_POLICY_TEMPLATE,
   IDEATION_SECTION_ORDER,
   IDEATION_SECTION_TEMPLATES,
   SECTION_ORDER,
@@ -177,7 +178,7 @@ function renderSection(
   }
 
   if (sectionId === "immediate_handoff") {
-    return renderImmediateHandoffSection(snapshot);
+    return renderImmediateHandoffSection(snapshot, context);
   }
 
   if (sectionId === "manual_directive") {
@@ -185,7 +186,7 @@ function renderSection(
       return null;
     }
 
-    return renderManualDirectiveSection(snapshot);
+    return renderManualDirectiveSection(snapshot, context);
   }
 
   if (sectionId === "pov_knowledge_constraints") {
@@ -206,6 +207,10 @@ function renderSection(
 
   if (sectionId === "ideation_slots") {
     return renderIdeationSlotsSection(snapshot, ideationRequest);
+  }
+
+  if (sectionId === "content_policy" && context.isIdeationPrompt) {
+    return renderTemplate(IDEATION_CONTENT_POLICY_TEMPLATE, snapshot, context);
   }
 
   if (sectionId === "relationship_and_emotion_pressure") {
@@ -232,24 +237,43 @@ function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): s
   return `<current_authoritative_state>\n${renderedLines.join("\n")}\n</current_authoritative_state>`;
 }
 
-function renderImmediateHandoffSection(snapshot: ValidationSnapshot): string {
+function renderImmediateHandoffSection(snapshot: ValidationSnapshot, context: RenderContext): string {
   const renderedBlocks = immediateHandoffBlocks
     .filter((block) => block.alwaysRender || hasImmediateHandoffValue(snapshot, block.placeholder))
-    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+    .map((block) => `${immediateHandoffLabel(block, context)}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+  const trailer = context.isIdeationPrompt
+    ? "Use this handoff only as user-authored continuity context. Ideas must continue from this point; do not treat archived prose as canon."
+    : "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.";
   const body = [
     ...renderedBlocks,
-    "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure."
+    trailer
   ].join("\n\n");
 
   return `<immediate_handoff>\n${body}\n</immediate_handoff>`;
 }
 
-function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
+function renderManualDirectiveSection(snapshot: ValidationSnapshot, context: RenderContext): string {
   const renderedBlocks = manualDirectiveBlocks
     .filter((block) => block.alwaysRender || hasManualDirectiveValue(snapshot, block.placeholder))
-    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+    .map((block) => `${manualDirectiveLabel(block, context)}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
 
   return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
+}
+
+function immediateHandoffLabel(block: (typeof immediateHandoffBlocks)[number], context: RenderContext): string {
+  if (context.isIdeationPrompt && block.placeholder === "begin_after") {
+    return "The next prose segment will begin after this point";
+  }
+
+  return block.label;
+}
+
+function manualDirectiveLabel(block: (typeof manualDirectiveBlocks)[number], context: RenderContext): string {
+  if (context.isIdeationPrompt && block.placeholder === "manual_must_render") {
+    return "The author's directive for the next segment (binding context: ideas must be compatible with it)";
+  }
+
+  return block.label;
 }
 
 function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): string {

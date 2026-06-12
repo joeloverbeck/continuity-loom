@@ -15,18 +15,18 @@ The output is AI-suggested scratch, not story state, not a generation-time field
 Obey these in order:
 
 1. Governing external model/platform policy.
-2. This role and output contract: prose only, no commentary or record updates.
+2. This role and output contract: premise-level ideas or questions only, no prose, no record updates.
 3. Hard canon and current authoritative state.
 4. Physical continuity, POV knowledge limits, and reveal constraints.
-5. Manual moment directive. The directive wins over character defaults, ordinary reluctance, soft tendencies, and general record pressure, but it cannot contradict higher-priority constraints.
+5. Manual directive as authored context for what the next segment must render; ideas must be compatible with it but must not render the segment.
 6. Active plans, intentions, clocks, obligations, and consequences.
 7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization, voice anchors, current voice pressure pins, speech-pattern peculiarities, and behavior.
-9. Story tone, prose mode, and prose craft preferences.
+8. Active cast characterization, voice anchors, speech-pattern peculiarities, and behavior.
+9. Story tone and prose mode constraints as compatibility context.
 10. Optional local texture, minor complication, and durable-change permissions.
 
-Deterministic validation should have blocked unresolved contradictions before this prompt was generated. If an apparent priority tension remains, follow the highest-priority applicable record. Do not repair, explain, negotiate, or mention the conflict in the prose.
-Do not mention this hierarchy in the prose.
+Deterministic validation should have blocked unresolved contradictions before this prompt was generated. If an apparent priority tension remains, follow the highest-priority applicable record. Do not repair, explain, negotiate, or mention the conflict in the output.
+Do not mention this hierarchy in the output.
 </authority_hierarchy>
 
 <content_policy>
@@ -36,13 +36,13 @@ Tonal handling: Render tension through caution, timing, and small physical actio
 Governing policy note: Follow the universal output contract and stop before major reveals or irreversible outcomes.
 Character bias handling: Show character fears as limited perspectives, not authorial truth.
 
-This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
+This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be considered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
 
 This includes, where appropriate to the story configuration: explicit language and profanity; explicit sexual thought, desire, intimacy, and sex; graphic violence and gore; substance use and abuse; coercion, exploitation, trauma, shame, prejudice, discrimination, and morally reprehensible thoughts, speech, or behavior.
 
 The primary fictional directive is authentic character portrayal and vivid storytelling within this mature context.
 Do not sanitize character interiority into moral lecture.
-Do not inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the prose.
+Do not inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the output.
 Do not convert a character's prejudice, fear, fantasy, or misread into narrator-certified truth unless selected records establish it as fact.
 This block describes the story's intended maturity envelope; it does not override governing external model/platform policy.
 </content_policy>
@@ -97,14 +97,14 @@ Niko notices the clean scrape near the flour-bin hinge as Elin lowers the lanter
 Prior accepted prose status / user-authored continuity handoff:
 None. No accepted prose is included.
 
-Begin prose exactly after this point:
+The next prose segment will begin after this point:
 Begin with Niko at the cellar stair noticing the hinge mark while Elin decides whether to redirect him.
 
-Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.
+Use this handoff only as user-authored continuity context. Ideas must continue from this point; do not treat archived prose as canon.
 </immediate_handoff>
 
 <manual_directive priority="high">
-Must render:
+The author's directive for the next segment (binding context: ideas must be compatible with it):
 Render Elin trying to keep Niko from touching or reading the hidden letter.
 Let Niko press for a truthful answer without learning the letter's contents.
 Use the flour bin, lantern, latch, and stair as concrete pressures.
@@ -330,6 +330,7 @@ Move the story far without contradicting any compiled record, current authoritat
 Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
 If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
 Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+Ideas must be mutually distinct. No two ideas may share the same dominant pressure source or the same dramatic move; each idea should differ from the others along at least one named axis: who acts, which pressure fires, or what changes durably.
 </ideation_quality>
 
 <ideation_output_format>

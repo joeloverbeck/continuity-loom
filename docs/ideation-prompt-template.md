@@ -60,6 +60,15 @@ Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<
 
 Frames the model as a story-development consultant for a continuity-first fiction system. It asks for premise-level ideas or questions and forbids prose, dialogue, scene text, beat sheets, outlines, branches, chapter plans, future summaries, new named entities, new facts, new locations, new objects, new secrets, and new backstory beyond compiled records. It labels the output as AI-suggested scratch, not story state, not a generation-time field, and not prompt context for prose generation.
 
+### Ideation-framed shared sections
+
+The ideation prompt uses prompt-kind-specific variants for shared contract sections that would otherwise imply prose output:
+
+- `<authority_hierarchy>` says the output contract is premise-level ideas or questions only, no prose, no record updates. It frames the manual directive as authored compatibility context, omits voice-pin/prose-craft prose-rendering references, and tells the model not to mention the hierarchy in the output.
+- `<content_policy>` resolves the same policy placeholders as the prose prompt, but its trailer says not to inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the output.
+- `<immediate_handoff>` labels `begin_after` as "The next prose segment will begin after this point" and uses a trailer that treats the handoff as user-authored continuity context for ideas rather than a prose launch command.
+- `<manual_directive>` labels `must_render` as "The author's directive for the next segment (binding context: ideas must be compatible with it)".
+
 ### `<relationship_and_emotion_pressure>`
 
 Renders RELATIONSHIP and EMOTION records from the deterministic `relationship_emotion_pressure` placeholder. This is the ideation-native replacement for the relationship/emotion lane that prose renders inside `<active_working_set>`; it keeps those selected records visible without carrying the full prose pressure precis.
@@ -91,7 +100,8 @@ Defines the quality bar:
 - reveal ideas must obey compiled reveal constraints;
 - without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure;
 - unsupported slots output `SKIPPED` rather than inventing support;
-- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle;
+- ideas must be mutually distinct: no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
 
 ### Ideation `<contradiction_prohibitions>`
 

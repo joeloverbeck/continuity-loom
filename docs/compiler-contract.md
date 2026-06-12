@@ -111,9 +111,13 @@ The compiler renders ideation sections in this order:
 Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
 
 - `<ideation_role>` from a template constant that frames the model as a story-development consultant, forbids prose/dialogue/scene text/branches/outlines, and labels output as non-canonical scratch.
+- `<authority_hierarchy>` from an ideation-specific static template: item 2 says "premise-level ideas or questions only, no prose, no record updates"; the manual directive is framed as authored compatibility context; voice-pin and prose-craft references are omitted; the closing line says not to mention the hierarchy in the output.
+- `<content_policy>` from an ideation-specific placeholder-resolved template whose policy trailer says not to inject assistant disclaimers, warnings, analysis, or safety moralizing into the output.
+- `<immediate_handoff>` with ideation labels: `begin_after` renders as "The next prose segment will begin after this point", and the trailer says to use the handoff only as user-authored continuity context, continue ideas from that point, and not treat archived prose as canon.
+- `<manual_directive>` with an ideation label for `must_render`: "The author's directive for the next segment (binding context: ideas must be compatible with it)".
 - `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
 - `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
-- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, and skip-if-unsupported rules.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
 - `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
 
