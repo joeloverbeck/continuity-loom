@@ -79,6 +79,18 @@ const povKnowledgeConstraintBlocks: readonly {
   { label: "POV cannot perceive right now", placeholder: "pov_cannot_perceive_now" }
 ];
 
+const secretsAndRevealConstraintBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+}[] = [
+  { label: "Writer-visible hidden truths", placeholder: "writer_visible_hidden_truths" },
+  { label: "Secret holders", placeholder: "secret_holders" },
+  { label: "Characters who must not know yet", placeholder: "secret_non_holders_to_protect" },
+  { label: "Allowed clues and surface cues now", placeholder: "allowed_clues_and_surface_cues" },
+  { label: "Forbidden reveals now", placeholder: "forbidden_reveals" },
+  { label: "Reveal permission", placeholder: "reveal_permissions" }
+];
+
 export { SECTION_ORDER };
 
 export interface CompilePromptOptions {
@@ -164,6 +176,10 @@ function renderSection(
     return renderPovKnowledgeConstraintsSection(snapshot);
   }
 
+  if (sectionId === "secrets_and_reveal_constraints") {
+    return renderSecretsAndRevealConstraintsSection(snapshot);
+  }
+
   if (sectionId === "audience_knowledge") {
     return renderAudienceKnowledgeSection(snapshot);
   }
@@ -229,6 +245,22 @@ function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): str
   const body = [...renderedBlocks, staticRules].join("\n\n");
 
   return `<pov_knowledge_constraints>\n${body}\n</pov_knowledge_constraints>`;
+}
+
+function renderSecretsAndRevealConstraintsSection(snapshot: ValidationSnapshot): string {
+  const renderedBlocks = secretsAndRevealConstraintBlocks
+    .map((block) => {
+      const value = resolvePlaceholder(block.placeholder, snapshot).trim();
+      return value && value !== EMPTY_STATE_CONSTANTS[block.placeholder] ? `${block.label}:\n${value}` : "";
+    })
+    .filter(Boolean);
+  const staticRules = SECTION_TEMPLATES.secrets_and_reveal_constraints
+    .split("\n\n")
+    .find((block) => block.startsWith("A secret may be revealed only if"))
+    ?.replace("\n</secrets_and_reveal_constraints>", "");
+  const body = [...renderedBlocks, staticRules].filter(Boolean).join("\n\n");
+
+  return `<secrets_and_reveal_constraints>\n${body}\n</secrets_and_reveal_constraints>`;
 }
 
 function renderStopRuleSection(snapshot: ValidationSnapshot): string {

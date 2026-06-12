@@ -377,6 +377,7 @@ describe("compiler front-section resolvers", () => {
   it("renders exact empty-state constants when front-section sources are absent", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
     const povSection = sectionBody(prompt, "pov_knowledge_constraints");
+    const secretsSection = sectionBody(prompt, "secrets_and_reveal_constraints");
 
     expect(EMPTY_STATE_CONSTANTS.soft_unit_guidance).toBe(
       "No additional user narrowing; use the universal local stop rule above."
@@ -394,9 +395,16 @@ describe("compiler front-section resolvers", () => {
     expect(sectionBody(prompt, "manual_directive")).toContain(EMPTY_STATE_CONSTANTS.manual_must_render);
     expect(sectionBody(prompt, "stop_rule")).not.toContain("Soft unit:");
     expect(sectionBody(prompt, "stop_rule")).not.toContain("Additional user stop guidance");
-    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
-      EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
-    );
+    expect(prompt).toContain("<secrets_and_reveal_constraints>");
+    expect(secretsSection).not.toContain("Writer-visible hidden truths:");
+    expect(secretsSection).not.toContain("Secret holders:");
+    expect(secretsSection).not.toContain("Characters who must not know yet:");
+    expect(secretsSection).not.toContain("Allowed clues and surface cues now:");
+    expect(secretsSection).not.toContain("Forbidden reveals now:");
+    expect(secretsSection).not.toContain("Reveal permission:");
+    expect(secretsSection).not.toContain("None specified");
+    expect(secretsSection).not.toContain(EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths);
+    expect(secretsSection).toContain("A secret may be revealed only if its reveal permission allows reveal");
     expect(prompt).toContain("<pov_knowledge_constraints>");
     expect(povSection).toContain("Prompt-label rule:");
     expect(povSection).toContain("Non-POV interiority rule:");
@@ -673,7 +681,7 @@ describe("compiler front-section resolvers", () => {
     expect(secretSection).not.toContain(holderId);
   });
 
-  it("renders the existing clue empty state when no surface cues or available carriers exist", () => {
+  it("omits the clue value-line when no surface cues or available carriers exist", () => {
     const input = populatedInput();
     input.records = input.records.map((record) =>
       record.id === secretId
@@ -696,9 +704,12 @@ describe("compiler front-section resolvers", () => {
         : record
     );
 
-    expect(sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints")).toContain(
-      `Allowed clues and surface cues now:\n${EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues}`
-    );
+    const secretSection = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).not.toContain("Allowed clues and surface cues now:");
+    expect(secretSection).not.toContain(EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues);
+    expect(secretSection).toContain("Writer-visible hidden truths:");
+    expect(secretSection).toContain("A secret may be revealed only if its reveal permission allows reveal");
   });
 
   it("renders affirmative no-forbidden-reveals secrets without using the empty state", () => {
@@ -728,8 +739,9 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(input));
     const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
 
+    expect(secretSection).toContain("Forbidden reveals now:");
     expect(secretSection).toContain("- No reveals are forbidden beyond the stated reveal permission.");
-    expect(secretSection).not.toContain(`Forbidden reveals:\n${EMPTY_STATE_CONSTANTS.forbidden_reveals}`);
+    expect(secretSection).not.toContain(`Forbidden reveals now:\n${EMPTY_STATE_CONSTANTS.forbidden_reveals}`);
   });
 
   it("still renders populated forbidden reveals as a list", () => {
