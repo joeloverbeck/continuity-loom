@@ -93,6 +93,17 @@ describe("GenerationBriefView", () => {
     }
   });
 
+  it("links to Ideate from the brief shell", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    await screen.findByRole("heading", { name: "Generation Brief" });
+    expect(screen.getByRole("link", { name: "Stuck? Get ideas" }).getAttribute("href")).toBe("/ideate");
+  });
+
   it("shows an always-required marker on required generation-brief fields", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });

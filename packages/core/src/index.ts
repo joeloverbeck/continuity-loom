@@ -22,8 +22,22 @@ export {
 } from "./demo/index.js";
 export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
+export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
+export { IDEATION_OPERATORS, REINCORPORATE_DORMANT_OPERATOR } from "./compiler/ideation/operators.js";
+export { assignSlots } from "./compiler/ideation/slot-assignment.js";
+export { ideationModeSchema, ideationRequestSchema, promptKindSchema } from "./compiler/ideation/types.js";
+export type {
+  IdeationAssignment,
+  IdeationMode,
+  IdeationOperatorId,
+  IdeationRequest,
+  IdeationSlot,
+  PromptKind
+} from "./compiler/ideation/types.js";
 export { PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
+export { IDEATION_SECTION_ORDER } from "./compiler/template-constants.js";
 export type {
   CompileMetadata,
   CompileResult,
@@ -185,6 +199,7 @@ export {
 } from "./records/space-material.js";
 export { generateRecordId } from "./records/uuidv7.js";
 export { runValidation } from "./validation/engine.js";
+export { blockerApplies, ideationApplicabilityFor } from "./validation/kind-applicability.js";
 export { deriveReadiness } from "./validation/readiness.js";
 export type {
   AffectedTarget,

@@ -1,12 +1,17 @@
 import type { ValidationSnapshot } from "../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
 import { estimatePromptTokens, fingerprintPrompt } from "./fingerprint.js";
+import type { IdeationRequest, PromptKind } from "./ideation/types.js";
 import { resolvePlaceholder, type PlaceholderName } from "./placeholder-map.js";
+import { renderIdeationSlotsSection } from "./sections/ideation.js";
 import {
   COMPOSITE_SECTION_TEMPLATES,
+  IDEATION_SECTION_ORDER,
+  IDEATION_SECTION_TEMPLATES,
   SECTION_ORDER,
   SECTION_TEMPLATES,
   type CompositeSectionId,
+  type IdeationSectionId,
   type PromptSectionId
 } from "./template-constants.js";
 import type { CompileResult } from "./types.js";
@@ -76,8 +81,13 @@ const povKnowledgeConstraintBlocks: readonly {
 
 export { SECTION_ORDER };
 
-export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
-  const prompt = renderPrompt(snapshot);
+export interface CompilePromptOptions {
+  promptKind?: PromptKind;
+  ideationRequest?: Partial<IdeationRequest>;
+}
+
+export function compilePrompt(snapshot: ValidationSnapshot, options: CompilePromptOptions = {}): CompileResult {
+  const prompt = renderPrompt(snapshot, options);
 
   return {
     prompt,
@@ -90,15 +100,34 @@ export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
   };
 }
 
-function renderPrompt(snapshot: ValidationSnapshot): string {
+function renderPrompt(snapshot: ValidationSnapshot, options: CompilePromptOptions): string {
+  if (options.promptKind === "ideation") {
+    return renderIdeationPrompt(snapshot, options.ideationRequest ?? {});
+  }
+
   return [
     "# Generated Prose Prompt",
     "",
-    ...SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot)).filter((section) => section !== null)
+    ...SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, {}, false)).filter((section) => section !== null)
   ].join("\n\n");
 }
 
-function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot): string | null {
+function renderIdeationPrompt(snapshot: ValidationSnapshot, ideationRequest: Partial<IdeationRequest>): string {
+  return [
+    "# Grounded Ideation Prompt",
+    "",
+    ...IDEATION_SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, ideationRequest, true)).filter(
+      (section) => section !== null
+    )
+  ].join("\n\n");
+}
+
+function renderSection(
+  sectionId: PromptSectionId | IdeationSectionId,
+  snapshot: ValidationSnapshot,
+  ideationRequest: Partial<IdeationRequest> = {},
+  omitEmptyManualDirective = false
+): string | null {
   if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
     return null;
   }
@@ -111,7 +140,7 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
     return null;
   }
 
-  if (isCompositeSectionId(sectionId)) {
+  if (isPromptSectionId(sectionId) && isCompositeSectionId(sectionId)) {
     return renderCompositeSection(sectionId, snapshot);
   }
 
@@ -124,6 +153,10 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
   }
 
   if (sectionId === "manual_directive") {
+    if (omitEmptyManualDirective && !hasAnyManualDirectiveValue(snapshot)) {
+      return null;
+    }
+
     return renderManualDirectiveSection(snapshot);
   }
 
@@ -137,6 +170,18 @@ function renderSection(sectionId: PromptSectionId, snapshot: ValidationSnapshot)
 
   if (sectionId === "stop_rule") {
     return renderStopRuleSection(snapshot);
+  }
+
+  if (sectionId === "ideation_slots") {
+    return renderIdeationSlotsSection(snapshot, ideationRequest);
+  }
+
+  if (isStaticIdeationSectionId(sectionId)) {
+    return IDEATION_SECTION_TEMPLATES[sectionId];
+  }
+
+  if (!isPromptSectionId(sectionId)) {
+    return null;
   }
 
   const template = SECTION_TEMPLATES[sectionId];
@@ -287,6 +332,14 @@ function hasManualDirectiveValue(snapshot: ValidationSnapshot, placeholder: Plac
   }
 }
 
+function hasAnyManualDirectiveValue(snapshot: ValidationSnapshot): boolean {
+  return (
+    hasValue(snapshot.generationSession.manual_moment_directive?.must_render) ||
+    hasValue(snapshot.generationSession.manual_moment_directive?.may_render_if_naturally_caused) ||
+    hasValue(snapshot.generationSession.manual_moment_directive?.do_not_force)
+  );
+}
+
 function hasValue(value: unknown): boolean {
   if (Array.isArray(value)) {
     return value.some(hasValue);
@@ -331,4 +384,14 @@ function renderCompositeSection(sectionId: CompositeSectionId, snapshot: Validat
 
 function isCompositeSectionId(sectionId: PromptSectionId): sectionId is CompositeSectionId {
   return Object.hasOwn(COMPOSITE_SECTION_TEMPLATES, sectionId);
+}
+
+function isPromptSectionId(sectionId: PromptSectionId | IdeationSectionId): sectionId is PromptSectionId {
+  return (SECTION_ORDER as readonly string[]).includes(sectionId);
+}
+
+function isStaticIdeationSectionId(
+  sectionId: PromptSectionId | IdeationSectionId
+): sectionId is Exclude<IdeationSectionId, PromptSectionId | "ideation_slots"> {
+  return Object.hasOwn(IDEATION_SECTION_TEMPLATES, sectionId);
 }

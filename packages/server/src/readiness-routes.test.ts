@@ -55,6 +55,29 @@ describe("readiness routes", () => {
     expect(response.json()).toEqual({ ok: false, kind: "no-open-project", message: "No project is open." });
   });
 
+  it("accepts ideation prompt-kind readiness requests and rejects unknown prompt kinds", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const ideation = await fastify.inject({
+      method: "POST",
+      url: "/api/readiness",
+      payload: { promptKind: "ideation" }
+    });
+
+    expect(ideation.statusCode).toBe(200);
+    expect(ideation.json()).toHaveProperty("canPreview");
+
+    const invalid = await fastify.inject({
+      method: "POST",
+      url: "/api/readiness",
+      payload: { promptKind: "outline" }
+    });
+
+    expect(invalid.statusCode).toBe(400);
+    expect(invalid.json()).toMatchObject({ ok: false, kind: "invalid-readiness-request" });
+  });
+
   it("returns 422 for malformed snapshot dependencies", async () => {
     const fastify = app();
     await openProject(fastify);

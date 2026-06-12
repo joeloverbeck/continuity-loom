@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.3.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.4.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -36,7 +36,9 @@ The compiler must not use accepted prose, rejected candidates, regenerated candi
 
 Generation-time fields may override story defaults for the current request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy.
 
-## 3. Prompt section order
+## 3. Prompt Section Orders
+
+### 3.1 Prose Prompt Section Order
 
 The compiler renders sections in this order:
 
@@ -72,6 +74,48 @@ The compiler renders sections in this order:
 Rationale: hard state and launch state appear early; compact active pressure and voice pins appear before long cast dossiers; final stop/output instructions remain at the final edge.
 
 Active working-set lines are pressure summaries, not archive copies. A record may appear both in a pressure summary and in a later detail section only when the pressure rendering performs a different prompt function: current causal force, behavior/interiority pressure, physical constraint, reveal safety, or voice salience.
+
+### 3.2 Ideation Prompt Section Order
+
+The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, selected records, physical continuity, and contradiction prohibitions. It replaces prose-only launch/output sections with ideation-specific sections.
+
+The compiler renders ideation sections in this order:
+
+1. `<authority_hierarchy>`
+2. `<content_policy>`
+3. `<story_contract>`
+4. `<hard_canon>` when at least one hard-canon FACT is selected
+5. `<current_authoritative_state>`
+6. `<immediate_handoff>`
+7. `<manual_directive>` when at least one manual directive field is supplied
+8. `<pov_knowledge_constraints>`
+9. `<audience_knowledge>`
+10. `<secrets_and_reveal_constraints>`
+11. `<active_working_set>`
+12. `<active_plans_and_intentions>`
+13. `<active_clocks>`
+14. `<active_obligations_and_consequences>`
+15. `<active_open_threads>`
+16. `<active_cast_full_dossiers>`
+17. `<present_minor_cast>` when at least one present-minor cast record is selected
+18. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+19. `<relevant_facts_beliefs_events>`
+20. `<locations_objects_affordances>`
+21. `<physical_continuity>`
+22. `<contradiction_prohibitions>`
+23. `<ideation_role>`
+24. `<ideation_slots>`
+25. `<ideation_quality>`
+26. `<ideation_output_format>`
+
+Ideation prompts do not render `<role>`, `<prose_mode>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
+
+- `<ideation_role>` from a template constant that frames the model as a story-development consultant, forbids prose/dialogue/scene text/branches/outlines, and labels output as non-canonical scratch.
+- `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, and skip-if-unsupported rules.
+- `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
+
+The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus display label, with deterministic suffixes for collisions.
 
 ## 4. Exhaustive placeholder mapping
 

@@ -19,6 +19,10 @@ body {
   border-right: 1px solid #d8dee8;
   background: #ffffff;
   padding: 24px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
 }
 
 .contentPane {
@@ -193,7 +197,23 @@ body {
 }
 
 .projectHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
+}
+
+.projectHeader .secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 h2 {
@@ -1043,6 +1063,185 @@ button:disabled:hover {
   margin-top: 12px;
 }
 
+.ideateQuarantine {
+  margin-bottom: 16px;
+}
+
+.ideateScratchPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.ideateScratchLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 16px;
+  align-items: start;
+}
+
+.ideateControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.segmentedControl,
+.ideateControlActions,
+.slateCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmentedControl button {
+  min-width: 92px;
+}
+
+.segmentedControl-active {
+  background: #245a8d;
+  color: #ffffff;
+}
+
+.controlField,
+.checkboxField {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.checkboxField {
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.checkboxField input {
+  width: auto;
+}
+
+.ideateRawScratch {
+  display: grid;
+  gap: 12px;
+}
+
+.ideateRawScratch pre {
+  box-sizing: border-box;
+  max-height: 280px;
+  overflow: auto;
+  margin: 0;
+  border: 1px solid #d8dee8;
+  border-radius: 6px;
+  background: #f7f9fc;
+  padding: 14px;
+  color: #202124;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ideateRawList {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 24px;
+}
+
+.ideateRawList article {
+  display: grid;
+  gap: 8px;
+}
+
+.ideateRawList h4,
+.ideateRawList p {
+  margin: 0;
+}
+
+.slateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.slateCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f7f9fc;
+  padding: 14px;
+}
+
+.slateCardHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.slateCardHeader h4,
+.slateCard p,
+.keepersPanel p {
+  margin: 0;
+}
+
+.operatorBadge,
+.citationChip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.operatorBadge {
+  background: #e8eef6;
+  color: #245a8d;
+}
+
+.citationChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citationChip {
+  border: 1px solid #c9d2df;
+  background: #ffffff;
+  color: #39445a;
+}
+
+.citationChip-warning {
+  border-color: #c99a2e;
+  color: #6d4a00;
+  background: #fff8e7;
+}
+
+.keepersPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.keepersList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keepersList li {
+  display: grid;
+  gap: 8px;
+}
+
 .candidateBody {
   box-sizing: border-box;
   max-height: 420px;
@@ -1454,6 +1653,9 @@ button:disabled:hover {
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid #d8dee8;
+    position: static;
+    height: auto;
+    overflow: visible;
   }
 
   .contentPane {
@@ -1465,6 +1667,10 @@ button:disabled:hover {
   }
 
   .promptPreviewLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .ideateScratchLayout {
     grid-template-columns: 1fr;
   }
 

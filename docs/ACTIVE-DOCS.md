@@ -29,6 +29,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/ACTIVE-DOCS.md` | Authority registry, active-vs-archive boundaries, and change-intake rules for coding agents. | reference | support |
 | `docs/compiler-contract.md` | Deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy. | reference | domain authority for prompt compiler and validation bridge |
 | `docs/prompt-template.md` | Universal prose prompt template text and placeholder structure. | reference | domain authority for universal prompt template |
+| `docs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | reference | domain authority for ideation prompt template |
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
 | `docs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | audit | domain authority for implemented validation-rule inventory |
@@ -56,10 +57,11 @@ These explain how the implemented local app is installed, run, verified, and use
 
 - `docs/compiler-contract.md`
 - `docs/prompt-template.md`
+- `docs/ideation-prompt-template.md`
 - `docs/prompt-template-rationale.md`
 - `docs/story-record-schema.md`
 
-Use these when changing prompt rendering, placeholder mapping, compiler metadata, validation-focus behavior, record schemas, generation-time brief schemas, active working set behavior, or story-config surfaces.
+Use these when changing prompt rendering, placeholder mapping, compiler metadata, validation-focus behavior, record schemas, generation-time brief schemas, active working set behavior, story-config surfaces, or the grounded ideation prompt.
 
 ### Stress, demo, and regression-support docs
 
@@ -153,6 +155,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; as of this writing, template is `1.0.0`, compiler is `1.2.0`, and compiler contract is `1.2.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; as of this writing, template is `1.1.0`, compiler is `1.3.0`, and compiler contract is `1.4.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

@@ -271,6 +271,39 @@ The compiler receives a normalized readiness input. Normalization may apply dete
 
 Continuity Loom uses one universal prose prompt template in v1.
 
+v1 also recognizes exactly one additional prompt class: the **assistance
+prompt** (§9.1). The universal-section list below, the local-prose stop rule,
+and every rule in this document that addresses "the prompt" in the context of
+prose generation govern the prose prompt class. Assistance prompts are governed
+by §9.1 and §26.
+
+### 9.1 Assistance prompt class
+
+An assistance prompt is a deterministic, inspectable prompt compiled from the
+same authority sources as the prose prompt (story configuration, active working
+set, generation-time fields) whose output is never story text. Assistance
+prompts must:
+
+- compile deterministically: identical story configuration, active working
+  set, generation-time fields, assistance-request inputs (e.g. mode, slot
+  count, slot selection, avoid-list), template version, and compiler version
+  must produce an identical prompt;
+- be inspectable before sending, under the same audit boundaries as §22;
+- be gated by deterministic validation: hard contradictions, impossible
+  state, and unsafe provider/policy configuration block assistance compilation
+  and sending exactly as they block prose generation; prose-launch readiness
+  requirements (e.g. the manual directive) apply only where the assistance
+  purpose needs them;
+- never produce story prose, and never be used to request story prose;
+- never have their output enter any prose prompt, story record, or
+  generation-time field automatically (§26 assistance-output rules).
+
+The local-prose stop rule and the prohibition on requesting alternatives,
+plans, or summaries (§4.6, §11 item 7, §19, §29.5) scope to the prose prompt
+class; an assistance prompt may request non-prose alternatives such as
+premise-level ideas or questions, because no prose writer is being asked to
+branch the story.
+
 The template must remain portable, inspectable, and model-provider-neutral. Markdown with XML-style section boundaries is the constitutional default because it is readable to humans and gives models stable semantic boundaries.
 
 Provider-specific wrappers, hacks, hidden adapters, or model-specific prompt forks must not enter the v1 core. Future provider-specific compatibility layers may exist only if explicitly justified and only if they preserve the universal prompt contract.
@@ -367,7 +400,7 @@ This blocker taxonomy defines when readiness blockers are legitimate. Readiness 
 4. The manual directive requires impossible knowledge, perception, movement, timing, physical action, reveal, or provider-policy violation based on explicit fields.
 5. The selected local mode requires state that is deterministically absent.
 6. Provider or content-policy configuration is missing or contradictory enough that sending would be unsafe.
-7. The prompt would ask the external prose writer to plan, summarize future consequences, produce alternatives, produce branches, or perform nonlocal story-structure work.
+7. The prompt would ask the external prose writer to plan, summarize future consequences, produce alternatives, produce branches, or perform nonlocal story-structure work (this condition scopes to prose prompts; a sanctioned §9.1 assistance prompt may request non-prose alternatives).
 
 Hard validation must include objective continuity contradictions and deterministically detectable prompt-safety gaps, including:
 
@@ -647,7 +680,7 @@ The stop rule must dominate length preference.
 
 The prose should stop when a materially new response point appears: a decision lands, a refusal changes the pressure, a question demands response, a threat becomes active, a secret is partially exposed or withheld, a practical result changes what can happen next, an interruption changes the pressure, or an irreversible event occurs.
 
-The prompt must not ask for alternate options, future summaries, downstream consequences, chapter packages, or global continuation plans.
+The prompt must not ask for alternate options, future summaries, downstream consequences, chapter packages, or global continuation plans (this scopes to the prose prompt class; a sanctioned §9.1 assistance prompt may request non-prose alternatives).
 
 ---
 
@@ -818,6 +851,27 @@ Any LLM-assisted continuity feature must obey these rules:
 
 LLM assistance may reduce clerical effort. It must not replace human continuity authority.
 
+### 26.1 Assistance-output handling
+
+All LLM-assistance surfaces, present and future, obey these shared rules:
+
+- assistance is invoked opt-in, per invocation, pull-based — never
+  background-automatic and never push-based;
+- assistance output is quarantined: it is rendered in a clearly labeled
+  non-canonical surface, is not a story record, not a generation-time field,
+  and not prompt context for prose generation;
+- provenance is mandatory: assistance output must show what records or fields
+  it derives from;
+- rejected or cleared assistance output leaves no residue in the project
+  store, the active working set, or any prompt;
+- assistance output is ephemeral by default and is never logged or archived
+  by default (mirroring §22); a user may keep items in a session-scoped
+  scratch surface, which still obeys every rule above;
+- within a single assistance surface, current ephemeral output may
+  parameterize a follow-up assistance request (e.g. an avoid-duplicates list
+  for regenerating one idea) as explicit, inspectable request input; it must
+  never parameterize prose generation.
+
 ---
 
 ## 27. UI and workflow principles
@@ -916,6 +970,7 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it mutate records without explicit user review and acceptance?
 - Does it allow the external prose writer to update records?
 - Does it hide continuity changes inside generation, regeneration, or acceptance?
+- Does it let assistance output enter a prose prompt, a story record, or a generation-time field without explicit per-item user action?
 
 ### 29.3 Active working set hard fails
 
@@ -931,13 +986,13 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it make prompt output nondeterministic for identical inputs and versions?
 - Does it include accepted prose in generated prompts?
 - Does it preserve provider-specific prompt hacks as v1 core behavior?
-- Does it omit one of the universal prompt contract sections other than the designated optional sections enumerated in §9 (present minor cast, offstage relevance, hard canon) without constitutional amendment, or omit even a designated optional section nondeterministically?
+- Does it omit one of the universal prompt contract sections (prose prompts) other than the designated optional sections enumerated in §9 (present minor cast, offstage relevance, hard canon) without constitutional amendment, or omit even a designated optional section nondeterministically?
 
 ### 29.5 Validation hard fails
 
 - Does it allow generation from contradictory current state?
 - Does it allow generation when mandatory generation-time fields are missing?
-- Does it allow a manual directive or stop guidance that asks for whole chapters, global outlines, alternate options, future summaries, plot beats, or multiple response points instead of one local prose segment?
+- Does it allow a manual directive or stop guidance that asks for whole chapters, global outlines, alternate options (in a prose prompt or its directive/stop guidance), future summaries, plot beats, or multiple response points instead of one local prose segment?
 - Does it allow impossible physical movement, perception, timing, object possession, or knowledge?
 - Does it allow secret leakage when deterministic records forbid it?
 - Does it allow a user override for hard validation failure in v1?
