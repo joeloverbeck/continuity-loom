@@ -7,6 +7,7 @@ export interface IdeationKeeper {
   question?: string;
   why?: string;
   grounds: readonly string[];
+  groundLabels?: Readonly<Record<string, string>>;
   unknownCitations: readonly string[];
 }
 
@@ -28,13 +29,16 @@ export function listKeepers(): readonly IdeationKeeper[] {
   }
 }
 
-export function addKeeper(idea: IdeationKeeper): readonly IdeationKeeper[] {
+export function addKeeper(idea: IdeationKeeper, citations: Readonly<Record<string, string>> = {}): readonly IdeationKeeper[] {
   const keepers = listKeepers();
   if (keepers.some((keeper) => keeperKey(keeper) === keeperKey(idea))) {
     return keepers;
   }
 
-  const updated = [...keepers, idea];
+  const groundLabels = Object.fromEntries(
+    idea.grounds.flatMap((ground) => (citations[ground] ? [[ground, citations[ground]] as const] : []))
+  );
+  const updated = [...keepers, Object.keys(groundLabels).length > 0 ? { ...idea, groundLabels } : idea];
   sessionStorage.setItem(keepersKey, JSON.stringify(updated));
   return updated;
 }

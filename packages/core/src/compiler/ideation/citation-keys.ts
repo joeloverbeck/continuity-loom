@@ -7,25 +7,20 @@ export function citationKey(record: ValidationRecord): string {
 
 export function citationKeysFor(records: readonly ValidationRecord[]): ReadonlyMap<string, string> {
   const sortedRecords = [...records].sort(compareRecordsForKeys);
-  const baseCounts = new Map<string, number>();
+  const typeCounts = new Map<string, number>();
   const keys = new Map<string, string>();
 
   for (const record of sortedRecords) {
-    const base = citationKeyBase(record);
-    const count = baseCounts.get(base) ?? 0;
-    baseCounts.set(base, count + 1);
-    keys.set(record.id, makeCitationKey(record, count === 0 ? "" : ` ${count + 1}`));
+    const count = (typeCounts.get(record.type) ?? 0) + 1;
+    typeCounts.set(record.type, count);
+    keys.set(record.id, makeCitationKey(record, String(count)));
   }
 
   return keys;
 }
 
-function citationKeyBase(record: ValidationRecord): string {
-  return `${record.type}: ${recordLabel(record)}`;
-}
-
 function makeCitationKey(record: ValidationRecord, suffix: string): string {
-  return `[${citationKeyBase(record)}${suffix}]`;
+  return `[${record.type}-${suffix || "1"}]`;
 }
 
 function compareRecordsForKeys(left: ValidationRecord, right: ValidationRecord): number {
@@ -37,5 +32,5 @@ function compareRecordsForKeys(left: ValidationRecord, right: ValidationRecord):
 }
 
 function recordLabel(record: ValidationRecord): string {
-  return record.metadata?.displayLabel ?? displayLabel(record);
+  return displayLabel(record);
 }

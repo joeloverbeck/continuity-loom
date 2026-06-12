@@ -15,10 +15,15 @@ describe("ideation keepers", () => {
     const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
     const keeper = ideaFixture("The sealed letter changes hands.");
 
-    expect(addKeeper(keeper)).toHaveLength(1);
-    expect(listKeepers()).toEqual([keeper]);
-    expect(listKeepers()).toEqual([keeper]);
-    expect(storageSetItem).toHaveBeenCalledWith("loom.ideate.keepers.v1", JSON.stringify([keeper]));
+    const expected = {
+      ...keeper,
+      groundLabels: { "[SECRET-1]": "The letter names a ledger substitution" }
+    };
+
+    expect(addKeeper(keeper, { "[SECRET-1]": "The letter names a ledger substitution" })).toHaveLength(1);
+    expect(listKeepers()).toEqual([expected]);
+    expect(listKeepers()).toEqual([expected]);
+    expect(storageSetItem).toHaveBeenCalledWith("loom.ideate.keepers.v1", JSON.stringify([expected]));
     expect(localStorage.length).toBe(0);
   });
 
@@ -49,6 +54,13 @@ describe("ideation keepers", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(0);
   });
+
+  it("keeps older persisted keepers without resolved labels backward-compatible", () => {
+    const keeper = ideaFixture("The sealed letter changes hands.");
+    sessionStorage.setItem("loom.ideate.keepers.v1", JSON.stringify([keeper]));
+
+    expect(listKeepers()).toEqual([keeper]);
+  });
 });
 
 function ideaFixture(headline: string) {
@@ -57,7 +69,7 @@ function ideaFixture(headline: string) {
     operator: "Reveal",
     headline,
     why: "The secret and handoff pressure support it.",
-    grounds: ["[SECRET: Letter]"],
+    grounds: ["[SECRET-1]"],
     unknownCitations: []
   };
 }

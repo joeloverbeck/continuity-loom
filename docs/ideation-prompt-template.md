@@ -25,40 +25,59 @@ Changing any request field changes the compiled ideation prompt and its fingerpr
 
 The compiler renders ideation sections in this order:
 
-1. `<authority_hierarchy>`
-2. `<content_policy>`
-3. `<story_contract>`
-4. `<hard_canon>` when at least one hard-canon FACT is selected
-5. `<current_authoritative_state>`
-6. `<immediate_handoff>`
-7. `<manual_directive>` when at least one manual directive field is supplied
-8. `<pov_knowledge_constraints>`
-9. `<audience_knowledge>`
-10. `<secrets_and_reveal_constraints>`
-11. `<active_working_set>`
+1. `<ideation_role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<hard_canon>` when at least one hard-canon FACT is selected
+6. `<current_authoritative_state>`
+7. `<immediate_handoff>`
+8. `<manual_directive>` when at least one manual directive field is supplied
+9. `<pov_knowledge_constraints>`
+10. `<audience_knowledge>`
+11. `<secrets_and_reveal_constraints>`
 12. `<active_plans_and_intentions>`
 13. `<active_clocks>`
 14. `<active_obligations_and_consequences>`
 15. `<active_open_threads>`
-16. `<active_cast_full_dossiers>`
-17. `<present_minor_cast>` when at least one present-minor cast record is selected
-18. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
-19. `<relevant_facts_beliefs_events>`
-20. `<locations_objects_affordances>`
-21. `<physical_continuity>`
-22. `<contradiction_prohibitions>`
-23. `<ideation_role>`
+16. `<relationship_and_emotion_pressure>`
+17. `<active_cast_full_dossiers>`
+18. `<present_minor_cast>` when at least one present-minor cast record is selected
+19. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+20. `<relevant_facts_beliefs_events>`
+21. `<locations_objects_affordances>`
+22. `<physical_continuity>`
+23. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 24. `<ideation_slots>`
 25. `<ideation_quality>`
 26. `<ideation_output_format>`
 
-Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`.
+Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`.
 
 ## Ideation Sections
 
 ### `<ideation_role>`
 
 Frames the model as a story-development consultant for a continuity-first fiction system. It asks for premise-level ideas or questions and forbids prose, dialogue, scene text, beat sheets, outlines, branches, chapter plans, future summaries, new named entities, new facts, new locations, new objects, new secrets, and new backstory beyond compiled records. It labels the output as AI-suggested scratch, not story state, not a generation-time field, and not prompt context for prose generation.
+
+### Ideation-framed shared sections
+
+The ideation prompt uses prompt-kind-specific variants for shared contract sections that would otherwise imply prose output:
+
+- `<authority_hierarchy>` says the output contract is premise-level ideas or questions only, no prose, no record updates. It frames the manual directive as authored compatibility context, omits voice-pin/prose-craft prose-rendering references, and tells the model not to mention the hierarchy in the output.
+- `<content_policy>` resolves the same policy placeholders as the prose prompt, but its trailer says not to inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the output.
+- `<immediate_handoff>` labels `begin_after` as "The next prose segment will begin after this point" and uses a trailer that treats the handoff as user-authored continuity context for ideas rather than a prose launch command.
+- `<manual_directive>` labels `must_render` as "The author's directive for the next segment (binding context: ideas must be compatible with it)".
+
+### `<relationship_and_emotion_pressure>`
+
+Renders RELATIONSHIP and EMOTION records from the deterministic `relationship_emotion_pressure` placeholder. This is the ideation-native replacement for the relationship/emotion lane that prose renders inside `<active_working_set>`; it keeps those selected records visible without carrying the full prose pressure precis.
+
+### Ideation `<locations_objects_affordances>` and `<physical_continuity>`
+
+The ideation prompt renders every selected LOCATION and OBJECT record in `<locations_objects_affordances>` regardless of status, with status shown as a label. This prevents dormant, inactive, transferred, destroyed, or otherwise non-active records from becoming invisible when they can still ground an ideation operator.
+
+The ideation `<physical_continuity>` body is slim: current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines. It does not repeat LOCATION or OBJECT descriptions already rendered in `<locations_objects_affordances>`. The prose prompt keeps the fuller physical-continuity body and the active/available status gate for location/object detail blocks.
 
 ### `<ideation_slots>`
 
@@ -81,7 +100,12 @@ Defines the quality bar:
 - reveal ideas must obey compiled reveal constraints;
 - without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure;
 - unsupported slots output `SKIPPED` rather than inventing support;
-- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle;
+- ideas must be mutually distinct: no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
+
+### Ideation `<contradiction_prohibitions>`
+
+The ideation prompt renders the same `<contradiction_prohibitions>` tag as the prose prompt at section position 23, but from an ideation-specific template. It keeps continuity, canon, physical-continuity, POV-knowledge, reveal-lock, future-consequence, and no-global-structure prohibitions. It omits prose-craft-only prohibitions such as generic speech, catchphrase reuse, exposition-dialogue, and abstract diagnosis because the ideator must not write prose.
 
 ### `<ideation_output_format>`
 
@@ -135,7 +159,22 @@ The compiler assigns slots deterministically from selected records only:
 
 ## Citation Keys
 
-Every selected record used for ideation receives a deterministic bracketed citation key derived from record type plus display label or id, with deterministic suffixes for collisions. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+Every selected record used for ideation receives a deterministic bracketed citation key in the form `[<TYPE>-<n>]`, for example `[BELIEF-1]` or `[VISIBLE AFFORDANCE-1]`. The ordinal is the record's 1-based position among selected records of the same type under the compiler's deterministic full-label sort. Keys are stable for identical selected records and versions, but no cross-session identity is promised after selection or record edits.
+
+Keys render inline once at the record's authoritative ideation section:
+
+| Record type | Inline key render site |
+|---|---|
+| `SECRET` | `<secrets_and_reveal_constraints>` / writer-visible hidden truths |
+| `BELIEF`, `FACT`, `EVENT` | `<relevant_facts_beliefs_events>` |
+| `CLOCK` | `<active_clocks>` |
+| `PLAN`, `INTENTION` | `<active_plans_and_intentions>` |
+| `OBLIGATION`, `CONSEQUENCE` | `<active_obligations_and_consequences>` |
+| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `OPEN THREAD` | `<active_open_threads>` |
+| `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION` | `<locations_objects_affordances>` |
+
+`EMOTION` and `ENTITY STATUS` records render without keys because they do not ground ideation operators. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
 
 ## UI Handling
 

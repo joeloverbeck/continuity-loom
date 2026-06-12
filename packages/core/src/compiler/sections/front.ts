@@ -7,6 +7,9 @@ import type { PlaceholderResolver } from "../types.js";
 type JsonRecord = Record<string, unknown>;
 
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+export interface FrontRenderOptions {
+  citationKeys?: ReadonlyMap<string, string> | undefined;
+}
 
 const frontResolvers: ResolverMap = {
   rating_label: (snapshot) => valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.rating_label, "rating_label"),
@@ -139,9 +142,7 @@ const frontResolvers: ResolverMap = {
   dramatic_irony_permissions: (snapshot) => renderDramaticIrony(snapshot),
   audience_perception_ambiguous: (snapshot) => renderAudiencePerceptionAmbiguous(snapshot),
 
-  writer_visible_hidden_truths: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, renderWriterVisibleHiddenTruth).join("\n") ||
-    EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths,
+  writer_visible_hidden_truths: (snapshot) => renderWriterVisibleHiddenTruths(snapshot),
   secret_holders: (snapshot) =>
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => resolveEntityLabels(snapshot, payload.holders)).join("\n") ||
     EMPTY_STATE_CONSTANTS.secret_holders,
@@ -180,6 +181,19 @@ export const FRONT_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<PlaceholderNam
       ])
     ) as Partial<Record<PlaceholderName, PlaceholderResolver>>
   );
+
+export function renderFrontPlaceholder(
+  placeholder: PlaceholderName,
+  snapshot: ValidationSnapshot,
+  options: FrontRenderOptions = {}
+): string | undefined {
+  switch (placeholder) {
+    case "writer_visible_hidden_truths":
+      return renderWriterVisibleHiddenTruths(snapshot, options);
+    default:
+      return undefined;
+  }
+}
 
 function valueOrEmpty(value: unknown, placeholder: PlaceholderName): string {
   const rendered = renderValue(value);
@@ -306,6 +320,19 @@ function renderWriterVisibleHiddenTruth(payload: JsonRecord): string {
   }
 
   return secretKind ? `[${secretKind}] ${secretClaim}` : secretClaim;
+}
+
+function renderWriterVisibleHiddenTruths(snapshot: ValidationSnapshot, options: FrontRenderOptions = {}): string {
+  return (
+    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload, record) =>
+      keyedText(renderWriterVisibleHiddenTruth(payload), record, options)
+    ).join("\n") || EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
+  );
+}
+
+function keyedText(text: string, record: ValidationRecord, options: FrontRenderOptions): string {
+  const key = options.citationKeys?.get(record.id);
+  return key ? `${key} ${text}` : text;
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {

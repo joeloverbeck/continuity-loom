@@ -47,17 +47,20 @@ describe("ideation end-to-end capstone", () => {
   });
 
   it("composes demo ideation compile, route parsing, citation verification, determinism, and no persistence", async () => {
-    sendChatCompletionMock.mockResolvedValue({
-      ok: true,
-      candidate: {
-        text: [
-          "IDEA 1",
-          "operator: Reveal",
-          "headline: Let the hinge scrape expose pressure without revealing the letter.",
-          "why: The selected secret and cellar objects support a clue-only pressure move.",
-          "grounds: [SECRET: The letter names a ledger substitution], [UNKNOWN: stray]"
-        ].join("\n")
-      }
+    sendChatCompletionMock.mockImplementation(async ({ prompt }) => {
+      const secretKey = prompt.match(/\[SECRET-\d+\]/)?.[0] ?? "[SECRET-0]";
+      return {
+        ok: true,
+        candidate: {
+          text: [
+            "IDEA 1",
+            "operator: Reveal",
+            "headline: Let the hinge scrape expose pressure without revealing the letter.",
+            "why: The selected secret and cellar objects support a clue-only pressure move.",
+            `grounds: ${secretKey}, [UNKNOWN-99]`
+          ].join("\n")
+        }
+      };
     });
     const fastify = app();
     await createDemo(fastify);
@@ -88,9 +91,9 @@ describe("ideation end-to-end capstone", () => {
     expect(body.ideas).toHaveLength(1);
     expect(body.ideas[0]).toMatchObject({
       headline: "Let the hinge scrape expose pressure without revealing the letter.",
-      unknownCitations: ["[UNKNOWN: stray]"]
+      unknownCitations: ["[UNKNOWN-99]"]
     });
-    expect(body.ideas[0]?.grounds).toContain("[SECRET: The letter names a ledger substitution]");
+    expect(body.ideas[0]?.grounds).toContain("[SECRET-1]");
     expect(body.metadata.versions).toEqual({ template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);

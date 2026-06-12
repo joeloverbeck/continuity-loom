@@ -29,7 +29,7 @@ type IdeateSurfaceState =
 type ScratchState =
   | { status: "empty" }
   | { status: "sending" }
-  | { status: "ideas"; ideas: readonly ParsedIdeationIdea[] }
+  | { status: "ideas"; ideas: readonly ParsedIdeationIdea[]; citations: Record<string, string> }
   | { status: "malformed"; raw: string }
   | { status: "error"; message: string };
 
@@ -103,7 +103,7 @@ export function IdeateView(): React.JSX.Element {
 
         setScratchState((current) => {
           if (replacementSlotNumber === undefined || current.status !== "ideas") {
-            return { status: "ideas", ideas: result.ideas };
+            return { status: "ideas", ideas: result.ideas, citations: result.citations };
           }
 
           const replacement = result.ideas.find((idea) => idea.slotNumber === replacementSlotNumber) ?? result.ideas[0];
@@ -113,6 +113,7 @@ export function IdeateView(): React.JSX.Element {
 
           return {
             status: "ideas",
+            citations: result.citations,
             ideas: current.ideas.map((idea) => idea.slotNumber === replacementSlotNumber ? replacement : idea)
           };
         });
@@ -150,7 +151,7 @@ export function IdeateView(): React.JSX.Element {
   }
 
   function keepIdea(idea: ParsedIdeationIdea): void {
-    setKeepers(addKeeper(idea));
+    setKeepers(addKeeper(idea, scratchState.status === "ideas" ? scratchState.citations : {}));
   }
 
   function unkeepIdea(idea: IdeationKeeper): void {
@@ -367,6 +368,7 @@ function ScratchPanel({
               <SlateCard
                 key={idea.slotNumber}
                 idea={idea}
+                citations={state.citations}
                 isKept={keeperKeys.has(keeperKey(idea))}
                 onKeep={onKeepIdea}
                 onRegenerate={onRegenerateSlot}
@@ -397,6 +399,18 @@ function KeepersPanel({
           {keepers.map((keeper) => (
             <li key={keeperKey(keeper)}>
               <span>{ideaTitle(keeper)}</span>
+              {keeper.grounds.length > 0 ? (
+                <div className="citationChipList" aria-label={`Grounds for kept ${ideaTitle(keeper)}`}>
+                  {keeper.grounds.map((ground) => (
+                    <span
+                      className={keeper.unknownCitations.includes(ground) ? "citationChip citationChip-warning" : "citationChip"}
+                      key={ground}
+                    >
+                      {keeper.groundLabels?.[ground] ?? ground}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <button type="button" className="secondaryButton" onClick={() => onRemoveKeeper(keeper)}>Remove</button>
             </li>
           ))}

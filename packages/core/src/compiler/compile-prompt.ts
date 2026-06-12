@@ -1,11 +1,16 @@
 import type { ValidationSnapshot } from "../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
 import { estimatePromptTokens, fingerprintPrompt } from "./fingerprint.js";
+import { citationKeysFor } from "./ideation/citation-keys.js";
 import type { IdeationRequest, PromptKind } from "./ideation/types.js";
 import { resolvePlaceholder, type PlaceholderName } from "./placeholder-map.js";
+import { renderFrontPlaceholder } from "./sections/front.js";
 import { renderIdeationSlotsSection } from "./sections/ideation.js";
+import { renderPressurePlaceholder } from "./sections/pressure.js";
+import { renderTailPlaceholder } from "./sections/records-tail.js";
 import {
   COMPOSITE_SECTION_TEMPLATES,
+  IDEATION_CONTENT_POLICY_TEMPLATE,
   IDEATION_SECTION_ORDER,
   IDEATION_SECTION_TEMPLATES,
   SECTION_ORDER,
@@ -17,6 +22,11 @@ import {
 import type { CompileResult } from "./types.js";
 
 const placeholderPattern = /\{([a-zA-Z0-9_]+)\}/g;
+
+interface RenderContext {
+  isIdeationPrompt: boolean;
+  citationKeys?: ReadonlyMap<string, string>;
+}
 
 const currentAuthoritativeStateLines: readonly {
   label: string;
@@ -79,6 +89,18 @@ const povKnowledgeConstraintBlocks: readonly {
   { label: "POV cannot perceive right now", placeholder: "pov_cannot_perceive_now" }
 ];
 
+const secretsAndRevealConstraintBlocks: readonly {
+  label: string;
+  placeholder: PlaceholderName;
+}[] = [
+  { label: "Writer-visible hidden truths", placeholder: "writer_visible_hidden_truths" },
+  { label: "Secret holders", placeholder: "secret_holders" },
+  { label: "Characters who must not know yet", placeholder: "secret_non_holders_to_protect" },
+  { label: "Allowed clues and surface cues now", placeholder: "allowed_clues_and_surface_cues" },
+  { label: "Forbidden reveals now", placeholder: "forbidden_reveals" },
+  { label: "Reveal permission", placeholder: "reveal_permissions" }
+];
+
 export { SECTION_ORDER };
 
 export interface CompilePromptOptions {
@@ -108,15 +130,22 @@ function renderPrompt(snapshot: ValidationSnapshot, options: CompilePromptOption
   return [
     "# Generated Prose Prompt",
     "",
-    ...SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, {}, false)).filter((section) => section !== null)
+    ...SECTION_ORDER.map((sectionId) =>
+      renderSection(sectionId, snapshot, {}, { isIdeationPrompt: false })
+    ).filter((section) => section !== null)
   ].join("\n\n");
 }
 
 function renderIdeationPrompt(snapshot: ValidationSnapshot, ideationRequest: Partial<IdeationRequest>): string {
+  const context: RenderContext = {
+    isIdeationPrompt: true,
+    citationKeys: citationKeysFor(snapshot.records)
+  };
+
   return [
     "# Grounded Ideation Prompt",
     "",
-    ...IDEATION_SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, ideationRequest, true)).filter(
+    ...IDEATION_SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, ideationRequest, context)).filter(
       (section) => section !== null
     )
   ].join("\n\n");
@@ -126,7 +155,7 @@ function renderSection(
   sectionId: PromptSectionId | IdeationSectionId,
   snapshot: ValidationSnapshot,
   ideationRequest: Partial<IdeationRequest> = {},
-  omitEmptyManualDirective = false
+  context: RenderContext
 ): string | null {
   if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
     return null;
@@ -141,7 +170,7 @@ function renderSection(
   }
 
   if (isPromptSectionId(sectionId) && isCompositeSectionId(sectionId)) {
-    return renderCompositeSection(sectionId, snapshot);
+    return renderCompositeSection(sectionId, snapshot, context);
   }
 
   if (sectionId === "current_authoritative_state") {
@@ -149,19 +178,23 @@ function renderSection(
   }
 
   if (sectionId === "immediate_handoff") {
-    return renderImmediateHandoffSection(snapshot);
+    return renderImmediateHandoffSection(snapshot, context);
   }
 
   if (sectionId === "manual_directive") {
-    if (omitEmptyManualDirective && !hasAnyManualDirectiveValue(snapshot)) {
+    if (context.isIdeationPrompt && !hasAnyManualDirectiveValue(snapshot)) {
       return null;
     }
 
-    return renderManualDirectiveSection(snapshot);
+    return renderManualDirectiveSection(snapshot, context);
   }
 
   if (sectionId === "pov_knowledge_constraints") {
     return renderPovKnowledgeConstraintsSection(snapshot);
+  }
+
+  if (sectionId === "secrets_and_reveal_constraints") {
+    return renderSecretsAndRevealConstraintsSection(snapshot, context);
   }
 
   if (sectionId === "audience_knowledge") {
@@ -176,6 +209,14 @@ function renderSection(
     return renderIdeationSlotsSection(snapshot, ideationRequest);
   }
 
+  if (sectionId === "content_policy" && context.isIdeationPrompt) {
+    return renderTemplate(IDEATION_CONTENT_POLICY_TEMPLATE, snapshot, context);
+  }
+
+  if (sectionId === "relationship_and_emotion_pressure") {
+    return renderTemplate(IDEATION_SECTION_TEMPLATES.relationship_and_emotion_pressure, snapshot, context);
+  }
+
   if (isStaticIdeationSectionId(sectionId)) {
     return IDEATION_SECTION_TEMPLATES[sectionId];
   }
@@ -185,7 +226,7 @@ function renderSection(
   }
 
   const template = SECTION_TEMPLATES[sectionId];
-  return renderTemplate(template, snapshot);
+  return renderTemplate(template, snapshot, context);
 }
 
 function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): string {
@@ -196,24 +237,43 @@ function renderCurrentAuthoritativeStateSection(snapshot: ValidationSnapshot): s
   return `<current_authoritative_state>\n${renderedLines.join("\n")}\n</current_authoritative_state>`;
 }
 
-function renderImmediateHandoffSection(snapshot: ValidationSnapshot): string {
+function renderImmediateHandoffSection(snapshot: ValidationSnapshot, context: RenderContext): string {
   const renderedBlocks = immediateHandoffBlocks
     .filter((block) => block.alwaysRender || hasImmediateHandoffValue(snapshot, block.placeholder))
-    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+    .map((block) => `${immediateHandoffLabel(block, context)}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+  const trailer = context.isIdeationPrompt
+    ? "Use this handoff only as user-authored continuity context. Ideas must continue from this point; do not treat archived prose as canon."
+    : "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure.";
   const body = [
     ...renderedBlocks,
-    "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context. Do not recap except through brief POV-colored perception or pressure."
+    trailer
   ].join("\n\n");
 
   return `<immediate_handoff>\n${body}\n</immediate_handoff>`;
 }
 
-function renderManualDirectiveSection(snapshot: ValidationSnapshot): string {
+function renderManualDirectiveSection(snapshot: ValidationSnapshot, context: RenderContext): string {
   const renderedBlocks = manualDirectiveBlocks
     .filter((block) => block.alwaysRender || hasManualDirectiveValue(snapshot, block.placeholder))
-    .map((block) => `${block.label}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
+    .map((block) => `${manualDirectiveLabel(block, context)}:\n${resolvePlaceholder(block.placeholder, snapshot)}`);
 
   return `<manual_directive priority="high">\n${renderedBlocks.join("\n\n")}\n</manual_directive>`;
+}
+
+function immediateHandoffLabel(block: (typeof immediateHandoffBlocks)[number], context: RenderContext): string {
+  if (context.isIdeationPrompt && block.placeholder === "begin_after") {
+    return "The next prose segment will begin after this point";
+  }
+
+  return block.label;
+}
+
+function manualDirectiveLabel(block: (typeof manualDirectiveBlocks)[number], context: RenderContext): string {
+  if (context.isIdeationPrompt && block.placeholder === "manual_must_render") {
+    return "The author's directive for the next segment (binding context: ideas must be compatible with it)";
+  }
+
+  return block.label;
 }
 
 function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): string {
@@ -229,6 +289,22 @@ function renderPovKnowledgeConstraintsSection(snapshot: ValidationSnapshot): str
   const body = [...renderedBlocks, staticRules].join("\n\n");
 
   return `<pov_knowledge_constraints>\n${body}\n</pov_knowledge_constraints>`;
+}
+
+function renderSecretsAndRevealConstraintsSection(snapshot: ValidationSnapshot, context: RenderContext): string {
+  const renderedBlocks = secretsAndRevealConstraintBlocks
+    .map((block) => {
+      const value = resolveTemplatePlaceholder(block.placeholder, snapshot, context).trim();
+      return value && value !== EMPTY_STATE_CONSTANTS[block.placeholder] ? `${block.label}:\n${value}` : "";
+    })
+    .filter(Boolean);
+  const staticRules = SECTION_TEMPLATES.secrets_and_reveal_constraints
+    .split("\n\n")
+    .find((block) => block.startsWith("A secret may be revealed only if"))
+    ?.replace("\n</secrets_and_reveal_constraints>", "");
+  const body = [...renderedBlocks, staticRules].filter(Boolean).join("\n\n");
+
+  return `<secrets_and_reveal_constraints>\n${body}\n</secrets_and_reveal_constraints>`;
 }
 
 function renderStopRuleSection(snapshot: ValidationSnapshot): string {
@@ -269,10 +345,41 @@ function renderAudienceKnowledgeSection(snapshot: ValidationSnapshot): string {
   );
 }
 
-function renderTemplate(template: string, snapshot: ValidationSnapshot): string {
+function renderTemplate(
+  template: string,
+  snapshot: ValidationSnapshot,
+  context: RenderContext = { isIdeationPrompt: false }
+): string {
   return template.replace(placeholderPattern, (_match, placeholder: string) =>
-    resolvePlaceholder(placeholder, snapshot)
+    resolveTemplatePlaceholder(placeholder, snapshot, context)
   );
+}
+
+function resolveTemplatePlaceholder(placeholder: string, snapshot: ValidationSnapshot, context: RenderContext): string {
+  if (!context.isIdeationPrompt) {
+    return resolvePlaceholder(placeholder, snapshot);
+  }
+
+  const placeholderName = placeholder as PlaceholderName;
+  const frontValue = renderFrontPlaceholder(placeholderName, snapshot, { citationKeys: context.citationKeys });
+  if (frontValue !== undefined) {
+    return frontValue;
+  }
+
+  const pressureValue = renderPressurePlaceholder(placeholderName, snapshot, { citationKeys: context.citationKeys });
+  if (pressureValue !== undefined) {
+    return pressureValue;
+  }
+
+  const tailValue = renderTailPlaceholder(placeholderName, snapshot, {
+    ideation: true,
+    citationKeys: context.citationKeys
+  });
+  if (tailValue !== undefined) {
+    return tailValue;
+  }
+
+  return resolvePlaceholder(placeholder, snapshot);
 }
 
 function hasCurrentStateValue(snapshot: ValidationSnapshot, placeholder: PlaceholderName): boolean {
@@ -369,11 +476,11 @@ function shouldRenderOffstageRelevance(snapshot: ValidationSnapshot): boolean {
   );
 }
 
-function renderCompositeSection(sectionId: CompositeSectionId, snapshot: ValidationSnapshot): string {
+function renderCompositeSection(sectionId: CompositeSectionId, snapshot: ValidationSnapshot, context: RenderContext): string {
   const template = COMPOSITE_SECTION_TEMPLATES[sectionId];
   const blocks = template.subBlocks
     .map((block) => {
-      const content = resolvePlaceholder(block.placeholder, snapshot).trim();
+      const content = resolveTemplatePlaceholder(block.placeholder, snapshot, context).trim();
       return content ? `${block.label}:\n${content}` : "";
     })
     .filter(Boolean);

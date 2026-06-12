@@ -58,8 +58,11 @@ describe("compiler scaffold", () => {
       EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
     );
     expect(sectionBody(prompt, "audience_knowledge")).toContain(EMPTY_STATE_CONSTANTS.audience_knows);
-    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).not.toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
+    );
+    expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
+      "A secret may be revealed only if its reveal permission allows reveal"
     );
     expect(sectionBody(prompt, "active_working_set")).toContain(
       EMPTY_STATE_CONSTANTS.active_action_pressure

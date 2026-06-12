@@ -76,7 +76,7 @@ describe("ideation slot assignment", () => {
 
     expect(assignment.slots.at(-1)).toMatchObject({
       operator: "reincorporate_dormant",
-      recordKeys: ["[CLOCK: Clock A]"]
+      recordKeys: ["[CLOCK-1]"]
     });
 
     const tieAssignment = assignSlots(
@@ -87,7 +87,7 @@ describe("ideation slot assignment", () => {
       { count: 3, dormantSlot: true }
     );
 
-    expect(tieAssignment.slots.at(-1)?.recordKeys).toEqual(["[PLAN: Plan A]"]);
+    expect(tieAssignment.slots.at(-1)?.recordKeys).toEqual(["[PLAN-1]"]);
   });
 
   it("uses identical slot machinery for question mode", () => {
@@ -101,7 +101,7 @@ describe("ideation slot assignment", () => {
     );
   });
 
-  it("is deterministic for identical inputs and resolves citation-key collisions predictably", () => {
+  it("is deterministic for identical inputs and assigns per-type citation-key ordinals predictably", () => {
     const records = [
       record("fact-b", "FACT", "Same Label"),
       record("fact-a", "FACT", "Same Label"),
@@ -112,9 +112,34 @@ describe("ideation slot assignment", () => {
       assignSlots(records, { count: 3, dormantSlot: true })
     );
     expect([...citationKeysFor(records).entries()]).toEqual([
-      ["belief-a", "[BELIEF: Belief A]"],
-      ["fact-a", "[FACT: Same Label]"],
-      ["fact-b", "[FACT: Same Label 2]"]
+      ["belief-a", "[BELIEF-1]"],
+      ["fact-a", "[FACT-1]"],
+      ["fact-b", "[FACT-2]"]
+    ]);
+    expect([...citationKeysFor([...records].reverse()).entries()]).toEqual([
+      ["belief-a", "[BELIEF-1]"],
+      ["fact-a", "[FACT-1]"],
+      ["fact-b", "[FACT-2]"]
+    ]);
+  });
+
+  it("orders citation-key ordinals from full record labels instead of truncated browse labels", () => {
+    const fullClaim =
+      "Jon Urena keeps daydreaming in his spare time, during commute, even in bed because the missing audit page gives his fear a shape";
+    const truncatedBrowseLabel = `${fullClaim.slice(0, 77)}...`;
+    const records = [
+      record("belief-long", "BELIEF", truncatedBrowseLabel, {
+        claim: fullClaim
+      }),
+      record("belief-alpha", "BELIEF", "Later browse label", {
+        claim: "A private worry that sorts before Jon's full claim"
+      })
+    ];
+
+    expect(citationKeysFor(records).get("belief-alpha")).toBe("[BELIEF-1]");
+    expect(citationKeysFor(records).get("belief-long")).toBe("[BELIEF-2]");
+    expect(assignSlots(records, { count: 3, dormantSlot: true }).slots.at(-1)?.recordKeys).toEqual([
+      "[BELIEF-1]"
     ]);
   });
 });
@@ -126,10 +151,12 @@ function record(
   payload: Record<string, unknown> = {},
   updatedAt = "2026-06-05T00:00:00.000Z"
 ): ValidationRecord {
+  const fullPayload = { ...labelPayload(type, label), ...payload };
+
   return {
     id,
     type,
-    payload,
+    payload: fullPayload,
     metadata: {
       id,
       type,
@@ -139,4 +166,31 @@ function record(
       archived: false
     }
   };
+}
+
+function labelPayload(type: string, label: string): Record<string, unknown> {
+  switch (type) {
+    case "BELIEF":
+      return { claim: label };
+    case "CLOCK":
+    case "OPEN THREAD":
+      return { title: label };
+    case "CONSEQUENCE":
+      return { current_effect: label };
+    case "EVENT":
+    case "RELATIONSHIP":
+      return { description: label };
+    case "FACT":
+      return { statement: label };
+    case "INTENTION":
+      return { intent: label };
+    case "OBLIGATION":
+      return { terms: label };
+    case "PLAN":
+      return { objective: label };
+    case "SECRET":
+      return { secret_claim: label };
+    default:
+      return { label };
+  }
 }

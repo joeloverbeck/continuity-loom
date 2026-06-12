@@ -77,45 +77,74 @@ Active working-set lines are pressure summaries, not archive copies. A record ma
 
 ### 3.2 Ideation Prompt Section Order
 
-The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, selected records, physical continuity, and contradiction prohibitions. It replaces prose-only launch/output sections with ideation-specific sections.
+The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, and selected records. It replaces prose-only launch/output sections with ideation-specific sections, renders an ideation-specific continuity-only contradiction-prohibitions body inside the shared `<contradiction_prohibitions>` tag, and uses ideation-only render variants where the assistance task needs less duplicated context.
 
 The compiler renders ideation sections in this order:
 
-1. `<authority_hierarchy>`
-2. `<content_policy>`
-3. `<story_contract>`
-4. `<hard_canon>` when at least one hard-canon FACT is selected
-5. `<current_authoritative_state>`
-6. `<immediate_handoff>`
-7. `<manual_directive>` when at least one manual directive field is supplied
-8. `<pov_knowledge_constraints>`
-9. `<audience_knowledge>`
-10. `<secrets_and_reveal_constraints>`
-11. `<active_working_set>`
+1. `<ideation_role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<hard_canon>` when at least one hard-canon FACT is selected
+6. `<current_authoritative_state>`
+7. `<immediate_handoff>`
+8. `<manual_directive>` when at least one manual directive field is supplied
+9. `<pov_knowledge_constraints>`
+10. `<audience_knowledge>`
+11. `<secrets_and_reveal_constraints>`
 12. `<active_plans_and_intentions>`
 13. `<active_clocks>`
 14. `<active_obligations_and_consequences>`
 15. `<active_open_threads>`
-16. `<active_cast_full_dossiers>`
-17. `<present_minor_cast>` when at least one present-minor cast record is selected
-18. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
-19. `<relevant_facts_beliefs_events>`
-20. `<locations_objects_affordances>`
-21. `<physical_continuity>`
-22. `<contradiction_prohibitions>`
-23. `<ideation_role>`
+16. `<relationship_and_emotion_pressure>`
+17. `<active_cast_full_dossiers>`
+18. `<present_minor_cast>` when at least one present-minor cast record is selected
+19. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+20. `<relevant_facts_beliefs_events>`
+21. `<locations_objects_affordances>`
+22. `<physical_continuity>`
+23. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 24. `<ideation_slots>`
 25. `<ideation_quality>`
 26. `<ideation_output_format>`
 
-Ideation prompts do not render `<role>`, `<prose_mode>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
+Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
 
 - `<ideation_role>` from a template constant that frames the model as a story-development consultant, forbids prose/dialogue/scene text/branches/outlines, and labels output as non-canonical scratch.
+- `<authority_hierarchy>` from an ideation-specific static template: item 2 says "premise-level ideas or questions only, no prose, no record updates"; the manual directive is framed as authored compatibility context; voice-pin and prose-craft references are omitted; the closing line says not to mention the hierarchy in the output.
+- `<content_policy>` from an ideation-specific placeholder-resolved template whose policy trailer says not to inject assistant disclaimers, warnings, analysis, or safety moralizing into the output.
+- `<immediate_handoff>` with ideation labels: `begin_after` renders as "The next prose segment will begin after this point", and the trailer says to use the handoff only as user-authored continuity context, continue ideas from that point, and not treat archived prose as canon.
+- `<manual_directive>` with an ideation label for `must_render`: "The author's directive for the next segment (binding context: ideas must be compatible with it)".
+- `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
 - `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
-- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, and skip-if-unsupported rules.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
+- `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
 
-The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus display label, with deterministic suffixes for collisions.
+For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
+
+The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
+
+Ideation citation keys render inline at exactly one authoritative site per operator-eligible record:
+
+| Record type | Ideation inline key render site |
+|---|---|
+| `SECRET` | `<secrets_and_reveal_constraints>` / writer-visible hidden truths |
+| `BELIEF` | `<relevant_facts_beliefs_events>` belief sub-blocks |
+| `FACT` | `<relevant_facts_beliefs_events>` fact sub-blocks |
+| `EVENT` | `<relevant_facts_beliefs_events>` event sub-blocks |
+| `CLOCK` | `<active_clocks>` |
+| `PLAN` | `<active_plans_and_intentions>` / Plans |
+| `INTENTION` | `<active_plans_and_intentions>` / Intentions |
+| `OBLIGATION` | `<active_obligations_and_consequences>` / Obligations |
+| `CONSEQUENCE` | `<active_obligations_and_consequences>` / Consequences |
+| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `OPEN THREAD` | `<active_open_threads>` |
+| `VISIBLE AFFORDANCE` | `<locations_objects_affordances>` / Visible affordances |
+| `OBJECT` | `<locations_objects_affordances>` / Objects |
+| `LOCATION` | `<locations_objects_affordances>` / Locations |
+
+`EMOTION` and `ENTITY STATUS` records render unkeyed because they do not ground ideation operators. The prose prompt never renders ideation citation keys.
 
 ## 4. Exhaustive placeholder mapping
 
@@ -173,12 +202,12 @@ Requiredness terms:
 | `{audience_does_not_know}` | AUDIENCE KNOWLEDGE PROFILE.audience_does_not_know | No unless audience ignorance matters | No block | `None specified` | Avoids overrevealing. |
 | `{dramatic_irony_permissions}` | AUDIENCE KNOWLEDGE PROFILE.dramatic_irony_permissions | Required when audience knows more than POV | Block if absent in heavy irony scene | `None specified` | Does not grant POV knowledge. |
 | `{audience_perception_ambiguous}` | AUDIENCE KNOWLEDGE PROFILE from active `SECRET` where `audience_visibility === "ambiguous"` | No unless active ambiguous secret exists | No block | Omit line when empty | Audience grasp deliberately unresolved; does not assert audience knowledge or grant POV knowledge. |
-| `{writer_visible_hidden_truths}` | Selected SECRET.secret_claim prefixed with SECRET.secret_kind, plus writer-visible hidden facts | Required when any active secret matters | Block if absent but secret tag set | `No active secrets or reveal locks selected` | Writer-facing only; kind prefix is a deterministic category label, not extra knowledge. |
-| `{secret_holders}` | SECRET.holders resolved to referenced records' display labels | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Raw-id fallback only when a referenced record is absent from the selected snapshot; holder list may be all/unknown only if explicit. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
-| `{secret_non_holders_to_protect}` | SECRET.non_holders_to_protect resolved to referenced records' display labels | Required for active secret | Block if blank | `No active secrets or reveal locks selected` | Defines protected ignorance. Raw-id fallback only when a referenced record is absent from the selected snapshot; `all_except_holders` and `none` render as deterministic phrases. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
-| `{allowed_clues_and_surface_cues}` | SECRET.allowed_surface_cues + `clue_carriers` entries with `status: "available"` | Required for clue pressure; optional otherwise | Block if clue pressure tag set and absent | `None specified` | Surface cues without reveal; clue carriers surface only `clue_text`, not `discovered_by` ids or audience metadata. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
-| `{forbidden_reveals}` | SECRET.forbidden_reveals | Required for active secret | Block if blank | `None specified` only when no active secret; active secrets may use the affirmative `none` sentinel, which renders as `No reveals are forbidden beyond the stated reveal permission.` | Prevents narrator leakage. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
-| `{reveal_permissions}` | SECRET.reveal_permission + reveal_triggers | Required for active secret | Block if blank or contradictory | `No active secrets or reveal locks selected` | `locked` cannot be overridden by directive. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
+| `{writer_visible_hidden_truths}` | Selected SECRET.secret_claim prefixed with SECRET.secret_kind, plus writer-visible hidden facts | Required when any active secret matters | Block if absent but secret tag set | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Writer-facing only; kind prefix is a deterministic category label, not extra knowledge. |
+| `{secret_holders}` | SECRET.holders resolved to referenced records' display labels | Required for active secret | Block if blank | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Raw-id fallback only when a referenced record is absent from the selected snapshot; holder list may be all/unknown only if explicit. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
+| `{secret_non_holders_to_protect}` | SECRET.non_holders_to_protect resolved to referenced records' display labels | Required for active secret | Block if blank | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Defines protected ignorance. Raw-id fallback only when a referenced record is absent from the selected snapshot; `all_except_holders` and `none` render as deterministic phrases. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
+| `{allowed_clues_and_surface_cues}` | SECRET.allowed_surface_cues + `clue_carriers` entries with `status: "available"` | Required for clue pressure; optional otherwise | Block if clue pressure tag set and absent | Omit line when empty; underlying empty constant remains `None specified` | Surface cues without reveal; clue carriers surface only `clue_text`, not `discovered_by` ids or audience metadata. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
+| `{forbidden_reveals}` | SECRET.forbidden_reveals | Required for active secret | Block if blank | Omit line when empty; active secrets may use the affirmative `none` sentinel, which renders as `No reveals are forbidden beyond the stated reveal permission.` | Prevents narrator leakage. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
+| `{reveal_permissions}` | SECRET.reveal_permission + reveal_triggers | Required for active secret | Block if blank or contradictory | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | `locked` cannot be overridden by directive. Use the secret label or compact identifier plus the lane-specific rule. Do not restate the full `secret_claim` in this lane unless omission would make the lane ambiguous. |
 | `{active_action_pressure}` | User-authored pressure summary + selected INTENTION/PLAN/AFFORDANCE/CONSEQUENCE/OPEN THREAD grouped deterministically | Yes | Warn if empty; block if directive lacks enough context | `None beyond detailed records below` | Not an LLM summary. INTENTION and PLAN lines prefix the holder's resolved display label with raw-id fallback; holder-less action-pressure records render without a name prefix. CONSEQUENCE lines render `possible_next_effect` as their summary text. Unlike the detailed `<active_*>` sections, this summary retains non-active action-pressure records with a deterministic display-label annotation: INTENTION/PLAN/OPEN THREAD/CONSEQUENCE statuses other than `active`, and VISIBLE AFFORDANCE statuses other than `available`, render as `[<type> <status>]` so blocked, suspended, answered, resolved, or unavailable pressure is not mistaken for active pressure. VISIBLE AFFORDANCE action text belongs here as current action possibility; do not duplicate the same action text in `{material_pressure}`. |
 | `{active_knowledge_pressure}` | User-authored pressure summary + selected SECRET/BELIEF/FACT/EVENT lanes, narrowed by pressure predicates | Yes when knowledge/secrecy matters | Warn/block as applicable | `None beyond detailed records below` | Keeps information pressure salient without copying the archive. BELIEF pressure leads with `behavioral_effect` when present, followed by a compact belief identifier/claim. This behavioral-effect-first ordering applies to all beliefs in the pressure summary by design — the pressure line conveys current behavioral/interiority force, not the dossier — and intentionally differs from the `{pov_relevant_beliefs}` detail row, which leads POV beliefs with truth relation; the difference is a deliberate dual-frame, not a drift bug. SECRET pressure may state the hidden truth only when reveal constraints still govern its use. FACT pressure renders only when `fact_kind=hard_canon`, `fact_kind=current_state`, `scope=current_segment`, or `salience=high|critical`; ordinary low/medium setting/discovered facts remain in the detail sections. EVENT pressure renders `immediate_previous` and `recent_causal` events with `current_relevance` other than `none`; `offstage` events render here only when `current_relevance=high|critical`; `relevant_backstory` and `withheld` events do not render here unless separately represented by a SECRET/reveal lane. If the projected pressure text equals the display label, render it once. EVENT knowledge pressure renders the description claim without appending the relevance enum. |
 | `{relationship_emotion_pressure}` | Selected RELATIONSHIP/EMOTION records rendered as the description label plus pressure text and, for RELATIONSHIP, current expression | No unless local pressure depends on it | Warn if expected but absent | `None beyond detailed records below` | Avoid raw axes alone. |
@@ -336,6 +365,7 @@ Repeated warnings should deduplicate by affected field/record group and present 
 - `<immediate_handoff>` always renders the section tag, `recent_causal_context`, `prior_accepted_prose_status_or_handoff_note`, and the accepted-prose firewall instruction text. `last_visible_moment` and `begin_after` omit both label and value when empty.
 - `<manual_directive priority="high">` always renders the section tag and `must_render`. `may_render_if_naturally_caused` and `do_not_force` omit both label and value when empty.
 - `<pov_knowledge_constraints>` always renders the section tag and the static prompt-label and non-POV interiority rules. `pov_knows`, `pov_believes_suspects_misreads`, `pov_does_not_know`, and `pov_cannot_perceive_now` omit both label and value when empty.
+- `<secrets_and_reveal_constraints>` always renders the section tag and the static reveal-permission rule. `writer_visible_hidden_truths`, `secret_holders`, `secret_non_holders_to_protect`, `allowed_clues_and_surface_cues`, `forbidden_reveals`, and `reveal_permissions` omit both label and value when empty. The affirmative `forbidden_reveals: "none"` sentinel is content, not empty state, and still renders its deterministic sentence.
 - `<hard_canon>`, `<present_minor_cast>`, and `<offstage_relevance>` are the designated optional universal-prompt sections. `<hard_canon>` omits the entire section when no hard-canon FACT is selected and no immutable story lock is active. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
 - Optional list sub-blocks inside `<relevant_facts_beliefs_events>` and `<locations_objects_affordances>` omit both the sub-block header and value when empty. If all sibling sub-blocks in one of those composite sections are empty, the section tag remains and renders the single deterministic section-level empty state `None specified`.
 

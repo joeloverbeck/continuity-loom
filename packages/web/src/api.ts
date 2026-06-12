@@ -123,7 +123,7 @@ export interface ParsedIdeationIdea {
 }
 
 export type IdeateResponse =
-  | { ok: true; ideas: readonly ParsedIdeationIdea[]; metadata: GenerationMetadata }
+  | { ok: true; ideas: readonly ParsedIdeationIdea[]; citations: Record<string, string>; metadata: GenerationMetadata }
   | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata }
   | CompileBlocked
   | ApiFailure
