@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `POST /api/ideate` route + idea-block parser/citation-verifier module; `POST /api/compile` accepts optional `promptKind`/`ideationRequest` for preview; new route + secret-leakage tests. No record mutation, no server-side persistence.
-**Deps**: SPEC021GROIDEPRO-003 (ideation `compilePrompt` + compiled citation-key set), SPEC021GROIDEPRO-004 (kind-aware relaxed gate)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation `compilePrompt` + compiled citation-key set), SPEC021GROIDEPRO-004 (kind-aware relaxed gate)
 
 ## Problem
 
@@ -60,7 +60,7 @@ The Ideate view needs a localhost endpoint that compiles the ideation prompt, ga
 ## Out of Scope
 
 - The web Ideate view and any UI — SPEC021GROIDEPRO-006/007.
-- Operator assignment — `archive/tickets/SPEC021GROIDEPRO-002.md`; ideation prompt text and version bumps — SPEC021GROIDEPRO-003.
+- Operator assignment — `archive/tickets/SPEC021GROIDEPRO-002.md`; ideation prompt text and version bumps — `archive/tickets/SPEC021GROIDEPRO-003.md`.
 - Per-purpose model settings — deferred (spec §Out of Scope); `/api/ideate` uses the global model.
 - Persisting ideas, keepers, or prompts server-side — forbidden (§22); keepers are client session scope (007).
 

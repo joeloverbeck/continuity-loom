@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — new `docs/ideation-prompt-template.md` authority doc + its mandatory `docs/ACTIVE-DOCS.md` registry entry, the ACTIVE-DOCS version-note refresh, and a `docs/user-guide.md` workflow addition; no production behavior change
-**Deps**: SPEC021GROIDEPRO-003 (ideation template + version bumps to document), SPEC021GROIDEPRO-007 (the full Ideate workflow the user-guide describes)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation template + version bumps to document), SPEC021GROIDEPRO-007 (the full Ideate workflow the user-guide describes)
 
 ## Problem
 
@@ -51,7 +51,7 @@ The ideation feature needs its documentation authorities to land coherently once
 
 ## Out of Scope
 
-- `docs/compiler-contract.md` ideation mapping — owned by SPEC021GROIDEPRO-003 (§8 same-change).
+- `docs/compiler-contract.md` ideation mapping — owned by `archive/tickets/SPEC021GROIDEPRO-003.md` (§8 same-change).
 - `docs/FOUNDATIONS.md` amendment — `archive/tickets/SPEC021GROIDEPRO-001.md`.
 - Any code, test, schema, or UI change — this is a documentation-only diff.
 - `docs/validation-rule-inventory.md` ideation column — SPEC021GROIDEPRO-004.

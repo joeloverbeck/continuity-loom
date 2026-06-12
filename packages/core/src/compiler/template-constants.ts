@@ -31,6 +31,37 @@ export const SECTION_ORDER = Object.freeze([
 
 export type PromptSectionId = (typeof SECTION_ORDER)[number];
 
+export const IDEATION_SECTION_ORDER = Object.freeze([
+  "authority_hierarchy",
+  "content_policy",
+  "story_contract",
+  "hard_canon",
+  "current_authoritative_state",
+  "immediate_handoff",
+  "manual_directive",
+  "pov_knowledge_constraints",
+  "audience_knowledge",
+  "secrets_and_reveal_constraints",
+  "active_working_set",
+  "active_plans_and_intentions",
+  "active_clocks",
+  "active_obligations_and_consequences",
+  "active_open_threads",
+  "active_cast_full_dossiers",
+  "present_minor_cast",
+  "offstage_relevance",
+  "relevant_facts_beliefs_events",
+  "locations_objects_affordances",
+  "physical_continuity",
+  "contradiction_prohibitions",
+  "ideation_role",
+  "ideation_slots",
+  "ideation_quality",
+  "ideation_output_format"
+] as const);
+
+export type IdeationSectionId = (typeof IDEATION_SECTION_ORDER)[number];
+
 export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
   relevant_facts_beliefs_events: {
     emptyState: "None specified",
@@ -61,6 +92,8 @@ export type StaticSectionId = Exclude<
   PromptSectionId,
   CompositeSectionId | "current_authoritative_state" | "immediate_handoff" | "manual_directive"
 >;
+
+export type StaticIdeationSectionId = Exclude<IdeationSectionId, PromptSectionId | "ideation_slots">;
 
 export const SECTION_TEMPLATES: Readonly<Record<StaticSectionId, string>> = Object.freeze({
   role: `<role>
@@ -370,4 +403,39 @@ No choices for the user.
 Do not mention story-structure terms such as page, scene, act, arc, midpoint, climax, beat, plot, or chapter in the prose.
 Begin directly with the next sentence of the story.
 </final_output_instruction>`
+});
+
+export const IDEATION_SECTION_TEMPLATES: Readonly<Record<StaticIdeationSectionId, string>> = Object.freeze({
+  ideation_role: `<ideation_role>
+You are a story-development consultant for a continuity-first fiction system.
+Your task is to propose premise-level ideas or questions for what could happen next.
+Do not write prose, dialogue, scene text, beat sheets, outlines, branches, chapter plans, or future summaries.
+Do not introduce new named entities, facts, locations, objects, secrets, or backstory beyond the compiled records.
+Every useful idea must remain grounded in the cited records and generation-time fields.
+The output is AI-suggested scratch, not story state, not a generation-time field, and not prompt context for prose generation.
+</ideation_role>`,
+  ideation_quality: `<ideation_quality>
+Each idea should satisfy the eventfulness rubric: relevant to the selected records, unexpected within the storyworld's expectation order, persistent, hard to reverse, and non-repetitive.
+Move the story far without contradicting any compiled record, current authoritative state, physical constraint, POV knowledge boundary, or reveal lock.
+Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
+If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
+Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+</ideation_quality>`,
+  ideation_output_format: `<ideation_output_format>
+Output only an ideas block. Malformed output is discarded.
+You may think briefly before the block, but do not include chain-of-thought or private reasoning.
+
+For each non-skipped slot, use this flat tagged format:
+IDEA <slot-number>
+operator: <operator name>
+headline: <one sentence, premise level, about 25 words or fewer>
+why: <one sentence paraphrasing why the cited records support the idea>
+grounds: <comma-separated citation keys from that slot>
+
+For question mode, replace headline with question and phrase it as an author-facing story question.
+For an unsupported slot, output:
+IDEA <slot-number>
+operator: <operator name>
+SKIPPED: no compiled record supports this slot.
+</ideation_output_format>`
 });

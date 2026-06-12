@@ -54,7 +54,7 @@ Ideation must stay fail-closed but with a relaxed blocker set: a contradictory o
 
 ## Out of Scope
 
-- The ideation compile path / section templates — SPEC021GROIDEPRO-003.
+- The ideation compile path / section templates — `archive/tickets/SPEC021GROIDEPRO-003.md`.
 - The server route that *calls* `deriveReadiness` with a kind and gates `/api/ideate` — SPEC021GROIDEPRO-005.
 - Any new diagnostic code or severity change — this ticket adds only an applicability dimension.
 - Adding an override path — there is no override in v1 (§4.5).

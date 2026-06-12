@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-003: Ideation prompt assembly + version bumps + compiler-contract mapping + golden
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `compilePrompt` gains an ideation kind (new `IDEATION_SECTION_ORDER`, four ideation section templates, citation-key rendering on reused record sections); `version.ts` template/compiler/contract bumps; `docs/compiler-contract.md` ideation mapping; new byte-frozen ideation golden. Prose-prompt behavior is byte-identical (default kind stays `prose`).
@@ -98,3 +98,27 @@ With the operator engine in place (002), this ticket makes a second deterministi
 1. `npm test -- compiler-ideation-golden compiler-golden compiler-front-sections compile-routes`
 2. `npm test && npm run typecheck && npm run lint && npm run build`
 3. `grep -rnE "versionInfo\.(templates|compiler|contract)\.version\)\.toBe|metadata\.versions\)\.toEqual" packages/ --include=*.ts` — the correct narrow surface to prove the version-bump blast radius is fully covered, not just the two known sites.
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added the ideation prompt compile path with `CompilePromptOptions`, `promptKind: "ideation"`, a frozen `IDEATION_SECTION_ORDER`, ideation-specific templates, and a dynamic `ideation_slots` renderer backed by the deterministic slot assignment engine.
+- Preserved the default prose prompt path and existing prose golden behavior.
+- Bumped template/compiler/contract versions to `1.1.0` / `1.3.0` / `1.4.0`.
+- Updated `docs/compiler-contract.md` with the ideation section order, request inputs, and deterministic mapping.
+- Added `compiler-ideation-golden.test.ts` and `golden-ideation.prompt.txt`; updated real API version metadata tests.
+
+Deviations:
+- The frozen ideation golden fixture includes the conventional final newline from the text fixture; the test compares the deterministic prompt plus that fixture newline.
+- Additional produced-version assertions in `packages/server/src/generate-routes.test.ts` were updated after the full suite exposed them.
+
+Verification:
+- `npm test -- compiler-ideation-golden compiler-golden compiler-front-sections compile-routes` passed: 42 tests.
+- `npm test -- generate-routes compile-routes compiler-ideation-golden compiler-front-sections` passed: 49 tests.
+- `rg -n "1\\.0\\.0.*1\\.2\\.0.*1\\.3\\.0|versionInfo\\.(templates|compiler|contract)\\.version\\)\\.toBe|metadata\\.versions\\)\\.toEqual" packages --glob '*.ts'` confirmed current produced-version assertions use `1.1.0` / `1.3.0` / `1.4.0`; remaining old triples are explicit fixture inputs.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 113 files, 880 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.
