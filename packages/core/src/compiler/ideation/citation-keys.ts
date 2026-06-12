@@ -37,5 +37,5 @@ function compareRecordsForKeys(left: ValidationRecord, right: ValidationRecord):
 }
 
 function recordLabel(record: ValidationRecord): string {
-  return record.metadata?.displayLabel ?? displayLabel(record);
+  return displayLabel(record);
 }

@@ -77,7 +77,7 @@ Active working-set lines are pressure summaries, not archive copies. A record ma
 
 ### 3.2 Ideation Prompt Section Order
 
-The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, selected records, physical continuity, and contradiction prohibitions. It replaces prose-only launch/output sections with ideation-specific sections.
+The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, selected records, and physical continuity. It replaces prose-only launch/output sections with ideation-specific sections, and renders an ideation-specific continuity-only contradiction-prohibitions body inside the shared `<contradiction_prohibitions>` tag.
 
 The compiler renders ideation sections in this order:
 
@@ -102,7 +102,7 @@ The compiler renders ideation sections in this order:
 19. `<relevant_facts_beliefs_events>`
 20. `<locations_objects_affordances>`
 21. `<physical_continuity>`
-22. `<contradiction_prohibitions>`
+22. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 23. `<ideation_role>`
 24. `<ideation_slots>`
 25. `<ideation_quality>`
@@ -114,8 +114,9 @@ Ideation prompts do not render `<role>`, `<prose_mode>`, `<invention_permissions
 - `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
 - `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, and skip-if-unsupported rules.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
+- `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
 
-The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus display label, with deterministic suffixes for collisions.
+The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and derived from selected record type plus the full display label, not the truncated browse label, with deterministic suffixes for collisions.
 
 ## 4. Exhaustive placeholder mapping
 

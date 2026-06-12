@@ -53,7 +53,7 @@ export const IDEATION_SECTION_ORDER = Object.freeze([
   "relevant_facts_beliefs_events",
   "locations_objects_affordances",
   "physical_continuity",
-  "contradiction_prohibitions",
+  "ideation_contradiction_prohibitions",
   "ideation_role",
   "ideation_slots",
   "ideation_quality",
@@ -406,6 +406,17 @@ Begin directly with the next sentence of the story.
 });
 
 export const IDEATION_SECTION_TEMPLATES: Readonly<Record<StaticIdeationSectionId, string>> = Object.freeze({
+  ideation_contradiction_prohibitions: `<contradiction_prohibitions>
+Do not:
+- contradict hard canon or current authoritative state
+- ignore physical continuity
+- move characters or objects without plausible action/time
+- give characters knowledge they do not have
+- reveal secrets to the wrong character or narrator
+- turn character prejudice, fantasy, or misread into objective fact unless selected records establish it
+- summarize future consequences as settled continuity
+- add global plot structure, act machinery, chapter framing, choices, notes, or commentary
+</contradiction_prohibitions>`,
   ideation_role: `<ideation_role>
 You are a story-development consultant for a continuity-first fiction system.
 Your task is to propose premise-level ideas or questions for what could happen next.

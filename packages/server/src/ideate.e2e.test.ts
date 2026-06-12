@@ -55,7 +55,7 @@ describe("ideation end-to-end capstone", () => {
           "operator: Reveal",
           "headline: Let the hinge scrape expose pressure without revealing the letter.",
           "why: The selected secret and cellar objects support a clue-only pressure move.",
-          "grounds: [SECRET: The letter names a ledger substitution], [UNKNOWN: stray]"
+          "grounds: [SECRET: The sealed letter says a market ledger page was replaced before Orin's audit.], [UNKNOWN: stray]"
         ].join("\n")
       }
     });
@@ -90,7 +90,9 @@ describe("ideation end-to-end capstone", () => {
       headline: "Let the hinge scrape expose pressure without revealing the letter.",
       unknownCitations: ["[UNKNOWN: stray]"]
     });
-    expect(body.ideas[0]?.grounds).toContain("[SECRET: The letter names a ledger substitution]");
+    expect(body.ideas[0]?.grounds).toContain(
+      "[SECRET: The sealed letter says a market ledger page was replaced before Orin's audit.]"
+    );
     expect(body.metadata.versions).toEqual({ template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);

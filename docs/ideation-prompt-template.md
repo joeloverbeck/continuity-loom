@@ -46,7 +46,7 @@ The compiler renders ideation sections in this order:
 19. `<relevant_facts_beliefs_events>`
 20. `<locations_objects_affordances>`
 21. `<physical_continuity>`
-22. `<contradiction_prohibitions>`
+22. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
 23. `<ideation_role>`
 24. `<ideation_slots>`
 25. `<ideation_quality>`
@@ -82,6 +82,10 @@ Defines the quality bar:
 - without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure;
 - unsupported slots output `SKIPPED` rather than inventing support;
 - prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
+
+### Ideation `<contradiction_prohibitions>`
+
+The ideation prompt renders the same `<contradiction_prohibitions>` tag as the prose prompt at section position 22, but from an ideation-specific template. It keeps continuity, canon, physical-continuity, POV-knowledge, reveal-lock, future-consequence, and no-global-structure prohibitions. It omits prose-craft-only prohibitions such as generic speech, catchphrase reuse, exposition-dialogue, and abstract diagnosis because the ideator must not write prose.
 
 ### `<ideation_output_format>`
 
@@ -135,7 +139,7 @@ The compiler assigns slots deterministically from selected records only:
 
 ## Citation Keys
 
-Every selected record used for ideation receives a deterministic bracketed citation key derived from record type plus display label or id, with deterministic suffixes for collisions. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+Every selected record used for ideation receives a deterministic bracketed citation key derived from record type plus the record's full display label or id, not the truncated browse label, with deterministic suffixes for collisions. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
 
 ## UI Handling
 

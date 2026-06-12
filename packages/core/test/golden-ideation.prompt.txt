@@ -115,7 +115,7 @@ POV knows:
 - The sealed letter says a market ledger page was replaced before Orin's audit.
 
 POV believes, suspects, or misreads:
-- Niko will be safer if he knows a letter exists but not what it says.
+- Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous
 
 Prompt-label rule:
 Prompt labels, dossier headings, and entity names are writer-facing handles. They do not grant the POV knowledge of names, identities, secrets, motives, backstory, or offstage facts.
@@ -173,8 +173,8 @@ Knowledge pressure:
 - The sealed letter says a market ledger page was replaced before Orin's audit.
 - The market bell rang early, warning Elin that Orin's audit rounds may start before noon.
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.
-- Elin blocks Niko from touching the flour bin while trying not to lie outright.; Niko will be safer if he knows a letter exists but not what it says.
 - Niko challenges her evasions and watches the flour bin.; Elin hid something connected to the audit, but he does not know it is a letter.
+- Elin blocks Niko from touching the flour bin while trying not to lie outright.; Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous
 
 Relationship and emotion pressure:
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
@@ -257,7 +257,7 @@ Offstage pressure or interruption is active, but no offstage cast slice has been
 
 <relevant_facts_beliefs_events>
 POV-relevant beliefs:
-- Niko will be safer if he knows a letter exists but not what it says.; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
+- Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous; truth: contested; mode: believes; confidence: medium; access: authorial_initialization; behavior: Elin blocks Niko from touching the flour bin while trying not to lie outright.; visibility: private
 
 Non-POV behavior-shaping beliefs:
 - Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace; visibility: shared
@@ -316,13 +316,8 @@ Do not:
 - give characters knowledge they do not have
 - reveal secrets to the wrong character or narrator
 - turn character prejudice, fantasy, or misread into objective fact unless selected records establish it
-- flatten active cast into generic speech or generic psychology
-- copy verbatim, closely echo, or turn sample utterances into catchphrases; `may_reuse_cadence_not_text` permits rhythm/function transfer only, and `canonical_phrase` still requires immediate cause
-- summarize future consequences
-- resolve immediate tension unless the directive requires it
+- summarize future consequences as settled continuity
 - add global plot structure, act machinery, chapter framing, choices, notes, or commentary
-- write exposition-dialogue unless the moment pressures the character to say it
-- replace concrete behavior with abstract diagnosis
 </contradiction_prohibitions>
 
 <ideation_role>
@@ -336,7 +331,7 @@ The output is AI-suggested scratch, not story state, not a generation-time field
 
 <ideation_slots>
 Mode: ideas. Render each slot as a premise-level possibility.
-Slate shrank from 5 requested slots to 4 grounded slots. Do not pad.
+Slate contains 5 grounded slots.
 
 Slot 1: Reveal
 Operator id: reveal
@@ -346,7 +341,7 @@ Grounds: [SECRET: The sealed letter says a market ledger page was replaced befor
 Slot 2: Falsify a Belief
 Operator id: falsify_belief
 Definition: Make a selected belief collide with a selected fact or event that can expose its limits.
-Grounds: [BELIEF: Niko will be safer if he knows a letter exists but not what it says.], [BELIEF: Elin hid something connected to the audit, but he does not know it is a letter.], [EVENT: The market bell rang early, warning Elin that Orin's audit rounds may start before noon.], [EVENT: Niko followed flour smears to the cellar after seeing Elin close the shop early.]
+Grounds: [BELIEF: Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous], [BELIEF: Elin hid something connected to the audit, but he does not know it is a letter.], [EVENT: The market bell rang early, warning Elin that Orin's audit rounds may start before noon.], [EVENT: Niko followed flour smears to the cellar after seeing Elin close the shop early.]
 
 Slot 3: Clock Advances
 Operator id: clock_advances
@@ -357,6 +352,11 @@ Slot 4: Plan Meets Friction
 Operator id: plan_meets_friction
 Definition: Turn a selected plan or intention into a yes-but or no-and complication.
 Grounds: [INTENTION: Keep the sealed letter hidden until she knows whether Orin is already on the stair.], [INTENTION: Make Elin admit what kind of danger she has pulled him near.]
+
+Slot 5: Reincorporate the Dormant
+Operator id: reincorporate_dormant
+Definition: Bring back the least-recently-updated selected pressure record as fresh causal pressure.
+Grounds: [BELIEF: Niko will be safer if he knows a letter exists but not what it says, because knowing the contents before Orin arrives would make his next question dangerous]
 </ideation_slots>
 
 <ideation_quality>

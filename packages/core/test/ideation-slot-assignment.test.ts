@@ -117,6 +117,22 @@ describe("ideation slot assignment", () => {
       ["fact-b", "[FACT: Same Label 2]"]
     ]);
   });
+
+  it("derives citation keys from full record labels instead of truncated browse labels", () => {
+    const fullClaim =
+      "Jon Urena keeps daydreaming in his spare time, during commute, even in bed because the missing audit page gives his fear a shape";
+    const truncatedBrowseLabel = `${fullClaim.slice(0, 77)}...`;
+    const records = [
+      record("belief-long", "BELIEF", truncatedBrowseLabel, {
+        claim: fullClaim
+      })
+    ];
+
+    expect(citationKeysFor(records).get("belief-long")).toBe(`[BELIEF: ${fullClaim}]`);
+    expect(assignSlots(records, { count: 3, dormantSlot: true }).slots.at(-1)?.recordKeys).toEqual([
+      `[BELIEF: ${fullClaim}]`
+    ]);
+  });
 });
 
 function record(
@@ -126,10 +142,12 @@ function record(
   payload: Record<string, unknown> = {},
   updatedAt = "2026-06-05T00:00:00.000Z"
 ): ValidationRecord {
+  const fullPayload = { ...labelPayload(type, label), ...payload };
+
   return {
     id,
     type,
-    payload,
+    payload: fullPayload,
     metadata: {
       id,
       type,
@@ -139,4 +157,31 @@ function record(
       archived: false
     }
   };
+}
+
+function labelPayload(type: string, label: string): Record<string, unknown> {
+  switch (type) {
+    case "BELIEF":
+      return { claim: label };
+    case "CLOCK":
+    case "OPEN THREAD":
+      return { title: label };
+    case "CONSEQUENCE":
+      return { current_effect: label };
+    case "EVENT":
+    case "RELATIONSHIP":
+      return { description: label };
+    case "FACT":
+      return { statement: label };
+    case "INTENTION":
+      return { intent: label };
+    case "OBLIGATION":
+      return { terms: label };
+    case "PLAN":
+      return { objective: label };
+    case "SECRET":
+      return { secret_claim: label };
+    default:
+      return { label };
+  }
 }
