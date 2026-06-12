@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-004: Kind-aware validation readiness (relaxed ideation gate, still fail-closed)
 
-**Status**: PENDING
+**Status**: ✅ COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `deriveReadiness` becomes prompt-kind aware via a new per-kind blocker-applicability map; `docs/validation-rule-inventory.md` gains an ideation-applicability column; new readiness tests. Prose readiness is unchanged.
@@ -83,3 +83,23 @@ Ideation must stay fail-closed but with a relaxed blocker set: a contradictory o
 1. `npm test -- validation-ideation-readiness`
 2. `npm test -- validation-rule-inventory readiness` — proves the one-severity-per-code model and prose readiness are untouched.
 3. `npm test && npm run typecheck && npm run lint && npm run build`
+
+## Outcome
+
+Completed: 2026-06-12
+
+What changed:
+- Added a prompt-kind blocker applicability map in `packages/core/src/validation/kind-applicability.ts`.
+- Threaded `promptKind` through `deriveReadiness`, defaulting to `prose`, so existing prose callers remain unchanged.
+- Added ideation readiness tests proving hard contradictions still block, missing launch directive no longer blocks ideation, warnings gate neither kind, and missing provider configuration still blocks ideation send.
+- Added an ideation applicability column to `docs/validation-rule-inventory.md` and extended the inventory drift test to compare the column against the code map.
+
+Deviations:
+- The relaxation is conservative: unknown/future blocker codes still apply to ideation by default, and only explicitly listed prose-launch codes are prose-only.
+
+Verification:
+- `npm test -- validation-ideation-readiness readiness validation-rule-inventory` passed: 7 files, 40 tests.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 114 files, 884 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.
