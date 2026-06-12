@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-008: Docs — ideation template authority, ACTIVE-DOCS registry + version note, user-guide
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — new `docs/ideation-prompt-template.md` authority doc + its mandatory `docs/ACTIVE-DOCS.md` registry entry, the ACTIVE-DOCS version-note refresh, and a `docs/user-guide.md` workflow addition; no production behavior change
@@ -80,3 +80,24 @@ The ideation feature needs its documentation authorities to land coherently once
 1. `test -f docs/ideation-prompt-template.md && grep -n "ideation-prompt-template.md" docs/ACTIVE-DOCS.md`
 2. `grep -nE "template.*1\.1\.0|compiler.*1\.3\.0|contract.*1\.4\.0" docs/ACTIVE-DOCS.md && ! grep -q "compiler contract is .1\.2\.0" docs/ACTIVE-DOCS.md`
 3. `npm run lint && npm run build` — the correct boundary for a docs-only change (no test runtime touched).
+
+## Outcome
+
+Completed: 2026-06-12
+
+Changed:
+- Added `docs/ideation-prompt-template.md` as the active authority for the grounded ideation prompt template, request shape, section order, operator taxonomy, slot assignment, citation keys, and quarantined UI handling.
+- Registered `docs/ideation-prompt-template.md` in `docs/ACTIVE-DOCS.md` and added it to the prompt/compiler authority list.
+- Refreshed the ACTIVE-DOCS version note to template `1.1.0`, compiler `1.3.0`, and compiler contract `1.4.0`.
+- Added the user-guide Ideate workflow section covering pull-based use, prompt inspection, controls, regeneration, keepers, copy-by-hand, and no insertion into records/briefs/prompts.
+
+Deviations:
+- None.
+
+Verification:
+- `test -f docs/ideation-prompt-template.md && grep -n "ideation-prompt-template.md" docs/ACTIVE-DOCS.md` passed.
+- `grep -nE "template.*1\.1\.0|compiler.*1\.3\.0|contract.*1\.4\.0" docs/ACTIVE-DOCS.md` matched the refreshed version note.
+- `grep -n "compiler contract is .1\.2\.0" docs/ACTIVE-DOCS.md` returned no matches.
+- `grep -n "Ideate - What Could Happen Next" docs/user-guide.md` matched the new workflow section.
+- `npm run lint` passed.
+- `npm run build` passed; Vite reported the existing large-chunk warning.

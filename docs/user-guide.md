@@ -63,6 +63,18 @@ If validation has blockers, preview and send are disabled. There is no override 
 
 The prompt preview is operational context for the current generation session. It is not canon and is not kept as a permanent prompt archive by default.
 
+## Ideate - What Could Happen Next?
+
+Use Ideate when you are stuck before generation and want grounded, non-canonical possibilities from the active working set and Generation Brief.
+
+The Ideate view is pull-based. Open it intentionally from the primary navigation or the "Stuck? Get ideas" link on the Generation Brief page. Inspect the compiled ideation prompt before sending. The prompt uses the same selected records and generation-time fields as the prose workflow, but it asks for premise-level ideas or author-facing questions, not prose.
+
+You can choose ideas or questions, set the slate size from 3 to 6, keep or remove the dormant-record slot, generate a full slate, regenerate the whole slate, or regenerate an individual slot. Per-slot and full regeneration send the current slate titles as an avoid-list for the next ideation request.
+
+Ideas are AI-suggested scratch. They are not story state, not records, not Generation Brief fields, not accepted prose, and not prompt context for prose generation. There is no insert-into-records, insert-into-brief, or use-as-prompt action. If an idea is useful, copy it by hand and decide what durable record or brief field you want to author yourself.
+
+Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.
+
 ## OpenRouter Settings
 
 OpenRouter is the external prose transport. It is not a continuity authority.
