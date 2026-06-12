@@ -1,6 +1,6 @@
 # SPEC021GROIDEPRO-007: Web slate interactions — cards, controls, regenerate, session keepers
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new slate-card / controls / session-keepers components wired into `IdeateView`; no production engine, record, or server change. Keepers are sessionStorage-only.
@@ -89,3 +89,26 @@ On top of the Ideate shell, the author needs the actual ideation slate: 3–6 ca
 1. `npm test -- ideate/`
 2. `npm test && npm run typecheck && npm run lint && npm run build`
 3. `grep -rn "localStorage\|/api\|project-store\|projectStore" packages/web/src/ideate/keepers.ts` — must return nothing: the narrow proof that keepers are session-scoped with no persistence path.
+
+## Outcome
+
+Completed: 2026-06-12
+
+Changed:
+- Added `SlateCard`, `IdeateControls`, and a sessionStorage-only `keepers.ts` store.
+- Replaced the 006 raw idea placeholder with slate cards, citation chips, unknown-citation warnings, mode/count/dormant controls, regenerate-all, per-slot regenerate, clear-all, and a session keepers panel.
+- Wired per-slot/all regenerate to send the current slate titles as `avoidList` for the next ideation request.
+- Added tests for card rendering, question-mode display, keeper persistence/no-residue behavior, avoid-list payloads, clear-all, and no insertion affordances.
+
+Deviations:
+- The visible card action text is `Keep` instead of a thumbs-up glyph so the control remains explicit and accessible without introducing a new icon dependency.
+- Browser smoke exercised the malformed raw-scratch fallback because the live provider response omitted bracketed citation keys; parsed-card behavior is covered by component and view tests.
+
+Verification:
+- `npm test -- ideate/` passed.
+- `grep -rn "localStorage\|/api\|project-store\|projectStore" packages/web/src/ideate/keepers.ts` returned no matches.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 120 files, 906 tests.
+- `npm run build` passed; Vite reported the existing large-chunk warning.
+- Browser smoke with `/tmp/continuity-loom-ideate-007-smoke` verified `/ideate` controls, prompt inspection, keepers panel, send lifecycle, and malformed raw scratch quarantine.

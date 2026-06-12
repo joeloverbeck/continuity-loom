@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — new `docs/ideation-prompt-template.md` authority doc + its mandatory `docs/ACTIVE-DOCS.md` registry entry, the ACTIVE-DOCS version-note refresh, and a `docs/user-guide.md` workflow addition; no production behavior change
-**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation template + version bumps to document), SPEC021GROIDEPRO-007 (the full Ideate workflow the user-guide describes)
+**Deps**: `archive/tickets/SPEC021GROIDEPRO-003.md` (ideation template + version bumps to document), `archive/tickets/SPEC021GROIDEPRO-007.md` (the full Ideate workflow the user-guide describes)
 
 ## Problem
 

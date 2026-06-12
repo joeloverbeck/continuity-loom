@@ -15,6 +15,9 @@ import {
 } from "../api.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
+import { IdeateControls } from "./IdeateControls.js";
+import { SlateCard } from "./SlateCard.js";
+import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type IdeationKeeper } from "./keepers.js";
 
 type IdeateSurfaceState =
   | { status: "loading" }
@@ -30,7 +33,7 @@ type ScratchState =
   | { status: "malformed"; raw: string }
   | { status: "error"; message: string };
 
-const defaultIdeationRequest: Partial<IdeationRequest> = {
+const defaultIdeationRequest: IdeationRequest = {
   mode: "ideas",
   count: 5,
   dormantSlot: true,
@@ -40,21 +43,22 @@ const defaultIdeationRequest: Partial<IdeationRequest> = {
 export function IdeateView(): React.JSX.Element {
   const [state, setState] = useState<IdeateSurfaceState>({ status: "loading" });
   const [scratchState, setScratchState] = useState<ScratchState>({ status: "empty" });
+  const [ideationRequest, setIdeationRequest] = useState<IdeationRequest>(defaultIdeationRequest);
+  const [keepers, setKeepers] = useState<readonly IdeationKeeper[]>(() => listKeepers());
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
-    void refreshPrompt();
-  }, []);
+    void refreshPrompt(ideationRequest);
+  }, [ideationRequest]);
 
-  async function refreshPrompt(): Promise<void> {
+  async function refreshPrompt(requestInput: IdeationRequest): Promise<void> {
     setState({ status: "loading" });
-    setScratchState({ status: "empty" });
     setSearchTerm("");
 
     try {
       const [compileResult, readinessResult] = await Promise.all([
-        compileIdeation(defaultIdeationRequest),
+        compileIdeation(requestInput),
         readiness({ promptKind: "ideation" })
       ]);
 
@@ -85,11 +89,11 @@ export function IdeateView(): React.JSX.Element {
     }
   }
 
-  async function requestIdeas(): Promise<void> {
+  async function requestIdeas(requestInput: IdeationRequest = ideationRequest, replacementSlotNumber?: number): Promise<void> {
     setScratchState({ status: "sending" });
 
     try {
-      const result = await ideate(defaultIdeationRequest);
+      const result = await ideate(requestInput);
 
       if (result.ok) {
         if ("malformed" in result) {
@@ -97,13 +101,27 @@ export function IdeateView(): React.JSX.Element {
           return;
         }
 
-        setScratchState({ status: "ideas", ideas: result.ideas });
+        setScratchState((current) => {
+          if (replacementSlotNumber === undefined || current.status !== "ideas") {
+            return { status: "ideas", ideas: result.ideas };
+          }
+
+          const replacement = result.ideas.find((idea) => idea.slotNumber === replacementSlotNumber) ?? result.ideas[0];
+          if (!replacement) {
+            return current;
+          }
+
+          return {
+            status: "ideas",
+            ideas: current.ideas.map((idea) => idea.slotNumber === replacementSlotNumber ? replacement : idea)
+          };
+        });
         return;
       }
 
       if (isIdeateBlocked(result)) {
         setScratchState({ status: "empty" });
-        await refreshPrompt();
+        await refreshPrompt(ideationRequest);
         return;
       }
 
@@ -111,6 +129,32 @@ export function IdeateView(): React.JSX.Element {
     } catch {
       setScratchState({ status: "error", message: "Could not request ideation scratch." });
     }
+  }
+
+  function currentAvoidList(): string[] {
+    return scratchState.status === "ideas" ? scratchState.ideas.map(ideaTitle) : [];
+  }
+
+  function requestWithCurrentAvoidList(): IdeationRequest {
+    return { ...ideationRequest, avoidList: currentAvoidList() };
+  }
+
+  function regenerateSlot(idea: ParsedIdeationIdea): void {
+    void requestIdeas(requestWithCurrentAvoidList(), idea.slotNumber);
+  }
+
+  function clearAll(): void {
+    setScratchState({ status: "empty" });
+    clearKeepers();
+    setKeepers([]);
+  }
+
+  function keepIdea(idea: ParsedIdeationIdea): void {
+    setKeepers(addKeeper(idea));
+  }
+
+  function unkeepIdea(idea: IdeationKeeper): void {
+    setKeepers(removeKeeper(idea));
   }
 
   function copyTechnicalJson(diagnostic: ReadinessDiagnostic): void {
@@ -147,7 +191,7 @@ export function IdeateView(): React.JSX.Element {
       {state.status === "idle" ? (
         <section className="configPanel">
           <p className="muted">No ideation prompt is currently compiled.</p>
-          <button type="button" onClick={() => void refreshPrompt()}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
         </section>
       ) : null}
 
@@ -160,14 +204,14 @@ export function IdeateView(): React.JSX.Element {
             <h3 id="ideate-validation-title">READINESS</h3>
             <ReadinessChecklist readiness={state.readiness} actions={checklistActions} />
           </section>
-          <button type="button" onClick={() => void refreshPrompt()}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
         </section>
       ) : null}
 
       {state.status === "error" ? (
         <section className="previewStack">
           <p className="status statusError" role="alert">{errorMessage(state.kind, state.message)}</p>
-          <button type="button" onClick={() => void refreshPrompt()}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
         </section>
       ) : null}
 
@@ -177,9 +221,17 @@ export function IdeateView(): React.JSX.Element {
           readiness={state.readiness}
           searchTerm={searchTerm}
           scratchState={scratchState}
+          ideationRequest={ideationRequest}
+          keepers={keepers}
+          onRequestChange={setIdeationRequest}
           onSearchTermChange={setSearchTerm}
-          onRefresh={() => void refreshPrompt()}
-          onIdeate={() => void requestIdeas()}
+          onRefresh={() => void refreshPrompt(ideationRequest)}
+          onIdeate={() => void requestIdeas(ideationRequest)}
+          onRegenerateAll={() => void requestIdeas(requestWithCurrentAvoidList())}
+          onRegenerateSlot={regenerateSlot}
+          onClearAll={clearAll}
+          onKeepIdea={keepIdea}
+          onRemoveKeeper={unkeepIdea}
           onChecklistAction={checklistActions}
         />
       ) : null}
@@ -200,22 +252,39 @@ function ReadyIdeate({
   readiness,
   searchTerm,
   scratchState,
+  ideationRequest,
+  keepers,
+  onRequestChange,
   onSearchTermChange,
   onRefresh,
   onIdeate,
+  onRegenerateAll,
+  onRegenerateSlot,
+  onClearAll,
+  onKeepIdea,
+  onRemoveKeeper,
   onChecklistAction
 }: {
   result: CompileResult;
   readiness: GenerationReadiness;
   searchTerm: string;
   scratchState: ScratchState;
+  ideationRequest: IdeationRequest;
+  keepers: readonly IdeationKeeper[];
+  onRequestChange: (request: IdeationRequest) => void;
   onSearchTermChange: (value: string) => void;
   onRefresh: () => void;
   onIdeate: () => void;
+  onRegenerateAll: () => void;
+  onRegenerateSlot: (idea: ParsedIdeationIdea) => void;
+  onClearAll: () => void;
+  onKeepIdea: (idea: ParsedIdeationIdea) => void;
+  onRemoveKeeper: (idea: IdeationKeeper) => void;
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
   const canIdeate = readiness.canGenerate && scratchState.status !== "sending";
   const showReadinessChecklist = readiness.blockers.length > 0 || readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
+  const hasSlate = scratchState.status === "ideas" || scratchState.status === "malformed";
 
   return (
     <section className="previewStack">
@@ -228,9 +297,18 @@ function ReadyIdeate({
         <p className="status statusSuccess" role="status">Ready to ideate.</p>
       )}
 
+      <IdeateControls
+        request={ideationRequest}
+        canIdeate={canIdeate}
+        hasSlate={hasSlate}
+        isSending={scratchState.status === "sending"}
+        onRequestChange={onRequestChange}
+        onGenerate={onIdeate}
+        onRegenerateAll={onRegenerateAll}
+        onClearAll={onClearAll}
+      />
       <div className="previewToolbar">
-        <button type="button" onClick={onIdeate} disabled={!canIdeate}>Get ideas</button>
-        <button type="button" onClick={onRefresh}>Refresh prompt</button>
+        <button type="button" className="secondaryButton" onClick={onRefresh}>Refresh prompt</button>
       </div>
 
       {scratchState.status === "sending" ? <p className="muted" role="status">Requesting ideas...</p> : null}
@@ -239,48 +317,97 @@ function ReadyIdeate({
       ) : null}
 
       <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
-      <ScratchPanel state={scratchState} />
+      <ScratchPanel
+        state={scratchState}
+        keepers={keepers}
+        onRegenerateSlot={onRegenerateSlot}
+        onKeepIdea={onKeepIdea}
+        onRemoveKeeper={onRemoveKeeper}
+      />
     </section>
   );
 }
 
-function ScratchPanel({ state }: { state: ScratchState }): React.JSX.Element {
+function ScratchPanel({
+  state,
+  keepers,
+  onRegenerateSlot,
+  onKeepIdea,
+  onRemoveKeeper
+}: {
+  state: ScratchState;
+  keepers: readonly IdeationKeeper[];
+  onRegenerateSlot: (idea: ParsedIdeationIdea) => void;
+  onKeepIdea: (idea: ParsedIdeationIdea) => void;
+  onRemoveKeeper: (idea: IdeationKeeper) => void;
+}): React.JSX.Element {
+  const keeperKeys = new Set(keepers.map(keeperKey));
+
   return (
-    <section className="candidatePanel ideateScratchPanel" aria-labelledby="ideate-scratch-title">
-      <div className="candidateHeader">
-        <div>
-          <h3 id="ideate-scratch-title">Scratch slate</h3>
-          <p className="muted">AI-suggested scratch - not story state.</p>
+    <section className="ideateScratchLayout" aria-label="Ideation scratch">
+      <section className="candidatePanel ideateScratchPanel" aria-labelledby="ideate-scratch-title">
+        <div className="candidateHeader">
+          <div>
+            <h3 id="ideate-scratch-title">Scratch slate</h3>
+            <p className="muted">AI-suggested scratch - not story state.</p>
+          </div>
         </div>
-      </div>
-      {state.status === "empty" || state.status === "sending" ? (
-        <p className="muted">No ideas yet.</p>
-      ) : null}
-      {state.status === "malformed" ? (
-        <div className="ideateRawScratch">
-          <p className="status statusWarning" role="status">The response could not be parsed into idea blocks.</p>
-          <pre>{state.raw}</pre>
-        </div>
-      ) : null}
-      {state.status === "ideas" ? (
-        <ol className="ideateRawList">
-          {state.ideas.map((idea) => (
-            <li key={idea.slotNumber}>
-              <article>
-                <h4>{idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`}</h4>
-                <p className="muted">{idea.operator}</p>
-                {idea.why ? <p>{idea.why}</p> : null}
-                <p className="muted">Grounds: {idea.grounds.join(", ")}</p>
-                {idea.unknownCitations.length > 0 ? (
-                  <p className="status statusWarning">Unknown citations: {idea.unknownCitations.join(", ")}</p>
-                ) : null}
-              </article>
-            </li>
-          ))}
-        </ol>
-      ) : null}
+        {state.status === "empty" || state.status === "sending" ? (
+          <p className="muted">No ideas yet.</p>
+        ) : null}
+        {state.status === "malformed" ? (
+          <div className="ideateRawScratch">
+            <p className="status statusWarning" role="status">The response could not be parsed into idea blocks.</p>
+            <pre>{state.raw}</pre>
+          </div>
+        ) : null}
+        {state.status === "ideas" ? (
+          <div className="slateGrid">
+            {state.ideas.map((idea) => (
+              <SlateCard
+                key={idea.slotNumber}
+                idea={idea}
+                isKept={keeperKeys.has(keeperKey(idea))}
+                onKeep={onKeepIdea}
+                onRegenerate={onRegenerateSlot}
+              />
+            ))}
+          </div>
+        ) : null}
+      </section>
+      <KeepersPanel keepers={keepers} onRemoveKeeper={onRemoveKeeper} />
     </section>
   );
+}
+
+function KeepersPanel({
+  keepers,
+  onRemoveKeeper
+}: {
+  keepers: readonly IdeationKeeper[];
+  onRemoveKeeper: (idea: IdeationKeeper) => void;
+}): React.JSX.Element {
+  return (
+    <aside className="candidatePanel keepersPanel" aria-labelledby="keepers-title">
+      <h3 id="keepers-title">Keepers</h3>
+      <p className="muted">Session scratch - not story state.</p>
+      {keepers.length === 0 ? <p className="muted">No keepers yet.</p> : null}
+      {keepers.length > 0 ? (
+        <ul className="keepersList">
+          {keepers.map((keeper) => (
+            <li key={keeperKey(keeper)}>
+              <span>{ideaTitle(keeper)}</span>
+              <button type="button" className="secondaryButton" onClick={() => onRemoveKeeper(keeper)}>Remove</button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </aside>
+  );
+}
+
+function ideaTitle(idea: Pick<ParsedIdeationIdea, "headline" | "question" | "slotNumber">): string {
+  return idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
 }
 
 function isFailure(result: CompileResponse): result is Extract<CompileResponse, { ok: false }> {

@@ -19,6 +19,8 @@ vi.mock("../api.js", () => ({
 }));
 
 beforeEach(() => {
+  sessionStorage.clear();
+  localStorage.clear();
   vi.mocked(compileIdeation).mockReset();
   vi.mocked(ideate).mockReset();
   vi.mocked(readiness).mockReset();
@@ -89,7 +91,7 @@ describe("IdeateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
 
     expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
-    expect(screen.getByText("Grounds: [SECRET: Letter]")).toBeTruthy();
+    expect(screen.getByText("[SECRET: Letter]")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /insert/i })).toBeNull();
     expect(ideate).toHaveBeenCalledWith({
       mode: "ideas",
@@ -97,6 +99,63 @@ describe("IdeateView", () => {
       dormantSlot: true,
       avoidList: []
     });
+  });
+
+  it("sends current slate headlines as an avoid-list for per-slot regenerate", async () => {
+    vi.mocked(ideate)
+      .mockResolvedValueOnce({
+        ok: true,
+        ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+        metadata: generationMetadata()
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        ideas: [ideaFixture({ slotNumber: 1, headline: "The latch interrupts the argument." })],
+        metadata: generationMetadata()
+      });
+
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Regenerate slot" }));
+
+    expect(await screen.findByRole("heading", { name: "The latch interrupts the argument." })).toBeTruthy();
+    expect(ideate).toHaveBeenLastCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      avoidList: ["The sealed letter changes hands."]
+    });
+  });
+
+  it("keeps ideas in session scratch and clear-all removes slate and keepers", async () => {
+    vi.mocked(ideate).mockResolvedValue({
+      ok: true,
+      ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      metadata: generationMetadata()
+    });
+
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Keep" }));
+
+    expect(screen.getByRole("button", { name: "Kept" })).toBeTruthy();
+    expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toContain("The sealed letter changes hands.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
+
+    expect(screen.queryByRole("heading", { name: "The sealed letter changes hands." })).toBeNull();
+    expect(screen.getByText("No ideas yet.")).toBeTruthy();
+    expect(screen.getByText("No keepers yet.")).toBeTruthy();
+    expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toBeNull();
+    expect(localStorage.length).toBe(0);
   });
 
   it("renders malformed raw scratch instead of treating it as story state", async () => {
@@ -153,6 +212,17 @@ function generationMetadata() {
       compiler: "compiler-1",
       contract: "contract-1"
     }
+  };
+}
+
+function ideaFixture(input: { slotNumber: number; headline: string }) {
+  return {
+    slotNumber: input.slotNumber,
+    operator: "Reveal",
+    headline: input.headline,
+    why: "The secret and handoff pressure support it.",
+    grounds: ["[SECRET: Letter]"],
+    unknownCitations: []
   };
 }
 

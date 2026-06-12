@@ -1072,6 +1072,57 @@ button:disabled:hover {
   gap: 12px;
 }
 
+.ideateScratchLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 16px;
+  align-items: start;
+}
+
+.ideateControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.segmentedControl,
+.ideateControlActions,
+.slateCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.segmentedControl button {
+  min-width: 92px;
+}
+
+.segmentedControl-active {
+  background: #245a8d;
+  color: #ffffff;
+}
+
+.controlField,
+.checkboxField {
+  display: grid;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.checkboxField {
+  grid-auto-flow: column;
+  align-items: center;
+}
+
+.checkboxField input {
+  width: auto;
+}
+
 .ideateRawScratch {
   display: grid;
   gap: 12px;
@@ -1109,6 +1160,86 @@ button:disabled:hover {
 .ideateRawList h4,
 .ideateRawList p {
   margin: 0;
+}
+
+.slateGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.slateCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #f7f9fc;
+  padding: 14px;
+}
+
+.slateCardHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.slateCardHeader h4,
+.slateCard p,
+.keepersPanel p {
+  margin: 0;
+}
+
+.operatorBadge,
+.citationChip {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.operatorBadge {
+  background: #e8eef6;
+  color: #245a8d;
+}
+
+.citationChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.citationChip {
+  border: 1px solid #c9d2df;
+  background: #ffffff;
+  color: #39445a;
+}
+
+.citationChip-warning {
+  border-color: #c99a2e;
+  color: #6d4a00;
+  background: #fff8e7;
+}
+
+.keepersPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.keepersList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.keepersList li {
+  display: grid;
+  gap: 8px;
 }
 
 .candidateBody {
@@ -1536,6 +1667,10 @@ button:disabled:hover {
   }
 
   .promptPreviewLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .ideateScratchLayout {
     grid-template-columns: 1fr;
   }
 
