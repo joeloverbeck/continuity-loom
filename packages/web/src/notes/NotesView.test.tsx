@@ -159,6 +159,23 @@ describe("NotesView", () => {
     expect(screen.getByText("Second body.")).toBeTruthy();
   });
 
+  it("opens a blank editor on New Note even when a note is already recorded", async () => {
+    render(<NotesView />);
+
+    // Let the initial auto-select fully settle on the existing note first.
+    await screen.findByRole("heading", { name: "Pinned reminder" });
+    const getNoteCallsBeforeNew = vi.mocked(getNote).mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "New Note" }));
+
+    // The new-note editor opens with its "New private note" eyebrow and heading...
+    expect(await screen.findByText("New private note")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "New Note" })).toBeTruthy();
+    // ...and the auto-select effect must not reopen the existing note over it.
+    expect(screen.queryByText("Edit private note")).toBeNull();
+    await waitFor(() => expect(getNote).toHaveBeenCalledTimes(getNoteCallsBeforeNew));
+  });
+
   it("removes a deleted note locally before auto-select can refetch it", async () => {
     vi.mocked(listNotes)
       .mockResolvedValueOnce({ ok: true, notes: [summaries[0]!], tags: ["todo"] })
