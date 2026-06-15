@@ -24,29 +24,54 @@ afterEach(async () => {
 });
 
 describe("project storage recoverability", () => {
-  it.each([
-    ["incompatible-version", LOOM_SCHEMA_VERSION + 1],
-    ["migration-required", LOOM_SCHEMA_VERSION - 1]
-  ] as const)("returns %s without mutating a version-drifted store", async (expectedKind, driftedVersion) => {
+  it("returns incompatible-version without mutating a newer store", async () => {
     const storeManager = manager();
     const parentPath = await tempParent();
     const status = await storeManager.createProject({
       parentPath,
-      folderName: expectedKind,
-      title: `Recoverability ${expectedKind}`
+      folderName: "incompatible-version",
+      title: "Recoverability incompatible-version"
     });
     await storeManager.closeProject();
 
-    await setProjectVersion(status.folderPath, driftedVersion);
+    await setProjectVersion(status.folderPath, LOOM_SCHEMA_VERSION + 1);
     const metadataBefore = await readMetadataText(status.folderPath);
     const userVersionBefore = readPragmaNumber(databasePath(status.folderPath), "user_version");
 
     const result = await storeManager.openProject(status.folderPath);
 
-    expect(result).toMatchObject({ ok: false, kind: expectedKind });
+    expect(result).toMatchObject({ ok: false, kind: "incompatible-version" });
     expect(result.ok || result.message.trim()).not.toBe("");
     expect(await readMetadataText(status.folderPath)).toBe(metadataBefore);
     expect(readPragmaNumber(databasePath(status.folderPath), "user_version")).toBe(userVersionBefore);
+  });
+
+  it("migrates a v1 store instead of returning migration-required", async () => {
+    const storeManager = manager();
+    const parentPath = await tempParent();
+    const status = await storeManager.createProject({
+      parentPath,
+      folderName: "migration-required",
+      title: "Recoverability migration-required"
+    });
+    await storeManager.closeProject();
+
+    await setProjectVersion(status.folderPath, LOOM_SCHEMA_VERSION - 1);
+
+    const result = await storeManager.openProject(status.folderPath);
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: {
+        appSchemaVersion: LOOM_SCHEMA_VERSION,
+        storeUserVersion: LOOM_SCHEMA_VERSION,
+        compatibility: "ok"
+      }
+    });
+    expect(readPragmaNumber(databasePath(status.folderPath), "user_version")).toBe(LOOM_SCHEMA_VERSION);
+    expect(JSON.parse(await readMetadataText(status.folderPath))).toMatchObject({
+      schemaMinVersion: LOOM_SCHEMA_VERSION
+    });
   });
 
   it("creates a backup copy that preserves loom store identity and schema version", async () => {

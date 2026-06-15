@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-003: `story_notes` table, schema v1→v2 bump, and forward migration
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — bumps `LOOM_SCHEMA_VERSION` 1→2, adds `story_notes` DDL + indexes (new-project create path and existing-project migration path), adjusts the open-project compatibility order; behavior change: existing v1 projects migrate to v2 on open
@@ -100,3 +100,23 @@ Author-private notes are per-project state stored beside `story_config` and `gen
 1. `npm test --workspace @loom/server -- story-notes-migration`
 2. `npm test --workspace @loom/server`
 3. `npm run typecheck && npm run build`
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Bumped `LOOM_SCHEMA_VERSION` from 1 to 2.
+- Added `story_notes` table DDL plus pinned/updated, title, and updated indexes to the existing per-project table authority.
+- Added a narrow `ensureStoryNoteTables()` helper and v1-to-v2 open-project migration path that creates `story_notes`, stamps SQLite `user_version = 2`, and updates project metadata `schemaMinVersion = 2`.
+- Preserved newer-store rejection and below-v1 rejection behavior while allowing schema-version-1 stores to migrate on open.
+- Updated version-sensitive server tests and added `packages/server/src/story-notes-migration.test.ts` for table creation, version stamps, existing row preservation, and idempotent reopen.
+
+Deviations:
+- None. The migration is limited to the sanctioned v1-to-v2 path and adds only `story_notes` plus indexes and version metadata.
+
+Verification:
+- `npm test --workspace @loom/server -- story-notes-migration` passed.
+- `npm test --workspace @loom/server` passed: 42 files, 221 tests.
+- `npm run typecheck` passed across core, server, and web workspaces.
+- `npm run build` passed across workspaces; Vite reported the pre-existing large chunk warning.

@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createProjectStoreManager, type ProjectStoreManager } from "./project-store.js";
 
 const APPLICATION_ID = 0x4c4f4f4d;
+const CURRENT_SCHEMA_VERSION = 2;
 
 const managers: ProjectStoreManager[] = [];
 
@@ -20,7 +21,7 @@ async function tempFolder(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-project-taxonomy-"));
 }
 
-async function writeMetadata(folderPath: string, schemaMinVersion = 1): Promise<void> {
+async function writeMetadata(folderPath: string, schemaMinVersion = CURRENT_SCHEMA_VERSION): Promise<void> {
   await writeFile(
     join(folderPath, "continuity-loom.project.json"),
     `${JSON.stringify(
@@ -100,7 +101,7 @@ describe("project open failure taxonomy", () => {
   it("returns not-a-loom-store for a foreign SQLite application id", async () => {
     const folderPath = await tempFolder();
     await writeMetadata(folderPath);
-    writeStore(folderPath, 0, 1);
+    writeStore(folderPath, 0, CURRENT_SCHEMA_VERSION);
 
     await expect(manager().openProject(folderPath)).resolves.toMatchObject({
       ok: false,
@@ -121,8 +122,8 @@ describe("project open failure taxonomy", () => {
 
   it("returns incompatible-version for a valid newer store", async () => {
     const folderPath = await tempFolder();
-    await writeMetadata(folderPath, 2);
-    writeStore(folderPath, APPLICATION_ID, 2);
+    await writeMetadata(folderPath, CURRENT_SCHEMA_VERSION + 1);
+    writeStore(folderPath, APPLICATION_ID, CURRENT_SCHEMA_VERSION + 1);
 
     await expect(manager().openProject(folderPath)).resolves.toMatchObject({
       ok: false,
