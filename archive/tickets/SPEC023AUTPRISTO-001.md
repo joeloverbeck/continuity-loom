@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-001: FOUNDATIONS amendment — author-private notes as the sixth project surface
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — amends `docs/FOUNDATIONS.md` §2, §6, §27, §29; no production behavior change (constitutional doc only)
@@ -82,3 +82,23 @@ Apply, verbatim, the five edits drafted in SPEC-023 §"FOUNDATIONS Alignment & R
 1. `grep -n "## 6. The six project surfaces" docs/FOUNDATIONS.md && grep -n "### 6.6" docs/FOUNDATIONS.md && grep -n "### 29.12" docs/FOUNDATIONS.md`
 2. `grep -rn "five continuity surfaces" docs/FOUNDATIONS.md`
 3. A narrower command is correct here: this ticket changes only constitutional prose, so `npm run lint` / `npm run typecheck` are unaffected; verification is the grep-proof set, not the code pipeline.
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Amended `docs/FOUNDATIONS.md` §2 to define author-private story notes as inert local scratch that is not continuity authority, not a story record, not a generation-time field, and never compiler input.
+- Replaced §6's five-surface heading/opening with the six-project-surface model and added §6.6 for author-private story notes.
+- Updated §27 UI principles with the six-surface distinction and inert-scratch labeling requirement.
+- Updated §29.11's surface-distinction wording and added §29.12 author-private notes hard fails.
+
+Deviations:
+- None. The SPEC-023 amendment text was applied with only line-wrapping appropriate to the existing Markdown style.
+
+Verification:
+- `grep -n "## 6. The six project surfaces" docs/FOUNDATIONS.md` returned one match.
+- `grep -n "### 6.6" docs/FOUNDATIONS.md` returned one match.
+- `grep -n "### 29.12" docs/FOUNDATIONS.md` returned one match.
+- `grep -rn "five continuity surfaces" docs/FOUNDATIONS.md` returned only the intended §29.11 contrastive wording.
+- No npm gate was run for this documentation-only ticket; the ticket's acceptance criteria require grep-proof verification only.

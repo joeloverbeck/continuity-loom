@@ -54,6 +54,12 @@ The constitutionally correct mental model is:
 
 > The records are the loom. The prompt is the shuttle. The generated prose is cloth. The cloth is not the loom.
 
+Continuity Loom may also provide author-private per-story notes as an inert
+scratch surface. These notes are local project data owned by the user, but they
+are not continuity authority, not story records, not generation-time fields, and
+never compiler input. A note can influence generation only when the user manually
+rewrites its substance into a prompt-facing record or generation-time field.
+
 ---
 
 ## 3. Core loop
@@ -177,9 +183,16 @@ Prose craft improves rendering. It never changes continuity.
 
 ---
 
-## 6. The five continuity surfaces
+## 6. The six project surfaces
 
-Continuity Loom must keep these surfaces distinct.
+Continuity Loom has six project surfaces. The first five are the only
+continuity-facing surfaces: story records, active working set, generation-time
+brief, generated prompt, and accepted prose segment archive. The sixth,
+author-private story notes, is a local scratch surface and is never prompt-facing
+or continuity-bearing.
+
+The app must keep these surfaces visibly and mechanically distinct. No surface
+may silently stand in for another.
 
 ### 6.1 All story records
 
@@ -218,6 +231,21 @@ The generated prompt is not canon. It is an operational artifact for one generat
 The ordered readable output archive.
 
 Accepted segments are story text. They are not the future-generation authority.
+
+### 6.6 Author-private story notes
+
+Author-private story notes are per-project local notes for the user's own
+brainstorming, worldbuilding, reminders, todos, research fragments, and other
+scratch material. Notes are not story records, not generation-time brief fields,
+not active-working-set entries, not generated prompts, and not accepted prose.
+
+Notes must never enter validation snapshots, readiness diagnostics, compiler
+inputs, prose prompts, ideation prompts, assistance prompts, OpenRouter request
+bodies, active-working-set membership, record reference graphs, or prompt
+inspection surfaces. The app must not infer canon from notes, promote notes to
+records, link notes to records, or use notes to satisfy readiness. A note affects
+future generation only if the user manually authors equivalent content into a
+prompt-facing record or generation-time field.
 
 ---
 
@@ -883,7 +911,11 @@ It should support:
 - fast atomic record creation through templates or forms;
 - discoverable rich cast dossier editing;
 - easy active working set curation;
-- clear distinction between all records, active working set, generation-time brief, generated prompt, and accepted segment archive;
+- clear distinction between story records, author-private story notes, active
+  working set, generation-time brief, generated prompt, and accepted segment
+  archive;
+- author-private notes must be labeled and arranged so the user can tell they
+  are inert scratch, not continuity authority and not prompt context;
 - clear validation errors;
 - prompt inspection;
 - editable generated prose before acceptance;
@@ -1056,7 +1088,18 @@ These are not all hard fails, but a good proposal should satisfy them.
 - Does it treat current cast voice pressure as optional salience unless supplied pressure contradicts authority or the local mode needs voice/body authority with no durable or compressed source?
 - Does it reduce clerical friction without reducing authorial control?
 - Does it help the user update records after accepted durable changes?
-- Does it make the five continuity surfaces more distinct rather than more blurred?
+- Does it make the project surfaces more distinct rather than more blurred,
+  keeping author-private notes visibly separate from the five continuity surfaces?
+
+### 29.12 Author-private notes hard fails
+
+- Does the change allow author-private notes — their titles, bodies, tags,
+  metadata, previews, summaries, or derived material — to influence validation,
+  readiness, active working set, compiler input, any prompt, any OpenRouter
+  request, prompt inspection, or assistance output? If yes, fail.
+- Does the change treat a note as a story record, generation-time field, record
+  reference target/source, active-working-set member, accepted prose source, or
+  promote-to-record staging item? If yes, fail.
 
 ---
 
