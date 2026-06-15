@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-010: Docs — Private Notes section in the user guide
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — adds a Private Notes section to `docs/user-guide.md`; no production behavior change
@@ -69,3 +69,23 @@ Add a "Private Notes" section covering: the per-story local scratchpad purpose; 
 1. `grep -niE "private notes" docs/user-guide.md`
 2. `grep -niE "never|cannot link|manually" docs/user-guide.md`
 3. A narrower command is the correct boundary: this ticket changes only user-guide prose, so `npm run lint`/`typecheck`/`build` are unaffected; verification is the grep-proof set.
+
+## Outcome
+
+Completed on 2026-06-15.
+
+Changed files:
+
+- `docs/user-guide.md` adds a "Private Notes" section after Active Working Set.
+
+Verification:
+
+- `grep -niE "private notes" docs/user-guide.md`
+- `grep -niE "never .*(prompt|record)|not .*prompt context|cannot link" docs/user-guide.md`
+- `grep -niE "never|cannot link|manually" docs/user-guide.md`
+- `git status --porcelain docs/` showed only `docs/user-guide.md` modified.
+
+Notes:
+
+- No new `docs/*.md` file was created, and `docs/ACTIVE-DOCS.md` was not changed because the existing active user guide is the correct surface.
+- No code gates were run for this docs-only ticket; ticket verification is the grep/status proof set above.

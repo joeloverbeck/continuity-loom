@@ -55,6 +55,16 @@ The active working set is the set of records selected for the next prompt. Recor
 
 The app may warn or block unsafe selections, but it does not silently add records because it thinks they matter.
 
+## Private Notes
+
+Private Notes are a per-story local scratchpad for your own author memory: loose questions, research fragments, reminders, discarded possibilities, or anything else you want beside the project without making it continuity authority.
+
+Open Private Notes from the project navigation to create, edit, browse, search, tag, pin, preview, or delete notes. Notes live in the project's local SQLite store and open or close with that project.
+
+Private Notes are never records, working-set entries, Generation Brief fields, validation input, readiness input, compiler input, prompt context, prompt-preview content, OpenRouter request content, or assistance output. Notes cannot link to or from records and cannot be selected for the active working set.
+
+A note can influence generation only when you manually re-author its substance into a real story record or a generation-time field. Treat that as a deliberate authoring step, not a transfer or sync feature.
+
 ## Prompt Preview
 
 Prompt preview shows the deterministic prompt that will be sent for generation. It is gated by validation.
