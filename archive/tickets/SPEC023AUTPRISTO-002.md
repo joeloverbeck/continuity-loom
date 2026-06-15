@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-002: Core `StoryNote` schemas, types, and helpers
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `packages/core/src/story-notes.ts` module + `@loom/core` export + core tests; no change to existing core behavior
@@ -84,3 +84,20 @@ Add the new types, schemas, and helper to the barrel. Do NOT register anything i
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck`
 3. `grep -rn "story-notes" packages/core/src/compiler/ packages/core/src/records/registry.ts` — must return no production import (exclusion grep-proof); the narrower grep is the correct boundary because it proves the isolation invariant directly.
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Added `packages/core/src/story-notes.ts` with pure `StoryNote` types, Zod schemas, tag normalization/de-duplication, and UUIDv7-style `generateStoryNoteId()` using `globalThis.crypto`.
+- Exported the StoryNote schemas, helper, and types from `packages/core/src/index.ts`.
+- Added `packages/core/test/story-notes.test.ts` covering schema validation, defaults, tag normalization, UUID shape/sortability, record-registry exclusion, readiness-schema exclusion, and compiler-import exclusion.
+
+Deviations:
+- None. Notes remain a separate pure core module and are not registered as records, generation-brief fields, compile destinations, validation input, or compiler input.
+
+Verification:
+- `npm test --workspace @loom/core` passed: 51 files, 442 tests.
+- `npm run typecheck` passed across core, server, and web workspaces.
+- `grep -rn "story-notes" packages/core/src/compiler/ packages/core/src/records/registry.ts` returned no matches, proving the narrow compiler/registry exclusion surface.
