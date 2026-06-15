@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-009: Capstone — non-leakage sentinel + isolation regression
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new server-side isolation/sentinel test surface + a manual verification runbook; no production behavior change
@@ -77,3 +77,30 @@ Per SPEC-023 §"Manual verification scenario": (1) open a local project; (2) cre
 1. `npm test --workspace @loom/server -- story-notes-isolation`
 2. `npm test` (full pipeline, incl. compiler golden tests)
 3. The manual runbook in What to Change §2 is an implementer checklist (UI smoke); it is not CI-runnable and is verified by hand against a copy of a local project.
+
+## Outcome
+
+Completed on 2026-06-15.
+
+Changed files:
+
+- `packages/server/src/story-notes-isolation.test.ts` adds the capstone isolation test suite.
+
+Verification added:
+
+- Inserts `NOTE_SENTINEL_DO_NOT_PROMPT_9f7e3c1b` into a private note in a populated demo project.
+- Asserts the sentinel is absent from `/api/validate`, `/api/readiness`, prose `/api/compile`, ideation `/api/compile`, `/api/generate`, `/api/ideate`, captured OpenRouter request arguments, and server logs.
+- Separately creates, updates, and deletes a note while asserting record count, `record_references` count, selected working-set response, and accepted-segment response remain unchanged.
+- Uses the existing demo project fixture and mocked OpenRouter client; no production behavior changed.
+
+Commands run:
+
+- `npm test --workspace @loom/server -- story-notes-isolation`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build` (passed; Vite emitted the existing large-chunk warning)
+
+Manual runbook:
+
+- Preserved in this archived ticket's What to Change §2 as the implementer checklist. The automated capstone covers the non-leakage and graph-inertness acceptance criteria; no separate manual artifact was created.
