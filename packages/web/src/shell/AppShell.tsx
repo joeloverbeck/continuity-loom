@@ -10,6 +10,7 @@ import { GenerateView } from "../generate/GenerateView.js";
 import { IdeateView } from "../ideate/IdeateView.js";
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
+import { NotesView } from "../notes/NotesView.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
 import { DurableChangeReminder } from "./DurableChangeReminder.js";
 import { ErrorBoundary } from "./ErrorBoundary.js";
@@ -27,6 +28,7 @@ interface AppShellProps {
 const primaryRoutes = [
   { to: "/", label: "Project Library", requiresProject: false },
   { to: "/records", label: "Records", requiresProject: true },
+  { to: "/notes", label: "Private Notes", requiresProject: true },
   { to: "/working-set", label: "Active Working Set", requiresProject: true },
   { to: "/generation-brief", label: "Generation Brief", requiresProject: true },
   { to: "/preview", label: "Validation / Prompt Preview", requiresProject: true },
@@ -120,6 +122,7 @@ function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
             <Routes>
               <Route path="/" element={<ProjectPicker />} />
               <Route path="/records" element={<RequireProject><RecordBrowser /></RequireProject>} />
+              <Route path="/notes" element={<RequireProject><NotesView /></RequireProject>} />
               <Route path="/working-set" element={<RequireProject><WorkingSetView /></RequireProject>} />
               <Route path="/generation-brief" element={<RequireProject><GenerationBriefView /></RequireProject>} />
               <Route path="/preview" element={<RequireProject><PromptPreviewView /></RequireProject>} />

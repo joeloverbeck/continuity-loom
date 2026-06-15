@@ -13,6 +13,7 @@ import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
 import { registerReminderRoutes } from "./reminder-routes.js";
 import { registerSettingsRoutes } from "./settings-routes.js";
+import { registerStoryNoteRoutes } from "./story-note-routes.js";
 import { registerStoryConfigRoutes } from "./story-config-routes.js";
 import { registerValidationRoutes } from "./validation-routes.js";
 import { healthResponseSchema, versionInfoSchema } from "./version-schema.js";
@@ -49,7 +50,14 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
               "choices",
               "body",
               "acceptedProse",
-              "recordPayload"
+              "recordPayload",
+              "note",
+              "notes",
+              "noteTitle",
+              "noteBody",
+              "noteTags",
+              "title",
+              "tags"
             ],
             censor: "[redacted]"
           },
@@ -73,6 +81,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   app.get("/api/version", () => versionInfoSchema.parse(versionInfo));
   registerProjectRoutes(app, projectStoreManager);
   registerRecordRoutes(app, projectStoreManager);
+  registerStoryNoteRoutes(app, projectStoreManager);
   registerStoryConfigRoutes(app, projectStoreManager);
   registerGenerationBriefRoutes(app, projectStoreManager);
   registerWorkingSetRoutes(app, projectStoreManager);

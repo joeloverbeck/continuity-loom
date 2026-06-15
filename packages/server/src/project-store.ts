@@ -19,7 +19,8 @@ import { backfillDisplayLabels } from "./display-label-backfill.js";
 import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
-import { ensureRecordTables } from "./record-tables.js";
+import { ensureRecordTables, ensureStoryNoteTables } from "./record-tables.js";
+import { StoryNotesRepository } from "./story-notes-repository.js";
 import { repairWorkingSetReferences } from "./working-set-integrity-migration.js";
 
 const METADATA_FILENAME = "continuity-loom.project.json";
@@ -106,6 +107,7 @@ export interface ProjectStoreManager {
   openProject(folderPath: string): Promise<OpenProjectResult>;
   getActiveProjectStatus(): ProjectOpenState;
   getRecordRepository(): RecordRepository | null;
+  getStoryNotesRepository(): StoryNotesRepository | null;
   closeProject(): Promise<{ open: false }>;
   createBackup(): Promise<{ backupPath: string }>;
 }
@@ -115,6 +117,7 @@ interface ActiveProject {
   metadata: ProjectMetadata;
   database: DatabaseSync;
   recordRepository: RecordRepository;
+  storyNotesRepository: StoryNotesRepository;
   storeUserVersion: number;
 }
 
@@ -162,6 +165,37 @@ function statusFromActive(active: ActiveProject): ProjectStatus {
 
 function sqliteStringLiteral(value: string): string {
   return `'${value.replaceAll("'", "''")}'`;
+}
+
+async function migrateStoreFromV1ToV2(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata
+): Promise<ProjectMetadata> {
+  try {
+    database.exec("BEGIN IMMEDIATE");
+    ensureStoryNoteTables(database);
+    database.exec("PRAGMA user_version = 2");
+    database.exec("COMMIT");
+  } catch (error) {
+    if (database.isOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+    }
+
+    throw error;
+  }
+
+  const migratedMetadata = projectMetadataSchema.parse({
+    ...metadata,
+    schemaMinVersion: 2,
+    updatedAt: new Date().toISOString()
+  });
+  await writeFile(metadataPath(folderPath), `${JSON.stringify(migratedMetadata, null, 2)}\n`, "utf8");
+  return migratedMetadata;
 }
 
 function failure(kind: Exclude<OpenProjectResult, { ok: true }>["kind"], message: string): OpenProjectResult {
@@ -256,6 +290,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
           metadata,
           database,
           recordRepository: new RecordRepository(database),
+          storyNotesRepository: new StoryNotesRepository(database),
           storeUserVersion: readPragmaNumber(database, "user_version")
         };
 
@@ -313,7 +348,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
       try {
         const applicationId = readPragmaNumber(database, "application_id");
-        const storeUserVersion = readPragmaNumber(database, "user_version");
+        let storeUserVersion = readPragmaNumber(database, "user_version");
         const applicationIdClassification = classifyApplicationId(applicationId);
 
         if (applicationIdClassification !== "ok") {
@@ -332,7 +367,13 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
           );
         }
 
-        const compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
+        let compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
+
+        if (compatibility === "migration-required" && LOOM_SCHEMA_VERSION === 2 && storeUserVersion === 1) {
+          metadata = await migrateStoreFromV1ToV2(database, folderPath, metadata);
+          storeUserVersion = readPragmaNumber(database, "user_version");
+          compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
+        }
 
         if (compatibility !== "ok") {
           database.close();
@@ -355,6 +396,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
           metadata,
           database,
           recordRepository: new RecordRepository(database),
+          storyNotesRepository: new StoryNotesRepository(database),
           storeUserVersion
         };
 
@@ -371,6 +413,10 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
     getRecordRepository() {
       return active?.recordRepository ?? null;
+    },
+
+    getStoryNotesRepository() {
+      return active?.storyNotesRepository ?? null;
     },
 
     closeProject() {

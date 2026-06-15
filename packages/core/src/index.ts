@@ -157,6 +157,23 @@ export {
 export { pruneWorkingSetReferences } from "./records/working-set-integrity.js";
 export type { WorkingSetPruneResult } from "./records/working-set-integrity.js";
 export {
+  generateStoryNoteId,
+  normalizeStoryNoteTags,
+  storyNoteBodySchema,
+  storyNoteCreateInputSchema,
+  storyNoteIdSchema,
+  storyNoteSchema,
+  storyNoteTagSchema,
+  storyNoteTagsSchema,
+  storyNoteTitleSchema,
+  storyNoteUpdateInputSchema
+} from "./story-notes.js";
+export type {
+  StoryNote,
+  StoryNoteCreateInput,
+  StoryNoteUpdateInput
+} from "./story-notes.js";
+export {
   proseModeSchema,
   storyContractSchema,
   universalContentPolicySchema

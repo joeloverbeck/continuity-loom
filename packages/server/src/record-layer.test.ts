@@ -78,6 +78,7 @@ describe("SPEC-003 record tables and repository", () => {
         "record_references",
         "reminder_state",
         "records",
+        "story_notes",
         "story_config"
       ])
     );
@@ -90,11 +91,12 @@ describe("SPEC-003 record tables and repository", () => {
         DROP TABLE accepted_segments;
         DROP TABLE generation_session;
         DROP TABLE reminder_state;
+        DROP TABLE story_notes;
         DROP TABLE story_config;
         DROP TABLE record_references;
         DROP TABLE records;
       `);
-      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 1 });
+      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 2 });
     } finally {
       database.close();
     }
@@ -108,6 +110,7 @@ describe("SPEC-003 record tables and repository", () => {
         "record_references",
         "reminder_state",
         "records",
+        "story_notes",
         "story_config"
       ])
     );
