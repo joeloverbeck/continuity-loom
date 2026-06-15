@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-006: Web API client helpers for notes
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — adds notes client helpers + types to `packages/web/src/api.ts` and a new client test; no change to existing client functions
@@ -69,3 +69,21 @@ Add `listNotes(query?: NoteListQuery): Promise<ListNotesResponse>`, `getNote(id)
 1. `npm test --workspace @loom/web -- api-notes`
 2. `npm run typecheck`
 3. `grep -nE "async function [a-zA-Z]+Json" packages/web/src/api.ts` — count unchanged from baseline (no new transport); the narrow grep proves the reuse invariant.
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Added typed Notes client request/response shapes to `packages/web/src/api.ts`.
+- Added `listNotes`, `getNote`, `createNote`, `updateNote`, and `deleteNote` helpers using the existing private `fetchJson` / `requestJson` transports.
+- Added `packages/web/src/api-notes.test.ts` covering route URLs, HTTP methods, query serialization, and request bodies.
+
+Deviations:
+- None. No new fetch transport was added.
+
+Verification:
+- `npm test --workspace @loom/web -- api-notes` passed.
+- `npm test --workspace @loom/web` passed: 31 files, 257 tests.
+- `npm run typecheck` passed across core, server, and web workspaces.
+- `grep -nE "async function [a-zA-Z]+Json" packages/web/src/api.ts` still returned only the existing `fetchJson`, `requestJson`, and `postJson` helpers.

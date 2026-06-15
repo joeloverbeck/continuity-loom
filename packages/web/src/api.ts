@@ -4,6 +4,9 @@ import type {
   IdeationRequest,
   OpenProjectResult,
   ProjectStatus,
+  StoryNote,
+  StoryNoteCreateInput,
+  StoryNoteUpdateInput,
   ValidationResult,
   VersionInfo
 } from "@loom/core";
@@ -219,6 +222,24 @@ export interface GenerationBriefDefaults {
 export type GenerationBriefResponse = { ok: true; session: unknown; defaults: GenerationBriefDefaults } | ApiFailure;
 export type SetGenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
 
+export type NoteSort = "updated-desc" | "updated-asc" | "created-desc" | "created-asc" | "title-asc";
+
+export interface NoteListQuery {
+  q?: string;
+  tag?: string;
+  pinned?: "all" | "only" | "unpinned";
+  sort?: NoteSort;
+}
+
+export type StoryNoteSummary = Pick<StoryNote, "id" | "title" | "tags" | "pinned" | "createdAt" | "updatedAt"> & {
+  bodyPreview: string;
+};
+
+export type ListNotesResponse = { ok: true; notes: StoryNoteSummary[]; tags: string[] } | ApiFailure;
+export type GetNoteResponse = { ok: true; note: StoryNote } | ApiFailure;
+export type SaveNoteResponse = { ok: true; note: StoryNote } | ApiFailure;
+export type DeleteNoteResponse = { ok: true } | ApiFailure;
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
     headers: {
@@ -340,6 +361,33 @@ export async function deleteRecord(id: string): Promise<OkResponse> {
 
 export async function getRecordReferences(id: string): Promise<RecordReferencesResponse> {
   return requestJson<RecordReferencesResponse>(`/api/records/${encodeURIComponent(id)}/references`, "GET");
+}
+
+export async function listNotes(query: NoteListQuery = {}): Promise<ListNotesResponse> {
+  return fetchJson<ListNotesResponse>(
+    `/api/notes${queryString({
+      q: query.q,
+      tag: query.tag,
+      pinned: query.pinned,
+      sort: query.sort
+    })}`
+  );
+}
+
+export async function getNote(id: string): Promise<GetNoteResponse> {
+  return fetchJson<GetNoteResponse>(`/api/notes/${encodeURIComponent(id)}`);
+}
+
+export async function createNote(input: StoryNoteCreateInput): Promise<SaveNoteResponse> {
+  return requestJson<SaveNoteResponse>("/api/notes", "POST", input);
+}
+
+export async function updateNote(id: string, input: StoryNoteUpdateInput): Promise<SaveNoteResponse> {
+  return requestJson<SaveNoteResponse>(`/api/notes/${encodeURIComponent(id)}`, "PUT", input);
+}
+
+export async function deleteNote(id: string): Promise<DeleteNoteResponse> {
+  return requestJson<DeleteNoteResponse>(`/api/notes/${encodeURIComponent(id)}`, "DELETE");
 }
 
 export async function getStoryConfig(kind: StoryConfigKind): Promise<StoryConfigResponse> {
