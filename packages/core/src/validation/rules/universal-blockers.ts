@@ -245,7 +245,7 @@ function validateSecretFirewall(snapshot: ValidationSnapshot): readonly Diagnost
     const knownByPov = Array.isArray(payload.holders) && payload.holders.includes(pov);
     const protectedFromPov =
       (Array.isArray(payload.non_holders_to_protect) && payload.non_holders_to_protect.includes(pov)) ||
-      payload.non_holders_to_protect === "all_except_holders";
+      (payload.non_holders_to_protect === "all_except_holders" && !knownByPov);
     const diagnostics: Diagnostic[] = [];
 
     if (knownByPov && protectedFromPov && payload.pov_access !== "knows_partly") {

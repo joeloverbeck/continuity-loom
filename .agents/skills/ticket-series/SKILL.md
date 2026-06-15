@@ -112,7 +112,10 @@ npm run build
    runbook may cite an earlier same-family smoke only when the earlier ticket
    outcome records the exact covered UI steps, remaining gaps are covered by
    current automated or manual proof, and the capstone outcome names any
-   live-provider caveat.
+   live-provider caveat. If you decide this smoke rule is not applicable, or
+   that a narrow component/API change is sufficiently proven without a real
+   localhost or browser smoke, record the rationale in the ticket `Outcome` and
+   final response.
 6. Update the ticket with final status and an `Outcome` section following
    `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the
    ticket before moving it, after the existing ticket sections.
@@ -193,6 +196,7 @@ npm run build
    ```sh
    for f in docs/*.md; do base=$(basename "$f"); grep -q "docs/$base" docs/ACTIVE-DOCS.md || echo "MISSING docs/$base"; done
    for ref in $(rg -o "docs/[A-Za-z0-9._/-]+\\.md" docs AGENTS.md CLAUDE.md README.md | sed 's/^.*docs\\//docs\\//' | sort -u); do test -f "$ref" || echo "MISSING $ref"; done
+   rg -n "specs/SPEC-ID|SPEC-ID|TICKET-PREFIX" docs specs tickets AGENTS.md CLAUDE.md README.md
    test ! -f specs/SPEC-ID.md && test -f archive/specs/SPEC-ID.md
    ```
 

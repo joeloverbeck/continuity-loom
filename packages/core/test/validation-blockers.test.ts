@@ -271,6 +271,29 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.missingCurrentAuthoritativeState);
   });
 
+  it("does not block a holder POV protected by all_except_holders", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: "all_except_holders",
+          pov_access: "knows",
+          forbidden_reveals: ["Do not reveal the motive to non-holders."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["a careful pause"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
   it("blocks contaminated continuation handoff", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
