@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-005: `/api/notes` routes, registration, and redaction
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `/api/notes` routes module + `server.ts` registration + route tests; no change to existing routes
@@ -78,3 +78,23 @@ Import and call `registerStoryNoteRoutes(app, projectStoreManager)` alongside th
 1. `npm test --workspace @loom/server -- story-note-routes`
 2. `npm test --workspace @loom/server && npm run typecheck && npm run lint`
 3. `grep -niE "openrouter|listen\(|api[_-]?key" packages/server/src/story-note-routes.ts` — must return nothing (no remote call / no new binding / no key handling); the narrow grep directly proves the secret/loopback invariant.
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Added `packages/server/src/story-note-routes.ts` with project-scoped `/api/notes` list, get, create, update, and delete routes.
+- Registered the routes from `packages/server/src/server.ts` without adding any new listener or network binding.
+- Added notes-specific redaction field names to the existing server logger redaction list.
+- Added `packages/server/src/story-note-routes.test.ts` covering no-open-project behavior, CRUD/list/filter/sort, structured invalid-request and malformed-payload errors, not-found responses, and note-content log non-leakage.
+
+Deviations:
+- None. The route layer uses the dedicated `StoryNotesRepository`, returns summaries from list, and does not touch prompt/readiness/OpenRouter surfaces.
+
+Verification:
+- `npm test --workspace @loom/server -- story-note-routes` passed.
+- `npm test --workspace @loom/server` passed: 44 files, 231 tests.
+- `npm run typecheck` passed across core, server, and web workspaces.
+- `npm run lint` passed across core, server, and web workspaces.
+- `grep -niE "openrouter|listen\\(|api[_-]?key" packages/server/src/story-note-routes.ts` returned no matches.
