@@ -17,6 +17,7 @@ const generationBriefMock = vi.hoisted(() => ({
     ideate: 0,
     preview: 0,
     records: 0,
+    notes: 0,
     storyConfig: 0,
     workingSet: 0
   }
@@ -33,6 +34,12 @@ vi.mock("../records/RecordBrowser.js", () => ({
   RecordBrowser: () => {
     generationBriefMock.viewRenders.records += 1;
     return <h2>Records</h2>;
+  }
+}));
+vi.mock("../notes/NotesView.js", () => ({
+  NotesView: () => {
+    generationBriefMock.viewRenders.notes += 1;
+    return <h2>Private Notes</h2>;
   }
 }));
 vi.mock("../working-set/WorkingSetView.js", () => ({
@@ -177,6 +184,7 @@ describe("AppShell", () => {
     const settingsLink = within(primaryNav).getByRole("link", { name: "Settings" });
     const guardedLinks = [
       "Records",
+      "Private Notes",
       "Active Working Set",
       "Generation Brief",
       "Validation / Prompt Preview",
@@ -204,6 +212,7 @@ describe("AppShell", () => {
 
   it.each([
     ["/records", "records"],
+    ["/notes", "notes"],
     ["/working-set", "workingSet"],
     ["/generation-brief", "generationBrief"],
     ["/preview", "preview"],

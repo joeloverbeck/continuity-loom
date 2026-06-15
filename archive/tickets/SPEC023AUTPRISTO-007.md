@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-007: Web UI read path — `/notes` route, nav, list, detail, safe preview
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new `/notes` route + AppShell nav item + `NotesView`/`NoteDetail` components + safe-markdown helper + CSS + a Markdown dependency + UI test; no change to existing surfaces
@@ -93,3 +93,39 @@ Append `.notes-`-prefixed styles. Add the Markdown rendering dependency.
 1. `npm test --workspace @loom/web -- NotesView`
 2. `npm run typecheck && npm run lint && npm run build`
 3. `grep -nE "to: \"/notes\"" packages/web/src/shell/AppShell.tsx` — confirms the project-gated nav entry exists.
+
+## Outcome
+
+Completed on 2026-06-15.
+
+Changed files:
+
+- `packages/web/package.json` and `package-lock.json` add `react-markdown` for safe note preview rendering.
+- `packages/web/src/shell/AppShell.tsx` adds the project-gated `/notes` route and "Private Notes" nav entry.
+- `packages/web/src/shell/AppShell.test.tsx` covers the guarded `/notes` route/nav behavior.
+- `packages/web/src/notes/NotesView.tsx`, `NoteDetail.tsx`, and `safe-markdown.tsx` add the read-only private-notes surface, list/detail flow, safe Markdown preview, disabled write affordances for ticket 008, and boundary copy.
+- `packages/web/src/notes/NotesView.test.tsx` covers list/detail rendering, query controls, boundary copy, route safety expectations, and safe preview behavior.
+- `packages/web/src/styles.css` adds `.notes...`-scoped layout/styles.
+- `packages/web/src/api-notes.test.ts` was renamed to `packages/web/src/api-notes.test.tsx` as an adjacent broad-lint fix after the web project-service lint pass rejected JSX in a `.ts` test file.
+
+Verification:
+
+- `npm test --workspace @loom/web -- NotesView AppShell`
+- `npm test --workspace @loom/web -- NotesView AppShell api-notes`
+- `npm test --workspace @loom/web`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build` (passed; Vite emitted the existing large-chunk warning)
+- `grep -nE "to: \"/notes\"" packages/web/src/shell/AppShell.tsx`
+
+Browser smoke:
+
+- Started the local dev stack at `http://127.0.0.1:5173` / `http://127.0.0.1:5174`.
+- Created disposable project `/tmp/loom-notes-smoke-20260615-1917`.
+- Seeded note `Browser smoke note` with Markdown, tags, pinned state, and raw `<script>` text.
+- Opened `http://127.0.0.1:5173/notes` with Playwright and confirmed the "Private Notes" route, "Author-private · never sent to prompts" badge, note list item, note detail pane, rendered Markdown heading/body, disabled `Edit`/`Delete` controls, and escaped raw `<script>` text.
+- Console log contained only the React DevTools development info message. Transient `.playwright-cli/` artifacts were removed after evidence review.
+
+Deviations:
+
+- Added the `api-notes` test rename noted above because it was required to keep the full web lint gate green after the dependency/UI changes.
