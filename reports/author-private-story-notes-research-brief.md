@@ -9,7 +9,7 @@
 
 ## 1. Context
 
-The uploaded manifest (`manifest_2026-06-15_0d5ff3c.txt`) is the path inventory of the
+The uploaded manifest (`manifest_2026-06-15_a62f975.txt`) is the path inventory of the
 `joeloverbeck/continuity-loom` repository — a **local-first story-state operating system**: a
 Node process serves a React UI and a localhost-only API that tracks structured story records,
 compiles them into a *deterministic* prose-generation prompt, and handles segment acceptance. No
@@ -23,10 +23,9 @@ Governing docs: **`docs/FOUNDATIONS.md` is the constitution** (its §29 is the a
 checklist every spec must clear; §1.1 is the amendment procedure); **`docs/ACTIVE-DOCS.md`** maps the
 active authority hierarchy and the active-vs-archive boundary.
 
-**Fetch every file named below from commit `0d5ff3c` (`0d5ff3ca5ea4b73351fc5b8b8cacc48c91b46b43`)** —
-the uploaded manifest reflects exactly that tree (verified clean working tree at authoring time). If
-any file you open cites a different "commit of record," that is that file's own baseline; use
-`0d5ff3c`, not the cited string.
+**Fetch every file named below from commit `a62f975` (`a62f975e08528cc713492af87d06623dd7872ed9`)** —
+the uploaded manifest reflects exactly that tree. If any file you open cites a different "commit of
+record," that is that file's own baseline; use `a62f975`, not the cited string.
 
 This is a **cold-start, standalone brief** — it does not continue a prior research brief. (A
 sibling, `reports/prompt-duplication-cross-segment-research-brief.md`, exists but is unrelated.)
@@ -272,4 +271,4 @@ faithful interpretation.
 - [ ] The FOUNDATIONS §6 sixth-surface question is answered with an explicit verdict, and amendment text
       (+ `ACTIVE-DOCS.md` registry note) is drafted if required.
 - [ ] Every external claim that shaped a decision is cited.
-- [ ] Commit `0d5ff3c` contains every file named in §2 (it does — the uploaded manifest is that tree).
+- [ ] Commit `a62f975` contains every file named in §2 (it does — the uploaded manifest is that tree).
