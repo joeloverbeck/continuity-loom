@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-004: `StoryNotesRepository` (CRUD, search, deterministic preview)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `StoryNotesRepository` + a `getStoryNotesRepository()` accessor on `ProjectStoreManager`; no change to record/generation/session behavior
@@ -79,3 +79,21 @@ The `/api/notes` routes need a dedicated repository for `story_notes` CRUD, sear
 1. `npm test --workspace @loom/server -- story-notes-repository`
 2. `npm test --workspace @loom/server && npm run typecheck`
 3. `grep -nE "records|record_references|story_config|generation_session|RecordRepository" packages/server/src/story-notes-repository.ts` — must return nothing (isolation grep-proof); the narrow grep is the correct boundary because it directly proves the no-record-graph-touch invariant.
+
+## Outcome
+
+Completed: 2026-06-15
+
+What changed:
+- Added `packages/server/src/story-notes-repository.ts` with dedicated Story Notes CRUD, list/search/filter/sort, tag listing, deterministic body previews, and core-schema parsing on inputs and rows.
+- Added `ProjectStoreManager.getStoryNotesRepository()` and an active-project `StoryNotesRepository` instance beside the existing record repository.
+- Added `packages/server/src/story-notes-repository.test.ts` covering CRUD, missing-note behavior, validation failures, malformed stored tags, deterministic ordering/search/previews, tag listing, manager access, and source-level no-record-table SQL isolation.
+
+Deviations:
+- None. The repository is a separate class and issues SQL only against `story_notes`.
+
+Verification:
+- `npm test --workspace @loom/server -- story-notes-repository` passed.
+- `npm test --workspace @loom/server` passed: 43 files, 227 tests.
+- `npm run typecheck` passed across core, server, and web workspaces.
+- `grep -nE "records|record_references|story_config|generation_session|RecordRepository" packages/server/src/story-notes-repository.ts` returned no matches.

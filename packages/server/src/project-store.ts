@@ -20,6 +20,7 @@ import { migrateGenerationSessionDraft } from "./generation-session-draft-migrat
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables, ensureStoryNoteTables } from "./record-tables.js";
+import { StoryNotesRepository } from "./story-notes-repository.js";
 import { repairWorkingSetReferences } from "./working-set-integrity-migration.js";
 
 const METADATA_FILENAME = "continuity-loom.project.json";
@@ -106,6 +107,7 @@ export interface ProjectStoreManager {
   openProject(folderPath: string): Promise<OpenProjectResult>;
   getActiveProjectStatus(): ProjectOpenState;
   getRecordRepository(): RecordRepository | null;
+  getStoryNotesRepository(): StoryNotesRepository | null;
   closeProject(): Promise<{ open: false }>;
   createBackup(): Promise<{ backupPath: string }>;
 }
@@ -115,6 +117,7 @@ interface ActiveProject {
   metadata: ProjectMetadata;
   database: DatabaseSync;
   recordRepository: RecordRepository;
+  storyNotesRepository: StoryNotesRepository;
   storeUserVersion: number;
 }
 
@@ -287,6 +290,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
           metadata,
           database,
           recordRepository: new RecordRepository(database),
+          storyNotesRepository: new StoryNotesRepository(database),
           storeUserVersion: readPragmaNumber(database, "user_version")
         };
 
@@ -392,6 +396,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
           metadata,
           database,
           recordRepository: new RecordRepository(database),
+          storyNotesRepository: new StoryNotesRepository(database),
           storeUserVersion
         };
 
@@ -408,6 +413,10 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
 
     getRecordRepository() {
       return active?.recordRepository ?? null;
+    },
+
+    getStoryNotesRepository() {
+      return active?.storyNotesRepository ?? null;
     },
 
     closeProject() {
