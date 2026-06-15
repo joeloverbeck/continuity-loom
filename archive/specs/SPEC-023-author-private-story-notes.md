@@ -1,6 +1,6 @@
 # SPEC-023 — Author-Private Story Notes
 
-**Status**: DRAFT  
+**Status**: COMPLETED  
 Phase: post-v1 feature spec; new author-private per-story surface  
 Depends on: explicit FOUNDATIONS amendment approval under §1.1 before implementation; existing local project store, record-route, record-repository, and app-shell patterns  
 Governing authority: `docs/FOUNDATIONS.md`  
@@ -1220,3 +1220,58 @@ scratchpad, never prompt context, no record links, and no promote-to-record.
 [^react-markdown]: remarkjs, "react-markdown," https://github.com/remarkjs/react-markdown (accessed 2026-06-15).
 [^dompurify]: Cure53, "DOMPurify," https://github.com/cure53/DOMPurify (accessed 2026-06-15).
 [^sqlite-fts5]: SQLite, "SQLite FTS5 Extension," https://sqlite.org/fts5.html (accessed 2026-06-15).
+
+## Outcome
+
+Completed on 2026-06-15.
+
+Implementation tickets completed and archived:
+
+- `archive/tickets/SPEC023AUTPRISTO-001.md` — FOUNDATIONS amendment for the sixth inert project surface.
+- `archive/tickets/SPEC023AUTPRISTO-002.md` — core `StoryNote` schemas, types, helpers, and tests.
+- `archive/tickets/SPEC023AUTPRISTO-003.md` — `story_notes` table, schema version 2, and v1-to-v2 migration.
+- `archive/tickets/SPEC023AUTPRISTO-004.md` — dedicated `StoryNotesRepository`.
+- `archive/tickets/SPEC023AUTPRISTO-005.md` — project-scoped `/api/notes` routes and redaction tests.
+- `archive/tickets/SPEC023AUTPRISTO-006.md` — web API client helpers.
+- `archive/tickets/SPEC023AUTPRISTO-007.md` — `/notes` read route, nav, list/detail, safe Markdown preview, browser smoke.
+- `archive/tickets/SPEC023AUTPRISTO-008.md` — editor, autosave, create, delete confirmation, browser smoke.
+- `archive/tickets/SPEC023AUTPRISTO-009.md` — non-leakage sentinel and record-graph isolation capstone.
+- `archive/tickets/SPEC023AUTPRISTO-010.md` — user-guide Private Notes section.
+
+Commits made:
+
+- `f93e26a` Complete SPEC023AUTPRISTO-001
+- `5a38457` Complete SPEC023AUTPRISTO-002
+- `ec50c1a` Complete SPEC023AUTPRISTO-003
+- `d84131e` Complete SPEC023AUTPRISTO-004
+- `9549fb5` Complete SPEC023AUTPRISTO-005
+- `9c19f74` Complete SPEC023AUTPRISTO-006
+- `fc3a15c` Complete SPEC023AUTPRISTO-007
+- `4cab61e` Complete SPEC023AUTPRISTO-008
+- `811eaf9` Complete SPEC023AUTPRISTO-009
+- `942db2b` Complete SPEC023AUTPRISTO-010
+
+Final verification:
+
+- `npm test --workspace @loom/server -- story-notes-isolation`
+- `npm test`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build` (passed; Vite emitted the existing large-chunk warning)
+- `grep -niE "private notes" docs/user-guide.md`
+- `grep -niE "never .*(prompt|record)|not .*prompt context|cannot link" docs/user-guide.md`
+- `grep -niE "never|cannot link|manually" docs/user-guide.md`
+- `git status --porcelain docs/`
+
+Browser/manual-style verification:
+
+- Final local dev stack ran at `http://127.0.0.1:5173` / `http://127.0.0.1:5174`.
+- Disposable demo project: `/tmp/loom-spec023-final-smoke-20260615-2204`.
+- Created `NOTE_SENTINEL_DO_NOT_PROMPT_manual` in `/notes`, confirmed it was searchable there, checked `/preview`, `/generate`, and `/ideate` for absence of the sentinel, deleted the note, and confirmed the empty notes state.
+- Console check reported no errors or warnings; only the React DevTools development info message appeared.
+- Stopped the dev stack and removed transient `.playwright-cli/` artifacts.
+
+Notes:
+
+- The automated capstone in `packages/server/src/story-notes-isolation.test.ts` is the durable non-leakage proof across validation, readiness, prose compile, ideation compile, generate, ideate, OpenRouter request arguments, logs, and record-graph inertness.
+- No out-of-scope items were implemented: no record links, prompt inclusion, promote-to-record action, FTS5, embeddings, AI mutation, attachments, folders, sync, or global notes.
