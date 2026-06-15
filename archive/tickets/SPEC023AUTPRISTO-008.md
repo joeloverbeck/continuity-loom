@@ -1,6 +1,6 @@
 # SPEC023AUTPRISTO-008: Web UI write path — editor, autosave, create, delete-confirm
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new `NoteEditor` component + mutation wiring into `NotesView`/`NoteDetail` + editor test; no change to existing non-notes surfaces
@@ -84,3 +84,37 @@ Wire the Edit button to open the editor and the Delete button to the title-beari
 1. `npm test --workspace @loom/web -- NoteEditor NotesView`
 2. `npm run typecheck && npm run lint && npm run build`
 3. `grep -niE "promote|working-set|include-in-prompt|insert.*brief|addToWorkingSet" packages/web/src/notes/NoteEditor.tsx` — must return nothing (no cross-surface action); the narrow grep proves the isolation invariant for the editor.
+
+## Outcome
+
+Completed on 2026-06-15.
+
+Changed files:
+
+- `packages/web/src/notes/NoteEditor.tsx` adds the private-note editor with title-first create, debounced autosave, save-on-blur, visible save status, safe Preview, close action, and title-bearing delete confirmation.
+- `packages/web/src/notes/NotesView.tsx` wires New/Edit/Delete flows, dirty save-before-selection-switch via an editor ref, list refresh after mutations, and local deleted-summary removal to avoid stale auto-select fetches.
+- `packages/web/src/notes/NoteDetail.tsx` enables the read-pane Edit and Delete actions.
+- `packages/web/src/notes/NoteEditor.test.tsx` covers title-first create, autosave status, failed-save buffer retention, delete confirmation, preview safety, and absence of cross-surface actions.
+- `packages/web/src/notes/NotesView.test.tsx` updates API mocks for mutation wiring and adds a deleted-note auto-select regression test.
+- `packages/web/src/styles.css` adds `.notes...`-scoped editor, preview, checkbox, and dialog styling.
+
+Verification:
+
+- `npm test --workspace @loom/web -- NoteEditor NotesView`
+- `npm test --workspace @loom/web`
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build` (passed; Vite emitted the existing large-chunk warning)
+- `grep -niE "promote|working-set|include-in-prompt|insert.*brief|addToWorkingSet" packages/web/src/notes/NoteEditor.tsx` returned no matches.
+
+Browser smoke:
+
+- Started the local dev stack at `http://127.0.0.1:5173` / `http://127.0.0.1:5174`.
+- Used disposable project `/tmp/loom-notes-write-smoke-20260615-2151`.
+- Opened `http://127.0.0.1:5173/notes`, created `Write smoke note`, filled body Markdown/tags, observed `Saved`, enabled Preview, confirmed the `Smoke edit` heading rendered, confirmed the preview contained no live `script` or `img` nodes, deleted via the title-bearing confirmation dialog, and confirmed the empty-list state returned.
+- Final clean console check reported no errors or warnings; only the React DevTools development info message appeared.
+- Stopped the dev stack and removed transient `.playwright-cli/` artifacts after evidence review.
+
+Deviations:
+
+- Browser smoke exposed two write-path races during implementation: parent state was replacing the active new-note draft after title-blur create, and delete could briefly auto-select a stale deleted summary. Both were fixed before closeout and covered by the final clean browser smoke; the delete race also has a `NotesView.test.tsx` regression test.

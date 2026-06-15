@@ -3,12 +3,15 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getNote, listNotes, type StoryNoteSummary } from "../api.js";
+import { createNote, deleteNote, getNote, listNotes, updateNote, type StoryNoteSummary } from "../api.js";
 import { NotesView } from "./NotesView.js";
 
 vi.mock("../api.js", () => ({
+  createNote: vi.fn(),
+  deleteNote: vi.fn(),
   getNote: vi.fn(),
-  listNotes: vi.fn()
+  listNotes: vi.fn(),
+  updateNote: vi.fn()
 }));
 
 const summaries: StoryNoteSummary[] = [
@@ -34,6 +37,31 @@ const summaries: StoryNoteSummary[] = [
 
 beforeEach(() => {
   vi.mocked(listNotes).mockResolvedValue({ ok: true, notes: summaries, tags: ["research", "todo", "worldbuilding"] });
+  vi.mocked(createNote).mockResolvedValue({
+    ok: true,
+    note: {
+      id: "note-new",
+      title: "New note",
+      body: "",
+      tags: [],
+      pinned: false,
+      createdAt: "2026-06-15T10:30:00.000Z",
+      updatedAt: "2026-06-15T10:30:00.000Z"
+    }
+  });
+  vi.mocked(updateNote).mockResolvedValue({
+    ok: true,
+    note: {
+      id: "note-1",
+      title: "Pinned reminder",
+      body: "Updated body.",
+      tags: ["todo"],
+      pinned: true,
+      createdAt: "2026-06-15T10:00:00.000Z",
+      updatedAt: "2026-06-15T10:30:00.000Z"
+    }
+  });
+  vi.mocked(deleteNote).mockResolvedValue({ ok: true });
   vi.mocked(getNote).mockResolvedValue({
     ok: true,
     note: {
@@ -129,5 +157,22 @@ describe("NotesView", () => {
     await waitFor(() => expect(getNote).toHaveBeenLastCalledWith("note-2"));
     expect(await screen.findByRole("heading", { name: "Research scrap" })).toBeTruthy();
     expect(screen.getByText("Second body.")).toBeTruthy();
+  });
+
+  it("removes a deleted note locally before auto-select can refetch it", async () => {
+    vi.mocked(listNotes)
+      .mockResolvedValueOnce({ ok: true, notes: [summaries[0]!], tags: ["todo"] })
+      .mockResolvedValueOnce({ ok: true, notes: [], tags: [] });
+
+    render(<NotesView />);
+
+    await screen.findByRole("heading", { name: "Pinned reminder" });
+    const getNoteCallsAfterSelection = vi.mocked(getNote).mock.calls.length;
+    fireEvent.click(await screen.findByRole("button", { name: "Delete" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete note" }));
+
+    await waitFor(() => expect(deleteNote).toHaveBeenCalledWith("note-1"));
+    await waitFor(() => expect(screen.getByText("No private notes.")).toBeTruthy());
+    expect(getNote).toHaveBeenCalledTimes(getNoteCallsAfterSelection);
   });
 });

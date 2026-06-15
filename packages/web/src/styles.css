@@ -1751,6 +1751,16 @@ button:disabled:hover {
   padding: 14px;
 }
 
+.notesEditor {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
 .notesDetailEmpty {
   min-height: 180px;
   align-content: center;
@@ -1773,6 +1783,66 @@ button:disabled:hover {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.notesEditorGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.notesEditorGrid label:first-child,
+.notesEditorGrid label:last-child {
+  grid-column: 1 / -1;
+}
+
+.notesCheckboxLabel {
+  display: inline-flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: center;
+}
+
+.notesCheckboxLabel input {
+  width: auto;
+}
+
+.notesEditorToolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.notesBodyInput {
+  min-height: 18rem;
+  resize: vertical;
+}
+
+.notesPreviewPane {
+  min-height: 18rem;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.notesDialog {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(24 32 51 / 40%);
+}
+
+.notesDialogPanel {
+  width: min(28rem, 100%);
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgb(24 32 51 / 18%);
+  padding: 16px;
 }
 
 .notesMeta {

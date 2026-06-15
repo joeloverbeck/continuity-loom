@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  deleteNote,
   getNote,
   listNotes,
   type NoteListQuery,
@@ -8,6 +9,7 @@ import {
 } from "../api.js";
 import type { StoryNote } from "@loom/core";
 import { NoteDetail } from "./NoteDetail.js";
+import { NoteEditor, type NoteEditorHandle } from "./NoteEditor.js";
 
 const sortOptions: Array<{ value: NonNullable<NoteListQuery["sort"]>; label: string }> = [
   { value: "updated-desc", label: "Updated newest" },
@@ -30,7 +32,10 @@ export function NotesView(): React.JSX.Element {
   const [notes, setNotes] = useState<StoryNoteSummary[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedNote, setSelectedNote] = useState<StoryNote | null>(null);
+  const [editingNote, setEditingNote] = useState<StoryNote | null | "new">(null);
+  const [deleteCandidate, setDeleteCandidate] = useState<StoryNote | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const editorRef = useRef<NoteEditorHandle | null>(null);
   const [filters, setFilters] = useState<Required<Pick<NoteListQuery, "pinned" | "sort">> & Pick<NoteListQuery, "q" | "tag">>({
     q: "",
     tag: "",
@@ -48,7 +53,7 @@ export function NotesView(): React.JSX.Element {
     [filters]
   );
 
-  useEffect(() => {
+  const loadNotes = useCallback(() => {
     let active = true;
 
     void listNotes(query)
@@ -86,6 +91,8 @@ export function NotesView(): React.JSX.Element {
     };
   }, [query]);
 
+  useEffect(() => loadNotes(), [loadNotes]);
+
   useEffect(() => {
     if (selectedNote || notes.length === 0) {
       return;
@@ -94,12 +101,58 @@ export function NotesView(): React.JSX.Element {
     void selectNote(notes[0]!);
   }, [notes, selectedNote]);
 
+  async function flushEditorBeforeLeaving(): Promise<boolean> {
+    if (!editorRef.current?.hasDirtyChanges()) {
+      return true;
+    }
+
+    const saved = await editorRef.current.flush();
+    if (!saved) {
+      setNotice("Save failed. Your private note edits are still open.");
+    }
+    return saved;
+  }
+
   async function selectNote(summary: StoryNoteSummary): Promise<void> {
+    if (!(await flushEditorBeforeLeaving())) {
+      return;
+    }
+
+    setEditingNote(null);
     setSelectedNote((current) => current ?? null);
     const response = await getNote(summary.id);
 
     if (response.ok) {
       setSelectedNote(response.note);
+      return;
+    }
+
+    setNotice(response.message);
+  }
+
+  function handleSaved(note: StoryNote): void {
+    setSelectedNote(note);
+    setNotice(null);
+    loadNotes();
+  }
+
+  function handleDeleted(id: string): void {
+    setNotes((current) => current.filter((note) => note.id !== id));
+    setSelectedNote((current) => (current?.id === id ? null : current));
+    setEditingNote(null);
+    setDeleteCandidate(null);
+    setNotice(null);
+    loadNotes();
+  }
+
+  async function confirmDetailDelete(): Promise<void> {
+    if (!deleteCandidate) {
+      return;
+    }
+
+    const response = await deleteNote(deleteCandidate.id);
+    if (response.ok) {
+      handleDeleted(deleteCandidate.id);
       return;
     }
 
@@ -120,7 +173,14 @@ export function NotesView(): React.JSX.Element {
       </p>
 
       <div className="notesToolbar" aria-label="Private note filters">
-        <button type="button" disabled>
+        <button
+          type="button"
+          onClick={() => {
+            setEditingNote("new");
+            setSelectedNote(null);
+            setNotice(null);
+          }}
+        >
           New Note
         </button>
         <label>
@@ -206,8 +266,39 @@ export function NotesView(): React.JSX.Element {
             ))
           )}
         </div>
-        <NoteDetail note={selectedNote} />
+        {editingNote ? (
+          <NoteEditor
+            ref={editorRef}
+            note={editingNote === "new" ? null : editingNote}
+            onSaved={handleSaved}
+            onDeleted={handleDeleted}
+            onCancel={() => setEditingNote(null)}
+          />
+        ) : (
+          <NoteDetail
+            note={selectedNote}
+            onEdit={(note) => setEditingNote(note)}
+            onDelete={(note) => setDeleteCandidate(note)}
+          />
+        )}
       </div>
+
+      {deleteCandidate ? (
+        <div role="dialog" aria-modal="true" aria-labelledby="note-detail-delete-title" className="notesDialog">
+          <div className="notesDialogPanel">
+            <h4 id="note-detail-delete-title">Delete "{deleteCandidate.title}"?</h4>
+            <p>This permanently removes the private note.</p>
+            <div className="notesDetailActions">
+              <button type="button" onClick={() => setDeleteCandidate(null)}>
+                Cancel
+              </button>
+              <button type="button" onClick={() => void confirmDetailDelete()}>
+                Delete note
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

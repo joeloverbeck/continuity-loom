@@ -4,6 +4,8 @@ import { SafeMarkdown } from "./safe-markdown.js";
 
 interface NoteDetailProps {
   note: StoryNote | null;
+  onEdit: (note: StoryNote) => void;
+  onDelete: (note: StoryNote) => void;
 }
 
 function formatDate(value: string): string {
@@ -13,7 +15,7 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
-export function NoteDetail({ note }: NoteDetailProps): React.JSX.Element {
+export function NoteDetail({ note, onEdit, onDelete }: NoteDetailProps): React.JSX.Element {
   if (!note) {
     return (
       <section className="notesDetail notesDetailEmpty" aria-label="Note detail">
@@ -30,10 +32,10 @@ export function NoteDetail({ note }: NoteDetailProps): React.JSX.Element {
           <h3 id="note-detail-title">{note.title}</h3>
         </div>
         <div className="notesDetailActions">
-          <button type="button" disabled>
+          <button type="button" onClick={() => onEdit(note)}>
             Edit
           </button>
-          <button type="button" disabled>
+          <button type="button" onClick={() => onDelete(note)}>
             Delete
           </button>
         </div>
