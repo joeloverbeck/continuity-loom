@@ -94,12 +94,12 @@ export function NotesView(): React.JSX.Element {
   useEffect(() => loadNotes(), [loadNotes]);
 
   useEffect(() => {
-    if (selectedNote || notes.length === 0) {
+    if (selectedNote || editingNote || notes.length === 0) {
       return;
     }
 
     void selectNote(notes[0]!);
-  }, [notes, selectedNote]);
+  }, [notes, selectedNote, editingNote]);
 
   async function flushEditorBeforeLeaving(): Promise<boolean> {
     if (!editorRef.current?.hasDirtyChanges()) {
