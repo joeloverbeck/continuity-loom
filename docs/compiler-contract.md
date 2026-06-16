@@ -301,7 +301,7 @@ Reference severity lanes:
 Implemented reference and structural blocker codes:
 
 - `selected-pov-reference-invalid`, `onstage-entity-reference-invalid`, `offstage-entity-reference-invalid`, `entity-statuses-reference-invalid`, and `current-location-reference-invalid`;
-- `cast-band-duplicate-membership`, `cast-band-reference-invalid`, and `voice-pressure-attachment-invalid`;
+- `cast-band-duplicate-membership`, `cast-band-reference-invalid`, `onstage-cast-band-missing`, and `voice-pressure-attachment-invalid`;
 - `record-reference-dangling`, `record-reference-type-mismatch`, and `record-reference-unselected-required`;
 - `onstage-offstage-entity-overlap`, `onstage-entity-status-contradiction`, `object-location-holder-incoherence`, and `relationship-self-reference`.
 

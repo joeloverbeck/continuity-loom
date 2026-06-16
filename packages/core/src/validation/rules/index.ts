@@ -3,6 +3,7 @@ import { castBandRules } from "./cast-band.js";
 import { durableChangeMatrixRules } from "./matrix-durable.js";
 import { knowledgeMatrixRules } from "./matrix-knowledge.js";
 import { physicalMatrixRules } from "./matrix-physical.js";
+import { onstageCastBandRules } from "./onstage-cast-band.js";
 import { referentialBriefRules } from "./referential-brief.js";
 import { recordInternalReferenceRules } from "./record-internal.js";
 import { voiceMatrixRules } from "./matrix-voice.js";
@@ -22,6 +23,7 @@ export const validationRules: readonly ValidationRule[] = Object.freeze([
   ...voiceMatrixRules,
   ...referentialBriefRules,
   ...castBandRules,
+  ...onstageCastBandRules,
   ...recordInternalReferenceRules,
   ...securityRules,
   ...warningRules

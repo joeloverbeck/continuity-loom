@@ -100,6 +100,7 @@ FOUNDATIONS §11 taxonomy clauses used below:
 |---|---|---|---|---|---|
 | `cast-band-duplicate-membership` | blocker | applies | One cast member id appears in more than one working-set cast band. | §11.3 | — |
 | `cast-band-reference-invalid` | blocker | applies | A working-set cast-band id is not selected or does not resolve to a selected CAST MEMBER record. | §11.2 / §11.3 | — |
+| `onstage-cast-band-missing` | blocker | applies | Onstage character's selected CAST MEMBER is Unassigned or in offstage relevance, so its dossier is not compiled as present cast. | §11.3 / §11.5 | — |
 | `selected-pov-reference-invalid` | blocker | applies | Selected POV is dangling, mistyped, or not selected for the readiness-required POV lane. | §11.2 / §11.3 | — |
 | `voice-pressure-attachment-invalid` | blocker | applies | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
 | `record-reference-dangling` | blocker | applies | A selected record's extracted internal reference does not resolve to a project record. | §11.3 | — |

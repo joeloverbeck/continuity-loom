@@ -5,11 +5,13 @@ import {
   buildValidationSnapshot,
   compilePrompt,
   demoGenerationSession,
+  demoRecordIds,
   demoRecords,
   demoStoryConfig,
   deriveGenerationContextDefault,
   runValidation,
-  type BuildValidationSnapshotInput
+  type BuildValidationSnapshotInput,
+  type ValidationRecord
 } from "../src/index.js";
 
 describe("validation taxonomy capstone", () => {
@@ -130,7 +132,25 @@ describe("validation taxonomy capstone", () => {
 
 function demoInput(): BuildValidationSnapshotInput {
   return {
-    records: structuredClone(demoRecords),
+    records: demoRecords.map((record): ValidationRecord => ({
+      id: record.id,
+      type: record.type,
+      payload: structuredClone(record.payload),
+      metadata: {
+        id: record.id,
+        type: record.type,
+        displayLabel: record.displayLabel,
+        createdAt: "2026-06-07T00:00:00.000Z",
+        updatedAt: "2026-06-07T00:00:00.000Z",
+        archived: false
+      },
+      ...(record.id === demoRecordIds.elinCast
+        ? { castBand: "active_onstage_cast_full" as const, localFunction: "pov_narrator" }
+        : {}),
+      ...(record.id === demoRecordIds.nikoCast
+        ? { castBand: "active_onstage_cast_full" as const, localFunction: "active_speaker" }
+        : {})
+    })),
     generationSession: structuredClone(demoGenerationSession),
     storyConfig: structuredClone(demoStoryConfig),
     versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }
