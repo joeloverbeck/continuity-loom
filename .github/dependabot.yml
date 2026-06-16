@@ -1,0 +1,25 @@
+version: 2
+updates:
+  # Application dependencies (npm workspaces resolve from the root manifest).
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      npm-development:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      npm-production:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+    # Major bumps fall outside the groups and arrive as individual PRs.
+
+  # Keep the GitHub Actions used by the workflows below current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns: ["*"]
