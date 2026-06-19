@@ -10,9 +10,8 @@ import {
 describe("field paths", () => {
   it("builds canonical paths for story config, brief, and cast fields", () => {
     expect(buildFieldPath("STORY CONTRACT", [
-      { name: "prose_preferences" },
-      { name: "psychic_distance" }
-    ])).toBe("STORY CONTRACT.prose_preferences.psychic_distance");
+      { name: "content_intensity" }
+    ])).toBe("STORY CONTRACT.content_intensity");
 
     expect(buildFieldPath("GENERATION BRIEF", [
       { name: "manual_moment_directive" },

@@ -197,12 +197,6 @@ const storyContractPayload = {
   content_intensity: "mature",
   explicitness: "Only render earned detail.",
   language_register: "controlled prose",
-  prose_preferences: {
-    psychic_distance: "close",
-    dialogue_density: "balanced",
-    interiority: "filtered",
-    paragraphing: "mixed"
-  }
 } as const;
 
 afterEach(async () => {

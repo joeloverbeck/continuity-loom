@@ -68,13 +68,7 @@ export const demoStoryConfig = {
     setting_baseline: "A rain-wet market town where tradespeople share narrow cellars and sharper rumors.",
     content_intensity: "general",
     explicitness: "Keep danger mild and non-graphic; focus on secrecy, trust, and practical choices.",
-    language_register: "clear literary prose with grounded sensory detail",
-    prose_preferences: {
-      psychic_distance: "close",
-      dialogue_density: "moment_led",
-      interiority: "filtered",
-      paragraphing: "mixed"
-    }
+    language_register: "clear literary prose with grounded sensory detail"
   } satisfies StoryContract,
   universalContentPolicy: {
     rating_label: "General audience / mild suspense",

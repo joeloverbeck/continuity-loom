@@ -165,18 +165,6 @@ const storyConfigEntries: readonly GuidanceInput[] = [
   config("STORY CONTRACT.language_register", "The durable language register for narration and dialogue.", [
     "{language_register}"
   ]),
-  config("STORY CONTRACT.prose_preferences.psychic_distance", "Default narrative closeness for prose rendering.", [
-    "{psychic_distance}"
-  ], { enumValues: psychicDistanceGuidance }),
-  config("STORY CONTRACT.prose_preferences.dialogue_density", "Default density of spoken exchange.", [
-    "{dialogue_density}"
-  ], { enumValues: dialogueDensityGuidance }),
-  config("STORY CONTRACT.prose_preferences.interiority", "Default access to thought and felt interior movement.", [
-    "{interiority_mode}"
-  ], { enumValues: interiorityGuidance }),
-  config("STORY CONTRACT.prose_preferences.paragraphing", "Default paragraph rhythm for the prose surface.", [
-    "{paragraphing}"
-  ], { enumValues: paragraphingGuidance }),
   config("UNIVERSAL CONTENT POLICY.rating_label", "Human-readable rating label for the current policy.", [
     "{rating_label}"
   ]),

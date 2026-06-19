@@ -1,6 +1,6 @@
 # SPEC024REMSTOCON-001: Remove `prose_preferences` from @loom/core schema, validation, guidance, and demo — with authority docs co-landed
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — removes the `prose_preferences` group from `storyContractSchema` (changing the `StoryContract` type), drops the presence clause + `prosePreferencesPresent` helper from the STORY CONTRACT completeness rule and scrubs its `whyItMatters` message, removes four STORY-CONTRACT field-guidance entries, removes the demo-fixture block, and updates authority docs (`docs/story-record-schema.md`, `docs/compiler-contract.md`). Compiled prompt output is unchanged — the removed fields were never compiled.
@@ -118,3 +118,17 @@ Drop the `prose_preferences` block from each core test fixture (see Files to Tou
 1. `npm test --workspace @loom/core`
 2. `npm run typecheck && npm run lint`
 3. `grep -rn "prose_preferences" packages/core/src docs && echo FAIL || echo OK` — targeted to this ticket's surfaces; the repo-wide sweep across all packages is the capstone (SPEC024REMSTOCON-004) because `@loom/server` / `@loom/web` sites clear in 002 / 003.
+
+## Outcome
+
+Completed: 2026-06-19
+
+Implemented with the same-revision coupling required by SPEC024REMSTOCON-001/-002/-003. Removed `STORY CONTRACT.prose_preferences` from the core `storyContractSchema`, the STORY CONTRACT completeness blocker, field-guidance entries, demo fixture, and core test fixtures. Updated `docs/story-record-schema.md` and `docs/compiler-contract.md` so PROSE MODE is the sole source for the surviving prose-style prompt placeholders. Added/updated absence assertions for the removed story-config field paths.
+
+Deviations: none from the intended end state. The migration and web UI portions landed in the same revision through SPEC024REMSTOCON-002 and SPEC024REMSTOCON-003 because the shared strict schema could not safely land alone.
+
+Verification:
+- `npm test --workspace @loom/core` — passed, 52 files / 447 tests.
+- `npm run typecheck` — passed across workspaces.
+- `npm run lint` — passed across workspaces.
+- `git diff --check` — passed.

@@ -15,9 +15,6 @@ export interface EnumGuidanceProps {
 
 const cardEnumPaths = new Set([
   "STORY CONTRACT.content_intensity",
-  "STORY CONTRACT.prose_preferences.psychic_distance",
-  "STORY CONTRACT.prose_preferences.dialogue_density",
-  "STORY CONTRACT.prose_preferences.interiority",
   "PROSE MODE.psychic_distance",
   "PROSE MODE.interiority_mode",
   "PROSE MODE.dialogue_density",

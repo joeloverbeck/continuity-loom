@@ -23,7 +23,7 @@ This contract is not an appendix. It is the authoritative bridge between concept
 The compiler renders from these sources only:
 
 1. Template constants from `prompt-template.md`.
-2. Story configuration records: STORY CONTRACT, UNIVERSAL CONTENT POLICY, story-level prose preferences, and story-level defaults.
+2. Story configuration records: STORY CONTRACT, UNIVERSAL CONTENT POLICY, and story-level defaults.
 3. `GenerationSessionReadyInput`, produced by deterministic normalization from saved draft state, story configuration, active working set, accepted-segment count, selected records, provider configuration where relevant, and deterministic empty-state/default rules.
 4. Generation-time brief fields inside that ready input: current authoritative state, immediate handoff, manual directive, prose mode, stop guidance, validation focus tags, current cast voice pressure, and cast voice overrides.
 5. User-selected active working set records.
@@ -170,7 +170,7 @@ Requiredness terms:
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |
 | `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
 | `{pov_character}` | PROSE MODE `pov_character`, resolved to the referenced selected record's human display label | Yes | Block if blank, unresolved, mistyped, or not selected | N/A | `omniscient` and `variable` render as literals. Non-omniscient POV requires knowledge profile. A referenced entity or cast member must resolve to a selected record before compilation. |
-| `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field or story default | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
+| `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
 | `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | Omit whole `<hard_canon>` section when empty | Do not silently include unselected facts except story configuration constants. |
 | `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
 | `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |

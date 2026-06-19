@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: None — verification-only; runs existing lint/typecheck/test/build plus repo-wide grep sweeps, adds no production or test surface.
-**Deps**: SPEC024REMSTOCON-001, SPEC024REMSTOCON-002, SPEC024REMSTOCON-003
+**Deps**: `archive/tickets/SPEC024REMSTOCON-001.md`, `archive/tickets/SPEC024REMSTOCON-002.md`, `archive/tickets/SPEC024REMSTOCON-003.md`
 
 ## Problem
 
@@ -12,7 +12,7 @@ The spec's §Verification includes cross-package guarantees no single package ti
 
 ## Assumption Reassessment (2026-06-19)
 
-1. **Upstream tickets compose the end state:** SPEC024REMSTOCON-001 (core + docs), -002 (server migration), -003 (web) each clear their own `prose_preferences` sites (verified per-package in their own Acceptance). This ticket asserts the union — there is nothing left to remove, only to prove gone.
+1. **Upstream tickets compose the end state:** `archive/tickets/SPEC024REMSTOCON-001.md` (core + docs), `archive/tickets/SPEC024REMSTOCON-002.md` (server migration), and `archive/tickets/SPEC024REMSTOCON-003.md` (web) each clear their own `prose_preferences` sites (verified per-package in their own Acceptance). This ticket asserts the union — there is nothing left to remove, only to prove gone.
 2. **Verification surfaces confirmed** (grep / package.json, 2026-06-19): the underscore inventory and the 3 space-form sites were enumerated during reassessment; `npm run lint|typecheck|test|build` are real root scripts. The one **intended survivor** of the space-form sweep is `docs/compiler-contract.md:242` ("Story/prose preferences … render in their own placeholders") — accurate via PROSE MODE, retained by design in 001.
 3. **Cross-artifact boundary under audit:** the whole-repo token surface (`packages/**`, `docs/**`) for `prose_preferences` and "prose preferences". The grep must run **after `npm run build`** so regenerated `dist/` artifacts are not stale false positives.
 4. **FOUNDATIONS alignment (§13 field economy, §8 schema/contract sync):** a clean repo-wide grep is the proof that the duplicate authority path is fully gone and that schema, validation, guidance, demo, UI, stored data, and authority docs are mutually consistent — no residue that would let the dead field reappear as prompt context or a stored key.
@@ -41,7 +41,7 @@ Record the sweep outputs in the PR/review notes as the removal's completion proo
 
 ## Files to Touch
 
-- None — verification-only (exercises the surfaces SPEC024REMSTOCON-001/-002/-003 modified; does not modify them).
+- None — verification-only (exercises the surfaces modified by `archive/tickets/SPEC024REMSTOCON-001.md`, `archive/tickets/SPEC024REMSTOCON-002.md`, and `archive/tickets/SPEC024REMSTOCON-003.md`; does not modify them).
 
 ## Out of Scope
 
@@ -65,7 +65,7 @@ Record the sweep outputs in the PR/review notes as the removal's completion proo
 
 ### New/Modified Tests
 
-1. None — verification-only ticket; behavioral coverage is the regressions added in SPEC024REMSTOCON-001 (field-path absence) and -002 (legacy-payload migration), plus the existing pipeline suites named above.
+1. None — verification-only ticket; behavioral coverage is the regressions added in `archive/tickets/SPEC024REMSTOCON-001.md` (field-path absence) and `archive/tickets/SPEC024REMSTOCON-002.md` (legacy-payload migration), plus the existing pipeline suites named above.
 
 ### Commands
 

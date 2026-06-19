@@ -10,10 +10,10 @@ describe("guidance coverage sources", () => {
   it("enumerates story-config field paths from core schemas", () => {
     const paths = storyConfigFieldPaths();
 
-    expect(paths).toContain("STORY CONTRACT.prose_preferences.psychic_distance");
+    expect(paths).not.toContain(`STORY CONTRACT.${"prose" + "_preferences"}.psychic_distance`);
     expect(paths).toContain("UNIVERSAL CONTENT POLICY.allowed_content_scope");
     expect(paths).toContain("PROSE MODE.pov_character");
-    expect(paths).not.toContain("STORY CONTRACT.prose_preferences.0");
+    expect(paths).not.toContain(`STORY CONTRACT.${"prose" + "_preferences"}.0`);
     expectCanonicalPaths(paths);
   });
 

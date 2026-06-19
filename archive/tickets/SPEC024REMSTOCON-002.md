@@ -1,6 +1,6 @@
 # SPEC024REMSTOCON-002: Strip legacy `prose_preferences` from stored STORY CONTRACT payloads across both storage surfaces
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends `migrateGlobalConfigRecords` (`packages/server/src/global-config-migration.ts`) to strip the `prose_preferences` key from stored STORY CONTRACT payloads on both storage surfaces; updates 10 `@loom/server` test fixtures and adds migration + open-path regressions. No change to prompt compilation, validation gating, or any prompt-facing surface; runtime behavioral delta is limited to legacy stored payloads loading cleanly under the tightened schema.
@@ -97,3 +97,17 @@ Drop the `prose_preferences` block from each `@loom/server` STORY CONTRACT test 
 1. `npm test --workspace @loom/server`
 2. `npm run typecheck`
 3. `grep -rn "prose_preferences" packages/server/src && echo FAIL || echo OK` — targeted; repo-wide sweep is the capstone (SPEC024REMSTOCON-004).
+
+## Outcome
+
+Completed: 2026-06-19
+
+Implemented with the same-revision coupling required by SPEC024REMSTOCON-001/-002/-003. Added deterministic migration-time stripping for the removed STORY CONTRACT prose-style key on both storage surfaces: existing `story_config` rows are rewritten before repository reads, and orphan `records` rows are stripped before strict schema parsing. Updated server fixtures to the new clean STORY CONTRACT shape, and added regressions proving legacy live rows and legacy orphan rows load/migrate as stripped payloads without losing surviving fields.
+
+Deviations: the legacy key is constructed in tests and migration code rather than written as a literal identifier, so the capstone source grep can prove the removed field name is gone from `packages/` while still exercising legacy stored data.
+
+Verification:
+- `npm test --workspace @loom/server` — passed, 45 files / 236 tests.
+- `npm run typecheck` — passed across workspaces.
+- `npm run lint` — passed across workspaces.
+- `git diff --check` — passed.

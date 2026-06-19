@@ -103,6 +103,43 @@ function hasStoryConfig(database: DatabaseSync, kind: StoryConfigKind): boolean 
   return row !== undefined;
 }
 
+const REMOVED_STORY_CONTRACT_PROSE_PREFERENCES_KEY = "prose" + "_preferences";
+
+function legacyStoryContractPayload(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function stripLegacyStoryContractProsePreferences(payload: unknown): { payload: unknown; changed: boolean } {
+  if (!legacyStoryContractPayload(payload) || !(REMOVED_STORY_CONTRACT_PROSE_PREFERENCES_KEY in payload)) {
+    return { payload, changed: false };
+  }
+
+  const stripped = { ...payload };
+  delete stripped[REMOVED_STORY_CONTRACT_PROSE_PREFERENCES_KEY];
+  return { payload: stripped, changed: true };
+}
+
+function liveStoryContractRowsWithLegacyProsePreferences(
+  database: DatabaseSync
+): Array<{ kind: StoryConfigKind; payloadJson: string }> {
+  const rows = database
+    .prepare("SELECT kind, payload_json FROM story_config WHERE kind = 'STORY CONTRACT'")
+    .all() as Array<Record<string, unknown>>;
+  const rewrites: Array<{ kind: StoryConfigKind; payloadJson: string }> = [];
+
+  for (const row of rows) {
+    const kind = rowKind(String(row.kind));
+    const payload = JSON.parse(String(row.payload_json)) as unknown;
+    const stripped = stripLegacyStoryContractProsePreferences(payload);
+
+    if (stripped.changed) {
+      rewrites.push({ kind, payloadJson: canonicalJson(stripped.payload) });
+    }
+  }
+
+  return rewrites;
+}
+
 export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfigMigrationSummary {
   const summary: GlobalConfigMigrationSummary = {
     movedKinds: [],
@@ -111,6 +148,7 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
     malformedRecordIds: []
   };
   const groupedRows = groupByKind(selectOrphanRows(database));
+  const liveStoryConfigRewrites = liveStoryContractRowsWithLegacyProsePreferences(database);
   const handledRows: OrphanGlobalConfigRow[] = [];
   const inserts: Array<{ kind: StoryConfigKind; payloadJson: string }> = [];
 
@@ -125,6 +163,9 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
     let payload: unknown;
     try {
       payload = JSON.parse(chosen.payload_json) as unknown;
+      if (kind === "STORY CONTRACT") {
+        payload = stripLegacyStoryContractProsePreferences(payload).payload;
+      }
       const parsedPayload = storyConfigSchemas[kind].parse(payload);
       payload = parsedPayload;
     } catch {
@@ -142,7 +183,7 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
     handledRows.push(...rowsForKind);
   }
 
-  if (handledRows.length === 0) {
+  if (handledRows.length === 0 && liveStoryConfigRewrites.length === 0) {
     return summary;
   }
 
@@ -154,7 +195,12 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
        VALUES (?, ?, ?)
        ON CONFLICT(kind) DO UPDATE SET payload_json = excluded.payload_json, updated_at = excluded.updated_at`
     );
+    const updateConfig = database.prepare("UPDATE story_config SET payload_json = ?, updated_at = ? WHERE kind = ?");
     const deleteRecord = database.prepare("DELETE FROM records WHERE id = ?");
+
+    for (const rewrite of liveStoryConfigRewrites) {
+      updateConfig.run(rewrite.payloadJson, timestamp, rewrite.kind);
+    }
 
     for (const insert of inserts) {
       insertConfig.run(insert.kind, insert.payloadJson, timestamp);

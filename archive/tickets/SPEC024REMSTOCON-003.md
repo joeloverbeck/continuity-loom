@@ -1,6 +1,6 @@
 # SPEC024REMSTOCON-003: Remove the `prose_preferences` group from the story-config UI
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — removes the `prose_preferences` `nested_group` from the STORY CONTRACT editor descriptor and the three STORY-CONTRACT prose-prefs paths from `EnumGuidance`, plus the editor test fixture; no production behavior beyond the editor no longer rendering the dead group.
@@ -75,3 +75,17 @@ Drop the `prose_preferences` block from the STORY CONTRACT fixture (line 29) and
 1. `npm test --workspace @loom/web`
 2. `npm run typecheck`
 3. `grep -rn "prose_preferences" packages/web/src && echo FAIL || echo OK` — targeted; repo-wide sweep is the capstone (SPEC024REMSTOCON-004).
+
+## Outcome
+
+Completed: 2026-06-19
+
+Implemented with the same-revision coupling required by SPEC024REMSTOCON-001/-002/-003. Removed the dead STORY CONTRACT prose-style nested group from the story-config editor descriptor, removed the matching enum-guidance card paths, and updated the editor fixture to the post-removal STORY CONTRACT shape. PROSE MODE remains unchanged as the sole UI location for these prose-style controls.
+
+Deviations: no real browser smoke was run for this ticket because the change is a descriptor/guidance-path removal with no request-shape or persisted-user-data workflow of its own; the web component suite covers the rendered descriptor shape, and the capstone full build/test plus grep proof covers the composed UI/source end state.
+
+Verification:
+- `npm test --workspace @loom/web` — passed, 33 files / 268 tests.
+- `npm run typecheck` — passed across workspaces.
+- `npm run lint` — passed across workspaces.
+- `git diff --check` — passed.

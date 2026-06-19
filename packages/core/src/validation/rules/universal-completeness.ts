@@ -35,15 +35,14 @@ function validateStoryConfig(snapshot: ValidationSnapshot): readonly Diagnostic[
     !hasValue(storyContract.tone) ||
     !hasText(storyContract.content_intensity) ||
     !hasText(storyContract.explicitness) ||
-    !hasText(storyContract.language_register) ||
-    !prosePreferencesPresent(storyContract.prose_preferences)
+    !hasText(storyContract.language_register)
   ) {
     diagnostics.push(
       blocker({
         code: DIAGNOSTIC_CODES.missingStoryConfig,
         field: "storyConfig.storyContract",
         message: "Story contract is missing required launch context.",
-        whyItMatters: "The prompt cannot carry story identity, tone, content envelope, or prose preferences without the story contract.",
+        whyItMatters: "The prompt cannot carry story identity, tone, or content envelope without the story contract.",
         suggestedActions: ["revise"]
       })
     );
@@ -376,19 +375,6 @@ function castCoreDossierPresent(payload: Record<string, unknown>): boolean {
     hasObject(payload.pressure_behavior_core) &&
     hasObject(payload.body_presence_core) &&
     hasObject(payload.agency_core)
-  );
-}
-
-function prosePreferencesPresent(value: unknown): boolean {
-  if (!hasObject(value)) {
-    return false;
-  }
-
-  return (
-    hasText(value.psychic_distance) &&
-    hasText(value.dialogue_density) &&
-    hasText(value.interiority) &&
-    hasText(value.paragraphing)
   );
 }
 

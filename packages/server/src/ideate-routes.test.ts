@@ -264,12 +264,6 @@ const storyConfigPayloads = {
     content_intensity: "general",
     explicitness: "non-graphic",
     language_register: "plain",
-    prose_preferences: {
-      psychic_distance: "close",
-      dialogue_density: "balanced",
-      interiority: "filtered",
-      paragraphing: "mixed"
-    }
   },
   "PROSE MODE": {
     pov_character: "omniscient",
