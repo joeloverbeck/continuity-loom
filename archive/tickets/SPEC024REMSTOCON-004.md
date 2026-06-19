@@ -1,6 +1,6 @@
 # SPEC024REMSTOCON-004: Cross-package removal verification — repo-wide grep-proofs + full green
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: None — verification-only; runs existing lint/typecheck/test/build plus repo-wide grep sweeps, adds no production or test surface.
@@ -72,3 +72,20 @@ Record the sweep outputs in the PR/review notes as the removal's completion proo
 1. `npm run build && { grep -rn "prose_preferences" packages docs | grep -v /dist/ && echo FAIL || echo OK; }`
 2. `grep -rni "prose preferences" packages docs | grep -v /dist/`
 3. `npm run lint && npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-19
+
+Completed the cross-package verification capstone after `archive/tickets/SPEC024REMSTOCON-001.md`, `archive/tickets/SPEC024REMSTOCON-002.md`, and `archive/tickets/SPEC024REMSTOCON-003.md` landed. No production or test files changed for this ticket; it verified the composed removal state.
+
+Deviations: none. `npm run build` emitted Vite's existing chunk-size warning, but completed successfully.
+
+Verification:
+- `npm run build` — passed before the grep sweeps; Vite reported the existing chunk-size warning.
+- `grep -rn --exclude-dir=dist "prose_preferences" packages docs` — passed with no matches.
+- `grep -rni --exclude-dir=dist "prose preferences" packages docs` — passed with the sole intended survivor at `docs/compiler-contract.md:242`.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 130 files / 951 tests.
+- `npm run build` — passed again after the full gates; Vite reported the existing chunk-size warning.

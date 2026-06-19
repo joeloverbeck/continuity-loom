@@ -1,6 +1,6 @@
 # SPEC-024 — Remove the Dead STORY CONTRACT `prose_preferences` Duplicate
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 cleanup spec; schema + validation + storage + docs alignment
 Depends on: existing local project store, global-config migration hook, deterministic compiler, validation engine, story-config UI, and field-guidance system
 Governing authority: `docs/FOUNDATIONS.md`
@@ -302,3 +302,28 @@ package-boundary order that keeps each intermediate state buildable:
   removal but spans `@loom/core`, `@loom/web`, `@loom/server` (migration), and
   docs. A natural split is core+docs+migration as one reviewable diff and the web
   UI as a second; the decomposition step settles this.
+
+## Outcome
+
+Completed: 2026-06-19
+
+Implemented and verified through the archived ticket series:
+
+- `archive/tickets/SPEC024REMSTOCON-001.md` removed the dead STORY CONTRACT field from core schema, validation, guidance, demo data, authority docs, and core fixtures.
+- `archive/tickets/SPEC024REMSTOCON-002.md` added idempotent legacy-payload stripping for both live `story_config` rows and orphan global-config records before strict parsing.
+- `archive/tickets/SPEC024REMSTOCON-003.md` removed the dead STORY CONTRACT prose-style group from the story-config UI and enum guidance.
+- `archive/tickets/SPEC024REMSTOCON-004.md` completed the cross-package grep-proof and full-pipeline capstone.
+
+Deviations: legacy stored-data tests construct the removed key dynamically so the capstone can prove the removed identifier is absent from `packages/` and `docs/` source while still covering legacy payloads. No browser smoke was run for the UI descriptor removal because the change has no request-shape or persisted-user-data workflow of its own; `@loom/web` component coverage, root build, and grep proof cover the composed UI/source end state. `docs/validation-rule-inventory.md` required no change because it did not name the removed field or helper.
+
+Verification:
+- `npm test --workspace @loom/core` — passed, 52 files / 447 tests.
+- `npm test --workspace @loom/server` — passed, 45 files / 236 tests.
+- `npm test --workspace @loom/web` — passed, 33 files / 268 tests.
+- `npm run build` — passed before the capstone grep sweeps; Vite reported the existing chunk-size warning.
+- `grep -rn --exclude-dir=dist "prose_preferences" packages docs` — passed with no matches.
+- `grep -rni --exclude-dir=dist "prose preferences" packages docs` — passed with the sole intended survivor at `docs/compiler-contract.md:242`.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 130 files / 951 tests.
+- `npm run build` — passed again after the full gates; Vite reported the existing chunk-size warning.
