@@ -93,7 +93,13 @@ describe("FieldHelp", () => {
     fireEvent.click(trigger);
     expect(await screen.findByText("The rule for whether and how this secret may surface.")).not.toBeNull();
 
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Outside" }));
+    // Radix's outside-dismissal needs the full pointer/click gesture; a bare
+    // pointerDown is not recognized as an outside interaction in the jsdom
+    // (forked, multi-file) test environment, so dispatch the whole sequence.
+    const outside = screen.getByRole("button", { name: "Outside" });
+    fireEvent.pointerDown(outside);
+    fireEvent.pointerUp(outside);
+    fireEvent.click(outside);
     await waitFor(() => {
       expect(screen.queryByText("The rule for whether and how this secret may surface.")).toBeNull();
     });
