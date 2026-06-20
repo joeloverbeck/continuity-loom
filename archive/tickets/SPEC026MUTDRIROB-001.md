@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-001: Add assurance dependencies and Stryker dry-run configuration
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds root devDependencies (StrykerJS, `@vitest/coverage-v8`, fast-check), three Stryker pillar configs, a shared config factory, `scripts/robustness/` dry-run scripts, `package.json` mutation scripts, and `.gitignore` entries; no production behavior change.
@@ -95,3 +95,22 @@ Append to `.gitignore`: `coverage/`, `reports/mutation/`, `.stryker-tmp/`, `.cac
 1. `npm run mutation:prose -- --dryRunOnly` (repeat for `mutation:ideation`, `mutation:validation`) — confirm mutated file set equals the locked glob.
 2. `npm run lint && npm run typecheck && npm test` — full default pipeline unchanged.
 3. A dry-run-only boundary is correct here: no mutants are scored until SPEC026MUTDRIROB-022; this ticket only proves the configs resolve and target the right files.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Implemented the root mutation-assurance foundation: exact-pinned root devDependencies and lockfile updates for StrykerJS, the Vitest runner, TypeScript checker, V8 coverage, fast-check, and `@fast-check/vitest`; root mutation scripts; shared `scripts/robustness/stryker-base.mjs`; sequential `mutation:core` runner; three pillar Stryker configs with advisory `break: null` floors; and narrow generated-artifact ignores for coverage, Stryker temp/cache, and mutation reports.
+
+The validation dry run exposed one tooling interaction: `packages/core/test/validation-rule-inventory.test.ts` reads validation rule source text, while Stryker dry-run instrumentation rewrites sandbox source. The test now redirects Stryker sandbox source paths back to the original worktree via `INIT_CWD`, preserving normal source-inventory behavior while allowing validation mutation dry runs to inspect uninstrumented source.
+
+Deviations from the plan: none for the ticket scope. Stryker dry runs required execution outside the filesystem sandbox because Stryker opens a local logging server; no product server or LAN binding was introduced.
+
+Verification:
+
+- `npm run mutation:prose -- --dryRunOnly` passed; Stryker found 12 of 785 files to mutate and completed the initial test run.
+- `npm run mutation:ideation -- --dryRunOnly` passed; Stryker found 5 of 785 files to mutate and completed the initial test run.
+- `npm run mutation:validation -- --dryRunOnly` passed after the source-inventory test adjustment; Stryker found 21 of 785 files to mutate and completed the initial test run.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 135 files, 1023 tests.

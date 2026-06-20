@@ -20,6 +20,7 @@ lib-cov
 
 # Coverage directory used by tools like istanbul
 coverage
+coverage/
 *.lcov
 
 # nyc test coverage
@@ -53,6 +54,11 @@ tsconfig.tsbuildinfo
 
 # Optional eslint cache
 .eslintcache
+
+# Mutation and robustness-test artifacts
+reports/mutation/
+.stryker-tmp/
+.cache/stryker/
 
 # Optional stylelint cache
 .stylelintcache
