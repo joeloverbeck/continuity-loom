@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-006: Make retained non-prompt fields explicit in guidance
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds field-specific prompt-destination/status metadata (guidance, compile-destinations) for ~13 retained non-prompt fields and updates the schema/contract prompt-treatment notes; no compiled-prompt, schema, storage, or migration change
@@ -93,3 +93,24 @@ Update editor descriptors where destination badges/help are derived so the non-p
 1. `npm test -- field-guidance-coverage field-guidance-doctrine guidance-coverage-sources field-guidance-records compile-destinations`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `npm test -- compiler-golden compiler-ideation-golden` (golden-stability check confirming this metadata-only change adds nothing to either compiled prompt).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Changed:
+- Added explicit non-prompt guidance for retained authoring/validation/history fields: `CAST MEMBER.entity_id`, `ENTITY.roles_in_story[]`, `OBJECT.durability`, `PLAN.fallback_steps[]`, `CLOCK.tick_history[]` fields, and RELATIONSHIP classifier fields.
+- Preserved RELATIONSHIP prose-facing guidance for `description`, `pressure_text`, and `current_expression`.
+- Added guidance tests for the non-prompt set and author-update paths for plan fallbacks and clock history.
+- Updated `docs/story-record-schema.md` and `docs/compiler-contract.md` to distinguish retained metadata from literal prompt content.
+
+Deviations:
+- `compile-destinations.ts`, `field-guidance.ts`, `field-guidance-coverage.test.ts`, `field-guidance-doctrine.test.ts`, `guidance-coverage-sources.test.ts`, and `compile-destinations.test.ts` did not require edits after live-code inspection; existing coverage/doctrine tests exercised the updated registry.
+- Browser smoke was not run because this ticket changes guidance/docs metadata only; golden-stability tests confirmed no compiled prompt output changed.
+
+Verification:
+- `npm test -- field-guidance-coverage field-guidance-doctrine guidance-coverage-sources field-guidance-records field-guidance-cast-material compile-destinations compiler-golden compiler-ideation-golden`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`

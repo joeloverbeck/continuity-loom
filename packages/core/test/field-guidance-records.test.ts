@@ -120,7 +120,8 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
     expect(getFieldGuidance("RELATIONSHIP.visibility")).toMatchObject({
       promptFacing: "never",
       promptDestinations: [],
-      validationRole: "Operational metadata for filtering, validation, or UI state."
+      validationRole:
+        "Visibility metadata for review and validation; prose-facing relationship material comes from description, pressure_text, and current_expression."
     });
   });
 
@@ -138,6 +139,22 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
       expect(Object.keys(getFieldGuidance(`RELATIONSHIP.${field}`)?.enumValues ?? {}).sort(), field).toEqual(
         enumOptions(field)
       );
+    }
+  });
+
+  it("keeps relationship classifier fields out of literal prompt destinations", () => {
+    for (const field of ["axis", "direction_kind", "value", "valence", "visibility"] as const) {
+      expect(getFieldGuidance(`RELATIONSHIP.${field}`)).toMatchObject({
+        promptFacing: "never",
+        promptDestinations: []
+      });
+    }
+
+    for (const field of ["description", "pressure_text", "current_expression"] as const) {
+      expect(getFieldGuidance(`RELATIONSHIP.${field}`)).toMatchObject({
+        promptFacing: "conditional",
+        promptDestinations: ["facts_beliefs_events"]
+      });
     }
   });
 
@@ -163,6 +180,24 @@ describe("field guidance for knowledge, pressure, relationship, and emotion reco
       validationRole:
         "Authoring metadata for continuity review; it is not sent to the prose prompt and does not control compiled event ordering."
     });
+  });
+
+  it("marks plan fallback branches and clock tick history as author-maintained history", () => {
+    expect(getFieldGuidance("PLAN.fallback_steps[]")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: [],
+      validationRole: "Private planning metadata; fallback branches are not offered to the prose writer as alternate futures."
+    });
+    expect(getFieldGuidance("PLAN.fallback_steps[]")?.authoringAdvice).toContain("update current_step");
+
+    for (const path of ["CLOCK.tick_history[].threshold", "CLOCK.tick_history[].cause", "CLOCK.tick_history[].result"]) {
+      expect(getFieldGuidance(path)).toMatchObject({
+        promptFacing: "never",
+        promptDestinations: [],
+        validationRole: "Continuity-history metadata; historical ticks are excluded from current prompt context."
+      });
+      expect(getFieldGuidance(path)?.authoringAdvice).toContain("current state");
+    }
   });
 });
 

@@ -89,4 +89,21 @@ describe("field guidance for cast, entity, and material records", () => {
       expect(validatePromptDestinations(entry), entry.fieldPath).toEqual([]);
     }
   });
+
+  it("marks retained validation/classification fields as non-prompt-facing", () => {
+    expect(getFieldGuidance("CAST MEMBER.entity_id")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: [],
+      validationRole:
+        "Record-reference metadata for validation and linkage; active cast dossiers do not print raw entity ids."
+    });
+    expect(getFieldGuidance("ENTITY.roles_in_story[]")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: []
+    });
+    expect(getFieldGuidance("OBJECT.durability")).toMatchObject({
+      promptFacing: "never",
+      promptDestinations: []
+    });
+  });
 });

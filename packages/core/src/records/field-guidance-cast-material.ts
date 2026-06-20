@@ -33,6 +33,14 @@ const visibilityToPovGuidance = {
 };
 
 const specificGuidance = new Map<string, Partial<FieldGuidance>>([
+  ["CAST MEMBER.entity_id", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Reference to the ENTITY this cast dossier represents.",
+    validationRole:
+      "Record-reference metadata for validation and linkage; active cast dossiers do not print raw entity ids.",
+    authoringAdvice: "Use the linked ENTITY for identity/state references, not as prose text."
+  }],
   ["CAST MEMBER.voice_anchor.core_voice", durableVoice("Core durable voice identity.", {
     examples: ["Speaks in exacting practical images; avoids decorative reassurance."],
     antiExamples: ["Stoic but secretly soft."]
@@ -133,7 +141,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["OBJECT.durability", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "How durable this object's state is for continuity.",
+    validationRole:
+      "Continuity metadata for author review; object prose rendering currently uses description, holder/location, visibility, affordances, and constraints.",
     enumValues: {
       local_texture: { short: "Useful local texture; low continuity weight." },
       continuity_relevant: { short: "Track changes because future continuity may depend on it." },

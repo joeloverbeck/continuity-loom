@@ -137,7 +137,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["RELATIONSHIP.axis", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "The dimension of the bond. Pick the single axis the pressure runs along; nuance goes in prose fields.",
+    validationRole:
+      "Classification metadata for authoring, filtering, and review; prose-facing relationship pressure comes from description, pressure_text, and current_expression.",
     enumValues: {
       trust: { short: "One party relies on the other's honesty, care, or steadiness." },
       fear: { short: "One party is afraid of the other or what the other may do." },
@@ -160,7 +164,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["RELATIONSHIP.direction_kind", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "Whether the quality flows one way or both.",
+    validationRole:
+      "Relationship structure metadata for interpreting from/to; it is not literal prompt content.",
     relatedFields: ["RELATIONSHIP.from", "RELATIONSHIP.to"],
     enumValues: {
       directed: { short: "From -> to only." },
@@ -178,7 +186,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     relatedFields: ["RELATIONSHIP.from", "RELATIONSHIP.direction_kind"]
   }],
   ["RELATIONSHIP.value", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "Intensity of the bond on its axis.",
+    validationRole:
+      "Classification metadata for author review; render the actionable pressure in pressure_text/current_expression.",
     enumValues: {
       none: { short: "Effectively absent." },
       trace: { short: "Barely present." },
@@ -189,7 +201,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["RELATIONSHIP.valence", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "The shape of reciprocity or stability between the two parties.",
+    validationRole:
+      "Classification metadata for author review; render the actionable pressure in pressure_text/current_expression.",
     enumValues: {
       symmetric: { short: "Both feel it similarly." },
       asymmetric: { short: "One party feels it far more than the other." },
@@ -199,7 +215,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["RELATIONSHIP.visibility", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "Who can perceive this relationship.",
+    validationRole:
+      "Visibility metadata for review and validation; prose-facing relationship material comes from description, pressure_text, and current_expression.",
     enumValues: {
       private: { short: "Not visible to others." },
       shared: { short: "Known to some involved parties." },
@@ -254,6 +274,15 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     antiExamples: ["Eventually win back the kingdom."],
     authoringAdvice: "Keep it local enough to affect the next generated segment."
   }],
+  ["PLAN.fallback_steps[]", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Authoring backup steps for plan maintenance.",
+    validationRole:
+      "Private planning metadata; fallback branches are not offered to the prose writer as alternate futures.",
+    authoringAdvice:
+      "When a fallback becomes current, update current_step, selected pressure, or current state instead of expecting multiple future options to compile."
+  }],
   ["PLAN.can_drive_prose", {
     promptFacing: "never",
     promptDestinations: [],
@@ -269,6 +298,30 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     short: "What causes the clock to advance.",
     examples: ["Each failed lockpick attempt moves the patrol closer."],
     antiExamples: ["When more pressure would be convenient."]
+  }],
+  ["CLOCK.tick_history[].threshold", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Historical threshold already crossed by this clock.",
+    validationRole: "Continuity-history metadata; historical ticks are excluded from current prompt context.",
+    authoringAdvice:
+      "If a past tick still matters now, represent it as current state, an event, a consequence, or current clock pressure."
+  }],
+  ["CLOCK.tick_history[].cause", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "What caused a historical clock tick.",
+    validationRole: "Continuity-history metadata; historical ticks are excluded from current prompt context.",
+    authoringAdvice:
+      "If the cause still matters now, represent it as current state, an event, a consequence, or current clock pressure."
+  }],
+  ["CLOCK.tick_history[].result", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "What changed after a historical clock tick.",
+    validationRole: "Continuity-history metadata; historical ticks are excluded from current prompt context.",
+    authoringAdvice:
+      "If the result still matters now, represent it as current state, an event, a consequence, or current clock pressure."
   }],
   ["OBLIGATION.consequence_if_broken", {
     short: "What happens if the obligation is violated.",

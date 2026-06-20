@@ -730,6 +730,7 @@ Validation:
 - `owner` and `carried_by` record ids must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional.
 - `current_location` record ids must resolve to LOCATION or OBJECT records. Dangling or mistyped references block; unselected resolved references warn while optional.
 - `current_location: carried_by_holder` is incoherent when `carried_by: none` and blocks validation.
+- `durability` is continuity metadata for author review. It is not currently rendered as literal object prompt text.
 
 ### 7.3 VISIBLE AFFORDANCE
 
@@ -835,6 +836,7 @@ can_drive_prose: true | false
 Validation:
 
 - `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. If the plan can drive prose or hidden-plan behavior is expected, an unselected resolved holder blocks; otherwise it warns.
+- `fallback_steps` is authoring metadata. When a fallback becomes current, update `current_step`, selected pressure, or current state; the compiler does not offer multiple future options.
 
 ### 8.4 CLOCK
 
@@ -854,6 +856,11 @@ tick_history:
     result: prose
 status: active | paused | resolved | abandoned
 ```
+
+Prompt treatment:
+
+- Current clock pressure renders through `current_pressure`, `tick_trigger`, `next_threshold`, and `possible_effects`.
+- `tick_history` is continuity history for author review. If a historical tick still matters now, represent it as current state, an EVENT, a CONSEQUENCE, or current clock pressure.
 
 ### 8.5 OBLIGATION
 
@@ -935,6 +942,7 @@ status: active | resolved | abandoned
 Prompt treatment:
 
 - Compile `description`, `pressure_text`, and `current_expression`, not raw axes alone.
+- `axis`, `direction_kind`, `value`, `valence`, and `visibility` are classifier/review metadata. They are not literal prompt content.
 
 Validation:
 
