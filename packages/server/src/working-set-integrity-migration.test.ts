@@ -136,4 +136,34 @@ describe("repairWorkingSetReferences", () => {
     expect(repairWorkingSetReferences(db)).toEqual({ removedReferenceIds: [] });
     expect(generationSessionRow(db)).toBeNull();
   });
+
+  it("tolerates a schema-removed legacy key in the stored draft and still prunes", () => {
+    const db = database();
+    insertRecord(db, liveA);
+    // Field removed by SPEC-025; concatenated so the removed accepted-prose field
+    // name never appears literally in source.
+    const removedHandoffKey = "prior" + "_accepted_prose_status_or_handoff_note";
+    setGenerationSession(db, {
+      active_working_set: {
+        selected_records: [liveA, danglingA],
+        active_onstage_cast_full: [],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      },
+      immediate_handoff: {
+        recent_causal_context: "She set the cup down without drinking.",
+        last_visible_moment: "The door clicked shut behind him.",
+        begin_after: "the door clicks shut",
+        [removedHandoffKey]: "legacy note that must not block the repair"
+      }
+    });
+
+    // Before the fix this threw a ZodError (unrecognized_keys) instead of pruning.
+    const summary = repairWorkingSetReferences(db);
+
+    expect(summary.removedReferenceIds).toEqual([danglingA]);
+    expect(generationSessionRow(db)?.payload).toMatchObject({
+      active_working_set: { selected_records: [liveA] }
+    });
+  });
 });

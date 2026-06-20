@@ -4,6 +4,8 @@ import {
 } from "@loom/core";
 import type { DatabaseSync } from "node:sqlite";
 
+import { stripLegacyGenerationSessionKeys } from "./generation-session-legacy-keys.js";
+
 export interface WorkingSetIntegrityRepairSummary {
   removedReferenceIds: string[];
 }
@@ -31,7 +33,13 @@ export function repairWorkingSetReferences(database: DatabaseSync): WorkingSetIn
   }
 
   const liveIds = liveRecordIds(database);
-  const session = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
+  // Strip schema-removed legacy keys before the strict parse: a project authored
+  // before a field removal still carries those keys, and the draft migration that
+  // persists the cleaned payload runs only after this repair. Without this, an
+  // otherwise-valid store fails to open. See generation-session-legacy-keys.ts.
+  const session = generationSessionDraftSchema.parse(
+    stripLegacyGenerationSessionKeys(JSON.parse(row.payload_json) as unknown)
+  );
   const result = pruneWorkingSetReferences(session, (id) => liveIds.has(id));
 
   if (result.removed.length === 0) {
