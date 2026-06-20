@@ -102,6 +102,8 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `cast-band-reference-invalid` | blocker | applies | A working-set cast-band id is not selected or does not resolve to a selected CAST MEMBER record. | §11.2 / §11.3 | — |
 | `onstage-cast-band-missing` | blocker | applies | Onstage character's selected CAST MEMBER is Unassigned or in offstage relevance, so its dossier is not compiled as present cast. | §11.3 / §11.5 | — |
 | `selected-pov-reference-invalid` | blocker | applies | Selected POV is dangling, mistyped, or not selected for the readiness-required POV lane. | §11.2 / §11.3 | — |
+| `selected-pov-required-for-variable-mode` | blocker | applies | PROSE MODE uses variable POV but the generation has no concrete selected POV. | §11.2 / §15 | — |
+| `selected-pov-conflicts-with-prose-mode` | blocker | applies | Generation selected POV conflicts with a fixed PROSE MODE POV authority. | §11.2 / §15 | — |
 | `voice-pressure-attachment-invalid` | blocker | applies | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
 | `record-reference-dangling` | blocker | applies | A selected record's extracted internal reference does not resolve to a project record. | §11.3 | — |
 | `record-reference-type-mismatch` | blocker | applies | A selected record's extracted internal reference resolves to a record outside the lane's expected type family. | §11.3 | — |

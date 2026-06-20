@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
 import { displayLabel, resolveRecordLabel } from "../labels.js";
@@ -221,13 +222,13 @@ function renderEntityStatuses(snapshot: ValidationSnapshot, value: unknown): str
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {
-  const povCharacter = renderValue(snapshot.storyConfig.proseMode?.pov_character);
+  const povCharacter = renderValue(resolveEffectivePov(snapshot));
 
   if (!povCharacter) {
     return EMPTY_STATE_CONSTANTS.pov_character;
   }
 
-  if (povCharacter === "omniscient" || povCharacter === "variable") {
+  if (povCharacter === "omniscient") {
     return povCharacter;
   }
 
@@ -328,7 +329,7 @@ function keyedText(text: string, record: ValidationRecord, options: FrontRenderO
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  const pov = snapshot.generationSession.active_working_set?.selected_pov;
+  const pov = resolveEffectivePov(snapshot);
   return pov && pov !== "omniscient" ? pov : undefined;
 }
 

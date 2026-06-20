@@ -438,15 +438,20 @@ describe("compiler front-section resolvers", () => {
     expect(versionInfo.contract.version).toBe("1.4.0");
   });
 
-  it("renders literal POV modes without record lookup", () => {
-    for (const literal of ["omniscient", "variable"] as const) {
-      const input = populatedInput();
-      input.storyConfig.proseMode!.pov_character = literal;
+  it("renders omniscient literally and resolves variable POV through selected_pov", () => {
+    const omniscient = populatedInput();
+    omniscient.storyConfig.proseMode!.pov_character = "omniscient";
 
-      const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    expect(sectionBody(compilePrompt(buildValidationSnapshot(omniscient)).prompt, "prose_mode")).toContain(
+      "POV: omniscient"
+    );
 
-      expect(sectionBody(prompt, "prose_mode")).toContain(`POV: ${literal}`);
-    }
+    const variable = populatedInput();
+    variable.storyConfig.proseMode!.pov_character = "variable";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(variable));
+    expect(sectionBody(prompt, "prose_mode")).toContain("POV: Jon Vale");
+    expect(prompt).not.toContain("POV: variable");
   });
 
   it("falls back to the raw POV id when the referenced record is not selected", () => {

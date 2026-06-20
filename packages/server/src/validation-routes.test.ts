@@ -32,8 +32,11 @@ async function openProject(fastify: ReturnType<typeof createServer>): Promise<vo
   expect(response.statusCode).toBe(201);
 }
 
-async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise<void> {
-  for (const [kind, payload] of Object.entries(storyConfigPayloads)) {
+async function putStoryConfig(
+  fastify: ReturnType<typeof createServer>,
+  overrides: Partial<typeof storyConfigPayloads> = {}
+): Promise<void> {
+  for (const [kind, payload] of Object.entries({ ...storyConfigPayloads, ...overrides })) {
     const response = await fastify.inject({
       method: "PUT",
       url: `/api/story-config/${encodeURIComponent(kind)}`,
@@ -44,7 +47,7 @@ async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise
   }
 }
 
-async function putBrief(fastify: ReturnType<typeof createServer>, overrides: Record<string, unknown> = {}): Promise<void> {
+async function putBrief(fastify: ReturnType<typeof createServer>, overrides: Record<string, unknown> = {}): Promise<string> {
   const entityId = await createCleanEntity(fastify);
   const response = await fastify.inject({
     method: "PUT",
@@ -56,6 +59,7 @@ async function putBrief(fastify: ReturnType<typeof createServer>, overrides: Rec
   });
 
   expect(response.statusCode).toBe(200);
+  return entityId;
 }
 
 async function createCleanEntity(fastify: ReturnType<typeof createServer>): Promise<string> {
@@ -172,6 +176,52 @@ describe("validation routes", () => {
     expect(body.blockers.map((blocker) => blocker.code)).toEqual(
       expect.arrayContaining(["local-prose-scope-violation", "prompt-facing-prose-contamination"])
     );
+  });
+
+  it("blocks variable PROSE MODE when no concrete selected POV is set", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify, {
+      "PROSE MODE": { ...storyConfigPayloads["PROSE MODE"], pov_character: "variable" }
+    });
+    await putBrief(fastify);
+
+    const response = await fastify.inject({ method: "POST", url: "/api/validate" });
+    const body = response.json() as { blockers: { code: string }[]; isBlocked: boolean };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.isBlocked).toBe(true);
+    expect(body.blockers.map((blocker) => blocker.code)).toContain("selected-pov-required-for-variable-mode");
+  });
+
+  it("blocks selected POV conflicts with fixed PROSE MODE", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    const entityId = await putBrief(fastify);
+    const rewrite = await fastify.inject({
+      method: "PUT",
+      url: "/api/generation-brief",
+      payload: {
+        ...cleanBriefForEntity(entityId),
+        active_working_set: {
+          selected_records: [entityId],
+          active_onstage_cast_full: [],
+          present_minor_cast_compressed: [],
+          offstage_relevant_cast: [],
+          selected_pov: entityId
+        }
+      }
+    });
+
+    expect(rewrite.statusCode).toBe(200);
+
+    const response = await fastify.inject({ method: "POST", url: "/api/validate" });
+    const body = response.json() as { blockers: { code: string }[]; isBlocked: boolean };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.isBlocked).toBe(true);
+    expect(body.blockers.map((blocker) => blocker.code)).toContain("selected-pov-conflicts-with-prose-mode");
   });
 
   it("does not mutate generation session during validation", async () => {

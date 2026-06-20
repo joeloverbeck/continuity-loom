@@ -78,6 +78,60 @@ function escapeSelectorValue(value: string): string {
   return globalThis.CSS?.escape(value) ?? value.replace(/["\\]/g, "\\$&");
 }
 
+interface PovOption {
+  value: string;
+  label: string;
+  disabled?: boolean;
+}
+
+function formatPovLabel(
+  value: string,
+  labels: ReadonlyMap<string, string>,
+  options: { variableLabel?: string } = {}
+): string {
+  if (value === "omniscient") {
+    return "Omniscient";
+  }
+  if (value === "variable") {
+    return options.variableLabel ?? "Selection required";
+  }
+  return labels.get(value) ?? value;
+}
+
+function unknownEntityLabel(value: string): string {
+  return `Unknown entity (${value.slice(0, 8)})`;
+}
+
+function povOptionsForFixedProsePov(
+  fixedProsePov: string,
+  selectedPov: string | undefined,
+  labels: ReadonlyMap<string, string>
+): PovOption[] {
+  const options: PovOption[] = [
+    { value: "", label: "Use PROSE MODE default" },
+    { value: fixedProsePov, label: formatPovLabel(fixedProsePov, labels) }
+  ];
+
+  if (selectedPov && selectedPov !== fixedProsePov) {
+    options.push({ value: selectedPov, label: `Conflicts with PROSE MODE (${formatPovLabel(selectedPov, labels)})`, disabled: true });
+  }
+
+  return options;
+}
+
+function povOptionsForVariableProsePov(
+  selectedPov: string | undefined,
+  entities: readonly RecordSummary[],
+  selectedPovHasKnownEntity: boolean
+): PovOption[] {
+  return [
+    { value: "", label: "Select required POV" },
+    { value: "omniscient", label: "Omniscient" },
+    ...(selectedPovHasKnownEntity || !selectedPov ? [] : [{ value: selectedPov, label: unknownEntityLabel(selectedPov) }]),
+    ...entities.map((entity) => ({ value: entity.id, label: entity.displayLabel }))
+  ];
+}
+
 function BriefSection({
   title,
   headingId,
@@ -187,7 +241,7 @@ export function GenerationBriefView(): React.JSX.Element {
     }
 
     const povCharacter = typeof proseModePayload.pov_character === "string" ? proseModePayload.pov_character : null;
-    const povLabel = povCharacter ? (povEntityLabels.get(povCharacter) ?? povCharacter) : null;
+    const povLabel = povCharacter ? formatPovLabel(povCharacter, povEntityLabels, { variableLabel: "Variable POV" }) : null;
 
     return [
       povLabel,
@@ -198,6 +252,20 @@ export function GenerationBriefView(): React.JSX.Element {
   const selectedPovHasKnownEntity = selectedPov
     ? selectedPov === "omniscient" || povEntityLabels.has(selectedPov)
     : true;
+  const prosePov = proseModePayload && typeof proseModePayload.pov_character === "string"
+    ? proseModePayload.pov_character
+    : undefined;
+  const fixedProsePov = prosePov && prosePov !== "variable" ? prosePov : undefined;
+  const effectivePov = prosePov === "variable" ? selectedPov : fixedProsePov;
+  const effectivePovLabel = effectivePov
+    ? formatPovLabel(effectivePov, povEntityLabels)
+    : prosePov === "variable"
+      ? "Selection required"
+      : "Not configured";
+  const povSelectionRequired = prosePov === "variable" && !selectedPov;
+  const availablePovOptions = fixedProsePov
+    ? povOptionsForFixedProsePov(fixedProsePov, selectedPov, povEntityLabels)
+    : povOptionsForVariableProsePov(selectedPov, povEntities, selectedPovHasKnownEntity);
   const immediateHandoffDraft = session.immediate_handoff ?? {};
   const immediateHandoff = {
     recent_causal_context: immediateHandoffDraft.recent_causal_context ?? "",
@@ -382,19 +450,21 @@ export function GenerationBriefView(): React.JSX.Element {
           description="Selected viewpoint and record authority for the next prompt."
         >
           <p className="muted">PROSE MODE source: {proseModeSummary}</p>
+          <p className="muted">Effective POV: {effectivePovLabel}</p>
+          {fixedProsePov ? (
+            <p className="muted">PROSE MODE is fixed; this selector can only clear or match the fixed POV.</p>
+          ) : null}
+          {povSelectionRequired ? (
+            <p className="status statusError">Select a concrete POV before compiling in variable POV mode.</p>
+          ) : null}
           <BriefFieldRow path="active_working_set.selected_pov" schemaLabel="selected_pov" generationContext={generationContext}>
             <select
               name="generationSession.active_working_set.selected_pov"
               value={selectedPov ?? ""}
               onChange={(event) => updateActiveWorkingSet({ selected_pov: event.target.value || undefined })}
             >
-              <option value="">Use PROSE MODE default</option>
-              <option value="omniscient">Omniscient</option>
-              {selectedPovHasKnownEntity || !selectedPov ? null : (
-                <option value={selectedPov}>Unknown entity ({selectedPov.slice(0, 8)})</option>
-              )}
-              {povEntities.map((entity) => (
-                <option key={entity.id} value={entity.id}>{entity.displayLabel}</option>
+              {availablePovOptions.map((option) => (
+                <option key={option.value} value={option.value} disabled={option.disabled}>{option.label}</option>
               ))}
             </select>
           </BriefFieldRow>

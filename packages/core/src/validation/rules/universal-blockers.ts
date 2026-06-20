@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import { DIAGNOSTIC_CODES, type Diagnostic, type SuggestedAction } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
@@ -502,7 +503,7 @@ function containsAny(text: string, markers: readonly string[]): boolean {
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+  return resolveEffectivePov(snapshot);
 }
 
 function hasPlausibleMeans(plan: Record<string, unknown>): boolean {

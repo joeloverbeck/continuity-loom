@@ -171,7 +171,19 @@ function input(records = tailRecords()): BuildValidationSnapshotInput {
       current_cast_voice_pressure: [],
       cast_voice_overrides: []
     },
-    storyConfig: {},
+    storyConfig: {
+      proseMode: {
+        pov_character: "variable",
+        person: "third",
+        tense: "past",
+        psychic_distance: "close",
+        interiority_mode: "filtered",
+        dialogue_density: "balanced",
+        paragraphing: "mixed",
+        language_output: "English",
+        special_style_constraints: []
+      }
+    },
     versions: {
       template: "1.0.0",
       compiler: "1.0.0",

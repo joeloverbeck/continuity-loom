@@ -81,6 +81,8 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   castBandDuplicateMembership: "cast-band-duplicate-membership",
   castBandReferenceInvalid: "cast-band-reference-invalid",
   selectedPovReferenceInvalid: "selected-pov-reference-invalid",
+  selectedPovRequiredForVariableMode: "selected-pov-required-for-variable-mode",
+  selectedPovConflictsWithProseMode: "selected-pov-conflicts-with-prose-mode",
   voicePressureAttachmentInvalid: "voice-pressure-attachment-invalid",
   recordReferenceDangling: "record-reference-dangling",
   recordReferenceTypeMismatch: "record-reference-type-mismatch",

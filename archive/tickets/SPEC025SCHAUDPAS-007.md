@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-007: One deterministic effective POV (resolveEffectivePov + consumers + 2 diagnostics)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `resolveEffectivePov` module, compiler POV rendering, five validation POV consumers, two new diagnostic codes + readiness combination logic, web POV controls, authority docs, route tests, invariant test, goldens
@@ -106,3 +106,24 @@ In the web POV controls (`StoryConfigEditor.tsx` for `pov_character`, `Generatio
 1. `npm test -- effective-pov validation-rule-inventory validation-matrix-knowledge compiler-front-sections`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted suites prove the resolver, the diagnostics, and the no-`variable` invariant; the full pipeline is the correct final boundary because the change spans the compiler, five validators, the diagnostic inventory, web, and route tests.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Added `resolveEffectivePov` as the pure core resolver and routed the compiler front/tail POV rendering plus all five validation POV consumers through it. Literal `variable` no longer renders in ready prompts; fixed PROSE MODE values are authoritative; variable mode requires a concrete generation `selected_pov`; and divergent fixed/selected POV combinations fail closed.
+
+Added blocker diagnostics `selected-pov-required-for-variable-mode` and `selected-pov-conflicts-with-prose-mode`, documented them in the validation inventory, and updated schema/compiler/rationale docs to distinguish the PROSE MODE `variable` sentinel from concrete selected POV values.
+
+Updated Generation Brief POV controls to show the resolved effective POV, require selection for variable mode, and constrain the selector when PROSE MODE is fixed. Added route coverage proving validation and compile return blockers with no prompt for missing variable POV and fixed/selected conflicts.
+
+Verification:
+- `npm test -- GenerationBriefView validation-routes compile-routes effective-pov validation-cast-band validation-rule-inventory compiler-front-sections`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite chunk-size warning)
+- `git diff --check`
+- Grep: no `selected_pov ??` coalesce remains; `POV: variable` appears only in the invariant assertion and docs saying it never renders.
+
+Browser smoke: not run; this ticket is covered by core resolver/compiler/validator tests, server route tests, and jsdom UI tests.

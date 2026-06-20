@@ -293,6 +293,10 @@ function danglingCastBandMember(input: BuildValidationSnapshotInput): void {
 }
 
 function danglingSelectedPov(input: BuildValidationSnapshotInput): void {
+  input.storyConfig.proseMode = {
+    ...input.storyConfig.proseMode!,
+    pov_character: "variable"
+  };
   input.generationSession.active_working_set = {
     selected_records: [],
     active_onstage_cast_full: [],

@@ -134,7 +134,7 @@ Compiler requirements:
 - Warn about risky omissions or prompt length; block only when minimum completeness or contradiction rules require it.
 - `selected_records` ids must resolve before a validation snapshot can be built; stale ids fail closed with the missing ids and the fix to remove them from the working set.
 - Cast-band ids must resolve to selected CAST MEMBER records and a cast member may appear in only one rendered band.
-- `selected_pov` may be `omniscient` or `variable`; otherwise it must resolve to a selected ENTITY or CAST MEMBER before compilation.
+- `selected_pov` may be `omniscient`; otherwise it must resolve to a selected ENTITY or CAST MEMBER before compilation. `variable` is only a PROSE MODE sentinel and must resolve to a concrete generation-time `selected_pov`.
 
 ### 3.2 CURRENT AUTHORITATIVE STATE
 
