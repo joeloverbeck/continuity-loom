@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-007: Mutation-tighten P1 empty states and placeholder mapping
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds independent placeholder/empty-state contract tables and no-unresolved-placeholder assertions; no production behavior change.
@@ -75,3 +75,21 @@ Run `npm run mutation:prose` scoped to `placeholder-map.ts`, `empty-states.ts`, 
 1. `vitest run packages/core/test/compiler-placeholder-emptystate.contract.test.ts` — targeted contract run.
 2. `npm run mutation:prose` — survivor classification for the placeholder/empty-state modules.
 3. The independent doc-derived table is the correct boundary: it is the only oracle independent of the code under mutation.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Added `packages/core/test/compiler-placeholder-emptystate.contract.test.ts` and `packages/core/test/support/arbitraries/empty-categories.ts`. The contract test carries a hard-coded doc-derived placeholder and empty-state table, asserts prompt-template placeholder exhaustiveness, exact exported empty-state constants, unknown-placeholder fail-closed behavior, unresolved-placeholder absence in emitted prompts, required section order, documented empty-state/omission behavior, optional section presence for hard canon / present minor cast / offstage relevance, and the one-record optional cast-category relation.
+
+Survivor classification for `packages/core/src/compiler/placeholder-map.ts`, `packages/core/src/compiler/empty-states.ts`, and `packages/core/src/compiler/template-constants.ts`: the final forced focused P1 mutation run killed all mutants in those three ticket-owned files and left 0 survivors / 0 no-coverage mutants for them. The run still reports the two previously classified equivalent `ordering.ts` fallback-key survivors from `SPEC026MUTDRIROB-005`; they are outside this ticket's surface.
+
+Deviations from the plan: the "add one record changes only that section plus metadata" assertion is applied to the present-minor and offstage cast optional categories. A hard-canon FACT correctly changes dependent knowledge/detail sections as well as `<hard_canon>`, so the test asserts hard-canon optional-section presence without treating dependent sections as a defect.
+
+Verification:
+
+- `npx vitest run packages/core/test/compiler-placeholder-emptystate.contract.test.ts` passed: 1 file, 8 tests.
+- `npm run mutation:prose -- --force --mutate packages/core/src/compiler/placeholder-map.ts,packages/core/src/compiler/empty-states.ts,packages/core/src/compiler/template-constants.ts` completed: `empty-states.ts` 100.00, `placeholder-map.ts` 100.00, `template-constants.ts` 100.00; 0 survivors / 0 no coverage in those files.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 139 files, 1070 tests.
