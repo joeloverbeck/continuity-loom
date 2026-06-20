@@ -86,7 +86,7 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "current_cast_voice_pressure[].current_must_preserve[]": "Current must preserve",
   "current_cast_voice_pressure[].current_must_avoid[]": "Current must avoid",
   "cast_voice_overrides[].cast_member_id": "Cast member",
-  "cast_voice_overrides[].reason": "Reason",
+  "cast_voice_overrides[].reason": "Reason (not sent to the writer)",
   "cast_voice_overrides[].applies_to[]": "Applies to",
   "cast_voice_overrides[].override_text": "Override text",
   "generation_validation_focus.validation_focus_tags.generation_context[]": "Generation context checks",
@@ -367,10 +367,13 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     "{active_cast_voice_pressure_pins}",
     "{present_minor_cast_notes}"
   ], optionalOpts),
-  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", [
-    "{active_cast_voice_pressure_pins}",
-    "{present_minor_cast_notes}"
-  ], optionalOpts),
+  brief("cast_voice_overrides[].reason", "Author-only note explaining why this temporary voice override exists.", [], {
+    ...optionalOpts,
+    promptFacing: "never",
+    authoringAdvice: "Use this for your process note only; put the actual writer instruction in override_text.",
+    criticalVisibleHint: "Not sent to the writer.",
+    doctrineWarnings: ["Do not rely on reason to carry continuity, secrets, or rendering instructions."]
+  }),
   brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", [
     "{active_cast_voice_pressure_pins}",
     "{present_minor_cast_notes}"

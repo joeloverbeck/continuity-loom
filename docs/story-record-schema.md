@@ -289,10 +289,11 @@ cast_voice_overrides:
 Compiler treatment:
 
 - Optional.
+- `reason` is author-only metadata. It is saved for the user's process but is not sent to the writer and is not scanned as prompt-facing text.
 - Intrinsically current-generation-only; there is no per-item scope field.
 - May target active/onstage cast or present-minor cast selected for the current generation.
-- For active/onstage cast, compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
-- For present-minor cast, compile only into the compressed present-minor note.
+- For active/onstage cast, `applies_to` and `override_text` compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
+- For present-minor cast, `applies_to` and `override_text` compile only into the compressed present-minor note.
 - Never persist automatically into the durable CAST MEMBER record.
 
 Validation:

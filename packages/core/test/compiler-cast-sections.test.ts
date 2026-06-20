@@ -320,7 +320,24 @@ describe("compiler cast-section resolvers", () => {
 
     expect(sectionBody(prompt, "active_cast_full_dossiers")).toContain("Current generation voice override");
     expect(sectionBody(prompt, "active_cast_full_dossiers")).not.toContain("scope: current_generation_only");
+    expect(prompt).toContain("Even shorter than usual.");
+    expect(prompt).not.toContain("She is hiding panic.");
+    expect(prompt).not.toContain("Background line risk.");
     expect(JSON.stringify(snapshot.records)).toBe(before);
+  });
+
+  it("keeps author-only override reason out of prose and ideation prompt bytes", () => {
+    const firstInput = input();
+    const secondInput = structuredClone(firstInput);
+    secondInput.generationSession.cast_voice_overrides[0]!.reason = "A different private author-only note.";
+    secondInput.generationSession.cast_voice_overrides[1]!.reason = "Another private author-only note.";
+
+    expect(compilePrompt(buildValidationSnapshot(firstInput)).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(secondInput)).prompt
+    );
+    expect(compilePrompt(buildValidationSnapshot(firstInput), { promptKind: "ideation" }).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(secondInput), { promptKind: "ideation" }).prompt
+    );
   });
 
   it("omits empty present-minor and gate-closed offstage compressed cast sections", () => {

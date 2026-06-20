@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-004: Make CAST VOICE OVERRIDES[].reason author-only (non-prompt-facing)
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — cast-override compiler serialization, field-guidance destination metadata, prompt-contamination enumeration, web label, authority docs, goldens; Zod shape unchanged
@@ -92,3 +92,26 @@ In the web brief editor (`GenerationBriefView.tsx`), keep the `reason` input but
 1. `npm test -- compiler-golden compiler-front-sections`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted compiler suites prove the serialization + byte-stability; the full pipeline is the correct final boundary because the change touches compiler, validation, web, docs, and two goldens.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Made `CAST VOICE OVERRIDES[].reason` author-only. The field remains in the generation-brief schema, draft/readiness parsing, UI, section-fill accounting, and server route persistence, but it is no longer rendered in current-generation voice override prompt blocks and no longer participates in prompt-facing contamination scans. Field guidance and the Generation Brief UI now label it as not sent to the writer.
+
+Added compiler coverage proving override instructions still render while author-only reasons do not, and that changing only `reason` leaves both prose and ideation prompt bytes unchanged. Strengthened server route coverage so a non-default reason round-trips with the draft.
+
+Deviations from plan: the demo goldens did not need content changes for `reason` because the demo fixture has no cast voice overrides; targeted compiler tests cover the behavior directly. `docs/validation-rule-inventory.md` required no edit because it did not describe `reason` as prompt-facing.
+
+Verification:
+
+- `npm test -- compiler-cast-sections compiler-golden compiler-ideation-golden GenerationBriefView generation-brief-routes field-guidance-brief-config validation-blockers` passed.
+- `rg -n "override\\.reason|entry\\.reason|labelValue\\(\\\"reason\\\"" packages/core/src/compiler/sections/cast.ts packages/core/src/validation/rules/universal-blockers.ts` returned no matches.
+- `rg -n "reason: z\\.union|cast_voice_overrides\\[\\]\\.reason|Reason \\(not sent to the writer\\)" packages/core/src/records packages/web/src/generation-brief docs/story-record-schema.md` confirmed the field remains schema/UI-visible.
+- `git diff --check` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+
+Browser smoke: not run. This is a compiler/validation/UI-form labeling change covered by targeted compiler, route, and React tests plus the full lint/typecheck/test/build gates. No live browser-only workflow or provider request shape was introduced.

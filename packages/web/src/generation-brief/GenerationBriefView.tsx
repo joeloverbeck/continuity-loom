@@ -675,6 +675,13 @@ export function GenerationBriefView(): React.JSX.Element {
           headingId="override-brief"
           description="Current-generation-only override instructions that never update durable cast records."
         >
+          <BriefFieldRow path="cast_voice_overrides[].reason" schemaLabel="reason" generationContext={generationContext}>
+            <textarea
+              name="generationSession.cast_voice_overrides.0.reason"
+              value={voiceOverride.reason}
+              onChange={(event) => updateSurface("cast_voice_overrides", [{ ...voiceOverride, reason: event.target.value }])}
+            />
+          </BriefFieldRow>
           <BriefFieldRow path="cast_voice_overrides[].override_text" schemaLabel="override_text" generationContext={generationContext}>
             <textarea
               name="generationSession.cast_voice_overrides.0.override_text"

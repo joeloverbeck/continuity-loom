@@ -156,7 +156,7 @@ describe("generation-brief routes", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          reason: "none",
+          reason: "Author-only note for this temporary override.",
           applies_to: ["dialogue"],
           override_text: "Use fewer metaphors."
         }

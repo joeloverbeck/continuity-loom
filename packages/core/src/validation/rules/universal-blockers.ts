@@ -479,7 +479,6 @@ function promptFacingUserInstructionText(snapshot: ValidationSnapshot): string {
     ...(entry.current_must_avoid ?? [])
   ]);
   const overrideText = (snapshot.generationSession.cast_voice_overrides ?? []).flatMap((entry) => [
-    entry.reason,
     entry.override_text
   ]);
 

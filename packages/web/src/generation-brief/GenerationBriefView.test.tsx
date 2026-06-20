@@ -342,6 +342,11 @@ describe("GenerationBriefView", () => {
     fireEvent.change(screen.getByLabelText(/do_not_force/), { target: { value: "Do not leave the dock." } });
     fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
     fireEvent.change(screen.getByLabelText(/current_voice_pressure/), { target: { value: "clipped and wary" } });
+    const overrideReason = screen.getByRole("textbox", { name: /Reason \(not sent to the writer\)/ });
+    expect(overrideReason).toBeTruthy();
+    fireEvent.change(overrideReason, {
+      target: { value: "Author-only reminder." }
+    });
     fireEvent.change(screen.getByLabelText(/override_text/), { target: { value: "shorter answers only" } });
     fireEvent.change(screen.getByLabelText(/generation_context/), { target: { value: "continuation_after_accepted_segment" } });
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after the reply." } });
@@ -378,7 +383,7 @@ describe("GenerationBriefView", () => {
         do_not_force: ["Do not leave the dock."]
       },
       current_cast_voice_pressure: [{ current_voice_pressure: "clipped and wary" }],
-      cast_voice_overrides: [{ override_text: "shorter answers only" }],
+      cast_voice_overrides: [{ reason: "Author-only reminder.", override_text: "shorter answers only" }],
       generation_validation_focus: {
         validation_focus_tags: { generation_context: ["continuation_after_accepted_segment"] }
       },
