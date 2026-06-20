@@ -97,7 +97,11 @@ npm run build
    touched surface after equivalent broad coverage already passed on the current
    task state, rerun the failing file or filter once and then rerun the broad
    gate once. Treat a repeat failure as a blocker. Report the original failure,
-   the targeted rerun, and the broad rerun outcome.
+   the targeted rerun, and the broad rerun outcome. If you fix an unrelated
+   assertion or brittle test exposed by a broad gate so the current gate can
+   pass, classify it as an incidental gate fix. Prefer a separate commit when
+   practical; if it lands in the ticket commit, name it explicitly in the
+   ticket `Outcome` and final response.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used. When the smoke needs project data
@@ -116,9 +120,13 @@ npm run build
    that a narrow component/API change is sufficiently proven without a real
    localhost or browser smoke, record the rationale in the ticket `Outcome` and
    final response.
-6. Update the ticket with final status and an `Outcome` section following
-   `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the
-   ticket before moving it, after the existing ticket sections.
+6. Before marking the ticket complete, re-read its `What to Change`,
+   `Files to Touch`, `Acceptance Criteria`, and `Test Plan` sections. For each
+   major surface, confirm it is fulfilled, intentionally deferred, not
+   applicable, or blocked with evidence. Then update the ticket with final
+   status and an `Outcome` section following `docs/archival-workflow.md`.
+   Append the `Outcome` at the bottom of the ticket before moving it, after the
+   existing ticket sections.
 7. Archive the ticket:
    - Create `archive/tickets/` if absent.
    - Use `git mv` for tracked tickets.
@@ -228,3 +236,4 @@ Final responses must include:
 - Verification commands actually run.
 - Any checks not run and why.
 - Any unrelated pre-existing changes left untouched.
+- Any incidental unrelated gate fixes included in a ticket commit.
