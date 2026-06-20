@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-007: Schema-cleanup regression capstone and stress/demo doc sync
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — adds a cross-cutting regression/determinism capstone test and syncs the non-§8 stress/demo support docs to the new compiled-prompt behavior; no production behavior change
@@ -82,3 +82,22 @@ Update `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, and `docs/demo-
 1. `npm test -- schema-audit-cleanup-capstone`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `npm run build && for id in continuity_philosophy manual_directive_id voice_pressure; do grep -rn "$id" packages/core/src packages/server/src packages/web/src && echo "LEAK: $id"; done; grep -rn "{voice_pressure}" docs packages/core/test/golden-first-segment.prompt.txt && echo "LEAK: voice_pressure lane"; true` (post-build grep-proof; must report no LEAK lines).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Implemented the schema-cleanup capstone as a cross-cutting regression test in `packages/core/test/schema-audit-cleanup-capstone.test.ts`. The test verifies deterministic repeat compilation for prose and ideation prompts, accepted/candidate/superseded/derived prose canaries staying out of compiled prompts, author-only fields staying out of prose and ideation prompts, and the removed voice-pressure lane staying absent from compiler placeholder surfaces.
+
+Updated the non-§8 support docs to match the landed behavior: present-minor current voice pressure now compiles through the present-minor cast section without restoring a duplicate role field, and demo guidance now treats current voice rows as local guidance rather than role/scope authority.
+
+Deviations: no production code, schema, migration, compiler resolver, or validation-rule changes were needed; those were completed by the upstream tickets.
+
+Verification:
+
+- `npm test -- schema-audit-cleanup-capstone`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- `rg -n "continuity_philosophy|manual_directive_id|current_cast_voice_pressure\\[\\]\\.local_function|cast_voice_overrides\\[\\]\\.scope|\\{voice_pressure\\}" packages/core/src packages/server/src packages/web/src packages/core/test/golden-first-segment.prompt.txt packages/core/test/golden-ideation.prompt.txt` printed no matches after build.

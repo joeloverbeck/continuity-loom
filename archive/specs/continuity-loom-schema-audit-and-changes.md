@@ -2,6 +2,7 @@
 
 **Document class:** change proposal / new-spec precursor  
 **Not an implementation spec and not assigned a spec number**  
+**Status:** COMPLETED
 **Requested repository:** `joeloverbeck/continuity-loom`  
 **Target commit:** `89706560a6af55a3741450b15d89d5dd5ad082d0`  
 **Freshness claim:** user-supplied target commit only; not independently verified as the current `main`  
@@ -1436,3 +1437,22 @@ The full exact-URL evidence ledger was reported before analysis. No repository m
 This document proves only that its repository analysis used the user-supplied target commit and exact-commit file URLs. It does not prove that `89706560a6af55a3741450b15d89d5dd5ad082d0` was the latest `main` on 2026-06-20.
 
 No repository was cloned and no implementation tests were executed as part of this research audit. The test and verification sections above are requirements for the eventual implementation work.
+
+---
+
+## 23. Outcome
+
+Completed: 2026-06-20
+
+Implemented through the CONLOOSCHAUD ticket series:
+
+- removed `STORY CONTRACT.continuity_philosophy`;
+- removed `ACTIVE WORKING SET.manual_directive_id`;
+- removed `CURRENT CAST VOICE PRESSURE[].local_function`;
+- removed `CAST VOICE OVERRIDES[].scope`;
+- removed the redundant `{voice_pressure}` prompt lane while preserving current voice-pressure delivery through the live cast/present-minor paths;
+- delivered selected non-person ENTITY material pressure and LOCATION hazards/social rules to their existing prompt destinations;
+- clarified retained authoring, validation, history, and relationship-classifier fields as non-literal prompt authority;
+- added the final schema-cleanup capstone regression coverage and synchronized the non-§8 stress/demo support docs.
+
+Verification completed during the series included focused per-ticket tests, browser smokes for UI-affecting tickets, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`, and the final post-build removed-identifier grep proof.

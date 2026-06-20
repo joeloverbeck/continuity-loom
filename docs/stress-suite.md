@@ -648,6 +648,7 @@ Stress target: a minor onstage character may speak one material line without bec
 Required records:
 
 - Present-minor compressed note with identity, physical state, allowed action, and enough voice note for one line.
+- A current cast voice pressure row for the same cast member when the line needs local dialogue, POV-narration, nonverbal, or avoidance guidance; this guidance must be visible in the compiled present-minor cast section.
 - Current position/audibility.
 - Knowledge constraints for what the minor can know.
 
@@ -660,6 +661,7 @@ Expected blockers:
 
 - Present-minor cast member speaks materially with no voice note.
 - Present-minor line reveals a secret they cannot know.
+- Present-minor speech relies on a removed role field instead of selected cast-band membership plus structured voice-pressure destinations.
 
 Prompt-quality risk:
 
