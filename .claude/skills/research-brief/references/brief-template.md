@@ -61,6 +61,12 @@ conformance target)* — distinct from *primary (load-bearing)* entries. This ke
 file counts and stops Session 2 from auditing or "correcting" code the scope intentions exclude. Call
 out the primary entries explicitly; list the rest grouped, with the boundary-awareness purpose stated once.
 
+**Code seams are not read-in-full entries.** The seams identified in Step 2 (files/modules Session 2
+should *inspect*, not read whole) belong in a clearly-labeled `Inspect, not read in full` subsection at
+the end of §2 — never intermixed with the authority-ordered read-in-full list, and never pasted inline.
+(They may instead ride in §5's exploration mandate; default to the §2 subsection so the emitted
+structure is deterministic across briefs.)
+
 ### 3. Settled intentions
 
 The decisions the interview resolved — the heart of why Session 2 is *locked*. State each
@@ -124,6 +130,12 @@ Exactly what Session 2 outputs — leave no ambiguity:
   sequence — there is no ledger, no staging epochs, and no live-vs-archived renumbering to
   reconcile. Carry any residual slug/placement ambiguity as a labeled `assumption:` line
   rather than asserting it;
+- when the deliverable is a **spec-precursor change-proposal document** — a standalone downloadable
+  markdown the user hands to a coding agent to *become* a spec, not a spec itself (the canonical Loom
+  pipeline: research-brief → ChatGPT-Pro change document → spec → tickets) — name it as a **hand-off
+  artifact filename, not a repo path**, and instruct Session 2 **not** to assign a `SPEC-NNN` or author
+  it in spec form. The next spec number may still be computed and named *as downstream context* (so the
+  coding agent knows where it will land) without Session 2 claiming it;
 - the **locked / no-questions** instruction, verbatim intent:
 
 > Produce the deliverables directly as downloadable markdown documents. Do not interview,
@@ -143,7 +155,10 @@ produced, but its *shape* depends on the verdict (e.g. a full spec if warranted,
 report if clean). Prefer (i) "always produce, with the verdict as a section" when the artifact's value
 survives a negative verdict (e.g. it locks already-correct properties); choose (iii) when a negative verdict
 still warrants a substantial evidence-complete document but in a *different form* than the spec; reserve
-(ii) "produce only if positive" for when a negative verdict means there is genuinely nothing to author. For
+(ii) "produce only if positive" for when a negative verdict means there is genuinely nothing to author.
+Note that **trigger and scope are independent axes**: a mode-(ii) artifact is *authored only on a
+positive verdict*, but when authored it may still need to record the evidence-backed verdicts for the
+examined-but-unchanged surfaces, so the document is a complete audit rather than a bare changelist. For
 mode (iii), the brief's deliverable spec (§7) must define **both** artifact shapes (a Branch A / Branch B
 specification) so Session 2 commits to one without asking.
 
