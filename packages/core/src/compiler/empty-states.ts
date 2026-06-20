@@ -86,7 +86,6 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   unavailable_or_impossible_actions: "None specified",
   visible_affordances: "None specified",
   visible_conditions: "None currently specified",
-  voice_pressure: "None beyond detailed records below",
   writer_visible_hidden_truths: "No active secrets or reveal locks selected",
   writer_visible_or_non_pov_facts: "None"
 });

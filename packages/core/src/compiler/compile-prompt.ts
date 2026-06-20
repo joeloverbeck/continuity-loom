@@ -4,6 +4,7 @@ import { estimatePromptTokens, fingerprintPrompt } from "./fingerprint.js";
 import { citationKeysFor } from "./ideation/citation-keys.js";
 import type { IdeationRequest, PromptKind } from "./ideation/types.js";
 import { resolvePlaceholder, type PlaceholderName } from "./placeholder-map.js";
+import { renderCastPlaceholder } from "./sections/cast.js";
 import { renderFrontPlaceholder } from "./sections/front.js";
 import { renderIdeationSlotsSection } from "./sections/ideation.js";
 import { renderPressurePlaceholder } from "./sections/pressure.js";
@@ -369,6 +370,11 @@ function resolveTemplatePlaceholder(placeholder: string, snapshot: ValidationSna
   const pressureValue = renderPressurePlaceholder(placeholderName, snapshot, { citationKeys: context.citationKeys });
   if (pressureValue !== undefined) {
     return pressureValue;
+  }
+
+  const castValue = renderCastPlaceholder(placeholderName, snapshot, { ideation: true });
+  if (castValue !== undefined) {
+    return castValue;
   }
 
   const tailValue = renderTailPlaceholder(placeholderName, snapshot, {

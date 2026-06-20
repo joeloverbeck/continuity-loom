@@ -7,6 +7,9 @@ import {
 import type { DatabaseSync } from "node:sqlite";
 
 const FABRICATED_DIRECTIVE = "Continue the immediate moment.";
+const REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY = "manual" + "_directive_id";
+const REMOVED_CURRENT_CAST_PRESSURE_LOCAL_FUNCTION_KEY = "local" + "_function";
+const REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY = "scope";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -14,6 +17,108 @@ function nowIso(): string {
 
 function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
+}
+
+function stripLegacyManualDirectiveId(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const activeWorkingSet = session.active_working_set;
+  if (activeWorkingSet === null || typeof activeWorkingSet !== "object" || Array.isArray(activeWorkingSet)) {
+    return value;
+  }
+
+  const activeWorkingSetRecord = activeWorkingSet as Record<string, unknown>;
+  if (!(REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY in activeWorkingSetRecord)) {
+    return value;
+  }
+
+  const nextActiveWorkingSet = { ...activeWorkingSetRecord };
+  delete nextActiveWorkingSet[REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY];
+  return {
+    ...session,
+    active_working_set: nextActiveWorkingSet
+  };
+}
+
+function stripLegacyCurrentCastPressureLocalFunction(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const currentCastVoicePressureValue = session.current_cast_voice_pressure;
+  if (!Array.isArray(currentCastVoicePressureValue)) {
+    return value;
+  }
+
+  const currentCastVoicePressure: readonly unknown[] = currentCastVoicePressureValue;
+  let changed = false;
+  const nextCurrentCastVoicePressure = currentCastVoicePressure.map((entry): unknown => {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+      return entry;
+    }
+
+    const entryRecord = entry as Record<string, unknown>;
+    if (!(REMOVED_CURRENT_CAST_PRESSURE_LOCAL_FUNCTION_KEY in entryRecord)) {
+      return entry;
+    }
+
+    const nextEntry = { ...entryRecord };
+    delete nextEntry[REMOVED_CURRENT_CAST_PRESSURE_LOCAL_FUNCTION_KEY];
+    changed = true;
+    return nextEntry;
+  });
+
+  if (!changed) {
+    return value;
+  }
+
+  return {
+    ...session,
+    current_cast_voice_pressure: nextCurrentCastVoicePressure
+  };
+}
+
+function stripLegacyCastVoiceOverrideScope(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const castVoiceOverridesValue = session.cast_voice_overrides;
+  if (!Array.isArray(castVoiceOverridesValue)) {
+    return value;
+  }
+
+  const castVoiceOverrides: readonly unknown[] = castVoiceOverridesValue;
+  let changed = false;
+  const nextCastVoiceOverrides = castVoiceOverrides.map((entry): unknown => {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+      return entry;
+    }
+
+    const entryRecord = entry as Record<string, unknown>;
+    if (!(REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY in entryRecord)) {
+      return entry;
+    }
+
+    const nextEntry = { ...entryRecord };
+    delete nextEntry[REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY];
+    changed = true;
+    return nextEntry;
+  });
+
+  if (!changed) {
+    return value;
+  }
+
+  return {
+    ...session,
+    cast_voice_overrides: nextCastVoiceOverrides
+  };
 }
 
 function acceptedSegmentCount(database: DatabaseSync): number {
@@ -77,7 +182,7 @@ function backfillImmediateSituationSummary(session: GenerationSessionDraft): Gen
 
 function hasSemanticCastPressure(entry: NonNullable<GenerationSessionDraft["current_cast_voice_pressure"]>[number]) {
   return Object.entries(entry).some(([key, value]) => {
-    if (key === "cast_member_id" || key === "local_function") {
+    if (key === "cast_member_id") {
       return false;
     }
     if (Array.isArray(value)) {
@@ -114,7 +219,12 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
     return;
   }
 
-  const original = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
+  const rawPayload = JSON.parse(row.payload_json) as unknown;
+  const strippedPayload = stripLegacyCastVoiceOverrideScope(
+    stripLegacyCurrentCastPressureLocalFunction(stripLegacyManualDirectiveId(rawPayload))
+  );
+  const strippedLegacyPayload = strippedPayload !== rawPayload;
+  const original = generationSessionDraftSchema.parse(strippedPayload);
   const migrated = removeEmptyCastPressureRows(
     backfillImmediateSituationSummary(
       backfillGenerationContext(
@@ -125,7 +235,7 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
   );
 
   const nextJson = canonicalJson(migrated);
-  if (nextJson === row.payload_json) {
+  if (!strippedLegacyPayload && nextJson === canonicalJson(original)) {
     return;
   }
 

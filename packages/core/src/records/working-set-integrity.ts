@@ -34,7 +34,6 @@ export function pruneWorkingSetReferences(
   const removed = new Set<string>();
   const activeWorkingSet = session.active_working_set;
   const selectedPov = activeWorkingSet.selected_pov;
-  const manualDirectiveId = activeWorkingSet.manual_directive_id;
 
   const prunedSelectedPov =
     isRecordIdPov(selectedPov) && !keepRecordId(selectedPov)
@@ -42,14 +41,6 @@ export function pruneWorkingSetReferences(
       : selectedPov;
   if (isRecordIdPov(selectedPov) && prunedSelectedPov === undefined) {
     removed.add(selectedPov);
-  }
-
-  const prunedManualDirectiveId =
-    manualDirectiveId !== undefined && !keepRecordId(manualDirectiveId)
-      ? undefined
-      : manualDirectiveId;
-  if (manualDirectiveId !== undefined && prunedManualDirectiveId === undefined) {
-    removed.add(manualDirectiveId);
   }
 
   const sessionWithPrunedWorkingSet: GenerationSessionDraft = {
@@ -69,8 +60,7 @@ export function pruneWorkingSetReferences(
         removed
       ),
       offstage_relevant_cast: removeDanglingIds(activeWorkingSet.offstage_relevant_cast ?? [], keepRecordId, removed),
-      ...(prunedSelectedPov === undefined ? {} : { selected_pov: prunedSelectedPov }),
-      ...(prunedManualDirectiveId === undefined ? {} : { manual_directive_id: prunedManualDirectiveId })
+      ...(prunedSelectedPov === undefined ? {} : { selected_pov: prunedSelectedPov })
     }
   };
 

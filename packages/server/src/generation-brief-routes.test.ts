@@ -133,7 +133,6 @@ describe("generation-brief routes", () => {
         present_minor_cast_compressed: [idB],
         offstage_relevant_cast: [idC],
         selected_pov: idA,
-        manual_directive_id: idC
       },
       immediate_handoff: {
         recent_causal_context: "A arrived.",
@@ -147,7 +146,6 @@ describe("generation-brief routes", () => {
       current_cast_voice_pressure: [
         {
           cast_member_id: idA,
-          local_function: "active_speaker",
           current_voice_pressure: "Keep the voice clipped.",
           dialogue_pressure: "answer briefly",
           pov_narration_pressure: "none",
@@ -159,7 +157,6 @@ describe("generation-brief routes", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          scope: "current_generation_only",
           reason: "none",
           applies_to: ["dialogue"],
           override_text: "Use fewer metaphors."
@@ -195,7 +192,6 @@ describe("generation-brief routes", () => {
         current_cast_voice_pressure: [
           {
             cast_member_id: idA,
-            local_function: "active_speaker",
             current_voice_pressure: "Keep the voice clipped.",
             dialogue_pressure: "answer briefly",
             pov_narration_pressure: "none",
@@ -354,7 +350,6 @@ describe("generation-brief routes", () => {
           present_minor_cast_compressed: [idB],
           offstage_relevant_cast: [idC],
           selected_pov: "omniscient",
-          manual_directive_id: idC
         }
       }
     });
@@ -367,7 +362,6 @@ describe("generation-brief routes", () => {
         present_minor_cast_compressed: [idB],
         offstage_relevant_cast: [idC],
         selected_pov: "omniscient",
-        manual_directive_id: idC
       }
     });
     expect((await fastify.inject({ method: "GET", url: "/api/working-set" })).json()).toEqual({
@@ -466,7 +460,6 @@ describe("generation-brief routes", () => {
           current_cast_voice_pressure: [
             {
               cast_member_id: idA,
-              local_function: "active_speaker",
               current_voice_pressure: secretBriefText,
               dialogue_pressure: "none",
               pov_narration_pressure: "none",

@@ -8,7 +8,6 @@ export const storyContractSchema = z
     premise: nonemptyString,
     genre_mode: z.union([nonemptyString, z.array(nonemptyString)]),
     tone: z.union([nonemptyString, z.array(nonemptyString)]),
-    continuity_philosophy: z.literal("continuity_first"),
     setting_baseline: nonemptyString,
     content_intensity: z.enum(["general", "mature", "explicit", "graphic", "variable"]),
     explicitness: nonemptyString,

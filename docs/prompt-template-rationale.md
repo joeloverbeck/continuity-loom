@@ -75,6 +75,8 @@ Present-minor cast gets compressed notes. Offstage cast gets relevance slices. T
 
 Within active/onstage dossiers, structured fields should render core-first: identity, durable voice anchor plus voice-related extended fields, pressure behavior core, body presence core, agency core, then remaining optional extended fields in schema order, with selected sample utterances last. This is a salience rule, not a deletion rule. It keeps voice and immediate behavior from being buried under optional backstory while preserving every populated active/onstage field.
 
+Material pressure is the prose-only salience lane for current physical and institutional constraints. It may include selected non-person ENTITY kind/description alongside entity-status, location, and object pressure; person ENTITY records stay out of that lane so they do not duplicate CAST MEMBER authority. LOCATION detail rendering also carries hazards/shelters and social rules because those fields are movement, access, and behavior constraints, not decorative setting.
+
 ## 9. Why active/onstage local-function sub-bands are validation aids, not compression rules
 
 The schema now lets active/onstage cast be labeled by local function: POV narrator, active speaker, active silent, close non-POV, physically active, or materially referenced.
@@ -91,7 +93,7 @@ The corrected shape separates:
 
 - durable `voice_anchor`: stable identity, rhythm, syntax, register, diction, vocabulary, metaphor pool, tactics, taboos, avoidance, turn-taking, anti-repetition, and anti-generic constraints;
 - generation-time `current_cast_voice_pressure`: what this local moment is doing to dialogue, POV narration, nonverbal behavior, silence, and turn-taking;
-- compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, local function, and any temporary override.
+- compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, active working-set local function, and any temporary override.
 
 The pin does not replace the full dossier. It prevents generic dialogue and generic close narration when the full dossier is long.
 
@@ -99,11 +101,13 @@ Voice pins remain protected salience duplicates. They should not be removed for 
 
 Durable CAST MEMBER fields are the primary voice authority. Current voice pressure pins are optional scene-specific emphasis. Missing pins are usually salience warnings, not blockers, when durable voice anchors and body/behavior dossiers are sufficient. A missing pin becomes blocking only when the selected local mode needs voice/body authority and no durable, compressed, or current source can supply it, or when supplied current pressure contradicts higher authority.
 
+Present-minor supplied current pressure is rendered in prose prompts inside the compressed present-minor notes, not in a separate voice-pressure lane. The ideation prompt omits that prose-delivery pressure.
+
 ## 11. Why cast voice overrides are generation-time only
 
 `CAST VOICE OVERRIDES` are useful, but dangerous if they become a second persistent character system. They remain generation-time fields only.
 
-The override shape includes target cast member, scope, reason, affected speech/rendering functions, and override text. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
+The override shape includes target cast member, reason, affected speech/rendering functions, and override text. The block is intrinsically current-generation-only. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
 
 No override silently updates durable CAST MEMBER identity. If the user wants the change to persist, the user edits the durable dossier manually.
 

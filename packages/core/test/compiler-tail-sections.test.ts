@@ -74,7 +74,9 @@ function tailRecords(): ValidationRecord[] {
       description: "Narrow stone stairs.",
       layout_relevant_now: "Only one person can pass.",
       access_routes: ["landing", "north hall"],
-      visibility_and_sound: "Echoes carry."
+      visibility_and_sound: "Echoes carry.",
+      hazards_or_shelters: ["Loose rail on the west turn.", "Alcove gives cover from the landing."],
+      social_rules: ["Archivists must yield the inner stair to sealed-ledger couriers."]
     }),
     record("019b0298-5c00-7000-8000-000000000411", "OBJECT", "Lantern", {
       status: "active",
@@ -207,9 +209,24 @@ describe("compiler tail-section resolvers", () => {
     expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain("The guard has a second key.");
     expect(sectionBody(prompt, "relevant_facts_beliefs_events")).toContain("A lantern fell in the hall.");
     expect(sectionBody(prompt, "locations_objects_affordances")).toContain("Archive stair");
+    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(
+      "hazards or shelters: Loose rail on the west turn., Alcove gives cover from the landing."
+    );
+    expect(sectionBody(prompt, "locations_objects_affordances")).toContain(
+      "social rules: Archivists must yield the inner stair to sealed-ledger couriers."
+    );
     expect(sectionBody(prompt, "locations_objects_affordances")).toContain("Lantern");
     expect(sectionBody(prompt, "locations_objects_affordances")).toContain("Servant door");
     expect(sectionBody(prompt, "physical_continuity")).toContain("The POV stands below the landing.");
+  });
+
+  it("renders location hazards and social rules in ideation tail sections", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(input()), { promptKind: "ideation" }).prompt;
+    const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
+
+    expect(locationsObjects).toContain("hazards or shelters: Loose rail on the west turn., Alcove gives cover from the landing.");
+    expect(locationsObjects).toContain("social rules: Archivists must yield the inner stair to sealed-ledger couriers.");
+    expect(locationsObjects).not.toContain("Dock Authority - institution");
   });
 
   it("resolves object and visible affordance references to display labels", () => {

@@ -20,6 +20,9 @@ const affordanceId = "019b0298-5c00-7000-8000-000000000110";
 const holderAId = "019b0298-5c00-7000-8000-000000000201";
 const holderBId = "019b0298-5c00-7000-8000-000000000202";
 const causeFactId = "019b0298-5c00-7000-8000-000000000203";
+const pressureEntityId = "019b0298-5c00-7000-8000-000000000204";
+const personEntityId = "019b0298-5c00-7000-8000-000000000205";
+const activeCastId = "019b0298-5c00-7000-8000-000000000206";
 const absentReferenceId = "019b0298-5c00-7000-8000-000000000999";
 const longObligationTerms =
   "Do not abandon the apprentice while the archive stair is flooding and every witness expects a public explanation before the bell stops.";
@@ -482,7 +485,6 @@ function populatedInput(records = pressureRecords()): BuildValidationSnapshotInp
       current_cast_voice_pressure: [
         {
           cast_member_id: "019b0298-5c00-7000-8000-000000000201",
-          local_function: "active_speaker",
           current_voice_pressure: "Keep replies clipped and guarded.",
           dialogue_pressure: "none",
           pov_narration_pressure: "none",
@@ -559,13 +561,60 @@ describe("compiler pressure-section resolvers", () => {
       "They trade polite favors without meeting each other's eyes."
     );
     expect(sectionBody(prompt, "active_working_set")).toContain("The stair turns sharply before the landing.");
-    expect(sectionBody(prompt, "active_working_set")).toContain("Keep replies clipped and guarded.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("Keep the guard calm.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("Get the ledger out of the archive.");
     expect(sectionBody(prompt, "active_clocks")).toContain("Guard return");
     expect(sectionBody(prompt, "active_obligations_and_consequences")).toContain("Do not abandon the apprentice.");
     expect(sectionBody(prompt, "active_obligations_and_consequences")).toContain("The office is under inspection.");
     expect(sectionBody(prompt, "active_open_threads")).toContain("Who moved the ledger?");
+  });
+
+  it("renders selected non-person entity material pressure once without duplicating active cast entities", () => {
+    const records: ValidationRecord[] = [
+      ...pressureRecords(),
+      {
+        id: pressureEntityId,
+        type: "ENTITY",
+        metadata: metadata(pressureEntityId, "Dock Authority"),
+        payload: {
+          id: pressureEntityId,
+          display_name: "Dock Authority",
+          entity_kind: "institution",
+          roles_in_story: ["authority", "pressure_source"],
+          short_description: "A harbor office with power to close the pier gates."
+        }
+      },
+      {
+        id: personEntityId,
+        type: "ENTITY",
+        metadata: metadata(personEntityId, "Elin Vale"),
+        payload: {
+          id: personEntityId,
+          display_name: "Elin Vale",
+          entity_kind: "person",
+          roles_in_story: ["primary_actor"],
+          short_description: "An active speaker with a full cast dossier."
+        }
+      },
+      {
+        id: activeCastId,
+        type: "CAST MEMBER",
+        castBand: "active_onstage_cast_full",
+        metadata: metadata(activeCastId, "Elin cast"),
+        payload: {
+          entity_id: personEntityId,
+          identity: { one_line: "Elin is trying to keep the ledger hidden." },
+          voice_anchor: { core_voice: "Clipped and careful." }
+        }
+      }
+    ];
+    const materialPressure = sectionBody(compilePrompt(buildValidationSnapshot(populatedInput(records))).prompt, "active_working_set");
+
+    expect(materialPressure.match(/Dock Authority - institution/g)).toHaveLength(1);
+    expect(materialPressure).toContain("Dock Authority - institution; A harbor office with power to close the pier gates.");
+    expect(materialPressure).not.toContain("An active speaker with a full cast dossier.");
+    expect(materialPressure).not.toContain(pressureEntityId);
+    expect(materialPressure).not.toContain(personEntityId);
   });
 
   it("resolves causal-pressure reference fields to selected record display labels", () => {
@@ -733,7 +782,7 @@ describe("compiler pressure-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 
     expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.active_action_pressure);
-    expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.voice_pressure);
+    expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.active_cast_voice_pressure_pins);
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain(EMPTY_STATE_CONSTANTS.active_intentions);
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain(EMPTY_STATE_CONSTANTS.active_plans);
     expect(sectionBody(prompt, "active_clocks")).toContain(EMPTY_STATE_CONSTANTS.active_clocks);

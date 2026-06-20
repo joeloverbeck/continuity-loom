@@ -138,7 +138,6 @@ function populatedInput(): BuildValidationSnapshotInput {
         premise: "An archivist hunts a stolen key during a storm.",
         genre_mode: "gothic mystery",
         tone: ["tense", "intimate"],
-        continuity_philosophy: "continuity_first",
         setting_baseline: "A coastal archive tower.",
         content_intensity: "mature",
         explicitness: "non-graphic",

@@ -53,14 +53,30 @@ describe("whatWillCompile", () => {
     ]);
   });
 
+  it("routes entity records to material/physical destinations", () => {
+    const entity = {
+      id: "019b0298-5c00-7000-8000-000000000006",
+      type: "ENTITY",
+      displayLabel: "Dock Authority"
+    };
+
+    expect(whatWillCompile([entity])).toEqual([
+      {
+        familyId: "locations_objects_affordances",
+        label: "Locations, objects, affordances, and physical continuity",
+        records: [entity]
+      }
+    ]);
+  });
+
   it("routes CAST MEMBER records by explicit inclusion band", () => {
-    const activeCast = { id: "019b0298-5c00-7000-8000-000000000006", type: "CAST MEMBER", displayLabel: "Active" };
+    const activeCast = { id: "019b0298-5c00-7000-8000-000000000007", type: "CAST MEMBER", displayLabel: "Active" };
     const presentMinorCast = {
-      id: "019b0298-5c00-7000-8000-000000000007",
+      id: "019b0298-5c00-7000-8000-000000000008",
       type: "CAST MEMBER",
       displayLabel: "Minor"
     };
-    const offstageCast = { id: "019b0298-5c00-7000-8000-000000000008", type: "CAST MEMBER", displayLabel: "Away" };
+    const offstageCast = { id: "019b0298-5c00-7000-8000-000000000009", type: "CAST MEMBER", displayLabel: "Away" };
 
     expect(
       whatWillCompile([offstageCast, presentMinorCast, activeCast], {

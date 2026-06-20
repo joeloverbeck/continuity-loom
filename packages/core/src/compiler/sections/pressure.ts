@@ -44,19 +44,13 @@ const pressureResolvers: ResolverMap = {
   material_pressure: (snapshot) =>
     pressureFromRecords(
       snapshot,
-      ["LOCATION", "OBJECT", "ENTITY STATUS"],
+      ["LOCATION", "OBJECT", "ENTITY STATUS", "ENTITY"],
       (record, payload) =>
-        firstText(payload, ["layout_relevant_now", "description", "prompt_text", "constraints", "visible_conditions"]),
+        record.type === "ENTITY"
+          ? entityMaterialPressureLine(snapshot, record, payload)
+          : firstText(payload, ["layout_relevant_now", "description", "prompt_text", "constraints", "visible_conditions"]),
       "material_pressure"
     ),
-  voice_pressure: (snapshot) => {
-    const lines = snapshot.generationSession.current_cast_voice_pressure
-      .map((entry) => entry.current_voice_pressure.trim())
-      .filter(Boolean)
-      .map((line) => `- ${line}`);
-
-    return lines.join("\n") || EMPTY_STATE_CONSTANTS.voice_pressure;
-  },
   active_intentions: (snapshot) => renderActiveIntentions(snapshot),
   active_plans: (snapshot) => renderActivePlans(snapshot),
   active_clocks: (snapshot) => renderActiveClocks(snapshot),
@@ -116,7 +110,10 @@ function pressureFromRecords(
     snapshot,
     types,
     () => true,
-    (payload, record) => compactSummaryLine(displayLabel(record), project(record, payload))
+    (payload, record) => {
+      const projectedText = project(record, payload);
+      return projectedText ? compactSummaryLine(displayLabel(record), projectedText) : "";
+    }
   ) || EMPTY_STATE_CONSTANTS[placeholder];
 }
 
@@ -312,6 +309,39 @@ function activeKnowledgePressureLine(record: ValidationRecord, payload: JsonReco
   }
 
   return compactParts([behavioralEffect, displayLabel(record)]);
+}
+
+function entityMaterialPressureLine(snapshot: ValidationSnapshot, record: ValidationRecord, payload: JsonRecord): string {
+  if (!shouldRenderEntityMaterialPressure(snapshot, record, payload)) {
+    return "";
+  }
+
+  return compactSummaryLine(
+    `${displayLabel(record)} - ${humanizeEntityKind(asString(payload.entity_kind))}`,
+    asString(payload.short_description)
+  );
+}
+
+function shouldRenderEntityMaterialPressure(
+  snapshot: ValidationSnapshot,
+  record: ValidationRecord,
+  payload: JsonRecord
+): boolean {
+  const entityKind = asString(payload.entity_kind);
+  if (!entityKind || !asString(payload.short_description)) {
+    return false;
+  }
+
+  return entityKind !== "person" && !snapshot.records.some(
+    (candidate) =>
+      candidate.type === "CAST MEMBER" &&
+      candidate.castBand === "active_onstage_cast_full" &&
+      payloadOf(candidate).entity_id === record.id
+  );
+}
+
+function humanizeEntityKind(value: string): string {
+  return value.split("_").filter(Boolean).join(" ");
 }
 
 function isPressureFact(record: ValidationRecord, payload: JsonRecord): boolean {

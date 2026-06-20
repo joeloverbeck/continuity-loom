@@ -382,7 +382,6 @@ function cleanInput(): BuildValidationSnapshotInput {
       current_cast_voice_pressure: [
         {
           cast_member_id: castId,
-          local_function: "active_speaker",
           current_voice_pressure: "B is clipped and afraid.",
           dialogue_pressure: "Direct question.",
           pov_narration_pressure: "none",
@@ -409,7 +408,6 @@ function cleanInput(): BuildValidationSnapshotInput {
         premise: "A city keeps its promises badly.",
         genre_mode: "urban fantasy",
         tone: "tense and intimate",
-        continuity_philosophy: "continuity_first",
         setting_baseline: "Rainy districts under old bargains.",
         content_intensity: "mature",
         explicitness: "Render mature material only when earned.",

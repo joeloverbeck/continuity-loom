@@ -6,6 +6,7 @@ import { ensureRecordTables } from "./record-tables.js";
 
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
+const removedManualDirectiveIdKey = "manual" + "_directive_id";
 
 let databases: DatabaseSync[] = [];
 
@@ -86,6 +87,39 @@ describe("migrateGenerationSessionDraft", () => {
         must_render: ["Continue the immediate moment.", "Open the sealed door."]
       }
     });
+  });
+
+  it("strips legacy active-working-set manual directive id while preserving inline directive prose", () => {
+    const db = database();
+    setGenerationSession(db, {
+      active_working_set: {
+        selected_records: [idA],
+        [removedManualDirectiveIdKey]: idB
+      },
+      manual_moment_directive: {
+        must_render: ["Open the sealed door."],
+        may_render_if_naturally_caused: ["Let the hinge complain."],
+        do_not_force: ["Do not explain what waits behind it."]
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    const afterSecond = generationSessionRow(db);
+
+    expect(afterFirst.payload).toMatchObject({
+      active_working_set: {
+        selected_records: [idA]
+      },
+      manual_moment_directive: {
+        must_render: ["Open the sealed door."],
+        may_render_if_naturally_caused: ["Let the hinge complain."],
+        do_not_force: ["Do not explain what waits behind it."]
+      }
+    });
+    expect(afterFirst.payload.active_working_set).not.toHaveProperty(removedManualDirectiveIdKey);
+    expect(afterSecond).toEqual(afterFirst);
   });
 
   it("backfills continuation context from accepted-segment count and preserves explicit context", () => {
@@ -180,12 +214,106 @@ describe("migrateGenerationSessionDraft", () => {
       current_cast_voice_pressure: [
         {
           cast_member_id: idB,
-          local_function: "active_speaker",
           current_voice_pressure: "Keep answers clipped.",
           current_must_preserve: []
         }
       ]
     });
+
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    expect(generationSessionRow(db)).toEqual(afterFirst);
+  });
+
+  it("persists legacy current-cast local function removal when no other draft migration is needed", () => {
+    const db = database();
+    setGenerationSession(db, {
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: idB,
+          local_function: "active_speaker",
+          current_voice_pressure: "Keep answers clipped.",
+          current_must_preserve: []
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+
+    expect(generationSessionRow(db).payload).toEqual({
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: idB,
+          current_voice_pressure: "Keep answers clipped.",
+          current_must_preserve: []
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+  });
+
+  it("strips legacy cast voice override scope and preserves override order and text", () => {
+    const db = database();
+    setGenerationSession(db, {
+      cast_voice_overrides: [
+        {
+          cast_member_id: idA,
+          scope: "current_generation_only",
+          reason: "First temporary adjustment.",
+          applies_to: ["dialogue"],
+          override_text: "Clip the first reply."
+        },
+        {
+          cast_member_id: idB,
+          scope: "current_generation_only",
+          reason: "Second temporary adjustment.",
+          applies_to: ["silence"],
+          override_text: "Hold silence longer."
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+
+    expect(generationSessionRow(db).payload).toEqual({
+      cast_voice_overrides: [
+        {
+          cast_member_id: idA,
+          reason: "First temporary adjustment.",
+          applies_to: ["dialogue"],
+          override_text: "Clip the first reply."
+        },
+        {
+          cast_member_id: idB,
+          reason: "Second temporary adjustment.",
+          applies_to: ["silence"],
+          override_text: "Hold silence longer."
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    expect(generationSessionRow(db)).toEqual(afterFirst);
   });
 
   it("is idempotent after the first migration", () => {

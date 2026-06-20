@@ -20,8 +20,7 @@ const cardEnumPaths = new Set([
   "PROSE MODE.dialogue_density",
   "SECRET.reveal_permission",
   "CAST MEMBER.sample_utterances[].copy_policy",
-  "GENERATION BRIEF.active_working_set.active_onstage_cast_full[].local_function",
-  "GENERATION BRIEF.current_cast_voice_pressure[].local_function"
+  "GENERATION BRIEF.active_working_set.active_onstage_cast_full[].local_function"
 ]);
 
 export function EnumGuidance({

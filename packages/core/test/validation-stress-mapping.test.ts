@@ -117,7 +117,6 @@ function baseInput(): BuildValidationSnapshotInput {
         premise: "A city keeps its promises badly.",
         genre_mode: "urban fantasy",
         tone: "tense and intimate",
-        continuity_philosophy: "continuity_first",
         setting_baseline: "Rainy districts under old bargains.",
         content_intensity: "mature",
         explicitness: "Render mature material only when earned.",
@@ -448,7 +447,6 @@ function relationshipRecord(from: string, to: string) {
 function voicePressure(castMemberId: string) {
   return {
     cast_member_id: castMemberId,
-    local_function: "active_speaker" as const,
     current_voice_pressure: "Clipped.",
     dialogue_pressure: "Direct.",
     pov_narration_pressure: "none",

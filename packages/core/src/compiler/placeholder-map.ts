@@ -92,7 +92,6 @@ export type PlaceholderName =
   | "unavailable_or_impossible_actions"
   | "visible_affordances"
   | "visible_conditions"
-  | "voice_pressure"
   | "writer_visible_hidden_truths"
   | "writer_visible_or_non_pov_facts";
 

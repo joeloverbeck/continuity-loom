@@ -595,7 +595,6 @@ describe("SPEC-003 record tables and repository", () => {
         present_minor_cast_compressed: [],
         offstage_relevant_cast: [],
         selected_pov: idA,
-        manual_directive_id: idA
       }
     });
 
@@ -616,7 +615,6 @@ describe("SPEC-003 record tables and repository", () => {
     expect(session.ok ? session.payload : {}).not.toMatchObject({
       active_working_set: {
         selected_pov: idA,
-        manual_directive_id: idA
       }
     });
   });

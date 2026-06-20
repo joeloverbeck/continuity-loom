@@ -28,7 +28,6 @@ title: string
 premise: prose
 genre_mode: prose or enum list
 tone: prose or tag list
-continuity_philosophy: continuity_first
 setting_baseline: prose
 content_intensity: general | mature | explicit | graphic | variable
 explicitness: prose
@@ -38,6 +37,7 @@ language_register: prose
 Prompt treatment:
 
 - Always included.
+- Continuity-first doctrine is constitutional/static, not a configurable story property.
 - Does not override hard canon, current authoritative state, POV constraints, reveal locks, or provider policy.
 
 ### 2.2 UNIVERSAL CONTENT POLICY
@@ -113,16 +113,17 @@ active_onstage_cast_full:
 present_minor_cast_compressed: list[cast_member_id]
 offstage_relevant_cast: list[cast_member_id]
 selected_pov: entity_id | omniscient
-manual_directive_id: id
 ```
 
 Storage note: historical provenance from SPEC004RECCRUBAS-002 Option A,
 implemented as designed and archived at
 `archive/tickets/SPEC004RECCRUBAS-002.md`: storage may persist membership-only
 active working sets containing `selected_records` without a POV or manual
-directive. `selected_pov` and `manual_directive_id` remain
-generation-time-required, but that fail-closed check belongs to the validation
-engine rather than the storage schema.
+directive. `selected_pov` remains a generation-time readiness requirement when
+the prose mode needs a concrete viewpoint, but that fail-closed check belongs to
+the validation engine rather than the storage schema. The manual directive's
+readiness-required content is `manual_moment_directive.must_render`, not a
+separate active-working-set reference.
 
 Compiler requirements:
 
@@ -244,7 +245,6 @@ Fields:
 ```yaml
 current_cast_voice_pressure:
   - cast_member_id: id
-    local_function: pov_narrator | active_speaker | active_silent | close_non_pov | present_minor_speaker | physically_active | materially_referenced
     current_voice_pressure: prose
     dialogue_pressure: prose | none
     pov_narration_pressure: prose | none
@@ -256,12 +256,13 @@ current_cast_voice_pressure:
 Rules:
 
 - Current cast voice pressure is optional scene-specific salience reinforcement. Durable CAST MEMBER voice and behavior fields are the primary authority.
+- Active/full local function is derived from `active_working_set.active_onstage_cast_full`; present-minor delivery is derived from `present_minor_cast_compressed`. Current cast voice pressure does not carry its own role authority.
 - Recommended when an active/onstage character is expected to speak materially.
 - Recommended when close POV narration depends on a character-specific current voice pressure.
 - Recommended when an active/onstage silent character's body, gesture, posture, stillness, or social presence materially drives the local unit.
 - It is not normally required when the durable dossier already gives enough voice/body authority.
 - Blocks only when supplied current pressure contradicts hard canon, current state, POV/reveal constraints, physical continuity, or provider policy; or when a selected local mode requires voice/body authority and neither durable cast fields nor compressed present-minor guidance can supply it.
-- Compiles into `{active_cast_voice_pressure_pins}`.
+- Active/onstage pressure compiles into `{active_cast_voice_pressure_pins}`. Present-minor current pressure compiles into compressed present-minor notes in prose prompts only.
 
 ### 3.6 CAST VOICE OVERRIDES
 
@@ -272,7 +273,6 @@ Fields:
 ```yaml
 cast_voice_overrides:
   - cast_member_id: id
-    scope: current_generation_only
     reason: prose | none
     applies_to:
       - dialogue
@@ -291,6 +291,7 @@ cast_voice_overrides:
 Compiler treatment:
 
 - Optional.
+- Intrinsically current-generation-only; there is no per-item scope field.
 - May target active/onstage cast or present-minor cast selected for the current generation.
 - For active/onstage cast, compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
 - For present-minor cast, compile only into the compressed present-minor note.
@@ -394,7 +395,8 @@ short_description: prose
 Prompt treatment:
 
 - Person-like active entities should usually have CAST MEMBER records.
-- Non-person entities may compile as institutions, factions, systems, places, or pressure sources when selected.
+- Selected non-person entities compile into material pressure using `entity_kind` and `short_description`.
+- Person entities do not compile into material pressure; active person-like prose authority belongs in CAST MEMBER records.
 
 ### 4.2 ENTITY STATUS
 
@@ -702,6 +704,11 @@ social_rules: prose list
 status: active | inactive | destroyed | inaccessible
 ```
 
+Prompt treatment:
+
+- Selected active LOCATION records render description, layout, routes, visibility/sound, hazards or shelters, and social rules in prose prompts.
+- Ideation renders selected LOCATION records regardless of status, with status plus the same hazards/social-rules clauses.
+
 ### 7.2 OBJECT
 
 ```yaml
@@ -723,6 +730,7 @@ Validation:
 - `owner` and `carried_by` record ids must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional.
 - `current_location` record ids must resolve to LOCATION or OBJECT records. Dangling or mistyped references block; unselected resolved references warn while optional.
 - `current_location: carried_by_holder` is incoherent when `carried_by: none` and blocks validation.
+- `durability` is continuity metadata for author review. It is not currently rendered as literal object prompt text.
 
 ### 7.3 VISIBLE AFFORDANCE
 
@@ -828,6 +836,7 @@ can_drive_prose: true | false
 Validation:
 
 - `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. If the plan can drive prose or hidden-plan behavior is expected, an unselected resolved holder blocks; otherwise it warns.
+- `fallback_steps` is authoring metadata. When a fallback becomes current, update `current_step`, selected pressure, or current state; the compiler does not offer multiple future options.
 
 ### 8.4 CLOCK
 
@@ -847,6 +856,11 @@ tick_history:
     result: prose
 status: active | paused | resolved | abandoned
 ```
+
+Prompt treatment:
+
+- Current clock pressure renders through `current_pressure`, `tick_trigger`, `next_threshold`, and `possible_effects`.
+- `tick_history` is continuity history for author review. If a historical tick still matters now, represent it as current state, an EVENT, a CONSEQUENCE, or current clock pressure.
 
 ### 8.5 OBLIGATION
 
@@ -928,6 +942,7 @@ status: active | resolved | abandoned
 Prompt treatment:
 
 - Compile `description`, `pressure_text`, and `current_expression`, not raw axes alone.
+- `axis`, `direction_kind`, `value`, `valence`, and `visibility` are classifier/review metadata. They are not literal prompt content.
 
 Validation:
 

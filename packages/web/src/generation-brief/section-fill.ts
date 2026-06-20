@@ -32,8 +32,7 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
     "active_working_set.active_onstage_cast_full[].local_function",
     "active_working_set.present_minor_cast_compressed[]",
     "active_working_set.offstage_relevant_cast[]",
-    "active_working_set.selected_pov",
-    "active_working_set.manual_directive_id"
+    "active_working_set.selected_pov"
   ],
   "current-state": [
     "current_authoritative_state.current_time",
@@ -66,7 +65,6 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
   ],
   "voice-pressure": [
     "current_cast_voice_pressure[].cast_member_id",
-    "current_cast_voice_pressure[].local_function",
     "current_cast_voice_pressure[].current_voice_pressure",
     "current_cast_voice_pressure[].dialogue_pressure",
     "current_cast_voice_pressure[].pov_narration_pressure",
@@ -76,7 +74,6 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
   ],
   override: [
     "cast_voice_overrides[].cast_member_id",
-    "cast_voice_overrides[].scope",
     "cast_voice_overrides[].reason",
     "cast_voice_overrides[].applies_to[]",
     "cast_voice_overrides[].override_text"

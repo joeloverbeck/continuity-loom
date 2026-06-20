@@ -31,8 +31,7 @@ const activeWorkingSetReadySchema = z
       .optional(),
     present_minor_cast_compressed: z.array(recordId).optional(),
     offstage_relevant_cast: z.array(recordId).optional(),
-    selected_pov: z.union([recordId, z.literal("omniscient")]).optional(),
-    manual_directive_id: recordId.optional()
+    selected_pov: z.union([recordId, z.literal("omniscient")]).optional()
   })
   .strict();
 
@@ -77,17 +76,6 @@ const manualMomentDirectiveReadySchema = z
 const currentCastVoicePressureReadySchema = z
   .object({
     cast_member_id: recordId,
-    local_function: z
-      .enum([
-        "pov_narrator",
-        "active_speaker",
-        "active_silent",
-        "close_non_pov",
-        "present_minor_speaker",
-        "physically_active",
-        "materially_referenced"
-      ])
-      .optional(),
     current_voice_pressure: readyString.optional(),
     dialogue_pressure: z.union([readyString, z.literal("none")]).optional(),
     pov_narration_pressure: z.union([readyString, z.literal("none")]).optional(),
@@ -100,7 +88,6 @@ const currentCastVoicePressureReadySchema = z
 const castVoiceOverridesReadySchema = z
   .object({
     cast_member_id: recordId,
-    scope: z.literal("current_generation_only").optional(),
     reason: z.union([readyString, z.literal("none")]).optional(),
     applies_to: z
       .array(

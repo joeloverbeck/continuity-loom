@@ -216,7 +216,7 @@ Voice pressure pins above are current-generation salience duplicates. Durable vo
 
 For non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate their private interiority directly unless the prose mode allows it.
 
-If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and scoped to this generation only. It adjusts the current rendering; it does not rewrite durable character identity.
+If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and current-generation-only. It adjusts the current rendering; it does not rewrite durable character identity.
 
 If sample utterances are included, treat them as annotated short examples of speech function, cadence, and register. Obey each sample's copy policy. The default is never copy verbatim. `may_reuse_cadence_not_text` permits rhythm/function transfer, not wording. `canonical_phrase` is rare and still must not become a repeated tic. Do not infer missing samples; omission means no sample text is selected.
 
@@ -243,7 +243,7 @@ Recent events:
 
 <locations_objects_affordances>
 Locations:
-- [LOCATION-1] Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.
+- [LOCATION-1] Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.; hazards or shelters: low beam over the bin, sacks that muffle footfalls; social rules: Customers should not be below stairs without Elin's invitation.
 
 Objects:
 - [OBJECT-3] sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.

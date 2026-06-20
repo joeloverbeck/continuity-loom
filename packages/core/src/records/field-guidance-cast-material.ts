@@ -17,7 +17,7 @@ const operationalFields = new Set(["id", "status"]);
 
 const destinationFamilyByType: Readonly<Record<CastMaterialRecordType, string>> = {
   "CAST MEMBER": "rich_active_cast_dossiers",
-  ENTITY: "active_working_set",
+  ENTITY: "locations_objects_affordances",
   "ENTITY STATUS": "locations_objects_affordances",
   LOCATION: "locations_objects_affordances",
   OBJECT: "locations_objects_affordances",
@@ -33,6 +33,14 @@ const visibilityToPovGuidance = {
 };
 
 const specificGuidance = new Map<string, Partial<FieldGuidance>>([
+  ["CAST MEMBER.entity_id", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Reference to the ENTITY this cast dossier represents.",
+    validationRole:
+      "Record-reference metadata for validation and linkage; active cast dossiers do not print raw entity ids.",
+    authoringAdvice: "Use the linked ENTITY for identity/state references, not as prose text."
+  }],
   ["CAST MEMBER.voice_anchor.core_voice", durableVoice("Core durable voice identity.", {
     examples: ["Speaks in exacting practical images; avoids decorative reassurance."],
     antiExamples: ["Stoic but secretly soft."]
@@ -96,6 +104,33 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     short: "How the entity status is perceptible to the POV.",
     enumValues: visibilityToPovGuidance
   }],
+  ["ENTITY.entity_kind", {
+    short: "The kind of non-cast entity; selected non-person entities can compile into material pressure.",
+    promptDestinations: ["locations_objects_affordances"],
+    authoringAdvice: "Use the closest concrete kind; do not use roles_in_story to describe pressure."
+  }],
+  ["ENTITY.short_description", {
+    short: "Prompt-facing description for a selected entity when it carries material pressure.",
+    promptDestinations: ["locations_objects_affordances"],
+    examples: ["A union office with enough authority to close the pier gates."],
+    authoringAdvice: "Describe what the entity is and why its presence can matter physically or institutionally now."
+  }],
+  ["ENTITY.roles_in_story[]", {
+    promptFacing: "never",
+    promptDestinations: [],
+    short: "Structured authoring metadata for selecting and organizing entities.",
+    validationRole: "Authoring metadata only; it is not sent as literal prose prompt context."
+  }],
+  ["LOCATION.hazards_or_shelters[]", {
+    short: "Physical dangers, cover, shelter, or safe movement constraints at this location.",
+    promptDestinations: ["locations_objects_affordances"],
+    examples: ["The west aisle gives cover from the balcony but leaves footprints in flour dust."]
+  }],
+  ["LOCATION.social_rules[]", {
+    short: "Public behavior, access, etiquette, authority, taboo, or consequence pressure in this location.",
+    promptDestinations: ["locations_objects_affordances"],
+    examples: ["Only guild clerks may touch sealed ledgers while the steward is present."]
+  }],
   ["OBJECT.visibility_to_pov", {
     short: "How the object is perceptible to the POV.",
     enumValues: {
@@ -106,7 +141,11 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     }
   }],
   ["OBJECT.durability", {
+    promptFacing: "never",
+    promptDestinations: [],
     short: "How durable this object's state is for continuity.",
+    validationRole:
+      "Continuity metadata for author review; object prose rendering currently uses description, holder/location, visibility, affordances, and constraints.",
     enumValues: {
       local_texture: { short: "Useful local texture; low continuity weight." },
       continuity_relevant: { short: "Track changes because future continuity may depend on it." },

@@ -120,8 +120,8 @@ function validatePresentMinorSpeechPossible(snapshot: ValidationSnapshot): reado
     blocker({
       code: DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete,
       field: "generationSession.active_working_set.present_minor_cast_compressed",
-      message: "Present minor speech focus lacks a compressed voice note or active/onstage promotion.",
-      whyItMatters: "A present minor cast member should not receive material speech without a voice pin or full active cast treatment.",
+      message: "Present minor speech focus lacks deliverable dialogue guidance or active/onstage promotion.",
+      whyItMatters: "A present minor cast member should not receive material speech unless the prompt carries compressed speech guidance, current dialogue pressure, or a dialogue-targeted current override.",
       suggestedActions: ["promote-cast", "add-voice-or-body-pressure"]
     })
   ];
@@ -173,9 +173,23 @@ function hasSilentPressure(snapshot: ValidationSnapshot, castId: string): boolea
 }
 
 function hasPresentMinorVoicePressure(snapshot: ValidationSnapshot, castId: string): boolean {
-  const pressure = voicePressureFor(snapshot, castId);
+  const minorIds = snapshot.generationSession.active_working_set?.present_minor_cast_compressed ?? [];
+  if (!minorIds.includes(castId)) {
+    return false;
+  }
 
-  return !!pressure && pressure.local_function === "present_minor_speaker" && hasText(pressure.current_voice_pressure);
+  const pressure = voicePressureFor(snapshot, castId);
+  const hasDeliverablePressure =
+    !!pressure &&
+    (hasText(pressure.dialogue_pressure) || hasSpeechSuitableCurrentPressure(pressure.current_voice_pressure));
+  const hasDialogueOverride = snapshot.generationSession.cast_voice_overrides.some(
+    (override) =>
+      override.cast_member_id === castId &&
+      override.applies_to.some((target) => target === "dialogue" || target === "all_prompted_voice") &&
+      hasText(override.override_text)
+  );
+
+  return hasDeliverablePressure || hasDialogueOverride;
 }
 
 function voicePressureFor(snapshot: ValidationSnapshot, castId: string) {
@@ -229,6 +243,13 @@ function hasValue(value: unknown): boolean {
 
 function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasSpeechSuitableCurrentPressure(value: unknown): boolean {
+  return (
+    hasText(value) &&
+    /\b(speak|speaks|speech|dialogue|line|lines|answer|answers|reply|replies|say|says|voice)\b/i.test(value)
+  );
 }
 
 function hasObject(value: unknown): value is Record<string, unknown> {

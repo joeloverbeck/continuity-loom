@@ -257,7 +257,9 @@ function renderLocations(snapshot: ValidationSnapshot, options: TailRenderOption
       options.ideation ? labelValue("status", payload.status) : "",
       labelValue("layout", payload.layout_relevant_now),
       labelValue("routes", payload.access_routes),
-      labelValue("visibility/sound", payload.visibility_and_sound)
+      labelValue("visibility/sound", payload.visibility_and_sound),
+      labelValue("hazards or shelters", payload.hazards_or_shelters),
+      labelValue("social rules", payload.social_rules)
     ])
   );
 }

@@ -59,7 +59,7 @@ const recordTypeFamilies: Readonly<Record<string, CompileDestinationFamilyId>> =
   CLOCK: "plans_clocks_obligations",
   CONSEQUENCE: "plans_clocks_obligations",
   EMOTION: "facts_beliefs_events",
-  ENTITY: "active_working_set",
+  ENTITY: "locations_objects_affordances",
   "ENTITY STATUS": "locations_objects_affordances",
   EVENT: "facts_beliefs_events",
   FACT: "facts_beliefs_events",

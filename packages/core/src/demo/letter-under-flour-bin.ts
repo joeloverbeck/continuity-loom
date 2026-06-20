@@ -64,7 +64,6 @@ export const demoStoryConfig = {
     premise: "A careful baker hides a stolen letter before a friend can decide whether to trust her.",
     genre_mode: ["cozy mystery", "mild suspense"],
     tone: ["quietly tense", "warm but wary"],
-    continuity_philosophy: "continuity_first",
     setting_baseline: "A rain-wet market town where tradespeople share narrow cellars and sharper rumors.",
     content_intensity: "general",
     explicitness: "Keep danger mild and non-graphic; focus on secrecy, trust, and practical choices.",
@@ -604,8 +603,7 @@ export const demoGenerationSession = {
     ],
     present_minor_cast_compressed: [],
     offstage_relevant_cast: [],
-    selected_pov: demoRecordIds.elinEntity,
-    manual_directive_id: demoRecordIds.elinIntention
+    selected_pov: demoRecordIds.elinEntity
   },
   current_authoritative_state: {
     current_time: "Late morning, minutes after the market bell rang early.",
@@ -661,7 +659,6 @@ export const demoGenerationSession = {
   current_cast_voice_pressure: [
     {
       cast_member_id: demoRecordIds.elinCast,
-      local_function: "pov_narrator",
       current_voice_pressure: "Elin narrates through practical details and controlled evasions.",
       dialogue_pressure: "She answers precisely and redirects Niko toward immediate safety.",
       pov_narration_pressure: "Keep close to Elin's guarded calculations without exposing facts Niko lacks.",
@@ -671,7 +668,6 @@ export const demoGenerationSession = {
     },
     {
       cast_member_id: demoRecordIds.nikoCast,
-      local_function: "active_speaker",
       current_voice_pressure: "Niko starts lightly but presses with hurt precision.",
       dialogue_pressure: "He should ask small concrete questions that expose the evasion.",
       pov_narration_pressure: "none",
