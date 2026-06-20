@@ -872,7 +872,7 @@ Validation:
 id: id
 status: pending | active | resolved | escalated | abandoned
 consequence_kind: physical | emotional | social | legal | financial | reputational | relational | logistical | supernatural | institutional | other
-holder_or_target: list[entity_id] | location_id | object_id | public | unknown
+holder_or_target: list[entity_id] | public | unknown
 cause: record_id | prose
 urgency: low | medium | high | critical
 current_effect: prose
