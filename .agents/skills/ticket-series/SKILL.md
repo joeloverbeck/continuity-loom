@@ -141,7 +141,10 @@ npm run build
 9. Review the diff for unrelated changes.
 10. Inspect `git diff --cached --name-status` before committing. If unrelated
     pre-existing changes are staged, unstage only those unrelated entries before
-    committing the ticket.
+    committing the ticket. After `git mv`, stage rename/deletion pairs with a
+    scoped command such as `git add -A tickets archive/tickets` when direct
+    staging of the old path fails, then re-check the cached name-status before
+    committing.
 11. Commit the completed ticket work before moving on unless the user explicitly
     asked not to commit. Use a concise message naming the ticket.
 
@@ -202,6 +205,10 @@ npm run build
 
 7. Run a final status/diff check and commit the spec archive/truthing work
    unless the user explicitly asked not to commit.
+   If the final ticket is itself the capstone or explicitly owns spec closeout,
+   the final ticket archive and spec archive may land in one commit. Record that
+   coupling in the ticket and spec `Outcome` sections, and use a commit message
+   that names the final ticket.
 8. If a `/goal` is active, mark it complete only after implementation,
    verification, ticket archives, spec archive or documented reason it remains
    active, reference repair, and required commits are done. When resuming after

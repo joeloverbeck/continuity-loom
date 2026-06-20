@@ -33,7 +33,11 @@ contains the §2 read-list):
 If this brief **continues a prior one** (a multi-block campaign, or a follow-up to earlier
 research), name the predecessor `reports/<...>-research-brief.md` and state what it already
 delivered, so Session 2 treats this as a *delta* — not a cold start — and does not re-commission
-completed work.
+completed work. **If the predecessor's deliverable was already implemented** (its recommendations
+became merged code, not just completed research), the delta is a *baseline shift*, not just prior
+findings: name the implementing commit/PR, declare the post-implementation baseline, list the
+now-live changes so Session 2 does not re-recommend them as new, and state whether those
+implemented changes are themselves reconsiderable in this pass.
 
 ### 2. Read in full (authority order)
 
@@ -168,7 +172,9 @@ A short acceptance checklist Session 2 runs against its own output before return
 e.g. every replacement preserves the load-bearing content of the original; no new doctrine
 weakens FOUNDATIONS or trips a §29 hard-fail; every external claim is cited; the deliverable
 set matches §7 exactly; the §1 fetch-baseline commit contains every file named in the §2
-read-in-full list.
+read-in-full list. When the brief cites a specific `§N`/section anchor *into* a read-list doc,
+that anchor was grep-confirmed at the baseline before writing — a path that resolves can still be
+cited at the wrong section, and the locked brief gives Session 2 no way to challenge it.
 
 ---
 
