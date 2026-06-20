@@ -57,21 +57,19 @@ describe("pruneWorkingSetReferences", () => {
     expect(result.removed).toEqual([danglingA, danglingB, danglingC]);
   });
 
-  it("clears dangling selected_pov and manual_directive_id", () => {
+  it("clears dangling selected_pov", () => {
     const session = sessionWithWorkingSet({
       selected_records: [],
       active_onstage_cast_full: [],
       present_minor_cast_compressed: [],
       offstage_relevant_cast: [],
-      selected_pov: danglingA,
-      manual_directive_id: danglingB
+      selected_pov: danglingA
     });
 
     const result = pruneWorkingSetReferences(session, keepLive);
 
     expect(result.session.active_working_set).not.toHaveProperty("selected_pov");
-    expect(result.session.active_working_set).not.toHaveProperty("manual_directive_id");
-    expect(result.removed).toEqual([danglingA, danglingB]);
+    expect(result.removed).toEqual([danglingA]);
   });
 
   it("preserves omniscient POV", () => {
@@ -95,8 +93,7 @@ describe("pruneWorkingSetReferences", () => {
       active_onstage_cast_full: [{ cast_member_id: liveB, local_function: "close_non_pov" }],
       present_minor_cast_compressed: [liveC],
       offstage_relevant_cast: [],
-      selected_pov: liveA,
-      manual_directive_id: liveB
+      selected_pov: liveA
     });
 
     const result = pruneWorkingSetReferences(session, keepLive);

@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — removes `current_cast_voice_pressure[].local_function` from core schema/draft/descriptor/guidance + a generation-session migration step; rewrites the matrix-voice present-minor speech blocker to derive role from cast band + deliverable speech guidance; delivers present-minor current voice pressure into the compressed cast band (prose-only); removes the redundant `{voice_pressure}` placeholder lane; compiled prose prompt changes (present-minor pressure added, `{voice_pressure}` removed); ideation prompt voice-delivery output unchanged
-**Deps**: CONLOOSCHAUD-002
+**Deps**: archive/tickets/CONLOOSCHAUD-002.md
 
 ## Problem
 

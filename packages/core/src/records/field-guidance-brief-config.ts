@@ -56,7 +56,6 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "active_working_set.present_minor_cast_compressed[]": "Present minor cast compressed",
   "active_working_set.offstage_relevant_cast[]": "Offstage relevant cast",
   "active_working_set.selected_pov": "Selected POV",
-  "active_working_set.manual_directive_id": "Manual directive link",
   "current_authoritative_state.current_time": "Current time",
   "current_authoritative_state.current_location": "Current location",
   "current_authoritative_state.onstage_entities[]": "Onstage entities",
@@ -231,11 +230,6 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     "{offstage_relevance_notes}"
   ], optionalOpts),
   brief("active_working_set.selected_pov", "Selected viewpoint for this generation.", ["{pov_character}"], optionalOpts),
-  brief("active_working_set.manual_directive_id", "Operational link to the current manual directive.", [], {
-    ...optionalOpts,
-    promptFacing: "never",
-    validationRole: "Used to connect UI state; it is not sent to the prose prompt."
-  }),
   brief("current_authoritative_state.current_time", "The exact current story time.", ["{current_time}"], alwaysRequiredCurrentStateOpts),
   brief("current_authoritative_state.current_location", "The current location authority.", ["{current_location}"], alwaysRequiredCurrentStateOpts),
   brief("current_authoritative_state.onstage_entities[]", "Entities physically or narratively onstage now.", [

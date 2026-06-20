@@ -603,8 +603,7 @@ export const demoGenerationSession = {
     ],
     present_minor_cast_compressed: [],
     offstage_relevant_cast: [],
-    selected_pov: demoRecordIds.elinEntity,
-    manual_directive_id: demoRecordIds.elinIntention
+    selected_pov: demoRecordIds.elinEntity
   },
   current_authoritative_state: {
     current_time: "Late morning, minutes after the market bell rang early.",

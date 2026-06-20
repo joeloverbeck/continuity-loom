@@ -32,8 +32,7 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
     "active_working_set.active_onstage_cast_full[].local_function",
     "active_working_set.present_minor_cast_compressed[]",
     "active_working_set.offstage_relevant_cast[]",
-    "active_working_set.selected_pov",
-    "active_working_set.manual_directive_id"
+    "active_working_set.selected_pov"
   ],
   "current-state": [
     "current_authoritative_state.current_time",

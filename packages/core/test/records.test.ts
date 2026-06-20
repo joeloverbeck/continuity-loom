@@ -361,12 +361,10 @@ describe("record data model", () => {
         present_minor_cast_compressed: [idB],
         offstage_relevant_cast: [],
         selected_pov: idA,
-        manual_directive_id: idB
       })
     ).toMatchObject({
       selected_records: [idA, idB],
       selected_pov: idA,
-      manual_directive_id: idB
     });
 
     expect(() =>

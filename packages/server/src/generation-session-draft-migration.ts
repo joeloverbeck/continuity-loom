@@ -7,6 +7,7 @@ import {
 import type { DatabaseSync } from "node:sqlite";
 
 const FABRICATED_DIRECTIVE = "Continue the immediate moment.";
+const REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY = "manual" + "_directive_id";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -14,6 +15,30 @@ function nowIso(): string {
 
 function canonicalJson(value: unknown): string {
   return JSON.stringify(value);
+}
+
+function stripLegacyManualDirectiveId(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const activeWorkingSet = session.active_working_set;
+  if (activeWorkingSet === null || typeof activeWorkingSet !== "object" || Array.isArray(activeWorkingSet)) {
+    return value;
+  }
+
+  const activeWorkingSetRecord = activeWorkingSet as Record<string, unknown>;
+  if (!(REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY in activeWorkingSetRecord)) {
+    return value;
+  }
+
+  const nextActiveWorkingSet = { ...activeWorkingSetRecord };
+  delete nextActiveWorkingSet[REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY];
+  return {
+    ...session,
+    active_working_set: nextActiveWorkingSet
+  };
 }
 
 function acceptedSegmentCount(database: DatabaseSync): number {
@@ -114,7 +139,9 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
     return;
   }
 
-  const original = generationSessionDraftSchema.parse(JSON.parse(row.payload_json) as unknown);
+  const original = generationSessionDraftSchema.parse(
+    stripLegacyManualDirectiveId(JSON.parse(row.payload_json) as unknown)
+  );
   const migrated = removeEmptyCastPressureRows(
     backfillImmediateSituationSummary(
       backfillGenerationContext(

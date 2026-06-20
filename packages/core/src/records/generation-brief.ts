@@ -22,8 +22,7 @@ export const activeWorkingSetSchema = z
     ).default([]),
     present_minor_cast_compressed: z.array(recordId).default([]),
     offstage_relevant_cast: z.array(recordId).default([]),
-    selected_pov: z.union([recordId, z.literal("omniscient")]).optional(),
-    manual_directive_id: recordId.optional()
+    selected_pov: z.union([recordId, z.literal("omniscient")]).optional()
   })
   .strict();
 

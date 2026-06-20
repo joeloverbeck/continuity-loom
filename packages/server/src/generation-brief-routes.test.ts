@@ -133,7 +133,6 @@ describe("generation-brief routes", () => {
         present_minor_cast_compressed: [idB],
         offstage_relevant_cast: [idC],
         selected_pov: idA,
-        manual_directive_id: idC
       },
       immediate_handoff: {
         recent_causal_context: "A arrived.",
@@ -354,7 +353,6 @@ describe("generation-brief routes", () => {
           present_minor_cast_compressed: [idB],
           offstage_relevant_cast: [idC],
           selected_pov: "omniscient",
-          manual_directive_id: idC
         }
       }
     });
@@ -367,7 +365,6 @@ describe("generation-brief routes", () => {
         present_minor_cast_compressed: [idB],
         offstage_relevant_cast: [idC],
         selected_pov: "omniscient",
-        manual_directive_id: idC
       }
     });
     expect((await fastify.inject({ method: "GET", url: "/api/working-set" })).json()).toEqual({

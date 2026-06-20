@@ -113,16 +113,17 @@ active_onstage_cast_full:
 present_minor_cast_compressed: list[cast_member_id]
 offstage_relevant_cast: list[cast_member_id]
 selected_pov: entity_id | omniscient
-manual_directive_id: id
 ```
 
 Storage note: historical provenance from SPEC004RECCRUBAS-002 Option A,
 implemented as designed and archived at
 `archive/tickets/SPEC004RECCRUBAS-002.md`: storage may persist membership-only
 active working sets containing `selected_records` without a POV or manual
-directive. `selected_pov` and `manual_directive_id` remain
-generation-time-required, but that fail-closed check belongs to the validation
-engine rather than the storage schema.
+directive. `selected_pov` remains a generation-time readiness requirement when
+the prose mode needs a concrete viewpoint, but that fail-closed check belongs to
+the validation engine rather than the storage schema. The manual directive's
+readiness-required content is `manual_moment_directive.must_render`, not a
+separate active-working-set reference.
 
 Compiler requirements:
 

@@ -96,7 +96,6 @@ describe("RecordRepository generation-session draft parsing", () => {
       active_working_set: {
         selected_records: [idA],
         selected_pov: idA,
-        manual_directive_id: idA
       },
       manual_moment_directive: {
         must_render: []

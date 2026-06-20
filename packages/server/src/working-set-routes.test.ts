@@ -106,7 +106,6 @@ describe("working-set routes", () => {
       active_working_set: {
         selected_records: [idA],
         selected_pov: idA,
-        manual_directive_id: idB,
         offstage_relevant_cast: [idB]
       }
     });
@@ -124,7 +123,6 @@ describe("working-set routes", () => {
       active_working_set: {
         selected_records: [idC],
         selected_pov: idA,
-        manual_directive_id: idB,
         offstage_relevant_cast: [idB]
       }
     });

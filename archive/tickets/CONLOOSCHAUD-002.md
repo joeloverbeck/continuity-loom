@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-002: Remove ACTIVE WORKING SET.manual_directive_id
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — removes `active_working_set.manual_directive_id` from the core generation-brief storage/draft/ready/descriptor/guidance shapes and the working-set integrity path; adds a generation-session draft migration step; removes the dead UI control/help; compiled prompt output and readiness behavior are unchanged
@@ -107,3 +107,28 @@ Remove any active-working-set / generation-brief control or help text for the id
 1. `npm test -- generation-session-draft-migration working-set-integrity compiler-golden`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `! grep -rn "manual_directive_id" packages/core/src packages/server/src packages/web/src` (grep-proof; run after `npm run build`).
+
+## Outcome
+
+Completed: 2026-06-20
+
+What changed:
+
+- Removed `active_working_set.manual_directive_id` from the generation-session storage, draft, and readiness schemas.
+- Removed the field from generation-brief guidance, section-fill accounting, working-set reference pruning, the demo generation session, active schema docs, and current test fixtures.
+- Added a generation-session draft migration that strips the legacy nested key before strict parsing while preserving inline `manual_moment_directive` prose.
+- Updated working-set integrity tests so only actual working-set references are pruned.
+
+Deviations from plan:
+
+- `docs/compiler-contract.md` did not need a content change because it did not describe `manual_directive_id` as a compiler source.
+
+Verification:
+
+- `npm test -- generation-session-draft-migration working-set-integrity compiler-golden` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed after tightening the raw migration helper's local type narrowing.
+- `npm test` passed: 131 files, 973 tests.
+- `npm run build` passed.
+- `rg -n "manual_directive_id" packages/core/src packages/server/src packages/web/src` returned no matches.
+- Browser smoke: launched `npm run dev` on `127.0.0.1:5173` / `127.0.0.1:5174`, created a disposable `/tmp/conlooschaud-002-smoke-20260620` project, visited `/generation-brief`, and confirmed the Active Working Set section exposes `selected_pov` while directive content remains in Manual Moment Directive with no `manual_directive_id` surface. Browser console contained only the standard React DevTools info line. Browser/dev server were stopped, `.playwright-cli/` was removed, and the disposable `/tmp` project folder was removed.

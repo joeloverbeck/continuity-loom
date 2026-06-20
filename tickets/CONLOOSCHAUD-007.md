@@ -8,7 +8,7 @@
 
 ## Problem
 
-The schema-cleanup set (archive/tickets/CONLOOSCHAUD-001.md and CONLOOSCHAUD-002…006) removes four stored fields and one prompt lane, repairs present-minor voice delivery, and renders entity/location state that previously fell through. Several spec §16 test-matrix rows are cross-cutting rather than owned by a single change — deterministic repeat-compilation, the accepted-prose firewall across all changes, author-only fields not leaking, and post-build grep-proofs for every removed identifier — and the non-§8 support docs (`docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`) describe behavior that several of these changes alter. This capstone exercises the composed pipeline end-to-end and lands the support-doc sync once all upstream changes exist coherently. (Spec §15 Phase 7, §16.)
+The schema-cleanup set (archive/tickets/CONLOOSCHAUD-001.md, archive/tickets/CONLOOSCHAUD-002.md, and CONLOOSCHAUD-003…006) removes four stored fields and one prompt lane, repairs present-minor voice delivery, and renders entity/location state that previously fell through. Several spec §16 test-matrix rows are cross-cutting rather than owned by a single change — deterministic repeat-compilation, the accepted-prose firewall across all changes, author-only fields not leaking, and post-build grep-proofs for every removed identifier — and the non-§8 support docs (`docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`) describe behavior that several of these changes alter. This capstone exercises the composed pipeline end-to-end and lands the support-doc sync once all upstream changes exist coherently. (Spec §15 Phase 7, §16.)
 
 ## Assumption Reassessment (2026-06-20)
 

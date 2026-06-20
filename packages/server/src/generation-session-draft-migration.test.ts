@@ -6,6 +6,7 @@ import { ensureRecordTables } from "./record-tables.js";
 
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
+const removedManualDirectiveIdKey = "manual" + "_directive_id";
 
 let databases: DatabaseSync[] = [];
 
@@ -86,6 +87,39 @@ describe("migrateGenerationSessionDraft", () => {
         must_render: ["Continue the immediate moment.", "Open the sealed door."]
       }
     });
+  });
+
+  it("strips legacy active-working-set manual directive id while preserving inline directive prose", () => {
+    const db = database();
+    setGenerationSession(db, {
+      active_working_set: {
+        selected_records: [idA],
+        [removedManualDirectiveIdKey]: idB
+      },
+      manual_moment_directive: {
+        must_render: ["Open the sealed door."],
+        may_render_if_naturally_caused: ["Let the hinge complain."],
+        do_not_force: ["Do not explain what waits behind it."]
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    const afterSecond = generationSessionRow(db);
+
+    expect(afterFirst.payload).toMatchObject({
+      active_working_set: {
+        selected_records: [idA]
+      },
+      manual_moment_directive: {
+        must_render: ["Open the sealed door."],
+        may_render_if_naturally_caused: ["Let the hinge complain."],
+        do_not_force: ["Do not explain what waits behind it."]
+      }
+    });
+    expect(afterFirst.payload.active_working_set).not.toHaveProperty(removedManualDirectiveIdKey);
+    expect(afterSecond).toEqual(afterFirst);
   });
 
   it("backfills continuation context from accepted-segment count and preserves explicit context", () => {

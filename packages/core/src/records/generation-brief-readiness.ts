@@ -31,8 +31,7 @@ const activeWorkingSetReadySchema = z
       .optional(),
     present_minor_cast_compressed: z.array(recordId).optional(),
     offstage_relevant_cast: z.array(recordId).optional(),
-    selected_pov: z.union([recordId, z.literal("omniscient")]).optional(),
-    manual_directive_id: recordId.optional()
+    selected_pov: z.union([recordId, z.literal("omniscient")]).optional()
   })
   .strict();
 

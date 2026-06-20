@@ -69,7 +69,6 @@ describe("field guidance for brief and story config", () => {
         "GENERATION BRIEF.active_working_set.present_minor_cast_compressed[]",
         "GENERATION BRIEF.active_working_set.offstage_relevant_cast[]",
         "GENERATION BRIEF.active_working_set.selected_pov",
-        "GENERATION BRIEF.active_working_set.manual_directive_id",
         "GENERATION BRIEF.current_cast_voice_pressure[].cast_member_id",
         "GENERATION BRIEF.current_cast_voice_pressure[].local_function",
         "GENERATION BRIEF.current_cast_voice_pressure[].current_voice_pressure",
