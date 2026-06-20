@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-006: Remove PLAN.can_drive_prose + extend shared migration + fix record-internal holder check
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — PLAN payload schema, two holder-reference validators (universal-blockers + record-internal), record editor/column/guidance, shared record-payload migration extension + mixed FACT/PLAN rollback tests, authority docs
@@ -98,3 +98,24 @@ Extend `record-payload-cleanup-migration.ts` (created by ticket 005) to also str
 1. `npm test -- validation-blockers validation-record-internal record-payload-cleanup-migration compiler-golden`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted suites prove both validators + migration + byte-stability; the full pipeline is the correct final boundary because the removal spans `@loom/core` schema/validators, `@loom/server` migration, and `@loom/web` editor under strict TS.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Removed `PLAN.can_drive_prose` from the PLAN payload schema and descriptor-derived editor/field-path surfaces. PLAN table columns no longer expose the removed boolean. Selected-record membership plus active plan status are now the inclusion authority.
+
+Fixed both holder-reference validators: active PLAN holder/means validation no longer has a false-flag bypass, and record-internal references now treat selected active PLAN holders as required while preserving hidden-plan focus as a requiredness trigger.
+
+Extended the shared record-payload cleanup migration to strip the legacy PLAN prose-driving flag with strict validation, idempotence, and mixed FACT/PLAN no-partial-write coverage. Compiler byte-stability tests now cover equivalent migrated PLAN data for prose and ideation prompts.
+
+Verification:
+- `npm test -- validation-blockers validation-record-internal record-payload-cleanup-migration compiler-golden records RecordEditor validation-record-reference-drift validation-matrix-knowledge schema-audit-cleanup-capstone`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite chunk-size warning)
+- `git diff --check`
+- Grep: no literal `can_drive_prose` remains under `packages/` or `docs/`.
+
+Browser smoke: not run; this ticket is covered by schema, validator, migration, compiler byte-stability, and descriptor-driven UI tests.

@@ -200,7 +200,7 @@ function validateActivePlanHolders(snapshot: ValidationSnapshot): readonly Diagn
 
     const payload = objectPayload(record);
 
-    if (payload.plan_status !== "active" || payload.can_drive_prose === false || !isText(payload.holder)) {
+    if (payload.plan_status !== "active" || !isText(payload.holder)) {
       return [];
     }
 

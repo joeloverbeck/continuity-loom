@@ -298,7 +298,7 @@ describe("record data model", () => {
       })
     ).toThrow();
     expect(() =>
-      planSchema.parse({ plan_status: "active", holder: idA, objective: "Act", steps: [], can_drive_prose: true, status: "active" })
+      planSchema.parse({ plan_status: "active", holder: idA, objective: "Act", steps: [], status: "active" })
     ).toThrow();
 
     expect(

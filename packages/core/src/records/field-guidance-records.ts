@@ -29,8 +29,7 @@ const operationalFields = new Set([
   "visibility",
   "audience_visibility",
   "pov_visibility",
-  "visibility_to_pov",
-  "can_drive_prose"
+  "visibility_to_pov"
 ]);
 
 const destinationFamilyByType: Readonly<Record<GuidedRecordType, string>> = {
@@ -282,12 +281,6 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
       "Private planning metadata; fallback branches are not offered to the prose writer as alternate futures.",
     authoringAdvice:
       "When a fallback becomes current, update current_step, selected pressure, or current state instead of expecting multiple future options to compile."
-  }],
-  ["PLAN.can_drive_prose", {
-    promptFacing: "never",
-    promptDestinations: [],
-    short: "Whether this plan may drive local prose pressure.",
-    validationRole: "Operational flag for selection and validation; it is not sent to the prose prompt."
   }],
   ["CLOCK.current_pressure", {
     short: "What the clock is making urgent right now.",

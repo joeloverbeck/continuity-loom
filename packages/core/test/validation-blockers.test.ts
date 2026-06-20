@@ -138,8 +138,7 @@ describe("universal blocker validation", () => {
               holder: entityId,
               current_step: "Act now.",
               resources: [],
-              fallback_steps: [],
-              can_drive_prose: true
+              fallback_steps: []
             }
           }
         ];

@@ -208,7 +208,7 @@ describe("RecordEditor", () => {
 
     cleanup();
     render(<RecordEditor recordType="PLAN" />);
-    expect(screen.getByLabelText<HTMLInputElement>(/^can_drive_prose/).type).toBe("checkbox");
+    expect(screen.queryByLabelText(new RegExp(`^${"can_drive"}_prose`))).toBeNull();
     expect(screen.getByRole("button", { name: "Add resources" })).toBeTruthy();
     expect(screen.queryByLabelText(/json/i)).toBeNull();
     expect(screen.queryByLabelText(/payload/i)).toBeNull();

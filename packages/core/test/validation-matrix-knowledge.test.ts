@@ -258,8 +258,7 @@ function cleanInput(): BuildValidationSnapshotInput {
           visibility_to_pov: "hidden",
           resources: ["reflection"],
           blockers: ["must not reveal intent"],
-          fallback_steps: [],
-          can_drive_prose: true
+          fallback_steps: []
         }
       }
     ],

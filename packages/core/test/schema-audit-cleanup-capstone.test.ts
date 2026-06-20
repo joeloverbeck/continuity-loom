@@ -184,8 +184,7 @@ function inputWithAuthorOnlyCanaries(): BuildValidationSnapshotInput {
       current_step: "Listen at the stair before moving the flour bin.",
       fallback_steps: [authorOnlyCanaries.fallbackStep],
       visibility_to_pov: "known",
-      salience: "high",
-      can_drive_prose: true
+      salience: "high"
     })
   ];
   const event = mustFind(records, demoRecordIds.marketBell);

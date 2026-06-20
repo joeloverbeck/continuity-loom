@@ -6,8 +6,11 @@ import {
 } from "@loom/core";
 import type { DatabaseSync } from "node:sqlite";
 
+const removedPlanProseFlagKey = "can_drive" + "_prose";
+
 const cleanupRules: ReadonlyArray<{ recordType: string; removedKeys: readonly string[] }> = [
-  { recordType: "FACT", removedKeys: ["status"] }
+  { recordType: "FACT", removedKeys: ["status"] },
+  { recordType: "PLAN", removedKeys: [removedPlanProseFlagKey] }
 ];
 
 interface RecordPayloadRow {

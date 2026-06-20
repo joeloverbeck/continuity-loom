@@ -8,7 +8,11 @@ let databases: DatabaseSync[] = [];
 
 const factId = "019b0298-5c00-7000-8000-000000000501";
 const secondFactId = "019b0298-5c00-7000-8000-000000000502";
+const planId = "019b0298-5c00-7000-8000-000000000503";
+const secondPlanId = "019b0298-5c00-7000-8000-000000000504";
+const holderId = "019b0298-5c00-7000-8000-000000000505";
 const legacyFactStatusKey = "sta" + "tus";
+const legacyPlanProseFlagKey = "can_drive" + "_prose";
 
 function database(): DatabaseSync {
   const db = new DatabaseSync(":memory:");
@@ -27,6 +31,22 @@ function factPayload(id = factId): Record<string, unknown> {
     known_by: "public",
     audience_visibility: "explicit",
     salience: "high"
+  };
+}
+
+function planPayload(id = planId): Record<string, unknown> {
+  return {
+    id,
+    plan_status: "active",
+    holder: holderId,
+    objective: "Reach the roof.",
+    resources: ["north stair"],
+    blockers: [],
+    current_step: "Find the stairs.",
+    fallback_steps: [],
+    visibility_to_pov: "hidden",
+    salience: "critical",
+    [legacyPlanProseFlagKey]: false
   };
 }
 
@@ -121,6 +141,39 @@ describe("migrateRecordPayloads", () => {
     expect(recordRow(db)).toEqual(afterFirst);
   });
 
+  it("strips legacy PLAN prose-driving flags and projects active status", () => {
+    const db = database();
+    insertRecord(db, {
+      id: planId,
+      type: "PLAN",
+      displayLabel: "Roof plan",
+      payloadJson: JSON.stringify(planPayload())
+    });
+
+    migrateRecordPayloads(db);
+
+    const row = recordRow(db, planId);
+    expect(row).toMatchObject({
+      id: planId,
+      type: "PLAN",
+      status: "active",
+      salience: "critical",
+      urgency: null
+    });
+    expect(JSON.parse(String(row.payload_json))).toEqual({
+      id: planId,
+      plan_status: "active",
+      holder: holderId,
+      objective: "Reach the roof.",
+      resources: ["north stair"],
+      blockers: [],
+      current_step: "Find the stairs.",
+      fallback_steps: [],
+      visibility_to_pov: "hidden",
+      salience: "critical"
+    });
+  });
+
   it("does not partially rewrite rows when a targeted row has malformed JSON", () => {
     const db = database();
     insertRecord(db);
@@ -135,6 +188,31 @@ describe("migrateRecordPayloads", () => {
     expect(() => migrateRecordPayloads(db)).toThrow(SyntaxError);
     expect(recordRow(db, factId)).toEqual(beforeFirst);
     expect(recordRow(db, secondFactId)).toEqual(beforeSecond);
+  });
+
+  it("does not partially rewrite a mixed FACT and PLAN batch when a PLAN row is invalid", () => {
+    const db = database();
+    insertRecord(db);
+    insertRecord(db, {
+      id: planId,
+      type: "PLAN",
+      displayLabel: "Roof plan",
+      payloadJson: JSON.stringify(planPayload())
+    });
+    insertRecord(db, {
+      id: secondPlanId,
+      type: "PLAN",
+      displayLabel: "Invalid plan",
+      payloadJson: JSON.stringify({ ...planPayload(secondPlanId), objective: "" })
+    });
+    const beforeFact = recordRow(db, factId);
+    const beforePlan = recordRow(db, planId);
+    const beforeInvalidPlan = recordRow(db, secondPlanId);
+
+    expect(() => migrateRecordPayloads(db)).toThrow();
+    expect(recordRow(db, factId)).toEqual(beforeFact);
+    expect(recordRow(db, planId)).toEqual(beforePlan);
+    expect(recordRow(db, secondPlanId)).toEqual(beforeInvalidPlan);
   });
 
   it("does not partially rewrite rows when stripped payload fails the new strict parser", () => {

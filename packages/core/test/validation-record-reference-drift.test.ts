@@ -234,8 +234,7 @@ const representativePayloadByType: Readonly<Record<string, unknown>> = {
     current_step: "Find the stairs.",
     fallback_steps: [],
     visibility_to_pov: "hidden",
-    salience: "high",
-    can_drive_prose: true
+    salience: "high"
   },
   "CLOCK": {
     id: idA,

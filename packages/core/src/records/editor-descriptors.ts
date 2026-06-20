@@ -84,8 +84,7 @@ const STATUS_OR_VALIDATION_FIELDS = new Set([
   "pov_visibility",
   "visibility_to_pov",
   "copy_policy",
-  "reveal_permission",
-  "can_drive_prose"
+  "reveal_permission"
 ]);
 
 export const PROMPT_FACING_FIELD_OVERRIDES: Readonly<Record<string, ReadonlySet<string>>> = Object.freeze({

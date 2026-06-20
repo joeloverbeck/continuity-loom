@@ -829,12 +829,11 @@ current_step: prose
 fallback_steps: prose list
 visibility_to_pov: visible | hidden | suspected | known
 salience: low | medium | high | critical
-can_drive_prose: true | false
 ```
 
 Validation:
 
-- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. If the plan can drive prose or hidden-plan behavior is expected, an unselected resolved holder blocks; otherwise it warns.
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. For every selected active PLAN, an unselected resolved holder blocks; otherwise it warns. Hidden-plan behavior focus also makes the holder reference required.
 - `fallback_steps` is authoring metadata. When a fallback becomes current, update `current_step`, selected pressure, or current state; the compiler does not offer multiple future options.
 
 ### 8.4 CLOCK
