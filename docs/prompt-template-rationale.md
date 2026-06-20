@@ -139,7 +139,7 @@ A flat event archive makes the writer guess what matters. Events therefore compi
 
 Facts are split by POV accessibility. A fact may be true but not available to the POV. The prompt therefore separates POV-accessible facts from writer-visible/non-POV facts.
 
-Deprecated facts are not normal prompt-facing records. If a fact is false, it should be removed, revised, or replaced with current state, event, belief, consequence, or another active record. Supersession is a validation diagnostic, not a persistent FACT status.
+Deprecated facts are not normal prompt-facing records. If a fact is false, it should be removed, revised, or replaced with current state, event, belief, consequence, or another active record. FACT active truth is implicit in the record category; supersession is a validation diagnostic, not a persistent FACT status.
 
 ## 16. Why relationships and emotions need prose-facing pressure
 

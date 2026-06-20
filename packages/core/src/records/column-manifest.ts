@@ -62,7 +62,6 @@ export const recordColumnManifest: Readonly<Record<string, RecordColumnManifestE
   FACT: {
     primaryLabelHeader: "Statement",
     additionalColumns: [
-      enumColumn("status", "Status"),
       enumColumn("fact_kind", "Fact kind"),
       enumColumn("scope", "Scope"),
       ordinal("salience", "Salience"),

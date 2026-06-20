@@ -43,7 +43,6 @@ describe("story notes schema migration", () => {
       displayLabel: "The lamp is lit.",
       payload: {
         id: recordId,
-        status: "active",
         fact_kind: "current_state",
         statement: "The lamp is lit.",
         scope: "current_segment",

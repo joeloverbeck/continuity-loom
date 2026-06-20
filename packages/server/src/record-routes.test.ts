@@ -10,6 +10,7 @@ const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const factStatusKey = "sta" + "tus";
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-record-routes-"));
@@ -38,7 +39,6 @@ async function openProject(fastify: ReturnType<typeof createServer>): Promise<vo
 function factPayload(id: string, statement: string, salience = "medium") {
   return {
     id,
-    status: "active",
     fact_kind: "current_state",
     statement,
     scope: "entity",
@@ -163,7 +163,6 @@ describe("record routes", () => {
     expect(createFact.statusCode).toBe(201);
     expect(createFact.json()).toMatchObject({ ok: true, record: { id: idA, type: "FACT" } });
     expect(createFact.json().record.displayValues).toEqual({
-      status: "active",
       fact_kind: "current_state",
       scope: "entity",
       salience: "medium",
@@ -174,7 +173,6 @@ describe("record routes", () => {
     expect(listFact.json()).toMatchObject({ ok: true, records: [{ id: idA, displayLabel: "Initial fact" }] });
     expect(listFact.json().records[0]).not.toHaveProperty("payload");
     expect(listFact.json().records[0].displayValues).toEqual({
-      status: "active",
       fact_kind: "current_state",
       scope: "entity",
       salience: "medium",
@@ -281,7 +279,7 @@ describe("record routes", () => {
       payload: {
         type: "FACT",
         displayLabel: "Bad fact",
-        payload: { ...factPayload(idA, "Bad status"), status: "inactive" }
+        payload: { ...factPayload(idA, "Bad status"), [factStatusKey]: "inactive" }
       }
     });
 

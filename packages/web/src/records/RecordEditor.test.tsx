@@ -68,7 +68,6 @@ const factRecord: RecordDetail = {
   updatedAt: "2026-06-05T00:00:00.000Z",
   payload: {
     id: idB,
-    status: "active",
     fact_kind: "current_state",
     statement: "A knows the old door code.",
     scope: "entity",
@@ -185,10 +184,9 @@ describe("RecordEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
 
     await waitFor(() =>
-      expect(updateRecord).toHaveBeenCalledWith(idB, {
-        displayLabel: "A knows the west door code.",
-        payload: {
-          status: "active",
+    expect(updateRecord).toHaveBeenCalledWith(idB, {
+      displayLabel: "A knows the west door code.",
+      payload: {
           fact_kind: "current_state",
           statement: "A knows the west door code.",
           scope: "entity",
@@ -198,6 +196,7 @@ describe("RecordEditor", () => {
         }
       })
     );
+    expect(screen.queryByLabelText(/^status/)).toBeNull();
   });
 
   it("renders descriptor field kinds as typed controls without a raw JSON editor", () => {

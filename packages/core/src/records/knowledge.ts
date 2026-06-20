@@ -11,7 +11,6 @@ export const secretStatusValues = ["hidden", "partially_revealed", "revealed", "
 export const factSchema = z
   .object({
     id: recordId,
-    status: z.enum(factStatusValues),
     fact_kind: z.enum(["hard_canon", "current_state", "setting_fact", "discovered_fact"]),
     statement: nonemptyString,
     scope: z.enum(["global", "entity", "location", "object", "relationship", "current_segment"]),
@@ -87,7 +86,7 @@ export const knowledgeDefinitions = [
     recordType: "FACT",
     payloadSchema: factSchema,
     statusValues: factStatusValues,
-    projectStatus: (payload: Fact) => payload.status,
+    projectStatus: () => "active",
     projectSalience: (payload: Fact) => payload.salience,
     extractReferences: (payload: Fact) =>
       Array.isArray(payload.known_by) ? refsFromStrings("known_by", payload.known_by) : []

@@ -590,12 +590,12 @@ scope: global | entity | location | object | relationship | current_segment
 known_by: list[entity_id] | public | unknown | not_applicable
 audience_visibility: hidden | implied | explicit | not_applicable
 salience: low | medium | high | critical
-status: active
 ```
 
 Notes:
 
 - `deprecated_fact` is not a normal record kind.
+- FACT records are active truth by category invariant. `active` may be projected in registry/UI metadata, but it is not stored in the FACT payload.
 - Supersession is a validation diagnostic, not a persistent FACT status.
 - If a selected fact contradicts current authoritative state, generation blocks until the user revises, removes, or deselects it.
 - Record-id `known_by` entries must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional. `public`, `unknown`, and `not_applicable` remain literals.

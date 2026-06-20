@@ -65,7 +65,6 @@ describe("record column manifest", () => {
     expect(
       projectDisplayValues("FACT", {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "The cellar key is missing.",
         scope: "object",
@@ -74,7 +73,6 @@ describe("record column manifest", () => {
         salience: "critical"
       })
     ).toEqual({
-      status: "active",
       fact_kind: "current_state",
       scope: "object",
       salience: "critical",

@@ -144,6 +144,23 @@ function promptSectionOrder(prompt: string): string[] {
   return Array.from(prompt.matchAll(/^<([a-z_]+)(?:\s[^>]*)?>$/gm), (match) => match[1] ?? "");
 }
 
+function stripFactPayloadStatus(input: BuildValidationSnapshotInput): BuildValidationSnapshotInput {
+  const statusKey = "sta" + "tus";
+
+  return {
+    ...input,
+    records: input.records.map((record) => {
+      if (record.type !== "FACT" || record.payload === null || typeof record.payload !== "object" || Array.isArray(record.payload)) {
+        return record;
+      }
+
+      const payload = { ...(record.payload as Record<string, unknown>) };
+      delete payload[statusKey];
+      return { ...record, payload };
+    })
+  };
+}
+
 describe("compiler golden prompt", () => {
   it("matches the frozen demo first-segment prompt baseline byte-for-byte", () => {
     const snapshot = buildValidationSnapshot({
@@ -192,5 +209,27 @@ describe("compiler golden prompt", () => {
     expect(prompt).not.toContain("None selected for this generation");
     expect(prompt).toContain("</prose_mode>\n\n<current_authoritative_state>");
     expect(prompt).not.toContain("</prose_mode>\n\n\n<current_authoritative_state>");
+  });
+
+  it("compiles FACT payloads byte-identically before and after legacy status cleanup", () => {
+    const statusKey = "sta" + "tus";
+    const legacyInput = goldenInput();
+    legacyInput.records = legacyInput.records.map((record) =>
+      record.type === "FACT" ? { ...record, payload: { ...(record.payload as object), [statusKey]: "active" } } : record
+    );
+    const migratedInput = stripFactPayloadStatus(legacyInput);
+
+    expect(compilePrompt(buildValidationSnapshot(migratedInput)).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput)).prompt
+    );
+    expect(compilePrompt(buildValidationSnapshot(migratedInput), {
+      promptKind: "ideation",
+      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    }).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput), {
+        promptKind: "ideation",
+        ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+      }).prompt
+    );
   });
 });

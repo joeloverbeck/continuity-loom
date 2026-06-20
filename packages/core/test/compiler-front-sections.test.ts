@@ -50,7 +50,6 @@ function populatedInput(): BuildValidationSnapshotInput {
         type: "FACT",
         payload: {
           id: factId,
-          status: "active",
           fact_kind: "hard_canon",
           statement: "The tower bell never rings after midnight.",
           known_by: [povId]

@@ -327,7 +327,6 @@ function cleanInput(): BuildValidationSnapshotInput {
         type: "FACT",
         payload: {
           id: factId,
-          status: "active",
           known_by: [povId]
         }
       }

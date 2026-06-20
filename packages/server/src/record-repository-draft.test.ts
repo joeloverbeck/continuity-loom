@@ -27,7 +27,6 @@ function insertFact(repositoryUnderTest: RecordRepository, id: string): void {
     displayLabel: `Fact ${id}`,
     payload: {
       id,
-      status: "active",
       fact_kind: "current_state",
       statement: `Fact for ${id}.`,
       scope: "global",

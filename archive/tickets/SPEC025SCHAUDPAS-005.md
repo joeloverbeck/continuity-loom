@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-005: Remove FACT.status + add shared record-payload cleanup migration
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — FACT payload schema + registry status projection, record editor/column/guidance, NEW server record-payload cleanup migration + project-store wiring, web FACT status control, authority docs, demo fixture
@@ -98,3 +98,25 @@ In `RecordEditor.tsx`, remove the single-option FACT status input; render the re
 1. `npm test -- records record-payload-cleanup-migration compiler-golden`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted suites prove schema + migration + byte-stability; the full pipeline is the correct final boundary because the removal spans `@loom/core` schema/type, `@loom/server` migration + wiring, and `@loom/web` editor under strict TS.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Removed `status` from the strict FACT payload schema and changed the registry projection to constant `active`. Descriptor-derived editor and field-path surfaces no longer expose an editable FACT payload status, and the FACT-specific browser/column display omits the removed payload column while list-level record metadata can still show projected status.
+
+Added the shared `record-payload-cleanup-migration` and wired it into both project create/open seams before strict repository reads. The migration strips top-level legacy FACT `status`, validates the strict payload, updates projected metadata, is idempotent, and avoids partial writes when malformed JSON or invalid stripped payloads are encountered.
+
+Docs now state FACT active truth as an implicit category invariant. `docs/validation-rule-inventory.md` did not require an edit because it did not name the removed FACT payload field. The demo fixture did not contain a FACT payload `status` key to remove.
+
+Verification:
+- `npm test -- records record-payload-cleanup-migration compiler-golden RecordEditor column-manifest project-store record-routes record-layer`
+- `npm test -- story-notes-migration`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite chunk-size warning)
+- `git diff --check`
+- Grep: `FACT.status` / FACT payload status references are absent from live implementation surfaces; `factStatusValues` remains only as registry metadata.
+
+Browser smoke: not run; this ticket is covered by schema, server migration, compiler byte-stability, and descriptor-driven UI tests.

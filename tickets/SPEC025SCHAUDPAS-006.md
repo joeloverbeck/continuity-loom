@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — PLAN payload schema, two holder-reference validators (universal-blockers + record-internal), record editor/column/guidance, shared record-payload migration extension + mixed FACT/PLAN rollback tests, authority docs
-**Deps**: SPEC025SCHAUDPAS-005
+**Deps**: archive/tickets/SPEC025SCHAUDPAS-005.md
 
 ## Problem
 

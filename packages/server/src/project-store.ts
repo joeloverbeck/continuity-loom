@@ -18,6 +18,7 @@ import { z, ZodError } from "zod";
 import { backfillDisplayLabels } from "./display-label-backfill.js";
 import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
+import { migrateRecordPayloads } from "./record-payload-cleanup-migration.js";
 import { RecordRepository } from "./record-repository.js";
 import { ensureRecordTables, ensureStoryNoteTables } from "./record-tables.js";
 import { StoryNotesRepository } from "./story-notes-repository.js";
@@ -284,6 +285,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
         migrateGenerationSessionDraft(database);
+        migrateRecordPayloads(database);
         closeActive();
         active = {
           folderPath,
@@ -391,6 +393,7 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         migrateGlobalConfigRecords(database);
         repairWorkingSetReferences(database);
         migrateGenerationSessionDraft(database);
+        migrateRecordPayloads(database);
         active = {
           folderPath,
           metadata,

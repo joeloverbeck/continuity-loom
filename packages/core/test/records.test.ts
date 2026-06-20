@@ -13,6 +13,7 @@ import {
   planSchema,
   proseModeSchema,
   projectRecordSalience,
+  projectRecordStatus,
   recordMetadataSchema,
   recordTypes,
   secretSchema,
@@ -22,6 +23,7 @@ import {
 
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
+const factStatusKey = "sta" + "tus";
 
 const fullCastMemberPayload = {
   entity_id: idA,
@@ -178,19 +180,32 @@ describe("record data model", () => {
     expect(getRecordTypeDefinition("PLAN")?.projectStatus?.({ plan_status: "blocked" })).toBe(
       "blocked"
     );
+    expect(getRecordTypeDefinition("FACT")?.projectStatus?.({})).toBe("active");
+    expect(projectRecordStatus("FACT", {})).toBe("active");
   });
 
   it("validates payloads and extracts references", () => {
     expect(factSchema.parse({
       id: idA,
-      status: "active",
       fact_kind: "current_state",
       statement: "A knows B.",
       scope: "entity",
       known_by: [idA],
       audience_visibility: "explicit",
       salience: "medium"
-    })).toMatchObject({ status: "active" });
+    })).toMatchObject({ fact_kind: "current_state" });
+    expect(() =>
+      factSchema.parse({
+        id: idA,
+        [factStatusKey]: "active",
+        fact_kind: "current_state",
+        statement: "A knows B.",
+        scope: "entity",
+        known_by: [idA],
+        audience_visibility: "explicit",
+        salience: "medium"
+      })
+    ).toThrow();
     expect(() =>
       secretSchema.parse({
         id: idB,
