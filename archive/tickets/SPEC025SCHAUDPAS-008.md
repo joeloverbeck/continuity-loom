@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-008: Capstone — SPEC-025 §Verification end-to-end + retired-key / no-variable invariants
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the pass-1 schema-audit-cleanup capstone test with pass-2 retired-key / destination / storage / no-`variable` assertions; no production behavior change
@@ -78,4 +78,22 @@ Add or extend a server-side capstone assertion that a legacy project carrying al
 
 1. `npm test -- schema-audit-cleanup-capstone`
 2. `npm run lint && npm run typecheck && npm test`
+
+## Outcome
+
+Completed: 2026-06-20
+
+Extended `packages/core/test/schema-audit-cleanup-capstone.test.ts` with SPEC-025 pass-2 assertions for retired-key authority surfaces, strict schema rejection of the four retired stored keys, non-prompt-facing author-only canaries, effective-POV/no-`variable` prompt behavior, missing/conflicting POV blockers, continuation handoff requiredness, and selected active PLAN holder/means blocking.
+
+The capstone deliberately excludes the shared legacy cleanup migration from the retired-key source scan because that migration must still know the retired storage keys in order to strip them. Storage rollback/idempotence remains covered by `record-payload-cleanup-migration` tests from the implementation tickets.
+
+Verification:
+- `npm test -- schema-audit-cleanup-capstone`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite chunk-size warning)
+- `git diff --check`
+
+Browser smoke: not run; this is a verification-only core capstone with no runtime UI behavior change.
 3. The capstone suite is the cross-cutting verification boundary; the full pipeline confirms the composed feature is correct end-to-end across `@loom/core`, `@loom/server`, and `@loom/web`.
