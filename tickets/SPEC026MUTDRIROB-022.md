@@ -13,7 +13,7 @@ Floors and the ratchet must activate only after every baseline survivor across a
 ## Assumption Reassessment (2026-06-20)
 
 1. The full pillar campaigns are complete and their reviewed scores recorded by SPEC026MUTDRIROB-009 (P1), -012 (P2), -018 (P3); the cross-pillar suite (-019), changed-file job (-020), and scheduled workflow (-021) exist — hence the Deps on the cross-pillar + enforcement leaves (which transitively cover the pillar campaigns).
-2. SPEC-026 §Deliverables E3 + report §10.3/§11 define the ratchet (`max(configured break floor, reviewed baseline rounded down)`), the floors table, and the "only after every survivor classified" precondition; the advisory baseline format comes from SPEC026MUTDRIROB-003.
+2. SPEC-026 §Deliverables E3 + report §10.3/§11 define the ratchet (`max(configured break floor, reviewed baseline rounded down)`), the floors table, and the "only after every survivor classified" precondition; the advisory baseline format comes from archive/tickets/SPEC026MUTDRIROB-003.md.
 3. Cross-artifact boundary under audit: the compact `tools/robustness/mutation-baseline.json` flips from advisory to authoritative; the CI branch-protection contract flips `core-coverage` + `mutation-changed` to required status checks.
 4. FOUNDATIONS principle restated: §29.11 workflow quality — the reviewed baseline cannot auto-decrease; lowering a ratchet requires an explicit baseline-change ticket. No runtime/schema/contract change; `packages/core/src/version.ts` untouched.
 
@@ -36,7 +36,7 @@ Set `thresholds.break` in `stryker.prose.config.mjs` / `stryker.ideation.config.
 
 ### 2. Commit reviewed baseline + ratchet
 
-Flip `tools/robustness/mutation-baseline.json` to authoritative with the reviewed per-pillar scores, ignored counts, timestamp/commit, and classifying-ticket links. Wire the ratchet rule `max(break floor, reviewed baseline)` into the gate (summarizer from SPEC026MUTDRIROB-003); a decrease fails.
+Flip `tools/robustness/mutation-baseline.json` to authoritative with the reviewed per-pillar scores, ignored counts, timestamp/commit, and classifying-ticket links. Wire the ratchet rule `max(break floor, reviewed baseline)` into the gate (summarizer from archive/tickets/SPEC026MUTDRIROB-003.md); a decrease fails.
 
 ### 3. Make checks required
 

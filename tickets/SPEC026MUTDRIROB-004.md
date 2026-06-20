@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds `docs/robustness-testing.md` and registers it in `docs/ACTIVE-DOCS.md`; documentation only, no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, archive/tickets/SPEC026MUTDRIROB-002.md, SPEC026MUTDRIROB-003
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-002.md, archive/tickets/SPEC026MUTDRIROB-003.md
 
 ## Problem
 

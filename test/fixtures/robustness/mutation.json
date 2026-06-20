@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.7",
+  "files": {
+    "packages/core/src/compiler/example.ts": {
+      "language": "ts",
+      "source": "export const value = 1;",
+      "mutants": [
+        {
+          "id": "0",
+          "mutatorName": "ArithmeticOperator",
+          "replacement": "2",
+          "location": { "start": { "line": 1, "column": 22 }, "end": { "line": 1, "column": 23 } },
+          "status": "Killed"
+        },
+        {
+          "id": "1",
+          "mutatorName": "BooleanLiteral",
+          "replacement": "false",
+          "location": { "start": { "line": 1, "column": 1 }, "end": { "line": 1, "column": 7 } },
+          "status": "Survived"
+        },
+        {
+          "id": "2",
+          "mutatorName": "BlockStatement",
+          "replacement": "{}",
+          "location": { "start": { "line": 1, "column": 1 }, "end": { "line": 1, "column": 7 } },
+          "status": "NoCoverage"
+        },
+        {
+          "id": "3",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "location": { "start": { "line": 1, "column": 1 }, "end": { "line": 1, "column": 7 } },
+          "status": "Ignored"
+        }
+      ]
+    },
+    "packages/core/src/validation/example.ts": {
+      "language": "ts",
+      "source": "export const valid = true;",
+      "mutants": [
+        {
+          "id": "4",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "false",
+          "location": { "start": { "line": 1, "column": 22 }, "end": { "line": 1, "column": 26 } },
+          "status": "Timeout"
+        },
+        {
+          "id": "5",
+          "mutatorName": "OptionalChaining",
+          "replacement": ".",
+          "location": { "start": { "line": 1, "column": 1 }, "end": { "line": 1, "column": 7 } },
+          "status": "RuntimeError"
+        },
+        {
+          "id": "6",
+          "mutatorName": "UpdateOperator",
+          "replacement": "--",
+          "location": { "start": { "line": 1, "column": 1 }, "end": { "line": 1, "column": 7 } },
+          "status": "CompileError"
+        }
+      ]
+    }
+  },
+  "thresholds": {
+    "high": 95,
+    "low": 92,
+    "break": null
+  }
+}

@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds the changed-file mutation-scope script and the `mutation-changed` CI job; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-003
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-003.md
 
 ## Problem
 
@@ -12,7 +12,7 @@ A full mutation matrix is too expensive per PR, but changed pillar source must s
 
 ## Assumption Reassessment (2026-06-20)
 
-1. `.github/workflows/ci.yml` exists and runs the established gates (confirmed this session); the Stryker configs + `mutation:*` scripts come from SPEC026MUTDRIROB-001 and the summarizer/baseline from SPEC026MUTDRIROB-003 — hence the Deps.
+1. `.github/workflows/ci.yml` exists and runs the established gates (confirmed this session); the Stryker configs + `mutation:*` scripts come from archive/tickets/SPEC026MUTDRIROB-001.md and the summarizer/baseline from archive/tickets/SPEC026MUTDRIROB-003.md — hence the Deps.
 2. SPEC-026 §Deliverables E1 + report §11.1 define the changed-file rules (forced changed-source `mutate`; config/dep/support/script changes force all three; cache-miss fallback; any new `Survived`/`NoCoverage`/`Timeout`/unclassified error fails; baseline ratchet must not regress).
 3. Cross-artifact boundary under audit: the CI gate contract — the new `mutation-changed` job is additive to `.github/workflows/ci.yml`, coexists with the existing jobs and the `core-coverage` job (archive/tickets/SPEC026MUTDRIROB-002.md), and shares the file with them (Step 6 shared-file overlap).
 4. FOUNDATIONS principle restated: §29.11 workflow quality — fast PR loop preserved (changed-file scope, not full matrix); failures produce replayable evidence; the job fails safe (cache miss → real work, never skip).
@@ -32,7 +32,7 @@ A full mutation matrix is too expensive per PR, but changed pillar source must s
 
 ### 1. Changed-file scope script
 
-`scripts/robustness/mutation-scope.mjs`: classify changed paths; for changed P1/P2/P3 source, force that file as a `mutate` target; for changed Stryker/Vitest/TS config, package manifest/lockfile, test-support generators, or robustness scripts, force all three pillar campaigns; restore-or-fallback the incremental cache (cache miss → forced changed-file scope without reuse). Use the summarizer (SPEC026MUTDRIROB-003) to gate on new adverse statuses + baseline ratchet.
+`scripts/robustness/mutation-scope.mjs`: classify changed paths; for changed P1/P2/P3 source, force that file as a `mutate` target; for changed Stryker/Vitest/TS config, package manifest/lockfile, test-support generators, or robustness scripts, force all three pillar campaigns; restore-or-fallback the incremental cache (cache miss → forced changed-file scope without reuse). Use the summarizer (archive/tickets/SPEC026MUTDRIROB-003.md) to gate on new adverse statuses + baseline ratchet.
 
 ### 2. `mutation-changed` CI job
 

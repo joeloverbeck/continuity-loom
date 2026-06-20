@@ -1,0 +1,65 @@
+{
+  "status": "advisory",
+  "schemaVersion": 1,
+  "toolVersions": {
+    "@stryker-mutator/core": "9.6.1",
+    "@stryker-mutator/vitest-runner": "9.6.1",
+    "@stryker-mutator/typescript-checker": "9.6.1"
+  },
+  "pillars": [
+    {
+      "pillar": "prose",
+      "statusTotals": {
+        "Killed": 0,
+        "Survived": 0,
+        "NoCoverage": 0,
+        "Timeout": 0,
+        "RuntimeError": 0,
+        "CompileError": 0,
+        "Ignored": 0,
+        "Pending": 0
+      },
+      "reviewedScore": null,
+      "reviewedIgnoredCount": 0,
+      "timestamp": "2026-06-20T20:28:00.000Z",
+      "commit": "2d22f0454221f8c8a353e61416e4d99424d700ad",
+      "classifyingTicket": null
+    },
+    {
+      "pillar": "ideation",
+      "statusTotals": {
+        "Killed": 0,
+        "Survived": 0,
+        "NoCoverage": 0,
+        "Timeout": 0,
+        "RuntimeError": 0,
+        "CompileError": 0,
+        "Ignored": 0,
+        "Pending": 0
+      },
+      "reviewedScore": null,
+      "reviewedIgnoredCount": 0,
+      "timestamp": "2026-06-20T20:28:00.000Z",
+      "commit": "2d22f0454221f8c8a353e61416e4d99424d700ad",
+      "classifyingTicket": null
+    },
+    {
+      "pillar": "validation",
+      "statusTotals": {
+        "Killed": 0,
+        "Survived": 0,
+        "NoCoverage": 0,
+        "Timeout": 0,
+        "RuntimeError": 0,
+        "CompileError": 0,
+        "Ignored": 0,
+        "Pending": 0
+      },
+      "reviewedScore": null,
+      "reviewedIgnoredCount": 0,
+      "timestamp": "2026-06-20T20:28:00.000Z",
+      "commit": "2d22f0454221f8c8a353e61416e4d99424d700ad",
+      "classifyingTicket": null
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-003: Add mutation report summarizer and compact baseline format
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds a Stryker-JSON summarizer script and the compact `mutation-baseline.json` format (advisory); no production behavior change.
@@ -78,3 +78,22 @@ If a convenience entry is useful, add a `package.json` script that runs the summ
 1. `node scripts/robustness/mutation-gate.mjs <fixture.json>` — confirm counts/score/decision.
 2. `npm run lint && npm run typecheck` — toolchain sanity.
 3. A fixture-driven unit test is the correct boundary: the summarizer's contract is JSON-in → counts-out, independent of running a full campaign.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Implemented the compact mutation-report summarizer and advisory baseline. `scripts/robustness/mutation-gate.mjs` parses documented Stryker mutation JSON fields (`files[*].mutants[*].status`), emits stable status totals, a compact mutation score, the score denominator, and an advisory or floor-based gate decision. `package.json` now exposes `mutation:gate`. A checked-in fixture at `test/fixtures/robustness/mutation.json` and `test/mutation-gate.test.ts` prove the summarizer output and failure behavior for an explicit floor. The initial `tools/robustness/mutation-baseline.json` records all three pillars in advisory status with zero reviewed totals and the establishing commit from the ticket-002 tree.
+
+The root script-test location required a narrow ESLint project-service allowlist addition for `test/*.ts`; this keeps the new fixture test in the normal `npm test` run without broadening lint to arbitrary generated paths.
+
+Deviations from the plan: none for the summarizer/baseline scope. No full Stryker incremental report was committed.
+
+Verification:
+
+- `npx vitest run test/mutation-gate.test.ts` passed: 1 file, 2 tests.
+- `node scripts/robustness/mutation-gate.mjs test/fixtures/robustness/mutation.json` exited 0 and emitted advisory counts/score.
+- `node scripts/robustness/mutation-gate.mjs test/fixtures/robustness/mutation.json 90` exited 1 with `score-below-floor`, as expected for the fixture.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 136 files, 1042 tests.

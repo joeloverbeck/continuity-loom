@@ -20,7 +20,8 @@
     "mutation:prose": "stryker run stryker.prose.config.mjs",
     "mutation:ideation": "stryker run stryker.ideation.config.mjs",
     "mutation:validation": "stryker run stryker.validation.config.mjs",
-    "mutation:core": "node scripts/robustness/run-core-mutation.mjs"
+    "mutation:core": "node scripts/robustness/run-core-mutation.mjs",
+    "mutation:gate": "node scripts/robustness/mutation-gate.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
