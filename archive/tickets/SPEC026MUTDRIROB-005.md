@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-005: Mutation-tighten P1 ordering
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds ordering property/contract tests and shared fast-check arbitraries; no production behavior change.
@@ -80,3 +80,21 @@ Run `npm run mutation:prose` scoped to `ordering.ts`; classify every survivor (t
 1. `vitest run packages/core/test/compiler-ordering.property.test.ts` — targeted property run.
 2. `npm run mutation:prose` — survivor classification for `ordering.ts`.
 3. The pillar-scoped mutation run is the correct adequacy boundary; the targeted Vitest run is the fast inner loop.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Added shared test arbitraries for deterministic record IDs and compiler-ordering records, plus `packages/core/test/compiler-ordering.property.test.ts`. The new tests pin named tie cases, user-order dominance, family-before-priority behavior, independent expected ordering for generated records, input permutation invariance, comparator antisymmetry/transitivity via the independent comparator, and no input/record mutation via deep-freeze.
+
+Survivor classification for `packages/core/src/compiler/ordering.ts`: focused P1 mutation run killed 21 mutants, had 46 compile-error mutants, and left 2 equivalent survivors. Both survivors are string-literal mutations in `comparePriority` fallback keys (`left ?? ""` and `right ?? ""` changed to another unknown key); any unknown key resolves to the same default priority rank, so the runtime order is unchanged. No product defect or contract ambiguity was found.
+
+Deviations from the plan: the mutation run reported two classified equivalent survivors rather than zero physical survivors. They are not unclassified survivors and do not indicate a test gap.
+
+Verification:
+
+- `npx vitest run packages/core/test/compiler-ordering.property.test.ts` passed: 1 file, 7 tests.
+- `npm run mutation:prose -- --mutate packages/core/src/compiler/ordering.ts` completed: 21 killed, 2 equivalent survived, 46 compile errors, 0 NoCoverage, 0 Timeout.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 137 files, 1049 tests.
