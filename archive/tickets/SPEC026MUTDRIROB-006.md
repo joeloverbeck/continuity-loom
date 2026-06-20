@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-006: Mutation-tighten P1 fingerprint and token estimate
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds fixed-vector fingerprint and token-boundary contract tests; no production behavior change.
@@ -73,3 +73,21 @@ Run `npm run mutation:prose` scoped to `fingerprint.ts` (and the token-estimate 
 1. `vitest run packages/core/test/compiler-fingerprint.contract.test.ts` — targeted contract run.
 2. `npm run mutation:prose` — survivor classification for `fingerprint.ts`.
 3. Fixed independent vectors are the correct boundary: they pin the algorithm without re-implementing it in the test.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Added `packages/core/test/compiler-fingerprint.contract.test.ts` with fixed FNV-1a vectors, exact token-estimate boundary cases for lengths 0, 1, 4, 5 and non-ASCII input, and a public `compilePrompt` metadata assertion that derives fingerprint, length, and token estimate from the emitted prompt string.
+
+Survivor classification for `packages/core/src/compiler/fingerprint.ts`: the focused P1 mutation run killed 7 mutants, timed out 2 mutants, and left 0 survivors in `fingerprint.ts`. An initial run exposed a live `padStart(8, "0")` survivor because all first-pass vectors had eight-digit hashes; the test now includes the `"f8"` vector with expected `fnv1a32:0d226273`, which makes the leading-zero padding contract observable. The mutation report still lists the two previously classified equivalent `ordering.ts` fallback-key survivors from `SPEC026MUTDRIROB-005`; they are outside this ticket's implementation surface.
+
+Deviations from the plan: none for production behavior. The test imports the existing `fingerprint.ts` helpers directly for helper-contract vectors and verifies `compilePrompt` metadata through the public compiler result.
+
+Verification:
+
+- `npx vitest run packages/core/test/compiler-fingerprint.contract.test.ts` passed: 1 file, 13 tests.
+- `npm run mutation:prose -- --mutate packages/core/src/compiler/fingerprint.ts` completed: `fingerprint.ts` 100.00 mutation score, 7 killed, 2 timeout, 0 survived, 0 no coverage, 2 compile errors.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 138 files, 1062 tests.

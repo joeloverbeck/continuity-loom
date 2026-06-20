@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds prose-compiler metamorphic + context-firewall property tests and completes the full P1 mutation campaign; no production behavior change.
-**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-005.md, SPEC026MUTDRIROB-006, SPEC026MUTDRIROB-007, SPEC026MUTDRIROB-008
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-005.md, archive/tickets/SPEC026MUTDRIROB-006.md, SPEC026MUTDRIROB-007, SPEC026MUTDRIROB-008
 
 ## Problem
 
