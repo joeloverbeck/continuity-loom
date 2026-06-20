@@ -164,7 +164,6 @@ function voicePressure(castMemberId: string) {
 function voiceOverride(castMemberId: string) {
   return {
     cast_member_id: castMemberId,
-    scope: "current_generation_only" as const,
     reason: "Tighten this local exchange.",
     applies_to: ["dialogue" as const],
     override_text: "Shorter than usual."

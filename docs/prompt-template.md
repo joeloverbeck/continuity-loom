@@ -221,7 +221,7 @@ Active cast voice pressure pins:
 
 If no current voice pressure pins are supplied, omit the pins sub-block or render a concise deterministic empty state. Do not treat missing pins as an instruction to invent current voice pressure.
 
-Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only within the scope stated there. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
+Voice pressure pins are current-generation salience duplicates for dialogue, POV narration, nonverbal behavior, silence, and turn-taking where relevant. They do not replace the full active cast dossiers. If a current-generation voice override is included in a pin, apply it only to the listed `applies_to` voice surfaces for this generation. This is a legitimate dual-frame duplicate: current scene voice pressure here, durable cast authority later.
 </active_working_set>
 
 <active_plans_and_intentions>
@@ -265,7 +265,7 @@ Voice pressure pins above are current-generation salience duplicates. Durable vo
 
 For non-POV active cast, use the full dossier to shape visible behavior and dialogue. Do not narrate their private interiority directly unless the prose mode allows it.
 
-If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and scoped to this generation only. It adjusts the current rendering; it does not rewrite durable character identity.
+If a dossier includes a clearly labeled `Current generation voice override`, treat it as temporary and current-generation-only. It adjusts the current rendering; it does not rewrite durable character identity.
 
 If sample utterances are included, treat them as annotated short examples of speech function, cadence, and register. Obey each sample's copy policy. The default is never copy verbatim. `may_reuse_cadence_not_text` permits rhythm/function transfer, not wording. `canonical_phrase` is rare and still must not become a repeated tic. Do not infer missing samples; omission means no sample text is selected.
 

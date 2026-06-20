@@ -227,7 +227,6 @@ function overrideLines(
     .map((override) =>
       compactParts([
         "Current generation voice override",
-        labelValue("scope", override.scope),
         labelValue("applies to", override.applies_to),
         labelValue("reason", override.reason),
         override.override_text

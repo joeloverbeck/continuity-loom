@@ -273,7 +273,6 @@ Fields:
 ```yaml
 cast_voice_overrides:
   - cast_member_id: id
-    scope: current_generation_only
     reason: prose | none
     applies_to:
       - dialogue
@@ -292,6 +291,7 @@ cast_voice_overrides:
 Compiler treatment:
 
 - Optional.
+- Intrinsically current-generation-only; there is no per-item scope field.
 - May target active/onstage cast or present-minor cast selected for the current generation.
 - For active/onstage cast, compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
 - For present-minor cast, compile only into the compressed present-minor note.

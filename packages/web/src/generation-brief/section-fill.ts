@@ -74,7 +74,6 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
   ],
   override: [
     "cast_voice_overrides[].cast_member_id",
-    "cast_voice_overrides[].scope",
     "cast_voice_overrides[].reason",
     "cast_voice_overrides[].applies_to[]",
     "cast_voice_overrides[].override_text"

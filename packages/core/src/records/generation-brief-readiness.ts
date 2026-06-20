@@ -88,7 +88,6 @@ const currentCastVoicePressureReadySchema = z
 const castVoiceOverridesReadySchema = z
   .object({
     cast_member_id: recordId,
-    scope: z.literal("current_generation_only").optional(),
     reason: z.union([readyString, z.literal("none")]).optional(),
     applies_to: z
       .array(

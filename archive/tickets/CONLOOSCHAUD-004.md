@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-004: Remove CAST VOICE OVERRIDES[].scope
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — removes `cast_voice_overrides[].scope` from core schema/draft/ready/descriptor/guidance; replaces the dynamic scope clause in the shared cast override renderer with a static current-generation label; adds a generation-session migration step; compiled prose + ideation prompts lose only the redundant scope clause
@@ -112,3 +112,25 @@ Remove any one-option scope control/readout from `GenerationBriefView.tsx` (and 
 1. `npm test -- compiler-cast-sections compiler-golden compiler-ideation-golden generation-session-draft-migration`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `! grep -n "scope" packages/core/src/records/generation-brief.ts` (grep-proof in the schema's context; run after `npm run build`).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Changed:
+- Removed `cast_voice_overrides[].scope` from generation brief schema, draft/readiness normalization, field guidance, section-fill metadata, web generation-brief defaults, and route/test fixtures.
+- Removed dynamic override-scope rendering from the shared cast override serializer while retaining the static `Current generation voice override` label and `applies_to` targeting.
+- Added an idempotent generation-session draft migration that strips legacy `cast_voice_overrides[*].scope` before strict parse while preserving override order and text.
+- Updated prompt/template docs and both prompt goldens to describe current-generation-only override semantics without a per-item scope clause.
+
+Deviations:
+- `generation-brief-descriptors.ts`, `compiler-golden.test.ts`, `compiler-ideation-golden.test.ts`, and `records.test.ts` did not contain owned live changes after inspection; no edits were needed there.
+
+Verification:
+- `npm test -- compiler-cast-sections compiler-golden compiler-ideation-golden generation-session-draft-migration generation-brief-routes generation-brief-readiness field-guidance-brief-config validation-cast-band`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test` initially hit unrelated timeout/resource contention in `project-store` / `record-layer`; targeted rerun `npm test -- project-store record-layer` passed, and full `npm test` then passed.
+- `npm run build`
+- Grep proof: no active schema/renderer/guidance `cast_voice_overrides[].scope` remains; only the legacy migration fixture and a negative renderer assertion retain `scope: "current_generation_only"`.
+- Browser smoke: local dev app on `127.0.0.1`; disposable `/tmp` project opened on `/generation-brief`; override text control rendered, override scope path/control absent, and console reported 0 errors / 0 warnings.

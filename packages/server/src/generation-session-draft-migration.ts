@@ -9,6 +9,7 @@ import type { DatabaseSync } from "node:sqlite";
 const FABRICATED_DIRECTIVE = "Continue the immediate moment.";
 const REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY = "manual" + "_directive_id";
 const REMOVED_CURRENT_CAST_PRESSURE_LOCAL_FUNCTION_KEY = "local" + "_function";
+const REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY = "scope";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -78,6 +79,45 @@ function stripLegacyCurrentCastPressureLocalFunction(value: unknown): unknown {
   return {
     ...session,
     current_cast_voice_pressure: nextCurrentCastVoicePressure
+  };
+}
+
+function stripLegacyCastVoiceOverrideScope(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const castVoiceOverridesValue = session.cast_voice_overrides;
+  if (!Array.isArray(castVoiceOverridesValue)) {
+    return value;
+  }
+
+  const castVoiceOverrides: readonly unknown[] = castVoiceOverridesValue;
+  let changed = false;
+  const nextCastVoiceOverrides = castVoiceOverrides.map((entry): unknown => {
+    if (entry === null || typeof entry !== "object" || Array.isArray(entry)) {
+      return entry;
+    }
+
+    const entryRecord = entry as Record<string, unknown>;
+    if (!(REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY in entryRecord)) {
+      return entry;
+    }
+
+    const nextEntry = { ...entryRecord };
+    delete nextEntry[REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY];
+    changed = true;
+    return nextEntry;
+  });
+
+  if (!changed) {
+    return value;
+  }
+
+  return {
+    ...session,
+    cast_voice_overrides: nextCastVoiceOverrides
   };
 }
 
@@ -180,7 +220,9 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
   }
 
   const rawPayload = JSON.parse(row.payload_json) as unknown;
-  const strippedPayload = stripLegacyCurrentCastPressureLocalFunction(stripLegacyManualDirectiveId(rawPayload));
+  const strippedPayload = stripLegacyCastVoiceOverrideScope(
+    stripLegacyCurrentCastPressureLocalFunction(stripLegacyManualDirectiveId(rawPayload))
+  );
   const strippedLegacyPayload = strippedPayload !== rawPayload;
   const original = generationSessionDraftSchema.parse(strippedPayload);
   const migrated = removeEmptyCastPressureRows(

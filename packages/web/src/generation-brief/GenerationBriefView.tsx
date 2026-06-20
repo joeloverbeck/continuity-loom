@@ -222,7 +222,6 @@ export function GenerationBriefView(): React.JSX.Element {
   };
   const voiceOverride = session.cast_voice_overrides?.[0] ?? {
     cast_member_id: currentVoicePressure.cast_member_id,
-    scope: "current_generation_only",
     reason: "none",
     applies_to: ["dialogue"],
     override_text: ""

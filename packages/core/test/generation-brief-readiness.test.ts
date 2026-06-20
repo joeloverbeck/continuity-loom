@@ -42,7 +42,6 @@ describe("generation brief readiness normalization", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          scope: "current_generation_only",
           override_text: "  make the refusal quieter  ",
           applies_to: ["dialogue"]
         },
@@ -86,7 +85,6 @@ describe("generation brief readiness normalization", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          scope: "current_generation_only",
           override_text: "make the refusal quieter",
           applies_to: ["dialogue"]
         }

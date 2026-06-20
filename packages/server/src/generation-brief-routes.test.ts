@@ -157,7 +157,6 @@ describe("generation-brief routes", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          scope: "current_generation_only",
           reason: "none",
           applies_to: ["dialogue"],
           override_text: "Use fewer metaphors."

@@ -379,7 +379,7 @@ describe("GenerationBriefView", () => {
         do_not_force: ["Do not leave the dock."]
       },
       current_cast_voice_pressure: [{ current_voice_pressure: "clipped and wary" }],
-      cast_voice_overrides: [{ scope: "current_generation_only", override_text: "shorter answers only" }],
+      cast_voice_overrides: [{ override_text: "shorter answers only" }],
       generation_validation_focus: {
         validation_focus_tags: { generation_context: ["continuation_after_accepted_segment"] }
       },

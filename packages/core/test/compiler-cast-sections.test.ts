@@ -145,14 +145,12 @@ function input(records: ValidationRecord[] = castRecords()): BuildValidationSnap
       cast_voice_overrides: [
         {
           cast_member_id: activeCastId,
-          scope: "current_generation_only",
           reason: "She is hiding panic.",
           applies_to: ["dialogue", "silence"],
           override_text: "Even shorter than usual."
         },
         {
           cast_member_id: presentCastId,
-          scope: "current_generation_only",
           reason: "Background line risk.",
           applies_to: ["dialogue"],
           override_text: "Keep him silent unless directly addressed."
@@ -315,12 +313,13 @@ describe("compiler cast-section resolvers", () => {
     expect(dossier).toContain("Current generation voice override");
   });
 
-  it("scopes temporary overrides to the current render and mutates no source record", () => {
+  it("labels temporary overrides statically and mutates no source record", () => {
     const snapshot = buildValidationSnapshot(input());
     const before = JSON.stringify(snapshot.records);
     const { prompt } = compilePrompt(snapshot);
 
-    expect(sectionBody(prompt, "active_cast_full_dossiers")).toContain("scope: current_generation_only");
+    expect(sectionBody(prompt, "active_cast_full_dossiers")).toContain("Current generation voice override");
+    expect(sectionBody(prompt, "active_cast_full_dossiers")).not.toContain("scope: current_generation_only");
     expect(JSON.stringify(snapshot.records)).toBe(before);
   });
 

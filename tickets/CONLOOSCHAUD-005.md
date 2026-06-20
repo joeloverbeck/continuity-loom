@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a deterministic entity-pressure serializer to the `{material_pressure}` source (prose-only) and hazards/social-rules clauses to the shared location renderer (prose + ideation); compiled prompts gain currently-dropped selected-record content; no schema, storage, or migration change
-**Deps**: CONLOOSCHAUD-004
+**Deps**: archive/tickets/CONLOOSCHAUD-004.md
 
 ## Problem
 

@@ -261,6 +261,61 @@ describe("migrateGenerationSessionDraft", () => {
     });
   });
 
+  it("strips legacy cast voice override scope and preserves override order and text", () => {
+    const db = database();
+    setGenerationSession(db, {
+      cast_voice_overrides: [
+        {
+          cast_member_id: idA,
+          scope: "current_generation_only",
+          reason: "First temporary adjustment.",
+          applies_to: ["dialogue"],
+          override_text: "Clip the first reply."
+        },
+        {
+          cast_member_id: idB,
+          scope: "current_generation_only",
+          reason: "Second temporary adjustment.",
+          applies_to: ["silence"],
+          override_text: "Hold silence longer."
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+
+    expect(generationSessionRow(db).payload).toEqual({
+      cast_voice_overrides: [
+        {
+          cast_member_id: idA,
+          reason: "First temporary adjustment.",
+          applies_to: ["dialogue"],
+          override_text: "Clip the first reply."
+        },
+        {
+          cast_member_id: idB,
+          reason: "Second temporary adjustment.",
+          applies_to: ["silence"],
+          override_text: "Hold silence longer."
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    expect(generationSessionRow(db)).toEqual(afterFirst);
+  });
+
   it("is idempotent after the first migration", () => {
     const db = database();
     setGenerationSession(

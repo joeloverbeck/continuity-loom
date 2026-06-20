@@ -79,7 +79,6 @@ export const currentCastVoicePressureSchema = z
 export const castVoiceOverridesSchema = z
   .object({
     cast_member_id: recordId,
-    scope: z.literal("current_generation_only"),
     reason: z.union([nonemptyString, z.literal("none")]),
     applies_to: z.array(
       z.enum([

@@ -77,7 +77,6 @@ describe("field guidance for brief and story config", () => {
         "GENERATION BRIEF.current_cast_voice_pressure[].current_must_preserve[]",
         "GENERATION BRIEF.current_cast_voice_pressure[].current_must_avoid[]",
         "GENERATION BRIEF.cast_voice_overrides[].cast_member_id",
-        "GENERATION BRIEF.cast_voice_overrides[].scope",
         "GENERATION BRIEF.cast_voice_overrides[].reason",
         "GENERATION BRIEF.cast_voice_overrides[].applies_to[]",
         "GENERATION BRIEF.cast_voice_overrides[].override_text",

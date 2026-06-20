@@ -105,7 +105,7 @@ Present-minor supplied current pressure is rendered in prose prompts inside the 
 
 `CAST VOICE OVERRIDES` are useful, but dangerous if they become a second persistent character system. They remain generation-time fields only.
 
-The override shape includes target cast member, scope, reason, affected speech/rendering functions, and override text. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
+The override shape includes target cast member, reason, affected speech/rendering functions, and override text. The block is intrinsically current-generation-only. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
 
 No override silently updates durable CAST MEMBER identity. If the user wants the change to persist, the user edits the durable dossier manually.
 
