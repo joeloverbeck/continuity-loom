@@ -48,6 +48,19 @@ describe("record-internal reference validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
   });
 
+  it("does not require unselected secret references when the secret is inactive", () => {
+    const input = baseInput();
+    input.records = [
+      ...input.records,
+      record(sourceId, "SECRET", secretPayload({ holders: [unselectedEntityId], status: "resolved" }))
+    ];
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
   it("treats hidden-plan holder references as required when the focus demands hidden plan behavior", () => {
     const input = baseInput();
     input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId }))];
@@ -67,6 +80,35 @@ describe("record-internal reference validation", () => {
     ];
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+  });
+
+  it("allows optional PLAN holder references when the plan is inactive and unselected", () => {
+    const input = baseInput();
+    input.records = [
+      ...input.records,
+      record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId, plan_status: "abandoned" }))
+    ];
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
+  it("allows OBJECT current_location to target an object container", () => {
+    const input = baseInput();
+    const containerId = "019b0298-5c00-7000-8000-000000000507";
+    input.records = [
+      ...input.records,
+      record(containerId, "OBJECT", objectPayload({ current_location: locationId })),
+      record(sourceId, "OBJECT", objectPayload({ current_location: containerId }))
+    ];
+    input.projectRecordIndex = {
+      ...input.projectRecordIndex,
+      [containerId]: "OBJECT"
+    };
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.recordReferenceTypeMismatch);
   });
 
   it("warns without blocking for unselected references in optional record-internal lanes", () => {
@@ -175,7 +217,7 @@ function objectPayload(overrides: Partial<{ current_location: string }> = {}) {
   };
 }
 
-function secretPayload(overrides: Partial<{ holders: string[] }> = {}) {
+function secretPayload(overrides: Partial<{ holders: string[]; status: string }> = {}) {
   return {
     id: sourceId,
     status: "hidden",
@@ -195,7 +237,7 @@ function secretPayload(overrides: Partial<{ holders: string[] }> = {}) {
   };
 }
 
-function planPayload(overrides: Partial<{ holder: string }> = {}) {
+function planPayload(overrides: Partial<{ holder: string; plan_status: string }> = {}) {
   return {
     id: sourceId,
     plan_status: "active",

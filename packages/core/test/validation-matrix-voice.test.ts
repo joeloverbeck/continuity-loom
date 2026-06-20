@@ -38,6 +38,22 @@ describe("voice/dialogue/presence matrix validation", () => {
     );
   });
 
+  it("handles missing active working set as incomplete tagged voice state", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "active_silent_presence_expected",
+      "present_minor_speech_possible"
+    ];
+    (input.generationSession as { active_working_set?: unknown }).active_working_set = undefined;
+
+    expect(blockerCodes(input)).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete,
+        DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete
+      ])
+    );
+  });
+
   it("stays silent when all voice matrix tags are satisfied", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
@@ -123,6 +139,28 @@ describe("voice/dialogue/presence matrix validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
   });
 
+  it.each([
+    ["belief known by POV", { type: "BELIEF", payload: { holder: povId } }],
+    ["secret held by POV", { type: "SECRET", payload: { holders: [povId] } }]
+  ])("accepts dialogue knowledge context from %s records", (_label, knowledgeRecord) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.records = input.records
+      .filter((record) => record.id !== factId)
+      .concat({ id: factId, type: knowledgeRecord.type, payload: { id: factId, ...knowledgeRecord.payload } });
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
+  it("accepts dialogue when no specific POV constrains knowledge", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    input.records = input.records.filter((record) => record.id !== factId);
+    (input.storyConfig.proseMode as { pov_character?: unknown }).pov_character = undefined;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
   it("warns but does not block when ensemble voice pins are absent or repeated", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
@@ -139,6 +177,49 @@ describe("voice/dialogue/presence matrix validation", () => {
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete);
     expect(warningCodes(input)).toContain(DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk);
+  });
+
+  it("accepts present minor speech through dialogue overrides", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "present_minor_speech_possible"
+    ];
+    input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.filter((entry) => entry.cast_member_id !== minorId);
+    input.generationSession.cast_voice_overrides = [
+      {
+        cast_member_id: minorId,
+        reason: "Minor can answer one direct question.",
+        applies_to: ["dialogue"],
+        override_text: "Let the minor answer in one clipped factual line."
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
+  });
+
+  it("accepts present minor speech when current pressure asks for a reply", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "present_minor_speech_possible"
+    ];
+    input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
+      entry.cast_member_id === minorId
+        ? { ...entry, dialogue_pressure: "", current_voice_pressure: "The minor replies once if questioned." }
+        : entry
+    );
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
+  });
+
+  it("does not treat pressure for absent minor IDs as present-minor speech guidance", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "present_minor_speech_possible"
+    ];
+    input.generationSession.active_working_set!.present_minor_cast_compressed = [minorId];
+    input.generationSession.current_cast_voice_pressure = [pressure(castA, "A says no.", "A answers.", "none")];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
   });
 });
 

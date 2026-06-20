@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-002: Add scoped Vitest V8 coverage as a reachability floor
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Small
 **Engine Changes**: Yes — adds a disabled-by-default coverage block to `vitest.config.ts`, a `test:coverage:core` script, and a `core-coverage` CI job; no production behavior change.
@@ -79,3 +79,20 @@ Add a `core-coverage` job to `.github/workflows/ci.yml` that runs `npm run test:
 1. `npm run test:coverage:core` — scoped coverage report + threshold enforcement.
 2. `npm test` — confirm default loop unchanged (coverage off).
 3. A scoped-coverage command is the correct boundary: coverage is a reachability floor here, not the adequacy gate (mutation, later phases).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Implemented scoped V8 coverage for the compiler and validation robustness surfaces: `vitest.config.ts` now keeps coverage disabled by default while defining the requested include set, reporters, global thresholds, validation-specific thresholds, and `autoUpdate: false`; `package.json` now exposes `test:coverage:core`; and `.github/workflows/ci.yml` has an additive `core-coverage` job that runs the new script without changing the existing test job.
+
+The initial coverage run proved the configured global floors passed but the requested validation branch floor did not. To satisfy the ticket without weakening the reviewed threshold, added focused validation tests for readiness target/action branches, voice matrix alternate knowledge/minor-speech paths, durable-change alternate institution/obligation/content-policy/lock paths, and record-internal reference edge cases. These tests are coverage support for existing validation behavior; no production runtime behavior changed.
+
+Deviations from the plan: the ticket expected config-only verification, but the specified validation branch floor required targeted test additions before `test:coverage:core` could pass. The coverage command had to run outside the managed sandbox because Vitest writes local Vite temp/cache files under `node_modules/.vite-temp`.
+
+Verification:
+
+- `npm run test:coverage:core` passed: 55 files, 506 tests; global coverage 98.32 statements / 94.92 branches / 99.33 functions / 98.31 lines with the validation threshold accepted.
+- `npm test` passed: 135 files, 1040 tests.
+- `npm run lint` passed.
+- `npm run typecheck` passed.

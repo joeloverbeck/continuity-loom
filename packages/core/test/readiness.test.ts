@@ -96,6 +96,19 @@ describe("deriveReadiness", () => {
     expect(readiness.provider.blockers[0]?.affected[0]?.kind).toBe("provider-setting");
   });
 
+  it("pluralizes the required-item summary when provider and validation blockers are both present", () => {
+    const readiness = deriveReadiness(
+      validationResult({
+        blockers: [diagnostic("blocker", DIAGNOSTIC_CODES.missingManualDirective, "generationSession.manual_moment_directive.must_render")]
+      }),
+      { configured: false },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.summary.headline).toBe("2 required items before generation");
+  });
+
   it("routes fallback blockers to required readiness items", () => {
     const validation = validationResult({
       blockers: [diagnostic("blocker", "new-validator-code", "versions")]
@@ -128,6 +141,21 @@ describe("deriveReadiness", () => {
     });
   });
 
+  it("uses generic fallback repair copy when diagnostics have no suggested actions", () => {
+    const validation = validationResult({
+      blockers: [
+        {
+          ...diagnostic("blocker", "new-validator-code", "versions"),
+          suggestedActions: []
+        }
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers[0]?.fastestFix).toBe("Review the technical diagnostic details.");
+  });
+
   it("enriches affected records with injected display labels and groups salience warnings", () => {
     const validation = validationResult({
       warnings: [
@@ -147,6 +175,53 @@ describe("deriveReadiness", () => {
     expect(readiness.warnings[0]?.affected).toEqual([
       expect.objectContaining({ recordId: "cast-a", recordType: "CAST MEMBER", displayLabel: "Mara Vale" }),
       expect.objectContaining({ recordId: "cast-b", recordType: "CAST MEMBER", displayLabel: "CAST MEMBER cast-b" })
+    ]);
+  });
+
+  it("maps project and technical affected targets without record actions", () => {
+    const validation = validationResult({
+      blockers: [
+        diagnostic("blocker", "project-code", "storyConfig.default_generation_context"),
+        {
+          ...diagnostic("blocker", "technical-code", "versions"),
+          affected: [{}]
+        }
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers).toEqual([
+      expect.objectContaining({
+        affected: [expect.objectContaining({ kind: "project", displayLabel: "Default Generation Context" })]
+      }),
+      expect.objectContaining({
+        affected: [expect.objectContaining({ kind: "technical" })],
+        actions: [{ kind: "copy-technical-json", label: "Copy technical JSON" }]
+      })
+    ]);
+  });
+
+  it("adds working-set review actions for deselect suggestions and shortens long fallback IDs", () => {
+    const validation = validationResult({
+      warnings: [
+        {
+          ...diagnostic("warning", "stale-custom-record", "lowercase.path", "record-identifier-long"),
+          suggestedActions: ["deselect"]
+        }
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.warnings[0]?.affected[0]).toMatchObject({
+      kind: "record",
+      displayLabel: "Record record-i"
+    });
+    expect(readiness.warnings[0]?.actions).toEqual([
+      { kind: "open-record", label: "Open Record record-i", target: "record-identifier-long" },
+      { kind: "open-working-set", label: "Review active working set" },
+      { kind: "copy-technical-json", label: "Copy technical JSON" }
     ]);
   });
 

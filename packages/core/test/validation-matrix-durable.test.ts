@@ -39,6 +39,65 @@ describe("durable-change matrix validation", () => {
     expect(blockerCodes(input)).not.toEqual(expect.arrayContaining([...allDurableCodes]));
   });
 
+  it("accepts escalated obligations and faction or system institutions", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "institutional_involvement_possible",
+      "obligation_breach_possible"
+    ];
+    input.records = input.records.map((record) => {
+      if (record.id === institutionId) {
+        return { ...record, payload: { ...(record.payload as Record<string, unknown>), entity_kind: "faction" } };
+      }
+      if (record.id === obligationId) {
+        return { ...record, payload: { ...(record.payload as Record<string, unknown>), status: "escalated" } };
+      }
+      return record;
+    });
+
+    expect(blockerCodes(input)).not.toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete,
+        DIAGNOSTIC_CODES.matrixObligationBreachIncomplete
+      ])
+    );
+
+    input.records = input.records.map((record) =>
+      record.id === institutionId ? { ...record, payload: { ...(record.payload as Record<string, unknown>), entity_kind: "system" } } : record
+    );
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete);
+  });
+
+  it("allows intimacy when content policy is absent", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "intimacy_or_sex_possible"
+    ];
+    delete input.storyConfig.universalContentPolicy;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete);
+  });
+
+  it("blocks durable changes when current locks or payload objects are absent", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "object_use_possible",
+      "object_transfer_possible"
+    ];
+    (input.generationSession.current_authoritative_state as { current_locks?: unknown }).current_locks = undefined;
+    input.records = input.records.map((record) =>
+      record.id === objectId ? { ...record, payload: null } : record
+    );
+
+    expect(blockerCodes(input)).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
+        DIAGNOSTIC_CODES.matrixObjectTransferIncomplete
+      ])
+    );
+  });
+
   it.each([
     ["object_use_possible", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, (input: BuildValidationSnapshotInput) => removeRecord(input, objectId)],
     ["object_transfer_possible", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "resulting holder")],
