@@ -30,7 +30,6 @@ function insertRecord(db: DatabaseSync, id: string): void {
     "2026-06-07T00:00:00.000Z",
     JSON.stringify({
       statement: `Fact for ${id}`,
-      status: "active",
       salience: "supporting"
     })
   );

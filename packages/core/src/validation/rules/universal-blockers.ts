@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import { DIAGNOSTIC_CODES, type Diagnostic, type SuggestedAction } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
@@ -200,7 +201,7 @@ function validateActivePlanHolders(snapshot: ValidationSnapshot): readonly Diagn
 
     const payload = objectPayload(record);
 
-    if (payload.plan_status !== "active" || payload.can_drive_prose === false || !isText(payload.holder)) {
+    if (payload.plan_status !== "active" || !isText(payload.holder)) {
       return [];
     }
 
@@ -354,7 +355,7 @@ function validateContentEnvelope(snapshot: ValidationSnapshot): readonly Diagnos
 
 function validatePromptFacingContamination(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   return promptFacingFields(snapshot)
-    .filter((entry) => !isCleanAcceptedStatus(entry) && containsAny(entry.text, CONTAMINATION_MARKERS))
+    .filter((entry) => containsAny(entry.text, CONTAMINATION_MARKERS))
     .map((entry) =>
       blocker({
         code: DIAGNOSTIC_CODES.promptFacingProseContamination,
@@ -377,15 +378,14 @@ function validateGenerationContextRows(snapshot: ValidationSnapshot): readonly D
   const handoffText = [
     handoff.recent_causal_context,
     handoff.last_visible_moment,
-    handoff.prior_accepted_prose_status_or_handoff_note,
     handoff.begin_after
   ].join("\n");
 
-  if (context === "first_segment" && (!isCleanNoAcceptedProseNote(handoff.prior_accepted_prose_status_or_handoff_note) || containsAny(handoffText, CONTINUATION_MARKERS))) {
+  if (context === "first_segment" && containsAny(handoffText, CONTINUATION_MARKERS)) {
     return [
       blocker({
         code: DIAGNOSTIC_CODES.promptFacingProseContamination,
-        field: "generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note",
+        field: "generationSession.immediate_handoff",
         message: "First segment handoff must not depend on accepted prose or continuation phrasing.",
         whyItMatters: "A first segment prompt must be self-sufficient from current state and records.",
         suggestedActions: ["revise"]
@@ -451,7 +451,6 @@ function promptFacingFields(snapshot: ValidationSnapshot): readonly { field: str
   return [
     ...textEntry("generationSession.immediate_handoff.recent_causal_context", handoff?.recent_causal_context),
     ...textEntry("generationSession.immediate_handoff.last_visible_moment", handoff?.last_visible_moment),
-    ...textEntry("generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note", handoff?.prior_accepted_prose_status_or_handoff_note),
     ...textEntry("generationSession.immediate_handoff.begin_after", handoff?.begin_after),
     ...textEntries("generationSession.manual_moment_directive.must_render", directive?.must_render),
     ...textEntries("generationSession.manual_moment_directive.may_render_if_naturally_caused", directive?.may_render_if_naturally_caused),
@@ -481,7 +480,6 @@ function promptFacingUserInstructionText(snapshot: ValidationSnapshot): string {
     ...(entry.current_must_avoid ?? [])
   ]);
   const overrideText = (snapshot.generationSession.cast_voice_overrides ?? []).flatMap((entry) => [
-    entry.reason,
     entry.override_text
   ]);
 
@@ -504,21 +502,8 @@ function containsAny(text: string, markers: readonly string[]): boolean {
   return markers.some((marker) => normalized.includes(marker));
 }
 
-function isCleanAcceptedStatus(entry: { field: string; text: string }): boolean {
-  return (
-    entry.field === "generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note" &&
-    isCleanNoAcceptedProseNote(entry.text)
-  );
-}
-
-export function isCleanNoAcceptedProseNote(text: string | undefined): boolean {
-  const normalized = text?.trim().toLowerCase() ?? "";
-
-  return normalized === "" || normalized === "none" || normalized === "none. no accepted prose is included.";
-}
-
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+  return resolveEffectivePov(snapshot);
 }
 
 function hasPlausibleMeans(plan: Record<string, unknown>): boolean {

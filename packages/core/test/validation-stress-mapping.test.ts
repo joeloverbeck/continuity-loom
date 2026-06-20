@@ -92,7 +92,6 @@ function baseInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "A arrived with the key.",
         last_visible_moment: "B noticed the key.",
-        prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
         begin_after: "B noticing the key."
       },
       manual_moment_directive: {
@@ -126,7 +125,6 @@ function baseInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "Tense but non-graphic.",
         tonal_handling: "Grounded.",
-        governing_policy_note: "Obey provider policy.",
         character_bias_handling: "Render bias as character belief, not endorsement."
       },
       proseMode: {
@@ -295,6 +293,10 @@ function danglingCastBandMember(input: BuildValidationSnapshotInput): void {
 }
 
 function danglingSelectedPov(input: BuildValidationSnapshotInput): void {
+  input.storyConfig.proseMode = {
+    ...input.storyConfig.proseMode!,
+    pov_character: "variable"
+  };
   input.generationSession.active_working_set = {
     selected_records: [],
     active_onstage_cast_full: [],

@@ -102,10 +102,9 @@ describe("warnings and security validation", () => {
       offstage_relevant_cast: [],
       selected_pov: "missing-pov"
     };
-    input.storyConfig.proseMode = proseMode("fallback-pov");
+    input.storyConfig.proseMode = proseMode("variable");
     input.projectRecordIndex = {
-      "missing-pov": "ENTITY",
-      "fallback-pov": "ENTITY"
+      "missing-pov": "ENTITY"
     };
 
     const result = runValidation(buildValidationSnapshot(input), castBandRules);
@@ -128,7 +127,7 @@ describe("warnings and security validation", () => {
       offstage_relevant_cast: [],
       selected_pov: "pov"
     };
-    selected.storyConfig.proseMode = proseMode("fallback-pov");
+    selected.storyConfig.proseMode = proseMode("variable");
 
     const omniscient = baseInput();
     omniscient.generationSession.active_working_set = {
@@ -138,10 +137,17 @@ describe("warnings and security validation", () => {
       offstage_relevant_cast: [],
       selected_pov: "omniscient"
     };
-    omniscient.storyConfig.proseMode = proseMode("fallback-pov");
+    omniscient.storyConfig.proseMode = proseMode("omniscient");
 
     const variable = baseInput();
     variable.storyConfig.proseMode = proseMode("variable");
+    variable.generationSession.active_working_set = {
+      selected_records: [],
+      active_onstage_cast_full: [],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: [],
+      selected_pov: "omniscient"
+    };
 
     const undefinedPov = baseInput();
 

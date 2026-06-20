@@ -60,7 +60,6 @@ const immediateHandoffReadySchema = z
   .object({
     recent_causal_context: readyString.optional(),
     last_visible_moment: readyString.optional(),
-    prior_accepted_prose_status_or_handoff_note: z.union([readyString, z.literal("none")]).optional(),
     begin_after: readyString.optional()
   })
   .strict();

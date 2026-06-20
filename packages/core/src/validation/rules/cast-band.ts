@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import { classifyReference } from "../reference-classification.js";
 import type { SelectedCastBand, ValidationSnapshot } from "../snapshot.js";
 import { DIAGNOSTIC_CODES, type Diagnostic } from "../types.js";
@@ -55,9 +56,37 @@ function validateCastBandReferences(snapshot: ValidationSnapshot): readonly Diag
 }
 
 function validateSelectedPovReference(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  const pov = snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+  const prosePov = snapshot.storyConfig.proseMode?.pov_character;
+  const selectedPov = snapshot.generationSession.active_working_set?.selected_pov;
 
-  if (!pov || pov === "omniscient" || pov === "variable") {
+  if (prosePov === "variable" && !selectedPov) {
+    return [
+      blocker(
+        DIAGNOSTIC_CODES.selectedPovRequiredForVariableMode,
+        "Variable POV mode requires a concrete selected POV for this generation.",
+        "generationSession.active_working_set.selected_pov"
+      )
+    ];
+  }
+
+  if (
+    selectedPov &&
+    prosePov &&
+    prosePov !== "variable" &&
+    selectedPov !== prosePov
+  ) {
+    return [
+      blocker(
+        DIAGNOSTIC_CODES.selectedPovConflictsWithProseMode,
+        `Selected POV ${selectedPov} conflicts with configured prose-mode POV ${prosePov}.`,
+        "generationSession.active_working_set.selected_pov"
+      )
+    ];
+  }
+
+  const pov = resolveEffectivePov(snapshot);
+
+  if (!pov || pov === "omniscient") {
     return [];
   }
 

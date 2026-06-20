@@ -50,7 +50,6 @@ function populatedInput(): BuildValidationSnapshotInput {
         type: "FACT",
         payload: {
           id: factId,
-          status: "active",
           fact_kind: "hard_canon",
           statement: "The tower bell never rings after midnight.",
           known_by: [povId]
@@ -114,7 +113,6 @@ function populatedInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "Jon followed the wet footprints upstairs.",
         last_visible_moment: "Mara shut the drawer too quickly.",
-        prior_accepted_prose_status_or_handoff_note: "No quoted prose; the prior segment ended at the desk.",
         begin_after: "Begin with Jon noticing Mara's hand."
       },
       manual_moment_directive: {
@@ -130,7 +128,6 @@ function populatedInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "Suspense, threat, and deception.",
         tonal_handling: "Tense but restrained.",
-        governing_policy_note: "Provider policy remains higher authority.",
         character_bias_handling: "Character judgments are not narrator fact."
       },
       storyContract: {
@@ -381,9 +378,6 @@ describe("compiler front-section resolvers", () => {
     expect(prompt).not.toContain(EMPTY_STATE_CONSTANTS.hard_canon_bullets);
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(EMPTY_STATE_CONSTANTS.current_time);
     expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.recent_causal_context);
-    expect(sectionBody(prompt, "immediate_handoff")).toContain(
-      EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
-    );
     expect(sectionBody(prompt, "immediate_handoff")).not.toContain(EMPTY_STATE_CONSTANTS.begin_after);
     expect(sectionBody(prompt, "manual_directive")).toContain(EMPTY_STATE_CONSTANTS.manual_must_render);
     expect(sectionBody(prompt, "stop_rule")).not.toContain("Soft unit:");
@@ -444,15 +438,20 @@ describe("compiler front-section resolvers", () => {
     expect(versionInfo.contract.version).toBe("1.4.0");
   });
 
-  it("renders literal POV modes without record lookup", () => {
-    for (const literal of ["omniscient", "variable"] as const) {
-      const input = populatedInput();
-      input.storyConfig.proseMode!.pov_character = literal;
+  it("renders omniscient literally and resolves variable POV through selected_pov", () => {
+    const omniscient = populatedInput();
+    omniscient.storyConfig.proseMode!.pov_character = "omniscient";
 
-      const { prompt } = compilePrompt(buildValidationSnapshot(input));
+    expect(sectionBody(compilePrompt(buildValidationSnapshot(omniscient)).prompt, "prose_mode")).toContain(
+      "POV: omniscient"
+    );
 
-      expect(sectionBody(prompt, "prose_mode")).toContain(`POV: ${literal}`);
-    }
+    const variable = populatedInput();
+    variable.storyConfig.proseMode!.pov_character = "variable";
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(variable));
+    expect(sectionBody(prompt, "prose_mode")).toContain("POV: Jon Vale");
+    expect(prompt).not.toContain("POV: variable");
   });
 
   it("falls back to the raw POV id when the referenced record is not selected", () => {
@@ -745,15 +744,15 @@ describe("compiler front-section resolvers", () => {
     );
   });
 
-  it("renders only the user-authored handoff note or the no-accepted-prose constant", () => {
+  it("renders handoff from the remaining user-authored lanes and firewall text", () => {
     const populated = compilePrompt(buildValidationSnapshot(populatedInput())).prompt;
     const empty = compilePrompt(buildValidationSnapshot(emptyInput())).prompt;
 
     expect(sectionBody(populated, "immediate_handoff")).toContain(
-      "No quoted prose; the prior segment ended at the desk."
+      "Jon followed the wet footprints upstairs."
     );
     expect(sectionBody(empty, "immediate_handoff")).toContain(
-      EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
+      "Do not include or quote accepted prose. Do not infer canon from archived prose."
     );
   });
 
@@ -762,7 +761,6 @@ describe("compiler front-section resolvers", () => {
     input.generationSession.immediate_handoff = {
       recent_causal_context: "",
       last_visible_moment: "",
-      prior_accepted_prose_status_or_handoff_note: "none",
       begin_after: ""
     };
     input.generationSession.manual_moment_directive = {
@@ -776,9 +774,6 @@ describe("compiler front-section resolvers", () => {
     const directive = sectionBody(prompt, "manual_directive");
 
     expect(handoff).toContain(`Recent causal context (writer-visible; not automatically POV knowledge):\n${EMPTY_STATE_CONSTANTS.recent_causal_context}`);
-    expect(handoff).toContain(
-      `Prior accepted prose status / user-authored continuity handoff:\n${EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note}`
-    );
     expect(handoff).toContain(
       "Do not include or quote accepted prose. Do not infer canon from archived prose. Use this handoff only as user-authored continuity context."
     );

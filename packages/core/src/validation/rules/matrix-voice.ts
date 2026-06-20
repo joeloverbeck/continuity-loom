@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import { DIAGNOSTIC_CODES, type Diagnostic, type SuggestedAction } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
@@ -197,7 +198,7 @@ function voicePressureFor(snapshot: ValidationSnapshot, castId: string) {
 }
 
 function hasPovKnowledge(snapshot: ValidationSnapshot): boolean {
-  const pov = snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+  const pov = resolveEffectivePov(snapshot);
 
   if (!pov || pov === "omniscient") {
     return true;

@@ -47,7 +47,6 @@ const payloads = {
     rating_label: "Mature",
     allowed_content_scope: "Only story-relevant mature content.",
     tonal_handling: "Direct but not exploitative.",
-    governing_policy_note: "Follow project policy.",
     character_bias_handling: "Render bias as character-specific."
   },
   "PROSE MODE": {

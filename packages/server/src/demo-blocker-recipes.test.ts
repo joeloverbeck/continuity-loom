@@ -108,12 +108,17 @@ const RECIPES: readonly Recipe[] = [
       const secret = await recordByLabel(app, "The letter names a ledger substitution");
       const niko = await recordByLabel(app, "Niko Bram");
       const session = await generationSession(app);
+      const proseMode = await storyConfig(app, "PROSE MODE");
 
       await updateRecord(app, secret, {
         ...objectPayload(secret.payload),
         holders: [niko.id],
         non_holders_to_protect: [niko.id],
         pov_access: "hidden"
+      });
+      await putStoryConfig(app, "PROSE MODE", {
+        ...proseMode,
+        pov_character: "variable"
       });
       await putGenerationSession(app, {
         ...session,
@@ -266,6 +271,22 @@ async function putGenerationSession(fastify: FastifyApp, session: Record<string,
     method: "PUT",
     url: "/api/generation-brief",
     payload: session
+  });
+  expect(response.statusCode).toBe(200);
+}
+
+async function storyConfig(fastify: FastifyApp, kind: string): Promise<Record<string, unknown>> {
+  const response = await fastify.inject({ method: "GET", url: `/api/story-config/${encodeURIComponent(kind)}` });
+  const body = response.json() as { ok: true; payload: Record<string, unknown> };
+  expect(body.ok).toBe(true);
+  return body.payload;
+}
+
+async function putStoryConfig(fastify: FastifyApp, kind: string, payload: Record<string, unknown>): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: `/api/story-config/${encodeURIComponent(kind)}`,
+    payload: { payload }
   });
   expect(response.statusCode).toBe(200);
 }

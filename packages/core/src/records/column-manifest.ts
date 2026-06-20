@@ -27,12 +27,6 @@ const enumColumn = (fieldKey: string, header: string): ColumnDescriptor => ({
   kind: "enum"
 });
 
-const booleanColumn = (fieldKey: string, header: string): ColumnDescriptor => ({
-  fieldKey,
-  header,
-  kind: "boolean"
-});
-
 const shortStringColumn = (fieldKey: string, header: string): ColumnDescriptor => ({
   fieldKey,
   header,
@@ -62,7 +56,6 @@ export const recordColumnManifest: Readonly<Record<string, RecordColumnManifestE
   FACT: {
     primaryLabelHeader: "Statement",
     additionalColumns: [
-      enumColumn("status", "Status"),
       enumColumn("fact_kind", "Fact kind"),
       enumColumn("scope", "Scope"),
       ordinal("salience", "Salience"),
@@ -127,7 +120,6 @@ export const recordColumnManifest: Readonly<Record<string, RecordColumnManifestE
     additionalColumns: [
       enumColumn("plan_status", "Status"),
       ordinal("salience", "Salience"),
-      booleanColumn("can_drive_prose", "Can drive prose"),
       enumColumn("visibility_to_pov", "POV visibility")
     ]
   },

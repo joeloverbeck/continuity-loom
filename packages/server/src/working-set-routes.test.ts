@@ -100,7 +100,6 @@ describe("working-set routes", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       },
       active_working_set: {

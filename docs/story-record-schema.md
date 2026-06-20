@@ -48,7 +48,6 @@ Required fields:
 rating_label: string
 allowed_content_scope: prose
 tonal_handling: prose
-governing_policy_note: prose
 character_bias_handling: prose
 ```
 
@@ -58,6 +57,7 @@ Required semantic content:
 - Explicit language, explicit sexuality, violence, horror, substance use, prejudice, morally reprehensible thoughts, morally reprehensible speech, and morally reprehensible behavior may be rendered when they serve character, situation, and continuity.
 - The block must never say `NO RESTRICTIONS`.
 - It must not attempt to override external model/provider/platform policy.
+- External model/provider/platform policy is fixed template doctrine, not editable project data.
 - It should forbid assistant disclaimers, moral lectures, warnings, safety commentary, or out-of-fiction analysis inside prose.
 - It must preserve the distinction between character-held bias and narrator-certified fact.
 - All five fields compile into `<content_policy>`; the compiler must not replace them with a generic maturity boilerplate.
@@ -134,7 +134,7 @@ Compiler requirements:
 - Warn about risky omissions or prompt length; block only when minimum completeness or contradiction rules require it.
 - `selected_records` ids must resolve before a validation snapshot can be built; stale ids fail closed with the missing ids and the fix to remove them from the working set.
 - Cast-band ids must resolve to selected CAST MEMBER records and a cast member may appear in only one rendered band.
-- `selected_pov` may be `omniscient` or `variable`; otherwise it must resolve to a selected ENTITY or CAST MEMBER before compilation.
+- `selected_pov` may be `omniscient`; otherwise it must resolve to a selected ENTITY or CAST MEMBER before compilation. `variable` is only a PROSE MODE sentinel and must resolve to a concrete generation-time `selected_pov`.
 
 ### 3.2 CURRENT AUTHORITATIVE STATE
 
@@ -206,7 +206,6 @@ Fields:
 ```yaml
 recent_causal_context: prose
 last_visible_moment: prose
-prior_accepted_prose_status_or_handoff_note: prose | none
 begin_after: prose
 ```
 
@@ -214,8 +213,7 @@ Rules:
 
 - Always included.
 - Must not contain verbatim accepted prose, rejected candidate prose, superseded regeneration text, or automatic prose-derived summaries.
-- `prior_accepted_prose_status_or_handoff_note` must render `None. No accepted prose is included.` for first segments or when no handoff is needed.
-- For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no prior accepted prose exists.
+- For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no recent causal context exists.
 - For `continuation_after_accepted_segment`, a user-authored handoff is required. The required continuation handoff must include a recent causal bridge and either a last visible moment or a begin-after point.
 - Durable changes from accepted prose must be represented in selected records or current state before the next prompt.
 
@@ -291,10 +289,11 @@ cast_voice_overrides:
 Compiler treatment:
 
 - Optional.
+- `reason` is author-only metadata. It is saved for the user's process but is not sent to the writer and is not scanned as prompt-facing text.
 - Intrinsically current-generation-only; there is no per-item scope field.
 - May target active/onstage cast or present-minor cast selected for the current generation.
-- For active/onstage cast, compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
-- For present-minor cast, compile only into the compressed present-minor note.
+- For active/onstage cast, `applies_to` and `override_text` compile into the active cast voice pressure pin and into the full dossier under `Current generation voice override`.
+- For present-minor cast, `applies_to` and `override_text` compile only into the compressed present-minor note.
 - Never persist automatically into the durable CAST MEMBER record.
 
 Validation:
@@ -591,12 +590,12 @@ scope: global | entity | location | object | relationship | current_segment
 known_by: list[entity_id] | public | unknown | not_applicable
 audience_visibility: hidden | implied | explicit | not_applicable
 salience: low | medium | high | critical
-status: active
 ```
 
 Notes:
 
 - `deprecated_fact` is not a normal record kind.
+- FACT records are active truth by category invariant. `active` may be projected in registry/UI metadata, but it is not stored in the FACT payload.
 - Supersession is a validation diagnostic, not a persistent FACT status.
 - If a selected fact contradicts current authoritative state, generation blocks until the user revises, removes, or deselects it.
 - Record-id `known_by` entries must resolve to ENTITY or CAST MEMBER records. Dangling or mistyped references block; unselected resolved references warn while optional. `public`, `unknown`, and `not_applicable` remain literals.
@@ -830,12 +829,11 @@ current_step: prose
 fallback_steps: prose list
 visibility_to_pov: visible | hidden | suspected | known
 salience: low | medium | high | critical
-can_drive_prose: true | false
 ```
 
 Validation:
 
-- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. If the plan can drive prose or hidden-plan behavior is expected, an unselected resolved holder blocks; otherwise it warns.
+- `holder` must resolve to an ENTITY or CAST MEMBER. Dangling or mistyped references block. For every selected active PLAN, an unselected resolved holder blocks; otherwise it warns. Hidden-plan behavior focus also makes the holder reference required.
 - `fallback_steps` is authoring metadata. When a fallback becomes current, update `current_step`, selected pressure, or current state; the compiler does not offer multiple future options.
 
 ### 8.4 CLOCK

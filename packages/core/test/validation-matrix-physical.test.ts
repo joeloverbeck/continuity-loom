@@ -125,7 +125,7 @@ function cleanInput(): BuildValidationSnapshotInput {
       {
         id: factId,
         type: "FACT",
-        payload: { id: factId, status: "active", known_by: [povId] }
+        payload: { id: factId, known_by: [povId] }
       }
     ],
     generationSession: {
@@ -162,7 +162,6 @@ function cleanInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "A arrived with the key.",
         last_visible_moment: "B noticed the key.",
-        prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
         begin_after: "B noticing the key."
       },
       manual_moment_directive: {
@@ -206,7 +205,6 @@ function cleanInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "Tense but non-graphic.",
         tonal_handling: "Grounded.",
-        governing_policy_note: "Obey provider policy.",
         character_bias_handling: "Render bias as character belief, not endorsement."
       },
       proseMode: {

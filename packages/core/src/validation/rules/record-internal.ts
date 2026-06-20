@@ -64,7 +64,12 @@ export function isRecordReferenceRequired(snapshot: ValidationSnapshot, sourceRe
 
   return sourceRecord.type === "PLAN" &&
     refRole === "holder" &&
-    (objectPayload(sourceRecord).can_drive_prose === true || hasExpectedLocalMode(snapshot, "non_pov_hidden_plan_behavior"));
+    (isSelectedActivePlan(snapshot, sourceRecord) || hasExpectedLocalMode(snapshot, "non_pov_hidden_plan_behavior"));
+}
+
+function isSelectedActivePlan(snapshot: ValidationSnapshot, sourceRecord: ValidationRecord): boolean {
+  return objectPayload(sourceRecord).plan_status === "active" &&
+    (snapshot.generationSession.active_working_set?.selected_records ?? []).includes(sourceRecord.id);
 }
 
 function validateRecordInternalReferences(snapshot: ValidationSnapshot): readonly Diagnostic[] {

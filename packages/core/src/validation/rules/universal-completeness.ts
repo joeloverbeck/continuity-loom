@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import { DIAGNOSTIC_CODES, type Diagnostic, type SuggestedAction } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
@@ -53,7 +54,7 @@ function validateStoryConfig(snapshot: ValidationSnapshot): readonly Diagnostic[
     !hasText(universalContentPolicy.rating_label) ||
     !hasText(universalContentPolicy.allowed_content_scope) ||
     !hasText(universalContentPolicy.tonal_handling) ||
-    !hasText(universalContentPolicy.governing_policy_note)
+    !hasText(universalContentPolicy.character_bias_handling)
   ) {
     diagnostics.push(
       blocker({
@@ -113,16 +114,14 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
     generationContext === "continuation_after_accepted_segment" &&
     (!handoff ||
       !hasText(handoff.recent_causal_context) ||
-      !hasText(handoff.last_visible_moment) ||
-      !hasText(handoff.prior_accepted_prose_status_or_handoff_note) ||
-      !hasText(handoff.begin_after))
+      (!hasText(handoff.last_visible_moment) && !hasText(handoff.begin_after)))
   ) {
     diagnostics.push(
       blocker({
         code: DIAGNOSTIC_CODES.missingImmediateHandoff,
         field: "generationSession.immediate_handoff",
         message: "Immediate handoff is missing required launch context.",
-        whyItMatters: "The prompt needs a user-authored recent causal bridge, last visible moment, accepted-prose status note, and begin-after point.",
+        whyItMatters: "The prompt needs a user-authored recent causal bridge plus either a last visible moment or a begin-after point.",
         suggestedActions: ["revise"]
       })
     );
@@ -304,7 +303,7 @@ function blocker(input: {
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  return snapshot.generationSession.active_working_set?.selected_pov ?? snapshot.storyConfig.proseMode?.pov_character;
+  return resolveEffectivePov(snapshot);
 }
 
 function recordCarriesPovKnowledge(record: ValidationRecord, pov: string): boolean {

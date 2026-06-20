@@ -20,7 +20,6 @@ export const universalContentPolicySchema = z
     rating_label: nonemptyString,
     allowed_content_scope: nonemptyString,
     tonal_handling: nonemptyString,
-    governing_policy_note: nonemptyString,
     character_bias_handling: nonemptyString
   })
   .strict();

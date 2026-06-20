@@ -84,6 +84,8 @@ export type {
   CompileDestinationFamilyId,
   CompileDestinationRecord
 } from "./records/compile-destinations.js";
+export { resolveEffectivePov } from "./records/effective-pov.js";
+export type { EffectivePov } from "./records/effective-pov.js";
 export {
   castMemberSchema,
   sampleUtteranceSchema

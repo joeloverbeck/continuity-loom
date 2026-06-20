@@ -16,7 +16,6 @@ const castPayload = {
 
 const factPayload = {
   statement: "The west gate oath still binds the watch.",
-  status: "active",
   salience: "supporting"
 };
 

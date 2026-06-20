@@ -50,9 +50,20 @@ describe("record-internal reference validation", () => {
 
   it("treats hidden-plan holder references as required when the focus demands hidden plan behavior", () => {
     const input = baseInput();
-    input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId, can_drive_prose: false }))];
+    input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId }))];
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
       "non_pov_hidden_plan_behavior"
+    ];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+  });
+
+  it("requires selected active PLAN holder references without a prose-driving flag", () => {
+    const input = baseInput();
+    input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId }))];
+    input.generationSession.active_working_set!.selected_records = [
+      ...input.generationSession.active_working_set!.selected_records,
+      sourceId
     ];
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
@@ -184,7 +195,7 @@ function secretPayload(overrides: Partial<{ holders: string[] }> = {}) {
   };
 }
 
-function planPayload(overrides: Partial<{ holder: string; can_drive_prose: boolean }> = {}) {
+function planPayload(overrides: Partial<{ holder: string }> = {}) {
   return {
     id: sourceId,
     plan_status: "active",
@@ -196,7 +207,6 @@ function planPayload(overrides: Partial<{ holder: string; can_drive_prose: boole
     fallback_steps: [],
     visibility_to_pov: "hidden",
     salience: "high",
-    can_drive_prose: true,
     ...overrides
   };
 }

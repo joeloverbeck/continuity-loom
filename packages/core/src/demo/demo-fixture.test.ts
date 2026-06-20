@@ -53,7 +53,6 @@ describe("letter under the flour bin demo fixture", () => {
     const handoff = demoGenerationSession.immediate_handoff;
     const handoffText = Object.values(handoff).join(" ").toLowerCase();
 
-    expect(handoff.prior_accepted_prose_status_or_handoff_note).toBe("None. No accepted prose is included.");
     expect(handoffText).not.toContain("as above");
     expect(handoffText).not.toContain("as before");
     expect(handoffText).not.toContain("from the previous segment");

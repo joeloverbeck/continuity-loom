@@ -33,7 +33,6 @@ Do not mention this hierarchy in the output.
 RATING: General audience / mild suspense
 Allowed content scope: Permits worry, secrecy, and brief non-graphic peril; excludes mature or graphic material.
 Tonal handling: Render tension through caution, timing, and small physical actions rather than shock.
-Governing policy note: Follow the universal output contract and stop before major reveals or irreversible outcomes.
 Character bias handling: Show character fears as limited perspectives, not authorial truth.
 
 This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be considered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
@@ -93,9 +92,6 @@ Elin has just closed the bakery early after hearing the market bell. Niko follow
 
 Last visible moment:
 Niko notices the clean scrape near the flour-bin hinge as Elin lowers the lantern shutter.
-
-Prior accepted prose status / user-authored continuity handoff:
-None. No accepted prose is included.
 
 The next prose segment will begin after this point:
 Begin with Niko at the cellar stair noticing the hinge mark while Elin decides whether to redirect him.

@@ -266,10 +266,10 @@ describe("SPEC-003 record tables and repository", () => {
         type: "FACT",
         displayLabel: "Bad",
         payload: {
-          status: "inactive",
+          api_key: "not allowed",
           id: idA,
           fact_kind: "current_state",
-          statement: "Bad status",
+          statement: "Bad payload",
           scope: "entity",
           known_by: [],
           audience_visibility: "explicit",
@@ -283,7 +283,6 @@ describe("SPEC-003 record tables and repository", () => {
       displayLabel: "Good",
       payload: {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "Good status",
         scope: "entity",
@@ -320,7 +319,6 @@ describe("SPEC-003 record tables and repository", () => {
       displayLabel: "Original",
       payload: {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "Original statement",
         scope: "entity",
@@ -375,7 +373,6 @@ describe("SPEC-003 record tables and repository", () => {
       type: "FACT",
       displayLabel: "Generated",
       payload: {
-        status: "active",
         fact_kind: "current_state",
         statement: "Generated id statement.",
         scope: "entity",
@@ -392,7 +389,6 @@ describe("SPEC-003 record tables and repository", () => {
       id: created.id,
       displayLabel: "Generated updated",
       payload: {
-        status: "active",
         fact_kind: "current_state",
         statement: "Updated without payload id.",
         scope: "entity",
@@ -545,7 +541,6 @@ describe("SPEC-003 record tables and repository", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       },
       manual_moment_directive: { must_render: ["A waits"] },
@@ -579,7 +574,6 @@ describe("SPEC-003 record tables and repository", () => {
       displayLabel: "Selected",
       payload: {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "A selected fact.",
         scope: "global",
@@ -691,7 +685,6 @@ describe("SPEC-003 record tables and repository", () => {
         displayLabel: `Fact ${id}`,
         payload: {
           id,
-          status: "active",
           fact_kind: "current_state",
           statement: `Fact ${id}.`,
           scope: "global",
@@ -734,7 +727,6 @@ describe("SPEC-003 record tables and repository", () => {
       displayLabel: "Persistent record",
       payload: {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "Records remain untouched.",
         scope: "global",
@@ -782,7 +774,6 @@ describe("SPEC-003 record tables and repository", () => {
       displayLabel: "Persistent record",
       payload: {
         id: idA,
-        status: "active",
         fact_kind: "current_state",
         statement: "Records remain untouched.",
         scope: "global",
@@ -806,7 +797,6 @@ describe("SPEC-003 record tables and repository", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       },
       manual_moment_directive: { must_render: ["A waits"] },

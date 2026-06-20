@@ -7,6 +7,7 @@ import { ensureRecordTables } from "./record-tables.js";
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const removedManualDirectiveIdKey = "manual" + "_directive_id";
+const removedPriorAcceptedProseHandoffKey = "prior" + "_accepted_prose_status_or_handoff_note";
 
 let databases: DatabaseSync[] = [];
 
@@ -314,6 +315,43 @@ describe("migrateGenerationSessionDraft", () => {
     const afterFirst = generationSessionRow(db);
     migrateGenerationSessionDraft(db);
     expect(generationSessionRow(db)).toEqual(afterFirst);
+  });
+
+  it("strips legacy prior accepted prose handoff without copying it to remaining handoff lanes", () => {
+    const db = database();
+    setGenerationSession(db, {
+      immediate_handoff: {
+        recent_causal_context: "Mara heard the latch click.",
+        last_visible_moment: "Mara turned toward the cellar door.",
+        [removedPriorAcceptedProseHandoffKey]: "Accepted prose said the latch clicked twice.",
+        begin_after: "Begin after the second click."
+      },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["continuation_after_accepted_segment"]
+        }
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    const afterSecond = generationSessionRow(db);
+
+    expect(afterFirst.payload).toEqual({
+      immediate_handoff: {
+        recent_causal_context: "Mara heard the latch click.",
+        last_visible_moment: "Mara turned toward the cellar door.",
+        begin_after: "Begin after the second click."
+      },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["continuation_after_accepted_segment"]
+        }
+      }
+    });
+    expect(JSON.stringify(afterFirst.payload)).not.toContain("Accepted prose said the latch clicked twice.");
+    expect(afterSecond).toEqual(afterFirst);
   });
 
   it("is idempotent after the first migration", () => {

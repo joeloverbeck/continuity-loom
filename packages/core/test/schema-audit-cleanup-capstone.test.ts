@@ -1,3 +1,6 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,7 +12,11 @@ import {
   demoRecordIds,
   demoRecords,
   demoStoryConfig,
+  factSchema,
+  immediateHandoffSchema,
+  planSchema,
   runValidation,
+  universalContentPolicySchema,
   type BuildValidationSnapshotInput,
   type ValidationRecord
 } from "../src/index.js";
@@ -26,6 +33,7 @@ const authorOnlyCanaries = {
   tickHistoryResult: "CAPSTONE_AUTHOR_ONLY_TICK_RESULT_DO_NOT_PROMPT",
   sequenceOrder: "CAPSTONE_AUTHOR_ONLY_SEQUENCE_ORDER_DO_NOT_PROMPT",
   threadAnswer: "CAPSTONE_AUTHOR_ONLY_THREAD_ANSWER_DO_NOT_PROMPT",
+  overrideReason: "CAPSTONE_AUTHOR_ONLY_OVERRIDE_REASON_DO_NOT_PROMPT",
   relationshipAxis: "power_imbalance",
   relationshipValue: "extreme",
   relationshipValence: "adversarial"
@@ -63,7 +71,6 @@ describe("schema-audit cleanup capstone", () => {
     for (const field of [
       "recent_causal_context",
       "last_visible_moment",
-      "prior_accepted_prose_status_or_handoff_note",
       "begin_after"
     ] as const) {
       const contaminated = structuredClone(input);
@@ -142,6 +149,128 @@ describe("schema-audit cleanup capstone", () => {
       }
     }
   });
+
+  it("keeps pass-2 retired keys out of live authority surfaces and strict schemas", () => {
+    const sourceText = readProductionAuthoritySurfaces();
+
+    for (const retiredKey of [
+      "governing_policy_note",
+      "prior_accepted_prose_status_or_handoff_note",
+      "can_drive_prose"
+    ]) {
+      expect(sourceText).not.toContain(retiredKey);
+    }
+
+    expect(Object.hasOwn(PLACEHOLDER_MAP, "governing_policy_note")).toBe(false);
+    expect(Object.hasOwn(PLACEHOLDER_MAP, "prior_accepted_prose_status_or_handoff_note")).toBe(false);
+
+    const factPayload = {
+      id: "019b0298-5c00-7000-8000-099000000010",
+      fact_kind: "current_state",
+      statement: "The cellar stair is locked.",
+      scope: "location",
+      known_by: "public",
+      audience_visibility: "explicit",
+      salience: "high"
+    };
+    const planPayload = {
+      id: "019b0298-5c00-7000-8000-099000000011",
+      plan_status: "active",
+      holder: demoRecordIds.elinEntity,
+      objective: "Keep the letter hidden.",
+      resources: ["flour bin"],
+      blockers: ["Niko is watching"],
+      current_step: "Keep one hand on the latch.",
+      fallback_steps: [],
+      visibility_to_pov: "known",
+      salience: "high"
+    };
+
+    expect(factSchema.safeParse({ ...factPayload, status: "active" }).success).toBe(false);
+    expect(planSchema.safeParse({ ...planPayload, can_drive_prose: false }).success).toBe(false);
+    expect(universalContentPolicySchema.safeParse({
+      ...demoStoryConfig.universalContentPolicy,
+      governing_policy_note: "Retired policy note."
+    }).success).toBe(false);
+    expect(immediateHandoffSchema.safeParse({
+      ...demoGenerationSession.immediate_handoff,
+      prior_accepted_prose_status_or_handoff_note: "Retired accepted-prose status."
+    }).success).toBe(false);
+  });
+
+  it("resolves variable POV before prompt compilation and blocks unresolved/conflicting POV choices", () => {
+    const variableInput = cleanInput();
+    requireProseMode(variableInput).pov_character = "variable";
+    variableInput.generationSession.active_working_set!.selected_pov = demoRecordIds.elinEntity;
+
+    const variablePrompt = compilePrompt(buildValidationSnapshot(variableInput)).prompt;
+
+    expect(variablePrompt).toContain("POV: Elin Vale");
+    expect(variablePrompt).not.toContain("POV: variable");
+
+    const missingVariable = cleanInput();
+    requireProseMode(missingVariable).pov_character = "variable";
+    delete missingVariable.generationSession.active_working_set!.selected_pov;
+
+    expect(blockerCodes(missingVariable)).toContain(DIAGNOSTIC_CODES.selectedPovRequiredForVariableMode);
+
+    const conflicting = cleanInput();
+    requireProseMode(conflicting).pov_character = "omniscient";
+    conflicting.generationSession.active_working_set!.selected_pov = demoRecordIds.elinEntity;
+
+    expect(blockerCodes(conflicting)).toContain(DIAGNOSTIC_CODES.selectedPovConflictsWithProseMode);
+  });
+
+  it("pins pass-2 validation behavior for continuation handoff and selected active PLAN holders", () => {
+    const continuationWithoutCutpoint = cleanInput();
+    continuationWithoutCutpoint.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+      "continuation_after_accepted_segment"
+    ];
+    continuationWithoutCutpoint.generationSession.immediate_handoff = {
+      recent_causal_context: "Niko noticed the flour on the wrong hinge.",
+      last_visible_moment: " ",
+      begin_after: " "
+    };
+
+    expect(blockerCodes(continuationWithoutCutpoint)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
+
+    const blockedPlanHolder = cleanInput();
+    const planId = "019b0298-5c00-7000-8000-099000000002";
+    const statusId = "019b0298-5c00-7000-8000-099000000003";
+    blockedPlanHolder.records = [
+      ...blockedPlanHolder.records,
+      record(statusId, "ENTITY STATUS", "Elin unable to act", {
+        entity_id: demoRecordIds.elinEntity,
+        life: "alive",
+        agency: "unconscious",
+        location: demoRecordIds.bakeryCellar
+      }),
+      record(planId, "PLAN", "Selected plan with unselected holder", {
+        id: planId,
+        plan_status: "active",
+        holder: demoRecordIds.elinEntity,
+        objective: "Move the letter before Niko sees it.",
+        resources: [],
+        blockers: ["Niko is watching the bin"],
+        current_step: "Wait until Niko looks at the stair.",
+        fallback_steps: [],
+        visibility_to_pov: "known",
+        salience: "high"
+      })
+    ];
+    blockedPlanHolder.generationSession.active_working_set!.selected_records = [
+      ...blockedPlanHolder.generationSession.active_working_set!.selected_records,
+      statusId,
+      planId
+    ];
+
+    expect(blockerCodes(blockedPlanHolder)).toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+
+    const cleanResult = runValidation(buildValidationSnapshot(cleanInput()));
+
+    expect(cleanResult.isBlocked).toBe(false);
+    expect(cleanResult.warnings.length).toBeGreaterThan(0);
+  });
 });
 
 function cleanInput(): BuildValidationSnapshotInput {
@@ -185,8 +314,7 @@ function inputWithAuthorOnlyCanaries(): BuildValidationSnapshotInput {
       current_step: "Listen at the stair before moving the flour bin.",
       fallback_steps: [authorOnlyCanaries.fallbackStep],
       visibility_to_pov: "known",
-      salience: "high",
-      can_drive_prose: true
+      salience: "high"
     })
   ];
   const event = mustFind(records, demoRecordIds.marketBell);
@@ -214,6 +342,14 @@ function inputWithAuthorOnlyCanaries(): BuildValidationSnapshotInput {
     value: authorOnlyCanaries.relationshipValue,
     valence: authorOnlyCanaries.relationshipValence
   });
+  input.generationSession.cast_voice_overrides = [
+    {
+      cast_member_id: demoRecordIds.elinCast,
+      reason: authorOnlyCanaries.overrideReason,
+      applies_to: ["dialogue"],
+      override_text: "Keep Elin's replies short and practical."
+    }
+  ];
 
   const activeWorkingSet = input.generationSession.active_working_set;
   if (!activeWorkingSet) {
@@ -253,4 +389,47 @@ function mustFind(records: ValidationRecord[], id: string): ValidationRecord {
   }
 
   return record;
+}
+
+function blockerCodes(input: BuildValidationSnapshotInput): string[] {
+  return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function requireProseMode(input: BuildValidationSnapshotInput): NonNullable<BuildValidationSnapshotInput["storyConfig"]["proseMode"]> {
+  if (!input.storyConfig.proseMode) {
+    throw new Error("Demo fixture must include PROSE MODE");
+  }
+
+  return input.storyConfig.proseMode;
+}
+
+function readProductionAuthoritySurfaces(): string {
+  const files = [
+    ...collectFiles(join(process.cwd(), "packages/core/src/records")),
+    ...collectFiles(join(process.cwd(), "packages/core/src/compiler")),
+    ...collectFiles(join(process.cwd(), "packages/core/src/validation")),
+    ...collectFiles(join(process.cwd(), "packages/core/src/demo")),
+    ...collectFiles(join(process.cwd(), "packages/web/src")),
+    ...collectFiles(join(process.cwd(), "packages/server/src"), (file) =>
+      !file.endsWith("record-payload-cleanup-migration.ts")
+    )
+  ];
+
+  return files.map((file) => readFileSync(file, "utf8")).join("\n");
+}
+
+function collectFiles(directory: string, include: (file: string) => boolean = () => true): string[] {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      return collectFiles(path, include);
+    }
+
+    if (!entry.isFile() || !/\.[cm]?[tj]sx?$/.test(entry.name) || entry.name.includes(".test.")) {
+      return [];
+    }
+
+    return include(path) ? [path] : [];
+  });
 }

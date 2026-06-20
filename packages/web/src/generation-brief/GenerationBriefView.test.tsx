@@ -310,8 +310,8 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" })).toBeTruthy();
+    expect(await screen.findByText(/PROSE MODE source: Omniscient \/ third \/ past/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Recent causal context" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Last visible moment" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Begin after" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Must render" })).toBeTruthy();
@@ -336,13 +336,17 @@ describe("GenerationBriefView", () => {
     });
     fireEvent.change(screen.getByLabelText(/recent_causal_context/), { target: { value: "A reached the gate." } });
     fireEvent.change(screen.getByLabelText(/last_visible_moment/), { target: { value: "A stood at the gate." } });
-    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
     fireEvent.change(screen.getByLabelText(/begin_after/), { target: { value: "Begin with the gate latch." } });
     fireEvent.change(screen.getByLabelText(/must_render/), { target: { value: "The lock opens." } });
     fireEvent.change(screen.getByLabelText(/may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
     fireEvent.change(screen.getByLabelText(/do_not_force/), { target: { value: "Do not leave the dock." } });
     fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
     fireEvent.change(screen.getByLabelText(/current_voice_pressure/), { target: { value: "clipped and wary" } });
+    const overrideReason = screen.getByRole("textbox", { name: /Reason \(not sent to the writer\)/ });
+    expect(overrideReason).toBeTruthy();
+    fireEvent.change(overrideReason, {
+      target: { value: "Author-only reminder." }
+    });
     fireEvent.change(screen.getByLabelText(/override_text/), { target: { value: "shorter answers only" } });
     fireEvent.change(screen.getByLabelText(/generation_context/), { target: { value: "continuation_after_accepted_segment" } });
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after the reply." } });
@@ -379,7 +383,7 @@ describe("GenerationBriefView", () => {
         do_not_force: ["Do not leave the dock."]
       },
       current_cast_voice_pressure: [{ current_voice_pressure: "clipped and wary" }],
-      cast_voice_overrides: [{ override_text: "shorter answers only" }],
+      cast_voice_overrides: [{ reason: "Author-only reminder.", override_text: "shorter answers only" }],
       generation_validation_focus: {
         validation_focus_tags: { generation_context: ["continuation_after_accepted_segment"] }
       },
@@ -395,7 +399,7 @@ describe("GenerationBriefView", () => {
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
-        "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
+        "PROSE MODE": { pov_character: "variable", person: "third", tense: "past" }
       }
     });
     vi.mocked(listRecords).mockResolvedValue({
@@ -411,12 +415,15 @@ describe("GenerationBriefView", () => {
     renderView();
 
     const selectedPov = await screen.findByLabelText(/selected_pov/);
-    expect(within(selectedPov).getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
+    expect(screen.getByText("Effective POV: Selection required")).toBeTruthy();
+    expect(screen.getByText("Select a concrete POV before compiling in variable POV mode.")).toBeTruthy();
+    expect(within(selectedPov).getByRole("option", { name: "Select required POV" })).toBeTruthy();
     expect(within(selectedPov).getByRole("option", { name: "Omniscient" })).toBeTruthy();
     expect(within(selectedPov).getByRole("option", { name: "Ane Arrieta" })).toBeTruthy();
     expect(within(selectedPov).getByRole("option", { name: "Jon Ureña" })).toBeTruthy();
 
     fireEvent.change(selectedPov, { target: { value: jonId } });
+    expect(screen.getByText("Effective POV: Jon Ureña")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalledTimes(1));
@@ -433,13 +440,48 @@ describe("GenerationBriefView", () => {
     expect(() => generationSessionDraftSchema.parse(defaultPayload)).not.toThrow();
   });
 
-  it("renders matching PROSE MODE pov_character UUIDs by entity display label and preserves literals", async () => {
+  it("renders fixed PROSE MODE pov_character UUIDs by display label and limits selected_pov choices", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    const aneId = "019ea213-8f7e-73dc-8e5b-67ba95ca9500";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
         "PROSE MODE": { pov_character: jonId, person: "first", tense: "present" }
+      }
+    });
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [
+        recordSummary({ id: jonId, displayLabel: "Jon Ureña" }),
+        recordSummary({ id: aneId, displayLabel: "Ane Arrieta" })
+      ]
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    expect(await screen.findByText("PROSE MODE source: Jon Ureña / first / present")).toBeTruthy();
+    expect(screen.getByText("Effective POV: Jon Ureña")).toBeTruthy();
+    expect(screen.getByText("PROSE MODE is fixed; this selector can only clear or match the fixed POV.")).toBeTruthy();
+    const selectedPov = screen.getByLabelText(/selected_pov/);
+    expect(within(selectedPov).getByRole("option", { name: "Use PROSE MODE default" })).toBeTruthy();
+    expect(within(selectedPov).getByRole("option", { name: "Jon Ureña" })).toBeTruthy();
+    expect(within(selectedPov).queryByRole("option", { name: "Ane Arrieta" })).toBeNull();
+    expect(screen.queryByText(new RegExp(jonId))).toBeNull();
+  });
+
+  it("renders variable PROSE MODE as a source sentinel and previews the resolved POV label", async () => {
+    const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: { active_working_set: { selected_pov: jonId } },
+      defaults: briefDefaults
+    });
+    vi.mocked(listStoryConfig).mockResolvedValue({
+      ok: true,
+      configs: {
+        "PROSE MODE": { pov_character: "variable", person: "third", tense: "present" }
       }
     });
     vi.mocked(listRecords).mockResolvedValue({
@@ -450,23 +492,9 @@ describe("GenerationBriefView", () => {
 
     renderView();
 
-    expect(await screen.findByText("PROSE MODE source: Jon Ureña / first / present")).toBeTruthy();
-    expect(screen.queryByText(new RegExp(jonId))).toBeNull();
-  });
-
-  it("renders variable PROSE MODE pov_character literally", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
-    vi.mocked(listStoryConfig).mockResolvedValue({
-      ok: true,
-      configs: {
-        "PROSE MODE": { pov_character: "variable", person: "third", tense: "present" }
-      }
-    });
-    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
-
-    renderView();
-
-    expect(await screen.findByText("PROSE MODE source: variable / third / present")).toBeTruthy();
+    expect(await screen.findByText("PROSE MODE source: Variable POV / third / present")).toBeTruthy();
+    expect(screen.getByText("Effective POV: Jon Ureña")).toBeTruthy();
+    expect(screen.queryByText("PROSE MODE source: variable / third / present")).toBeNull();
   });
 
   it("keeps a dangling selected_pov UUID selectable without relabeling it as a known entity", async () => {
@@ -494,10 +522,10 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    const handoffHelp = screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" });
+    const handoffHelp = screen.getByRole("button", { name: "Help for Recent causal context" });
 
     expect(handoffHelp.getAttribute("aria-controls")).toBe(
-      "field-help-generation-brief-immediate-handoff-prior-accepted-prose-status-or-handoff-note"
+      "field-help-generation-brief-immediate-handoff-recent-causal-context"
     );
     expect(screen.getAllByText("Completeness checks, not plot beats.")).toHaveLength(1);
     expect(screen.getAllByText("Stop at the next local response point; do not ask for downstream consequences."))
@@ -505,8 +533,8 @@ describe("GenerationBriefView", () => {
 
     fireEvent.click(handoffHelp);
 
-    expect(screen.getAllByText("A handoff note about accepted prose status, not prose authority.").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
+    expect(screen.getAllByText("User-authored recent cause that launches the next segment.").length).toBeGreaterThan(1);
+    expect(screen.getAllByText("Do not paste or summarize accepted prose here.")).toHaveLength(1);
   });
 
   it("renders helper text inline and wires controls with aria-describedby", async () => {
@@ -589,7 +617,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), {
+    fireEvent.change(screen.getByLabelText(/recent_causal_context/), {
       target: {
         value: "This is a long paragraph. It reads like finished prose. It keeps going. It should be summarized instead."
       }

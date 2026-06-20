@@ -62,11 +62,6 @@ const immediateHandoffBlocks: readonly {
     alwaysRender: true
   },
   { label: "Last visible moment", placeholder: "last_visible_moment" },
-  {
-    label: "Prior accepted prose status / user-authored continuity handoff",
-    placeholder: "prior_accepted_prose_status_or_handoff_note",
-    alwaysRender: true
-  },
   { label: "Begin prose exactly after this point", placeholder: "begin_after" }
 ];
 

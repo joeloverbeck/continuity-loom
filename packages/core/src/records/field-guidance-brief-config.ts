@@ -74,7 +74,6 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "current_authoritative_state.current_locks[]": "Current locks",
   "immediate_handoff.recent_causal_context": "Recent causal context",
   "immediate_handoff.last_visible_moment": "Last visible moment",
-  "immediate_handoff.prior_accepted_prose_status_or_handoff_note": "Prior accepted-prose status / handoff note",
   "immediate_handoff.begin_after": "Begin after",
   "manual_moment_directive.must_render[]": "Must render",
   "manual_moment_directive.may_render_if_naturally_caused[]": "May render if naturally caused",
@@ -87,7 +86,7 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "current_cast_voice_pressure[].current_must_preserve[]": "Current must preserve",
   "current_cast_voice_pressure[].current_must_avoid[]": "Current must avoid",
   "cast_voice_overrides[].cast_member_id": "Cast member",
-  "cast_voice_overrides[].reason": "Reason",
+  "cast_voice_overrides[].reason": "Reason (not sent to the writer)",
   "cast_voice_overrides[].applies_to[]": "Applies to",
   "cast_voice_overrides[].override_text": "Override text",
   "generation_validation_focus.validation_focus_tags.generation_context[]": "Generation context checks",
@@ -167,11 +166,6 @@ const storyConfigEntries: readonly GuidanceInput[] = [
   config("UNIVERSAL CONTENT POLICY.tonal_handling", "How sensitive or intense material should be handled tonally.", [
     "{tonal_handling}"
   ]),
-  config("UNIVERSAL CONTENT POLICY.governing_policy_note", "Provider or platform policy note that outranks story pressure.", [
-    "{governing_policy_note}"
-  ], {
-    doctrineWarnings: ["Manual directives and character pressure cannot override governing policy."]
-  }),
   config("UNIVERSAL CONTENT POLICY.character_bias_handling", "How character bias should be rendered without endorsing it.", [
     "{character_bias_handling}"
   ]),
@@ -320,18 +314,6 @@ const generationBriefEntries: readonly GuidanceInput[] = [
       "Use a visible sensory anchor or final action, not a causal explanation or broad state summary.",
     relatedFields: ["GENERATION BRIEF.immediate_handoff.begin_after"]
   }),
-  brief("immediate_handoff.prior_accepted_prose_status_or_handoff_note", "A handoff note about accepted prose status, not prose authority.", [
-    "{prior_accepted_prose_status_or_handoff_note}"
-  ], {
-    requiredness: "optional",
-    requirednessNote: "Always renders; leave as None unless you have a user-authored handoff bridge.",
-    criticalVisibleHint: "Accepted prose is readable output, not continuity authority.",
-    doctrineWarnings: ["Do not use accepted prose as canon for future prompt context."],
-    examples: ["None.", "User-authored bridge: after the interrupted toast, Mara is still holding the sealed glass."],
-    antiExamples: ["Previous segment accepted.", "Use the accepted segment as the source of current canon."],
-    authoringAdvice:
-      "Use None for a first segment or when no bridge is needed; otherwise write a short user-authored continuity bridge."
-  }),
   brief("immediate_handoff.begin_after", "The exact point where new prose should begin.", ["{begin_after}"], {
     requiredness: "continuation",
     requirednessNote: "For continuations, this or last_visible_moment is required.",
@@ -385,10 +367,13 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     "{active_cast_voice_pressure_pins}",
     "{present_minor_cast_notes}"
   ], optionalOpts),
-  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", [
-    "{active_cast_voice_pressure_pins}",
-    "{present_minor_cast_notes}"
-  ], optionalOpts),
+  brief("cast_voice_overrides[].reason", "Author-only note explaining why this temporary voice override exists.", [], {
+    ...optionalOpts,
+    promptFacing: "never",
+    authoringAdvice: "Use this for your process note only; put the actual writer instruction in override_text.",
+    criticalVisibleHint: "Not sent to the writer.",
+    doctrineWarnings: ["Do not rely on reason to carry continuity, secrets, or rendering instructions."]
+  }),
   brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", [
     "{active_cast_voice_pressure_pins}",
     "{present_minor_cast_notes}"

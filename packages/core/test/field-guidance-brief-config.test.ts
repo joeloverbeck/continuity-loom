@@ -59,7 +59,6 @@ describe("field guidance for brief and story config", () => {
         "GENERATION BRIEF.current_authoritative_state.current_locks[]"
       ],
       optional: [
-        "GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note",
         "GENERATION BRIEF.stop_guidance.soft_unit_guidance",
         "GENERATION BRIEF.manual_moment_directive.may_render_if_naturally_caused[]",
         "GENERATION BRIEF.manual_moment_directive.do_not_force[]",
@@ -97,17 +96,13 @@ describe("field guidance for brief and story config", () => {
     expect(getFieldGuidance("STORY CONTRACT.title")?.requiredness).toBeUndefined();
   });
 
-  it("adds requiredness notes for continuation either-or and always-render handoff fields", () => {
+  it("adds requiredness notes for continuation either-or handoff fields", () => {
     expect(getFieldGuidance("GENERATION BRIEF.immediate_handoff.last_visible_moment")?.requirednessNote).toContain(
       "this or begin_after"
     );
     expect(getFieldGuidance("GENERATION BRIEF.immediate_handoff.begin_after")?.requirednessNote).toContain(
       "this or last_visible_moment"
     );
-    expect(
-      getFieldGuidance("GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note")
-        ?.requirednessNote
-    ).toContain("leave as None");
   });
 
   it("distinguishes state snapshot guidance from causal handoff guidance", () => {
@@ -155,19 +150,15 @@ describe("field guidance for brief and story config", () => {
     );
   });
 
-  it("keeps prior accepted prose guidance as None or a user-authored bridge", () => {
-    const entry = getFieldGuidance("GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note");
-
-    expect(entry?.doctrineWarnings?.join(" ")).toContain("Do not use accepted prose as canon");
-    expect(entry?.examples?.join(" ")).toContain("None");
-    expect(entry?.examples?.join(" ")).toContain("User-authored bridge");
-    expect(entry?.examples?.join(" ")).not.toContain("Previous segment accepted");
-    expect(entry?.antiExamples).toContain("Previous segment accepted.");
+  it("does not expose retired prior accepted prose guidance", () => {
+    const retiredPath = "GENERATION BRIEF.immediate_handoff.prior" + "_accepted_prose_status_or_handoff_note";
+    expect(
+      getFieldGuidance(retiredPath)
+    ).toBeUndefined();
   });
 
   it("gives high-risk handoff, directive, and stop fields examples and anti-examples", () => {
     for (const path of [
-      "GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note",
       "GENERATION BRIEF.manual_moment_directive.must_render[]",
       "GENERATION BRIEF.stop_guidance.soft_unit_guidance"
     ]) {

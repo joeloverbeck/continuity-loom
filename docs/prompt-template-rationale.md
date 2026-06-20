@@ -21,7 +21,7 @@ This protects the app’s prose-only contract without turning the prompt into a 
 
 ## 3. Why the content policy now exposes story-specific fields
 
-A generic maturity boilerplate is not enough. The schema has `rating_label`, `allowed_content_scope`, `tonal_handling`, `governing_policy_note`, and `character_bias_handling`; all five now compile into `<content_policy>`.
+A generic maturity boilerplate is not enough. The schema has `rating_label`, `allowed_content_scope`, `tonal_handling`, and `character_bias_handling`; all four compile into `<content_policy>`. External model/provider/platform policy remains fixed template doctrine rather than editable project data.
 
 This matters because mature-fiction permission, tonal handling, provider-policy priority, and character-bias handling are different concerns. A story may be explicit but non-sensational; violent but restrained; prejudiced in character perception but not narrator-certified; adult-only but still bounded by platform policy. These distinctions should be author-visible and prompt-facing.
 
@@ -39,19 +39,19 @@ Narrative-planning research supports preserving causality and character intentio
 
 `<current_authoritative_state>` is the live start snapshot: time, place, onstage bodies, immediate local situation, positions, agency/status, possessions, visible conditions, line of sight, routes, available time, consent/force conditions, and continuity locks.
 
-`<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, prior accepted prose status or user-authored handoff note, and begin-after instruction.
+`<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, and begin-after instruction.
 
 Keeping these separate is the biggest safeguard after POV/reveal locks. Current state answers “what is true now.” Handoff answers “how did we get here and where does prose begin.” Mixing them invites the prose writer to turn non-POV context into POV knowledge.
 
 For a first segment, there is no prior accepted prose and no continuation bridge to supply. Current authoritative state plus the manual directive can be enough to begin. For a continuation after an accepted segment, a user-authored handoff is needed because accepted prose remains excluded from prompt context.
 
-## 6. Why `prior_accepted_prose_status_or_handoff_note` stays narrow
+## 6. Why accepted prose stays out of handoff fields
 
 The old idea of a most-recent-prose summary is wrong for this app. It points implementers toward mining accepted prose, which violates record-first continuity.
 
-The correct field is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
+Continuation launch uses user-authored recent causal context plus a visible or imperative cutpoint. These fields must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
 
-The handoff note is a bridge written by the user, not a prose-archive substitute. It may identify the causal hinge or begin-after point for a continuation, but it must not quote accepted prose or let the compiler mine prose into canon.
+The handoff is a bridge written by the user, not a prose-archive substitute. It may identify the causal hinge or begin-after point for a continuation, but it must not quote accepted prose or let the compiler mine prose into canon.
 
 If an accepted segment created a durable change, that change belongs in selected story records, current authoritative state, immediate handoff, or selected event/fact/belief/relationship/emotion/plan/clock/obligation/consequence/open-thread/location/object/affordance/cast records before the next generation.
 
@@ -107,7 +107,7 @@ Present-minor supplied current pressure is rendered in prose prompts inside the 
 
 `CAST VOICE OVERRIDES` are useful, but dangerous if they become a second persistent character system. They remain generation-time fields only.
 
-The override shape includes target cast member, reason, affected speech/rendering functions, and override text. The block is intrinsically current-generation-only. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
+The override shape includes target cast member, an author-only reason, affected speech/rendering functions, and override text. The block is intrinsically current-generation-only. Only the affected surfaces and override text compile into prompt output; the reason stays local author metadata. Overrides may compile into the active cast voice pressure pin. For active/onstage cast, they may also compile into the full dossier under a clearly labeled `Current generation voice override`. For present-minor cast, they compile only into compressed notes.
 
 No override silently updates durable CAST MEMBER identity. If the user wants the change to persist, the user edits the durable dossier manually.
 
@@ -139,7 +139,9 @@ A flat event archive makes the writer guess what matters. Events therefore compi
 
 Facts are split by POV accessibility. A fact may be true but not available to the POV. The prompt therefore separates POV-accessible facts from writer-visible/non-POV facts.
 
-Deprecated facts are not normal prompt-facing records. If a fact is false, it should be removed, revised, or replaced with current state, event, belief, consequence, or another active record. Supersession is a validation diagnostic, not a persistent FACT status.
+POV accessibility is keyed to one effective POV resolved from PROSE MODE and the generation brief. `variable` is only a configuration sentinel; ready prompts must resolve it to a concrete selected POV or block before prompt compilation.
+
+Deprecated facts are not normal prompt-facing records. If a fact is false, it should be removed, revised, or replaced with current state, event, belief, consequence, or another active record. FACT active truth is implicit in the record category; supersession is a validation diagnostic, not a persistent FACT status.
 
 ## 16. Why relationships and emotions need prose-facing pressure
 

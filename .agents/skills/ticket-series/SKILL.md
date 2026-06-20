@@ -97,7 +97,11 @@ npm run build
    touched surface after equivalent broad coverage already passed on the current
    task state, rerun the failing file or filter once and then rerun the broad
    gate once. Treat a repeat failure as a blocker. Report the original failure,
-   the targeted rerun, and the broad rerun outcome.
+   the targeted rerun, and the broad rerun outcome. If you fix an unrelated
+   assertion or brittle test exposed by a broad gate so the current gate can
+   pass, classify it as an incidental gate fix. Prefer a separate commit when
+   practical; if it lands in the ticket commit, name it explicitly in the
+   ticket `Outcome` and final response.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used. When the smoke needs project data
@@ -116,9 +120,13 @@ npm run build
    that a narrow component/API change is sufficiently proven without a real
    localhost or browser smoke, record the rationale in the ticket `Outcome` and
    final response.
-6. Update the ticket with final status and an `Outcome` section following
-   `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the
-   ticket before moving it, after the existing ticket sections.
+6. Before marking the ticket complete, re-read its `What to Change`,
+   `Files to Touch`, `Acceptance Criteria`, and `Test Plan` sections. For each
+   major surface, confirm it is fulfilled, intentionally deferred, not
+   applicable, or blocked with evidence. Then update the ticket with final
+   status and an `Outcome` section following `docs/archival-workflow.md`.
+   Append the `Outcome` at the bottom of the ticket before moving it, after the
+   existing ticket sections.
 7. Archive the ticket:
    - Create `archive/tickets/` if absent.
    - Use `git mv` for tracked tickets.
@@ -141,7 +149,10 @@ npm run build
 9. Review the diff for unrelated changes.
 10. Inspect `git diff --cached --name-status` before committing. If unrelated
     pre-existing changes are staged, unstage only those unrelated entries before
-    committing the ticket.
+    committing the ticket. After `git mv`, stage rename/deletion pairs with a
+    scoped command such as `git add -A tickets archive/tickets` when direct
+    staging of the old path fails, then re-check the cached name-status before
+    committing.
 11. Commit the completed ticket work before moving on unless the user explicitly
     asked not to commit. Use a concise message naming the ticket.
 
@@ -202,6 +213,10 @@ npm run build
 
 7. Run a final status/diff check and commit the spec archive/truthing work
    unless the user explicitly asked not to commit.
+   If the final ticket is itself the capstone or explicitly owns spec closeout,
+   the final ticket archive and spec archive may land in one commit. Record that
+   coupling in the ticket and spec `Outcome` sections, and use a commit message
+   that names the final ticket.
 8. If a `/goal` is active, mark it complete only after implementation,
    verification, ticket archives, spec archive or documented reason it remains
    active, reference repair, and required commits are done. When resuming after
@@ -221,3 +236,4 @@ Final responses must include:
 - Verification commands actually run.
 - Any checks not run and why.
 - Any unrelated pre-existing changes left untouched.
+- Any incidental unrelated gate fixes included in a ticket commit.

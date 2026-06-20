@@ -251,7 +251,6 @@ const storyConfigPayloads = {
     rating_label: "General",
     allowed_content_scope: "Mild suspense.",
     tonal_handling: "Quiet.",
-    governing_policy_note: "Policy first.",
     character_bias_handling: "Character views are limited."
   },
   "STORY CONTRACT": {
@@ -298,7 +297,6 @@ const cleanBrief = {
   immediate_handoff: {
     recent_causal_context: "A arrived.",
     last_visible_moment: "A lifted the key.",
-    prior_accepted_prose_status_or_handoff_note: "none",
     begin_after: "A lifting the key."
   },
   manual_moment_directive: {

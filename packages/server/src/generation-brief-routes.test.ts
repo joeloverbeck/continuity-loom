@@ -137,7 +137,6 @@ describe("generation-brief routes", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "At the threshold.",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "The door opens."
       },
       manual_moment_directive: {
@@ -157,7 +156,7 @@ describe("generation-brief routes", () => {
       cast_voice_overrides: [
         {
           cast_member_id: idA,
-          reason: "none",
+          reason: "Author-only note for this temporary override.",
           applies_to: ["dialogue"],
           override_text: "Use fewer metaphors."
         }
@@ -227,7 +226,6 @@ describe("generation-brief routes", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       }
     });
@@ -267,7 +265,6 @@ describe("generation-brief routes", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A opens the door."
       },
       stop_guidance: { soft_unit_guidance: "Stop before any aftermath." }
@@ -285,7 +282,6 @@ describe("generation-brief routes", () => {
         immediate_handoff: {
           recent_causal_context: "",
           last_visible_moment: "",
-          prior_accepted_prose_status_or_handoff_note: "none",
           begin_after: ""
         },
         manual_moment_directive: {
@@ -303,9 +299,6 @@ describe("generation-brief routes", () => {
     expect(response.json()).toEqual({
       ok: true,
       session: {
-        immediate_handoff: {
-          prior_accepted_prose_status_or_handoff_note: "none"
-        },
         generation_validation_focus: {
           validation_focus_tags: {
             generation_context: ["first_segment"]
@@ -451,7 +444,6 @@ describe("generation-brief routes", () => {
           immediate_handoff: {
             recent_causal_context: secretBriefText,
             last_visible_moment: "Doorway",
-            prior_accepted_prose_status_or_handoff_note: "none",
             begin_after: "A waits"
           },
           manual_moment_directive: {

@@ -140,6 +140,38 @@ function insertStaleCastMemberLabel(databasePath: string): void {
   }
 }
 
+function insertLegacyFact(databasePath: string): void {
+  const database = new DatabaseSync(databasePath);
+  const legacyStatusKey = "sta" + "tus";
+  const legacyFactId = "019b0298-5c00-7000-8000-000000000009";
+
+  try {
+    database
+      .prepare(
+        `INSERT INTO records (
+          id, type, display_label, status, salience, archived, created_at, updated_at, payload_json
+        ) VALUES (?, 'FACT', 'Legacy fact', NULL, NULL, 0, ?, ?, ?)`
+      )
+      .run(
+        legacyFactId,
+        "2026-06-07T00:00:00.000Z",
+        "2026-06-07T00:00:00.000Z",
+        JSON.stringify({
+          id: legacyFactId,
+          [legacyStatusKey]: "active",
+          fact_kind: "current_state",
+          statement: "The cellar key is missing.",
+          scope: "object",
+          known_by: "public",
+          audience_visibility: "explicit",
+          salience: "critical"
+        })
+      );
+  } finally {
+    database.close();
+  }
+}
+
 function setGenerationSession(databasePath: string, session: unknown): void {
   const database = new DatabaseSync(databasePath);
 
@@ -371,6 +403,42 @@ describe("createProjectStoreManager", () => {
       ok: true,
       record: {
         displayLabel: "Ane Arrieta, 18, a self-employed sex worker."
+      }
+    });
+  });
+
+  it("cleans legacy record payload keys before exposing an opened repository", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "record-payload-cleanup",
+      title: "Record Payload Cleanup"
+    });
+    await firstManager.closeProject();
+
+    insertLegacyFact(join(created.folderPath, "loom.sqlite"));
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+    const record = secondManager.getRecordRepository()?.getRecord("019b0298-5c00-7000-8000-000000000009");
+
+    expect(opened).toMatchObject({ ok: true });
+    expect(record).toMatchObject({
+      ok: true,
+      record: {
+        id: "019b0298-5c00-7000-8000-000000000009",
+        status: "active",
+        salience: "critical",
+        payload: {
+          id: "019b0298-5c00-7000-8000-000000000009",
+          fact_kind: "current_state",
+          statement: "The cellar key is missing.",
+          scope: "object",
+          known_by: "public",
+          audience_visibility: "explicit",
+          salience: "critical"
+        }
       }
     });
   });

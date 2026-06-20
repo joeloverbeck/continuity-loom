@@ -107,6 +107,7 @@ const REMOVED_STORY_CONTRACT_KEYS = [
   "prose" + "_preferences",
   "continuity" + "_philosophy"
 ] as const;
+const REMOVED_UNIVERSAL_CONTENT_POLICY_KEYS = ["governing" + "_policy_note"] as const;
 
 function legacyStoryContractPayload(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -130,18 +131,48 @@ function stripLegacyStoryContractKeys(payload: unknown): { payload: unknown; cha
   return { payload: stripped, changed };
 }
 
-function liveStoryContractRowsWithLegacyKeys(
+function stripRemovedKeys(payload: unknown, keys: readonly string[]): { payload: unknown; changed: boolean } {
+  if (!legacyStoryContractPayload(payload)) {
+    return { payload, changed: false };
+  }
+
+  const stripped = { ...payload };
+  let changed = false;
+
+  for (const key of keys) {
+    if (key in stripped) {
+      delete stripped[key];
+      changed = true;
+    }
+  }
+
+  return { payload: stripped, changed };
+}
+
+function stripLegacyGlobalConfigPayload(kind: StoryConfigKind, payload: unknown): { payload: unknown; changed: boolean } {
+  if (kind === "STORY CONTRACT") {
+    return stripLegacyStoryContractKeys(payload);
+  }
+
+  if (kind === "UNIVERSAL CONTENT POLICY") {
+    return stripRemovedKeys(payload, REMOVED_UNIVERSAL_CONTENT_POLICY_KEYS);
+  }
+
+  return { payload, changed: false };
+}
+
+function liveStoryConfigRowsWithLegacyKeys(
   database: DatabaseSync
 ): Array<{ kind: StoryConfigKind; payloadJson: string }> {
   const rows = database
-    .prepare("SELECT kind, payload_json FROM story_config WHERE kind = 'STORY CONTRACT'")
+    .prepare("SELECT kind, payload_json FROM story_config WHERE kind IN ('STORY CONTRACT', 'UNIVERSAL CONTENT POLICY')")
     .all() as Array<Record<string, unknown>>;
   const rewrites: Array<{ kind: StoryConfigKind; payloadJson: string }> = [];
 
   for (const row of rows) {
     const kind = rowKind(String(row.kind));
     const payload = JSON.parse(String(row.payload_json)) as unknown;
-    const stripped = stripLegacyStoryContractKeys(payload);
+    const stripped = stripLegacyGlobalConfigPayload(kind, payload);
 
     if (stripped.changed) {
       rewrites.push({ kind, payloadJson: canonicalJson(stripped.payload) });
@@ -159,7 +190,7 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
     malformedRecordIds: []
   };
   const groupedRows = groupByKind(selectOrphanRows(database));
-  const liveStoryConfigRewrites = liveStoryContractRowsWithLegacyKeys(database);
+  const liveStoryConfigRewrites = liveStoryConfigRowsWithLegacyKeys(database);
   const handledRows: OrphanGlobalConfigRow[] = [];
   const inserts: Array<{ kind: StoryConfigKind; payloadJson: string }> = [];
 
@@ -174,9 +205,7 @@ export function migrateGlobalConfigRecords(database: DatabaseSync): GlobalConfig
     let payload: unknown;
     try {
       payload = JSON.parse(chosen.payload_json) as unknown;
-      if (kind === "STORY CONTRACT") {
-        payload = stripLegacyStoryContractKeys(payload).payload;
-      }
+      payload = stripLegacyGlobalConfigPayload(kind, payload).payload;
       const parsedPayload = storyConfigSchemas[kind].parse(payload);
       payload = parsedPayload;
     } catch {

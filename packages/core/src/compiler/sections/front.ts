@@ -1,3 +1,4 @@
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
 import { displayLabel, resolveRecordLabel } from "../labels.js";
@@ -16,8 +17,6 @@ const frontResolvers: ResolverMap = {
   allowed_content_scope: (snapshot) =>
     valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.allowed_content_scope, "allowed_content_scope"),
   tonal_handling: (snapshot) => valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.tonal_handling, "tonal_handling"),
-  governing_policy_note: (snapshot) =>
-    valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.governing_policy_note, "governing_policy_note"),
   character_bias_handling: (snapshot) =>
     valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.character_bias_handling, "character_bias_handling"),
 
@@ -110,12 +109,6 @@ const frontResolvers: ResolverMap = {
     valueOrEmpty(snapshot.generationSession.immediate_handoff?.recent_causal_context, "recent_causal_context"),
   last_visible_moment: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.immediate_handoff?.last_visible_moment, "last_visible_moment"),
-  prior_accepted_prose_status_or_handoff_note: (snapshot) => {
-    const handoffNote = snapshot.generationSession.immediate_handoff?.prior_accepted_prose_status_or_handoff_note;
-    return handoffNote && handoffNote !== "none"
-      ? handoffNote
-      : EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note;
-  },
   begin_after: (snapshot) => valueOrEmpty(snapshot.generationSession.immediate_handoff?.begin_after, "begin_after"),
 
   manual_must_render: (snapshot) =>
@@ -229,13 +222,13 @@ function renderEntityStatuses(snapshot: ValidationSnapshot, value: unknown): str
 }
 
 function renderPovCharacter(snapshot: ValidationSnapshot): string {
-  const povCharacter = renderValue(snapshot.storyConfig.proseMode?.pov_character);
+  const povCharacter = renderValue(resolveEffectivePov(snapshot));
 
   if (!povCharacter) {
     return EMPTY_STATE_CONSTANTS.pov_character;
   }
 
-  if (povCharacter === "omniscient" || povCharacter === "variable") {
+  if (povCharacter === "omniscient") {
     return povCharacter;
   }
 
@@ -336,7 +329,7 @@ function keyedText(text: string, record: ValidationRecord, options: FrontRenderO
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  const pov = snapshot.generationSession.active_working_set?.selected_pov;
+  const pov = resolveEffectivePov(snapshot);
   return pov && pov !== "omniscient" ? pov : undefined;
 }
 

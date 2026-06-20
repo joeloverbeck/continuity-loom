@@ -3,6 +3,7 @@ import { resolveRecordLabel } from "../labels.js";
 import { orderCompilerRecords } from "../ordering.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
+import { resolveEffectivePov } from "../../records/effective-pov.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
 
 type JsonRecord = Record<string, unknown>;
@@ -340,7 +341,7 @@ function payloadOf(record: ValidationRecord): JsonRecord {
 }
 
 function selectedPov(snapshot: ValidationSnapshot): string | undefined {
-  const pov = snapshot.generationSession.active_working_set?.selected_pov;
+  const pov = resolveEffectivePov(snapshot);
   return pov && pov !== "omniscient" ? pov : undefined;
 }
 

@@ -56,8 +56,7 @@ export const planSchema = z
     current_step: nonemptyString,
     fallback_steps: z.array(nonemptyString).default([]),
     visibility_to_pov: z.enum(["visible", "hidden", "suspected", "known"]),
-    salience: salienceEnum,
-    can_drive_prose: z.boolean()
+    salience: salienceEnum
   })
   .strict();
 

@@ -27,7 +27,6 @@ function insertFact(repositoryUnderTest: RecordRepository, id: string): void {
     displayLabel: `Fact ${id}`,
     payload: {
       id,
-      status: "active",
       fact_kind: "current_state",
       statement: `Fact for ${id}.`,
       scope: "global",
@@ -68,7 +67,6 @@ describe("RecordRepository generation-session draft parsing", () => {
       immediate_handoff: {
         recent_causal_context: "",
         last_visible_moment: "",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: ""
       },
       manual_moment_directive: {
@@ -131,7 +129,6 @@ describe("RecordRepository generation-session draft parsing", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "At the door.",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits."
       },
       manual_moment_directive: {

@@ -56,7 +56,6 @@ const immediateHandoffDraftSchema = z
   .object({
     recent_causal_context: draftString.optional(),
     last_visible_moment: draftString.optional(),
-    prior_accepted_prose_status_or_handoff_note: z.union([draftString, z.literal("none")]).optional(),
     begin_after: draftString.optional()
   })
   .strict();

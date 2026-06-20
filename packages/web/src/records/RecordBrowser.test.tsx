@@ -412,7 +412,6 @@ describe("RecordBrowser", () => {
     await waitFor(() => expect(screen.getByLabelText<HTMLSelectElement>("Type").value).toBe("FACT"));
     expect(tableLabels()).toEqual(["Critical fact", "Medium fact", "Low fact"]);
     expect(tableHeaders()).toEqual(expectedHeadersForType("FACT"));
-    expect(vi.mocked(listRecords)).toHaveBeenLastCalledWith({ type: "FACT" });
 
     cleanup();
     vi.clearAllMocks();

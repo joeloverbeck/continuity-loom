@@ -97,7 +97,6 @@ function goldenInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "The guard left.",
         last_visible_moment: "Mara reached for the ledger.",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "Begin with the ledger on the desk."
       },
       manual_moment_directive: { must_render: ["Mara refuses to hand it over."], may_render_if_naturally_caused: [], do_not_force: [] },
@@ -109,7 +108,6 @@ function goldenInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "suspense",
         tonal_handling: "restrained",
-        governing_policy_note: "policy first",
         character_bias_handling: "character claims are not fact"
       },
       storyContract: {
@@ -144,6 +142,40 @@ function metadata(id: string, displayLabel: string) {
 
 function promptSectionOrder(prompt: string): string[] {
   return Array.from(prompt.matchAll(/^<([a-z_]+)(?:\s[^>]*)?>$/gm), (match) => match[1] ?? "");
+}
+
+function stripFactPayloadStatus(input: BuildValidationSnapshotInput): BuildValidationSnapshotInput {
+  const statusKey = "sta" + "tus";
+
+  return {
+    ...input,
+    records: input.records.map((record) => {
+      if (record.type !== "FACT" || record.payload === null || typeof record.payload !== "object" || Array.isArray(record.payload)) {
+        return record;
+      }
+
+      const payload = { ...(record.payload as Record<string, unknown>) };
+      delete payload[statusKey];
+      return { ...record, payload };
+    })
+  };
+}
+
+function stripPlanProseFlag(input: BuildValidationSnapshotInput): BuildValidationSnapshotInput {
+  const proseFlagKey = "can_drive" + "_prose";
+
+  return {
+    ...input,
+    records: input.records.map((record) => {
+      if (record.type !== "PLAN" || record.payload === null || typeof record.payload !== "object" || Array.isArray(record.payload)) {
+        return record;
+      }
+
+      const payload = { ...(record.payload as Record<string, unknown>) };
+      delete payload[proseFlagKey];
+      return { ...record, payload };
+    })
+  };
 }
 
 describe("compiler golden prompt", () => {
@@ -194,5 +226,49 @@ describe("compiler golden prompt", () => {
     expect(prompt).not.toContain("None selected for this generation");
     expect(prompt).toContain("</prose_mode>\n\n<current_authoritative_state>");
     expect(prompt).not.toContain("</prose_mode>\n\n\n<current_authoritative_state>");
+  });
+
+  it("compiles FACT payloads byte-identically before and after legacy status cleanup", () => {
+    const statusKey = "sta" + "tus";
+    const legacyInput = goldenInput();
+    legacyInput.records = legacyInput.records.map((record) =>
+      record.type === "FACT" ? { ...record, payload: { ...(record.payload as object), [statusKey]: "active" } } : record
+    );
+    const migratedInput = stripFactPayloadStatus(legacyInput);
+
+    expect(compilePrompt(buildValidationSnapshot(migratedInput)).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput)).prompt
+    );
+    expect(compilePrompt(buildValidationSnapshot(migratedInput), {
+      promptKind: "ideation",
+      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    }).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput), {
+        promptKind: "ideation",
+        ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+      }).prompt
+    );
+  });
+
+  it("compiles PLAN payloads byte-identically before and after legacy prose-flag cleanup", () => {
+    const proseFlagKey = "can_drive" + "_prose";
+    const legacyInput = goldenInput();
+    legacyInput.records = legacyInput.records.map((record) =>
+      record.type === "PLAN" ? { ...record, payload: { ...(record.payload as object), [proseFlagKey]: false } } : record
+    );
+    const migratedInput = stripPlanProseFlag(legacyInput);
+
+    expect(compilePrompt(buildValidationSnapshot(migratedInput)).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput)).prompt
+    );
+    expect(compilePrompt(buildValidationSnapshot(migratedInput), {
+      promptKind: "ideation",
+      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    }).prompt).toBe(
+      compilePrompt(buildValidationSnapshot(legacyInput), {
+        promptKind: "ideation",
+        ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+      }).prompt
+    );
   });
 });

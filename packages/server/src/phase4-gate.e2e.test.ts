@@ -125,7 +125,6 @@ function castMemberPayload(entityIdInput: string) {
 function factPayload(statement: string, salience = "medium") {
   return {
     id: factId,
-    status: "active",
     fact_kind: "current_state",
     statement,
     scope: "entity",

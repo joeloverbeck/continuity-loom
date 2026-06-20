@@ -175,6 +175,10 @@ function requireSilentWithoutPressure(input: BuildValidationSnapshotInput): void
 }
 
 function leakHiddenSecretToPov(input: BuildValidationSnapshotInput): void {
+  input.storyConfig.proseMode = {
+    ...input.storyConfig.proseMode!,
+    pov_character: "variable"
+  };
   input.generationSession.active_working_set!.selected_pov = demoRecordIds.nikoEntity;
   mutateRecord(input, demoRecordIds.hiddenLetterSecret, {
     holders: [demoRecordIds.nikoEntity],
