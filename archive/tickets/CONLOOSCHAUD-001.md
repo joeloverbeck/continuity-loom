@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-001: Remove STORY CONTRACT.continuity_philosophy
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — removes `storyContract.continuity_philosophy` from the core global-config schema, its descriptor, field guidance, demo fixture, and the story-config UI; adds a global-config migration step (live + orphan rows); compiled prompt output is unchanged
@@ -104,3 +104,27 @@ Remove the one-option control from `packages/web/src/config/StoryConfigEditor.ts
 1. `npm test -- global-config-migration compiler-golden StoryConfigEditor`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `! grep -rn "continuity_philosophy" packages/core/src packages/server/src packages/web/src` (grep-proof; run after `npm run build` so `dist/**` is refreshed — narrower than full-suite because it proves the removal invariant directly).
+
+## Outcome
+
+Completed: 2026-06-20
+
+What changed:
+
+- Removed `storyContract.continuity_philosophy` from the STORY CONTRACT schema, generated story-config descriptors, field guidance, demo fixture, Story Configuration UI, active schema docs, and current test fixtures.
+- Extended the global-config migration to strip legacy STORY CONTRACT keys before strict parsing, including both live `story_config` rows and orphan STORY CONTRACT records.
+- Added migration coverage proving legacy live/orphan rows with `continuity_philosophy` open losslessly, re-save without the key, and rerun idempotently.
+
+Deviations from plan:
+
+- `docs/compiler-contract.md` did not need a content change because it already grouped STORY CONTRACT fields without naming `continuity_philosophy` as an independent compiler source.
+
+Verification:
+
+- `npm test -- global-config-migration compiler-golden StoryConfigEditor` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 131 files, 972 tests.
+- `npm run build` passed.
+- `rg -n "continuity_philosophy" packages/core/src packages/server/src packages/web/src` returned no matches.
+- Browser smoke: launched `npm run dev` on `127.0.0.1:5173` / `127.0.0.1:5174`, opened `/tmp/letter-under-flour-bin-demo`, visited `/story-config`, and confirmed the STORY CONTRACT editor renders `title`, `premise`, `genre_mode`, `tone`, `setting_baseline`, `content_intensity`, `explicitness`, and `language_register` with no `continuity_philosophy` control. A prior demo-create attempt reported an expected `409 folder-exists` for the existing `/tmp/letter-under-flour-bin-demo`; the project then opened normally. Browser and dev server were stopped, and `.playwright-cli/` was removed.

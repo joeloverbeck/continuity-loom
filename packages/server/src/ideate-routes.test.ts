@@ -259,7 +259,6 @@ const storyConfigPayloads = {
     premise: "A tests a locked door.",
     genre_mode: "mystery",
     tone: "tense",
-    continuity_philosophy: "continuity_first",
     setting_baseline: "A loading dock.",
     content_intensity: "general",
     explicitness: "non-graphic",

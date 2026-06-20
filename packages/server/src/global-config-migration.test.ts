@@ -12,13 +12,13 @@ const storyContractPayload = {
   premise: "A city keeps its promises badly.",
   genre_mode: "urban fantasy",
   tone: "tense and intimate",
-  continuity_philosophy: "continuity_first",
   setting_baseline: "Rainy districts under old bargains.",
   content_intensity: "mature",
   explicitness: "Render mature material only when earned.",
   language_register: "controlled contemporary prose"
 } as const;
 const removedStoryContractProsePreferencesKey = "prose" + "_preferences";
+const removedStoryContractContinuityPhilosophyKey = "continuity" + "_philosophy";
 const legacyStoryContractPayload = {
   ...storyContractPayload,
   [removedStoryContractProsePreferencesKey]: {
@@ -27,6 +27,10 @@ const legacyStoryContractPayload = {
     interiority: "filtered",
     paragraphing: "mixed"
   }
+} as const;
+const legacyStoryContractContinuityPhilosophyPayload = {
+  ...storyContractPayload,
+  [removedStoryContractContinuityPhilosophyKey]: "continuity_first"
 } as const;
 
 const contentPolicyPayload = {
@@ -193,9 +197,43 @@ describe("migrateGlobalConfigRecords", () => {
     expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
   });
 
+  it("strips the removed continuity philosophy key from existing story_config values", () => {
+    const db = database();
+    setStoryConfig(db, "STORY CONTRACT", legacyStoryContractContinuityPhilosophyPayload);
+
+    const first = migrateGlobalConfigRecords(db);
+    const second = migrateGlobalConfigRecords(db);
+
+    expect(first).toEqual({
+      movedKinds: [],
+      deletedRecordIds: [],
+      preservedExistingKinds: [],
+      malformedRecordIds: []
+    });
+    expect(second).toEqual(first);
+    expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
+  });
+
   it("strips the removed prose defaults key from orphan story contracts before strict parsing", () => {
     const db = database();
     insertOrphan(db, { id: "legacy-contract", type: "STORY CONTRACT", payload: legacyStoryContractPayload });
+
+    const summary = migrateGlobalConfigRecords(db);
+
+    expect(summary.movedKinds).toEqual(["STORY CONTRACT"]);
+    expect(summary.deletedRecordIds).toEqual(["legacy-contract"]);
+    expect(summary.malformedRecordIds).toEqual([]);
+    expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
+    expect(orphanCount(db)).toBe(0);
+  });
+
+  it("strips the removed continuity philosophy key from orphan story contracts before strict parsing", () => {
+    const db = database();
+    insertOrphan(db, {
+      id: "legacy-contract",
+      type: "STORY CONTRACT",
+      payload: legacyStoryContractContinuityPhilosophyPayload
+    });
 
     const summary = migrateGlobalConfigRecords(db);
 

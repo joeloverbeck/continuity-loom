@@ -46,7 +46,6 @@ const storyConfigEditorDescriptors: Record<StoryConfigKind, RecordEditorDescript
       field("premise", "prose"),
       field("genre_mode", "short_string"),
       field("tone", "short_string"),
-      field("continuity_philosophy", "enum", { enumValues: ["continuity_first"] }),
       field("setting_baseline", "prose"),
       field("content_intensity", "enum", { enumValues: ["general", "mature", "explicit", "graphic", "variable"] }),
       field("explicitness", "prose"),

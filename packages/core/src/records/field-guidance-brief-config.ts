@@ -147,10 +147,6 @@ const storyConfigEntries: readonly GuidanceInput[] = [
     "{genre_mode}"
   ]),
   config("STORY CONTRACT.tone", "The durable tonal envelope for generated local prose.", ["{tone}"]),
-  config("STORY CONTRACT.continuity_philosophy", "Marks this project as continuity-first story state.", [], {
-    promptFacing: "never",
-    validationRole: "Operational doctrine marker; it is not sent to the prose prompt."
-  }),
   config("STORY CONTRACT.setting_baseline", "Stable setting context the prompt can rely on.", ["{setting_baseline}"]),
   config("STORY CONTRACT.content_intensity", "The intensity lane for allowed prose rendering.", ["{content_intensity}"], {
     enumValues: {

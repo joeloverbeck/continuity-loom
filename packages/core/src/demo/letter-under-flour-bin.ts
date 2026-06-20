@@ -64,7 +64,6 @@ export const demoStoryConfig = {
     premise: "A careful baker hides a stolen letter before a friend can decide whether to trust her.",
     genre_mode: ["cozy mystery", "mild suspense"],
     tone: ["quietly tense", "warm but wary"],
-    continuity_philosophy: "continuity_first",
     setting_baseline: "A rain-wet market town where tradespeople share narrow cellars and sharper rumors.",
     content_intensity: "general",
     explicitness: "Keep danger mild and non-graphic; focus on secrecy, trust, and practical choices.",

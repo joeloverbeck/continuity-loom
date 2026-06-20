@@ -76,7 +76,6 @@ const storyContractPayload = {
   premise: "A city keeps its promises badly.",
   genre_mode: "urban fantasy",
   tone: "tense and intimate",
-  continuity_philosophy: "continuity_first",
   setting_baseline: "Rainy districts under old bargains.",
   content_intensity: "mature",
   explicitness: "Render mature material only when earned.",

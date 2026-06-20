@@ -192,7 +192,6 @@ const storyContractPayload = {
   premise: `The test keeps ${briefSentinel} private.`,
   genre_mode: "procedural fantasy",
   tone: "tense and exact",
-  continuity_philosophy: "continuity_first",
   setting_baseline: "A city archive under watch.",
   content_intensity: "mature",
   explicitness: "Only render earned detail.",

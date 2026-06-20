@@ -117,7 +117,6 @@ function goldenInput(): BuildValidationSnapshotInput {
         premise: "An archivist protects a ledger.",
         genre_mode: "mystery",
         tone: "tense",
-        continuity_philosophy: "continuity_first",
         setting_baseline: "archive tower",
         content_intensity: "mature",
         explicitness: "non-graphic",

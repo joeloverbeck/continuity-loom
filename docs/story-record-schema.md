@@ -28,7 +28,6 @@ title: string
 premise: prose
 genre_mode: prose or enum list
 tone: prose or tag list
-continuity_philosophy: continuity_first
 setting_baseline: prose
 content_intensity: general | mature | explicit | graphic | variable
 explicitness: prose
@@ -38,6 +37,7 @@ language_register: prose
 Prompt treatment:
 
 - Always included.
+- Continuity-first doctrine is constitutional/static, not a configurable story property.
 - Does not override hard canon, current authoritative state, POV constraints, reveal locks, or provider policy.
 
 ### 2.2 UNIVERSAL CONTENT POLICY
