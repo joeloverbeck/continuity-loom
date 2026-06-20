@@ -1,6 +1,6 @@
 # SPEC-025 — Schema Audit Pass 2: Authority Deduplication and Effective POV
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 cleanup spec; schema + validation + compiler + storage + docs alignment (second schema-audit pass)
 Depends on: existing local project store, the two global-config / generation-session-draft migration hooks, the record-payload repository read path, the deterministic compiler, the validation engine, story-config and generation-brief UIs, and the field-guidance system
 Governing authority: `docs/FOUNDATIONS.md`
@@ -532,3 +532,28 @@ Gate every claim through `npm run lint`, `npm run typecheck`, and `npm test`.
 6. **Decomposition.** This spec is intended for `spec-to-tickets`; the natural
    ticket boundaries are Deliverable 0 (amendment, gated) and one ticket per
    reviewable diff per change, preserving package-boundary order.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Implemented through archived tickets `archive/tickets/SPEC025SCHAUDPAS-001.md`
+through `archive/tickets/SPEC025SCHAUDPAS-008.md`.
+
+The completed work amended FOUNDATIONS §10, removed the retired UCP, handoff,
+FACT, and PLAN fields with deterministic migrations, made cast override reasons
+author-only, added effective-POV resolution and fail-closed diagnostics, updated
+authority docs and UI controls, and extended the schema-audit cleanup capstone
+with SPEC-025 pass-2 invariants.
+
+Verification:
+
+- `npm test -- schema-audit-cleanup-capstone`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build` (passed with the existing Vite chunk-size warning)
+- Ticket-level targeted suites are recorded in the archived ticket outcomes.
+
+Browser smoke: not run for the final spec archive; browser/UI behavior was
+covered by jsdom web tests in the implementation tickets.
