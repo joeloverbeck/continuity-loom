@@ -21,7 +21,7 @@ This protects the app’s prose-only contract without turning the prompt into a 
 
 ## 3. Why the content policy now exposes story-specific fields
 
-A generic maturity boilerplate is not enough. The schema has `rating_label`, `allowed_content_scope`, `tonal_handling`, `governing_policy_note`, and `character_bias_handling`; all five now compile into `<content_policy>`.
+A generic maturity boilerplate is not enough. The schema has `rating_label`, `allowed_content_scope`, `tonal_handling`, and `character_bias_handling`; all four compile into `<content_policy>`. External model/provider/platform policy remains fixed template doctrine rather than editable project data.
 
 This matters because mature-fiction permission, tonal handling, provider-policy priority, and character-bias handling are different concerns. A story may be explicit but non-sensational; violent but restrained; prejudiced in character perception but not narrator-certified; adult-only but still bounded by platform policy. These distinctions should be author-visible and prompt-facing.
 

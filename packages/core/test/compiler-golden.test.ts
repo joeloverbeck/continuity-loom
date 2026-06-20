@@ -108,7 +108,6 @@ function goldenInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "suspense",
         tonal_handling: "restrained",
-        governing_policy_note: "policy first",
         character_bias_handling: "character claims are not fact"
       },
       storyContract: {

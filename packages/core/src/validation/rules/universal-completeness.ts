@@ -53,7 +53,7 @@ function validateStoryConfig(snapshot: ValidationSnapshot): readonly Diagnostic[
     !hasText(universalContentPolicy.rating_label) ||
     !hasText(universalContentPolicy.allowed_content_scope) ||
     !hasText(universalContentPolicy.tonal_handling) ||
-    !hasText(universalContentPolicy.governing_policy_note)
+    !hasText(universalContentPolicy.character_bias_handling)
   ) {
     diagnostics.push(
       blocker({

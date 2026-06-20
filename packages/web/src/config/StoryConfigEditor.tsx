@@ -58,7 +58,6 @@ const storyConfigEditorDescriptors: Record<StoryConfigKind, RecordEditorDescript
       field("rating_label", "short_string"),
       field("allowed_content_scope", "prose"),
       field("tonal_handling", "prose"),
-      field("governing_policy_note", "prose"),
       field("character_bias_handling", "prose")
     ]
   ),

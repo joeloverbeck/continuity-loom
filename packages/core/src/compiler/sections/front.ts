@@ -16,8 +16,6 @@ const frontResolvers: ResolverMap = {
   allowed_content_scope: (snapshot) =>
     valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.allowed_content_scope, "allowed_content_scope"),
   tonal_handling: (snapshot) => valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.tonal_handling, "tonal_handling"),
-  governing_policy_note: (snapshot) =>
-    valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.governing_policy_note, "governing_policy_note"),
   character_bias_handling: (snapshot) =>
     valueOrEmpty(snapshot.storyConfig.universalContentPolicy?.character_bias_handling, "character_bias_handling"),
 

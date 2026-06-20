@@ -73,7 +73,6 @@ export const demoStoryConfig = {
     rating_label: "General audience / mild suspense",
     allowed_content_scope: "Permits worry, secrecy, and brief non-graphic peril; excludes mature or graphic material.",
     tonal_handling: "Render tension through caution, timing, and small physical actions rather than shock.",
-    governing_policy_note: "Follow the universal output contract and stop before major reveals or irreversible outcomes.",
     character_bias_handling: "Show character fears as limited perspectives, not authorial truth."
   } satisfies UniversalContentPolicy,
   proseMode: {

@@ -129,7 +129,6 @@ function populatedInput(): BuildValidationSnapshotInput {
         rating_label: "Mature",
         allowed_content_scope: "Suspense, threat, and deception.",
         tonal_handling: "Tense but restrained.",
-        governing_policy_note: "Provider policy remains higher authority.",
         character_bias_handling: "Character judgments are not narrator fact."
       },
       storyContract: {

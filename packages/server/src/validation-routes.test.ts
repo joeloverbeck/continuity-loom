@@ -224,7 +224,6 @@ const storyConfigPayloads = {
     rating_label: "Mature",
     allowed_content_scope: "Tense but non-graphic.",
     tonal_handling: "Grounded.",
-    governing_policy_note: "Obey provider policy.",
     character_bias_handling: "Render bias as character belief, not endorsement."
   },
   "PROSE MODE": {

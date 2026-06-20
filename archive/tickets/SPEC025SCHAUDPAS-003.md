@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-003: Remove UNIVERSAL CONTENT POLICY.governing_policy_note
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — UCP schema, compiler placeholder + content-policy line, completeness rule, server global-config migration, web story-config editor, authority docs, goldens
@@ -104,3 +104,25 @@ Extend `global-config-migration.ts` to idempotently strip `universalContentPolic
 1. `npm test -- validation-completeness global-config-migration compiler-golden`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted suites prove the readiness/migration/render behavior; the full pipeline is the correct final boundary because the change spans schema, compiler, validation, server, web, and goldens.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Removed `UNIVERSAL CONTENT POLICY.governing_policy_note` from the story-config schema, compiler placeholder map, empty-state constants, content-policy prompt templates, compiler front-section resolver, completeness validation, field guidance, demo/test fixtures, Story Config UI, and active docs. The content-policy section still renders the fixed external model/provider/platform policy boundary as static template doctrine; it no longer asks the user to author an unverifiable provider-policy note.
+
+Extended the global-config migration so live and orphan `UNIVERSAL CONTENT POLICY` payloads with the legacy key are stripped before strict parsing. The migration preserves sibling fields, does not synthesize replacement prose, and is idempotent.
+
+Deviations from plan: `docs/validation-rule-inventory.md` and `docs/ideation-prompt-template.md` required no edit because they did not expose the retired field by name.
+
+Verification:
+
+- `npm test -- validation-completeness global-config-migration compiler-golden compiler-ideation-golden compiler-front-sections StoryConfigEditor` passed.
+- `rg -n "governing_policy_note|Governing policy note" packages docs -g '!node_modules'` returned no matches.
+- `git diff --check` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+
+Browser smoke: not run. This change removes a schema/compiler/UI field and is covered by targeted StoryConfigEditor tests plus schema, migration, compiler golden, full test, typecheck, lint, and build gates. No live-provider request shape or browser-only workflow was introduced.

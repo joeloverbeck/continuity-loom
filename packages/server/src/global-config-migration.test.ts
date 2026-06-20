@@ -37,8 +37,12 @@ const contentPolicyPayload = {
   rating_label: "Mature",
   allowed_content_scope: "Political danger and emotional intensity.",
   tonal_handling: "Treat harm as consequential.",
-  governing_policy_note: "Follow provider policy.",
   character_bias_handling: "Render character bias without endorsing it."
+} as const;
+const removedGoverningPolicyNoteKey = "governing" + "_policy_note";
+const legacyContentPolicyPayload = {
+  ...contentPolicyPayload,
+  [removedGoverningPolicyNoteKey]: "Follow provider policy."
 } as const;
 
 const proseModePayload = {
@@ -214,6 +218,24 @@ describe("migrateGlobalConfigRecords", () => {
     expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
   });
 
+  it("strips the removed governing policy note key from existing story_config values", () => {
+    const db = database();
+    setStoryConfig(db, "UNIVERSAL CONTENT POLICY", legacyContentPolicyPayload);
+
+    const first = migrateGlobalConfigRecords(db);
+    const second = migrateGlobalConfigRecords(db);
+
+    expect(first).toEqual({
+      movedKinds: [],
+      deletedRecordIds: [],
+      preservedExistingKinds: [],
+      malformedRecordIds: []
+    });
+    expect(second).toEqual(first);
+    expect(storyConfigPayload(db, "UNIVERSAL CONTENT POLICY")).toEqual(contentPolicyPayload);
+    expect(JSON.stringify(storyConfigPayload(db, "UNIVERSAL CONTENT POLICY"))).not.toContain("Follow provider policy.");
+  });
+
   it("strips the removed prose defaults key from orphan story contracts before strict parsing", () => {
     const db = database();
     insertOrphan(db, { id: "legacy-contract", type: "STORY CONTRACT", payload: legacyStoryContractPayload });
@@ -241,6 +263,24 @@ describe("migrateGlobalConfigRecords", () => {
     expect(summary.deletedRecordIds).toEqual(["legacy-contract"]);
     expect(summary.malformedRecordIds).toEqual([]);
     expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
+    expect(orphanCount(db)).toBe(0);
+  });
+
+  it("strips the removed governing policy note key from orphan content policy before strict parsing", () => {
+    const db = database();
+    insertOrphan(db, {
+      id: "legacy-policy",
+      type: "UNIVERSAL CONTENT POLICY",
+      payload: legacyContentPolicyPayload
+    });
+
+    const summary = migrateGlobalConfigRecords(db);
+
+    expect(summary.movedKinds).toEqual(["UNIVERSAL CONTENT POLICY"]);
+    expect(summary.deletedRecordIds).toEqual(["legacy-policy"]);
+    expect(summary.malformedRecordIds).toEqual([]);
+    expect(storyConfigPayload(db, "UNIVERSAL CONTENT POLICY")).toEqual(contentPolicyPayload);
+    expect(JSON.stringify(storyConfigPayload(db, "UNIVERSAL CONTENT POLICY"))).not.toContain("Follow provider policy.");
     expect(orphanCount(db)).toBe(0);
   });
 

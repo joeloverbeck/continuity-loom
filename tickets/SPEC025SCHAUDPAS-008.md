@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the pass-1 schema-audit-cleanup capstone test with pass-2 retired-key / destination / storage / no-`variable` assertions; no production behavior change
-**Deps**: archive/tickets/SPEC025SCHAUDPAS-002.md, SPEC025SCHAUDPAS-003, SPEC025SCHAUDPAS-004, SPEC025SCHAUDPAS-006, SPEC025SCHAUDPAS-007
+**Deps**: archive/tickets/SPEC025SCHAUDPAS-002.md, archive/tickets/SPEC025SCHAUDPAS-003.md, SPEC025SCHAUDPAS-004, SPEC025SCHAUDPAS-006, SPEC025SCHAUDPAS-007
 
 ## Problem
 

@@ -166,11 +166,6 @@ const storyConfigEntries: readonly GuidanceInput[] = [
   config("UNIVERSAL CONTENT POLICY.tonal_handling", "How sensitive or intense material should be handled tonally.", [
     "{tonal_handling}"
   ]),
-  config("UNIVERSAL CONTENT POLICY.governing_policy_note", "Provider or platform policy note that outranks story pressure.", [
-    "{governing_policy_note}"
-  ], {
-    doctrineWarnings: ["Manual directives and character pressure cannot override governing policy."]
-  }),
   config("UNIVERSAL CONTENT POLICY.character_bias_handling", "How character bias should be rendered without endorsing it.", [
     "{character_bias_handling}"
   ]),

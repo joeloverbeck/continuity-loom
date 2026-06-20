@@ -30,7 +30,6 @@ const payloads: Record<StoryConfigKind, unknown> = {
     rating_label: "Mature",
     allowed_content_scope: "Only story-relevant mature content.",
     tonal_handling: "Direct but not exploitative.",
-    governing_policy_note: "Follow project policy.",
     character_bias_handling: "Render bias as character-specific."
   },
   "PROSE MODE": {
@@ -131,7 +130,7 @@ describe("StoryConfigEditor", () => {
     expect(listStoryConfig).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps all five content-policy fields distinct with no boilerplate shortcut", async () => {
+  it("keeps the four content-policy fields distinct with no boilerplate shortcut", async () => {
     setupMocks();
     render(<StoryConfigEditor />);
 
@@ -140,7 +139,6 @@ describe("StoryConfigEditor", () => {
       "rating_label",
       "allowed_content_scope",
       "tonal_handling",
-      "governing_policy_note",
       "character_bias_handling"
     ]) {
       expect(screen.getByLabelText(new RegExp(`^${field}`))).toBeTruthy();

@@ -48,7 +48,6 @@ Required fields:
 rating_label: string
 allowed_content_scope: prose
 tonal_handling: prose
-governing_policy_note: prose
 character_bias_handling: prose
 ```
 
@@ -58,6 +57,7 @@ Required semantic content:
 - Explicit language, explicit sexuality, violence, horror, substance use, prejudice, morally reprehensible thoughts, morally reprehensible speech, and morally reprehensible behavior may be rendered when they serve character, situation, and continuity.
 - The block must never say `NO RESTRICTIONS`.
 - It must not attempt to override external model/provider/platform policy.
+- External model/provider/platform policy is fixed template doctrine, not editable project data.
 - It should forbid assistant disclaimers, moral lectures, warnings, safety commentary, or out-of-fiction analysis inside prose.
 - It must preserve the distinction between character-held bias and narrator-certified fact.
 - All five fields compile into `<content_policy>`; the compiler must not replace them with a generic maturity boilerplate.

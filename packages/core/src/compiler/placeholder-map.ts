@@ -38,7 +38,6 @@ export type PlaceholderName =
   | "explicitness"
   | "forbidden_reveals"
   | "genre_mode"
-  | "governing_policy_note"
   | "hard_canon_bullets"
   | "immediate_situation_summary"
   | "interiority_mode"

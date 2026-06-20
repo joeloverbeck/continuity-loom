@@ -164,7 +164,6 @@ Requiredness terms:
 | `{rating_label}` | UNIVERSAL CONTENT POLICY.rating_label | Yes | Block | N/A | Must not render `NO RESTRICTIONS`. |
 | `{allowed_content_scope}` | UNIVERSAL CONTENT POLICY.allowed_content_scope | Yes | Block if blank or incompatible with story/active cast constraints | N/A | Story maturity envelope, not provider-policy override. |
 | `{tonal_handling}` | UNIVERSAL CONTENT POLICY.tonal_handling | Yes | Block if blank | N/A | Describes how mature material should be handled in prose. |
-| `{governing_policy_note}` | UNIVERSAL CONTENT POLICY.governing_policy_note | Yes | Block if blank or attempts to override provider/platform policy | N/A | Must preserve governing policy as first authority. |
 | `{character_bias_handling}` | UNIVERSAL CONTENT POLICY.character_bias_handling | Yes | Block if blank in stories involving prejudice/bias; otherwise warn | N/A | Keeps character-held perception separate from narrator-certified fact. |
 | `{title}` | STORY CONTRACT.title | Yes | Block | N/A | Stable story identity. |
 | `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |

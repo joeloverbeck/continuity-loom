@@ -99,7 +99,6 @@ export const IDEATION_CONTENT_POLICY_TEMPLATE = `<content_policy>
 RATING: {rating_label}
 Allowed content scope: {allowed_content_scope}
 Tonal handling: {tonal_handling}
-Governing policy note: {governing_policy_note}
 Character bias handling: {character_bias_handling}
 
 This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be considered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
@@ -142,7 +141,6 @@ Do not mention this hierarchy in the prose.
 RATING: {rating_label}
 Allowed content scope: {allowed_content_scope}
 Tonal handling: {tonal_handling}
-Governing policy note: {governing_policy_note}
 Character bias handling: {character_bias_handling}
 
 This is fiction governed by the story-specific maturity envelope above. Explicit, dark, controversial, violent, erotic, morally compromised, prejudiced, transgressive, traumatic, or otherwise disturbing content may be rendered when the story configuration permits it and when it serves character, situation, continuity, and the story's intended tone.
