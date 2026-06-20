@@ -122,7 +122,6 @@ function goldenInput(): BuildValidationSnapshotInput {
         content_intensity: "mature",
         explicitness: "non-graphic",
         language_register: "literary",
-        prose_preferences: { psychic_distance: "close", dialogue_density: "balanced", interiority: "filtered", paragraphing: "mixed" }
       },
       proseMode: {
         pov_character: "019b0298-5c00-7000-8000-000000000501",

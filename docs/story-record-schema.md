@@ -33,11 +33,6 @@ setting_baseline: prose
 content_intensity: general | mature | explicit | graphic | variable
 explicitness: prose
 language_register: prose
-prose_preferences:
-  psychic_distance: close | medium | distant | variable
-  dialogue_density: sparse | balanced | moment_led | dense
-  interiority: minimal | filtered | free_indirect | direct | variable
-  paragraphing: spare | mixed | lush | variable
 ```
 
 Prompt treatment:

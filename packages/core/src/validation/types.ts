@@ -53,6 +53,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   missingImmediateHandoff: "missing-immediate-handoff",
   missingManualDirective: "missing-manual-directive",
   missingStoryConfig: "missing-story-config",
+  onstageCastBandMissing: "onstage-cast-band-missing",
   onstageOffstageEntityOverlap: "onstage-offstage-entity-overlap",
   onstageEntityStatusContradiction: "onstage-entity-status-contradiction",
   objectLocationHolderIncoherence: "object-location-holder-incoherence",

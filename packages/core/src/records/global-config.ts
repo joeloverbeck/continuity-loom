@@ -12,15 +12,7 @@ export const storyContractSchema = z
     setting_baseline: nonemptyString,
     content_intensity: z.enum(["general", "mature", "explicit", "graphic", "variable"]),
     explicitness: nonemptyString,
-    language_register: nonemptyString,
-    prose_preferences: z
-      .object({
-        psychic_distance: z.enum(["close", "medium", "distant", "variable"]),
-        dialogue_density: z.enum(["sparse", "balanced", "moment_led", "dense"]),
-        interiority: z.enum(["minimal", "filtered", "free_indirect", "direct", "variable"]),
-        paragraphing: z.enum(["spare", "mixed", "lush", "variable"])
-      })
-      .strict()
+    language_register: nonemptyString
   })
   .strict();
 

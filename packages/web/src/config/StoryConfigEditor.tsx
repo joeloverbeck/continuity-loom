@@ -50,15 +50,7 @@ const storyConfigEditorDescriptors: Record<StoryConfigKind, RecordEditorDescript
       field("setting_baseline", "prose"),
       field("content_intensity", "enum", { enumValues: ["general", "mature", "explicit", "graphic", "variable"] }),
       field("explicitness", "prose"),
-      field("language_register", "short_string"),
-      field("prose_preferences", "nested_group", {
-        fields: [
-          field("psychic_distance", "enum", { enumValues: ["close", "medium", "distant", "variable"] }),
-          field("dialogue_density", "enum", { enumValues: ["sparse", "balanced", "moment_led", "dense"] }),
-          field("interiority", "enum", { enumValues: ["minimal", "filtered", "free_indirect", "direct", "variable"] }),
-          field("paragraphing", "enum", { enumValues: ["spare", "mixed", "lush", "variable"] })
-        ]
-      })
+      field("language_register", "short_string")
     ]
   ),
   "UNIVERSAL CONTENT POLICY": descriptor(

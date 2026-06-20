@@ -235,12 +235,6 @@ const storyConfigPayloads = {
     content_intensity: "mature",
     explicitness: "Render mature material only when earned.",
     language_register: "controlled contemporary prose",
-    prose_preferences: {
-      psychic_distance: "close",
-      dialogue_density: "moment_led",
-      interiority: "filtered",
-      paragraphing: "mixed"
-    }
   },
   "UNIVERSAL CONTENT POLICY": {
     rating_label: "Mature",

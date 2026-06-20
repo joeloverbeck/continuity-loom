@@ -16,8 +16,12 @@ const storyContractPayload = {
   setting_baseline: "Rainy districts under old bargains.",
   content_intensity: "mature",
   explicitness: "Render mature material only when earned.",
-  language_register: "controlled contemporary prose",
-  prose_preferences: {
+  language_register: "controlled contemporary prose"
+} as const;
+const removedStoryContractProsePreferencesKey = "prose" + "_preferences";
+const legacyStoryContractPayload = {
+  ...storyContractPayload,
+  [removedStoryContractProsePreferencesKey]: {
     psychic_distance: "close",
     dialogue_density: "moment_led",
     interiority: "filtered",
@@ -169,6 +173,36 @@ describe("migrateGlobalConfigRecords", () => {
     expect(summary.preservedExistingKinds).toEqual(["STORY CONTRACT"]);
     expect(summary.deletedRecordIds).toEqual(["orphan"]);
     expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(existing);
+    expect(orphanCount(db)).toBe(0);
+  });
+
+  it("strips the removed prose defaults key from existing story_config values", () => {
+    const db = database();
+    setStoryConfig(db, "STORY CONTRACT", legacyStoryContractPayload);
+
+    const first = migrateGlobalConfigRecords(db);
+    const second = migrateGlobalConfigRecords(db);
+
+    expect(first).toEqual({
+      movedKinds: [],
+      deletedRecordIds: [],
+      preservedExistingKinds: [],
+      malformedRecordIds: []
+    });
+    expect(second).toEqual(first);
+    expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
+  });
+
+  it("strips the removed prose defaults key from orphan story contracts before strict parsing", () => {
+    const db = database();
+    insertOrphan(db, { id: "legacy-contract", type: "STORY CONTRACT", payload: legacyStoryContractPayload });
+
+    const summary = migrateGlobalConfigRecords(db);
+
+    expect(summary.movedKinds).toEqual(["STORY CONTRACT"]);
+    expect(summary.deletedRecordIds).toEqual(["legacy-contract"]);
+    expect(summary.malformedRecordIds).toEqual([]);
+    expect(storyConfigPayload(db, "STORY CONTRACT")).toEqual(storyContractPayload);
     expect(orphanCount(db)).toBe(0);
   });
 
