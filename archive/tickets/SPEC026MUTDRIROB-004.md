@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-004: Add robustness-testing authority doc and ACTIVE-DOCS registry entry
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds `docs/robustness-testing.md` and registers it in `docs/ACTIVE-DOCS.md`; documentation only, no production behavior change.
@@ -73,3 +73,19 @@ Add a row to `docs/ACTIVE-DOCS.md` registering `docs/robustness-testing.md` as d
 1. `grep -n "robustness-testing" docs/ACTIVE-DOCS.md` — registry entry present.
 2. `for s in "Survivor" "Ratchet" "Seed" "Cadence" "Floors"; do grep -qi "$s" docs/robustness-testing.md || echo "MISSING $s"; done` — mandated sections present.
 3. Grep-proof is the correct boundary: this ticket changes documentation only and is verified by content presence, not runtime tests.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Added `docs/robustness-testing.md` as the development-assurance authority for the SPEC-026 robustness regime. The document covers enrolled scopes, commands and exact tool versions, coverage floors, mutation floors, changed-source behavior, cadence, baseline/ratchet policy, survivor classifications, equivalent-mutant rules, seed/replay policy, artifact retention, the no-external-dashboard decision, and behavior-defect escalation. It explicitly states that it does not define prompt text, validation behavior, schema, OpenRouter behavior, accepted-prose behavior, or contract versions.
+
+Registered `docs/robustness-testing.md` in `docs/ACTIVE-DOCS.md` as development-assurance authority subordinate to FOUNDATIONS and domain contracts.
+
+Deviations from the plan: none. This ticket was documentation-only and introduced no FOUNDATIONS amendment.
+
+Verification:
+
+- `grep -n "robustness-testing" docs/ACTIVE-DOCS.md` passed.
+- `for s in "Survivor" "Ratchet" "Seed" "Cadence" "Floors"; do grep -qi "$s" docs/robustness-testing.md || echo "MISSING $s"; done` emitted no missing headings.
+- `npm run lint` passed.

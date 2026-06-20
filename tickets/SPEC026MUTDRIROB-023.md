@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — adds documentation queuing the deferred secondary-tier hardening scope; no production behavior change, no implementation.
-**Deps**: SPEC026MUTDRIROB-004
+**Deps**: archive/tickets/SPEC026MUTDRIROB-004.md
 
 ## Problem
 
@@ -12,7 +12,7 @@ The report's secondary criticality audit (§4) sequences the next hardening targ
 
 ## Assumption Reassessment (2026-06-20)
 
-1. `docs/robustness-testing.md` exists from SPEC026MUTDRIROB-004 (the doc this ticket appends the queued scope to) — hence the Deps; the secondary-tier candidates are enumerated in `reports/prompt-and-validation-robustness-hardening.md` §4.
+1. `docs/robustness-testing.md` exists from archive/tickets/SPEC026MUTDRIROB-004.md (the doc this ticket appends the queued scope to) — hence the Deps; the secondary-tier candidates are enumerated in `reports/prompt-and-validation-robustness-hardening.md` §4.
 2. SPEC-026 §Deliverables E4 + §Out of Scope confirm this ticket only *records* the deferred scope (snapshot-builder, record/reference/working-set integrity, server security envelope, SQLite durability, `uuidv7.ts`, core normalization helpers, OpenRouter helpers) and adds **no** implementation change.
 3. Cross-artifact boundary under audit: this ticket touches documentation only; it must not create any spec or ticket for the secondary tier (that is a future brainstorm/spec decision).
 4. FOUNDATIONS principle restated: no runtime doctrine; the queued note is a pointer to future hardening, subordinate to the existing authority hierarchy. No FOUNDATIONS amendment.
