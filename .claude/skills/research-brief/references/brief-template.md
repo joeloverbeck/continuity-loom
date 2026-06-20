@@ -75,7 +75,12 @@ structure is deterministic across briefs.)
 
 The decisions the interview resolved — the heart of why Session 2 is *locked*. State each
 as a committed decision, not an option. This section pre-empts every clarifying question
-Session 2 might otherwise ask. Carry any early-exit gaps here as `assumption: <X>` lines so
+Session 2 might otherwise ask. A committed decision may itself be a *delegation to Session 2* —
+when the interview resolved that a research-suited axis (technique mix, thresholds, enforcement
+model) is Session 2's to settle, state it as the locked decision **plus its bounding
+constraints/anchor** (e.g. "the technique mix is Session 2's to recommend, with mutation testing
+the named anchor"), so the delegation reads as a decision Session 2 executes, not a question it
+reopens. Carry any early-exit gaps here as `assumption: <X>` lines so
 they read as defaults the user can override, not as open questions.
 
 ### 4. The task
@@ -139,7 +144,10 @@ Exactly what Session 2 outputs — leave no ambiguity:
   pipeline: research-brief → ChatGPT-Pro change document → spec → tickets) — name it as a **hand-off
   artifact filename, not a repo path**, and instruct Session 2 **not** to assign a `SPEC-NNN` or author
   it in spec form. The next spec number may still be computed and named *as downstream context* (so the
-  coding agent knows where it will land) without Session 2 claiming it;
+  coding agent knows where it will land) without Session 2 claiming it. When the target's
+  wording merely says "spec," it is ambiguous between a numbered `SPEC-NNN` and this precursor —
+  default to the precursor and resolve the choice in the interview as a settled intention, never
+  letting the bare word "spec" select a numbered-spec deliverable;
 - the **locked / no-questions** instruction, verbatim intent:
 
 > Produce the deliverables directly as downloadable markdown documents. Do not interview,

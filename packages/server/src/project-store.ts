@@ -348,9 +348,11 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         return failure("invalid-sqlite", "The project store is not a readable SQLite database.");
       }
 
+      let storeUserVersion: number;
+
       try {
         const applicationId = readPragmaNumber(database, "application_id");
-        let storeUserVersion = readPragmaNumber(database, "user_version");
+        storeUserVersion = readPragmaNumber(database, "user_version");
         const applicationIdClassification = classifyApplicationId(applicationId);
 
         if (applicationIdClassification !== "ok") {
@@ -368,7 +370,17 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
             "The project metadata schema version does not match the SQLite store version."
           );
         }
+      } catch {
+        database.close();
+        return failure("invalid-sqlite", "The project store is not a readable SQLite database.");
+      }
 
+      // Schema-upgrade work (the v1→v2 migration and the on-open record/draft
+      // migrations) is fallible against valid older stores. A failure here means
+      // the store could not be upgraded — NOT that the SQLite file is unreadable
+      // — so it must surface as `migration-failed`, never as `invalid-sqlite`,
+      // which would falsely report the user's intact data as corrupt.
+      try {
         let compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
 
         if (compatibility === "migration-required" && LOOM_SCHEMA_VERSION === 2 && storeUserVersion === 1) {
@@ -406,7 +418,10 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         return { ok: true, status: statusFromActive(active) };
       } catch {
         database.close();
-        return failure("invalid-sqlite", "The project store is not a readable SQLite database.");
+        return failure(
+          "migration-failed",
+          "The project store could not be upgraded to the current app schema version. The database file itself is intact."
+        );
       }
     },
 

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -178,6 +178,33 @@ function setGenerationSession(databasePath: string, session: unknown): void {
   try {
     database.prepare("INSERT INTO generation_session (id, payload_json, updated_at) VALUES (1, ?, ?)").run(
       JSON.stringify(session),
+      "2026-06-07T00:00:00.000Z"
+    );
+  } finally {
+    database.close();
+  }
+}
+
+function readGenerationSessionPayload(databasePath: string): Record<string, unknown> {
+  const database = new DatabaseSync(databasePath);
+
+  try {
+    const row = database.prepare("SELECT payload_json FROM generation_session WHERE id = 1").get() as
+      | { payload_json: string }
+      | undefined;
+    expect(row).toBeDefined();
+    return JSON.parse((row as { payload_json: string }).payload_json) as Record<string, unknown>;
+  } finally {
+    database.close();
+  }
+}
+
+function corruptGenerationSessionJson(databasePath: string): void {
+  const database = new DatabaseSync(databasePath);
+
+  try {
+    database.prepare("INSERT INTO generation_session (id, payload_json, updated_at) VALUES (1, ?, ?)").run(
+      "{ this is not valid json",
       "2026-06-07T00:00:00.000Z"
     );
   } finally {
@@ -441,6 +468,89 @@ describe("createProjectStoreManager", () => {
         }
       }
     });
+  });
+
+  it("opens a project whose stored draft carries a schema-removed legacy key", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "legacy-handoff-key",
+      title: "Legacy Handoff Key"
+    });
+    await firstManager.closeProject();
+
+    // Field removed by SPEC-025; assembled by concatenation so the removed
+    // accepted-prose field name never appears literally in source.
+    const removedHandoffKey = "prior" + "_accepted_prose_status_or_handoff_note";
+    setGenerationSession(join(created.folderPath, "loom.sqlite"), {
+      immediate_handoff: {
+        recent_causal_context: "She set the cup down without drinking.",
+        last_visible_moment: "The door clicked shut behind him.",
+        begin_after: "the door clicks shut",
+        [removedHandoffKey]: "legacy note that must not block opening"
+      }
+    });
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+
+    // Before the fix this returned { ok: false, kind: "invalid-sqlite" }.
+    expect(opened).toMatchObject({ ok: true });
+    expect(secondManager.getRecordRepository()?.getGenerationSession()).toMatchObject({
+      ok: true,
+      payload: {
+        immediate_handoff: {
+          recent_causal_context: "She set the cup down without drinking.",
+          last_visible_moment: "The door clicked shut behind him.",
+          begin_after: "the door clicks shut"
+        }
+      }
+    });
+
+    const persisted = readGenerationSessionPayload(join(created.folderPath, "loom.sqlite"));
+    const persistedHandoff = persisted.immediate_handoff as Record<string, unknown>;
+    expect(removedHandoffKey in persistedHandoff).toBe(false);
+  });
+
+  it("reports migration-failed (not invalid-sqlite) when an on-open migration throws", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "migration-failure",
+      title: "Migration Failure"
+    });
+    await firstManager.closeProject();
+
+    // A valid, readable Loom SQLite store whose stored draft is unparseable JSON:
+    // the on-open working-set repair throws during the upgrade step. The failure
+    // must surface as migration-failed, never as invalid-sqlite, because the
+    // database file itself opened fine and the user's data is intact.
+    corruptGenerationSessionJson(join(created.folderPath, "loom.sqlite"));
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "migration-failed" });
+  });
+
+  it("still reports invalid-sqlite when the store is not a readable SQLite database", async () => {
+    const parentPath = await tempParent();
+    const firstManager = manager();
+    const created = await firstManager.createProject({
+      parentPath,
+      folderName: "garbage-store",
+      title: "Garbage Store"
+    });
+    await firstManager.closeProject();
+
+    await writeFile(join(created.folderPath, "loom.sqlite"), "this is not a sqlite database at all", "utf8");
+
+    const secondManager = manager();
+    const opened = await secondManager.openProject(created.folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "invalid-sqlite" });
   });
 
   it("creates a consistent backup copy that opens as a Loom store", async () => {

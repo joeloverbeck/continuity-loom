@@ -27,6 +27,7 @@ export type OpenFailureKind =
   | "not-a-loom-store"
   | "incompatible-version"
   | "migration-required"
+  | "migration-failed"
   | "invalid-sqlite"
   | "unreadable";
 
