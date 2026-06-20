@@ -214,7 +214,7 @@ Relationship and emotion pressure:
 Material pressure:
 {material_pressure}
 
-Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
+Material pressure covers non-person entity, entity-status, location, and object constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
 
 Active cast voice pressure pins:
 {active_cast_voice_pressure_pins}

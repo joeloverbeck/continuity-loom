@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-005: Render entity material-pressure and location hazards/social-rules
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a deterministic entity-pressure serializer to the `{material_pressure}` source (prose-only) and hazards/social-rules clauses to the shared location renderer (prose + ideation); compiled prompts gain currently-dropped selected-record content; no schema, storage, or migration change
@@ -115,3 +115,24 @@ In `field-guidance-records.ts` and `compile-destinations.ts`, give `entity_kind`
 1. `npm test -- compiler-pressure-sections compiler-tail-sections compiler-golden compiler-ideation-golden`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `npm test -- compiler-golden` (narrower golden-diff boundary confirming the prose prompt gains only the intended entity/location content).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Changed:
+- Added deterministic non-person ENTITY material-pressure rendering in the prose-only `{material_pressure}` lane using selected entity kind and short description.
+- Kept person ENTITY records out of material pressure so they do not duplicate CAST MEMBER authority; the active-cast de-duplication test covers the person/cast case.
+- Added LOCATION `hazards_or_shelters` and `social_rules` clauses to the shared location renderer, so they appear in both prose and ideation location/detail sections.
+- Updated prompt template constants, prose and ideation goldens, compiler contract, prompt template docs, ideation docs, story-record schema notes, rationale docs, compile destinations, and cast/material field guidance.
+
+Deviations:
+- Browser smoke was not run because this ticket changes compiler/guidance output rather than an interactive browser workflow; section tests and prompt goldens cover the runtime rendered-output surface.
+- The implementation renders non-person ENTITY material pressure only. Person ENTITY material rendering remains out of this ticket because person-like prompt authority belongs in CAST MEMBER records and remaining author-only metadata cleanup is CONLOOSCHAUD-006.
+
+Verification:
+- `npm test -- compiler-pressure-sections compiler-tail-sections compiler-golden compiler-ideation-golden compile-destinations field-guidance`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`

@@ -209,7 +209,7 @@ Material pressure:
 - cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
 - Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
 
-Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
+Material pressure covers non-person entity, entity-status, location, and object constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
 
 Active cast voice pressure pins:
 None active
@@ -286,7 +286,7 @@ Recent events:
 
 <locations_objects_affordances>
 Locations:
-- Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.
+- Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.; hazards or shelters: low beam over the bin, sacks that muffle footfalls; social rules: Customers should not be below stairs without Elin's invitation.
 
 Objects:
 - sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.

@@ -75,6 +75,8 @@ Present-minor cast gets compressed notes. Offstage cast gets relevance slices. T
 
 Within active/onstage dossiers, structured fields should render core-first: identity, durable voice anchor plus voice-related extended fields, pressure behavior core, body presence core, agency core, then remaining optional extended fields in schema order, with selected sample utterances last. This is a salience rule, not a deletion rule. It keeps voice and immediate behavior from being buried under optional backstory while preserving every populated active/onstage field.
 
+Material pressure is the prose-only salience lane for current physical and institutional constraints. It may include selected non-person ENTITY kind/description alongside entity-status, location, and object pressure; person ENTITY records stay out of that lane so they do not duplicate CAST MEMBER authority. LOCATION detail rendering also carries hazards/shelters and social rules because those fields are movement, access, and behavior constraints, not decorative setting.
+
 ## 9. Why active/onstage local-function sub-bands are validation aids, not compression rules
 
 The schema now lets active/onstage cast be labeled by local function: POV narrator, active speaker, active silent, close non-POV, physically active, or materially referenced.

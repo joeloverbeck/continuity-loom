@@ -77,9 +77,9 @@ Renders RELATIONSHIP and EMOTION records from the deterministic `relationship_em
 
 ### Ideation `<locations_objects_affordances>` and `<physical_continuity>`
 
-The ideation prompt renders every selected LOCATION and OBJECT record in `<locations_objects_affordances>` regardless of status, with status shown as a label. This prevents dormant, inactive, transferred, destroyed, or otherwise non-active records from becoming invisible when they can still ground an ideation operator.
+The ideation prompt renders every selected LOCATION and OBJECT record in `<locations_objects_affordances>` regardless of status, with status shown as a label. LOCATION records include hazards/shelters and social rules. This prevents dormant, inactive, transferred, destroyed, or otherwise non-active records from becoming invisible when they can still ground an ideation operator.
 
-The ideation `<physical_continuity>` body is slim: current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines. It does not repeat LOCATION or OBJECT descriptions already rendered in `<locations_objects_affordances>`. The prose prompt keeps the fuller physical-continuity body and the active/available status gate for location/object detail blocks.
+The ideation `<physical_continuity>` body is slim: current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines. It does not repeat LOCATION or OBJECT descriptions already rendered in `<locations_objects_affordances>`, and it does not render prose-only entity material pressure. The prose prompt keeps the fuller physical-continuity body and the active/available status gate for location/object detail blocks.
 
 ### `<ideation_slots>`
 

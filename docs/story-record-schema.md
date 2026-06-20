@@ -395,7 +395,8 @@ short_description: prose
 Prompt treatment:
 
 - Person-like active entities should usually have CAST MEMBER records.
-- Non-person entities may compile as institutions, factions, systems, places, or pressure sources when selected.
+- Selected non-person entities compile into material pressure using `entity_kind` and `short_description`.
+- Person entities do not compile into material pressure; active person-like prose authority belongs in CAST MEMBER records.
 
 ### 4.2 ENTITY STATUS
 
@@ -702,6 +703,11 @@ hazards_or_shelters: prose list
 social_rules: prose list
 status: active | inactive | destroyed | inaccessible
 ```
+
+Prompt treatment:
+
+- Selected active LOCATION records render description, layout, routes, visibility/sound, hazards or shelters, and social rules in prose prompts.
+- Ideation renders selected LOCATION records regardless of status, with status plus the same hazards/social-rules clauses.
 
 ### 7.2 OBJECT
 

@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds field-specific prompt-destination/status metadata (guidance, compile-destinations) for ~13 retained non-prompt fields and updates the schema/contract prompt-treatment notes; no compiled-prompt, schema, storage, or migration change
-**Deps**: CONLOOSCHAUD-005
+**Deps**: archive/tickets/CONLOOSCHAUD-005.md
 
 ## Problem
 
@@ -14,7 +14,7 @@ The guidance system relies on a broad default that makes every prose-looking or 
 
 1. The guidance/destination surfaces are `packages/core/src/records/compile-destinations.ts`, `field-guidance-records.ts`, and `field-guidance.ts`, plus editor descriptors where destination badges/help are derived. The fields in scope exist today on their records: `ENTITY.roles_in_story`/`aliases` (`entity.ts`), `OBJECT.durability` (`space-material.ts:59`), `EVENT.sequence_order` and `PLAN.fallback_steps` and `CLOCK.tick_history` and `OPEN THREAD.answer_if_known` (`causal-pressure.ts`), and `RELATIONSHIP.axis`/`direction_kind`/`value`/`valence`/`visibility` (`relationship-emotion.ts`). Verified by grep 2026-06-20.
 2. Guidance coverage/doctrine is enforced by `packages/core/test/field-guidance-coverage.test.ts`, `field-guidance-doctrine.test.ts`, `guidance-coverage-sources.test.ts`, `field-guidance-records.test.ts`, `field-guidance.test.ts`, and `compile-destinations.test.ts`. `docs/story-record-schema.md` (prompt-treatment notes) and `docs/compiler-contract.md` §9 (prompt-facing vs validation-only fields) are the authority docs. Spec: `specs/continuity-loom-schema-audit-and-changes.md` §8.3–§8.4.
-3. Cross-artifact boundary under audit: the per-field guidance/destination metadata (`compile-destinations.ts`, `field-guidance-records.ts`, `field-guidance.ts`) ↔ the guidance coverage/doctrine tests ↔ the schema/contract prompt-treatment docs. This is a truthfulness correction to destination metadata, not a compiler or schema change. It depends on CONLOOSCHAUD-005, which already assigns truthful prompt destinations to the now-rendered ENTITY/LOCATION fields; this ticket covers the remaining non-prompt fields without contradicting those.
+3. Cross-artifact boundary under audit: the per-field guidance/destination metadata (`compile-destinations.ts`, `field-guidance-records.ts`, `field-guidance.ts`) ↔ the guidance coverage/doctrine tests ↔ the schema/contract prompt-treatment docs. This is a truthfulness correction to destination metadata, not a compiler or schema change. It depends on archive/tickets/CONLOOSCHAUD-005.md, which already assigns truthful prompt destinations to the now-rendered ENTITY/LOCATION fields; this ticket covers the remaining non-prompt fields without contradicting those.
 4. FOUNDATIONS §13 (field economy — a field earns its place through a concrete function even if not prompt-facing) and §29.11 (reduce false configurability / improve guidance legibility without reducing authorial control) motivate the change. The harm guard is §8.3/§14: marking `PLAN.fallback_steps` and `CLOCK.tick_history` non-prompt-facing prevents compiling alternative futures (soft branches) or stale event repetition.
 5. Enforcement-surface confirmation (§8/§10): these fields are already not compiled into any prompt — the existing deterministic compiler is the enforcement surface. This ticket makes the guidance/docs *state* that truthfully; it introduces no new leakage or nondeterminism path and changes no compiled output. The doctrine test is the standing guard that prevents a future regression from quietly making them prompt-facing.
 6. Metadata-contract extension: this adds field-specific destination/status entries to the guidance/compile-destinations metadata. Consumers are the coverage/doctrine tests and editor destination badges; the extension is additive per-field labelling, replacing reliance on the broad conditional default. No story-record Zod schema is touched.
@@ -30,7 +30,7 @@ The guidance system relies on a broad default that makes every prose-looking or 
 ## Verification Layers
 
 1. Each §8.3 field carries an explicit non-prompt (or validation/operational-only) destination/status -> guidance coverage + doctrine tests (`field-guidance-coverage.test.ts`, `field-guidance-doctrine.test.ts`, `compile-destinations.test.ts`).
-2. The listed author-only fields do not leak into any compiled prompt -> codebase/compiler grep-proof + golden stability (the prose/ideation goldens from CONLOOSCHAUD-005 remain unchanged by this ticket).
+2. The listed author-only fields do not leak into any compiled prompt -> codebase/compiler grep-proof + golden stability (the prose/ideation goldens from archive/tickets/CONLOOSCHAUD-005.md remain unchanged by this ticket).
 3. RELATIONSHIP prose-facing contract is preserved (`description`/`pressure_text`/`current_expression` remain the writer-facing representation) -> guidance records test.
 4. `PLAN.fallback_steps` and `CLOCK.tick_history` guidance states the author-update path (update `current_step`/current state; historical ticks excluded unless represented as current state/event/consequence) -> FOUNDATIONS §14 alignment check in the guidance records test.
 
@@ -65,7 +65,7 @@ Update editor descriptors where destination badges/help are derived so the non-p
 
 - Deleting any of the in-scope fields (they have real non-prompt functions).
 - Changing any Zod schema, compiler resolver, or compiled prompt output.
-- The ENTITY/LOCATION fields that CONLOOSCHAUD-005 makes prompt-facing (this ticket covers only the non-prompt set).
+- The ENTITY/LOCATION fields that archive/tickets/CONLOOSCHAUD-005.md makes prompt-facing (this ticket covers only the non-prompt set).
 - Any storage migration.
 
 ## Acceptance Criteria
