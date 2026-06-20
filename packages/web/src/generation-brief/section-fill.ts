@@ -55,7 +55,6 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
   handoff: [
     "immediate_handoff.recent_causal_context",
     "immediate_handoff.last_visible_moment",
-    "immediate_handoff.prior_accepted_prose_status_or_handoff_note",
     "immediate_handoff.begin_after"
   ],
   directive: [

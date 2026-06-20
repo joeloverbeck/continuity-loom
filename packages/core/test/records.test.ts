@@ -330,7 +330,6 @@ describe("record data model", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "At the door",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "Someone knocks"
       },
       manual_moment_directive: { must_render: ["The knock"] },

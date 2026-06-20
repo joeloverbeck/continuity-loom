@@ -63,7 +63,6 @@ describe("schema-audit cleanup capstone", () => {
     for (const field of [
       "recent_causal_context",
       "last_visible_moment",
-      "prior_accepted_prose_status_or_handoff_note",
       "begin_after"
     ] as const) {
       const contaminated = structuredClone(input);

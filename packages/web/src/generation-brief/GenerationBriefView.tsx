@@ -202,7 +202,6 @@ export function GenerationBriefView(): React.JSX.Element {
   const immediateHandoff = {
     recent_causal_context: immediateHandoffDraft.recent_causal_context ?? "",
     last_visible_moment: immediateHandoffDraft.last_visible_moment ?? "",
-    prior_accepted_prose_status_or_handoff_note: immediateHandoffDraft.prior_accepted_prose_status_or_handoff_note ?? "none",
     begin_after: immediateHandoffDraft.begin_after ?? ""
   };
   const manualDirectiveDraft = session.manual_moment_directive ?? {};
@@ -242,8 +241,8 @@ export function GenerationBriefView(): React.JSX.Element {
   const generationContext = validationFocusTags.generation_context?.[0] ?? defaultGenerationContext;
   const stopGuidance = { soft_unit_guidance: session.stop_guidance?.soft_unit_guidance ?? "" };
   const pasteWarning = useMemo(
-    () => proseLikePaste(immediateHandoff.prior_accepted_prose_status_or_handoff_note),
-    [immediateHandoff.prior_accepted_prose_status_or_handoff_note]
+    () => proseLikePaste([immediateHandoff.recent_causal_context, immediateHandoff.last_visible_moment, immediateHandoff.begin_after].join("\n")),
+    [immediateHandoff.begin_after, immediateHandoff.last_visible_moment, immediateHandoff.recent_causal_context]
   );
   const nonLocalStopWarning = nonLocalStopPattern.test(stopGuidance.soft_unit_guidance);
 
@@ -590,23 +589,7 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, last_visible_moment: event.target.value })}
             />
           </BriefFieldRow>
-          <BriefFieldRow
-            path="immediate_handoff.prior_accepted_prose_status_or_handoff_note"
-            schemaLabel="prior_accepted_prose_status_or_handoff_note"
-            generationContext={generationContext}
-          >
-            <textarea
-              name="generationSession.immediate_handoff.prior_accepted_prose_status_or_handoff_note"
-              value={immediateHandoff.prior_accepted_prose_status_or_handoff_note}
-              onChange={(event) =>
-                updateSurface("immediate_handoff", {
-                  ...immediateHandoff,
-                  prior_accepted_prose_status_or_handoff_note: event.target.value
-                })
-              }
-            />
-          </BriefFieldRow>
-          {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use a user-authored handoff note instead.</p> : null}
+          {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use user-authored launch context instead.</p> : null}
           <BriefFieldRow path="immediate_handoff.begin_after" schemaLabel="begin_after" generationContext={generationContext}>
             <textarea
               name="generationSession.immediate_handoff.begin_after"

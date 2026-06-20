@@ -110,12 +110,6 @@ const frontResolvers: ResolverMap = {
     valueOrEmpty(snapshot.generationSession.immediate_handoff?.recent_causal_context, "recent_causal_context"),
   last_visible_moment: (snapshot) =>
     valueOrEmpty(snapshot.generationSession.immediate_handoff?.last_visible_moment, "last_visible_moment"),
-  prior_accepted_prose_status_or_handoff_note: (snapshot) => {
-    const handoffNote = snapshot.generationSession.immediate_handoff?.prior_accepted_prose_status_or_handoff_note;
-    return handoffNote && handoffNote !== "none"
-      ? handoffNote
-      : EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note;
-  },
   begin_after: (snapshot) => valueOrEmpty(snapshot.generationSession.immediate_handoff?.begin_after, "begin_after"),
 
   manual_must_render: (snapshot) =>

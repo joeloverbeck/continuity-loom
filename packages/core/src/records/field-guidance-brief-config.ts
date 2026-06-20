@@ -74,7 +74,6 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "current_authoritative_state.current_locks[]": "Current locks",
   "immediate_handoff.recent_causal_context": "Recent causal context",
   "immediate_handoff.last_visible_moment": "Last visible moment",
-  "immediate_handoff.prior_accepted_prose_status_or_handoff_note": "Prior accepted-prose status / handoff note",
   "immediate_handoff.begin_after": "Begin after",
   "manual_moment_directive.must_render[]": "Must render",
   "manual_moment_directive.may_render_if_naturally_caused[]": "May render if naturally caused",
@@ -319,18 +318,6 @@ const generationBriefEntries: readonly GuidanceInput[] = [
     authoringAdvice:
       "Use a visible sensory anchor or final action, not a causal explanation or broad state summary.",
     relatedFields: ["GENERATION BRIEF.immediate_handoff.begin_after"]
-  }),
-  brief("immediate_handoff.prior_accepted_prose_status_or_handoff_note", "A handoff note about accepted prose status, not prose authority.", [
-    "{prior_accepted_prose_status_or_handoff_note}"
-  ], {
-    requiredness: "optional",
-    requirednessNote: "Always renders; leave as None unless you have a user-authored handoff bridge.",
-    criticalVisibleHint: "Accepted prose is readable output, not continuity authority.",
-    doctrineWarnings: ["Do not use accepted prose as canon for future prompt context."],
-    examples: ["None.", "User-authored bridge: after the interrupted toast, Mara is still holding the sealed glass."],
-    antiExamples: ["Previous segment accepted.", "Use the accepted segment as the source of current canon."],
-    authoringAdvice:
-      "Use None for a first segment or when no bridge is needed; otherwise write a short user-authored continuity bridge."
   }),
   brief("immediate_handoff.begin_after", "The exact point where new prose should begin.", ["{begin_after}"], {
     requiredness: "continuation",

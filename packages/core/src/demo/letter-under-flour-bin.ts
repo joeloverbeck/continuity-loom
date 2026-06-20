@@ -637,7 +637,6 @@ export const demoGenerationSession = {
   immediate_handoff: {
     recent_causal_context: "Elin has just closed the bakery early after hearing the market bell. Niko followed flour smears downstairs and knows she is hiding something, but not what.",
     last_visible_moment: "Niko notices the clean scrape near the flour-bin hinge as Elin lowers the lantern shutter.",
-    prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
     begin_after: "Begin with Niko at the cellar stair noticing the hinge mark while Elin decides whether to redirect him."
   },
   manual_moment_directive: {

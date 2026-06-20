@@ -39,19 +39,19 @@ Narrative-planning research supports preserving causality and character intentio
 
 `<current_authoritative_state>` is the live start snapshot: time, place, onstage bodies, immediate local situation, positions, agency/status, possessions, visible conditions, line of sight, routes, available time, consent/force conditions, and continuity locks.
 
-`<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, prior accepted prose status or user-authored handoff note, and begin-after instruction.
+`<immediate_handoff>` is the launch ramp: recent causal context, last visible moment, and begin-after instruction.
 
 Keeping these separate is the biggest safeguard after POV/reveal locks. Current state answers “what is true now.” Handoff answers “how did we get here and where does prose begin.” Mixing them invites the prose writer to turn non-POV context into POV knowledge.
 
 For a first segment, there is no prior accepted prose and no continuation bridge to supply. Current authoritative state plus the manual directive can be enough to begin. For a continuation after an accepted segment, a user-authored handoff is needed because accepted prose remains excluded from prompt context.
 
-## 6. Why `prior_accepted_prose_status_or_handoff_note` stays narrow
+## 6. Why accepted prose stays out of handoff fields
 
 The old idea of a most-recent-prose summary is wrong for this app. It points implementers toward mining accepted prose, which violates record-first continuity.
 
-The correct field is `prior_accepted_prose_status_or_handoff_note`. It may render `None`, or it may render a user-authored continuity handoff. It must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
+Continuation launch uses user-authored recent causal context plus a visible or imperative cutpoint. These fields must not contain verbatim accepted prose, rejected candidate text, superseded regeneration text, or an automatic prose-derived summary.
 
-The handoff note is a bridge written by the user, not a prose-archive substitute. It may identify the causal hinge or begin-after point for a continuation, but it must not quote accepted prose or let the compiler mine prose into canon.
+The handoff is a bridge written by the user, not a prose-archive substitute. It may identify the causal hinge or begin-after point for a continuation, but it must not quote accepted prose or let the compiler mine prose into canon.
 
 If an accepted segment created a durable change, that change belongs in selected story records, current authoritative state, immediate handoff, or selected event/fact/belief/relationship/emotion/plan/clock/obligation/consequence/open-thread/location/object/affordance/cast records before the next generation.
 

@@ -294,7 +294,6 @@ function cleanInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "A arrived with the key.",
         last_visible_moment: "B noticed the key.",
-        prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
         begin_after: "B noticing the key."
       },
       manual_moment_directive: {

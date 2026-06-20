@@ -545,7 +545,6 @@ describe("SPEC-003 record tables and repository", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       },
       manual_moment_directive: { must_render: ["A waits"] },
@@ -806,7 +805,6 @@ describe("SPEC-003 record tables and repository", () => {
       immediate_handoff: {
         recent_causal_context: "A arrived.",
         last_visible_moment: "Doorway",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "A waits"
       },
       manual_moment_directive: { must_render: ["A waits"] },

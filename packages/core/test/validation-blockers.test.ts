@@ -6,7 +6,6 @@ import {
   runValidation,
   type BuildValidationSnapshotInput
 } from "../src/index.js";
-import { isCleanNoAcceptedProseNote } from "../src/validation/rules/universal-blockers.js";
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castId = "019b0298-5c00-7000-8000-000000000002";
@@ -224,23 +223,13 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
 
-  it.each([
-    ["absent", undefined, true],
-    ["empty", "", true],
-    ["clean sentinel", "None. No accepted prose is included.", true],
-    ["literal none", "none", true],
-    ["real handoff note", "A user-authored continuation bridge.", false]
-  ])("classifies %s prior-prose notes", (_name, text, expected) => {
-    expect(isCleanNoAcceptedProseNote(text)).toBe(expected);
-  });
-
   it("does not block first-segment handoff when the prior-prose note is absent", () => {
     const input = cleanInput();
     input.generationSession.immediate_handoff = {
       recent_causal_context: "A arrived with the key.",
       last_visible_moment: "B noticed the key.",
       begin_after: "B noticing the key."
-    } as BuildValidationSnapshotInput["generationSession"]["immediate_handoff"];
+    };
 
     expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
@@ -297,7 +286,7 @@ describe("universal blocker validation", () => {
   it("blocks contaminated continuation handoff", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
-    input.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note = "Rejected candidate: she opened the door.";
+    input.generationSession.immediate_handoff!.recent_causal_context = "Rejected candidate: she opened the door.";
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
@@ -371,7 +360,6 @@ function cleanInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "A arrived with the key.",
         last_visible_moment: "B noticed the key.",
-        prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
         begin_after: "B noticing the key."
       },
       manual_moment_directive: {

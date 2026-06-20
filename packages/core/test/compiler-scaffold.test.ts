@@ -54,9 +54,7 @@ describe("compiler scaffold", () => {
     expect(sectionBody(prompt, "current_authoritative_state")).toContain(
       EMPTY_STATE_CONSTANTS.positions
     );
-    expect(sectionBody(prompt, "immediate_handoff")).toContain(
-      EMPTY_STATE_CONSTANTS.prior_accepted_prose_status_or_handoff_note
-    );
+    expect(sectionBody(prompt, "immediate_handoff")).toContain(EMPTY_STATE_CONSTANTS.recent_causal_context);
     expect(sectionBody(prompt, "audience_knowledge")).toContain(EMPTY_STATE_CONSTANTS.audience_knows);
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).not.toContain(
       EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths

@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-002: Remove IMMEDIATE HANDOFF.prior_accepted_prose_status_or_handoff_note + correct continuation readiness
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — generation-brief schema (strict/draft/readiness), compiler placeholder + immediate-handoff section, completeness readiness rule, contamination scan, server draft migration, web brief editor, authority docs, goldens
@@ -117,3 +117,23 @@ Extend `generation-session-draft-migration.ts` to strip the legacy key before st
 1. `npm test -- generation-brief-readiness validation-completeness generation-session-draft-migration accepted-prose-exclusion`
 2. `npm run lint && npm run typecheck && npm test`
 3. The targeted suites prove the readiness/migration/firewall behavior; the full pipeline is the correct final boundary because the change touches schema, compiler, validation, server, web, and a golden across all three packages.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Removed `IMMEDIATE HANDOFF.prior_accepted_prose_status_or_handoff_note` from the strict, draft, and readiness generation-brief schemas; compiler placeholder registration and rendering; empty-state constants; field guidance; the generation brief UI; demo fixtures; route/test fixtures; and active docs. Continuation readiness now requires a user-authored recent causal bridge plus either `last_visible_moment` or `begin_after`, matching `docs/story-record-schema.md`. Prompt-facing contamination checks continue to scan the remaining handoff lanes, manual directive, and stop guidance. The server draft migration strips the retired legacy key before strict parsing, preserves sibling handoff fields, does not copy the removed value into another lane, and is idempotent.
+
+Deviations from plan: none. The ticket co-landed with ticket 001 as required. The generated prompt and ideation goldens were regenerated to remove the retired handoff block while preserving the fixed accepted-prose firewall trailer.
+
+Verification:
+
+- `npm test -- generation-brief-readiness validation-completeness generation-session-draft-migration accepted-prose-exclusion compiler-front-sections compiler-scaffold field-guidance-brief-config GenerationBriefView FieldHelp compiler-golden compiler-ideation-golden` passed.
+- `npm test -- generation-brief-routes` passed after updating the blank-draft normalization expectation.
+- `rg -n "prior_accepted_prose_status_or_handoff_note|Prior accepted prose status|accepted-prose status" docs packages -g '!node_modules'` returned no matches.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+
+Browser smoke: not run. The change affects deterministic schemas, compiler output, validation, server migration/route behavior, and the generation-brief form; those surfaces are covered by targeted unit/e2e tests plus full lint/typecheck/test/build gates. No live-provider request shape or browser-only interaction was introduced.

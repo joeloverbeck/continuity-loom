@@ -71,7 +71,6 @@ export type PlaceholderName =
   | "pov_relevant_beliefs"
   | "premise"
   | "present_minor_cast_notes"
-  | "prior_accepted_prose_status_or_handoff_note"
   | "psychic_distance"
   | "rating_label"
   | "recent_causal_context"

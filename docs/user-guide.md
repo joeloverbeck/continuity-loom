@@ -138,7 +138,7 @@ Continuity Loom v1 works from one current continuity. Inactive, archived, unreso
 
 Accepted prose is output. Records and generation-time fields are the prompt authority. This keeps continuity explicit, inspectable, and owned by you instead of inferred from previous prose.
 
-Use `prior_accepted_prose_status_or_handoff_note` only for a user-authored status or continuity handoff note. Do not paste accepted prose, rejected candidates, superseded regenerations, or automatic prose summaries into prompt-facing fields.
+For continuations, write recent causal context plus either a last visible moment or a begin-after point. Do not paste accepted prose, rejected candidates, superseded regenerations, or automatic prose summaries into prompt-facing fields.
 
 ### Why can I save a brief that still has blockers?
 

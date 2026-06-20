@@ -65,7 +65,6 @@ export const EMPTY_STATE_CONSTANTS: Readonly<Record<PlaceholderName, string>> = 
   pov_relevant_beliefs: "None specified",
   premise: "None specified",
   present_minor_cast_notes: "None",
-  prior_accepted_prose_status_or_handoff_note: "None. No accepted prose is included.",
   psychic_distance: "None specified",
   rating_label: "None specified",
   recent_causal_context: "None; first local unit begins from current state",

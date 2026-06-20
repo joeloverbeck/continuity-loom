@@ -51,7 +51,6 @@ export const immediateHandoffSchema = z
   .object({
     recent_causal_context: nonemptyString,
     last_visible_moment: nonemptyString,
-    prior_accepted_prose_status_or_handoff_note: z.union([nonemptyString, z.literal("none")]),
     begin_after: nonemptyString
   })
   .strict();

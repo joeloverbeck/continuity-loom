@@ -298,7 +298,6 @@ const cleanBrief = {
   immediate_handoff: {
     recent_causal_context: "A arrived.",
     last_visible_moment: "A lifted the key.",
-    prior_accepted_prose_status_or_handoff_note: "none",
     begin_after: "A lifting the key."
   },
   manual_moment_directive: {

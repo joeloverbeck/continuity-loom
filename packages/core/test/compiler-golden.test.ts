@@ -97,7 +97,6 @@ function goldenInput(): BuildValidationSnapshotInput {
       immediate_handoff: {
         recent_causal_context: "The guard left.",
         last_visible_moment: "Mara reached for the ledger.",
-        prior_accepted_prose_status_or_handoff_note: "none",
         begin_after: "Begin with the ledger on the desk."
       },
       manual_moment_directive: { must_render: ["Mara refuses to hand it over."], may_render_if_naturally_caused: [], do_not_force: [] },

@@ -1,6 +1,6 @@
 # SPEC025SCHAUDPAS-001: FOUNDATIONS §10 amendment — sharpen no-accepted-prose, drop the named-field exception
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — docs (`docs/FOUNDATIONS.md` §10 amendment); no production behavior change
@@ -76,3 +76,22 @@ Preserve every other §10 rule: the general prohibition at `:407` (no prompt fie
 1. `grep -n "prior_accepted_prose_status_or_handoff_note\|No prompt-facing schema field may use accepted prose" docs/FOUNDATIONS.md`
 2. `npm run lint && npm run typecheck && npm test`
 3. A narrower command is correct here because the deliverable is a single constitutional paragraph swap; the grep proves the swap and the full pipeline proves no regression — there is no behavior to unit-test.
+
+## Outcome
+
+Completed: 2026-06-20
+
+Ticket 001 was implemented in the same revision as ticket 002, satisfying the §1.1 co-landing constraint. `docs/FOUNDATIONS.md` §10 no longer names `prior_accepted_prose_status_or_handoff_note` as a sanctioned exception and now states the stronger source-level invariant: prompt-facing schema fields may not use accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries as their source.
+
+Deviations from plan: none. The §29 checklist did not need an edit because the retired field name was not present there.
+
+Verification:
+
+- `rg -n "prior_accepted_prose_status_or_handoff_note" docs/FOUNDATIONS.md` returned no matches.
+- `rg -n "No prompt-facing schema field may use accepted prose" docs/FOUNDATIONS.md` returned the new §10 invariant.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run build` passed.
+
+Browser smoke: not applicable. This ticket is a constitutional documentation amendment coupled to ticket 002; automated docs/code grep plus full pipeline checks prove the requested behavior.

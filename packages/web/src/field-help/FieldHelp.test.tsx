@@ -29,21 +29,21 @@ describe("FieldHelp", () => {
   it("renders a real button and opens by click without hover", async () => {
     render(
       <FieldHelp
-        fieldPath="GENERATION BRIEF.immediate_handoff.prior_accepted_prose_status_or_handoff_note"
-        fieldLabel="Prior accepted prose status"
+        fieldPath="GENERATION BRIEF.immediate_handoff.recent_causal_context"
+        fieldLabel="Recent causal context"
       />
     );
 
-    const trigger = screen.getByRole("button", { name: "Help for Prior accepted prose status" });
+    const trigger = screen.getByRole("button", { name: "Help for Recent causal context" });
 
     expect(trigger.tagName).toBe("BUTTON");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByText("Accepted prose is readable output, not continuity authority.")).not.toBeNull();
+    expect(screen.queryByText("Do not paste or summarize accepted prose here.")).toBeNull();
 
     fireEvent.click(trigger);
 
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
-    expect(await screen.findByText("Prior accepted prose status")).not.toBeNull();
+    expect(await screen.findByText("Do not paste or summarize accepted prose here.")).not.toBeNull();
     expect(screen.queryAllByText("Prompt").length).toBeGreaterThan(0);
     expect(trigger.getAttribute("aria-controls")).toMatch(/^field-help-/);
     expect(trigger.getAttribute("aria-describedby")).toMatch(/^field-help-/);

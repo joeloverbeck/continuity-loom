@@ -17,7 +17,6 @@ const acceptedSegmentCanary = "ACCEPTED_SEGMENT_CANARY_DO_NOT_PROMPT";
 const promptFacingHandoffFields = [
   "recent_causal_context",
   "last_visible_moment",
-  "prior_accepted_prose_status_or_handoff_note",
   "begin_after"
 ] as const;
 
@@ -42,13 +41,13 @@ describe("accepted prose exclusion", () => {
     );
   });
 
-  it("allows a clean user-authored accepted-prose status handoff note", () => {
+  it("allows clean user-authored continuation handoff fields", () => {
     const snapshotInput = input();
     snapshotInput.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
       "continuation_after_accepted_segment"
     ];
-    snapshotInput.generationSession.immediate_handoff!.prior_accepted_prose_status_or_handoff_note =
-      "The previous accepted segment introduced no durable continuity change; records are current.";
+    snapshotInput.generationSession.immediate_handoff!.recent_causal_context =
+      "The previous local beat introduced no durable continuity change; records are current.";
 
     const result = runValidation(buildValidationSnapshot(snapshotInput));
 
@@ -61,7 +60,6 @@ describe("accepted prose exclusion", () => {
     const expectedFields = [
       "begin_after",
       "last_visible_moment",
-      "prior_accepted_prose_status_or_handoff_note",
       "recent_causal_context"
     ];
     const validHandoff = input().generationSession.immediate_handoff!;
@@ -76,7 +74,6 @@ describe("accepted prose exclusion", () => {
     expect(Object.keys(validHandoff).sort()).toEqual(expectedFields);
 
     const schemaDoc = readFileSync(new URL("../../../docs/story-record-schema.md", import.meta.url), "utf8");
-    expect(schemaDoc).toContain("prior_accepted_prose_status_or_handoff_note");
     expect(schemaDoc).not.toMatch(/automatic_prose_summary/i);
   });
 });

@@ -10,6 +10,7 @@ const FABRICATED_DIRECTIVE = "Continue the immediate moment.";
 const REMOVED_ACTIVE_WORKING_SET_MANUAL_DIRECTIVE_KEY = "manual" + "_directive_id";
 const REMOVED_CURRENT_CAST_PRESSURE_LOCAL_FUNCTION_KEY = "local" + "_function";
 const REMOVED_CAST_VOICE_OVERRIDE_SCOPE_KEY = "scope";
+const REMOVED_PRIOR_ACCEPTED_PROSE_HANDOFF_KEY = "prior" + "_accepted_prose_status_or_handoff_note";
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -121,6 +122,30 @@ function stripLegacyCastVoiceOverrideScope(value: unknown): unknown {
   };
 }
 
+function stripLegacyPriorAcceptedProseHandoff(value: unknown): unknown {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+
+  const session = value as Record<string, unknown>;
+  const immediateHandoff = session.immediate_handoff;
+  if (immediateHandoff === null || typeof immediateHandoff !== "object" || Array.isArray(immediateHandoff)) {
+    return value;
+  }
+
+  const handoffRecord = immediateHandoff as Record<string, unknown>;
+  if (!(REMOVED_PRIOR_ACCEPTED_PROSE_HANDOFF_KEY in handoffRecord)) {
+    return value;
+  }
+
+  const nextHandoff = { ...handoffRecord };
+  delete nextHandoff[REMOVED_PRIOR_ACCEPTED_PROSE_HANDOFF_KEY];
+  return {
+    ...session,
+    immediate_handoff: nextHandoff
+  };
+}
+
 function acceptedSegmentCount(database: DatabaseSync): number {
   const row = database.prepare("SELECT count(*) AS count FROM accepted_segments").get() as { count: number };
   return row.count;
@@ -220,8 +245,10 @@ export function migrateGenerationSessionDraft(database: DatabaseSync): void {
   }
 
   const rawPayload = JSON.parse(row.payload_json) as unknown;
-  const strippedPayload = stripLegacyCastVoiceOverrideScope(
-    stripLegacyCurrentCastPressureLocalFunction(stripLegacyManualDirectiveId(rawPayload))
+  const strippedPayload = stripLegacyPriorAcceptedProseHandoff(
+    stripLegacyCastVoiceOverrideScope(
+      stripLegacyCurrentCastPressureLocalFunction(stripLegacyManualDirectiveId(rawPayload))
+    )
   );
   const strippedLegacyPayload = strippedPayload !== rawPayload;
   const original = generationSessionDraftSchema.parse(strippedPayload);

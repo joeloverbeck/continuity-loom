@@ -113,16 +113,14 @@ function validateGenerationBriefSurfaces(snapshot: ValidationSnapshot): readonly
     generationContext === "continuation_after_accepted_segment" &&
     (!handoff ||
       !hasText(handoff.recent_causal_context) ||
-      !hasText(handoff.last_visible_moment) ||
-      !hasText(handoff.prior_accepted_prose_status_or_handoff_note) ||
-      !hasText(handoff.begin_after))
+      (!hasText(handoff.last_visible_moment) && !hasText(handoff.begin_after)))
   ) {
     diagnostics.push(
       blocker({
         code: DIAGNOSTIC_CODES.missingImmediateHandoff,
         field: "generationSession.immediate_handoff",
         message: "Immediate handoff is missing required launch context.",
-        whyItMatters: "The prompt needs a user-authored recent causal bridge, last visible moment, accepted-prose status note, and begin-after point.",
+        whyItMatters: "The prompt needs a user-authored recent causal bridge plus either a last visible moment or a begin-after point.",
         suggestedActions: ["revise"]
       })
     );

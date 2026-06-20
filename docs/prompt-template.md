@@ -114,9 +114,6 @@ Recent causal context (writer-visible; not automatically POV knowledge):
 Last visible moment (omit this label and value when empty):
 {last_visible_moment}
 
-Prior accepted prose status / user-authored continuity handoff:
-{prior_accepted_prose_status_or_handoff_note}
-
 Begin prose exactly after this point (omit this label and value when empty):
 {begin_after}
 

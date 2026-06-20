@@ -25,7 +25,6 @@ describe("generation brief draft schema", () => {
         immediate_handoff: {
           recent_causal_context: "",
           last_visible_moment: "",
-          prior_accepted_prose_status_or_handoff_note: "none",
           begin_after: ""
         }
       }).success
@@ -185,7 +184,6 @@ describe("generation brief draft normalization", () => {
       immediate_handoff: {
         recent_causal_context: "   ",
         last_visible_moment: "  Mara reaches the stairwell. ",
-        prior_accepted_prose_status_or_handoff_note: " none ",
         begin_after: ""
       },
       manual_moment_directive: {
@@ -225,7 +223,6 @@ describe("generation brief draft normalization", () => {
       },
       immediate_handoff: {
         last_visible_moment: "Mara reaches the stairwell.",
-        prior_accepted_prose_status_or_handoff_note: "none"
       },
       manual_moment_directive: {
         must_render: ["Mara opens the door."],

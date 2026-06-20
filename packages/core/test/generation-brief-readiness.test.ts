@@ -107,7 +107,6 @@ describe("generation brief readiness normalization", () => {
         immediate_handoff: {
           recent_causal_context: "",
           last_visible_moment: "",
-          prior_accepted_prose_status_or_handoff_note: "",
           begin_after: ""
         },
         manual_moment_directive: {
@@ -185,7 +184,6 @@ describe("generation brief readiness normalization", () => {
   it("is deterministic and never invents handoff continuity or launch directives", () => {
     const draft: GenerationSessionDraft = {
       immediate_handoff: {
-        prior_accepted_prose_status_or_handoff_note: "   "
       },
       manual_moment_directive: {
         must_render: ["   "]

@@ -206,7 +206,6 @@ Fields:
 ```yaml
 recent_causal_context: prose
 last_visible_moment: prose
-prior_accepted_prose_status_or_handoff_note: prose | none
 begin_after: prose
 ```
 
@@ -214,8 +213,7 @@ Rules:
 
 - Always included.
 - Must not contain verbatim accepted prose, rejected candidate prose, superseded regeneration text, or automatic prose-derived summaries.
-- `prior_accepted_prose_status_or_handoff_note` must render `None. No accepted prose is included.` for first segments or when no handoff is needed.
-- For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no prior accepted prose exists.
+- For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no recent causal context exists.
 - For `continuation_after_accepted_segment`, a user-authored handoff is required. The required continuation handoff must include a recent causal bridge and either a last visible moment or a begin-after point.
 - Durable changes from accepted prose must be represented in selected records or current state before the next prompt.
 

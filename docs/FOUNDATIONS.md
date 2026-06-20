@@ -406,7 +406,7 @@ The only allowed continuation-launch material is user-authored generation-time c
 
 Prompt, schema, and compiler surfaces must not name or label any prompt field as “most recent accepted prose,” “accepted prose summary,” or anything that implies accepted prose is a prompt source.
 
-The correct generation-time field is `prior_accepted_prose_status_or_handoff_note`. It may contain `None`, or it may contain a user-authored continuity handoff note. It must not contain verbatim accepted prose, rejected candidate prose, superseded regeneration text, automatic prose-derived summary, or any instruction inviting the model, compiler, or user to mine the prose archive for canon.
+No prompt-facing schema field may use accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries as its source. Continuation launch must use user-authored recent causal context plus a visible or imperative cutpoint, grounded in selected records and current authoritative state.
 
 If a prior accepted segment created continuity-relevant durable change, that change belongs in story records, current authoritative state, immediate handoff, or selected EVENT/FACT/BELIEF/RELATIONSHIP/EMOTION/PLAN/CLOCK/OBLIGATION/CONSEQUENCE/OPEN THREAD/LOCATION/OBJECT/AFFORDANCE/CAST MEMBER records before the next prompt is generated.
 

@@ -311,7 +311,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     expect(await screen.findByText(/PROSE MODE source: omniscient \/ third \/ past/)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Help for Recent causal context" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Last visible moment" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Begin after" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Help for Must render" })).toBeTruthy();
@@ -336,7 +336,6 @@ describe("GenerationBriefView", () => {
     });
     fireEvent.change(screen.getByLabelText(/recent_causal_context/), { target: { value: "A reached the gate." } });
     fireEvent.change(screen.getByLabelText(/last_visible_moment/), { target: { value: "A stood at the gate." } });
-    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), { target: { value: "handoff only" } });
     fireEvent.change(screen.getByLabelText(/begin_after/), { target: { value: "Begin with the gate latch." } });
     fireEvent.change(screen.getByLabelText(/must_render/), { target: { value: "The lock opens." } });
     fireEvent.change(screen.getByLabelText(/may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
@@ -494,10 +493,10 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    const handoffHelp = screen.getByRole("button", { name: "Help for Prior accepted-prose status / handoff note" });
+    const handoffHelp = screen.getByRole("button", { name: "Help for Recent causal context" });
 
     expect(handoffHelp.getAttribute("aria-controls")).toBe(
-      "field-help-generation-brief-immediate-handoff-prior-accepted-prose-status-or-handoff-note"
+      "field-help-generation-brief-immediate-handoff-recent-causal-context"
     );
     expect(screen.getAllByText("Completeness checks, not plot beats.")).toHaveLength(1);
     expect(screen.getAllByText("Stop at the next local response point; do not ask for downstream consequences."))
@@ -505,8 +504,8 @@ describe("GenerationBriefView", () => {
 
     fireEvent.click(handoffHelp);
 
-    expect(screen.getAllByText("A handoff note about accepted prose status, not prose authority.").length).toBeGreaterThan(1);
-    expect(screen.getAllByText("Accepted prose is readable output, not continuity authority.")).toHaveLength(1);
+    expect(screen.getAllByText("User-authored recent cause that launches the next segment.").length).toBeGreaterThan(1);
+    expect(screen.getAllByText("Do not paste or summarize accepted prose here.")).toHaveLength(1);
   });
 
   it("renders helper text inline and wires controls with aria-describedby", async () => {
@@ -589,7 +588,7 @@ describe("GenerationBriefView", () => {
     renderView();
 
     await screen.findByRole("heading", { name: "Generation Brief" });
-    fireEvent.change(screen.getByLabelText(/prior_accepted_prose_status_or_handoff_note/), {
+    fireEvent.change(screen.getByLabelText(/recent_causal_context/), {
       target: {
         value: "This is a long paragraph. It reads like finished prose. It keeps going. It should be summarized instead."
       }
