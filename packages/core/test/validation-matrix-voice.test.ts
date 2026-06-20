@@ -226,10 +226,10 @@ function cleanInput(): BuildValidationSnapshotInput {
         do_not_force: []
       },
       current_cast_voice_pressure: [
-        pressure(castA, "active_speaker", "A is clipped.", "A asks directly.", "none"),
-        pressure(castB, "active_speaker", "B is evasive.", "B deflects.", "none"),
-        pressure(castC, "active_silent", "C is watchful.", "none", "C grips the doorframe."),
-        pressure(minorId, "present_minor_speaker", "Minor speaks in short factual fragments.", "one line only", "none")
+        pressure(castA, "A is clipped.", "A asks directly.", "none"),
+        pressure(castB, "B is evasive.", "B deflects.", "none"),
+        pressure(castC, "C is watchful.", "none", "C grips the doorframe."),
+        pressure(minorId, "Minor speaks in short factual fragments.", "one line only", "none")
       ],
       cast_voice_overrides: [],
       generation_validation_focus: {
@@ -317,14 +317,12 @@ function castRecord(id: string, entityIdValue: string): ValidationRecord {
 
 function pressure(
   castMemberId: string,
-  localFunction: "active_speaker" | "active_silent" | "present_minor_speaker",
   currentVoicePressure: string,
   dialoguePressure: string,
   silencePressure: string
 ) {
   return {
     cast_member_id: castMemberId,
-    local_function: localFunction,
     current_voice_pressure: currentVoicePressure,
     dialogue_pressure: dialoguePressure,
     pov_narration_pressure: "none",

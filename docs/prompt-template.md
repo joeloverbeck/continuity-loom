@@ -216,9 +216,6 @@ Material pressure:
 
 Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
 
-Voice pressure:
-{voice_pressure}
-
 Active cast voice pressure pins:
 {active_cast_voice_pressure_pins}
 

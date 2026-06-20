@@ -8,6 +8,9 @@ import type { ValidationRecord, ValidationSnapshot } from "../../validation/snap
 
 type JsonRecord = Record<string, unknown>;
 type ResolverMap = Partial<Record<PlaceholderName, (snapshot: ValidationSnapshot) => string>>;
+interface CastRenderOptions {
+  ideation?: boolean;
+}
 
 const activeDossierFieldOrder = [
   "identity",
@@ -49,6 +52,25 @@ export const CAST_PLACEHOLDER_RESOLVERS: Readonly<Partial<Record<PlaceholderName
     ) as Partial<Record<PlaceholderName, PlaceholderResolver>>
   );
 
+export function renderCastPlaceholder(
+  placeholder: PlaceholderName,
+  snapshot: ValidationSnapshot,
+  options: CastRenderOptions = {}
+): string | undefined {
+  switch (placeholder) {
+    case "present_minor_cast_notes":
+      return renderCompressedCastBand(snapshot, "present_minor_cast_compressed", options);
+    case "offstage_relevance_notes":
+      return renderCompressedCastBand(snapshot, "offstage_relevant_cast", options);
+    case "active_cast_voice_pressure_pins":
+      return renderActiveVoicePins(snapshot);
+    case "active_onstage_full_cast_dossiers":
+      return renderActiveDossiers(snapshot);
+    default:
+      return undefined;
+  }
+}
+
 function renderActiveVoicePins(snapshot: ValidationSnapshot): string {
   const lines = activeCastRecords(snapshot)
     .map((record) => {
@@ -79,15 +101,21 @@ function renderActiveDossiers(snapshot: ValidationSnapshot): string {
 
 function renderCompressedCastBand(
   snapshot: ValidationSnapshot,
-  castBand: "present_minor_cast_compressed" | "offstage_relevant_cast"
+  castBand: "present_minor_cast_compressed" | "offstage_relevant_cast",
+  options: CastRenderOptions = {}
 ): string {
   const records = orderCompilerRecords(snapshot.records).filter((record) => record.castBand === castBand);
   const lines = records
     .map((record) => {
       const payload = payloadOf(record);
+      const currentPressure =
+        castBand === "present_minor_cast_compressed" && !options.ideation
+          ? currentVoicePressureLines(snapshot.generationSession, record.id)
+          : [];
       return compactParts([
         nestedString(payload.identity, "one_line"),
         labelValue("voice", nestedString(payload.voice_anchor, "core_voice")),
+        ...currentPressure,
         ...overrideLines(snapshot.generationSession, record.id, castBand)
       ]);
     })
@@ -175,7 +203,7 @@ function currentVoicePressureLines(generationSession: GenerationSession, castMem
   return generationSession.current_cast_voice_pressure
     .filter((entry) => entry.cast_member_id === castMemberId)
     .flatMap((entry) => [
-      labelValue("current voice pressure", entry.current_voice_pressure),
+      labelValue("current generation voice pressure", entry.current_voice_pressure),
       labelValue("dialogue pressure", entry.dialogue_pressure),
       labelValue("POV narration pressure", entry.pov_narration_pressure),
       labelValue("nonverbal/silence pressure", entry.nonverbal_or_silence_pressure),

@@ -92,7 +92,7 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `matrix-dialogue-incomplete` | blocker | prose-only | Dialogue focus lacks speaker dossier/voice authority, language/register state, POV knowledge, or relationship/status context. | §11.5 | Case 8 |
 | `matrix-ensemble-dialogue-incomplete` | blocker | prose-only | Ensemble dialogue focus lacks speaker functions, relationship/status pressure, or auditory/interruptibility state. | §11.5 | Case 8 |
 | `matrix-active-silent-presence-incomplete` | blocker | prose-only | Active silent presence lacks dossier, body presence, position/visibility, allowed actions, or POV access limits. | §11.5 | Case 13 |
-| `matrix-present-minor-speech-incomplete` | blocker | prose-only | Present-minor speech lacks compressed voice note or promotion to active/onstage status. | §11.5 | Case 13 |
+| `matrix-present-minor-speech-incomplete` | blocker | prose-only | Present-minor speech lacks deliverable dialogue guidance, a dialogue-targeted current override, or promotion to active/onstage status. | §11.5 | Case 13 |
 
 ## Referential Integrity
 

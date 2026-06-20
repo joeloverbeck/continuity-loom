@@ -49,14 +49,6 @@ const pressureResolvers: ResolverMap = {
         firstText(payload, ["layout_relevant_now", "description", "prompt_text", "constraints", "visible_conditions"]),
       "material_pressure"
     ),
-  voice_pressure: (snapshot) => {
-    const lines = snapshot.generationSession.current_cast_voice_pressure
-      .map((entry) => entry.current_voice_pressure.trim())
-      .filter(Boolean)
-      .map((line) => `- ${line}`);
-
-    return lines.join("\n") || EMPTY_STATE_CONSTANTS.voice_pressure;
-  },
   active_intentions: (snapshot) => renderActiveIntentions(snapshot),
   active_plans: (snapshot) => renderActivePlans(snapshot),
   active_clocks: (snapshot) => renderActiveClocks(snapshot),

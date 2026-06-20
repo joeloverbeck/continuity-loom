@@ -54,6 +54,8 @@ The compiler renders ideation sections in this order:
 
 Ideation prompts do not render prose-only sections: `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`.
 
+`<present_minor_cast>` keeps durable compressed cast notes and temporary overrides, but it does not render current voice-delivery pressure from `current_cast_voice_pressure`; that pressure is prose-only.
+
 ## Ideation Sections
 
 ### `<ideation_role>`

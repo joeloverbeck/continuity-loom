@@ -80,7 +80,6 @@ const generationBriefDisplayLabels: Record<string, string> = {
   "manual_moment_directive.may_render_if_naturally_caused[]": "May render if naturally caused",
   "manual_moment_directive.do_not_force[]": "Do not force",
   "current_cast_voice_pressure[].cast_member_id": "Cast member",
-  "current_cast_voice_pressure[].local_function": "Local function",
   "current_cast_voice_pressure[].current_voice_pressure": "Current voice pressure",
   "current_cast_voice_pressure[].dialogue_pressure": "Dialogue pressure",
   "current_cast_voice_pressure[].pov_narration_pressure": "POV narration pressure",
@@ -356,38 +355,56 @@ const generationBriefEntries: readonly GuidanceInput[] = [
   ], optionalDirectiveOpts),
   brief("manual_moment_directive.do_not_force[]", "Outcomes or moves the prose must not force.", ["{manual_do_not_force}"], optionalDirectiveOpts),
   brief("current_cast_voice_pressure[].cast_member_id", "Cast member receiving current-generation voice pressure.", [
-    "{active_cast_voice_pressure_pins}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], optionalOpts),
-  brief("current_cast_voice_pressure[].local_function", "The cast member's local function in this generation.", [
-    "{active_cast_voice_pressure_pins}"
-  ], { ...optionalOpts, enumValues: localFunctionGuidance }),
   brief("current_cast_voice_pressure[].current_voice_pressure", "Temporary voice pressure for this immediate moment.", [
-    "{voice_pressure}",
-    "{active_cast_voice_pressure_pins}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], voicePressureOpts),
-  brief("current_cast_voice_pressure[].dialogue_pressure", "Current dialogue pressure, or none.", ["{voice_pressure}"], voicePressureOpts),
+  brief("current_cast_voice_pressure[].dialogue_pressure", "Current dialogue pressure, or none.", [
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
+  ], voicePressureOpts),
   brief("current_cast_voice_pressure[].pov_narration_pressure", "Current narration pressure for POV rendering, or none.", [
-    "{voice_pressure}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], voicePressureOpts),
   brief("current_cast_voice_pressure[].nonverbal_or_silence_pressure", "Current nonverbal or silence pressure, or none.", [
-    "{voice_pressure}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], voicePressureOpts),
   brief("current_cast_voice_pressure[].current_must_preserve[]", "Temporary voice elements to preserve now.", [
-    "{voice_pressure}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], voicePressureOpts),
   brief("current_cast_voice_pressure[].current_must_avoid[]", "Temporary voice mistakes to avoid now.", [
-    "{voice_pressure}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], voicePressureOpts),
   brief("cast_voice_overrides[].cast_member_id", "Cast member receiving a current-generation-only override.", [
-    "{voice_pressure}"
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
   ], optionalOpts),
-  brief("cast_voice_overrides[].scope", "The override scope; v1 supports current generation only.", ["{voice_pressure}"], {
+  brief("cast_voice_overrides[].scope", "The override scope; v1 supports current generation only.", [
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
+  ], {
     ...optionalOpts,
     criticalVisibleHint: "Current-generation only; never written back to CAST MEMBER records."
   }),
-  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", ["{voice_pressure}"], optionalOpts),
-  brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", ["{voice_pressure}"], optionalOpts),
-  brief("cast_voice_overrides[].override_text", "The exact temporary voice instruction.", ["{voice_pressure}"], {
+  brief("cast_voice_overrides[].reason", "Why this temporary voice override exists.", [
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
+  ], optionalOpts),
+  brief("cast_voice_overrides[].applies_to[]", "Voice surface affected by the temporary override.", [
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
+  ], optionalOpts),
+  brief("cast_voice_overrides[].override_text", "The exact temporary voice instruction.", [
+    "{active_cast_voice_pressure_pins}",
+    "{present_minor_cast_notes}"
+  ], {
     ...optionalOpts,
     examples: ["For this confrontation only, his register becomes clipped and formal."],
     antiExamples: ["Change his permanent voice anchor from now on."]

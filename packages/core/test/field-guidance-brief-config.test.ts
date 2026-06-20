@@ -70,7 +70,6 @@ describe("field guidance for brief and story config", () => {
         "GENERATION BRIEF.active_working_set.offstage_relevant_cast[]",
         "GENERATION BRIEF.active_working_set.selected_pov",
         "GENERATION BRIEF.current_cast_voice_pressure[].cast_member_id",
-        "GENERATION BRIEF.current_cast_voice_pressure[].local_function",
         "GENERATION BRIEF.current_cast_voice_pressure[].current_voice_pressure",
         "GENERATION BRIEF.current_cast_voice_pressure[].dialogue_pressure",
         "GENERATION BRIEF.current_cast_voice_pressure[].pov_narration_pressure",

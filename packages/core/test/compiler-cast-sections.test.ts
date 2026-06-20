@@ -125,13 +125,21 @@ function input(records: ValidationRecord[] = castRecords()): BuildValidationSnap
       current_cast_voice_pressure: [
         {
           cast_member_id: activeCastId,
-          local_function: "active_speaker",
           current_voice_pressure: "Make every answer sound carefully bounded.",
           dialogue_pressure: "Use procedural deflection.",
           pov_narration_pressure: "none",
           nonverbal_or_silence_pressure: "Let silence sharpen suspicion.",
           current_must_preserve: ["precision"],
           current_must_avoid: ["rambling"]
+        },
+        {
+          cast_member_id: presentCastId,
+          current_voice_pressure: "Let any speech sound reluctant and brief.",
+          dialogue_pressure: "Only answer if directly addressed.",
+          pov_narration_pressure: "none",
+          nonverbal_or_silence_pressure: "Prefer silence.",
+          current_must_preserve: [],
+          current_must_avoid: ["chatty exposition"]
         }
       ],
       cast_voice_overrides: [
@@ -329,10 +337,22 @@ describe("compiler cast-section resolvers", () => {
     const populated = compilePrompt(buildValidationSnapshot(input())).prompt;
 
     expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
+    expect(sectionBody(populated, "present_minor_cast")).toContain("current generation voice pressure");
+    expect(sectionBody(populated, "present_minor_cast")).toContain("Let any speech sound reluctant and brief.");
+    expect(sectionBody(populated, "present_minor_cast")).toContain("Only answer if directly addressed.");
     expect(sectionBody(populated, "present_minor_cast")).toContain("Keep him silent unless directly addressed.");
     const offstageRelevance = sectionBody(populated, "offstage_relevance");
     expect(offstageRelevance).toContain("The guard may return soon.");
     expect(offstageRelevance).not.toContain(EMPTY_STATE_CONSTANTS.offstage_relevance_notes);
+  });
+
+  it("omits present-minor current voice pressure from ideation prompts", () => {
+    const populated = compilePrompt(buildValidationSnapshot(input()), { promptKind: "ideation" }).prompt;
+
+    expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
+    expect(sectionBody(populated, "present_minor_cast")).not.toContain("current generation voice pressure");
+    expect(sectionBody(populated, "present_minor_cast")).not.toContain("Let any speech sound reluctant and brief.");
+    expect(sectionBody(populated, "present_minor_cast")).toContain("Keep him silent unless directly addressed.");
   });
 
   it("renders the offstage relevance directive when interruption focus opens the gate with no offstage cast", () => {

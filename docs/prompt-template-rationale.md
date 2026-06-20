@@ -91,13 +91,15 @@ The corrected shape separates:
 
 - durable `voice_anchor`: stable identity, rhythm, syntax, register, diction, vocabulary, metaphor pool, tactics, taboos, avoidance, turn-taking, anti-repetition, and anti-generic constraints;
 - generation-time `current_cast_voice_pressure`: what this local moment is doing to dialogue, POV narration, nonverbal behavior, silence, and turn-taking;
-- compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, local function, and any temporary override.
+- compiled `active_cast_voice_pressure_pins`: deterministic salience duplicates near `<active_working_set>` assembled from the voice anchor, current voice pressure, active working-set local function, and any temporary override.
 
 The pin does not replace the full dossier. It prevents generic dialogue and generic close narration when the full dossier is long.
 
 Voice pins remain protected salience duplicates. They should not be removed for token-budget reasons while active/onstage cast dossiers are long. The pin is the current-generation voice pressure; the dossier is the durable character authority.
 
 Durable CAST MEMBER fields are the primary voice authority. Current voice pressure pins are optional scene-specific emphasis. Missing pins are usually salience warnings, not blockers, when durable voice anchors and body/behavior dossiers are sufficient. A missing pin becomes blocking only when the selected local mode needs voice/body authority and no durable, compressed, or current source can supply it, or when supplied current pressure contradicts higher authority.
+
+Present-minor supplied current pressure is rendered in prose prompts inside the compressed present-minor notes, not in a separate voice-pressure lane. The ideation prompt omits that prose-delivery pressure.
 
 ## 11. Why cast voice overrides are generation-time only
 

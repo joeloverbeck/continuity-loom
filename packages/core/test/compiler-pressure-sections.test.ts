@@ -482,7 +482,6 @@ function populatedInput(records = pressureRecords()): BuildValidationSnapshotInp
       current_cast_voice_pressure: [
         {
           cast_member_id: "019b0298-5c00-7000-8000-000000000201",
-          local_function: "active_speaker",
           current_voice_pressure: "Keep replies clipped and guarded.",
           dialogue_pressure: "none",
           pov_narration_pressure: "none",
@@ -559,7 +558,6 @@ describe("compiler pressure-section resolvers", () => {
       "They trade polite favors without meeting each other's eyes."
     );
     expect(sectionBody(prompt, "active_working_set")).toContain("The stair turns sharply before the landing.");
-    expect(sectionBody(prompt, "active_working_set")).toContain("Keep replies clipped and guarded.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("Keep the guard calm.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("Get the ledger out of the archive.");
     expect(sectionBody(prompt, "active_clocks")).toContain("Guard return");
@@ -733,7 +731,7 @@ describe("compiler pressure-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(emptyInput()));
 
     expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.active_action_pressure);
-    expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.voice_pressure);
+    expect(sectionBody(prompt, "active_working_set")).toContain(EMPTY_STATE_CONSTANTS.active_cast_voice_pressure_pins);
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain(EMPTY_STATE_CONSTANTS.active_intentions);
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain(EMPTY_STATE_CONSTANTS.active_plans);
     expect(sectionBody(prompt, "active_clocks")).toContain(EMPTY_STATE_CONSTANTS.active_clocks);

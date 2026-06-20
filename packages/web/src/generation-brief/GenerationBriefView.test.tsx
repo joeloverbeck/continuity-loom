@@ -342,7 +342,6 @@ describe("GenerationBriefView", () => {
     fireEvent.change(screen.getByLabelText(/may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
     fireEvent.change(screen.getByLabelText(/do_not_force/), { target: { value: "Do not leave the dock." } });
     fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
-    fireEvent.change(screen.getByLabelText(/local_function/), { target: { value: "present_minor_speaker" } });
     fireEvent.change(screen.getByLabelText(/current_voice_pressure/), { target: { value: "clipped and wary" } });
     fireEvent.change(screen.getByLabelText(/override_text/), { target: { value: "shorter answers only" } });
     fireEvent.change(screen.getByLabelText(/generation_context/), { target: { value: "continuation_after_accepted_segment" } });
@@ -379,7 +378,7 @@ describe("GenerationBriefView", () => {
         may_render_if_naturally_caused: ["The hinge complains."],
         do_not_force: ["Do not leave the dock."]
       },
-      current_cast_voice_pressure: [{ local_function: "present_minor_speaker", current_voice_pressure: "clipped and wary" }],
+      current_cast_voice_pressure: [{ current_voice_pressure: "clipped and wary" }],
       cast_voice_overrides: [{ scope: "current_generation_only", override_text: "shorter answers only" }],
       generation_validation_focus: {
         validation_focus_tags: { generation_context: ["continuation_after_accepted_segment"] }
@@ -603,18 +602,6 @@ describe("GenerationBriefView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
     await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
     expect(await screen.findByText("Draft saved.")).toBeTruthy();
-  });
-
-  it("offers all current-cast local functions including present_minor_speaker", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
-    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
-    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
-
-    renderView();
-
-    const selector = await screen.findByLabelText(/local_function/);
-    expect(within(selector).getByRole("option", { name: "present_minor_speaker" })).toBeTruthy();
-    expect(within(selector).getAllByRole("option")).toHaveLength(7);
   });
 
   it("saves a blank directive draft without fabricating a launch directive", async () => {

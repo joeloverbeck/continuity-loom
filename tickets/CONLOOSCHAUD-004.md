@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — removes `cast_voice_overrides[].scope` from core schema/draft/ready/descriptor/guidance; replaces the dynamic scope clause in the shared cast override renderer with a static current-generation label; adds a generation-session migration step; compiled prose + ideation prompts lose only the redundant scope clause
-**Deps**: CONLOOSCHAUD-003
+**Deps**: archive/tickets/CONLOOSCHAUD-003.md
 
 ## Problem
 
@@ -85,7 +85,7 @@ Remove any one-option scope control/readout from `GenerationBriefView.tsx` (and 
 - Retaining `scope` or re-encoding temporariness under another field.
 - Changing `applies_to` gating behavior or any other override field.
 - Persisting any override into a durable CAST MEMBER record.
-- The voice-pressure normalization (CONLOOSCHAUD-003) and entity/location delivery (CONLOOSCHAUD-005).
+- The voice-pressure normalization (archive/tickets/CONLOOSCHAUD-003.md) and entity/location delivery (CONLOOSCHAUD-005).
 
 ## Acceptance Criteria
 

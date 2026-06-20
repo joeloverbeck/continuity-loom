@@ -76,17 +76,6 @@ const manualMomentDirectiveReadySchema = z
 const currentCastVoicePressureReadySchema = z
   .object({
     cast_member_id: recordId,
-    local_function: z
-      .enum([
-        "pov_narrator",
-        "active_speaker",
-        "active_silent",
-        "close_non_pov",
-        "present_minor_speaker",
-        "physically_active",
-        "materially_referenced"
-      ])
-      .optional(),
     current_voice_pressure: readyString.optional(),
     dialogue_pressure: z.union([readyString, z.literal("none")]).optional(),
     pov_narration_pressure: z.union([readyString, z.literal("none")]).optional(),

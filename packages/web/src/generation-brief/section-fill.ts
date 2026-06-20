@@ -65,7 +65,6 @@ const SECTION_FIELDS: Record<BriefSectionId, readonly string[]> = {
   ],
   "voice-pressure": [
     "current_cast_voice_pressure[].cast_member_id",
-    "current_cast_voice_pressure[].local_function",
     "current_cast_voice_pressure[].current_voice_pressure",
     "current_cast_voice_pressure[].dialogue_pressure",
     "current_cast_voice_pressure[].pov_narration_pressure",

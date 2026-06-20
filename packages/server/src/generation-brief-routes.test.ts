@@ -146,7 +146,6 @@ describe("generation-brief routes", () => {
       current_cast_voice_pressure: [
         {
           cast_member_id: idA,
-          local_function: "active_speaker",
           current_voice_pressure: "Keep the voice clipped.",
           dialogue_pressure: "answer briefly",
           pov_narration_pressure: "none",
@@ -194,7 +193,6 @@ describe("generation-brief routes", () => {
         current_cast_voice_pressure: [
           {
             cast_member_id: idA,
-            local_function: "active_speaker",
             current_voice_pressure: "Keep the voice clipped.",
             dialogue_pressure: "answer briefly",
             pov_narration_pressure: "none",
@@ -463,7 +461,6 @@ describe("generation-brief routes", () => {
           current_cast_voice_pressure: [
             {
               cast_member_id: idA,
-              local_function: "active_speaker",
               current_voice_pressure: secretBriefText,
               dialogue_pressure: "none",
               pov_narration_pressure: "none",

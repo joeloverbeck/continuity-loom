@@ -659,7 +659,6 @@ export const demoGenerationSession = {
   current_cast_voice_pressure: [
     {
       cast_member_id: demoRecordIds.elinCast,
-      local_function: "pov_narrator",
       current_voice_pressure: "Elin narrates through practical details and controlled evasions.",
       dialogue_pressure: "She answers precisely and redirects Niko toward immediate safety.",
       pov_narration_pressure: "Keep close to Elin's guarded calculations without exposing facts Niko lacks.",
@@ -669,7 +668,6 @@ export const demoGenerationSession = {
     },
     {
       cast_member_id: demoRecordIds.nikoCast,
-      local_function: "active_speaker",
       current_voice_pressure: "Niko starts lightly but presses with hurt precision.",
       dialogue_pressure: "He should ask small concrete questions that expose the evasion.",
       pov_narration_pressure: "none",

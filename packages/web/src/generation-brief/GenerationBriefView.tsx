@@ -21,16 +21,6 @@ import { ValidationPanel } from "./ValidationPanel.js";
 type GenerationSession = z.infer<typeof generationSessionDraftSchema>;
 type ActiveWorkingSet = z.infer<typeof activeWorkingSetSchema>;
 
-const currentCastLocalFunctions = [
-  "pov_narrator",
-  "active_speaker",
-  "active_silent",
-  "close_non_pov",
-  "present_minor_speaker",
-  "physically_active",
-  "materially_referenced"
-] as const;
-
 const nonLocalStopPattern = /\b(whole chapter|chapter|act|beat|future consequences|alternate options|multiple response points)\b/i;
 
 function splitLines(value: string): string[] {
@@ -223,7 +213,6 @@ export function GenerationBriefView(): React.JSX.Element {
   };
   const currentVoicePressure = session.current_cast_voice_pressure?.[0] ?? {
     cast_member_id: "",
-    local_function: "active_speaker",
     current_voice_pressure: "",
     dialogue_pressure: "none",
     pov_narration_pressure: "none",
@@ -683,21 +672,6 @@ export function GenerationBriefView(): React.JSX.Element {
                 updateSurface("current_cast_voice_pressure", [{ ...currentVoicePressure, cast_member_id: event.target.value }])
               }
             />
-          </BriefFieldRow>
-          <BriefFieldRow path="current_cast_voice_pressure[].local_function" schemaLabel="local_function" generationContext={generationContext}>
-            <select
-              name="generationSession.current_cast_voice_pressure.0.local_function"
-              value={currentVoicePressure.local_function}
-              onChange={(event) =>
-                updateSurface("current_cast_voice_pressure", [
-                  { ...currentVoicePressure, local_function: event.target.value as typeof currentCastLocalFunctions[number] }
-                ])
-              }
-            >
-              {currentCastLocalFunctions.map((value) => (
-                <option key={value} value={value}>{value}</option>
-              ))}
-            </select>
           </BriefFieldRow>
           <BriefFieldRow
             path="current_cast_voice_pressure[].current_voice_pressure"

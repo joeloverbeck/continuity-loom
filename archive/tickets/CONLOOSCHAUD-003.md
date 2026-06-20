@@ -1,6 +1,6 @@
 # CONLOOSCHAUD-003: Normalize current cast voice pressure and repair present-minor delivery
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — removes `current_cast_voice_pressure[].local_function` from core schema/draft/descriptor/guidance + a generation-session migration step; rewrites the matrix-voice present-minor speech blocker to derive role from cast band + deliverable speech guidance; delivers present-minor current voice pressure into the compressed cast band (prose-only); removes the redundant `{voice_pressure}` placeholder lane; compiled prose prompt changes (present-minor pressure added, `{voice_pressure}` removed); ideation prompt voice-delivery output unchanged
@@ -139,3 +139,26 @@ Update generation-brief rendering/help in `GenerationBriefView.tsx` so no `local
 1. `npm test -- validation-matrix-voice compiler-cast-sections compiler-pressure-sections compiler-golden compiler-ideation-golden generation-session-draft-migration`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. `! grep -rn "voice_pressure\b" packages/core/src/compiler && ! grep -rn "{voice_pressure}" docs packages/core/test/golden-first-segment.prompt.txt` (grep-proof; run after `npm run build`).
+
+## Outcome
+
+Completed: 2026-06-20
+
+Changed:
+- Removed `current_cast_voice_pressure[].local_function` from the generation brief schemas, draft/readiness paths, web generation-brief form, field guidance, fixtures, and demo data.
+- Removed the redundant `{voice_pressure}` placeholder lane from the compiler placeholder map, empty states, pressure resolver, template, prose golden, and compiler contract docs.
+- Delivered present-minor current voice pressure through the prose-only compressed present-minor cast renderer while keeping ideation and offstage output unchanged.
+- Reworked `matrixPresentMinorSpeechIncomplete` to derive from present-minor band membership plus deliverable dialogue guidance/current speech pressure/dialogue-targeted overrides.
+- Added an idempotent generation-session draft migration that strips legacy current-cast `local_function` before strict parse without role inference.
+
+Deviations:
+- `generation-brief-descriptors.ts`, `compile-destinations.ts`, `compiler/types.ts`, `records.test.ts`, and `golden-ideation.prompt.txt` did not contain owned changes after live-code inspection; no edits were needed there.
+
+Verification:
+- `npm test -- validation-matrix-voice compiler-cast-sections compiler-pressure-sections compiler-golden compiler-ideation-golden generation-session-draft-migration generation-brief-routes`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+- Grep proof: no `{voice_pressure}` or `current_cast_voice_pressure[].local_function` remains in active source/docs/goldens outside the legacy migration test fixture and active ticket/spec references.
+- Browser smoke: local dev app on `127.0.0.1`; disposable `/tmp` project opened on `/generation-brief`; `current_voice_pressure` control rendered, removed current-cast `local_function` path/control absent, and console reported 0 errors / 0 warnings.

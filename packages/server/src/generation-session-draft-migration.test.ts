@@ -214,11 +214,50 @@ describe("migrateGenerationSessionDraft", () => {
       current_cast_voice_pressure: [
         {
           cast_member_id: idB,
-          local_function: "active_speaker",
           current_voice_pressure: "Keep answers clipped.",
           current_must_preserve: []
         }
       ]
+    });
+
+    const afterFirst = generationSessionRow(db);
+    migrateGenerationSessionDraft(db);
+    expect(generationSessionRow(db)).toEqual(afterFirst);
+  });
+
+  it("persists legacy current-cast local function removal when no other draft migration is needed", () => {
+    const db = database();
+    setGenerationSession(db, {
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: idB,
+          local_function: "active_speaker",
+          current_voice_pressure: "Keep answers clipped.",
+          current_must_preserve: []
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
+    });
+
+    migrateGenerationSessionDraft(db);
+
+    expect(generationSessionRow(db).payload).toEqual({
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: idB,
+          current_voice_pressure: "Keep answers clipped.",
+          current_must_preserve: []
+        }
+      ],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
+        }
+      }
     });
   });
 

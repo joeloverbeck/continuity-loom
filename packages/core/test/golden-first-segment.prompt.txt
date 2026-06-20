@@ -211,10 +211,6 @@ Material pressure:
 
 Material pressure covers location, object, and entity-status constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
 
-Voice pressure:
-- Elin narrates through practical details and controlled evasions.
-- Niko starts lightly but presses with hurt precision.
-
 Active cast voice pressure pins:
 None active
 

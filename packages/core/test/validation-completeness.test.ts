@@ -90,7 +90,6 @@ function cleanInput(): BuildValidationSnapshotInput {
       current_cast_voice_pressure: [
         {
           cast_member_id: castId,
-          local_function: "active_speaker",
           current_voice_pressure: "B is clipped and afraid.",
           dialogue_pressure: "Direct question.",
           pov_narration_pressure: "none",

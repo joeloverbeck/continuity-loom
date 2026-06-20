@@ -245,7 +245,6 @@ Fields:
 ```yaml
 current_cast_voice_pressure:
   - cast_member_id: id
-    local_function: pov_narrator | active_speaker | active_silent | close_non_pov | present_minor_speaker | physically_active | materially_referenced
     current_voice_pressure: prose
     dialogue_pressure: prose | none
     pov_narration_pressure: prose | none
@@ -257,12 +256,13 @@ current_cast_voice_pressure:
 Rules:
 
 - Current cast voice pressure is optional scene-specific salience reinforcement. Durable CAST MEMBER voice and behavior fields are the primary authority.
+- Active/full local function is derived from `active_working_set.active_onstage_cast_full`; present-minor delivery is derived from `present_minor_cast_compressed`. Current cast voice pressure does not carry its own role authority.
 - Recommended when an active/onstage character is expected to speak materially.
 - Recommended when close POV narration depends on a character-specific current voice pressure.
 - Recommended when an active/onstage silent character's body, gesture, posture, stillness, or social presence materially drives the local unit.
 - It is not normally required when the durable dossier already gives enough voice/body authority.
 - Blocks only when supplied current pressure contradicts hard canon, current state, POV/reveal constraints, physical continuity, or provider policy; or when a selected local mode requires voice/body authority and neither durable cast fields nor compressed present-minor guidance can supply it.
-- Compiles into `{active_cast_voice_pressure_pins}`.
+- Active/onstage pressure compiles into `{active_cast_voice_pressure_pins}`. Present-minor current pressure compiles into compressed present-minor notes in prose prompts only.
 
 ### 3.6 CAST VOICE OVERRIDES
 

@@ -447,7 +447,6 @@ function relationshipRecord(from: string, to: string) {
 function voicePressure(castMemberId: string) {
   return {
     cast_member_id: castMemberId,
-    local_function: "active_speaker" as const,
     current_voice_pressure: "Clipped.",
     dialogue_pressure: "Direct.",
     pov_narration_pressure: "none",
