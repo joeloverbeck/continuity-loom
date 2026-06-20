@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-008: Mutation-tighten P1 prose section renderers
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds section-renderer branch/boundary tests; no production behavior change.
@@ -77,3 +77,35 @@ Run `npm run mutation:prose` scoped to the four section files; classify every su
 1. `vitest run packages/core/test/compiler-sections.contract.test.ts` — targeted section run.
 2. `npm run mutation:prose` — survivor classification for the section renderers.
 3. Section-level assertions plus the unchanged golden are the correct boundary: the golden guards the whole, the assertions localize each band/branch.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+
+- Added `packages/core/test/compiler-sections.contract.test.ts` with exact section-renderer assertions for front, cast, pressure, and record-tail prose sections.
+- Added `packages/core/test/support/arbitraries/section-records.ts` with self-contained populated and empty section fixtures for deterministic compiler-section tests.
+- Pinned cast-band distinctions, the active cast sample cap at three, front secret/POV branches, pressure resolver-map-only placeholders, record-tail physical/material branches, direct-renderer default branches, and deterministic compilation for both empty and populated section fixtures.
+- The existing prose golden file was not modified.
+
+Survivor classification:
+
+- Latest focused command: `npm run mutation:prose -- --force --mutate packages/core/src/compiler/sections/front.ts,packages/core/src/compiler/sections/cast.ts,packages/core/src/compiler/sections/pressure.ts,packages/core/src/compiler/sections/records-tail.ts`.
+- Latest section totals: `cast.ts` 29 survived / 1 no coverage, `front.ts` 65 survived / 4 no coverage, `pressure.ts` 62 survived / 7 no coverage, `records-tail.ts` 21 survived / 3 no coverage; section score 79.64, covered score 80.93.
+- No unclassified section survivors remain. Remaining mutants are grouped as helper-equivalent or already-understood residual branch classes: direct-renderer default-switch mutations, `.filter(Boolean)` / join-separator / trim mutations that do not change emitted prompt bytes for valid section fixtures, payload/object guard mutations that require malformed records outside the ticket fixture contract, sentinel/status variants already pinned by existing section tests plus the new exact alternate-branch assertions, and no-coverage variants for malformed or absent optional payload shapes that the renderer intentionally collapses to empty-state output.
+
+Verification:
+
+- `npx vitest run packages/core/test/compiler-sections.contract.test.ts` — passed, 12 tests.
+- `npx vitest run packages/core/test/compiler-golden.test.ts` — passed, 5 tests.
+- `npm run mutation:prose -- --force --mutate packages/core/src/compiler/sections/front.ts,packages/core/src/compiler/sections/cast.ts,packages/core/src/compiler/sections/pressure.ts,packages/core/src/compiler/sections/records-tail.ts` — completed; section survivors classified above.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 140 files / 1082 tests.
+- `npm run build` — first sandboxed attempt failed with `EROFS` writing generated build output; escalated rerun passed with the existing Vite large-chunk warning.
+
+Deviations:
+
+- The mutation run did not reach zero surviving section mutants. The ticket acceptance was closed by classifying the remaining survivor/no-coverage set from the current JSON report rather than treating them as unknown regressions.
+- No browser or localhost smoke was run; this ticket is test-only core compiler coverage and does not change browser behavior or request shape.
