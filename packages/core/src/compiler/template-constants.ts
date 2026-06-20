@@ -131,7 +131,7 @@ Obey these in order:
 5. Manual moment directive. The directive wins over character defaults, ordinary reluctance, soft tendencies, and general record pressure, but it cannot contradict higher-priority constraints.
 6. Active plans, intentions, clocks, obligations, and consequences.
 7. Beliefs, relationships, emotions, open threads, facts, and events.
-8. Active cast characterization, voice anchors, current voice pressure pins, speech-pattern peculiarities, and behavior.
+8. Active cast characterization, voice anchors, any supplied current voice pressure pins, speech-pattern peculiarities, body/behavior dossiers, and behavior.
 9. Story tone, prose mode, and prose craft preferences.
 10. Optional local texture, minor complication, and durable-change permissions.
 
@@ -382,7 +382,7 @@ Do not:
   prose_craft: `<prose_craft>
 Stay inside the selected POV, person, tense, and psychic distance.
 Let the POV character's diction, judgments, omissions, bodily attention, and sentence rhythms color the prose.
-Use active cast voice anchors, current voice pressure pins, and speech-pattern peculiarities. Characters should not sound interchangeable.
+Use active cast voice anchors, speech-pattern peculiarities, body/behavior dossiers, and any supplied current voice pressure pins. Characters should not sound interchangeable.
 Prefer concrete nouns, embodied verbs, pressure-shaped dialogue, specific sensory detail, and visible action.
 In low-drama or minimalist scenes, preserve pressure through exact perception, rhythm, gesture, omission, and subtext rather than manufacturing incident.
 Use interiority when it is part of the moment's pressure; avoid explaining psychology from outside.
