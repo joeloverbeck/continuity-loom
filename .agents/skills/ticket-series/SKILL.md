@@ -96,12 +96,17 @@ npm run build
    as a blocker. If a broad gate fails in an unrelated assertion outside the
    touched surface after equivalent broad coverage already passed on the current
    task state, rerun the failing file or filter once and then rerun the broad
-   gate once. Treat a repeat failure as a blocker. Report the original failure,
-   the targeted rerun, and the broad rerun outcome. If you fix an unrelated
-   assertion or brittle test exposed by a broad gate so the current gate can
-   pass, classify it as an incidental gate fix. Prefer a separate commit when
-   practical; if it lands in the ticket commit, name it explicitly in the
-   ticket `Outcome` and final response.
+   gate once. If a broad gate fails because it traverses unrelated generated
+   output, mutation-test sandboxes, or sibling worktrees outside the task scope,
+   verify the failing paths are unrelated, run the owned package/path-scoped
+   equivalent checks, leave the unrelated files untouched, and record the broad
+   gate caveat in the ticket `Outcome` and final response. Treat a repeat
+   in-scope failure as a blocker. Report the original failure, the targeted rerun
+   or scoped substitute, and the broad rerun outcome when one is applicable. If
+   you fix an unrelated assertion or brittle test exposed by a broad gate so the
+   current gate can pass, classify it as an incidental gate fix. Prefer a
+   separate commit when practical; if it lands in the ticket commit, name it
+   explicitly in the ticket `Outcome` and final response.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used. When the smoke needs project data
@@ -182,8 +187,14 @@ npm run build
    as a blocker. If a broad final gate fails in an unrelated assertion outside
    the touched surface after equivalent broad coverage already passed on the
    current task state, rerun the failing file or filter once and then rerun the
-   broad gate once. Treat a repeat failure as a blocker. Report the original
-   failure, the targeted rerun, and the broad rerun outcome.
+   broad gate once. If a broad final gate fails because it traverses unrelated
+   generated output, mutation-test sandboxes, or sibling worktrees outside the
+   task scope, verify the failing paths are unrelated, run the owned
+   package/path-scoped equivalent checks, leave the unrelated files untouched,
+   and record the broad gate caveat in the spec `Outcome` and final response.
+   Treat a repeat in-scope failure as a blocker. Report the original failure,
+   the targeted rerun or scoped substitute, and the broad rerun outcome when one
+   is applicable.
 3. Update the spec with final status and an `Outcome` section following
    `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the spec
    before moving it, after the existing spec sections.
