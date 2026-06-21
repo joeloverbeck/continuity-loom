@@ -117,6 +117,73 @@ describe("durable-change matrix validation", () => {
 
     expect(blockerCodes(input)).toContain(code);
   });
+
+  it.each([
+    ["missing owner", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setObjectPayload(input, { owner: "" })],
+    ["missing carried-by", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setObjectPayload(input, { carried_by: "" })],
+    ["missing object location", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setObjectPayload(input, { current_location: "" })],
+    ["missing object POV visibility", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setObjectPayload(input, { visibility_to_pov: "" })],
+    ["empty object affordances", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setObjectPayload(input, { usable_affordances: [] })],
+    ["wrong affordance family", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceUseId, { action_families: ["inspect"] })],
+    ["blank affordance prompt", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceUseId, { prompt_text: " " })],
+    ["missing positions", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "positions", [])],
+    ["missing line of sight", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "line_of_sight_and_visibility", "")],
+    ["missing routes", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["missing available time", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, "object_use_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")]
+  ])("blocks object use when %s", (_name, code, tag, mutate) => {
+    expectDurableBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["missing transfer affordance", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => removeRecord(input, affordanceTransferId)],
+    ["blank consent or force", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", " ")],
+    ["missing transfer route", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["missing source location", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "current_location", "")],
+    ["missing movement time", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")],
+    ["missing movement constraint", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "movement constraint")]
+  ])("blocks transfer and movement when %s", (_name, code, tag, mutate) => {
+    expectDurableBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["missing entity status", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => removeRecord(input, entityId)],
+    ["missing consent or force", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", "")],
+    ["missing physical constraint", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "physical constraint")],
+    ["forbidden by no-intimacy policy", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAllowedContentScope(input, "No intimacy in this scene.")],
+    ["missing relationship pressure", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "RELATIONSHIP")],
+    ["missing bond affordance", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceBondId, { action_families: ["harm"] })],
+    ["missing harm affordance", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceHarmId, { prompt_text: "" })],
+    ["missing consequence record", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "CONSEQUENCE")],
+    ["missing injury consequence lock", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "injury consequence")]
+  ])("blocks body-state durable changes when %s", (_name, code, tag, mutate) => {
+    expectDurableBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["entity is a person", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, institutionId, { entity_kind: "person" })],
+    ["missing communication route", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["missing authority relation", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "authority relation")],
+    ["inactive clock", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { status: "paused" })],
+    ["missing clock pressure", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { current_pressure: "" })],
+    ["missing tick trigger", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { tick_trigger: "" })],
+    ["missing next threshold", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { next_threshold: "" })],
+    ["missing possible effects", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { possible_effects: [] })],
+    ["missing clock cause", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "clock tick cause")]
+  ])("blocks institutional and clock changes when %s", (_name, code, tag, mutate) => {
+    expectDurableBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["closed obligation", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { status: "closed" })],
+    ["missing terms", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { terms: "" })],
+    ["missing owing party", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { owed_by: [] })],
+    ["missing owed-to party", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { owed_to: null })],
+    ["missing visibility", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { visibility: "" })],
+    ["missing breach consequence", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { consequence_if_broken: "" })],
+    ["missing opportunity lock", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "obligation opportunity")]
+  ])("blocks obligation breach when %s", (_name, code, tag, mutate) => {
+    expectDurableBlock(tag, code, mutate);
+  });
 });
 
 const allDurableTags = [
@@ -147,14 +214,64 @@ function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
 }
 
+function expectDurableBlock(
+  tag: string,
+  code: string,
+  mutate: (input: BuildValidationSnapshotInput) => void
+): void {
+  const input = cleanInput();
+  input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+    tag as DurableChangeTag
+  ];
+  mutate(input);
+
+  expect(blockerCodes(input), tag).toContain(code);
+}
+
 function removeRecord(input: BuildValidationSnapshotInput, id: string): void {
   input.records = input.records.filter((record) => record.id !== id);
+}
+
+function removeRecordsOfType(input: BuildValidationSnapshotInput, type: string): void {
+  input.records = input.records.filter((record) => record.type !== type);
 }
 
 function removeLock(input: BuildValidationSnapshotInput, marker: string): void {
   input.generationSession.current_authoritative_state!.current_locks = input.generationSession.current_authoritative_state!.current_locks.filter(
     (lock) => !lock.toLowerCase().includes(marker)
   );
+}
+
+function setObjectPayload(input: BuildValidationSnapshotInput, patch: Record<string, unknown>): void {
+  setRecordPayload(input, objectId, patch);
+}
+
+function setAffordancePayload(input: BuildValidationSnapshotInput, id: string, patch: Record<string, unknown>): void {
+  setRecordPayload(input, id, patch);
+}
+
+function setRecordPayload(input: BuildValidationSnapshotInput, id: string, patch: Record<string, unknown>): void {
+  input.records = input.records.map((record) =>
+    record.id === id ? { ...record, payload: { ...(record.payload as Record<string, unknown>), ...patch } } : record
+  );
+}
+
+function setStateField(
+  input: BuildValidationSnapshotInput,
+  field: keyof NonNullable<BuildValidationSnapshotInput["generationSession"]["current_authoritative_state"]>,
+  value: unknown
+): void {
+  input.generationSession.current_authoritative_state = {
+    ...input.generationSession.current_authoritative_state!,
+    [field]: value
+  };
+}
+
+function setAllowedContentScope(input: BuildValidationSnapshotInput, allowedContentScope: string): void {
+  input.storyConfig.universalContentPolicy = {
+    ...input.storyConfig.universalContentPolicy!,
+    allowed_content_scope: allowedContentScope
+  };
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
