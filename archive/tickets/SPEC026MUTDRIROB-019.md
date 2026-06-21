@@ -1,10 +1,24 @@
 # SPEC026MUTDRIROB-019: Add cross-pillar generated contracts
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds cross-pillar validation→compilation contract tests; no production behavior change.
 **Deps**: archive/tickets/SPEC026MUTDRIROB-009.md, archive/tickets/SPEC026MUTDRIROB-012.md, archive/tickets/SPEC026MUTDRIROB-018.md
+
+## Outcome
+
+- Added `packages/core/test/cross-pillar-contracts.test.ts`, a core-only generated seam suite covering clean validation-to-compilation, blocker readiness gating without diagnostic prompt leakage, warning-only non-gating without prompt leakage, ideation deterministic compilation, and deep-frozen snapshot non-mutation.
+- Used the existing prose snapshot generator for generated variation and a local fully resolved validation-clean fixture for the stricter P3 rule set, keeping the suite focused on the validation/compilation seam rather than duplicating server behavior.
+- No browser smoke was run; this ticket only adds `@loom/core` tests and does not change runtime behavior or UI.
+
+Verification:
+
+- `npx vitest run packages/core/test/cross-pillar-contracts.test.ts` (5 tests passed)
+- `npm run lint` (passed)
+- `npm run typecheck` (passed)
+- `npm test` (150 files, 1232 tests passed; prose and ideation goldens unchanged)
+- `npm run build` (passed; existing Vite large-chunk warning)
 
 ## Problem
 
