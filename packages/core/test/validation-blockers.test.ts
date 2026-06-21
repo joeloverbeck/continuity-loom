@@ -289,10 +289,195 @@ describe("universal blocker validation", () => {
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
+
+  it.each([
+    ["stop-immediately directive versus continuing stop guidance", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.must_render = ["Stop immediately after one look."];
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through the later consequence.";
+    }],
+    ["single-line directive versus later-consequence stop guidance", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.do_not_force = ["Keep this to a single line."];
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through the later consequence.";
+    }]
+  ])("blocks directive/stop boundary conflict from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement, mutate);
+  });
+
+  it.each([
+    ["unknown entity location", { entity_id: entityId, life: "alive", agency: "free", location: "unknown" }],
+    ["missing entity id", { life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000333" }],
+    ["missing location", { entity_id: entityId, life: "alive", agency: "free" }]
+  ])("does not treat %s as a second current location", (_name, payload) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      { id: recordB, type: "ENTITY STATUS", payload }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
+  it.each([
+    ["owner none", { owner: "none", carried_by: entityId }],
+    ["carrier none", { owner: povId, carried_by: "none" }],
+    ["owner unknown", { owner: "unknown", carried_by: entityId }],
+    ["same holder", { owner: povId, carried_by: povId }]
+  ])("does not block object holder state when %s", (_name, payload) => {
+    const input = cleanInput();
+    input.records = [...input.records, { id: recordA, type: "OBJECT", payload }];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
+  });
+
+  it.each([
+    ["dead holder", { life: "dead", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["captive holder", { life: "alive", agency: "captive", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["incapacitated holder", { life: "alive", agency: "incapacitated", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["offstage holder", { life: "alive", agency: "free", location: "offstage" }]
+  ])("blocks active plan from %s without plausible means", (_name, statusPatch) => {
+    expectBlock(DIAGNOSTIC_CODES.inactivePlanHolder, (input) => {
+      input.records = [
+        ...input.records,
+        {
+          id: recordA,
+          type: "ENTITY STATUS",
+          payload: { entity_id: entityId, ...statusPatch }
+        },
+        {
+          id: recordB,
+          type: "PLAN",
+          payload: {
+            plan_status: "active",
+            holder: entityId,
+            current_step: "Wait.",
+            resources: [],
+            fallback_steps: []
+          }
+        }
+      ];
+    });
+  });
+
+  it.each([
+    ["resources", { resources: ["phone"], fallback_steps: [], current_step: "Wait." }],
+    ["fallback steps", { resources: [], fallback_steps: ["send another person"], current_step: "Wait." }],
+    ["remote current step", { resources: [], fallback_steps: [], current_step: "Send a remote signal." }],
+    ["delegate current step", { resources: [], fallback_steps: [], current_step: "Delegate through a proxy." }]
+  ])("allows inactive active-plan holder when plausible means come from %s", (_name, planPatch) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "alive", agency: "unconscious", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          ...planPatch
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("does not run the secret firewall for omniscient POV", () => {
+    const input = cleanInput();
+    input.generationSession.active_working_set!.selected_pov = "omniscient";
+    input.storyConfig.proseMode!.pov_character = "omniscient";
+    input.records = [...input.records, hiddenKnownSecret()];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("allows a partly known POV secret that is also protected from fuller reveal", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "partially_revealed",
+          holders: [povId],
+          non_holders_to_protect: [povId],
+          pov_access: "knows_partly",
+          forbidden_reveals: ["Do not state the whole name."],
+          reveal_permission: "clue_only",
+          allowed_surface_cues: ["a chill"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it.each([
+    ["manual may-render lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = ["Use the accepted segment text."];
+    }],
+    ["manual do-not-force lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.do_not_force = ["Do not contradict the superseded regeneration."];
+    }],
+    ["stop guidance lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the auto-summary resolves.";
+    }]
+  ])("blocks prompt-facing contamination from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.promptFacingProseContamination, mutate);
+  });
+
+  it.each([
+    ["voice pressure", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.current_cast_voice_pressure[0]!.dialogue_pressure = "Demand graphic sex.";
+    }],
+    ["voice preserve lane", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex.";
+      input.generationSession.current_cast_voice_pressure[0]!.current_must_preserve = ["Explicit sex description."];
+    }],
+    ["voice override", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.cast_voice_overrides = [{
+        cast_member_id: castId,
+        reason: "Temporary read.",
+        applies_to: ["dialogue"],
+        override_text: "Push into graphic gore."
+      }];
+    }]
+  ])("blocks content envelope contradiction from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, mutate);
+  });
+
+  it("blocks when the compiler version source is missing", () => {
+    expectBlock(DIAGNOSTIC_CODES.missingConstitutionalSection, (input) => {
+      input.versions.compiler = "";
+    });
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function expectBlock(code: string, mutate: (input: BuildValidationSnapshotInput) => void): void {
+  const input = cleanInput();
+  mutate(input);
+
+  const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+  expect(diagnostic?.severity).toBe("blocker");
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
