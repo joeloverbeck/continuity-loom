@@ -93,7 +93,37 @@ describe("deriveReadiness", () => {
     expect(readiness.canPreview).toBe(true);
     expect(readiness.canGenerate).toBe(false);
     expect(readiness.provider.configured).toBe(false);
-    expect(readiness.provider.blockers[0]?.affected[0]?.kind).toBe("provider-setting");
+    expect(readiness.provider.blockers[0]).toMatchObject({
+      code: "provider-configuration-missing",
+      title: "Configure OpenRouter before generating",
+      summary: "Prompt preview can still work, but sending needs a local OpenRouter credential.",
+      affected: [expect.objectContaining({
+        kind: "provider-setting",
+        fieldPath: "openrouter.apiKey",
+        displayLabel: "OpenRouter API key",
+        navTarget: "/settings"
+      })],
+      actions: [
+        { kind: "open-provider-settings", label: "Open provider settings", target: "/settings" },
+        { kind: "copy-technical-json", label: "Copy technical JSON" }
+      ],
+      technical: {
+        legacyCode: "provider-configuration-missing",
+        ruleId: "provider-configuration-missing",
+        rawPaths: ["openrouter.apiKey"]
+      }
+    });
+  });
+
+  it.each([
+    ["one validation blocker", validationResult({ blockers: [diagnostic("blocker", DIAGNOSTIC_CODES.missingManualDirective, "generationSession.manual_moment_directive.must_render")] }), true, "1 required item before generation"],
+    ["one provider blocker", validationResult({}), false, "1 required item before generation"],
+    ["warnings only", validationResult({ warnings: [diagnostic("warning", DIAGNOSTIC_CODES.castSalienceRisk, "CAST MEMBER", "cast-a")] }), true, "Ready with recommendations"],
+    ["fully ready", validationResult({}), true, "Ready to generate"]
+  ])("summarizes readiness for %s", (_name, validation, providerConfigured, headline) => {
+    const readiness = deriveReadiness(validation, { configured: providerConfigured }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.summary.headline).toBe(headline);
   });
 
   it("pluralizes the required-item summary when provider and validation blockers are both present", () => {
@@ -120,6 +150,8 @@ describe("deriveReadiness", () => {
       code: "new-validator-code",
       title: "New Validator Code",
       group: "required-before-prompt-generation",
+      summary: "new-validator-code message",
+      fastestFix: "Use suggested action: change-directive.",
       technical: {
         legacyCode: "new-validator-code",
         rawPaths: ["versions"]
@@ -137,7 +169,8 @@ describe("deriveReadiness", () => {
     expect(readiness.warnings[0]).toMatchObject({
       code: "new-warning-code",
       title: "New Warning Code",
-      group: "recommended-for-stronger-output"
+      group: "recommended-for-stronger-output",
+      fastestFix: "Use suggested action: revise."
     });
   });
 
@@ -176,6 +209,39 @@ describe("deriveReadiness", () => {
       expect.objectContaining({ recordId: "cast-a", recordType: "CAST MEMBER", displayLabel: "Mara Vale" }),
       expect.objectContaining({ recordId: "cast-b", recordType: "CAST MEMBER", displayLabel: "CAST MEMBER cast-b" })
     ]);
+    expect(readiness.warnings[0]?.technical.rawPaths).toEqual(["CAST MEMBER"]);
+    expect(readiness.warnings[0]?.technical.evidence).toEqual([DIAGNOSTIC_CODES.castSalienceRisk + " message"]);
+  });
+
+  it("deduplicates repeated affected targets, actions, raw paths, and evidence while preserving distinct targets", () => {
+    const first = diagnostic("blocker", "duplicate-code", "generationSession.manual_moment_directive.must_render");
+    const second = {
+      ...diagnostic("blocker", "duplicate-code", "generationSession.manual_moment_directive.must_render"),
+      message: "second duplicate-code message"
+    };
+    const third = diagnostic("blocker", "duplicate-code", "generationSession.current_authoritative_state.current_location");
+
+    const readiness = deriveReadiness(
+      validationResult({ blockers: [first, second, third] }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.blockers).toHaveLength(2);
+    expect(readiness.blockers[0]?.technical.rawPaths).toEqual(["generationSession.current_authoritative_state.current_location"]);
+    expect(readiness.blockers[1]?.affected).toEqual([
+      expect.objectContaining({ fieldPath: "generationSession.manual_moment_directive.must_render" })
+    ]);
+    expect(readiness.blockers[1]?.actions).toEqual([
+      { kind: "focus-field", label: "Edit launch directive", target: "generationSession.manual_moment_directive.must_render" },
+      { kind: "copy-technical-json", label: "Copy technical JSON" }
+    ]);
+    expect(readiness.blockers[1]?.technical.rawPaths).toEqual(["generationSession.manual_moment_directive.must_render"]);
+    expect(readiness.blockers[1]?.technical.evidence).toEqual([
+      "duplicate-code message",
+      "second duplicate-code message"
+    ]);
   });
 
   it("maps project and technical affected targets without record actions", () => {
@@ -200,6 +266,55 @@ describe("deriveReadiness", () => {
         actions: [{ kind: "copy-technical-json", label: "Copy technical JSON" }]
       })
     ]);
+  });
+
+  it.each([
+    ["generationSession.immediate_handoff.begin_after", "Edit continuation handoff"],
+    ["generationSession.current_authoritative_state.current_location", "Edit current state"],
+    ["generationSession.stop_guidance.soft_unit_guidance", "Edit stop guidance"],
+    ["generationSession.current_cast_voice_pressure[0].current_voice_pressure", "Edit voice pressure"],
+    ["generationSession.generation_validation_focus.validation_focus_tags", "Edit Generation Validation Focus Validation Focus Tags"]
+  ])("uses the targeted action label for %s", (field, label) => {
+    const readiness = deriveReadiness(
+      validationResult({ blockers: [diagnostic("blocker", "label-code", field)] }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.blockers[0]?.actions[0]).toEqual({ kind: "focus-field", label, target: field });
+  });
+
+  it("formats fallback record labels from uppercase record-type fields and short ids", () => {
+    const readiness = deriveReadiness(
+      validationResult({
+        blockers: [diagnostic("blocker", "record-code", "ENTITY STATUS.location", "shortid")]
+      }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.blockers[0]?.affected[0]).toMatchObject({
+      recordType: "ENTITY STATUS",
+      displayLabel: "ENTITY STATUS shortid"
+    });
+  });
+
+  it("keeps warning copy non-blocking rationale fields", () => {
+    const readiness = deriveReadiness(
+      validationResult({ warnings: [diagnostic("warning", DIAGNOSTIC_CODES.promptMiddleSalienceRisk, "records")] }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.warnings[0]).toMatchObject({
+      code: "prompt-length-risk",
+      group: "prompt-length-salience-risk",
+      whyThisIsNotBlocking: "The compiler still has enough deterministic continuity authority to produce a prompt.",
+      ignoringIsReasonableWhen: "The current local unit does not depend on this nuance."
+    });
   });
 
   it("adds working-set review actions for deselect suggestions and shortens long fallback IDs", () => {
@@ -230,6 +345,10 @@ describe("deriveReadiness", () => {
 
     expect(readiness.status).toBe("draft");
     expect(readiness.canSaveDraft).toBe(true);
+    expect(readiness.summary).toEqual({
+      headline: "Draft has unsaved changes",
+      nextAction: "Save the draft before trusting this readiness result."
+    });
     expect(readiness.unsavedDraft).toEqual({
       hasUnsavedChanges: true,
       readinessMayBeStale: true
