@@ -92,6 +92,13 @@ npm test
 npm run build
 ```
 
+   When a ticket changes `packages/core` and you run direct server or web tests
+   that import the built `@loom/core` package, rebuild the core workspace first
+   or prefer a root lane that rebuilds it. If a direct package test fails with
+   stale compiler/template/version metadata or other behavior that contradicts
+   the current source, rebuild the relevant workspace output and rerun the test
+   before treating the failure as a product regression.
+
    If a broad gate fails only from timeout or resource contention, and the
    failure is not an assertion, type, lint, build, or product error, rerun the
    affected targeted tests and then rerun the broad gate once before treating it
@@ -109,6 +116,14 @@ npm run build
    current gate can pass, classify it as an incidental gate fix. Prefer a
    separate commit when practical; if it lands in the ticket commit, name it
    explicitly in the ticket `Outcome` and final response.
+
+   If a pre-existing assertion spans behavior deliberately split across later
+   tickets, do not weaken it to hide a real failure. Either use the
+   same-revision exception when the intermediate state cannot be made coherent,
+   or, when the active ticket explicitly scopes the later behavior out, keep a
+   narrower assertion that still proves the current ticket invariant. Record the
+   temporary narrowing in the ticket `Outcome`, and restore or strengthen the
+   broader coverage in the dependent ticket before closing the series.
 5. For browser-facing or request-shape-sensitive work, add a real localhost or
    browser smoke instead of relying only on unit tests. Use loopback URLs only;
    record the project/path and URL used. When the smoke needs project data
@@ -261,3 +276,9 @@ Final responses must include:
 - Any checks not run and why.
 - Any unrelated pre-existing changes left untouched.
 - Any incidental unrelated gate fixes included in a ticket commit.
+
+Use explicit `none` entries when applicable, for example:
+
+- Checks not run: none.
+- Unrelated pre-existing changes left untouched: none observed.
+- Incidental unrelated gate fixes: none.
