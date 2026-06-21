@@ -1,6 +1,6 @@
 # SPEC-028 — Ideation Operator Taxonomy: Distinctness and Comprehensiveness
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 product-behavior spec; deterministic ideation prompt-compilation change (operator taxonomy, eligibility predicates, grounding bundles, dormancy modifier, distinctness rule, citation keys)
 Depends on: the deterministic ideation prompt compiler (`packages/core/src/compiler/ideation/*`, `sections/ideation.ts`, `template-constants.ts`), the citation-key machinery, the established `lint` / `typecheck` / `test` / `build` CI gates, and the core import-boundary rule. Builds on the landed `IDEAPROMPT-001` (citation keys from full label) and `IDEAPROMPT-002` (`ideation_contradiction_prohibitions` section), both archived.
 Governing authority: `docs/FOUNDATIONS.md`
@@ -518,3 +518,25 @@ mapping (verified unnecessary — ids are session-scoped scratch + internal type
 8. **Citation render sites.** Adding keys to EMOTION and ENTITY STATUS must
    preserve the one-authoritative-site invariant and must not duplicate those
    records in a second section.
+
+## Outcome
+
+Completed: 2026-06-21
+
+Implemented SPEC-028 across three dependency-ordered tickets:
+
+- `archive/tickets/SPEC028IDEOPETAX-001.md` replaced the ideation operator taxonomy with nine peer operators, added fail-closed operator-active predicates, minimum deterministic grounding bundles, `commit_at_a_cost` pressure-family checks, dormancy-as-modifier behavior, the dormant slot instruction, the version bump to template `1.3.0` / compiler `1.5.0` / contract `1.6.0`, and the ticket-owned authority/golden updates.
+- `archive/tickets/SPEC028IDEOPETAX-002.md` added EMOTION and ENTITY STATUS ideation citation keys at their authoritative render sites, replaced the emitted `<ideation_quality>` distinctness rule, updated the two authority docs, and re-baselined the ideation golden.
+- `archive/tickets/SPEC028IDEOPETAX-003.md` added the capstone regression suite and updated `docs/ACTIVE-DOCS.md`; this ticket is archived in the same closeout commit as this spec.
+
+Deviations: none from the accepted scope. The offline adversarial semantic-distinctness model-evaluation corpus remains out of scope and was not implemented. No FOUNDATIONS amendment was made because the implementation stays within deterministic, non-mutating, local-first assistance-prompt boundaries.
+
+Verification:
+- `npx vitest run packages/core/test/ideation-operator-eligibility.test.ts packages/core/test/ideation-slot-assignment.test.ts packages/core/test/ideation-slot-assignment.property.test.ts packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-front-sections.test.ts` passed during ticket 001.
+- `npx vitest run packages/core/test/ideation-citation-keys.property.test.ts packages/core/test/ideation-request-rendering.test.ts packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts` passed during ticket 002.
+- `npx vitest run packages/core/test/ideation-taxonomy-capstone.test.ts` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed on rerun after one unrelated web test flake was isolated by a passing targeted rerun: 158 test files, 1674 tests.
+- `npm run build` passed with the existing non-failing Vite large chunk warning.
+- `grep -q "1.3.0" docs/ACTIVE-DOCS.md` and `grep -q "1.6.0" docs/ACTIVE-DOCS.md` passed.

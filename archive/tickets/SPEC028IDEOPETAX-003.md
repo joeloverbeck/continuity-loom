@@ -1,6 +1,6 @@
 # SPEC028IDEOPETAX-003: Ideation taxonomy regression capstone, dense-working-set breadth fixture, and completion bookkeeping
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a new end-to-end ideation-taxonomy regression test file (including the dense-working-set breadth fixture); updates the `docs/ACTIVE-DOCS.md` version note and archives the spec; no production behavior change
@@ -81,3 +81,20 @@ Per `docs/archival-workflow.md`: flip the spec Status to COMPLETED, add an Outco
 1. `npx vitest run packages/core/test/ideation-taxonomy-capstone.test.ts`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. The grep/`test -f` checks in Acceptance are the correct boundary for the docs-note + archival bookkeeping, which carry no test-runnable assertion of their own.
+
+## Outcome
+
+Completed: 2026-06-21
+
+Added `packages/core/test/ideation-taxonomy-capstone.test.ts`, covering the composed SPEC-028 ideation taxonomy behavior: dense default breadth, dormancy as a real-operator modifier, minimum bundle sizes, unused-first grounds, two-family commitment, fail-closed reveal/status edges, deterministic prompt output, section order, and no selected-record eviction. Updated `docs/ACTIVE-DOCS.md` to the new version note: template `1.3.0`, compiler `1.5.0`, contract `1.6.0`.
+
+Verification:
+- `npx vitest run packages/core/test/ideation-taxonomy-capstone.test.ts` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- First `npm test` run passed the capstone but hit one unrelated `GenerationBriefView.test.tsx` mock-call assertion; rerunning that file passed, and the required broad rerun passed: 158 test files, 1674 tests.
+- `npm run build` passed. Vite reported the existing non-failing large chunk warning.
+- `grep -q "1.3.0" docs/ACTIVE-DOCS.md` passed.
+- `grep -q "1.6.0" docs/ACTIVE-DOCS.md` passed.
+
+Browser smoke rationale: not run for this capstone because it is test-only and documentation/archive bookkeeping; no browser-facing UI flow or request shape changed beyond the already-covered prompt-rendering surfaces.
