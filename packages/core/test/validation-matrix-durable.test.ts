@@ -40,6 +40,45 @@ describe("durable-change matrix validation", () => {
     expect(blockerCodes(input)).not.toEqual(expect.arrayContaining([...allDurableCodes]));
   });
 
+  it("stays silent when durable focus containers are absent or malformed", () => {
+    const absentFocus = cleanInput();
+    delete absentFocus.generationSession.generation_validation_focus;
+    removeRecord(absentFocus, objectId);
+    expect(blockerCodes(absentFocus)).not.toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
+
+    const missingTags = cleanInput();
+    missingTags.generationSession.generation_validation_focus = {} as never;
+    removeRecord(missingTags, objectId);
+    expect(blockerCodes(missingTags)).not.toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
+
+    const missingDurableLane = cleanInput();
+    missingDurableLane.generationSession.generation_validation_focus = {
+      validation_focus_tags: {
+        generation_context: [],
+        expected_local_modes: []
+      }
+    } as never;
+    removeRecord(missingDurableLane, objectId);
+    expect(blockerCodes(missingDurableLane)).not.toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
+  });
+
+  it.each([
+    ["generation context", "generation_context"],
+    ["expected local modes", "expected_local_modes"],
+    ["possible durable changes", "possible_durable_changes"]
+  ])("activates durable gates from %s focus tags", (_name, lane) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags = {
+      generation_context: [],
+      expected_local_modes: [],
+      possible_durable_changes: [],
+      [lane]: ["object_use_possible" as never]
+    };
+    removeRecord(input, objectId);
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixObjectUseIncomplete);
+  });
+
   it("accepts escalated obligations and faction or system institutions", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
@@ -136,6 +175,30 @@ describe("durable-change matrix validation", () => {
     });
   });
 
+  it("treats array payloads as empty objects for durable matrix records", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "object_use_possible",
+      "institutional_involvement_possible",
+      "clock_tick_possible",
+      "obligation_breach_possible"
+    ];
+    input.records = input.records.map((record) =>
+      [objectId, institutionId, clockId, obligationId].includes(record.id)
+        ? { ...record, payload: [record.id] }
+        : record
+    );
+
+    expect(blockerCodes(input)).toEqual(
+      expect.arrayContaining([
+        DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
+        DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete,
+        DIAGNOSTIC_CODES.matrixClockTickIncomplete,
+        DIAGNOSTIC_CODES.matrixObligationBreachIncomplete
+      ])
+    );
+  });
+
   it.each([
     ["object_use_possible", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, (input: BuildValidationSnapshotInput) => removeRecord(input, objectId)],
     ["object_transfer_possible", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "resulting holder")],
@@ -175,12 +238,14 @@ describe("durable-change matrix validation", () => {
   it.each([
     ["missing transfer affordance", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => removeRecord(input, affordanceTransferId)],
     ["blank consent or force", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", " ")],
+    ["null consent or force", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", null)],
     ["missing transfer route", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
     ["missing transfer positions", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "positions", [])],
     ["missing current state", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => {
       input.generationSession.current_authoritative_state = undefined;
     }],
     ["missing source location", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "current_location", "")],
+    ["missing movement routes", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", undefined)],
     ["missing movement time", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")],
     ["missing movement constraint", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "movement constraint")]
   ])("blocks transfer and movement when %s", (_name, code, tag, mutate) => {
@@ -268,6 +333,23 @@ describe("durable-change matrix validation", () => {
         ...input.records,
         {
           id: "019b0298-5c00-7000-8000-000000000012",
+          type: "FACT",
+          payload: {
+            status: "active",
+            current_pressure: "Wrong type pressure.",
+            tick_trigger: "Door opens.",
+            next_threshold: "Alarm sounds.",
+            possible_effects: ["guards arrive"]
+          }
+        }
+      ];
+    }],
+    ["non-clock active clock-shaped payload only", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => {
+      removeRecord(input, clockId);
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000018",
           type: "FACT",
           payload: {
             status: "active",
