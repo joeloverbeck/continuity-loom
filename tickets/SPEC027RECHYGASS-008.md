@@ -14,7 +14,7 @@ The non-§8-bound documentation surfaces must sync once the feature surfaces exi
 
 1. **Doc surfaces exist (codebase).** `docs/ideation-prompt-template.md:11` opens "The ideation prompt is the sanctioned assistance prompt class from `docs/FOUNDATIONS.md` Section 9.1… compiled from the same authority sources as the prose prompt" — the replace-target verified this session. `docs/validation-rule-inventory.md`, `docs/user-guide.md`, `README.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md` all exist (pre-write `test -f` confirmed).
 2. **Spec/doc authority.** `specs/SPEC-027` Deliverable 6 + proposal §11.3 (ideation opening), §11.6 (validation-inventory note), §11.8 (user guide), §11.9 (README), §11.10 (stress cases), §11.11 (coverage matrix). Proposal §11.7 / §11.12: `docs/narrative-theory-blocker-roadmap.md`, `docs/prompt-template.md`, `docs/prompt-template-rationale.md` get **no behavior change** (optional cross-reference only) — not ticketed.
-3. **Cross-artifact boundary under audit.** These docs reference surfaces built across `archive/tickets/SPEC027RECHYGASS-002.md` and SPEC027RECHYGASS-003…007 (compiler, version, routes, page). `Deps: SPEC027RECHYGASS-007` is the transitive head of the linear implementation chain (`archive/tickets/SPEC027RECHYGASS-001.md`←`archive/tickets/SPEC027RECHYGASS-002.md`←004←005←006←007, 003←004), so all referenced surfaces exist when this lands. The §8-bound docs (`docs/compiler-contract.md`, `docs/story-record-schema.md`) and the ACTIVE-DOCS registry are **not** here — they co-landed in 004 / 003 respectively.
+3. **Cross-artifact boundary under audit.** These docs reference surfaces built across `archive/tickets/SPEC027RECHYGASS-002.md`, `archive/tickets/SPEC027RECHYGASS-003.md`, `archive/tickets/SPEC027RECHYGASS-004.md`, and SPEC027RECHYGASS-005…007 (compiler, version, routes, page). `Deps: SPEC027RECHYGASS-007` is the transitive head of the linear implementation chain (`archive/tickets/SPEC027RECHYGASS-001.md`←`archive/tickets/SPEC027RECHYGASS-002.md`←`archive/tickets/SPEC027RECHYGASS-004.md`←005←006←007, `archive/tickets/SPEC027RECHYGASS-003.md`←`archive/tickets/SPEC027RECHYGASS-004.md`), so all referenced surfaces exist when this lands. The §8-bound docs (`docs/compiler-contract.md`, `docs/story-record-schema.md`) and the ACTIVE-DOCS registry are **not** here — they co-landed in 004 / 003 respectively.
 4. **FOUNDATIONS principle motivating this ticket.** §9.1 (amended) doctrinal coherence — the ideation opening must restate ideation as the `prose-aligned` source profile so the doc set moves together with the amendment; §11 — the validation-inventory note must state hygiene findings are **not** validation diagnostics and add **no** diagnostic code.
 5. **No validation code / no gate added (§11).** Confirm the `validation-rule-inventory.md` edit is the single documentary note only — it adds no diagnostic code to the inventory table — and the stress docs add review *cases*, not gates that block any operation.
 
@@ -61,7 +61,7 @@ Add the Record-hygiene row group mapping each case to its proof surface and the 
 
 ## Out of Scope
 
-- `docs/compiler-contract.md` + `docs/story-record-schema.md` (§8-co-located in SPEC027RECHYGASS-004) and `docs/ACTIVE-DOCS.md` (SPEC027RECHYGASS-003) and `docs/FOUNDATIONS.md` (`archive/tickets/SPEC027RECHYGASS-001.md`).
+- `docs/compiler-contract.md` + `docs/story-record-schema.md` (§8-co-located in `archive/tickets/SPEC027RECHYGASS-004.md`) and `docs/ACTIVE-DOCS.md` (`archive/tickets/SPEC027RECHYGASS-003.md`) and `docs/FOUNDATIONS.md` (`archive/tickets/SPEC027RECHYGASS-001.md`).
 - `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/narrative-theory-blocker-roadmap.md` — no behavior change.
 - Any production code; any validation diagnostic code.
 
@@ -82,7 +82,7 @@ Add the Record-hygiene row group mapping each case to its proof surface and the 
 
 ### New/Modified Tests
 
-1. `None — documentation-only ticket; verification is grep-based against the post-implementation tree, and feature behavior is covered by archive/tickets/SPEC027RECHYGASS-002.md and SPEC027RECHYGASS-003…007 plus the capstone (009).`
+1. `None — documentation-only ticket; verification is grep-based against the post-implementation tree, and feature behavior is covered by archive/tickets/SPEC027RECHYGASS-002.md, archive/tickets/SPEC027RECHYGASS-003.md, archive/tickets/SPEC027RECHYGASS-004.md, and SPEC027RECHYGASS-005…007 plus the capstone (009).`
 
 ### Commands
 

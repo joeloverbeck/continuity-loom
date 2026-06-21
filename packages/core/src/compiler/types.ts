@@ -5,6 +5,8 @@ export interface CompileMetadata {
   fingerprint: string;
   lengthEstimate: number;
   tokenEstimate: number;
+  countsByType?: Readonly<Record<string, number>>;
+  citationMap?: Readonly<Record<string, string>>;
 }
 
 export interface CompileResult {

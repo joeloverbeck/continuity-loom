@@ -23,15 +23,15 @@ export const versionInfo: VersionInfo = {
     version: "0.0.0"
   },
   templates: {
-    version: "1.1.0",
+    version: "1.2.0",
     status: "stable"
   },
   compiler: {
-    version: "1.3.0",
+    version: "1.4.0",
     status: "stable"
   },
   contract: {
-    version: "1.4.0",
+    version: "1.5.0",
     status: "stable"
   }
 };

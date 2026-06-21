@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/server` modules `record-hygiene-snapshot-builder.ts` and `record-hygiene-parse.ts` plus their tests. No change to any existing route or behavior.
-**Deps**: SPEC027RECHYGASS-004
+**Deps**: `archive/tickets/SPEC027RECHYGASS-004.md`
 
 ## Problem
 
@@ -13,8 +13,8 @@ The server must build the complete `StoryRecordHygieneSnapshot` from project sta
 ## Assumption Reassessment (2026-06-21)
 
 1. **Repository seams (codebase).** `RecordRepository` (`packages/server/src/record-repository.ts:168`); `listRecords({ includeArchived?: boolean }): RecordReadResult[]` (`:306`, maps each row through `getRecord` → `RecordReadResult` union at `:32`, which carries `{ ok:false, kind:"malformed-record" }`); `referencesForRecord(id): RecordReference[]` (`:474`, outgoing `refRole`/`targetId`); `incomingReferencesForRecord(id): IncomingRecordReference[]` (`:480`, `IncomingRecordReference` at `:69`). **Premise correction carried from reassessment**: `listRecords` does **not** silently drop malformed rows — it returns them as `{ ok:false }`; the builder must inspect each result and **fail `422 malformed-hygiene-source`** on any `ok:false`, never filter it out (the proposal's "as the general list route currently does" rationale is stale and must not be reused).
-2. **Spec/doc authority.** `specs/SPEC-027` Deliverable 3 + proposal §6.3 (builder steps) and §6.9 (parser rules); the output format is normative in the authority doc (SPEC027RECHYGASS-003).
-3. **Cross-artifact boundary under audit.** The builder produces `StoryRecordHygieneSnapshot`/`HygieneRecord`/`HygieneReferenceSummary` (types from `archive/tickets/SPEC027RECHYGASS-002.md`), gated by `isHygieneActive` (002) and labelled/status-projected via core registry functions (`projectRecordStatus`, `registry.ts:63`). The parser validates against the citation-key set the compiler emits (SPEC027RECHYGASS-004). It mirrors the error-category style of `ideate-routes.ts` (`{ ok:false, kind:… }`).
+2. **Spec/doc authority.** `specs/SPEC-027` Deliverable 3 + proposal §6.3 (builder steps) and §6.9 (parser rules); the output format is normative in the authority doc (`archive/tickets/SPEC027RECHYGASS-003.md`).
+3. **Cross-artifact boundary under audit.** The builder produces `StoryRecordHygieneSnapshot`/`HygieneRecord`/`HygieneReferenceSummary` (types from `archive/tickets/SPEC027RECHYGASS-002.md`), gated by `isHygieneActive` (002) and labelled/status-projected via core registry functions (`projectRecordStatus`, `registry.ts:63`). The parser validates against the citation-key set the compiler emits (`archive/tickets/SPEC027RECHYGASS-004.md`). It mirrors the error-category style of `ideate-routes.ts` (`{ ok:false, kind:… }`).
 4. **FOUNDATIONS principle motivating this ticket.** §9.1 (amended) whole-project completeness — the project-review source predicate must render the *complete* declared set or fail; §11 fail-closed — only structural/transport blockers gate, never the overlap/contradiction/staleness the surface exists to inspect. Completeness and fail-closed are the invariants under audit.
 5. **Secret-firewall + no-auto-mutation enforcement (§15/§13/§29.2).** Excluded `ENTITY`/`CAST MEMBER` references resolve to the stored repository `displayLabel` **only** — no dossier/base-record payload field enters the snapshot. The parser quarantines malformed output (`{ ok:false, raw }`) rather than repairing it with another model call, and **never** converts a finding into a record-write payload (no path from model output to a record mutation).
 

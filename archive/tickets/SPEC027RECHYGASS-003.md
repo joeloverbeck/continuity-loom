@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-003: Record-hygiene authority doc + ACTIVE-DOCS registry
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new authority doc `docs/story-record-hygiene-prompt-template.md` and `docs/ACTIVE-DOCS.md` registry + version-note edits (documentation surfaces). No production behavior change; the doc is the normative contract the compiler (SPEC027RECHYGASS-004) implements.
@@ -76,3 +76,28 @@ Add the registry row immediately after the ideation-template row; add `docs/stor
 1. `grep -nE "story-record-hygiene-prompt-template|project-review" docs/ACTIVE-DOCS.md docs/story-record-hygiene-prompt-template.md` — registry + authority-doc presence.
 2. `grep -nE "1\.2\.0|1\.4\.0|1\.5\.0" docs/ACTIVE-DOCS.md` — version-note bump.
 3. A doc-level grep set is the correct verification boundary because the doc is the compiler's *contract*; conformance of the rendered prompt to this contract is proven by the golden test in SPEC027RECHYGASS-004 (same revision), not by a test in this docs ticket.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added `docs/story-record-hygiene-prompt-template.md` as the active project-review record-hygiene prompt authority.
+- Registered the new authority doc in `docs/ACTIVE-DOCS.md`, added it to the prompt/compiler/schema authority list, updated the source-profile guidance sentence, and bumped the version note to template `1.2.0`, compiler `1.4.0`, and contract `1.5.0`.
+- Coupled this authority-doc registration in the same revision as SPEC027RECHYGASS-004 so the registered contract and compiler implementation land together.
+
+Deviations:
+- The authority doc carries the proposal's normative source predicate, taxonomies, section order, serialization, output contract, and quarantine rules in compact active-doc form rather than copying the entire source proposal verbatim.
+- The stale malformed-row rationale was not copied; the doc states the verified `listRecords` `{ ok:false, kind:"malformed-record" }` mechanism.
+
+Verification:
+- `grep -nE "story-record-hygiene-prompt-template|project-review" docs/ACTIVE-DOCS.md docs/story-record-hygiene-prompt-template.md` passed.
+- `grep -nE "1\\.2\\.0|1\\.4\\.0|1\\.5\\.0" docs/ACTIVE-DOCS.md docs/compiler-contract.md packages/core/src/version.ts` passed.
+- Active `docs/*.md` registry completeness loop produced no missing docs.
+- `npm test -- record-hygiene-golden` passed: 1 file, 5 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 137 files, 1032 tests.
+- `npm run lint --workspace @loom/core` passed.
+- Path-scoped `npx eslint` over touched code/tests passed.
+- `npm run lint` did not pass because the pre-existing untracked `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files. This was unrelated to SPEC027RECHYGASS-003/004 and was left untouched.

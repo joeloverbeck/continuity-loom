@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-004: Core deterministic hygiene compiler + contract/schema docs + version bump
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/core` modules `compiler/hygiene/{citation-keys,record-renderer,template,compile-record-hygiene-prompt}.ts`, `index.ts` export, `version.ts` bump (template→`1.2.0`, compiler→`1.4.0`, contract→`1.5.0`), and the §8-co-located `docs/compiler-contract.md` + `docs/story-record-schema.md` edits. Adds the deterministic `record_hygiene` prompt compiler; no change to the prose or ideation prompt contracts (their goldens change only in version metadata).
@@ -106,3 +106,31 @@ Update the produced-assertion sites enumerated in Assumption Reassessment item 6
 1. `npm test -- record-hygiene-golden` — targeted compiler/golden coverage.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline gate (catches every produced version-assertion site across packages; an un-updated inert-vs-produced misclassification surfaces here).
 3. Running the whole suite is the correct boundary because the version bump's blast radius spans `@loom/core` and `@loom/server` tests; a narrower run would miss a produced assertion in the other package.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added the dedicated core record-hygiene compiler entry point `compileRecordHygienePrompt`, separate citation-key generation, fixed section templates, escaped canonical record rendering, deterministic ordering, empty-source rendering, counts-by-type metadata, and citation-map metadata.
+- Exported the compiler and section constants from `@loom/core`.
+- Bumped `packages/core/src/version.ts` to template `1.2.0`, compiler `1.4.0`, and contract `1.5.0`.
+- Updated `docs/compiler-contract.md` and `docs/story-record-schema.md` with the project-review source profile, section order, source mapping, projection rules, and same-change change-control requirements.
+- Added `packages/core/test/record-hygiene-golden.test.ts` for section order, empty state, hostile payload escaping, deterministic ordering/citation keys, and fingerprint behavior.
+- Updated produced version assertions in core/server tests.
+- Coupled this compiler and contract work in the same revision as SPEC027RECHYGASS-003 so the registered authority doc and implementation land together.
+
+Deviations:
+- The compiler uses compact static section text that mirrors the authority doc rather than embedding the full proposal prose in code.
+- `CompileMetadata` gained optional `countsByType` and `citationMap` fields so the dedicated hygiene compiler can return the required review metadata without changing existing prose/ideation callers.
+
+Verification:
+- `npm test -- record-hygiene-golden` passed: 1 file, 5 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 137 files, 1032 tests.
+- `npm run lint --workspace @loom/core` passed.
+- Path-scoped `npx eslint` over touched code/tests passed.
+- `grep -nE "story-record-hygiene-prompt-template|project-review" docs/ACTIVE-DOCS.md docs/story-record-hygiene-prompt-template.md` passed.
+- `grep -nE "1\\.2\\.0|1\\.4\\.0|1\\.5\\.0" docs/ACTIVE-DOCS.md docs/compiler-contract.md packages/core/src/version.ts` passed.
+- `npm run lint` did not pass because the pre-existing untracked `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files. This was unrelated to SPEC027RECHYGASS-003/004 and was left untouched.
