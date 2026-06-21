@@ -83,7 +83,8 @@ describe("deriveReadiness", () => {
       title: "Complete the current state",
       group: "required-before-prompt-generation",
       summary: "Current authoritative state is missing: current location, onstage entities, immediate situation summary.",
-      fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary."
+      fastestFix: "In CURRENT AUTHORITATIVE STATE, fill current_time, current_location, onstage_entities, and immediate_situation_summary.",
+      whenItBecomesBlocking: "Always blocks Preview and Generate until all required current-state fields are supplied."
     });
   });
 
@@ -97,6 +98,8 @@ describe("deriveReadiness", () => {
       code: "provider-configuration-missing",
       title: "Configure OpenRouter before generating",
       summary: "Prompt preview can still work, but sending needs a local OpenRouter credential.",
+      whyItMatters: "Continuity Loom can only send generation requests when the provider is configured locally.",
+      fastestFix: "Open settings and add the OpenRouter API key.",
       affected: [expect.objectContaining({
         kind: "provider-setting",
         fieldPath: "openrouter.apiKey",
@@ -126,6 +129,18 @@ describe("deriveReadiness", () => {
     const readiness = deriveReadiness(validation, { configured: providerConfigured }, { hasUnsavedChanges: false }, new Map());
 
     expect(readiness.summary.headline).toBe(headline);
+  });
+
+  it("marks clean configured readiness as fully ready without stale draft state", () => {
+    const readiness = deriveReadiness(validationResult({}), { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.status).toBe("ready");
+    expect(readiness.canPreview).toBe(true);
+    expect(readiness.canGenerate).toBe(true);
+    expect(readiness.unsavedDraft).toEqual({
+      hasUnsavedChanges: false,
+      readinessMayBeStale: false
+    });
   });
 
   it.each([
@@ -334,6 +349,27 @@ describe("deriveReadiness", () => {
     ]);
   });
 
+  it("maps technical field references with display labels and navigation targets", () => {
+    const readiness = deriveReadiness(
+      validationResult({ blockers: [diagnostic("blocker", "technical-code", "versions.contract")] }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.blockers[0]?.affected).toEqual([
+      {
+        kind: "technical",
+        fieldPath: "versions.contract",
+        displayLabel: "Versions Contract",
+        navTarget: "versions.contract"
+      }
+    ]);
+    expect(readiness.blockers[0]?.actions).toEqual([
+      { kind: "copy-technical-json", label: "Copy technical JSON" }
+    ]);
+  });
+
   it.each([
     ["generationSession.immediate_handoff.begin_after", "Edit continuation handoff"],
     ["generationSession.current_authoritative_state.current_location", "Edit current state"],
@@ -354,7 +390,7 @@ describe("deriveReadiness", () => {
   it("formats fallback record labels from uppercase record-type fields and short ids", () => {
     const readiness = deriveReadiness(
       validationResult({
-        blockers: [diagnostic("blocker", "record-code", "ENTITY STATUS.location", "shortid")]
+        blockers: [diagnostic("blocker", "record-code", "ENTITY STATUS.location", "short/id")]
       }),
       { configured: true },
       { hasUnsavedChanges: false },
@@ -362,8 +398,12 @@ describe("deriveReadiness", () => {
     );
 
     expect(readiness.blockers[0]?.affected[0]).toMatchObject({
+      kind: "record",
+      recordId: "short/id",
       recordType: "ENTITY STATUS",
-      displayLabel: "ENTITY STATUS shortid"
+      fieldPath: "ENTITY STATUS.location",
+      displayLabel: "ENTITY STATUS short/id",
+      navTarget: "/records?recordId=short%2Fid"
     });
   });
 
@@ -396,6 +436,7 @@ describe("deriveReadiness", () => {
     expect(readiness.warnings[0]).toMatchObject({
       code: "prompt-length-risk",
       group: "prompt-length-salience-risk",
+      whyItMatters: "This may weaken local prose output, but it does not make the prompt structurally invalid.",
       whyThisIsNotBlocking: "The compiler still has enough deterministic continuity authority to produce a prompt.",
       ignoringIsReasonableWhen: "The current local unit does not depend on this nuance."
     });
