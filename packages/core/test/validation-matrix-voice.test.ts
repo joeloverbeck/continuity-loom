@@ -18,6 +18,7 @@ const castA = "019b0298-5c00-7000-8000-000000000002";
 const castB = "019b0298-5c00-7000-8000-000000000003";
 const castC = "019b0298-5c00-7000-8000-000000000004";
 const minorId = "019b0298-5c00-7000-8000-000000000005";
+const secondMinorId = "019b0298-5c00-7000-8000-000000000015";
 const entityId = "019b0298-5c00-7000-8000-000000000006";
 const factId = "019b0298-5c00-7000-8000-000000000007";
 const statusId = "019b0298-5c00-7000-8000-000000000008";
@@ -207,6 +208,126 @@ describe("voice/dialogue/presence matrix validation", () => {
     }]
   ])("blocks present minor speech when %s", (_name, mutate) => {
     expectMatrixBlock("present_minor_speech_possible", DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete, mutate);
+  });
+
+  it.each([
+    {
+      tag: "dialogue_expected",
+      code: DIAGNOSTIC_CODES.matrixDialogueIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.storyConfig.proseMode!.language_output = "";
+      },
+      expected: {
+        affected: [{ field: "generationSession.active_working_set.active_onstage_cast_full" }],
+        message: "Dialogue focus lacks active speaker voice anchors, language, knowledge, or relationship/status context.",
+        whyItMatters: "Dialogue needs current speaker functions, durable voice anchors, and relationship/status context so active cast do not flatten into generic speech.",
+        suggestedActions: ["add-voice-or-body-pressure", "add-knowledge-constraint"]
+      }
+    },
+    {
+      tag: "ensemble_dialogue_expected",
+      code: DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        setActiveCast(input, [
+          { cast_member_id: castA, local_function: "active_speaker" },
+          { cast_member_id: castB, local_function: "pov_narrator" }
+        ]);
+      },
+      expected: {
+        affected: [{ field: "generationSession.active_working_set.active_onstage_cast_full" }],
+        message: "Ensemble dialogue focus lacks three anchored speakers or audibility/relationship context.",
+        whyItMatters: "Three or more speakers need durable voice anchors plus clear interruptibility/audibility and relationship/status state.",
+        suggestedActions: ["add-voice-or-body-pressure", "add-current-state"]
+      }
+    },
+    {
+      tag: "active_silent_presence_expected",
+      code: DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        setVoicePressure(input, castC, { nonverbal_or_silence_pressure: "none" });
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_cast_voice_pressure" }],
+        message: "Active silent presence focus lacks body dossier, position/visibility, silence pressure, or POV/action limits.",
+        whyItMatters: "A silent onstage character still needs body presence and allowed nonverbal pressure to remain continuity-bearing.",
+        suggestedActions: ["add-voice-or-body-pressure", "add-current-state"]
+      }
+    },
+    {
+      tag: "present_minor_speech_possible",
+      code: DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.filter((entry) => entry.cast_member_id !== minorId);
+      },
+      expected: {
+        affected: [{ field: "generationSession.active_working_set.present_minor_cast_compressed" }],
+        message: "Present minor speech focus lacks deliverable dialogue guidance or active/onstage promotion.",
+        whyItMatters: "A present minor cast member should not receive material speech unless the prompt carries compressed speech guidance, current dialogue pressure, or a dialogue-targeted current override.",
+        suggestedActions: ["promote-cast", "add-voice-or-body-pressure"]
+      }
+    }
+  ])("emits exact diagnostic contract for $tag", ({ tag, code, mutate, expected }) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      tag as ExpectedLocalMode
+    ];
+    mutate(input);
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code,
+      ...expected
+    });
+  });
+
+  it("blocks ensemble dialogue when only some of three speakers have voice anchors", () => {
+    expectMatrixBlock("ensemble_dialogue_expected", DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete, (input) => {
+      setActiveCast(input, [
+        { cast_member_id: castA, local_function: "active_speaker" },
+        { cast_member_id: castB, local_function: "pov_narrator" },
+        { cast_member_id: castC, local_function: "active_speaker" }
+      ]);
+      setRecordPayload(input, castC, { voice_anchor: undefined });
+    });
+  });
+
+  it("blocks active silent presence when only one of multiple silent cast members is complete", () => {
+    expectMatrixBlock("active_silent_presence_expected", DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete, (input) => {
+      input.records = [...input.records, castRecord(secondMinorId, entityId)];
+      setActiveCast(input, [
+        { cast_member_id: castC, local_function: "active_silent" },
+        { cast_member_id: secondMinorId, local_function: "active_silent" }
+      ]);
+      input.generationSession.current_cast_voice_pressure = [
+        pressure(castC, "C is watchful.", "none", "C grips the doorframe."),
+        pressure(secondMinorId, "Second silent watches.", "none", "none")
+      ];
+    });
+  });
+
+  it("blocks present minor speech when only one compressed minor is promoted or guided", () => {
+    expectMatrixBlock("present_minor_speech_possible", DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete, (input) => {
+      input.generationSession.active_working_set!.present_minor_cast_compressed = [minorId, secondMinorId];
+      input.generationSession.active_working_set!.active_onstage_cast_full.push({
+        cast_member_id: minorId,
+        local_function: "active_speaker"
+      });
+      input.generationSession.current_cast_voice_pressure = [];
+    });
+  });
+
+  it.each([
+    ["public fact", { type: "FACT", payload: { known_by: "public" } }],
+    ["belief held by another entity", { type: "BELIEF", payload: { holder: entityId } }],
+    ["secret held by another entity", { type: "SECRET", payload: { holders: [entityId] } }]
+  ])("does not accept dialogue knowledge context from %s", (_label, knowledgeRecord) => {
+    expectMatrixBlock("dialogue_expected", DIAGNOSTIC_CODES.matrixDialogueIncomplete, (input) => {
+      input.records = input.records
+        .filter((record) => record.id !== factId)
+        .concat({ id: factId, type: knowledgeRecord.type, payload: { id: factId, ...knowledgeRecord.payload } });
+    });
   });
 
   it("does not block dialogue when speakers have durable voice anchors but no local pressure pins", () => {
