@@ -172,9 +172,6 @@ describe("compiler ideation golden prompt", () => {
       "[BELIEF-2]"
     ]);
     for (const key of groundsKeys(first.prompt)) {
-      if (key.startsWith("[EMOTION-")) {
-        continue;
-      }
       const inlinePrompt = promptWithoutSection(first.prompt, "ideation_slots");
       expect(Array.from(inlinePrompt.matchAll(escapeRegExp(key))).length).toBe(1);
     }

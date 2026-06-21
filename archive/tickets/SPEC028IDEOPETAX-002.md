@@ -1,6 +1,6 @@
 # SPEC028IDEOPETAX-002: Add EMOTION + ENTITY STATUS citation keys and replace the ideation distinctness instruction
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds ideation citation keys for EMOTION (`sections/pressure.ts`) and ENTITY STATUS (`sections/records-tail.ts`), replaces the `<ideation_quality>` distinctness text constant (`template-constants.ts`), co-lands the matching `docs/ideation-prompt-template.md` + `docs/compiler-contract.md` citation-keys/distinctness sections, and re-baselines the ideation golden; no change to prose-prompt behavior
@@ -105,3 +105,20 @@ Regenerate `golden-ideation.prompt.txt` via `compiler-ideation-golden.test.ts` u
 1. `npx vitest run packages/core/test/ideation-citation-keys.property.test.ts packages/core/test/ideation-request-rendering.test.ts packages/core/test/compiler-ideation-golden.test.ts`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. Running `compiler-golden.test.ts` (prose) alongside the ideation golden is the correct boundary to prove the key additions did not leak into the prose prompt.
+
+## Outcome
+
+Completed: 2026-06-21
+
+Implemented the remaining SPEC-028 ideation prompt-text changes: EMOTION now keys at `<relationship_and_emotion_pressure>`, ENTITY STATUS keys at its authoritative ideation current-state site in `<physical_continuity>`, and the emitted `<ideation_quality>` text now uses the operator/dominant-change-target distinctness rule with the stale reincorporation wording removed.
+
+Updated `docs/ideation-prompt-template.md` and `docs/compiler-contract.md` to mirror the new key render sites and distinctness rule, re-baselined `golden-ideation.prompt.txt`, and added render coverage proving EMOTION/ENTITY STATUS keys appear only on the ideation path while prose remains unkeyed.
+
+Verification:
+- `npx vitest run packages/core/test/ideation-citation-keys.property.test.ts packages/core/test/ideation-request-rendering.test.ts packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-golden.test.ts` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm test` passed: 157 test files, 1670 tests.
+- `npm run build` passed. Vite reported the existing non-failing large chunk warning.
+
+Browser smoke rationale: not run for this ticket because the changed behavior is deterministic prompt rendering and is covered by core render/golden tests plus prose-path firewall assertions; no browser UI workflow changed.

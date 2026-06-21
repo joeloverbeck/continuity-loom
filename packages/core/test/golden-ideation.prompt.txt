@@ -198,8 +198,8 @@ Open threads are unresolved pressures, promises, risks, mysteries, or tensions. 
 </active_open_threads>
 
 <relationship_and_emotion_pressure>
-- Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
-- Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
+- [EMOTION-1] Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
+- [EMOTION-2] Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
 - [RELATIONSHIP-1] They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
 </relationship_and_emotion_pressure>
 
@@ -326,8 +326,8 @@ Each idea should satisfy the eventfulness rubric: relevant to the selected recor
 Move the story far without contradicting any compiled record, current authoritative state, physical constraint, POV knowledge boundary, or reveal lock.
 Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
 If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
-Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
-Ideas must be mutually distinct. No two ideas may share the same dominant pressure source or the same dramatic move; each idea should differ from the others along at least one named axis: who acts, which pressure fires, or what changes durably.
+Prefer causal pressure, try-fail friction, dormant-pressure return, consequence, and costly commitment over spectacle.
+Ideas must be mutually distinct. Each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 </ideation_quality>
 
 <ideation_output_format>

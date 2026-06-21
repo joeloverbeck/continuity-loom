@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { compilePrompt, demoGenerationSession, demoStoryConfig } from "../src/index.js";
+import { compilePrompt, demoGenerationSession, demoStoryConfig, type GenerationSession } from "../src/index.js";
 import { renderIdeationSlotsSection } from "../src/compiler/sections/ideation.js";
 import { ideationRequestSchema } from "../src/compiler/ideation/types.js";
 import { buildValidationSnapshot, type ValidationRecord } from "../src/validation/snapshot.js";
@@ -71,12 +71,41 @@ No grounded ideation slots are available.
     expect(result.prompt).not.toContain("Begin prose exactly after this point");
     expect(result.prompt).not.toContain("hidden clock");
   });
+
+  it("renders EMOTION and ENTITY STATUS keys only in ideation prompts", () => {
+    const generationSession: GenerationSession = {
+      ...demoGenerationSession,
+      current_authoritative_state: {
+        ...demoGenerationSession.current_authoritative_state,
+        entity_statuses: ["entity-status"]
+      }
+    };
+    const snapshot = snapshotWith(
+      [
+        ideationRecord("EMOTION", "emotion", { label: "Elin keeps fear under tight control" }),
+        ideationRecord("ENTITY STATUS", "entity-status", { label: "Elin stands by the flour bin" })
+      ],
+      generationSession
+    );
+    const ideation = compilePrompt(snapshot, {
+      promptKind: "ideation",
+      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    }).prompt;
+    const prose = compilePrompt(snapshot, { promptKind: "prose" }).prompt;
+
+    expect(ideation).toContain("[EMOTION-1] Elin keeps fear under tight control");
+    expect(ideation).toContain("statuses: [ENTITY STATUS-1] Elin stands by the flour bin");
+    expect(prose).toContain("Elin keeps fear under tight control");
+    expect(prose).toContain("statuses: Elin stands by the flour bin");
+    expect(prose).not.toContain("[EMOTION-1]");
+    expect(prose).not.toContain("[ENTITY STATUS-1]");
+  });
 });
 
-function snapshotWith(records: readonly ValidationRecord[]) {
+function snapshotWith(records: readonly ValidationRecord[], generationSession: GenerationSession = demoGenerationSession) {
   return buildValidationSnapshot({
     records,
-    generationSession: demoGenerationSession,
+    generationSession,
     storyConfig: demoStoryConfig,
     versions: { template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" }
   });

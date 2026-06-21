@@ -102,8 +102,8 @@ Defines the quality bar:
 - reveal ideas must obey compiled reveal constraints;
 - without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure;
 - unsupported slots output `SKIPPED` rather than inventing support;
-- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle;
-- ideas must be mutually distinct: no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
+- prefer causal pressure, try-fail friction, dormant-pressure return, consequence, and costly commitment over spectacle;
+- ideas must be mutually distinct: each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 
 ### Ideation `<contradiction_prohibitions>`
 
@@ -173,11 +173,12 @@ Keys render inline once at the record's authoritative ideation section:
 | `CLOCK` | `<active_clocks>` |
 | `PLAN`, `INTENTION` | `<active_plans_and_intentions>` |
 | `OBLIGATION`, `CONSEQUENCE` | `<active_obligations_and_consequences>` |
-| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `RELATIONSHIP`, `EMOTION` | `<relationship_and_emotion_pressure>` |
 | `OPEN THREAD` | `<active_open_threads>` |
 | `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION` | `<locations_objects_affordances>` |
+| `ENTITY STATUS` | `<physical_continuity>` / status lines |
 
-`EMOTION` and `ENTITY STATUS` records render without keys because they do not ground ideation operators. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+`EMOTION` records render keys at `<relationship_and_emotion_pressure>`. `ENTITY STATUS` records render keys at their authoritative ideation current-state site in `<physical_continuity>`. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
 
 ## UI Handling
 

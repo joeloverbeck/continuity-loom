@@ -139,7 +139,7 @@ Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`,
 - `<manual_directive>` with an ideation label for `must_render`: "The author's directive for the next segment (binding context: ideas must be compatible with it)".
 - `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
 - `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, slot citation keys, and any dormant-record modifier instruction.
-- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says each idea must execute its assigned operator and produce one dominant local state transition; no two ideas may use the same operator or end in the same dominant change target; wording, actors, and citation keys alone do not prove distinctness; and who acts or which pressure fires are secondary preferences.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
 - `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
 
@@ -169,12 +169,14 @@ Ideation citation keys render inline at exactly one authoritative site per opera
 | `OBLIGATION` | `<active_obligations_and_consequences>` / Obligations |
 | `CONSEQUENCE` | `<active_obligations_and_consequences>` / Consequences |
 | `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `EMOTION` | `<relationship_and_emotion_pressure>` |
 | `OPEN THREAD` | `<active_open_threads>` |
 | `VISIBLE AFFORDANCE` | `<locations_objects_affordances>` / Visible affordances |
 | `OBJECT` | `<locations_objects_affordances>` / Objects |
 | `LOCATION` | `<locations_objects_affordances>` / Locations |
+| `ENTITY STATUS` | `<physical_continuity>` / status lines |
 
-`EMOTION` and `ENTITY STATUS` records render unkeyed because they do not ground ideation operators. The prose prompt never renders ideation citation keys.
+The prose prompt never renders ideation citation keys.
 
 ### 3.3 Record-Hygiene Prompt Section Order
 
