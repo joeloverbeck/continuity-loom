@@ -621,6 +621,19 @@ describe("universal blocker validation", () => {
   });
 
   it.each([
+    ["matching stop guidance without directive marker", "B asks for the key.", "Stop after the first response point."],
+    ["matching directive without stop marker", "Continue through the argument.", "End once B speaks."],
+    ["later-consequence stop without immediate-stop directive", "B asks for the key.", "Continue through the later consequence."],
+    ["immediate-stop directive without later-consequence stop", "Stop immediately after one look.", "End once B speaks."]
+  ])("does not invent directive/stop conflict for %s", (_name, directiveText, stopText) => {
+    const input = cleanInput();
+    input.generationSession.manual_moment_directive!.must_render = [directiveText];
+    input.generationSession.stop_guidance!.soft_unit_guidance = stopText;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement);
+  });
+
+  it.each([
     "This contradicts current state.",
     "This is not the current state."
   ])("blocks handoff contradiction marker '%s'", (handoffText) => {
@@ -643,6 +656,21 @@ describe("universal blocker validation", () => {
         payload: { entity_id: entityId, life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }
       },
       { id: recordB, type: "ENTITY STATUS", payload }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
+  it("does not inspect non-status records for current-location conflicts", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: { entity_id: entityId, life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000222")
     ];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
@@ -755,6 +783,31 @@ describe("universal blocker validation", () => {
           resources: [],
           fallback_steps: [],
           ...planPayload
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("ignores malformed entity-status payloads when indexing active plan holders", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
         }
       }
     ];
@@ -931,6 +984,42 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
   });
 
+  it("does not treat all-except-holders protection as hiding a secret from holders", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: "all_except_holders",
+          pov_access: "knows",
+          forbidden_reveals: ["Do not reveal the motive."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["a careful pause"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("treats array payloads as empty objects for blocker payload guards", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      { id: recordA, type: "SECRET", payload: [povId] },
+      { id: recordB, type: "PLAN", payload: [entityId] }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
   it.each([
     ["manual may-render lane", (input: BuildValidationSnapshotInput) => {
       input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = ["Use the accepted segment text."];
@@ -982,12 +1071,49 @@ describe("universal blocker validation", () => {
     });
   });
 
+  it("blocks content-envelope pressure when voice lists are omitted", () => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, (input) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.current_cast_voice_pressure = [{
+        cast_member_id: castId,
+        current_voice_pressure: "Push into graphic gore.",
+        dialogue_pressure: "none",
+        pov_narration_pressure: "none",
+        nonverbal_or_silence_pressure: "none"
+      } as never];
+    });
+  });
+
   it("does not block content envelope when policy is absent", () => {
     const input = cleanInput();
     delete input.storyConfig.universalContentPolicy;
     input.generationSession.manual_moment_directive!.must_render = ["Render graphic gore."];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.contentEnvelopeContradiction);
+  });
+
+  it.each([
+    "object_use_possible",
+    "object_transfer_possible",
+    "location_change_possible",
+    "restraint_or_coercion_possible",
+    "intimacy_or_sex_possible",
+    "violence_or_injury_possible"
+  ])("blocks missing physical context for focus tag %s", (focusTag) => {
+    expectBlock(DIAGNOSTIC_CODES.impossibleActionPhysicalContext, (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [focusTag as never];
+      input.generationSession.current_authoritative_state!.available_time = null as never;
+    });
+  });
+
+  it("blocks missing offstage route when the focus tag comes from durable changes", () => {
+    expectBlock(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute, (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "offstage_interruption_possible" as never
+      ];
+      input.generationSession.current_authoritative_state!.routes_and_exits = undefined as never;
+    });
   });
 
   it("blocks when the compiler version source is missing", () => {
