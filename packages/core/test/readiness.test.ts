@@ -113,6 +113,8 @@ describe("deriveReadiness", () => {
         rawPaths: ["openrouter.apiKey"]
       }
     });
+    expect(readiness.provider.blockers[0]?.dedupeKey).toBe("blocker:provider-configuration-missing");
+    expect(readiness.provider.blockers[0]?.sortKey).toBe("0:blocker:provider-configuration-missing");
   });
 
   it.each([
@@ -124,6 +126,37 @@ describe("deriveReadiness", () => {
     const readiness = deriveReadiness(validation, { configured: providerConfigured }, { hasUnsavedChanges: false }, new Map());
 
     expect(readiness.summary.headline).toBe(headline);
+  });
+
+  it.each([
+    [
+      "blocked",
+      validationResult({ blockers: [diagnostic("blocker", DIAGNOSTIC_CODES.missingManualDirective, "generationSession.manual_moment_directive.must_render")] }),
+      {
+        headline: "1 required item before generation",
+        nextAction: "Fix the required readiness items, then refresh."
+      }
+    ],
+    [
+      "ready with warnings",
+      validationResult({ warnings: [diagnostic("warning", DIAGNOSTIC_CODES.castSalienceRisk, "CAST MEMBER", "cast-a")] }),
+      {
+        headline: "Ready with recommendations",
+        nextAction: "Preview and Generate are available; review warnings if stronger output matters."
+      }
+    ],
+    [
+      "ready",
+      validationResult({}),
+      {
+        headline: "Ready to generate",
+        nextAction: "Preview and Generate are available."
+      }
+    ]
+  ])("uses exact readiness summary copy for %s", (_name, validation, summary) => {
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.summary).toEqual(summary);
   });
 
   it("pluralizes the required-item summary when provider and validation blockers are both present", () => {
@@ -172,6 +205,39 @@ describe("deriveReadiness", () => {
       group: "recommended-for-stronger-output",
       fastestFix: "Use suggested action: revise."
     });
+  });
+
+  it("formats fallback titles without empty words from repeated separators", () => {
+    const validation = validationResult({
+      blockers: [diagnostic("blocker", "new--validator-code", "versions")]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers[0]?.title).toBe("New Validator Code");
+    expect(readiness.blockers[0]?.sortKey).toBe("0:blocker:new--validator-code:blocker:new--validator-code:versions:");
+  });
+
+  it("sorts readiness diagnostics by blocking group before recommendation groups", () => {
+    const validation = validationResult({
+      blockers: [diagnostic("blocker", "zzz-blocker", "versions")],
+      warnings: [
+        diagnostic("warning", DIAGNOSTIC_CODES.promptMiddleSalienceRisk, "records"),
+        diagnostic("warning", DIAGNOSTIC_CODES.localVoicePressureMayHelp, "generationSession.current_cast_voice_pressure")
+      ]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect([
+      readiness.blockers[0]?.group,
+      readiness.warnings[0]?.group,
+      readiness.warnings[1]?.group
+    ]).toEqual([
+      "required-before-prompt-generation",
+      "recommended-for-stronger-output",
+      "prompt-length-salience-risk"
+    ]);
   });
 
   it("uses generic fallback repair copy when diagnostics have no suggested actions", () => {
@@ -298,6 +364,24 @@ describe("deriveReadiness", () => {
     expect(readiness.blockers[0]?.affected[0]).toMatchObject({
       recordType: "ENTITY STATUS",
       displayLabel: "ENTITY STATUS shortid"
+    });
+  });
+
+  it.each([
+    ["lowercase prefix before uppercase type", "xENTITY STATUS.location"],
+    ["lowercase suffix after uppercase type", "ENTITY STATUSx.location"]
+  ])("does not infer record type from %s", (_name, field) => {
+    const readiness = deriveReadiness(
+      validationResult({
+        blockers: [diagnostic("blocker", "record-code", field, "abcdefghijk")]
+      }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.blockers[0]?.affected[0]).toMatchObject({
+      displayLabel: "Record abcdefgh"
     });
   });
 
