@@ -54,7 +54,7 @@ Make `core-coverage` and `mutation-changed` required; record the required-status
 ## Out of Scope
 
 - Any pillar test content (Phases B/C/D) or new campaigns.
-- Queuing the secondary-tier follow-ups (SPEC026MUTDRIROB-023).
+- Queuing the secondary-tier follow-ups (archive/tickets/SPEC026MUTDRIROB-023.md).
 - Any runtime/schema/diagnostic/contract-version change.
 
 ## Acceptance Criteria

@@ -201,3 +201,33 @@ Classify the defect, open or update the owning ticket/spec, and fix the product
 behavior under the relevant domain authority. Contract-version changes,
 diagnostic changes, prompt text changes, schema changes, OpenRouter behavior, and
 accepted-prose behavior remain outside this document's authority.
+
+## Queued Secondary-Tier Hardening
+
+SPEC-026 deliberately defers the report's secondary criticality audit to future
+spec work. These items are queued scope, not automatically revived backlog, and
+each must become its own future spec before implementation begins.
+
+Recommended order:
+
+1. Snapshot/reference integrity first: harden `packages/server/src/snapshot-builder.ts`
+   and adjacent working-set/reference assembly seams. This is the choke point
+   from persisted project state into the validation and compilation snapshot, so
+   future work should cover archive filtering, selected-record resolution,
+   project indexes, dangling-state fail-closed behavior, and clean
+   snapshot-then-compile contracts.
+2. Server security envelope next: harden selected localhost API and OpenRouter
+   request/error/model helper seams, focusing on pure request builders,
+   provider-error classifiers, secret discipline, and simulated transport
+   failure handling before any broad integration campaign.
+3. SQLite/project durability next: harden local-first persistence, including
+   project storage/store behavior, record tables, migrations, recoverability,
+   transaction/fault-injection behavior, close/reopen invariants, and narrowly
+   scoped mutation for pure decision helpers.
+4. Record identity and normalization support: harden `uuidv7.ts` and core
+   normalization helpers with fixed vectors, injected time/randomness,
+   uniqueness, version/variant, monotonic-ordering, and reference-preservation
+   properties.
+
+Compiler fingerprint and token-estimate robustness are not queued here because
+they are already part of the P1 compiler scope.

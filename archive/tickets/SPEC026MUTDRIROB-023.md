@@ -1,10 +1,22 @@
 # SPEC026MUTDRIROB-023: Document and queue secondary-tier follow-ups
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — adds documentation queuing the deferred secondary-tier hardening scope; no production behavior change, no implementation.
 **Deps**: archive/tickets/SPEC026MUTDRIROB-004.md
+
+## Outcome
+
+- Added `docs/robustness-testing.md#queued-secondary-tier-hardening`, recording the deferred SPEC-026 secondary-tier hardening scope.
+- The queued order is snapshot/reference integrity first, server security envelope next, SQLite/project durability next, then record identity/normalization support. The note explicitly frames each item as future spec work, not automatically revived backlog.
+- No implementation, config, spec, ticket-creation, runtime, schema, or version change was made for the secondary-tier targets.
+
+Verification:
+
+- `grep -ni "secondary-tier\|snapshot/reference\|durability" docs/robustness-testing.md` (queued scope present)
+- `git diff --name-only` before ticket closeout showed only `docs/robustness-testing.md` for the implementation diff
+- `npm run lint` (passed)
 
 ## Problem
 
