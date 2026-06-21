@@ -5,7 +5,8 @@
     "declaration": false,
     "declarationMap": false,
     "noEmit": true,
-    "rootDir": "."
+    "rootDir": ".",
+    "types": ["node"]
   },
   "include": ["src/**/*.ts", "test/**/*.ts", "src/**/*.test.ts"]
 }
