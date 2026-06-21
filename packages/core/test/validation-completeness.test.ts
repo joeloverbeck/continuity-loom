@@ -193,6 +193,41 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).toContain(code);
   });
 
+  it.each([
+    ["missing content policy", (input: BuildValidationSnapshotInput) => {
+      delete input.storyConfig.universalContentPolicy;
+    }, "storyConfig.universalContentPolicy"],
+    ["blank content policy rating", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.rating_label = "";
+    }, "storyConfig.universalContentPolicy"],
+    ["blank allowed scope", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "";
+    }, "storyConfig.universalContentPolicy"],
+    ["blank tonal handling", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.tonal_handling = "";
+    }, "storyConfig.universalContentPolicy"],
+    ["blank bias handling", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.character_bias_handling = "";
+    }, "storyConfig.universalContentPolicy"],
+    ["missing prose mode", (input: BuildValidationSnapshotInput) => {
+      delete input.storyConfig.proseMode;
+    }, "storyConfig.proseMode"],
+    ["blank prose mode POV", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode!.pov_character = "";
+    }, "storyConfig.proseMode"],
+    ["blank language output", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode!.language_output = "";
+    }, "storyConfig.proseMode"]
+  ])("blocks story configuration when %s", (_name, mutate, field) => {
+    const input = cleanInput();
+    mutate(input);
+
+    const diagnostic = missingStoryConfigBlocker(input, field);
+
+    expect(diagnostic?.severity).toBe("blocker");
+    expect(diagnostic?.affected[0]?.field).toBe(field);
+  });
+
   it("requires only the minimum current authoritative state when no physical focus tag is selected", () => {
     const input = cleanInput();
     input.generationSession.current_authoritative_state = {
@@ -263,6 +298,32 @@ describe("universal completeness validation", () => {
     delete input.generationSession.immediate_handoff;
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
+  });
+
+  it.each([
+    ["missing recent context", { recent_causal_context: "", last_visible_moment: "B saw the key.", begin_after: "" }],
+    ["missing both launch anchors", { recent_causal_context: "A arrived with the key.", last_visible_moment: "", begin_after: "" }]
+  ])("blocks continuation handoff with %s", (_name, handoff) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+      "continuation_after_accepted_segment"
+    ];
+    input.generationSession.immediate_handoff = handoff;
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
+  });
+
+  it.each([
+    ["last visible moment", { recent_causal_context: "A arrived with the key.", last_visible_moment: "B saw the key.", begin_after: "" }],
+    ["begin-after point", { recent_causal_context: "A arrived with the key.", last_visible_moment: "", begin_after: "B seeing the key." }]
+  ])("allows continuation handoff with recent context plus %s", (_name, handoff) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+      "continuation_after_accepted_segment"
+    ];
+    input.generationSession.immediate_handoff = handoff;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.missingImmediateHandoff);
   });
 
   it("flags only malformed multiple generation contexts", () => {
@@ -353,6 +414,27 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
   });
 
+  it("does not block resolved secrets with missing reveal-boundary fields", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "resolved",
+          holders: [],
+          non_holders_to_protect: [],
+          forbidden_reveals: [],
+          reveal_permission: ""
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
+  });
+
   it("does not block an active secret with an affirmative no-forbidden-reveals sentinel", () => {
     const input = cleanInput();
     input.records = [
@@ -433,6 +515,69 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
   });
 
+  it("does not require allowed cues without clue pressure", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: secretId,
+        type: "SECRET",
+        payload: {
+          id: secretId,
+          status: "partially_revealed",
+          holders: [povId],
+          non_holders_to_protect: [entityId],
+          forbidden_reveals: ["Do not state the true name."],
+          reveal_permission: "locked",
+          allowed_surface_cues: []
+        }
+      }
+    ];
+    selectRecord(input, secretId);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
+  });
+
+  it.each([
+    ["public fact", (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === factId ? { ...record, payload: { id: factId, known_by: "public" } } : record
+      );
+    }],
+    ["POV belief", (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        ...input.records.filter((record) => record.id !== factId),
+        { id: "belief", type: "BELIEF", payload: { holder: povId, claim: "The door is watched." } }
+      ];
+    }],
+    ["POV secret holder", (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        ...input.records.filter((record) => record.id !== factId),
+        { id: "secret", type: "SECRET", payload: { status: "hidden", holders: [povId], non_holders_to_protect: [entityId], forbidden_reveals: ["x"], reveal_permission: "locked" } }
+      ];
+    }],
+    ["POV entity status", (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        ...input.records.filter((record) => record.id !== factId),
+        { id: "status", type: "ENTITY STATUS", payload: { entity_id: povId, life: "alive", agency: "free", location: "warehouse" } }
+      ];
+    }]
+  ])("accepts POV knowledge carried by %s", (_name, mutate) => {
+    const input = cleanInput();
+    mutate(input);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.povKnowledgeMissing);
+  });
+
+  it("does not require POV knowledge for omniscient prose mode", () => {
+    const input = cleanInput();
+    input.records = input.records.filter((record) => record.id !== factId);
+    input.generationSession.active_working_set!.selected_pov = "omniscient";
+    input.storyConfig.proseMode!.pov_character = "omniscient";
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.povKnowledgeMissing);
+  });
+
   it("blocks active physical interaction missing required physical context", () => {
     const input = cleanInput();
     input.records = [
@@ -452,6 +597,49 @@ describe("universal completeness validation", () => {
     };
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
+  });
+
+  it.each([
+    "physical_interaction_expected",
+  ] as const)("blocks active physical context for expected local mode %s", (tag) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [tag];
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      routes_and_exits: []
+    };
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
+  });
+
+  it.each([
+    "object_transfer_possible",
+    "location_change_possible",
+    "restraint_or_coercion_possible",
+    "intimacy_or_sex_possible",
+    "violence_or_injury_possible"
+  ] as const)("blocks active physical context for durable-change tag %s", (tag) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [tag];
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      routes_and_exits: []
+    };
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
+  });
+
+  it("does not require possessions for physical interaction when objects do not matter", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "physical_interaction_expected"
+    ];
+    input.generationSession.current_authoritative_state = {
+      ...input.generationSession.current_authoritative_state!,
+      possessions: []
+    };
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activePhysicalContextIncomplete);
   });
 
   it("blocks active onstage cast missing core dossier or local function", () => {
@@ -474,6 +662,41 @@ describe("universal completeness validation", () => {
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
   });
+
+  it.each([
+    ["identity", { identity: undefined }],
+    ["voice", { voice_anchor: undefined }],
+    ["pressure behavior", { pressure_behavior_core: undefined }],
+    ["body presence", { body_presence_core: undefined }],
+    ["agency", { agency_core: undefined }]
+  ])("blocks active cast missing %s dossier", (_name, patch) => {
+    const input = cleanInput();
+    input.records = input.records.map((record) =>
+      record.id === castId
+        ? { ...record, payload: { ...fullCastPayload(entityId), ...patch } }
+        : record
+    );
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
+
+  it("does not require a core cast dossier for active institutional cast records", () => {
+    const input = cleanInput();
+    input.records = input.records.map((record) => {
+      if (record.id === entityId) {
+        return { ...record, payload: { id: entityId, entity_kind: "institution" } };
+      }
+      if (record.id === castId) {
+        return {
+          ...record,
+          payload: { entity_id: entityId }
+        };
+      }
+      return record;
+    });
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
@@ -483,6 +706,12 @@ function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
 function activeSecretBlocker(input: BuildValidationSnapshotInput): Diagnostic | undefined {
   return runValidation(buildValidationSnapshot(input)).blockers.find(
     (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.activeSecretIncomplete
+  );
+}
+
+function missingStoryConfigBlocker(input: BuildValidationSnapshotInput, field: string): Diagnostic | undefined {
+  return runValidation(buildValidationSnapshot(input)).blockers.find(
+    (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.missingStoryConfig && diagnostic.affected[0]?.field === field
   );
 }
 
