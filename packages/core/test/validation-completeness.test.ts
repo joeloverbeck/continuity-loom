@@ -697,6 +697,187 @@ describe("universal completeness validation", () => {
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
   });
+
+  it.each([
+    {
+      name: "story contract",
+      code: DIAGNOSTIC_CODES.missingStoryConfig,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        delete input.storyConfig.storyContract;
+      },
+      expected: {
+        affected: [{ field: "storyConfig.storyContract" }],
+        message: "Story contract is missing required launch context.",
+        whyItMatters: "The prompt cannot carry story identity, tone, or content envelope without the story contract.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "content policy",
+      code: DIAGNOSTIC_CODES.missingStoryConfig,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        delete input.storyConfig.universalContentPolicy;
+      },
+      expected: {
+        affected: [{ field: "storyConfig.universalContentPolicy" }],
+        message: "Universal content policy is missing required launch context.",
+        whyItMatters: "The prompt cannot state the governing content envelope or provider-policy handling without this policy.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "prose mode",
+      code: DIAGNOSTIC_CODES.missingStoryConfig,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        delete input.storyConfig.proseMode;
+      },
+      expected: {
+        affected: [{ field: "storyConfig.proseMode" }],
+        message: "Prose mode is missing required launch context.",
+        whyItMatters: "The prompt cannot deterministically set POV, person, tense, interiority, or language output without prose mode.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "current authoritative state",
+      code: DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        delete input.generationSession.current_authoritative_state;
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Current authoritative state is missing: current time, current location, onstage entities, immediate situation summary.",
+        whyItMatters: "The prompt needs current time, location, onstage entities, and an immediate situation summary as deterministic continuity ground.",
+        suggestedActions: ["add-current-state"]
+      }
+    },
+    {
+      name: "immediate handoff",
+      code: DIAGNOSTIC_CODES.missingImmediateHandoff,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+          "continuation_after_accepted_segment"
+        ];
+        delete input.generationSession.immediate_handoff;
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff" }],
+        message: "Immediate handoff is missing required launch context.",
+        whyItMatters: "The prompt needs a user-authored recent causal bridge plus either a last visible moment or a begin-after point.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "manual directive",
+      code: DIAGNOSTIC_CODES.missingManualDirective,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.manual_moment_directive!.must_render = [];
+      },
+      expected: {
+        affected: [{ field: "generationSession.manual_moment_directive.must_render" }],
+        message: "Manual moment directive needs at least one must-render instruction.",
+        whyItMatters: "The prose writer needs a local, user-authored launch instruction instead of inferring the next story move.",
+        suggestedActions: ["change-directive"]
+      }
+    },
+    {
+      name: "POV knowledge",
+      code: DIAGNOSTIC_CODES.povKnowledgeMissing,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = input.records.filter((record) => record.id !== factId);
+      },
+      expected: {
+        affected: [{ field: "generationSession.active_working_set.selected_pov" }],
+        message: "Selected non-omniscient POV has no selected knowledge profile.",
+        whyItMatters: "A non-omniscient prompt needs deterministic selected facts, beliefs, secrets, events, or status records to bound what the POV can know.",
+        suggestedActions: ["add-knowledge-constraint"]
+      }
+    },
+    {
+      name: "active secret",
+      code: DIAGNOSTIC_CODES.activeSecretIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [
+          ...input.records,
+          {
+            id: secretId,
+            type: "SECRET",
+            payload: {
+              id: secretId,
+              status: "hidden",
+              holders: [],
+              non_holders_to_protect: [],
+              forbidden_reveals: [],
+              reveal_permission: "",
+              allowed_surface_cues: []
+            }
+          }
+        ];
+      },
+      expected: {
+        affected: [{ recordId: secretId, field: "holders" }],
+        message: "Active secret is missing: holders, protected non-holders, forbidden reveals, reveal permission.",
+        whyItMatters: "Active secrets need holders, protected non-holders, forbidden reveals, reveal permission, and clue cues when clue pressure is active.",
+        suggestedActions: ["add-knowledge-constraint", "add-reveal-permission"]
+      }
+    },
+    {
+      name: "active physical context",
+      code: DIAGNOSTIC_CODES.activePhysicalContextIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+          "physical_interaction_expected"
+        ];
+        input.generationSession.current_authoritative_state!.routes_and_exits = [];
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Active physical interaction is missing required physical continuity context.",
+        whyItMatters: "Physical action needs location, onstage entities, positions, possession state when objects matter, visibility, routes, time, and impossible-action locks.",
+        suggestedActions: ["add-current-state", "add-route"]
+      }
+    },
+    {
+      name: "active cast",
+      code: DIAGNOSTIC_CODES.activeCastIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = input.records.map((record) =>
+          record.id === castId ? { ...record, payload: { ...fullCastPayload(entityId), agency_core: undefined } } : record
+        );
+      },
+      expected: {
+        affected: [{ recordId: castId, field: "CAST MEMBER" }],
+        message: "Active onstage cast member is missing a local function or core dossier.",
+        whyItMatters: "Materially involved cast need identity, voice, pressure behavior, body presence, agency, and current local function to avoid generic rendering.",
+        suggestedActions: ["promote-cast", "add-voice-or-body-pressure"]
+      }
+    },
+    {
+      name: "generation context count",
+      code: DIAGNOSTIC_CODES.focusTagCountInvalid,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = [
+          "first_segment",
+          "continuation_after_accepted_segment"
+        ];
+      },
+      expected: {
+        affected: [{ field: "generationSession.generation_validation_focus.validation_focus_tags.generation_context" }],
+        message: "Generation validation focus must identify exactly one generation context.",
+        whyItMatters: "The engine must know whether this is a first segment or a continuation before applying contextual validation.",
+        suggestedActions: ["revise"]
+      }
+    }
+  ])("emits exact diagnostic contract for $name", ({ code, mutate, expected }) => {
+    const input = cleanInput();
+    mutate(input);
+
+    expect(findDiagnostic(input, code, expected.affected[0]?.field)).toEqual({
+      severity: "blocker",
+      code,
+      ...expected
+    });
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
@@ -712,6 +893,12 @@ function activeSecretBlocker(input: BuildValidationSnapshotInput): Diagnostic | 
 function missingStoryConfigBlocker(input: BuildValidationSnapshotInput, field: string): Diagnostic | undefined {
   return runValidation(buildValidationSnapshot(input)).blockers.find(
     (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.missingStoryConfig && diagnostic.affected[0]?.field === field
+  );
+}
+
+function findDiagnostic(input: BuildValidationSnapshotInput, code: string, field?: string): Diagnostic | undefined {
+  return runValidation(buildValidationSnapshot(input)).blockers.find(
+    (diagnostic) => diagnostic.code === code && (!field || diagnostic.affected[0]?.field === field)
   );
 }
 
