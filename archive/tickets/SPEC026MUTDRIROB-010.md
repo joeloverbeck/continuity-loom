@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-010: Mutation-tighten P2 ideation operator eligibility
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds an independent operator-eligibility truth table and presence-vector property tests; no production behavior change.
@@ -74,3 +74,20 @@ Run `npm run mutation:ideation` scoped to `operators.ts`; classify every survivo
 1. `vitest run packages/core/test/ideation-operator-eligibility.test.ts` — targeted run.
 2. `npm run mutation:ideation` — survivor classification for `operators.ts`.
 3. The doc-derived truth table is the correct boundary: it is the only eligibility oracle independent of the mutated code.
+
+## Outcome
+
+Completed 2026-06-21. Added `packages/core/test/ideation-operator-eligibility.test.ts` and `packages/core/test/support/arbitraries/ideation-records.ts`.
+
+The new contract test defines an independent operator truth table derived from `docs/ideation-prompt-template.md`, generates ideation record presence vectors, and checks assigned operator IDs, names, definitions, multi-condition boundaries, revealable-secret preference, and dormant-slot eligibility for every documented dormant record type. No production code changed.
+
+Verification:
+
+1. `npx vitest run packages/core/test/ideation-operator-eligibility.test.ts` — passed, 27 tests.
+2. `npm run mutation:ideation -- --force --mutate packages/core/src/compiler/ideation/operators.ts` — passed with `operators.ts` at 100.00 mutation score: 69 killed, 19 compile-error mutants, 0 survived, 0 no-coverage, 0 timeout. No unclassified survivors remain in `operators.ts`.
+3. `npm run lint` — passed.
+4. `npm run typecheck` — passed.
+5. `npm test` — passed, 143 files / 1118 tests.
+6. `npm run build` — passed under escalation due prior sandbox write restrictions; Vite emitted the existing chunk-size warning.
+
+No browser smoke was run because this ticket changes only core test coverage and self-contained test arbitraries.

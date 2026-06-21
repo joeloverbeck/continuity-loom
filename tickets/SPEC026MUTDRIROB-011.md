@@ -46,7 +46,7 @@ Run `npm run mutation:ideation` scoped to `slot-assignment.ts`; classify every s
 
 ## Out of Scope
 
-- Operator eligibility (SPEC026MUTDRIROB-010), citation keys / rendering / full campaign (SPEC026MUTDRIROB-012).
+- Operator eligibility (archive/tickets/SPEC026MUTDRIROB-010.md), citation keys / rendering / full campaign (SPEC026MUTDRIROB-012).
 - Any change to `slot-assignment.ts` production logic.
 
 ## Acceptance Criteria
