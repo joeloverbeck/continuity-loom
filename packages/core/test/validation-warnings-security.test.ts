@@ -179,6 +179,13 @@ describe("warnings and security validation", () => {
   });
 
   it("pins warning thresholds, affected fields, and message text for salience and setting risks", () => {
+    const exactMiddleBoundary = baseInput();
+    exactMiddleBoundary.records = [record("big", "FACT", { statement: "" })];
+    exactMiddleBoundary.records = [
+      record("big", "FACT", { statement: "x".repeat(5000 - promptSize(exactMiddleBoundary)) })
+    ];
+    expect(warningCodes(exactMiddleBoundary)).not.toContain(DIAGNOSTIC_CODES.promptMiddleSalienceRisk);
+
     const sixHigh = baseInput();
     sixHigh.records = Array.from({ length: 6 }, (_, index) =>
       record(`high-${index}`, "FACT", { statement: `High salience fact ${index}.`, salience: "critical" })
@@ -352,6 +359,25 @@ describe("warnings and security validation", () => {
     offstageDangling.generationSession.current_authoritative_state = currentState({ offstage_pressuring_entities: ["missing"] });
     expect(warningCodes(offstageDangling)).not.toContain(DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional);
 
+    const offstageWrongType = baseInput();
+    offstageWrongType.projectRecordIndex = { fact: "FACT" };
+    offstageWrongType.generationSession.active_working_set = { selected_records: [], active_onstage_cast_full: [], present_minor_cast_compressed: [], offstage_relevant_cast: [] };
+    offstageWrongType.generationSession.current_authoritative_state = currentState({ offstage_pressuring_entities: ["fact"] });
+    expect(warningCodes(offstageWrongType)).not.toContain(DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional);
+
+    const offstageRequired = baseInput();
+    offstageRequired.projectRecordIndex = { offstage: "ENTITY" };
+    offstageRequired.generationSession.active_working_set = { selected_records: [], active_onstage_cast_full: [], present_minor_cast_compressed: [], offstage_relevant_cast: [] };
+    offstageRequired.generationSession.generation_validation_focus = {
+      validation_focus_tags: {
+        generation_context: [],
+        expected_local_modes: ["offstage_interruption_possible"],
+        possible_durable_changes: []
+      }
+    };
+    offstageRequired.generationSession.current_authoritative_state = currentState({ offstage_pressuring_entities: ["offstage"] });
+    expect(warningCodes(offstageRequired)).not.toContain(DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional);
+
     const entityStatusOptional = baseInput();
     entityStatusOptional.projectRecordIndex = { status: "ENTITY STATUS" };
     entityStatusOptional.generationSession.active_working_set = { selected_records: [], active_onstage_cast_full: [], present_minor_cast_compressed: [], offstage_relevant_cast: [] };
@@ -390,6 +416,18 @@ describe("warnings and security validation", () => {
     wrongTypeOverride.generationSession.cast_voice_overrides = [castOverride("fact")];
     expect(warningCodes(wrongTypeOverride)).not.toContain(DIAGNOSTIC_CODES.voicePressureOrphanedAttachment);
 
+    const attachedCast = baseInput();
+    attachedCast.records = [record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
+    attachedCast.projectRecordIndex = { cast: "CAST MEMBER" };
+    attachedCast.generationSession.active_working_set = {
+      selected_records: ["cast"],
+      active_onstage_cast_full: [{ cast_member_id: "cast", local_function: "active_speaker" }],
+      present_minor_cast_compressed: [],
+      offstage_relevant_cast: []
+    };
+    attachedCast.generationSession.current_cast_voice_pressure = [castPressure("cast", "Pin", "Line", "none")];
+    expect(warningCodes(attachedCast)).not.toContain(DIAGNOSTIC_CODES.voicePressureOrphanedAttachment);
+
     const pinnedLongCast = baseInput();
     pinnedLongCast.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     pinnedLongCast.generationSession.current_cast_voice_pressure = [castPressure("cast", "Pin", "Line", "none")];
@@ -418,6 +456,19 @@ describe("warnings and security validation", () => {
     stalePayload.records = [record("abandoned", "PLAN", { status: "abandoned" })];
     expect(warningByCode(stalePayload, DIAGNOSTIC_CODES.staleSelectedRecord)).toMatchObject({
       affected: [{ field: "record:abandoned" }]
+    });
+  });
+
+  it("keeps warning diagnostics non-blocking with the shared warning payload", () => {
+    const input = baseInput();
+    input.generationSession.manual_moment_directive = manualDirective("Ask for the key.");
+
+    const warning = warningByCode(input, DIAGNOSTIC_CODES.noActiveClockPressure);
+
+    expect(warning).toMatchObject({
+      severity: "warning",
+      whyItMatters: "This warning helps improve curation without blocking generation.",
+      suggestedActions: ["revise", "deselect"]
     });
   });
 
@@ -525,6 +576,15 @@ function warningByCode(input: BuildValidationSnapshotInput, code: string) {
   expect(matches[0], code).toBeDefined();
 
   return matches[0]!;
+}
+
+function promptSize(input: BuildValidationSnapshotInput): number {
+  return JSON.stringify({
+    records: input.records,
+    generationSession: input.generationSession,
+    storyConfig: input.storyConfig,
+    versions: input.versions
+  }).length;
 }
 
 function voiceInput(focusTags: readonly ExpectedLocalMode[], castIds: readonly string[] = ["cast-a", "cast-b", "cast-c"]): BuildValidationSnapshotInput {
