@@ -38,6 +38,45 @@ describe("knowledge/secret/POV matrix validation", () => {
     );
   });
 
+  it("stays silent when knowledge focus containers are absent or malformed", () => {
+    const absentFocus = cleanInput();
+    delete absentFocus.generationSession.generation_validation_focus;
+    absentFocus.records = absentFocus.records.filter((record) => record.type !== "BELIEF");
+    expect(blockerCodes(absentFocus)).not.toContain(DIAGNOSTIC_CODES.matrixIntrospectionIncomplete);
+
+    const missingTags = cleanInput();
+    missingTags.generationSession.generation_validation_focus = {} as never;
+    missingTags.records = missingTags.records.filter((record) => record.type !== "BELIEF");
+    expect(blockerCodes(missingTags)).not.toContain(DIAGNOSTIC_CODES.matrixIntrospectionIncomplete);
+
+    const missingExpectedLane = cleanInput();
+    missingExpectedLane.generationSession.generation_validation_focus = {
+      validation_focus_tags: {
+        generation_context: [],
+        possible_durable_changes: []
+      }
+    } as never;
+    missingExpectedLane.records = missingExpectedLane.records.filter((record) => record.type !== "BELIEF");
+    expect(blockerCodes(missingExpectedLane)).not.toContain(DIAGNOSTIC_CODES.matrixIntrospectionIncomplete);
+  });
+
+  it.each([
+    ["generation context", "generation_context"],
+    ["expected local modes", "expected_local_modes"],
+    ["possible durable changes", "possible_durable_changes"]
+  ])("activates knowledge gates from %s focus tags", (_name, lane) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags = {
+      generation_context: [],
+      expected_local_modes: [],
+      possible_durable_changes: [],
+      [lane]: ["introspection_expected" as never]
+    };
+    input.records = input.records.filter((record) => record.type !== "BELIEF");
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixIntrospectionIncomplete);
+  });
+
   it("stays silent when all four knowledge matrix tags are satisfied", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
@@ -83,6 +122,34 @@ describe("knowledge/secret/POV matrix validation", () => {
     );
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixSecretClueIncomplete);
+  });
+
+  it("requires every active secret to carry a complete reveal lane", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "secret_or_clue_pressure"
+    ];
+    input.records = [
+      ...input.records,
+      {
+        id: "019b0298-5c00-7000-8000-000000000011",
+        type: "SECRET",
+        payload: {
+          id: "019b0298-5c00-7000-8000-000000000011",
+          status: "partially_revealed",
+          secret_claim: "A second watcher is listening.",
+          holders: [nonPovId],
+          non_holders_to_protect: [povId],
+          pov_access: "can_suspect",
+          audience_visibility: "ambiguous",
+          allowed_surface_cues: ["A floorboard creaks."],
+          forbidden_reveals: [],
+          reveal_permission: "clue_only"
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixSecretClueIncomplete);
   });
 
   it("still blocks a blank forbidden-reveals list under secret clue pressure", () => {
@@ -173,10 +240,30 @@ describe("knowledge/secret/POV matrix validation", () => {
   it.each([
     ["missing POV belief", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, beliefId, { holder: nonPovId })],
     ["blank POV belief claim", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, beliefId, { claim: "" })],
+    ["wrong-type POV belief payload", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === beliefId
+          ? { ...record, type: "FACT", payload: { holder: povId, claim: "The doorway may be watched." } }
+          : record
+      );
+    }],
     ["missing POV emotion", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, emotionId, { holder: nonPovId })],
     ["blank emotion surface", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, emotionId, { surface_expression: "" })],
+    ["wrong-type POV emotion payload", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === emotionId
+          ? { ...record, type: "FACT", payload: { holder: povId, surface_expression: "A keeps glancing at the door." } }
+          : record
+      );
+    }],
     ["missing prose mode", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
       delete input.storyConfig.proseMode;
+    }],
+    ["blank psychic distance", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode!.psychic_distance = "" as never;
+    }],
+    ["blank interiority mode", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode!.interiority_mode = "" as never;
     }],
     ["missing non-POV lock", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "non-pov interiority")]
   ])("blocks introspection when %s", (_name, tag, code, mutate) => {
@@ -195,6 +282,24 @@ describe("knowledge/secret/POV matrix validation", () => {
     ["secret already known by POV", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
       input.records = input.records.filter((record) => record.type !== "BELIEF");
       setRecordPayload(input, secretId, { pov_access: "knows" });
+    }],
+    ["wrong-type secret with audience visibility", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records
+        .filter((record) => record.type !== "BELIEF" && record.id !== secretId)
+        .concat({
+          id: secretId,
+          type: "FACT",
+          payload: { audience_visibility: "ambiguous", pov_access: "can_suspect" }
+        });
+    }],
+    ["wrong-type belief with truth relation", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records
+        .filter((record) => record.type !== "SECRET" && record.id !== beliefId)
+        .concat({
+          id: beliefId,
+          type: "FACT",
+          payload: { truth_relation: "unknown" }
+        });
     }],
     ["secret lacks audience visibility", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
       input.records = input.records.filter((record) => record.type !== "BELIEF");
@@ -222,9 +327,33 @@ describe("knowledge/secret/POV matrix validation", () => {
     ["plan visible to POV", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { visibility_to_pov: "known" })],
     ["plan current step blank", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { current_step: "" })],
     ["plan has no means", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { resources: [], blockers: [], fallback_steps: [] })],
+    ["wrong-type plan payload", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === planId
+          ? { ...record, type: "FACT", payload: { ...(record.payload as Record<string, unknown>) } }
+          : record
+      );
+    }],
+    ["array plan payload", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === planId ? { ...record, payload: [nonPovId, "hidden"] } : record
+      );
+    }],
+    ["wrong-type holder status", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === statusId
+          ? { ...record, type: "FACT", payload: { entity_id: nonPovId, location: "019b0298-5c00-7000-8000-000000000111" } }
+          : record
+      );
+    }],
     ["holder status unknown location", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "unknown" })],
     ["holder status not applicable location", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "not_applicable" })],
     ["status missing entity id", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { entity_id: "" })],
+    ["array status payload", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.map((record) =>
+        record.id === statusId ? { ...record, payload: [nonPovId, "onstage"] } : record
+      );
+    }],
     ["missing non-POV lock", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "non-pov interiority")]
   ])("blocks hidden-plan behavior when %s", (_name, tag, code, mutate) => {
     expectKnowledgeBlock(tag, code, mutate);
@@ -337,7 +466,8 @@ describe("knowledge/secret/POV matrix validation", () => {
   it.each([
     ["resources", { resources: ["reflection"], blockers: [], fallback_steps: [] }],
     ["blockers", { resources: [], blockers: ["must wait for the door"], fallback_steps: [] }],
-    ["fallback steps", { resources: [], blockers: [], fallback_steps: ["signal later"] }]
+    ["fallback steps", { resources: [], blockers: [], fallback_steps: ["signal later"] }],
+    ["non-string resource marker", { resources: [{ name: "reflection" }], blockers: [], fallback_steps: [] }]
   ])("accepts hidden non-POV plan means from %s", (_name, patch) => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
