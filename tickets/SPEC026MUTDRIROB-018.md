@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — extends the diagnostic contract registry with the security/warning/remaining families and completes the full P3 mutation campaign; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-013, SPEC026MUTDRIROB-014, SPEC026MUTDRIROB-015, SPEC026MUTDRIROB-016, SPEC026MUTDRIROB-017
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md, SPEC026MUTDRIROB-014, SPEC026MUTDRIROB-015, SPEC026MUTDRIROB-016, SPEC026MUTDRIROB-017
 
 ## Problem
 
@@ -13,7 +13,7 @@ The security and warning rule families carry the warning/blocker severity distin
 ## Assumption Reassessment (2026-06-20)
 
 1. `packages/core/src/validation/rules/{security,warnings}.ts` plus `cast-band.ts` / `onstage-cast-band.ts` / `index.ts` / `types.ts` exist (confirmed this session) and are inside the P3 mutation glob; `validation-rule-inventory.test.ts` enforces warnings.ts → warning, every other module → blocker.
-2. SPEC-026 §Deliverables D6 + report §8.7 (full validation tree integration pass) define closing inventory gaps and the full campaign; the registry + runner exist from SPEC026MUTDRIROB-013 and are extended by -015/-016/-017.
+2. SPEC-026 §Deliverables D6 + report §8.7 (full validation tree integration pass) define closing inventory gaps and the full campaign; the registry + runner exist from archive/tickets/SPEC026MUTDRIROB-013.md and are extended by -015/-016/-017.
 3. Cross-artifact boundary under audit: the one-severity-per-code inventory model — the warning family must resolve to warning and never close a gate; security codes keep their documented severity. Cases derive no expected value from `rules/*`.
 4. FOUNDATIONS principle restated: §11 fail-closed validation + §29.5 gating + §29.9 secrets — warnings never become prompt instructions or close gates; security diagnostics preserve the secret/loopback posture at the validation layer.
 5. Fail-closed-validation + secret surfaces (§11, §29.9): the campaign mutates the full validation tree in the sandbox only. A surviving warning/blocker conflation or security mutant that reflects a real defect → CRITICAL behavior-fix ticket.
@@ -26,7 +26,7 @@ The security and warning rule families carry the warning/blocker severity distin
 ## Verification Layers
 
 1. Severity + non-gating -> warning-family codes resolve to warning and never close preview/generate; security codes keep documented severity (exact contract cases).
-2. Inventory closed -> the completeness check (SPEC026MUTDRIROB-013) reports zero uncovered codes across the whole inventory.
+2. Inventory closed -> the completeness check (archive/tickets/SPEC026MUTDRIROB-013.md) reports zero uncovered codes across the whole inventory.
 3. Full P3 adequacy -> `npm run mutation:validation` across the full P3 glob meets the 95 break floor with zero unclassified survivors.
 
 ## What to Change

@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds gate/sort/dedupe/immutability/applicability/reference-classification property tests; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-013
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md
 
 ## Problem
 
@@ -35,7 +35,7 @@ The validation engine splits blockers from warnings, derives preview/generate ga
 
 ### 1. Engine/readiness/applicability/reference property tests
 
-Add `packages/core/test/validation-engine.property.test.ts` (gate/sort/dedupe/immutability + applicability matrix) and `packages/core/test/validation-reference-classification.property.test.ts` (exact reference classes + downstream codes), over generated snapshots within practical size limits (reuse `validation-snapshots.ts` from SPEC026MUTDRIROB-013). "No exception" is only a baseline property combined with exact diagnostics for invalid states, never the sole assertion.
+Add `packages/core/test/validation-engine.property.test.ts` (gate/sort/dedupe/immutability + applicability matrix) and `packages/core/test/validation-reference-classification.property.test.ts` (exact reference classes + downstream codes), over generated snapshots within practical size limits (reuse `validation-snapshots.ts` from archive/tickets/SPEC026MUTDRIROB-013.md). "No exception" is only a baseline property combined with exact diagnostics for invalid states, never the sole assertion.
 
 ### 2. Survivor classification
 
@@ -48,7 +48,7 @@ Run `npm run mutation:validation` scoped to the five modules; classify every sur
 
 ## Out of Scope
 
-- The diagnostic contract harness itself (SPEC026MUTDRIROB-013).
+- The diagnostic contract harness itself (archive/tickets/SPEC026MUTDRIROB-013.md).
 - Per-family diagnostic contracts (SPEC026MUTDRIROB-015..018) and cross-pillar contracts (SPEC026MUTDRIROB-019).
 - Any change to validation production logic.
 

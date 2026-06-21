@@ -1,10 +1,10 @@
 # SPEC026MUTDRIROB-013: Introduce the P3 diagnostic contract harness
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds the independent diagnostic-contract fixture schema, an inventory-completeness check, and first contract cases; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md
 
 ## Problem
 
@@ -78,3 +78,24 @@ Seed contract cases for engine/readiness/universal diagnostics; assert exact cod
 1. `vitest run packages/core/test/validation-diagnostic-contract.test.ts` — targeted harness run.
 2. `npm run mutation:validation` — survivor classification for the seeded engine/readiness portion.
 3. The contract harness is the foundational P3 oracle; later family tickets extend the same registry, so it is built and verified first.
+
+## Outcome
+
+Completed 2026-06-21. Added `packages/core/test/support/diagnostic-contract.ts`, `packages/core/test/validation-diagnostic-contract.test.ts`, and `packages/core/test/support/arbitraries/validation-snapshots.ts`.
+
+The new harness has an explicit registry entry for every exported `DIAGNOSTIC_CODES` value. Six runnable seed contracts cover foundational engine/readiness/universal diagnostics: `missing-story-config`, `missing-current-authoritative-state`, `missing-manual-directive`, `missing-immediate-handoff`, `missing-constitutional-section`, and `pov-knowledge-missing`. Non-seeded codes are explicit deferred entries for later P3 family tickets, so a newly exported code without a registry entry fails the completeness check.
+
+Each runnable contract asserts a clean baseline, a minimal defect producing exactly one diagnostic with expected code/severity/affected target, prompt-kind readiness applicability, and repair that removes the diagnostic. The expected severity/applicability/affected values are manually declared in the contract registry, not derived from validation rules.
+
+Verification:
+
+1. `npx vitest run packages/core/test/validation-diagnostic-contract.test.ts` — passed, 8 tests.
+2. `npm run mutation:validation -- --force --mutate packages/core/src/validation/engine.ts,packages/core/src/validation/readiness.ts,packages/core/src/validation/rules/universal-completeness.ts,packages/core/src/validation/rules/universal-blockers.ts` — completed as a broad seeded-file baseline: 570 killed, 539 compile-error mutants, 365 survived, 76 timeout, 22 no-coverage.
+   - File counts: `engine.ts` 25 killed / 13 compile-error / 3 survived; `readiness.ts` 112 killed / 131 compile-error / 117 survived / 62 timeout / 8 no-coverage; `universal-blockers.ts` 245 killed / 206 compile-error / 132 survived / 3 timeout / 11 no-coverage; `universal-completeness.ts` 188 killed / 189 compile-error / 113 survived / 11 timeout / 3 no-coverage.
+   - Classification: this ticket establishes the harness and seed cases; the broad survivors/timeouts are expected baseline debt in rule/readiness branches outside the six seeded contracts and are deferred to SPEC026MUTDRIROB-014 through SPEC026MUTDRIROB-018, which extend this registry by family.
+3. `npm run lint` — passed.
+4. `npm run typecheck` — passed.
+5. `npm test` — passed, 147 files / 1146 tests.
+6. `npm run build` — passed under escalation due prior sandbox write restrictions; Vite emitted the existing chunk-size warning.
+
+No browser smoke was run because this ticket changes only core validation test harnesses and test fixtures.

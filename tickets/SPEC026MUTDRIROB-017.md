@@ -4,16 +4,16 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the knowledge and voice matrix families; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-013
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md
 
 ## Problem
 
-The knowledge and voice matrix rule families encode field-matrix predicates (knowledge/secrets boundaries, voice consistency) whose comparisons Stryker mutates directly. A surviving mutant changes which knowledge or voice contradiction is flagged while staying green — and a knowledge mutant can touch the §15 secret boundary. This ticket covers every code and predicate boundary in the two families, extending the SPEC026MUTDRIROB-013 registry.
+The knowledge and voice matrix rule families encode field-matrix predicates (knowledge/secrets boundaries, voice consistency) whose comparisons Stryker mutates directly. A surviving mutant changes which knowledge or voice contradiction is flagged while staying green — and a knowledge mutant can touch the §15 secret boundary. This ticket covers every code and predicate boundary in the two families, extending the archive/tickets/SPEC026MUTDRIROB-013.md registry.
 
 ## Assumption Reassessment (2026-06-20)
 
 1. `packages/core/src/validation/rules/matrix-knowledge.ts` and `matrix-voice.ts` exist (confirmed this session) and are inside the P3 mutation glob.
-2. SPEC-026 §Deliverables D5 + report §8.2/§8.7 define covering every code + predicate boundary in the two matrices; the registry + runner exist from SPEC026MUTDRIROB-013.
+2. SPEC-026 §Deliverables D5 + report §8.2/§8.7 define covering every code + predicate boundary in the two matrices; the registry + runner exist from archive/tickets/SPEC026MUTDRIROB-013.md.
 3. Cross-artifact boundary under audit: each case extends the independent registry and derives no expected value from `matrix-*.ts` under mutation.
 4. FOUNDATIONS principle restated: §11 fail-closed validation + §15 POV/knowledge/secrets + §29.6 POV/reveal — knowledge-matrix blockers preserve the secret boundary; voice-matrix preserves voice consistency. Contract cases pin them without changing rules.
 5. Fail-closed-validation + secret-firewall surfaces (§11, §15): the knowledge-matrix contracts must confirm the secret boundary is not weakened — a surviving knowledge mutant that opens a secret leak is a CRITICAL behavior-fix ticket, not a test relaxation.

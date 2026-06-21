@@ -4,17 +4,17 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the universal/referential/internal/structural rule families; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-013
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md
 
 ## Problem
 
-The universal-blocker/completeness, referential-brief, record-internal, and structural-contradiction rule families each emit diagnostics whose exact code, severity, and affected target must be pinned. A surviving mutant that swaps a code or drops an affected ID changes the diagnostic without changing a count. This ticket adds minimal-defect/repair fixtures with exact affected targets for those families, extending the SPEC026MUTDRIROB-013 registry.
+The universal-blocker/completeness, referential-brief, record-internal, and structural-contradiction rule families each emit diagnostics whose exact code, severity, and affected target must be pinned. A surviving mutant that swaps a code or drops an affected ID changes the diagnostic without changing a count. This ticket adds minimal-defect/repair fixtures with exact affected targets for those families, extending the archive/tickets/SPEC026MUTDRIROB-013.md registry.
 
 ## Assumption Reassessment (2026-06-20)
 
 1. `packages/core/src/validation/rules/{universal-blockers,universal-completeness,referential-brief,record-internal,structural-contradiction}.ts` exist (confirmed this session) and are inside the P3 mutation glob.
-2. SPEC-026 §Deliverables D3 + report §8.7 (family rollout) define the per-family contract approach; the diagnostic contract registry + runner exist from SPEC026MUTDRIROB-013.
-3. Cross-artifact boundary under audit: each new case extends the independent registry from SPEC026MUTDRIROB-013 and derives no expected value from `rules/*` under mutation.
+2. SPEC-026 §Deliverables D3 + report §8.7 (family rollout) define the per-family contract approach; the diagnostic contract registry + runner exist from archive/tickets/SPEC026MUTDRIROB-013.md.
+3. Cross-artifact boundary under audit: each new case extends the independent registry from archive/tickets/SPEC026MUTDRIROB-013.md and derives no expected value from `rules/*` under mutation.
 4. FOUNDATIONS principle restated: §11 + §29.5 — these families carry fail-closed blockers; contract cases pin exact codes/severities/affected without changing rules. §19/§29 referential integrity governs the referential-brief family.
 5. Fail-closed-validation surface (§11): the contracts exercise the families but add no rule and change no gate. Any family defect a contract case exposes → separate behavior-fix ticket.
 
@@ -26,7 +26,7 @@ The universal-blocker/completeness, referential-brief, record-internal, and stru
 ## Verification Layers
 
 1. Per-code contract -> for each code in these families: baseline clean, minimal defect yields exact code+severity+applicability+affected, repair removes exactly that diagnostic, unrelated diagnostics unchanged.
-2. Family completeness -> the inventory-completeness check (from SPEC026MUTDRIROB-013) shows no uncovered code in these families.
+2. Family completeness -> the inventory-completeness check (from archive/tickets/SPEC026MUTDRIROB-013.md) shows no uncovered code in these families.
 3. Mutants killed -> `npm run mutation:validation` over the four family files reports survivors classified.
 
 ## What to Change

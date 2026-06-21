@@ -4,16 +4,16 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the durable and physical matrix families; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, SPEC026MUTDRIROB-013
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md
 
 ## Problem
 
-The durable and physical matrix rule families encode field-matrix predicates whose boundaries (`>` / `>=`, equality, negation, `AND` / `OR`) are exactly the comparisons Stryker mutates. A surviving matrix mutant changes which durable/physical contradiction is flagged while staying green. This ticket covers every code and predicate boundary in the two families, extending the SPEC026MUTDRIROB-013 registry.
+The durable and physical matrix rule families encode field-matrix predicates whose boundaries (`>` / `>=`, equality, negation, `AND` / `OR`) are exactly the comparisons Stryker mutates. A surviving matrix mutant changes which durable/physical contradiction is flagged while staying green. This ticket covers every code and predicate boundary in the two families, extending the archive/tickets/SPEC026MUTDRIROB-013.md registry.
 
 ## Assumption Reassessment (2026-06-20)
 
 1. `packages/core/src/validation/rules/matrix-durable.ts` and `matrix-physical.ts` exist (confirmed this session) and are inside the P3 mutation glob.
-2. SPEC-026 §Deliverables D4 + report §8.2/§8.7 define covering every code + predicate boundary in the two matrices; the registry + runner exist from SPEC026MUTDRIROB-013.
+2. SPEC-026 §Deliverables D4 + report §8.2/§8.7 define covering every code + predicate boundary in the two matrices; the registry + runner exist from archive/tickets/SPEC026MUTDRIROB-013.md.
 3. Cross-artifact boundary under audit: each case extends the independent registry and derives no expected value from `matrix-*.ts` under mutation.
 4. FOUNDATIONS principle restated: §11 fail-closed validation + §29.7 physical continuity — physical-matrix blockers strengthen existing continuity guarantees without changing them; durable-matrix governs durable-state contradictions.
 5. Fail-closed-validation surface (§11): contracts exercise the matrices but add no rule and change no gate. Any matrix defect a case exposes → separate behavior-fix ticket.
