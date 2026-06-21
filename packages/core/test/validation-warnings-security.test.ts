@@ -237,6 +237,19 @@ describe("warnings and security validation", () => {
     ];
     expect(warningCodes(activeWithSamples)).not.toContain(DIAGNOSTIC_CODES.noSampleUtterances);
 
+    const mixedSampleCoverage = baseInput();
+    mixedSampleCoverage.records = [
+      record("cast-a", "CAST MEMBER", { voice_anchor: {}, identity: {}, sample_utterances: ["Say it plainly."] }, "active_onstage_cast_full"),
+      record("cast-b", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")
+    ];
+    expect(warningCodes(mixedSampleCoverage)).not.toContain(DIAGNOSTIC_CODES.noSampleUtterances);
+
+    const emptySampleArray = baseInput();
+    emptySampleArray.records = [
+      record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {}, sample_utterances: [] }, "active_onstage_cast_full")
+    ];
+    expect(warningCodes(emptySampleArray)).toContain(DIAGNOSTIC_CODES.noSampleUtterances);
+
     const dialogueExpected = voiceInput(["dialogue_expected"]);
     dialogueExpected.generationSession.current_cast_voice_pressure = [];
     expect(warningByCode(dialogueExpected, DIAGNOSTIC_CODES.localVoicePressureMayHelp)).toMatchObject({
@@ -262,6 +275,21 @@ describe("warnings and security validation", () => {
     noVoiceAnchor.records = [record("cast-a", "CAST MEMBER", { identity: {} }, "active_onstage_cast_full")];
     noVoiceAnchor.generationSession.current_cast_voice_pressure = [];
     expect(warningCodes(noVoiceAnchor)).not.toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
+
+    const activeSpeakerWrongRecordType = voiceInput(["dialogue_expected"], ["fact"]);
+    activeSpeakerWrongRecordType.records = [
+      record("fact", "FACT", { voice_anchor: {}, identity: {} }),
+      record("other-cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")
+    ];
+    activeSpeakerWrongRecordType.generationSession.current_cast_voice_pressure = [];
+    expect(warningCodes(activeSpeakerWrongRecordType)).not.toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
+
+    const missingActiveSpeakerRecord = voiceInput(["dialogue_expected"], ["missing-cast"]);
+    missingActiveSpeakerRecord.records = [
+      record("other-cast", "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")
+    ];
+    missingActiveSpeakerRecord.generationSession.current_cast_voice_pressure = [];
+    expect(warningCodes(missingActiveSpeakerRecord)).not.toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
 
     const dialoguePressureOnly = voiceInput(["dialogue_expected"]);
     dialoguePressureOnly.generationSession.current_cast_voice_pressure = [
@@ -383,6 +411,7 @@ describe("warnings and security validation", () => {
     entityStatusOptional.generationSession.active_working_set = { selected_records: [], active_onstage_cast_full: [], present_minor_cast_compressed: [], offstage_relevant_cast: [] };
     entityStatusOptional.generationSession.current_authoritative_state = currentState({ entity_statuses: ["status"] });
     expect(warningByCode(entityStatusOptional, DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional)).toMatchObject({
+      message: "Entity status reference status exists but is not selected, so it will not render unless selected into the active working set.",
       affected: [{ field: "generationSession.current_authoritative_state.entity_statuses" }]
     });
 
@@ -432,6 +461,11 @@ describe("warnings and security validation", () => {
     pinnedLongCast.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
     pinnedLongCast.generationSession.current_cast_voice_pressure = [castPressure("cast", "Pin", "Line", "none")];
     expect(warningCodes(pinnedLongCast)).not.toContain(DIAGNOSTIC_CODES.castSalienceRisk);
+
+    const blankPinnedLongCast = baseInput();
+    blankPinnedLongCast.records = [record("cast", "CAST MEMBER", { biography: "x".repeat(1300) })];
+    blankPinnedLongCast.generationSession.current_cast_voice_pressure = [castPressure("cast", " ", "Line", "none")];
+    expect(warningCodes(blankPinnedLongCast)).toContain(DIAGNOSTIC_CODES.castSalienceRisk);
 
     const labeledLongCast = baseInput();
     labeledLongCast.records = [
