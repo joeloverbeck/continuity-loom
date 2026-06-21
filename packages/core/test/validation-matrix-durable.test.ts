@@ -139,6 +139,10 @@ describe("durable-change matrix validation", () => {
     ["missing transfer affordance", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => removeRecord(input, affordanceTransferId)],
     ["blank consent or force", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", " ")],
     ["missing transfer route", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["missing transfer positions", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, "object_transfer_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "positions", [])],
+    ["missing current state", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state = undefined;
+    }],
     ["missing source location", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "current_location", "")],
     ["missing movement time", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")],
     ["missing movement constraint", DIAGNOSTIC_CODES.matrixLocationChangeIncomplete, "location_change_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "movement constraint")]
@@ -149,10 +153,13 @@ describe("durable-change matrix validation", () => {
   it.each([
     ["missing entity status", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => removeRecord(input, entityId)],
     ["missing consent or force", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "consent_or_force_conditions", "")],
+    ["missing restraint positions", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "positions", [])],
     ["missing physical constraint", DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete, "restraint_or_coercion_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "physical constraint")],
     ["forbidden by no-intimacy policy", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAllowedContentScope(input, "No intimacy in this scene.")],
+    ["missing intimacy visibility", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "line_of_sight_and_visibility", "")],
     ["missing relationship pressure", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "RELATIONSHIP")],
     ["missing bond affordance", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceBondId, { action_families: ["harm"] })],
+    ["missing violence route", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
     ["missing harm affordance", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceHarmId, { prompt_text: "" })],
     ["missing consequence record", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "CONSEQUENCE")],
     ["missing injury consequence lock", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "injury consequence")]
@@ -164,6 +171,23 @@ describe("durable-change matrix validation", () => {
     ["entity is a person", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, institutionId, { entity_kind: "person" })],
     ["missing communication route", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
     ["missing authority relation", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "authority relation")],
+    ["wrong-type active clock payload", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => {
+      setRecordPayload(input, clockId, { status: "paused" });
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000012",
+          type: "FACT",
+          payload: {
+            status: "active",
+            current_pressure: "Wrong type pressure.",
+            tick_trigger: "Door opens.",
+            next_threshold: "Alarm sounds.",
+            possible_effects: ["guards arrive"]
+          }
+        }
+      ];
+    }],
     ["inactive clock", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { status: "paused" })],
     ["missing clock pressure", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { current_pressure: "" })],
     ["missing tick trigger", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, clockId, { tick_trigger: "" })],
@@ -175,6 +199,24 @@ describe("durable-change matrix validation", () => {
   });
 
   it.each([
+    ["wrong-type open obligation payload", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => {
+      setRecordPayload(input, obligationId, { status: "closed" });
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000013",
+          type: "FACT",
+          payload: {
+            status: "open",
+            terms: "Wrong type term.",
+            owed_by: [entityId],
+            owed_to: "institution",
+            visibility: "public",
+            consequence_if_broken: "Sanction."
+          }
+        }
+      ];
+    }],
     ["closed obligation", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { status: "closed" })],
     ["missing terms", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { terms: "" })],
     ["missing owing party", DIAGNOSTIC_CODES.matrixObligationBreachIncomplete, "obligation_breach_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, obligationId, { owed_by: [] })],
