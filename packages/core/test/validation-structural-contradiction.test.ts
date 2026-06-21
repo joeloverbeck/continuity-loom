@@ -20,7 +20,14 @@ describe("structural contradiction validation", () => {
     const input = baseInput();
     input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [entityId];
 
-    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.onstageOffstageEntityOverlap);
+    expect(findBlocker(input, DIAGNOSTIC_CODES.onstageOffstageEntityOverlap)).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.onstageOffstageEntityOverlap,
+      affected: [{ field: "generationSession.current_authoritative_state.onstage_entities/offstage_pressuring_entities" }],
+      message: "The same entity is both onstage and offstage-pressuring in current authoritative state.",
+      whyItMatters: "A selected entity cannot be physically present and offstage-pressuring in the same local moment without an explicit state distinction.",
+      suggestedActions: ["revise", "remove", "deselect"]
+    });
   });
 
   it.each(["offstage", "concealed"])("blocks onstage entity statuses with %s locations", (location) => {
@@ -34,7 +41,14 @@ describe("structural contradiction validation", () => {
     const input = baseInput();
     input.records = [...input.records, entityStatus({ location: otherLocationId })];
 
-    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.onstageEntityStatusContradiction);
+    expect(findBlocker(input, DIAGNOSTIC_CODES.onstageEntityStatusContradiction)).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.onstageEntityStatusContradiction,
+      affected: [{ recordId, field: "ENTITY STATUS.location" }],
+      message: "An onstage entity status places the entity at a different current location than the scene.",
+      whyItMatters: "The prompt cannot deterministically render an onstage entity in two different current locations.",
+      suggestedActions: ["revise", "remove", "deselect"]
+    });
   });
 
   it.each(["unknown", "not_applicable"])("allows onstage entity status location sentinel %s", (location) => {
@@ -52,16 +66,47 @@ describe("structural contradiction validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.onstageEntityStatusContradiction);
   });
 
+  it.each([
+    ["non-status record", record(recordId, "FACT", { entity_id: entityId, location: "offstage" })],
+    ["missing entity id", entityStatus({ entity_id: undefined } as never)],
+    ["unselected entity id", entityStatus({ entity_id: otherEntityId } as never)],
+    ["missing location", entityStatus({ location: undefined } as never)],
+    ["array payload", record(recordId, "ENTITY STATUS", [entityId, "offstage"])]
+  ])("does not inspect %s as an onstage entity-status contradiction", (_name, candidate) => {
+    const input = baseInput();
+    input.records = [...input.records, candidate];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.onstageEntityStatusContradiction);
+  });
+
   it("blocks carried-by-holder object location when carried_by is none", () => {
     const input = baseInput();
     input.records = [...input.records, objectRecord({ current_location: "carried_by_holder", carried_by: "none" })];
 
-    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.objectLocationHolderIncoherence);
+    expect(findBlocker(input, DIAGNOSTIC_CODES.objectLocationHolderIncoherence)).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.objectLocationHolderIncoherence,
+      affected: [{ recordId, field: "OBJECT.current_location/carried_by" }],
+      message: "Object current_location says it is carried by its holder, but carried_by is none.",
+      whyItMatters: "Object location and holder state must agree before physical use, transfer, or possession can compile deterministically.",
+      suggestedActions: ["revise", "remove", "deselect"]
+    });
   });
 
   it("allows carried-by-holder object location when carried_by is unknown", () => {
     const input = baseInput();
     input.records = [...input.records, objectRecord({ current_location: "carried_by_holder", carried_by: "unknown" })];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectLocationHolderIncoherence);
+  });
+
+  it.each([
+    ["non-object record", record(recordId, "FACT", { current_location: "carried_by_holder", carried_by: "none" })],
+    ["array payload", record(recordId, "OBJECT", ["carried_by_holder", "none"])],
+    ["different location", objectRecord({ current_location: "shelf", carried_by: "none" })]
+  ])("does not inspect %s as object holder/location incoherence", (_name, candidate) => {
+    const input = baseInput();
+    input.records = [...input.records, candidate];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectLocationHolderIncoherence);
   });
@@ -72,7 +117,25 @@ describe("structural contradiction validation", () => {
     input.records = [...input.records, record(recordId, "RELATIONSHIP", payload)];
 
     expect(() => relationshipSchema.parse(payload)).not.toThrow();
-    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.relationshipSelfReference);
+    expect(findBlocker(input, DIAGNOSTIC_CODES.relationshipSelfReference)).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.relationshipSelfReference,
+      affected: [{ recordId, field: "RELATIONSHIP.from/to" }],
+      message: "Relationship endpoints reference the same record.",
+      whyItMatters: "A relationship record must model pressure between distinct endpoints; self-reference makes the social pressure ambiguous.",
+      suggestedActions: ["revise", "remove", "deselect"]
+    });
+  });
+
+  it.each([
+    ["non-relationship record", record(recordId, "FACT", relationshipPayload({ from: entityId, to: entityId }))],
+    ["missing from endpoint", record(recordId, "RELATIONSHIP", relationshipPayload({ from: "" }))],
+    ["array payload", record(recordId, "RELATIONSHIP", [entityId, entityId])]
+  ])("does not inspect %s as relationship self-reference", (_name, candidate) => {
+    const input = baseInput();
+    input.records = [...input.records, candidate];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.relationshipSelfReference);
   });
 
   it("stays silent for structurally coherent selected records", () => {
@@ -94,6 +157,10 @@ function validate(input: BuildValidationSnapshotInput): ValidationResult {
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return validate(input).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function findBlocker(input: BuildValidationSnapshotInput, code: string) {
+  return validate(input).blockers.find((diagnostic) => diagnostic.code === code);
 }
 
 function baseInput(): BuildValidationSnapshotInput {
