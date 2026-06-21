@@ -138,14 +138,22 @@ Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`,
 - `<immediate_handoff>` with ideation labels: `begin_after` renders as "The next prose segment will begin after this point", and the trailer says to use the handoff only as user-authored continuity context, continue ideas from that point, and not treat archived prose as canon.
 - `<manual_directive>` with an ideation label for `must_render`: "The author's directive for the next segment (binding context: ideas must be compatible with it)".
 - `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
-- `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, and slot citation keys.
-- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
+- `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, slot citation keys, and any dormant-record modifier instruction.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says each idea must execute its assigned operator and produce one dominant local state transition; no two ideas may use the same operator or end in the same dominant change target; wording, actors, and citation keys alone do not prove distinctness; and who acts or which pressure fires are secondary preferences.
 - `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
 - `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
 
 For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
 
 The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
+
+Ideation operators are evaluated in this fixed order: `reveal`, `plan_meets_friction`, `emotion_becomes_action`, `shift_option_set`, `falsify_belief`, `clock_advances`, `debt_comes_due`, `relationship_turns`, `commit_at_a_cost`. Slot eligibility is fail-closed and current-state-aware: `SECRET` must be hidden or partially revealed, with Reveal also requiring an authored surface cue, an available clue carrier, `clue_only`, or `natural_reveal_allowed`; `BELIEF` active; `FACT` always active as evidence; `EVENT` not abandoned with `current_relevance` other than `none`; `PLAN.plan_status` active, blocked, or suspended; `INTENTION` active or blocked; `CLOCK` active; `OBLIGATION` open, escalated, or transferred; `CONSEQUENCE` pending, active, or escalated; `OPEN THREAD` active or escalated; `RELATIONSHIP` active; `EMOTION` active, suppressed, transformed, or dissociated; and `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, and `ENTITY STATUS` current by record purpose.
+
+Each assigned operator receives the minimum deterministic grounding bundle: one record for single-source operators, one `BELIEF` plus one `FACT` or active `EVENT` for `falsify_belief`, and exactly two active records from different pressure families for `commit_at_a_cost`. Bundle selection prefers an all-unused bundle, then the fewest reused records, then deterministic citation-key order. This selects slot grounds only; it never evicts selected records from their authoritative rendered sections.
+
+`commit_at_a_cost` pressure families are pursuit (`PLAN`, `INTENTION`), time (`CLOCK`), duty/effect (`OBLIGATION`, `CONSEQUENCE`), unresolved pressure (`OPEN THREAD`), relationship (`RELATIONSHIP`), affect (`EMOTION`), information/interpretation (`SECRET`, `BELIEF`), material/agency (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`), and causal event (`EVENT`). `FACT` is support-only and excluded. The operator must require one commitment with one cost, not alternatives, branches, or future-beat packages.
+
+When `dormantSlot` is true, dormancy reserves the final slot as a deterministic modifier rather than a pseudo-operator. Dormant candidates are operator-active selected pressure/material records except `FACT`, sorted by stored `updatedAt` and then id. The compiler selects the oldest candidate that can participate in a valid bundle for an otherwise unused real operator, marks that candidate's citation key in the slot body, and shrinks the slate if no candidate is viable.
 
 Ideation citation keys render inline at exactly one authoritative site per operator-eligible record:
 
@@ -161,12 +169,14 @@ Ideation citation keys render inline at exactly one authoritative site per opera
 | `OBLIGATION` | `<active_obligations_and_consequences>` / Obligations |
 | `CONSEQUENCE` | `<active_obligations_and_consequences>` / Consequences |
 | `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `EMOTION` | `<relationship_and_emotion_pressure>` |
 | `OPEN THREAD` | `<active_open_threads>` |
 | `VISIBLE AFFORDANCE` | `<locations_objects_affordances>` / Visible affordances |
 | `OBJECT` | `<locations_objects_affordances>` / Objects |
 | `LOCATION` | `<locations_objects_affordances>` / Locations |
+| `ENTITY STATUS` | `<physical_continuity>` / status lines |
 
-`EMOTION` and `ENTITY STATUS` records render unkeyed because they do not ground ideation operators. The prose prompt never renders ideation citation keys.
+The prose prompt never renders ideation citation keys.
 
 ### 3.3 Record-Hygiene Prompt Section Order
 

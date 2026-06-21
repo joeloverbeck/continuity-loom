@@ -257,10 +257,6 @@ function actionPressureStatusTag(record: ValidationRecord, payload: JsonRecord):
 }
 
 function keyedLabel(label: string, record: ValidationRecord, options: PressureRenderOptions): string {
-  if (record.type === "EMOTION") {
-    return label;
-  }
-
   return keyedText(label, record, options);
 }
 

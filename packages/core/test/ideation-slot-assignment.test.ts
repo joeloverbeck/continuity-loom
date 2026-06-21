@@ -21,12 +21,15 @@ describe("ideation slot assignment", () => {
   it("fills eligible operators in taxonomy order from selected record types", () => {
     const assignment = assignSlots(
       [
-        record("plan-a", "PLAN", "Plan A"),
-        record("clock-a", "CLOCK", "Clock A"),
+        record("plan-a", "PLAN", "Plan A", { plan_status: "active" }),
+        record("emotion-a", "EMOTION", "Emotion A", { status: "active" }),
+        record("affordance-a", "VISIBLE AFFORDANCE", "Affordance A", { status: "available" }),
+        record("clock-a", "CLOCK", "Clock A", { status: "active" }),
         record("secret-a", "SECRET", "Secret A", {
+          status: "hidden",
           reveal_permission: "natural_reveal_allowed"
         }),
-        record("belief-a", "BELIEF", "Belief A"),
+        record("belief-a", "BELIEF", "Belief A", { status: "active" }),
         record("fact-a", "FACT", "Fact A")
       ],
       { count: 4, dormantSlot: false }
@@ -34,15 +37,18 @@ describe("ideation slot assignment", () => {
 
     expect(assignment.slots.map((slot) => slot.operator)).toEqual([
       "reveal",
-      "falsify_belief",
-      "clock_advances",
-      "plan_meets_friction"
+      "plan_meets_friction",
+      "emotion_becomes_action",
+      "shift_option_set"
     ]);
     expect(assignment.shrunk).toBe(false);
   });
 
   it("shrinks the slate instead of padding when too few operators are eligible", () => {
-    const assignment = assignSlots([record("clock-a", "CLOCK", "Clock A")], { count: 5, dormantSlot: false });
+    const assignment = assignSlots([record("clock-a", "CLOCK", "Clock A", { status: "active" })], {
+      count: 5,
+      dormantSlot: false
+    });
 
     expect(assignment).toMatchObject({
       requestedCount: 5,
@@ -54,46 +60,54 @@ describe("ideation slot assignment", () => {
 
   it("requires both belief and fact/event evidence for the falsify-belief operator", () => {
     const beliefOnly = assignSlots([record("belief-a", "BELIEF", "Belief A")], { count: 3, dormantSlot: false });
-    const withFact = assignSlots([record("belief-a", "BELIEF", "Belief A"), record("fact-a", "FACT", "Fact A")], {
-      count: 3,
-      dormantSlot: false
-    });
+    const withFact = assignSlots(
+      [record("belief-a", "BELIEF", "Belief A", { status: "active" }), record("fact-a", "FACT", "Fact A")],
+      {
+        count: 3,
+        dormantSlot: false
+      }
+    );
 
     expect(beliefOnly.slots.map((slot) => slot.operator)).not.toContain("falsify_belief");
     expect(withFact.slots.map((slot) => slot.operator)).toContain("falsify_belief");
   });
 
-  it("targets the least recently updated selected pressure record for dormancy, with id tie-break", () => {
+  it("uses the least recently updated viable selected pressure as a dormant modifier", () => {
     const assignment = assignSlots(
       [
-        record("plan-b", "PLAN", "Plan B", {}, "2026-06-03T00:00:00.000Z"),
-        record("plan-a", "PLAN", "Plan A", {}, "2026-06-03T00:00:00.000Z"),
-        record("clock-a", "CLOCK", "Clock A", {}, "2026-06-02T00:00:00.000Z"),
+        record("plan-b", "PLAN", "Plan B", { plan_status: "active" }, "2026-06-03T00:00:00.000Z"),
+        record("plan-a", "PLAN", "Plan A", { plan_status: "active" }, "2026-06-03T00:00:00.000Z"),
+        record("clock-a", "CLOCK", "Clock A", { status: "active" }, "2026-06-02T00:00:00.000Z"),
         record("fact-new", "FACT", "Fact New", {}, "2026-06-04T00:00:00.000Z")
       ],
       { count: 3, dormantSlot: true }
     );
 
     expect(assignment.slots.at(-1)).toMatchObject({
-      operator: "reincorporate_dormant",
-      recordKeys: ["[CLOCK-1]"]
+      operator: "commit_at_a_cost",
+      recordKeys: ["[CLOCK-1]", "[PLAN-2]"],
+      dormantRecordKey: "[CLOCK-1]"
     });
 
     const tieAssignment = assignSlots(
       [
-        record("plan-b", "PLAN", "Plan B", {}, "2026-06-03T00:00:00.000Z"),
-        record("plan-a", "PLAN", "Plan A", {}, "2026-06-03T00:00:00.000Z")
+        record("plan-b", "PLAN", "Plan B", { plan_status: "active" }, "2026-06-03T00:00:00.000Z"),
+        record("plan-a", "PLAN", "Plan A", { plan_status: "active" }, "2026-06-03T00:00:00.000Z"),
+        record("clock-a", "CLOCK", "Clock A", { status: "active" }, "2026-06-04T00:00:00.000Z")
       ],
       { count: 3, dormantSlot: true }
     );
 
-    expect(tieAssignment.slots.at(-1)?.recordKeys).toEqual(["[PLAN-1]"]);
+    expect(tieAssignment.slots.at(-1)).toMatchObject({
+      operator: "commit_at_a_cost",
+      dormantRecordKey: "[PLAN-1]"
+    });
   });
 
   it("uses identical slot machinery for question mode", () => {
     const records = [
       record("secret-a", "SECRET", "Secret A", { reveal_permission: "locked" }),
-      record("clock-a", "CLOCK", "Clock A")
+      record("clock-a", "CLOCK", "Clock A", { status: "active" })
     ];
 
     expect(assignSlots(records, { mode: "ideas", count: 3, dormantSlot: false }).slots).toEqual(
@@ -138,9 +152,23 @@ describe("ideation slot assignment", () => {
 
     expect(citationKeysFor(records).get("belief-alpha")).toBe("[BELIEF-1]");
     expect(citationKeysFor(records).get("belief-long")).toBe("[BELIEF-2]");
-    expect(assignSlots(records, { count: 3, dormantSlot: true }).slots.at(-1)?.recordKeys).toEqual([
-      "[BELIEF-1]"
-    ]);
+    const dormantSlot = assignSlots(
+      [
+        record("secret-a", "SECRET", "Secret A", {
+          status: "hidden",
+          reveal_permission: "natural_reveal_allowed"
+        }),
+        record("plan-a", "PLAN", "Plan A", { plan_status: "active" }),
+        ...records,
+        record("fact-a", "FACT", "Fact A")
+      ],
+      { count: 3, dormantSlot: true }
+    ).slots.at(-1);
+
+    expect(dormantSlot).toMatchObject({
+      operator: "falsify_belief",
+      dormantRecordKey: "[BELIEF-1]"
+    });
   });
 });
 
@@ -171,25 +199,36 @@ function record(
 function labelPayload(type: string, label: string): Record<string, unknown> {
   switch (type) {
     case "BELIEF":
-      return { claim: label };
+      return { status: "active", claim: label };
     case "CLOCK":
+      return { status: "active", title: label };
     case "OPEN THREAD":
-      return { title: label };
+      return { status: "active", current_relevance: "high", title: label };
     case "CONSEQUENCE":
-      return { current_effect: label };
+      return { status: "active", current_effect: label };
     case "EVENT":
+      return { status: "active", current_relevance: "high", description: label };
     case "RELATIONSHIP":
-      return { description: label };
+      return { status: "active", description: label };
     case "FACT":
       return { statement: label };
     case "INTENTION":
-      return { intent: label };
+      return { status: "active", intent: label };
     case "OBLIGATION":
-      return { terms: label };
+      return { status: "open", terms: label };
     case "PLAN":
-      return { objective: label };
+      return { plan_status: "active", objective: label };
     case "SECRET":
-      return { secret_claim: label };
+      return { status: "hidden", secret_claim: label };
+    case "EMOTION":
+      return { status: "active", description: label };
+    case "VISIBLE AFFORDANCE":
+      return { status: "available", label };
+    case "OBJECT":
+    case "LOCATION":
+      return { status: "active", label };
+    case "ENTITY STATUS":
+      return { current_activity: label };
     default:
       return { label };
   }

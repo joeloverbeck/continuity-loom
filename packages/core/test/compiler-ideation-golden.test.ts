@@ -51,7 +51,7 @@ function ideationSnapshot() {
     records,
     generationSession: demoGenerationSession,
     storyConfig: demoStoryConfig,
-    versions: { template: "1.2.0", compiler: "1.4.0", contract: "1.5.0" }
+    versions: { template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" }
   });
 }
 
@@ -165,18 +165,17 @@ describe("compiler ideation golden prompt", () => {
     expect(first.prompt).toContain("Grounds:");
     expect(groundsKeys(first.prompt)).toEqual([
       "[SECRET-1]",
+      "[INTENTION-1]",
+      "[EMOTION-1]",
       "[BELIEF-2]",
-      "[BELIEF-1]",
-      "[EVENT-2]",
       "[EVENT-1]",
-      "[CLOCK-1]",
       "[BELIEF-2]"
     ]);
     for (const key of groundsKeys(first.prompt)) {
       const inlinePrompt = promptWithoutSection(first.prompt, "ideation_slots");
       expect(Array.from(inlinePrompt.matchAll(escapeRegExp(key))).length).toBe(1);
     }
-    expect(first.metadata.versions).toEqual({ template: "1.2.0", compiler: "1.4.0", contract: "1.5.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" });
   });
 });
 

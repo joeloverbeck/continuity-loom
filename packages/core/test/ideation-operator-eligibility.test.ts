@@ -1,5 +1,7 @@
 import fc from "fast-check";
+import { describe, expect, it } from "vitest";
 
+import { IDEATION_OPERATORS } from "../src/compiler/ideation/operators.js";
 import { assignSlots } from "../src/compiler/ideation/slot-assignment.js";
 import type { IdeationOperatorId } from "../src/compiler/ideation/types.js";
 import {
@@ -9,15 +11,12 @@ import {
   type IdeationPresenceVector,
   type IdeationRecordType
 } from "./support/arbitraries/ideation-records.js";
-import { describe, expect, it } from "vitest";
 
 type TruthRow = {
   id: IdeationOperatorId;
   name: string;
   definition: string;
   feedingTypes: readonly IdeationRecordType[];
-  minimumRecords?: number;
-  requiredGroups?: readonly (readonly IdeationRecordType[])[];
 };
 
 const operatorTruthTable: readonly TruthRow[] = [
@@ -25,59 +24,82 @@ const operatorTruthTable: readonly TruthRow[] = [
     id: "reveal",
     name: "Reveal",
     definition:
-      "Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.",
+      "Change information access by bringing one selected secret closer to the surface through an authored legal cue or reveal permission.",
     feedingTypes: ["SECRET"]
-  },
-  {
-    id: "falsify_belief",
-    name: "Falsify a Belief",
-    definition: "Make a selected belief collide with a selected fact or event that can expose its limits.",
-    feedingTypes: ["BELIEF", "FACT", "EVENT"],
-    requiredGroups: [["BELIEF"], ["FACT", "EVENT"]]
-  },
-  {
-    id: "clock_advances",
-    name: "Clock Advances",
-    definition: "Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.",
-    feedingTypes: ["CLOCK"]
   },
   {
     id: "plan_meets_friction",
     name: "Plan Meets Friction",
-    definition: "Turn a selected plan or intention into a yes-but or no-and complication.",
+    definition: "Change attempt state by making one selected plan or intention meet local resistance, cost, or interruption.",
     feedingTypes: ["PLAN", "INTENTION"]
+  },
+  {
+    id: "emotion_becomes_action",
+    name: "Emotion Becomes Action",
+    definition:
+      "Change observable tactics by making one selected emotion produce a concrete action, refusal, concealment, or control shift.",
+    feedingTypes: ["EMOTION"]
+  },
+  {
+    id: "shift_option_set",
+    name: "Shift the Option Set",
+    definition:
+      "Change the immediate feasible-action set through one selected affordance, object, location, or entity status.",
+    feedingTypes: ["VISIBLE AFFORDANCE", "OBJECT", "LOCATION", "ENTITY STATUS"]
+  },
+  {
+    id: "falsify_belief",
+    name: "Falsify a Belief",
+    definition: "Change operative interpretation by making one selected active belief collide with one selected fact or event.",
+    feedingTypes: ["BELIEF", "FACT", "EVENT"]
+  },
+  {
+    id: "clock_advances",
+    name: "Clock Advances",
+    definition: "Change temporal pressure by advancing one selected active clock without inventing unsupported facts.",
+    feedingTypes: ["CLOCK"]
   },
   {
     id: "debt_comes_due",
     name: "Debt Comes Due",
-    definition: "Make a selected obligation or consequence demand action now.",
+    definition: "Change duty or effect pressure by making one selected obligation or consequence demand action now.",
     feedingTypes: ["OBLIGATION", "CONSEQUENCE"]
   },
   {
-    id: "relationship_reversal",
-    name: "Relationship Reversal",
-    definition: "Invert, stress, or reframe a selected relationship pressure in the current moment.",
+    id: "relationship_turns",
+    name: "Relationship Turns",
+    definition:
+      "Change relational pressure by making one selected relationship turn, tighten, invert, or demand a new response.",
     feedingTypes: ["RELATIONSHIP"]
   },
   {
-    id: "close_escape_route",
-    name: "Close the Escape Route",
-    definition: "Use a selected affordance, object, or location to remove an easy path forward.",
-    feedingTypes: ["VISIBLE AFFORDANCE", "OBJECT", "LOCATION"]
-  },
-  {
-    id: "collide_two_threads",
-    name: "Collide Two Threads",
-    definition: "Make two selected pressures interfere with each other instead of resolving cleanly.",
-    feedingTypes: ["OPEN THREAD", "PLAN", "SECRET", "EVENT"],
-    minimumRecords: 2
+    id: "commit_at_a_cost",
+    name: "Commit at a Cost",
+    definition:
+      "Change commitment under pressure by forcing one selected costly move from two different active pressure families; never render an A/B menu or branch list.",
+    feedingTypes: [
+      "SECRET",
+      "BELIEF",
+      "EVENT",
+      "PLAN",
+      "INTENTION",
+      "CLOCK",
+      "OBLIGATION",
+      "CONSEQUENCE",
+      "RELATIONSHIP",
+      "EMOTION",
+      "OPEN THREAD",
+      "VISIBLE AFFORDANCE",
+      "OBJECT",
+      "LOCATION",
+      "ENTITY STATUS"
+    ]
   }
 ];
 
-const dormantTypes: readonly IdeationRecordType[] = [
+const dormantCandidateTypes: readonly IdeationRecordType[] = [
   "SECRET",
   "BELIEF",
-  "FACT",
   "EVENT",
   "CLOCK",
   "PLAN",
@@ -85,10 +107,12 @@ const dormantTypes: readonly IdeationRecordType[] = [
   "OBLIGATION",
   "CONSEQUENCE",
   "RELATIONSHIP",
+  "EMOTION",
   "OPEN THREAD",
   "VISIBLE AFFORDANCE",
   "OBJECT",
-  "LOCATION"
+  "LOCATION",
+  "ENTITY STATUS"
 ];
 
 function runProperty<T>(property: fc.IProperty<T>, seed: number, runs = 32): void {
@@ -103,11 +127,40 @@ function expectedOperators(vector: IdeationPresenceVector): IdeationOperatorId[]
 }
 
 function eligibleByTruthTable(row: TruthRow, vector: IdeationPresenceVector): boolean {
-  const feedingCount = row.feedingTypes.reduce((total, type) => total + vector[type], 0);
-  const hasMinimum = feedingCount >= (row.minimumRecords ?? 1);
-  const hasRequiredGroups = (row.requiredGroups ?? []).every((group) => group.some((type) => vector[type] > 0));
+  switch (row.id) {
+    case "reveal":
+      return vector.SECRET > 0 && vector.revealableSecret;
+    case "plan_meets_friction":
+      return vector.PLAN + vector.INTENTION > 0;
+    case "emotion_becomes_action":
+      return vector.EMOTION > 0;
+    case "shift_option_set":
+      return vector["VISIBLE AFFORDANCE"] + vector.OBJECT + vector.LOCATION + vector["ENTITY STATUS"] > 0;
+    case "falsify_belief":
+      return vector.BELIEF > 0 && vector.FACT + vector.EVENT > 0;
+    case "clock_advances":
+      return vector.CLOCK > 0;
+    case "debt_comes_due":
+      return vector.OBLIGATION + vector.CONSEQUENCE > 0;
+    case "relationship_turns":
+      return vector.RELATIONSHIP > 0;
+    case "commit_at_a_cost":
+      return pressureFamilyCount(vector) >= 2;
+  }
+}
 
-  return hasMinimum && hasRequiredGroups;
+function pressureFamilyCount(vector: IdeationPresenceVector): number {
+  return [
+    vector.PLAN + vector.INTENTION,
+    vector.CLOCK,
+    vector.OBLIGATION + vector.CONSEQUENCE,
+    vector["OPEN THREAD"],
+    vector.RELATIONSHIP,
+    vector.EMOTION,
+    vector.SECRET + vector.BELIEF,
+    vector["VISIBLE AFFORDANCE"] + vector.OBJECT + vector.LOCATION + vector["ENTITY STATUS"],
+    vector.EVENT
+  ].filter((count) => count > 0).length;
 }
 
 describe("ideation operator eligibility", () => {
@@ -120,6 +173,11 @@ describe("ideation operator eligibility", () => {
       }),
       0x26010
     );
+  });
+
+  it("keeps the code operator table in SPEC-028 order", () => {
+    expect(IDEATION_OPERATORS.map((operator) => operator.id)).toEqual(operatorTruthTable.map((row) => row.id));
+    expect(IDEATION_OPERATORS.map((operator) => operator.name)).toEqual(operatorTruthTable.map((row) => row.name));
   });
 
   it.each(operatorTruthTable)("admits the minimal documented inputs for %s", (row) => {
@@ -150,72 +208,96 @@ describe("ideation operator eligibility", () => {
     expect(withEvent.slots.map((slot) => slot.operator)).toContain("falsify_belief");
   });
 
-  it("requires two feeding records for Collide Two Threads", () => {
-    const oneRecord = assignSlots([ideationRecord("OPEN THREAD", "thread")], { count: 6, dormantSlot: false });
-    const twoRecords = assignSlots([
-      ideationRecord("OPEN THREAD", "thread"),
-      ideationRecord("PLAN", "plan")
-    ], { count: 6, dormantSlot: false });
-
-    expect(oneRecord.slots.map((slot) => slot.operator)).not.toContain("collide_two_threads");
-    expect(twoRecords.slots.map((slot) => slot.operator)).toContain("collide_two_threads");
-  });
-
-  it("prefers revealable secrets but still grounds Reveal when only locked secrets are selected", () => {
-    const revealable = assignSlots([
-      ideationRecord("SECRET", "locked-secret"),
-      ideationRecord("SECRET", "revealable-secret", { revealable: true })
-    ], { count: 6, dormantSlot: false });
-    const lockedOnly = assignSlots([ideationRecord("SECRET", "locked-secret")], { count: 6, dormantSlot: false });
-
-    expect(revealable.slots[0]).toMatchObject({
-      operator: "reveal",
-      recordKeys: ["[SECRET-2]"]
+  it("requires two different pressure families for Commit at a Cost and excludes FACT", () => {
+    const oneFamily = assignSlots([ideationRecord("PLAN", "plan"), ideationRecord("INTENTION", "intention")], {
+      count: 6,
+      dormantSlot: false
     });
-    expect(lockedOnly.slots[0]).toMatchObject({
-      operator: "reveal",
-      recordKeys: ["[SECRET-1]"]
+    const factPlusPlan = assignSlots([ideationRecord("PLAN", "plan"), ideationRecord("FACT", "fact")], {
+      count: 6,
+      dormantSlot: false
     });
+    const twoFamilies = assignSlots([ideationRecord("PLAN", "plan"), ideationRecord("CLOCK", "clock")], {
+      count: 6,
+      dormantSlot: false
+    });
+
+    expect(oneFamily.slots.map((slot) => slot.operator)).not.toContain("commit_at_a_cost");
+    expect(factPlusPlan.slots.map((slot) => slot.operator)).not.toContain("commit_at_a_cost");
+    expect(twoFamilies.slots.map((slot) => slot.operator)).toContain("commit_at_a_cost");
   });
 
-  it("reserves the dormant slot only when requested and a dormant-eligible record exists", () => {
-    const records = [ideationRecord("CLOCK", "clock", { updatedAt: "2026-06-01T00:00:00.000Z" })];
-
-    expect(assignSlots(records, { count: 3, dormantSlot: true }).slots.at(-1)?.operator).toBe(
-      "reincorporate_dormant"
-    );
-    expect(assignSlots(records, { count: 3, dormantSlot: false }).slots.map((slot) => slot.operator)).not.toContain(
-      "reincorporate_dormant"
-    );
-    expect(dormantTypes).toContain("CLOCK");
+  it("fails closed for stale statuses and preserves the documented PLAN plan_status exception", () => {
+    expect(assignSlots([ideationRecord("PLAN", "revised", { payload: { plan_status: "revised" } })], { count: 6, dormantSlot: false }).slots).toEqual([]);
+    expect(assignSlots([ideationRecord("CLOCK", "paused", { payload: { status: "paused" } })], { count: 6, dormantSlot: false }).slots).toEqual([]);
+    expect(assignSlots([ideationRecord("EMOTION", "transformed", { payload: { status: "transformed" } })], { count: 6, dormantSlot: false }).slots.map((slot) => slot.operator)).toEqual(["emotion_becomes_action"]);
+    expect(assignSlots([ideationRecord("EVENT", "irrelevant", { payload: { current_relevance: "none" } })], { count: 6, dormantSlot: false }).slots).toEqual([]);
   });
 
-  it.each(dormantTypes)(
-    "allows %s records to ground the dormant slot",
-    (type) => {
-      const id = type.toLowerCase().replaceAll(" ", "-") + "-dormant";
-      const assignment = assignSlots([ideationRecord(type, id)], {
-        count: 3,
-        dormantSlot: true
-      });
-      const expectedKey = "[" + type + "-1]";
+  it("requires a legal authored surface move for Reveal and does not treat directive_required alone as enough", () => {
+    const directiveOnly = ideationRecord("SECRET", "directive", { revealable: "directive_required" });
+    const lockedWithCue = ideationRecord("SECRET", "locked-cue", {
+      payload: { reveal_permission: "locked", allowed_surface_cues: ["A visible flinch."] }
+    });
+    const clueOnly = ideationRecord("SECRET", "clue", { payload: { reveal_permission: "clue_only" } });
 
-      expect(assignment.slots.at(-1)).toMatchObject({
-        operator: "reincorporate_dormant",
-        recordKeys: [expectedKey]
-      });
+    expect(assignSlots([directiveOnly], { count: 6, dormantSlot: false }).slots).toEqual([]);
+    expect(assignSlots([lockedWithCue], { count: 6, dormantSlot: false }).slots.map((slot) => slot.operator)).toEqual([
+      "reveal"
+    ]);
+    expect(assignSlots([clueOnly], { count: 6, dormantSlot: false }).slots.map((slot) => slot.operator)).toEqual([
+      "reveal"
+    ]);
+  });
+
+  it("uses dormant selected pressure as a modifier on a real unused operator", () => {
+    const assignment = assignSlots(
+      [
+        ideationRecord("CLOCK", "clock-old", { updatedAt: "2026-06-01T00:00:00.000Z" }),
+        ideationRecord("PLAN", "plan-new", { updatedAt: "2026-06-02T00:00:00.000Z" })
+      ],
+      { count: 3, dormantSlot: true }
+    );
+
+    expect(assignment.slots.at(-1)).toMatchObject({
+      operator: "commit_at_a_cost",
+      recordKeys: ["[CLOCK-1]", "[PLAN-1]"],
+      dormantRecordKey: "[CLOCK-1]"
+    });
+    expect(assignSlots(assignmentRecordsWithoutDormantViability(), { count: 3, dormantSlot: true }).shrunk).toBe(true);
+  });
+
+  it("allows each dormant candidate type to participate in at least one real operator", () => {
+    for (const type of dormantCandidateTypes) {
+      const id = type.toLowerCase().replaceAll(" ", "-") + "-candidate";
+      const records = [ideationRecord(type, id, { revealable: type === "SECRET" })];
+      const withSupport =
+        type === "BELIEF"
+          ? [...records, ideationRecord("FACT", "fact-support")]
+          : type === "EVENT"
+            ? [...records, ideationRecord("CLOCK", "clock-support")]
+          : type === "OPEN THREAD"
+            ? [...records, ideationRecord("CLOCK", "clock-support")]
+            : records;
+      const assignment = assignSlots(withSupport, { count: 6, dormantSlot: false });
+
+      expect(assignment.slots.length, type).toBeGreaterThan(0);
+      expect(assignment.slots.some((slot) => slot.recordKeys.includes("[" + type + "-1]")), type).toBe(true);
     }
-  );
+  });
 });
 
 function minimalRecords(row: TruthRow): ReturnType<typeof ideationRecord>[] {
-  if (row.id === "falsify_belief") {
-    return [ideationRecord("BELIEF", "belief"), ideationRecord("FACT", "fact")];
+  switch (row.id) {
+    case "falsify_belief":
+      return [ideationRecord("BELIEF", "belief"), ideationRecord("FACT", "fact")];
+    case "commit_at_a_cost":
+      return [ideationRecord("PLAN", "plan"), ideationRecord("CLOCK", "clock")];
+    default:
+      return [ideationRecord(row.feedingTypes[0]!, row.id + "-record", { revealable: row.id === "reveal" })];
   }
+}
 
-  if (row.id === "collide_two_threads") {
-    return [ideationRecord("OPEN THREAD", "thread"), ideationRecord("EVENT", "event")];
-  }
-
-  return [ideationRecord(row.feedingTypes[0]!, row.id + "-record", { revealable: row.id === "reveal" })];
+function assignmentRecordsWithoutDormantViability(): ReturnType<typeof ideationRecord>[] {
+  return [ideationRecord("CLOCK", "clock-only", { updatedAt: "2026-06-01T00:00:00.000Z" })];
 }

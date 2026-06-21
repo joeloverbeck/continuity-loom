@@ -18,7 +18,7 @@ describe("record hygiene compiler", () => {
     expect(result.prompt).toContain("<record key=\"[FACT-1]\"");
     expect(result.prompt).toContain("<record key=\"[ENTITY STATUS-1]\"");
     expect(result.prompt).toContain("outgoing: holder -> [FACT-1]");
-    expect(result.metadata.versions).toEqual({ template: "1.2.0", compiler: "1.4.0", contract: "1.5.0" });
+    expect(result.metadata.versions).toEqual({ template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" });
     expect(result.metadata.countsByType?.FACT).toBe(1);
     expect(result.metadata.citationMap?.["[FACT-1]"]).toBe("fact-a");
   });

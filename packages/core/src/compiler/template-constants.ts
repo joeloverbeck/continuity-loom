@@ -463,8 +463,8 @@ Each idea should satisfy the eventfulness rubric: relevant to the selected recor
 Move the story far without contradicting any compiled record, current authoritative state, physical constraint, POV knowledge boundary, or reveal lock.
 Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
 If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
-Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
-Ideas must be mutually distinct. No two ideas may share the same dominant pressure source or the same dramatic move; each idea should differ from the others along at least one named axis: who acts, which pressure fires, or what changes durably.
+Prefer causal pressure, try-fail friction, dormant-pressure return, consequence, and costly commitment over spectacle.
+Ideas must be mutually distinct. Each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 </ideation_quality>`,
   ideation_output_format: `<ideation_output_format>
 Output only an ideas block. Malformed output is discarded.

@@ -218,7 +218,7 @@ function renderPhysicalContinuity(snapshot: ValidationSnapshot, options: TailRen
         labelValue("time", state.current_time),
         labelValue("location", resolveRecordLabel(snapshot, state.current_location)),
         labelValue("positions", state.positions),
-        labelValue("statuses", renderEntityStatuses(snapshot, state.entity_statuses)),
+        labelValue("statuses", renderEntityStatuses(snapshot, state.entity_statuses, options)),
         labelValue("possessions", state.possessions),
         labelValue("visibility", state.line_of_sight_and_visibility),
         labelValue("routes/exits", state.routes_and_exits),
@@ -371,9 +371,16 @@ function labelValue(label: string, value: unknown): string {
   return rendered && rendered !== "none" ? `${label}: ${rendered}` : "";
 }
 
-function renderEntityStatuses(snapshot: ValidationSnapshot, value: unknown): string {
+function renderEntityStatuses(snapshot: ValidationSnapshot, value: unknown, options: TailRenderOptions): string {
   if (Array.isArray(value)) {
-    return value.map((item) => resolveRecordLabel(snapshot, item)).filter(Boolean).join(", ");
+    return value
+      .map((item) => {
+        const record = snapshot.records.find((candidate) => candidate.id === item && candidate.type === "ENTITY STATUS");
+        const label = resolveRecordLabel(snapshot, item);
+        return record && label ? keyedText(label, record, options) : label;
+      })
+      .filter(Boolean)
+      .join(", ");
   }
 
   return renderValue(value);

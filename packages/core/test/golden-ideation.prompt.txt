@@ -198,8 +198,8 @@ Open threads are unresolved pressures, promises, risks, mysteries, or tensions. 
 </active_open_threads>
 
 <relationship_and_emotion_pressure>
-- Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
-- Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
+- [EMOTION-1] Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
+- [EMOTION-2] Niko feels excluded, worried, and unwilling to be sent away with a polite lie.; He jokes once, then watches Elin's hands instead of her face.
 - [RELATIONSHIP-1] They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
 </relationship_and_emotion_pressure>
 
@@ -296,28 +296,29 @@ Slate contains 5 grounded slots.
 
 Slot 1: Reveal
 Operator id: reveal
-Definition: Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
+Definition: Change information access by bringing one selected secret closer to the surface through an authored legal cue or reveal permission.
 Grounds: [SECRET-1]
 
-Slot 2: Falsify a Belief
-Operator id: falsify_belief
-Definition: Make a selected belief collide with a selected fact or event that can expose its limits.
-Grounds: [BELIEF-2], [BELIEF-1], [EVENT-2], [EVENT-1]
-
-Slot 3: Clock Advances
-Operator id: clock_advances
-Definition: Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.
-Grounds: [CLOCK-1]
-
-Slot 4: Plan Meets Friction
+Slot 2: Plan Meets Friction
 Operator id: plan_meets_friction
-Definition: Turn a selected plan or intention into a yes-but or no-and complication.
-Grounds: [INTENTION-1], [INTENTION-2]
+Definition: Change attempt state by making one selected plan or intention meet local resistance, cost, or interruption.
+Grounds: [INTENTION-1]
 
-Slot 5: Reincorporate the Dormant
-Operator id: reincorporate_dormant
-Definition: Bring back the least-recently-updated selected pressure record as fresh causal pressure.
-Grounds: [BELIEF-2]
+Slot 3: Emotion Becomes Action
+Operator id: emotion_becomes_action
+Definition: Change observable tactics by making one selected emotion produce a concrete action, refusal, concealment, or control shift.
+Grounds: [EMOTION-1]
+
+Slot 4: Shift the Option Set
+Operator id: shift_option_set
+Definition: Change the immediate feasible-action set through one selected affordance, object, location, or entity status.
+Grounds: [LOCATION-1]
+
+Slot 5: Falsify a Belief
+Operator id: falsify_belief
+Definition: Change operative interpretation by making one selected active belief collide with one selected fact or event.
+Grounds: [BELIEF-2], [EVENT-1]
+Dormancy modifier: this slot must reincorporate dormant record [BELIEF-2].
 </ideation_slots>
 
 <ideation_quality>
@@ -325,8 +326,8 @@ Each idea should satisfy the eventfulness rubric: relevant to the selected recor
 Move the story far without contradicting any compiled record, current authoritative state, physical constraint, POV knowledge boundary, or reveal lock.
 Reveal ideas must obey the compiled reveal constraints. Without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure.
 If a slot has no supporting record after deterministic assignment, output SKIPPED for that slot rather than inventing support.
-Prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle.
-Ideas must be mutually distinct. No two ideas may share the same dominant pressure source or the same dramatic move; each idea should differ from the others along at least one named axis: who acts, which pressure fires, or what changes durably.
+Prefer causal pressure, try-fail friction, dormant-pressure return, consequence, and costly commitment over spectacle.
+Ideas must be mutually distinct. Each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 </ideation_quality>
 
 <ideation_output_format>

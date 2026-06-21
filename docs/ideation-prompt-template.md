@@ -102,8 +102,8 @@ Defines the quality bar:
 - reveal ideas must obey compiled reveal constraints;
 - without reveal permission, propose surface cues, pressure, partial exposure, or suspicion rather than narrator-certified exposure;
 - unsupported slots output `SKIPPED` rather than inventing support;
-- prefer causal pressure, try-fail friction, reincorporation, consequence, and dilemma over spectacle;
-- ideas must be mutually distinct: no two ideas may share the same dominant pressure source or dramatic move, and each idea should differ along at least one named axis: who acts, which pressure fires, or what changes durably.
+- prefer causal pressure, try-fail friction, dormant-pressure return, consequence, and costly commitment over spectacle;
+- ideas must be mutually distinct: each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 
 ### Ideation `<contradiction_prohibitions>`
 
@@ -137,26 +137,27 @@ SKIPPED: no compiled record supports this slot.
 
 Operators are evaluated in fixed order:
 
-1. Reveal - feeds from `SECRET`; brings a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
-2. Falsify a Belief - feeds from `BELIEF` plus `FACT` or `EVENT`; makes a selected belief collide with evidence that exposes its limits.
-3. Clock Advances - feeds from `CLOCK`; advances a selected clock without inventing unsupported facts.
-4. Plan Meets Friction - feeds from `PLAN` or `INTENTION`; turns a plan or intention into a yes-but or no-and complication.
-5. Debt Comes Due - feeds from `OBLIGATION` or `CONSEQUENCE`; makes an obligation or consequence demand action now.
-6. Relationship Reversal - feeds from `RELATIONSHIP`; inverts, stresses, or reframes relationship pressure in the current moment.
-7. Close the Escape Route - feeds from `VISIBLE AFFORDANCE`, `OBJECT`, or `LOCATION`; removes an easy path forward.
-8. Collide Two Threads - feeds from at least two records among `OPEN THREAD`, `PLAN`, `SECRET`, or `EVENT`; makes selected pressures interfere rather than resolve cleanly.
-9. Reincorporate the Dormant - feeds from selected pressure/material records; brings back the least-recently-updated eligible selected record as fresh causal pressure.
+1. Reveal - feeds from one operator-active `SECRET`; changes information access through an authored legal cue or reveal permission.
+2. Plan Meets Friction - feeds from one operator-active `PLAN` or `INTENTION`; changes attempt state through resistance, cost, or interruption.
+3. Emotion Becomes Action - feeds from one operator-active `EMOTION`; changes observable tactic or control state.
+4. Shift the Option Set - feeds from one `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, or `ENTITY STATUS`; changes the immediate feasible-action set.
+5. Falsify a Belief - feeds from one active `BELIEF` plus one `FACT` or operator-active `EVENT`; changes operative interpretation.
+6. Clock Advances - feeds from one operator-active `CLOCK`; changes temporal pressure.
+7. Debt Comes Due - feeds from one operator-active `OBLIGATION` or `CONSEQUENCE`; changes duty or effect pressure.
+8. Relationship Turns - feeds from one operator-active `RELATIONSHIP`; changes relational pressure.
+9. Commit at a Cost - feeds from exactly two operator-active records from different pressure families; changes commitment under cost and must not render an A/B menu, branch list, or alternate future set.
 
 ## Slot Assignment
 
 The compiler assigns slots deterministically from selected records only:
 
-- An operator is eligible only when the active working set contains the required feeding records.
-- Operators fill in taxonomy order until `count` is reached.
-- `Falsify a Belief` requires at least one `BELIEF` and at least one `FACT` or `EVENT`.
-- `Collide Two Threads` requires at least two feeding records.
-- When `dormantSlot` is true, the final slot is reserved for `Reincorporate the Dormant` when an eligible dormant record exists.
-- Dormancy uses stored record `updatedAt` values; lexical ISO timestamp order is chronological, with record id as the tie-breaker.
+- An operator is eligible only when the active working set contains the required operator-active records. Resolved, fulfilled, settled, closed, answered, superseded, abandoned, irrelevant, paused, or revised records may still render at their authoritative sites, but they do not ground slots unless this contract explicitly marks them active.
+- Operator-active states are: `SECRET` hidden or partially revealed, with Reveal additionally requiring an authored surface cue, an available clue carrier, `clue_only`, or `natural_reveal_allowed`; `BELIEF` active; `FACT` always; `EVENT` not abandoned and `current_relevance` not `none`; `PLAN.plan_status` active, blocked, or suspended; `INTENTION` active or blocked; `CLOCK` active; `OBLIGATION` open, escalated, or transferred; `CONSEQUENCE` pending, active, or escalated; `OPEN THREAD` active or escalated; `RELATIONSHIP` active; `EMOTION` active, suppressed, transformed, or dissociated; material/status records (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`) current by record purpose.
+- Operators fill in taxonomy order until `count` is reached, reserving the final slot first when `dormantSlot` is true.
+- Each slot receives the minimum deterministic grounding bundle: one record for single-source operators, one `BELIEF` plus one `FACT`/`EVENT` for `Falsify a Belief`, and exactly two different pressure families for `Commit at a Cost`.
+- Bundle choice prefers all-unused grounds, then fewer reused grounds, then deterministic citation-key order. Reuse is allowed only when no all-unused valid bundle exists; every selected record still renders at its authoritative section.
+- `Commit at a Cost` pressure families are pursuit (`PLAN`, `INTENTION`), time (`CLOCK`), duty/effect (`OBLIGATION`, `CONSEQUENCE`), unresolved pressure (`OPEN THREAD`), relationship (`RELATIONSHIP`), affect (`EMOTION`), information/interpretation (`SECRET`, `BELIEF`), material/agency (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`), and causal event (`EVENT`). `FACT` is support-only and excluded.
+- When `dormantSlot` is true, dormancy is a slot-selection modifier, not an operator. Dormant candidates are operator-active selected pressure/material records except `FACT`, sorted by stored `updatedAt` then record id. The compiler selects the oldest candidate that can participate in a valid bundle for an otherwise unused real operator and marks that candidate as mandatory in the slot. If no candidate is viable, the dormant slot is omitted and the slate shrinks.
 - No wall-clock reads are allowed during compilation.
 
 ## Citation Keys
@@ -172,11 +173,12 @@ Keys render inline once at the record's authoritative ideation section:
 | `CLOCK` | `<active_clocks>` |
 | `PLAN`, `INTENTION` | `<active_plans_and_intentions>` |
 | `OBLIGATION`, `CONSEQUENCE` | `<active_obligations_and_consequences>` |
-| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `RELATIONSHIP`, `EMOTION` | `<relationship_and_emotion_pressure>` |
 | `OPEN THREAD` | `<active_open_threads>` |
 | `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION` | `<locations_objects_affordances>` |
+| `ENTITY STATUS` | `<physical_continuity>` / status lines |
 
-`EMOTION` and `ENTITY STATUS` records render without keys because they do not ground ideation operators. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+`EMOTION` records render keys at `<relationship_and_emotion_pressure>`. `ENTITY STATUS` records render keys at their authoritative ideation current-state site in `<physical_continuity>`. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
 
 ## UI Handling
 
