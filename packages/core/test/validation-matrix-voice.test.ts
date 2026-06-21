@@ -40,6 +40,45 @@ describe("voice/dialogue/presence matrix validation", () => {
     );
   });
 
+  it("stays silent when voice focus containers are absent or malformed", () => {
+    const absentFocus = cleanInput();
+    delete absentFocus.generationSession.generation_validation_focus;
+    removeRecord(absentFocus, castA);
+    expect(blockerCodes(absentFocus)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+
+    const missingTags = cleanInput();
+    missingTags.generationSession.generation_validation_focus = {} as never;
+    removeRecord(missingTags, castA);
+    expect(blockerCodes(missingTags)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+
+    const missingExpectedLane = cleanInput();
+    missingExpectedLane.generationSession.generation_validation_focus = {
+      validation_focus_tags: {
+        generation_context: [],
+        possible_durable_changes: []
+      }
+    } as never;
+    removeRecord(missingExpectedLane, castA);
+    expect(blockerCodes(missingExpectedLane)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
+  it.each([
+    ["generation context", "generation_context"],
+    ["expected local modes", "expected_local_modes"],
+    ["possible durable changes", "possible_durable_changes"]
+  ])("activates voice gates from %s focus tags", (_name, lane) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags = {
+      generation_context: [],
+      expected_local_modes: [],
+      possible_durable_changes: [],
+      [lane]: ["dialogue_expected" as never]
+    };
+    removeRecord(input, castA);
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
   it("handles missing active working set as incomplete tagged voice state", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
@@ -351,6 +390,24 @@ describe("voice/dialogue/presence matrix validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
   });
 
+  it("treats array cast payloads as missing voice and body dossiers", () => {
+    const dialogueInput = cleanInput();
+    dialogueInput.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    dialogueInput.records = dialogueInput.records.map((record) =>
+      record.id === castA ? { ...record, payload: [castA] } : record
+    );
+    expect(blockerCodes(dialogueInput)).toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+
+    const silentInput = cleanInput();
+    silentInput.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "active_silent_presence_expected"
+    ];
+    silentInput.records = silentInput.records.map((record) =>
+      record.id === castC ? { ...record, payload: [castC] } : record
+    );
+    expect(blockerCodes(silentInput)).toContain(DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete);
+  });
+
   it.each([
     ["belief known by POV", { type: "BELIEF", payload: { holder: povId } }],
     ["secret held by POV", { type: "SECRET", payload: { holders: [povId] } }]
@@ -362,6 +419,18 @@ describe("voice/dialogue/presence matrix validation", () => {
       .concat({ id: factId, type: knowledgeRecord.type, payload: { id: factId, ...knowledgeRecord.payload } });
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixDialogueIncomplete);
+  });
+
+  it.each([
+    ["FACT records without a known-by list", { type: "FACT", payload: { known_by: povId } }],
+    ["BELIEF records without the POV holder", { type: "BELIEF", payload: { known_by: [povId] } }],
+    ["SECRET records without a holders list", { type: "SECRET", payload: { holders: povId } }]
+  ])("does not accept dialogue knowledge context from %s", (_label, knowledgeRecord) => {
+    expectMatrixBlock("dialogue_expected", DIAGNOSTIC_CODES.matrixDialogueIncomplete, (input) => {
+      input.records = input.records
+        .filter((record) => record.id !== factId)
+        .concat({ id: factId, type: knowledgeRecord.type, payload: { id: factId, ...knowledgeRecord.payload } });
+    });
   });
 
   it("accepts dialogue when no specific POV constrains knowledge", () => {
@@ -449,6 +518,34 @@ describe("voice/dialogue/presence matrix validation", () => {
     );
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
+  });
+
+  it("does not require local silent pressure for speaking cast members", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "active_silent_presence_expected"
+    ];
+    input.generationSession.active_working_set!.active_onstage_cast_full = [
+      { cast_member_id: castA, local_function: "active_speaker" },
+      { cast_member_id: castC, local_function: "active_silent" }
+    ];
+    input.generationSession.current_cast_voice_pressure = [
+      pressure(castA, "A speaks.", "A answers.", "none"),
+      pressure(castC, "C is watchful.", "none", "C grips the doorframe.")
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete);
+  });
+
+  it("accepts active silent presence when state positions and locks are non-string values", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "active_silent_presence_expected"
+    ];
+    input.generationSession.current_authoritative_state!.positions = { castC: "doorframe" } as never;
+    input.generationSession.current_authoritative_state!.current_locks = { castC: "visible only" } as never;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete);
   });
 
   it("does not treat pressure for absent minor IDs as present-minor speech guidance", () => {
