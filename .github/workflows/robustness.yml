@@ -1,0 +1,73 @@
+name: Robustness
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  full-mutation:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pillar: prose
+            label: P1 prose mutation
+            script: mutation:prose
+          - pillar: ideation
+            label: P2 ideation mutation
+            script: mutation:ideation
+          - pillar: validation
+            label: P3 validation mutation
+            script: mutation:validation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Record run seed
+        run: |
+          mkdir -p reports/mutation/${{ matrix.pillar }}
+          {
+            echo "pillar=${{ matrix.pillar }}"
+            echo "seed=${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.pillar }}"
+            echo "sha=${{ github.sha }}"
+          } | tee reports/mutation/${{ matrix.pillar }}/run-seed.txt
+          cat reports/mutation/${{ matrix.pillar }}/run-seed.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Run forced full mutation
+        run: npm run ${{ matrix.script }} -- --force
+      - name: Write compact mutation summary
+        if: always()
+        run: |
+          if [ -f reports/mutation/${{ matrix.pillar }}/mutation.json ]; then
+            npm run mutation:gate -- reports/mutation/${{ matrix.pillar }}/mutation.json null \
+              | tee reports/mutation/${{ matrix.pillar }}/mutation-summary.json
+            {
+              echo
+              echo "mutation summary:"
+              cat reports/mutation/${{ matrix.pillar }}/mutation-summary.json
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No mutation report was produced for ${{ matrix.pillar }}." | tee reports/mutation/${{ matrix.pillar }}/mutation-summary.txt
+          fi
+      - name: Upload robustness artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: robustness-${{ matrix.pillar }}-${{ github.run_id }}
+          retention-days: 14
+          path: |
+            reports/mutation/${{ matrix.pillar }}/
+            coverage/
+          if-no-files-found: ignore

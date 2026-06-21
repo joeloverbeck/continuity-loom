@@ -1,10 +1,27 @@
 # SPEC026MUTDRIROB-021: Add scheduled/manual full robustness workflow
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a scheduled/manual `robustness.yml` CI workflow; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md
+
+## Outcome
+
+- Added `.github/workflows/robustness.yml`, a separate scheduled/manual workflow with `schedule` and `workflow_dispatch` triggers.
+- The workflow runs a forced full Stryker matrix for P1 prose, P2 ideation, and P3 validation via `npm run mutation:* -- --force`, records a run seed/commit summary, writes compact mutation summaries with `mutation:gate`, and uploads short-lived CI artifacts for local report files.
+- No external report publishing step was added; reports remain CI-internal.
+- No browser smoke was run; this ticket only adds a CI workflow definition.
+
+Verification:
+
+- `grep -nE "schedule:|workflow_dispatch:|--force" .github/workflows/robustness.yml` (schedule, manual trigger, and forced mutation present)
+- `grep -niE "dashboard|stryker-dashboard|upload.*report.*http" .github/workflows/robustness.yml` (no matches)
+- `npx prettier --check .github/workflows/robustness.yml` (passed)
+- `npm run lint` (passed)
+- `npm run typecheck` (passed)
+- `npm test` (150 files, 1232 tests passed)
+- `npm run build` (passed; existing Vite large-chunk warning)
 
 ## Problem
 
@@ -12,7 +29,7 @@ Changed-file PR mutation cannot detect stale caches, indirect test/config drift,
 
 ## Assumption Reassessment (2026-06-20)
 
-1. The Stryker configs + `mutation:*` scripts come from SPEC026MUTDRIROB-001; `.github/workflows/` exists and holds `ci.yml` (confirmed this session); no `robustness.yml` exists yet (proposed-new, no collision).
+1. The Stryker configs + `mutation:*` scripts come from archive/tickets/SPEC026MUTDRIROB-001.md; `.github/workflows/` exists and holds `ci.yml` (confirmed this session); no `robustness.yml` exists yet (proposed-new, no collision).
 2. SPEC-026 §Deliverables E2 + report §11.2 define the workflow (scheduled uncached full matrix for P1/P2/P3; `workflow_dispatch`; artifact upload for HTML/JSON/coverage/seed/summary; `--force`, ignore incremental reuse; no external dashboard).
 3. Cross-artifact boundary under audit: `robustness.yml` is a **separate** workflow from `ci.yml` — it does not alter the PR gates; the three pillar jobs run on separate runners for parallelism.
 4. FOUNDATIONS principle restated: §29.9 prompt-audit/secrets + §29.11 workflow quality — generated reports stay CI-internal (no external dashboard upload); expensive full mutation is scheduled, not per-PR.
