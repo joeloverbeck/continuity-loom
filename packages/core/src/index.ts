@@ -24,6 +24,24 @@ export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export {
+  HYGIENE_LIVE_STATUSES,
+  HYGIENE_RECORD_TYPES,
+  isHygieneActive,
+  isHygieneRecordType
+} from "./compiler/hygiene/active-predicate.js";
+export { HYGIENE_TYPE_ORDER } from "./compiler/hygiene/types.js";
+export type {
+  HygieneActiveCandidate
+} from "./compiler/hygiene/active-predicate.js";
+export type {
+  HygieneRecord,
+  HygieneRecordType,
+  HygieneReferenceSummary,
+  RecordHygieneRequest,
+  StoryRecordHygieneSnapshot,
+  StoryRecordHygieneVersions
+} from "./compiler/hygiene/types.js";
 export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
 export { displayLabel } from "./compiler/labels.js";
 export { IDEATION_OPERATORS, REINCORPORATE_DORMANT_OPERATOR } from "./compiler/ideation/operators.js";

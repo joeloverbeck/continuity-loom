@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-001: FOUNDATIONS amendment — assistance source profiles
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — amends `docs/FOUNDATIONS.md` §6.4, §8, §9.1, §29.3–§29.5 (constitutional doctrine surface); authorizes the project-review assistance source profile. No production code changes in this ticket and no runtime behavior change on its own.
@@ -76,3 +76,27 @@ Replace the §29.3 first bullet with the prose-prompt-scoped form and add the pr
 1. `grep -nE "prose-aligned|project-review" docs/FOUNDATIONS.md` — confirm both source profiles are declared in §6.4/§8/§9.1.
 2. `grep -nE "^- Does (a project-review|an assistance prompt|a diagnostic assistance)" docs/FOUNDATIONS.md` — confirm the new §29.4/§29.5 source-profile and diagnostic-not-blocked bullets are present.
 3. A narrower grep set is the correct verification boundary because this ticket changes only constitutional prose; there is no compiled artifact or runtime path to exercise until SPEC027RECHYGASS-002+ land in the same revision.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Replaced `docs/FOUNDATIONS.md` §6.4, §8, and §9.1 with the signed-off assistance source-profile doctrine.
+- Added the §29 project-review/source-profile/diagnostic-assistance hard-fail checks.
+- Coupled this constitutional amendment in the same revision as SPEC027RECHYGASS-002, per FOUNDATIONS §1.1 and the ticket dependency note.
+
+Deviations:
+- None for the requested doctrine. The exact grep phrase `same authority sources as the prose prompt` remains only in the new `prose-aligned` clause.
+
+Verification:
+- `grep -nE "prose-aligned|project-review" docs/FOUNDATIONS.md` passed.
+- `grep -nE "^- Does (a project-review|an assistance prompt|a diagnostic assistance)" docs/FOUNDATIONS.md` passed.
+- `grep -n "same authority sources as the prose prompt" docs/FOUNDATIONS.md` returned the intended single `prose-aligned` clause.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test -- record-hygiene-predicate` passed.
+- `npm test` passed: 136 files, 1027 tests.
+- `npm run lint --workspace @loom/core` passed.
+- `npx eslint docs/FOUNDATIONS.md packages/core/src/compiler/hygiene/active-predicate.ts packages/core/src/compiler/hygiene/types.ts packages/core/src/index.ts packages/core/test/record-hygiene-predicate.test.ts` passed for code; `docs/FOUNDATIONS.md` was ignored by the ESLint config.
+- `npm run lint` did not pass because the pre-existing untracked `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files. This was unrelated to SPEC027RECHYGASS-001/002 and was left untouched.

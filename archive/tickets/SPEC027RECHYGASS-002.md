@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-002: Core hygiene types + hygiene-active predicate
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/core` modules `compiler/hygiene/types.ts` and `compiler/hygiene/active-predicate.ts` plus `index.ts` re-exports; substrate that feeds the deferred hygiene compiler (SPEC027RECHYGASS-004). No runtime behavior change to any existing surface.
@@ -83,3 +83,26 @@ Re-export the new public types and `isHygieneActive` / `HYGIENE_TYPE_ORDER` alon
 1. `npm test -- record-hygiene-predicate` — targeted predicate coverage.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline gate (core builds first, boundary rule enforced).
 3. The predicate unit test is the correct verification boundary here because this ticket ships pure data + one pure function; there is no route or prompt to exercise until SPEC027RECHYGASS-004+.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added `packages/core/src/compiler/hygiene/types.ts` with the fixed 16-type hygiene order, `RecordHygieneRequest`, `StoryRecordHygieneSnapshot`, `HygieneRecord`, and `HygieneReferenceSummary` types.
+- Added `packages/core/src/compiler/hygiene/active-predicate.ts` with the single exported `isHygieneActive` predicate authority, the in-scope type set, and the per-type live-status table.
+- Re-exported the new hygiene substrate from `packages/core/src/index.ts`.
+- Added `packages/core/test/record-hygiene-predicate.test.ts` covering type order, every current registry status value, archived-row exclusion, FACT projection, ENTITY STATUS inclusion, out-of-scope `CAST MEMBER`/`ENTITY` exclusion, and deterministic row-local behavior.
+- Coupled this first dependent code substrate in the same revision as SPEC027RECHYGASS-001, per FOUNDATIONS §1.1 and the ticket dependency note.
+
+Deviations:
+- None. The predicate uses the current registry `projectRecordStatus` projector rather than re-reading payload status fields.
+
+Verification:
+- `npm test -- record-hygiene-predicate` passed: 1 file, 4 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 136 files, 1027 tests.
+- `npm run lint --workspace @loom/core` passed.
+- `npx eslint docs/FOUNDATIONS.md packages/core/src/compiler/hygiene/active-predicate.ts packages/core/src/compiler/hygiene/types.ts packages/core/src/index.ts packages/core/test/record-hygiene-predicate.test.ts` passed for code; `docs/FOUNDATIONS.md` was ignored by the ESLint config.
+- `npm run lint` did not pass because the pre-existing untracked `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files. This was unrelated to SPEC027RECHYGASS-001/002 and was left untouched.

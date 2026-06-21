@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new authority doc `docs/story-record-hygiene-prompt-template.md` and `docs/ACTIVE-DOCS.md` registry + version-note edits (documentation surfaces). No production behavior change; the doc is the normative contract the compiler (SPEC027RECHYGASS-004) implements.
-**Deps**: SPEC027RECHYGASS-001
+**Deps**: `archive/tickets/SPEC027RECHYGASS-001.md`
 
 > **Same revision; never merge standalone (§8).** The authority doc is the deterministic contract the core hygiene compiler (SPEC027RECHYGASS-004) renders. Drift between template, schema, and contract is a continuity bug (FOUNDATIONS §8), so this doc and 004 must land in the **same revision**; the doc must not precede its implementation (it would register an authority for unimplemented behavior).
 
