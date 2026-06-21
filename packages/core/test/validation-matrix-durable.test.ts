@@ -99,6 +99,43 @@ describe("durable-change matrix validation", () => {
     );
   });
 
+  it("does not treat non-object records with object-shaped payloads as object state", () => {
+    expectDurableBlock("object_use_possible", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, (input) => {
+      removeRecord(input, objectId);
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000012",
+          type: "FACT",
+          payload: {
+            owner: entityId,
+            carried_by: entityId,
+            current_location: "carried_by_holder",
+            visibility_to_pov: "visible",
+            usable_affordances: ["unlock"]
+          }
+        }
+      ];
+    });
+  });
+
+  it("does not treat non-affordance records with affordance-shaped payloads as usable affordances", () => {
+    expectDurableBlock("object_use_possible", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, (input) => {
+      removeRecord(input, affordanceUseId);
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000013",
+          type: "FACT",
+          payload: {
+            action_families: ["use"],
+            prompt_text: "A concrete available action."
+          }
+        }
+      ];
+    });
+  });
+
   it.each([
     ["object_use_possible", DIAGNOSTIC_CODES.matrixObjectUseIncomplete, (input: BuildValidationSnapshotInput) => removeRecord(input, objectId)],
     ["object_transfer_possible", DIAGNOSTIC_CODES.matrixObjectTransferIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "resulting holder")],
@@ -158,17 +195,71 @@ describe("durable-change matrix validation", () => {
     ["forbidden by no-intimacy policy", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAllowedContentScope(input, "No intimacy in this scene.")],
     ["missing intimacy visibility", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "line_of_sight_and_visibility", "")],
     ["missing relationship pressure", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "RELATIONSHIP")],
+    ["wrong-type relationship pressure", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => {
+      removeRecordsOfType(input, "RELATIONSHIP");
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000014",
+          type: "FACT",
+          payload: { status: "active", pressure_text: "Tense trust." }
+        }
+      ];
+    }],
     ["missing bond affordance", DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete, "intimacy_or_sex_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceBondId, { action_families: ["harm"] })],
     ["missing violence route", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
     ["missing harm affordance", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => setAffordancePayload(input, affordanceHarmId, { prompt_text: "" })],
     ["missing consequence record", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeRecordsOfType(input, "CONSEQUENCE")],
+    ["wrong-type consequence payload", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => {
+      removeRecordsOfType(input, "CONSEQUENCE");
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000015",
+          type: "FACT",
+          payload: { status: "active", current_effect: "A bruise would change the next beat." }
+        }
+      ];
+    }],
     ["missing injury consequence lock", DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete, "violence_or_injury_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "injury consequence")]
   ])("blocks body-state durable changes when %s", (_name, code, tag, mutate) => {
     expectDurableBlock(tag, code, mutate);
   });
 
+  it("allows intimacy relationship pressure from emotion records", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "intimacy_or_sex_possible"
+    ];
+    removeRecordsOfType(input, "RELATIONSHIP");
+    input.records = [
+      ...input.records,
+      {
+        id: "019b0298-5c00-7000-8000-000000000016",
+        type: "EMOTION",
+        payload: { status: "active", current_expression: "Careful longing." }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete);
+  });
+
   it.each([
     ["entity is a person", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setRecordPayload(input, institutionId, { entity_kind: "person" })],
+    ["wrong-type institutional payload", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => {
+      removeRecord(input, institutionId);
+      input.records = [
+        ...input.records,
+        {
+          id: "019b0298-5c00-7000-8000-000000000017",
+          type: "FACT",
+          payload: {
+            entity_kind: "institution",
+            short_description: "A local office with immediate authority."
+          }
+        }
+      ];
+    }],
     ["missing communication route", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
     ["missing authority relation", DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete, "institutional_involvement_possible", (input: BuildValidationSnapshotInput) => removeLock(input, "authority relation")],
     ["wrong-type active clock payload", DIAGNOSTIC_CODES.matrixClockTickIncomplete, "clock_tick_possible", (input: BuildValidationSnapshotInput) => {
