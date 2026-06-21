@@ -20,7 +20,10 @@ export function renderIdeationSlotsSection(
         `Slot ${index + 1}: ${slot.operatorName}`,
         `Operator id: ${slot.operator}`,
         `Definition: ${slot.definition}`,
-        `Grounds: ${slot.recordKeys.join(", ")}`
+        `Grounds: ${slot.recordKeys.join(", ")}`,
+        ...(slot.dormantRecordKey
+          ? [`Dormancy modifier: this slot must reincorporate dormant record ${slot.dormantRecordKey}.`]
+          : [])
       ].join("\n")
     )
     .join("\n\n");

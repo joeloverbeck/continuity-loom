@@ -5,8 +5,6 @@ export interface IdeationOperator {
   name: string;
   definition: string;
   feedingTypes: readonly string[];
-  minimumRecords?: number;
-  requiredTypeGroups?: readonly (readonly string[])[];
 }
 
 export const IDEATION_OPERATORS: readonly IdeationOperator[] = Object.freeze([
@@ -14,76 +12,75 @@ export const IDEATION_OPERATORS: readonly IdeationOperator[] = Object.freeze([
     id: "reveal",
     name: "Reveal",
     definition:
-      "Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.",
+      "Change information access by bringing one selected secret closer to the surface through an authored legal cue or reveal permission.",
     feedingTypes: Object.freeze(["SECRET"])
-  },
-  {
-    id: "falsify_belief",
-    name: "Falsify a Belief",
-    definition: "Make a selected belief collide with a selected fact or event that can expose its limits.",
-    feedingTypes: Object.freeze(["BELIEF", "FACT", "EVENT"]),
-    requiredTypeGroups: Object.freeze([Object.freeze(["BELIEF"]), Object.freeze(["FACT", "EVENT"])])
-  },
-  {
-    id: "clock_advances",
-    name: "Clock Advances",
-    definition: "Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.",
-    feedingTypes: Object.freeze(["CLOCK"])
   },
   {
     id: "plan_meets_friction",
     name: "Plan Meets Friction",
-    definition: "Turn a selected plan or intention into a yes-but or no-and complication.",
+    definition: "Change attempt state by making one selected plan or intention meet local resistance, cost, or interruption.",
     feedingTypes: Object.freeze(["PLAN", "INTENTION"])
+  },
+  {
+    id: "emotion_becomes_action",
+    name: "Emotion Becomes Action",
+    definition:
+      "Change observable tactics by making one selected emotion produce a concrete action, refusal, concealment, or control shift.",
+    feedingTypes: Object.freeze(["EMOTION"])
+  },
+  {
+    id: "shift_option_set",
+    name: "Shift the Option Set",
+    definition:
+      "Change the immediate feasible-action set through one selected affordance, object, location, or entity status.",
+    feedingTypes: Object.freeze(["VISIBLE AFFORDANCE", "OBJECT", "LOCATION", "ENTITY STATUS"])
+  },
+  {
+    id: "falsify_belief",
+    name: "Falsify a Belief",
+    definition: "Change operative interpretation by making one selected active belief collide with one selected fact or event.",
+    feedingTypes: Object.freeze(["BELIEF", "FACT", "EVENT"])
+  },
+  {
+    id: "clock_advances",
+    name: "Clock Advances",
+    definition: "Change temporal pressure by advancing one selected active clock without inventing unsupported facts.",
+    feedingTypes: Object.freeze(["CLOCK"])
   },
   {
     id: "debt_comes_due",
     name: "Debt Comes Due",
-    definition: "Make a selected obligation or consequence demand action now.",
+    definition: "Change duty or effect pressure by making one selected obligation or consequence demand action now.",
     feedingTypes: Object.freeze(["OBLIGATION", "CONSEQUENCE"])
   },
   {
-    id: "relationship_reversal",
-    name: "Relationship Reversal",
-    definition: "Invert, stress, or reframe a selected relationship pressure in the current moment.",
+    id: "relationship_turns",
+    name: "Relationship Turns",
+    definition:
+      "Change relational pressure by making one selected relationship turn, tighten, invert, or demand a new response.",
     feedingTypes: Object.freeze(["RELATIONSHIP"])
   },
   {
-    id: "close_escape_route",
-    name: "Close the Escape Route",
-    definition: "Use a selected affordance, object, or location to remove an easy path forward.",
-    feedingTypes: Object.freeze(["VISIBLE AFFORDANCE", "OBJECT", "LOCATION"])
-  },
-  {
-    id: "collide_two_threads",
-    name: "Collide Two Threads",
-    definition: "Make two selected pressures interfere with each other instead of resolving cleanly.",
-    feedingTypes: Object.freeze(["OPEN THREAD", "PLAN", "SECRET", "EVENT"]),
-    minimumRecords: 2
-  },
-  {
-    id: "reincorporate_dormant",
-    name: "Reincorporate the Dormant",
-    definition: "Bring back the least-recently-updated selected pressure record as fresh causal pressure.",
+    id: "commit_at_a_cost",
+    name: "Commit at a Cost",
+    definition:
+      "Change commitment under pressure by forcing one selected costly move from two different active pressure families; never render an A/B menu or branch list.",
     feedingTypes: Object.freeze([
       "SECRET",
       "BELIEF",
-      "FACT",
       "EVENT",
-      "CLOCK",
       "PLAN",
       "INTENTION",
+      "CLOCK",
       "OBLIGATION",
       "CONSEQUENCE",
       "RELATIONSHIP",
+      "EMOTION",
       "OPEN THREAD",
       "VISIBLE AFFORDANCE",
       "OBJECT",
-      "LOCATION"
+      "LOCATION",
+      "ENTITY STATUS"
     ])
   }
 ]);
-
-export const REINCORPORATE_DORMANT_OPERATOR = IDEATION_OPERATORS.find(
-  (operator) => operator.id === "reincorporate_dormant"
-);

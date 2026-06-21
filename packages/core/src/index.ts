@@ -48,7 +48,7 @@ export { EMPTY_HYGIENE_RECORDS_STATE, RECORD_HYGIENE_SECTION_ORDER } from "./com
 export type { RecordHygieneSectionId } from "./compiler/hygiene/template.js";
 export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
 export { displayLabel } from "./compiler/labels.js";
-export { IDEATION_OPERATORS, REINCORPORATE_DORMANT_OPERATOR } from "./compiler/ideation/operators.js";
+export { IDEATION_OPERATORS } from "./compiler/ideation/operators.js";
 export { assignSlots } from "./compiler/ideation/slot-assignment.js";
 export { ideationModeSchema, ideationRequestSchema, promptKindSchema } from "./compiler/ideation/types.js";
 export type {

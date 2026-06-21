@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds ideation citation keys for EMOTION (`sections/pressure.ts`) and ENTITY STATUS (`sections/records-tail.ts`), replaces the `<ideation_quality>` distinctness text constant (`template-constants.ts`), co-lands the matching `docs/ideation-prompt-template.md` + `docs/compiler-contract.md` citation-keys/distinctness sections, and re-baselines the ideation golden; no change to prose-prompt behavior
-**Deps**: SPEC028IDEOPETAX-001
+**Deps**: `archive/tickets/SPEC028IDEOPETAX-001.md`
 
 ## Problem
 

@@ -19,20 +19,21 @@ export type IdeationRequest = z.infer<typeof ideationRequestSchema>;
 
 export type IdeationOperatorId =
   | "reveal"
+  | "plan_meets_friction"
+  | "emotion_becomes_action"
+  | "shift_option_set"
   | "falsify_belief"
   | "clock_advances"
-  | "plan_meets_friction"
   | "debt_comes_due"
-  | "relationship_reversal"
-  | "close_escape_route"
-  | "collide_two_threads"
-  | "reincorporate_dormant";
+  | "relationship_turns"
+  | "commit_at_a_cost";
 
 export interface IdeationSlot {
   operator: IdeationOperatorId;
   operatorName: string;
   definition: string;
   recordKeys: readonly string[];
+  dormantRecordKey?: string;
 }
 
 export interface IdeationAssignment {

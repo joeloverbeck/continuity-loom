@@ -137,26 +137,27 @@ SKIPPED: no compiled record supports this slot.
 
 Operators are evaluated in fixed order:
 
-1. Reveal - feeds from `SECRET`; brings a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
-2. Falsify a Belief - feeds from `BELIEF` plus `FACT` or `EVENT`; makes a selected belief collide with evidence that exposes its limits.
-3. Clock Advances - feeds from `CLOCK`; advances a selected clock without inventing unsupported facts.
-4. Plan Meets Friction - feeds from `PLAN` or `INTENTION`; turns a plan or intention into a yes-but or no-and complication.
-5. Debt Comes Due - feeds from `OBLIGATION` or `CONSEQUENCE`; makes an obligation or consequence demand action now.
-6. Relationship Reversal - feeds from `RELATIONSHIP`; inverts, stresses, or reframes relationship pressure in the current moment.
-7. Close the Escape Route - feeds from `VISIBLE AFFORDANCE`, `OBJECT`, or `LOCATION`; removes an easy path forward.
-8. Collide Two Threads - feeds from at least two records among `OPEN THREAD`, `PLAN`, `SECRET`, or `EVENT`; makes selected pressures interfere rather than resolve cleanly.
-9. Reincorporate the Dormant - feeds from selected pressure/material records; brings back the least-recently-updated eligible selected record as fresh causal pressure.
+1. Reveal - feeds from one operator-active `SECRET`; changes information access through an authored legal cue or reveal permission.
+2. Plan Meets Friction - feeds from one operator-active `PLAN` or `INTENTION`; changes attempt state through resistance, cost, or interruption.
+3. Emotion Becomes Action - feeds from one operator-active `EMOTION`; changes observable tactic or control state.
+4. Shift the Option Set - feeds from one `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, or `ENTITY STATUS`; changes the immediate feasible-action set.
+5. Falsify a Belief - feeds from one active `BELIEF` plus one `FACT` or operator-active `EVENT`; changes operative interpretation.
+6. Clock Advances - feeds from one operator-active `CLOCK`; changes temporal pressure.
+7. Debt Comes Due - feeds from one operator-active `OBLIGATION` or `CONSEQUENCE`; changes duty or effect pressure.
+8. Relationship Turns - feeds from one operator-active `RELATIONSHIP`; changes relational pressure.
+9. Commit at a Cost - feeds from exactly two operator-active records from different pressure families; changes commitment under cost and must not render an A/B menu, branch list, or alternate future set.
 
 ## Slot Assignment
 
 The compiler assigns slots deterministically from selected records only:
 
-- An operator is eligible only when the active working set contains the required feeding records.
-- Operators fill in taxonomy order until `count` is reached.
-- `Falsify a Belief` requires at least one `BELIEF` and at least one `FACT` or `EVENT`.
-- `Collide Two Threads` requires at least two feeding records.
-- When `dormantSlot` is true, the final slot is reserved for `Reincorporate the Dormant` when an eligible dormant record exists.
-- Dormancy uses stored record `updatedAt` values; lexical ISO timestamp order is chronological, with record id as the tie-breaker.
+- An operator is eligible only when the active working set contains the required operator-active records. Resolved, fulfilled, settled, closed, answered, superseded, abandoned, irrelevant, paused, or revised records may still render at their authoritative sites, but they do not ground slots unless this contract explicitly marks them active.
+- Operator-active states are: `SECRET` hidden or partially revealed, with Reveal additionally requiring an authored surface cue, an available clue carrier, `clue_only`, or `natural_reveal_allowed`; `BELIEF` active; `FACT` always; `EVENT` not abandoned and `current_relevance` not `none`; `PLAN.plan_status` active, blocked, or suspended; `INTENTION` active or blocked; `CLOCK` active; `OBLIGATION` open, escalated, or transferred; `CONSEQUENCE` pending, active, or escalated; `OPEN THREAD` active or escalated; `RELATIONSHIP` active; `EMOTION` active, suppressed, transformed, or dissociated; material/status records (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`) current by record purpose.
+- Operators fill in taxonomy order until `count` is reached, reserving the final slot first when `dormantSlot` is true.
+- Each slot receives the minimum deterministic grounding bundle: one record for single-source operators, one `BELIEF` plus one `FACT`/`EVENT` for `Falsify a Belief`, and exactly two different pressure families for `Commit at a Cost`.
+- Bundle choice prefers all-unused grounds, then fewer reused grounds, then deterministic citation-key order. Reuse is allowed only when no all-unused valid bundle exists; every selected record still renders at its authoritative section.
+- `Commit at a Cost` pressure families are pursuit (`PLAN`, `INTENTION`), time (`CLOCK`), duty/effect (`OBLIGATION`, `CONSEQUENCE`), unresolved pressure (`OPEN THREAD`), relationship (`RELATIONSHIP`), affect (`EMOTION`), information/interpretation (`SECRET`, `BELIEF`), material/agency (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`), and causal event (`EVENT`). `FACT` is support-only and excluded.
+- When `dormantSlot` is true, dormancy is a slot-selection modifier, not an operator. Dormant candidates are operator-active selected pressure/material records except `FACT`, sorted by stored `updatedAt` then record id. The compiler selects the oldest candidate that can participate in a valid bundle for an otherwise unused real operator and marks that candidate as mandatory in the slot. If no candidate is viable, the dormant slot is omitted and the slate shrinks.
 - No wall-clock reads are allowed during compilation.
 
 ## Citation Keys

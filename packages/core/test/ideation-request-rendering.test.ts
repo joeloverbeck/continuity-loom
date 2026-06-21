@@ -23,22 +23,27 @@ describe("ideation request rendering", () => {
 
     expect(section).toBe(`<ideation_slots>
 Mode: questions. Render each slot as an author-facing story question.
-Slate shrank from 4 requested slots to 3 grounded slots. Do not pad.
+Slate contains 4 grounded slots.
 
 Slot 1: Reveal
 Operator id: reveal
-Definition: Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
+Definition: Change information access by bringing one selected secret closer to the surface through an authored legal cue or reveal permission.
 Grounds: [SECRET-1]
 
 Slot 2: Falsify a Belief
 Operator id: falsify_belief
-Definition: Make a selected belief collide with a selected fact or event that can expose its limits.
+Definition: Change operative interpretation by making one selected active belief collide with one selected fact or event.
 Grounds: [BELIEF-1], [FACT-1]
 
 Slot 3: Clock Advances
 Operator id: clock_advances
-Definition: Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.
+Definition: Change temporal pressure by advancing one selected active clock without inventing unsupported facts.
 Grounds: [CLOCK-1]
+
+Slot 4: Commit at a Cost
+Operator id: commit_at_a_cost
+Definition: Change commitment under pressure by forcing one selected costly move from two different active pressure families; never render an A/B menu or branch list.
+Grounds: [BELIEF-1], [CLOCK-1]
 </ideation_slots>`);
   });
 
@@ -59,7 +64,7 @@ No grounded ideation slots are available.
 
     expect(result.prompt).toContain("<ideation_slots>");
     expect(result.prompt).toContain("Mode: ideas.");
-    expect(result.prompt).toContain("Slate shrank from 3 requested slots to 2 grounded slots. Do not pad.");
+    expect(result.prompt).toContain("Slate shrank from 3 requested slots to 1 grounded slots. Do not pad.");
     expect(result.prompt).not.toContain("<prose_craft>");
     expect(result.prompt).not.toContain("<stop_rule>");
     expect(result.prompt).not.toContain("<final_output_instruction>");

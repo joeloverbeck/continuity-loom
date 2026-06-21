@@ -53,20 +53,18 @@ describe("ideation slot assignment properties", () => {
     );
   });
 
-  it("reserves a requested dormant slot as the final slot when any dormant-eligible record exists", () => {
+  it("places any viable requested dormant modifier on the final slot with a real operator", () => {
     runProperty(
       fc.property(ideationPresenceVectorArbitrary, ideationRequestArbitrary, (vector, request) => {
         const records = recordsForPresence(vector);
         const assignment = assignSlots(records, { ...request, dormantSlot: true });
-        const dormantSlot = assignment.slots.find((slot) => slot.operator === "reincorporate_dormant");
+        const dormantSlot = assignment.slots.find((slot) => slot.dormantRecordKey);
 
-        if (records.length === 0) {
-          expect(dormantSlot).toBeUndefined();
-          return;
+        if (dormantSlot) {
+          expect(assignment.slots.at(-1)).toBe(dormantSlot);
+          expect(dormantSlot.operator).not.toBe("reincorporate_dormant");
+          expect(dormantSlot.recordKeys).toContain(dormantSlot.dormantRecordKey);
         }
-
-        expect(dormantSlot).toBeDefined();
-        expect(assignment.slots.at(-1)?.operator).toBe("reincorporate_dormant");
       }),
       0x26012
     );
@@ -87,6 +85,7 @@ describe("ideation slot assignment properties", () => {
         const assignment = assignSlots(recordsForPresence(vector), { ...request, dormantSlot: false });
 
         expect(assignment.slots.map((slot) => slot.operator)).not.toContain("reincorporate_dormant");
+        expect(assignment.slots.some((slot) => slot.dormantRecordKey)).toBe(false);
       }),
       0x26013
     );
@@ -105,7 +104,7 @@ describe("ideation slot assignment properties", () => {
 
     expect(assignment.slots[0]).toMatchObject({
       operator: "reveal",
-      recordKeys: ["[SECRET-2]", "[SECRET-3]"]
+      recordKeys: ["[SECRET-3]"]
     });
   });
 
@@ -121,18 +120,20 @@ describe("ideation slot assignment properties", () => {
     const idTieBreak = assignSlots(
       [
         ideationRecord("PLAN", "plan-b", { updatedAt: "2026-06-01T00:00:00.000Z" }),
-        ideationRecord("PLAN", "plan-a", { updatedAt: "2026-06-01T00:00:00.000Z" })
+        ideationRecord("PLAN", "plan-a", { updatedAt: "2026-06-01T00:00:00.000Z" }),
+        ideationRecord("CLOCK", "clock-support", { updatedAt: "2026-06-02T00:00:00.000Z" })
       ],
       { count: 3, dormantSlot: true }
     );
 
     expect(oldestByTimestamp.slots.at(-1)).toMatchObject({
-      operator: "reincorporate_dormant",
-      recordKeys: ["[CLOCK-1]"]
+      operator: "commit_at_a_cost",
+      recordKeys: ["[CLOCK-1]", "[PLAN-1]"],
+      dormantRecordKey: "[CLOCK-1]"
     });
     expect(idTieBreak.slots.at(-1)).toMatchObject({
-      operator: "reincorporate_dormant",
-      recordKeys: ["[PLAN-1]"]
+      operator: "commit_at_a_cost",
+      dormantRecordKey: "[PLAN-1]"
     });
   });
 
@@ -173,9 +174,10 @@ describe("ideation slot assignment properties", () => {
     );
 
     expect(assignment.slots.at(-1)).toMatchObject({
-      operator: "reincorporate_dormant",
+      operator: "clock_advances",
       recordKeys: ["[CLOCK-1]"]
     });
+    expect(assignment.slots.some((slot) => slot.dormantRecordKey)).toBe(false);
   });
 });
 
@@ -188,9 +190,11 @@ function fullOperatorRecordSet(): ValidationRecord[] {
     ideationRecord("PLAN", "plan"),
     ideationRecord("OBLIGATION", "obligation"),
     ideationRecord("RELATIONSHIP", "relationship"),
+    ideationRecord("EMOTION", "emotion"),
     ideationRecord("VISIBLE AFFORDANCE", "affordance"),
     ideationRecord("OPEN THREAD", "thread"),
-    ideationRecord("EVENT", "event")
+    ideationRecord("EVENT", "event"),
+    ideationRecord("ENTITY STATUS", "entity-status")
   ];
 }
 

@@ -296,28 +296,29 @@ Slate contains 5 grounded slots.
 
 Slot 1: Reveal
 Operator id: reveal
-Definition: Bring a selected secret closer to the surface while respecting reveal permission and POV knowledge constraints.
+Definition: Change information access by bringing one selected secret closer to the surface through an authored legal cue or reveal permission.
 Grounds: [SECRET-1]
 
-Slot 2: Falsify a Belief
-Operator id: falsify_belief
-Definition: Make a selected belief collide with a selected fact or event that can expose its limits.
-Grounds: [BELIEF-2], [BELIEF-1], [EVENT-2], [EVENT-1]
-
-Slot 3: Clock Advances
-Operator id: clock_advances
-Definition: Advance a selected clock in a way that changes immediate pressure without inventing unsupported facts.
-Grounds: [CLOCK-1]
-
-Slot 4: Plan Meets Friction
+Slot 2: Plan Meets Friction
 Operator id: plan_meets_friction
-Definition: Turn a selected plan or intention into a yes-but or no-and complication.
-Grounds: [INTENTION-1], [INTENTION-2]
+Definition: Change attempt state by making one selected plan or intention meet local resistance, cost, or interruption.
+Grounds: [INTENTION-1]
 
-Slot 5: Reincorporate the Dormant
-Operator id: reincorporate_dormant
-Definition: Bring back the least-recently-updated selected pressure record as fresh causal pressure.
-Grounds: [BELIEF-2]
+Slot 3: Emotion Becomes Action
+Operator id: emotion_becomes_action
+Definition: Change observable tactics by making one selected emotion produce a concrete action, refusal, concealment, or control shift.
+Grounds: [EMOTION-1]
+
+Slot 4: Shift the Option Set
+Operator id: shift_option_set
+Definition: Change the immediate feasible-action set through one selected affordance, object, location, or entity status.
+Grounds: [LOCATION-1]
+
+Slot 5: Falsify a Belief
+Operator id: falsify_belief
+Definition: Change operative interpretation by making one selected active belief collide with one selected fact or event.
+Grounds: [BELIEF-2], [EVENT-1]
+Dormancy modifier: this slot must reincorporate dormant record [BELIEF-2].
 </ideation_slots>
 
 <ideation_quality>

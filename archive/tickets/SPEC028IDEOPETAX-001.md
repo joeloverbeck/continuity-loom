@@ -1,6 +1,6 @@
 # SPEC028IDEOPETAX-001: Replace the ideation operator taxonomy with nine peer operators, fail-closed eligibility, minimum bundles, and dormancy-as-modifier
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — rewrites `@loom/core` ideation operator taxonomy + slot-assignment algorithm (`operators.ts`, `types.ts`, `slot-assignment.ts`, `sections/ideation.ts`), removes the `REINCORPORATE_DORMANT_OPERATOR` public export, bumps the deterministic template/compiler/contract version triple, and co-lands the `docs/ideation-prompt-template.md` + `docs/compiler-contract.md §3.2` taxonomy/slot authority sections and the regenerated ideation golden
@@ -116,3 +116,21 @@ Rewrite `ideation-operator-eligibility.test.ts` truth table + status/reveal/fami
 1. `npx vitest run packages/core/test/ideation-operator-eligibility.test.ts packages/core/test/ideation-slot-assignment.test.ts packages/core/test/ideation-slot-assignment.property.test.ts packages/core/test/compiler-ideation-golden.test.ts`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
 3. Targeted vitest first localizes operator/slot/golden regressions before the full `npm test` (which builds `@loom/core` first) confirms cross-package version-assertion consistency.
+
+## Outcome
+
+Completed: 2026-06-21
+
+Implemented the SPEC-028 core ideation taxonomy rewrite: replaced the old umbrella/pseudo operators with the nine peer operators, removed `REINCORPORATE_DORMANT_OPERATOR`, updated the `IdeationOperatorId` union and public barrel export, rewrote slot assignment around fail-closed operator-active predicates, minimum deterministic grounding bundles, two-family `commit_at_a_cost`, and dormancy as a real-operator modifier, and added the dormant modifier line to `<ideation_slots>`.
+
+Co-landed the ticket-owned authority updates in `docs/ideation-prompt-template.md` and `docs/compiler-contract.md`, bumped produced versions to template `1.3.0`, compiler `1.5.0`, contract `1.6.0`, regenerated the ideation golden slot baseline, and updated produced-version assertions. The citation-key render sites for EMOTION/ENTITY STATUS and the `<ideation_quality>` distinctness text remain intentionally for SPEC028IDEOPETAX-002.
+
+Verification:
+- `npx vitest run packages/core/test/ideation-operator-eligibility.test.ts packages/core/test/ideation-slot-assignment.test.ts packages/core/test/ideation-slot-assignment.property.test.ts packages/core/test/compiler-ideation-golden.test.ts packages/core/test/compiler-front-sections.test.ts` passed.
+- `npm run typecheck` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- `npx vitest run packages/server/src/compile-routes.test.ts packages/server/src/generate-routes.test.ts packages/server/src/ideate-routes.test.ts packages/server/src/ideate.e2e.test.ts packages/core/test/record-hygiene-golden.test.ts packages/core/test/compiler-ideation-golden.test.ts` passed after rebuilding updated `@loom/core`.
+- `npm test` passed: 157 test files, 1669 tests.
+
+Browser smoke rationale: not run for this ticket because the change is a deterministic core/server prompt-compilation contract with no browser-facing UI flow or request-shape change beyond existing API route tests.

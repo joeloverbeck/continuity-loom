@@ -13,10 +13,12 @@ export const ideationRecordTypes = [
   "OBLIGATION",
   "CONSEQUENCE",
   "RELATIONSHIP",
+  "EMOTION",
   "OPEN THREAD",
   "VISIBLE AFFORDANCE",
   "OBJECT",
-  "LOCATION"
+  "LOCATION",
+  "ENTITY STATUS"
 ] as const;
 
 export type IdeationRecordType = (typeof ideationRecordTypes)[number];
@@ -36,10 +38,12 @@ export const ideationPresenceVectorArbitrary: fc.Arbitrary<IdeationPresenceVecto
     OBLIGATION: fc.integer({ min: 0, max: 2 }),
     CONSEQUENCE: fc.integer({ min: 0, max: 2 }),
     RELATIONSHIP: fc.integer({ min: 0, max: 2 }),
+    EMOTION: fc.integer({ min: 0, max: 2 }),
     "OPEN THREAD": fc.integer({ min: 0, max: 2 }),
     "VISIBLE AFFORDANCE": fc.integer({ min: 0, max: 2 }),
     OBJECT: fc.integer({ min: 0, max: 2 }),
     LOCATION: fc.integer({ min: 0, max: 2 }),
+    "ENTITY STATUS": fc.integer({ min: 0, max: 2 }),
     revealableSecret: fc.boolean()
   });
 
@@ -57,7 +61,12 @@ export function recordsForPresence(vector: IdeationPresenceVector): ValidationRe
 export function ideationRecord(
   type: IdeationRecordType,
   id: string,
-  options: { label?: string; revealable?: boolean | "directive_required"; updatedAt?: string } = {}
+  options: {
+    label?: string;
+    payload?: Record<string, unknown>;
+    revealable?: boolean | "directive_required";
+    updatedAt?: string;
+  } = {}
 ): ValidationRecord {
   const label = options.label ?? `${type} ${id}`;
 
@@ -66,14 +75,17 @@ export function ideationRecord(
     type,
     payload: {
       ...labelPayload(type, label),
+      ...options.payload,
       ...(type === "SECRET"
         ? {
             reveal_permission:
-              options.revealable === "directive_required"
-                ? "directive_required"
-                : options.revealable
-                  ? "natural_reveal_allowed"
-                  : "locked"
+              typeof options.payload?.reveal_permission === "string"
+                ? options.payload.reveal_permission
+                : options.revealable === "directive_required"
+                  ? "directive_required"
+                  : options.revealable
+                    ? "natural_reveal_allowed"
+                    : "locked"
           }
         : {})
     },
@@ -91,25 +103,36 @@ export function ideationRecord(
 function labelPayload(type: IdeationRecordType, label: string): Record<string, unknown> {
   switch (type) {
     case "BELIEF":
-      return { claim: label };
+      return { status: "active", claim: label };
     case "CLOCK":
+      return { status: "active", title: label };
     case "OPEN THREAD":
-      return { title: label };
+      return { status: "active", current_relevance: "high", title: label };
     case "CONSEQUENCE":
-      return { current_effect: label };
+      return { status: "active", current_effect: label };
     case "EVENT":
+      return { status: "active", current_relevance: "high", description: label };
     case "RELATIONSHIP":
-      return { description: label };
+      return { status: "active", description: label };
     case "FACT":
       return { statement: label };
     case "INTENTION":
-      return { intent: label };
+      return { status: "active", intent: label };
     case "OBLIGATION":
-      return { terms: label };
+      return { status: "open", terms: label };
     case "PLAN":
-      return { objective: label };
+      return { plan_status: "active", objective: label };
     case "SECRET":
-      return { secret_claim: label };
+      return { status: "hidden", secret_claim: label };
+    case "EMOTION":
+      return { status: "active", description: label };
+    case "VISIBLE AFFORDANCE":
+      return { status: "available", label };
+    case "OBJECT":
+    case "LOCATION":
+      return { status: "active", label };
+    case "ENTITY STATUS":
+      return { current_activity: label };
     default:
       return { label };
   }

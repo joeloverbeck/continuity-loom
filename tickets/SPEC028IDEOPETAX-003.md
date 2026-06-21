@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a new end-to-end ideation-taxonomy regression test file (including the dense-working-set breadth fixture); updates the `docs/ACTIVE-DOCS.md` version note and archives the spec; no production behavior change
-**Deps**: SPEC028IDEOPETAX-001, SPEC028IDEOPETAX-002
+**Deps**: `archive/tickets/SPEC028IDEOPETAX-001.md`, SPEC028IDEOPETAX-002
 
 ## Problem
 
