@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-006: Server routes + OpenRouter safety
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/server` module `record-hygiene-routes.ts`, `server.ts` route registration, and route tests. Adds `POST /api/record-hygiene/compile` and `POST /api/record-hygiene/analyze`; no change to existing routes.
@@ -78,3 +78,25 @@ Register both routes (mirror the `registerIdeateRoutes(app, projectStoreManager)
 1. `npm test -- record-hygiene-routes` — targeted route + safety coverage.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline gate.
 3. A server route+log-capture test is the correct boundary because the secret-firewall and no-logging invariants live at the transport layer; the live-LLM `analyze` round-trip is exercised by the capstone's manual runbook (SPEC027RECHYGASS-009), not in CI.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added `packages/server/src/record-hygiene-routes.ts` with dedicated `POST /api/record-hygiene/compile` and `POST /api/record-hygiene/analyze` routes.
+- Registered the route module in `packages/server/src/server.ts`.
+- Added `packages/server/src/record-hygiene-routes.test.ts` covering compile, analyze, invalid hostile request fields, missing-key behavior, prompt-too-large fail-fast behavior, malformed output quarantine, no project mutation, route registration, and log redaction.
+
+Deviations:
+- Client-supplied `prompt`, `subset`, `edit`, and `write` fields are rejected as `invalid-record-hygiene-request`; the server only analyzes prompts it recompiles from current project state.
+- `prompt-too-large` is detected when the selected model has a cached `contextLength` and the compiled prompt token estimate plus requested output budget exceeds it. If no context length is known, the route preserves the existing transport behavior.
+
+Verification:
+- `npm test -- record-hygiene-routes` passed: 1 file, 8 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 140 files, 1051 tests.
+- `npm run lint --workspace @loom/server` passed.
+- Path-scoped `npx eslint packages/server/src/record-hygiene-routes.ts packages/server/src/record-hygiene-routes.test.ts packages/server/src/server.ts` passed.
+- `npm run lint` did not pass because the pre-existing unrelated `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files and worktree test files, producing 626 errors. This is unrelated to SPEC027RECHYGASS-006 and was left untouched.

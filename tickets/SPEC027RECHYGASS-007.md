@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/web` modules under `packages/web/src/record-hygiene/`, two `api.ts` client functions, and an `AppShell.tsx` menu entry + route. Adds the Record Hygiene page; no change to existing pages.
-**Deps**: SPEC027RECHYGASS-006
+**Deps**: `archive/tickets/SPEC027RECHYGASS-006.md`
 
 ## Problem
 
@@ -14,7 +14,7 @@ The user needs a menu-accessible, project-required **Record Hygiene** page that 
 
 1. **Web seams (codebase).** `AppShell.tsx`: menu shape `{ to, label, requiresProject }` (`:28`, Ideate entry at `:36`), routes declared `<Route path="/ideate" element={<RequireProject><IdeateView/></RequireProject>} />` (`:130`), `RequireProject` wrapper (`:146`). `api.ts`: `ideate()` via `postJson` (`:457`); `compileIdeation()` via `postJson("/api/compile", …)` (`:434`). `packages/web/src/ideate/keepers.ts:1` uses `sessionStorage` key `loom.ideate.keepers.v1`; the hygiene page uses `loom.record-hygiene.keepers.v1`. Web tests are co-located `*.test.tsx` (`packages/web/src/ideate/IdeateView.test.tsx`).
 2. **Spec/doc authority.** `specs/SPEC-027` Deliverable 5 + proposal §7.3 (the ten ordered page sections and the explicit prohibited-control list).
-3. **Cross-artifact boundary under audit.** The page consumes `POST /api/record-hygiene/compile` and `/analyze` (SPEC027RECHYGASS-006) via new `api.ts` client functions, and navigates citations to `/records?recordId=<id>`. **Seam to confirm at implementation**: that the existing Records route reads a `recordId` query param for deep-linking; if it does not, the deep-link is a small additive change to the Records page (a pre-existing file the approved navigation behavior requires) — flag it in implementation rather than expanding scope into record editing.
+3. **Cross-artifact boundary under audit.** The page consumes `POST /api/record-hygiene/compile` and `/analyze` (`archive/tickets/SPEC027RECHYGASS-006.md`) via new `api.ts` client functions, and navigates citations to `/records?recordId=<id>`. **Seam to confirm at implementation**: that the existing Records route reads a `recordId` query param for deep-linking; if it does not, the deep-link is a small additive change to the Records page (a pre-existing file the approved navigation behavior requires) — flag it in implementation rather than expanding scope into record editing.
 4. **FOUNDATIONS principle motivating this ticket.** §26 / §26.1 assistance-output handling: opt-in, pull-based, quarantined in a clearly-labeled non-canonical surface, provenance shown, ephemeral by default (session-scoped scratch), and never auto-applied to records/working-set/prompt.
 5. **Secret-firewall + quarantine enforcement (§26/§29.2/§29.6) — the no-mutation boundary.** The page renders findings as advisory scratch only: **no** apply/merge/delete/deactivate/archive/accept/"fix all"/brief-insertion/active-working-set/use-as-prose/notes-import/background-scan/persisted-history control exists in the rendered DOM or any event handler. Keepers live only in `sessionStorage` (no project-store residue; clear leaves none). The network-disclosure/confirmation step makes explicit that the full active payload — including hidden SECRET content — leaves the machine only on the `Analyze` click. `REMOVE` carries the strongest caution and is never styled as a one-click optimization; `KEEP_DISTINCT` reads as protective; the three high-stakes actions are distinguishable without relying on color alone.
 
@@ -60,7 +60,7 @@ Add `{ to:"/record-hygiene", label:"Record Hygiene", requiresProject:true }` and
 
 ## Out of Scope
 
-- The server routes (SPEC027RECHYGASS-006) and any record-editing behavior in the Records page (this ticket only *navigates* there).
+- The server routes (`archive/tickets/SPEC027RECHYGASS-006.md`) and any record-editing behavior in the Records page (this ticket only *navigates* there).
 - Any apply/merge/delete/deactivate/archive/accept/fix-all/brief-insertion/working-set/use-as-prose/notes-import control, background scanning, or persisted run history.
 
 ## Acceptance Criteria
