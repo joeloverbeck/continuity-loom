@@ -39,6 +39,11 @@ findings: name the implementing commit/PR, declare the post-implementation basel
 now-live changes so Session 2 does not re-recommend them as new, and state whether those
 implemented changes are themselves reconsiderable in this pass.
 
+**If a prior report shares vocabulary but is *not* a predecessor** — a superficially similar theme
+at a different layer or scope (e.g. schema/field-authority dedup vs. record-instance dedup) — name
+it and state explicitly what makes this target distinct, so Session 2 does not conflate them or
+treat that report's work as completed scope to extend.
+
 ### 2. Read in full (authority order)
 
 An explicit, tiered path list — every file Session 2 must read before producing — each

@@ -220,11 +220,11 @@ The generation-time brief has two operational states: draft and ready. Draft fie
 
 Deterministic non-story defaults are allowed when derived from project state. For example, generation context may resolve to first segment when there are no accepted segments, and to continuation after accepted segment when accepted segments exist. Such defaults must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
 
-### 6.4 Generated prompt
+### 6.4 Generated prompts
 
-The deterministic, inspectable prompt compiled from the active working set and generation-time brief.
+Generated prompts are deterministic, inspectable operational artifacts. A prose prompt compiles from the active working set and generation-time brief. An assistance prompt compiles only from the declared assistance source profile permitted by §9.1 and documented in the applicable domain authority and compiler contract.
 
-The generated prompt is not canon. It is an operational artifact for one generation request.
+No generated prompt is canon. A project-review assistance prompt does not change the active working set and does not grant any record authority in a prose prompt.
 
 ### 6.5 Accepted prose segment archive
 
@@ -265,32 +265,37 @@ The app may warn when the active working set is risky. It may block generation w
 
 The prompt compiler is a deterministic renderer, not an intelligence layer.
 
+Every prompt class must have one explicit source contract. Assistance prompts declare their source profile under §9.1; every prompt class must also document its sources in the applicable domain authority and `docs/compiler-contract.md`. The compiler must not read a source merely because it is available in the project store.
+
 It must:
 
-- compile from selected records and generation-time fields;
+- compile a prose prompt or prose-aligned assistance prompt only from the records and generation-time fields declared by that prompt's source profile;
+- compile a project-review assistance prompt only from the explicit deterministic project-record projection declared by that prompt's source profile;
 - use stable section names and deterministic ordering;
-- render records into prose-facing prompt sections, not raw database dumps;
-- preserve author-written nuance fields;
-- keep operational fields meaningful for validation and formatting;
-- separate state, handoff, knowledge, secrets, cast, pressure, affordances, and stop instructions;
-- expose the generated prompt to the user for inspection.
+- render records into purpose-specific, inspectable prompt sections rather than raw database dumps;
+- preserve author-written nuance fields needed by the declared prompt purpose;
+- keep operational fields meaningful for validation, formatting, or review;
+- expose every compiled prompt to the user for inspection before sending.
 
 It must not:
 
-- use an LLM to choose records;
-- use an LLM to summarize selected records;
-- use an LLM to repair contradictions;
+- use an LLM to choose source records;
+- use an LLM to summarize source records during compilation;
+- use an LLM to repair contradictions during compilation;
 - decide by intuition what matters;
-- silently compress active/onstage cast dossiers;
-- infer missing pressure from archived prose;
+- silently compress or omit records required by the declared source profile;
+- infer source material from accepted prose, candidates, author-private notes, or hidden UI state;
 - include accepted prose text in prompts;
-- mutate story records.
+- mutate story records; or
+- let a project-review assistance source alter active-working-set membership or prose-prompt content.
 
-Structured fields carry operational meaning. Author-written prose fields carry nuance. The compiler must respect both. A relationship axis, status enum, or salience tag may help sort and validate records, but the prompt-facing rendering should use human-authored pressure text whenever nuance matters.
+Structured fields carry operational meaning. Author-written prose fields carry nuance. The compiler must respect both. A relationship axis, status enum, or salience tag may help sort, validate, or review records, but purpose-facing rendering should use human-authored text whenever nuance matters.
 
-Compiler mapping is part of deterministic compilation, not a convenience appendix. Any prompt placeholder, schema field used for prompt generation, validation-only field, empty-state rendering rule, or prompt-section ordering rule must have an explicit deterministic source in the compiler contract or schema mapping. Adding, renaming, deleting, or changing the requiredness of a prompt placeholder must update the compiler contract in the same change. Drift between template, schema, rationale, example, and compiler contract is a continuity bug.
+Compiler mapping is part of deterministic compilation, not a convenience appendix. Any prompt placeholder, schema field used for prompt generation, validation-only field, empty-state rendering rule, source-profile rule, or prompt-section ordering rule must have an explicit deterministic source in the compiler contract or schema mapping. Adding, renaming, deleting, or changing the requiredness of a prompt placeholder or assistance source predicate must update the compiler contract in the same change. Drift between template, schema, rationale, example, and compiler contract is a continuity bug.
 
-The compiler receives a normalized readiness input. Normalization may apply deterministic non-story defaults, such as first-segment vs continuation derived from accepted-segment count. Normalization must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
+A prose or prose-aligned assistance compiler receives normalized readiness input. Normalization may apply deterministic non-story defaults, such as first-segment versus continuation derived from accepted-segment count. Normalization must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
+
+A project-review assistance compiler receives its own typed deterministic snapshot. It must not reuse generation readiness input when doing so would add undeclared sources or omit declared project-review records.
 
 
 ---
@@ -307,34 +312,31 @@ by §9.1 and §26.
 
 ### 9.1 Assistance prompt class
 
-An assistance prompt is a deterministic, inspectable prompt compiled from the
-same authority sources as the prose prompt (story configuration, active working
-set, generation-time fields) whose output is never story text. Assistance
-prompts must:
+An assistance prompt is a deterministic, inspectable prompt whose declared source profile is limited to user-authored continuity authority appropriate to its assistance purpose and whose output is never story text.
 
-- compile deterministically: identical story configuration, active working
-  set, generation-time fields, assistance-request inputs (e.g. mode, slot
-  count, slot selection, avoid-list), template version, and compiler version
-  must produce an identical prompt;
+Every assistance prompt must declare exactly one source profile in the applicable domain authority and in `docs/compiler-contract.md`:
+
+- **prose-aligned:** the same authority sources as the prose prompt: story configuration, the active working set, and only the generation-time fields needed by the assistance purpose; or
+- **project-review:** a deterministic records-only projection of explicitly named story-record types across the project, with explicit archive and per-type status predicates.
+
+A project-review assistance prompt does not change the active working set and grants no record outside the active working set authority in a prose prompt. Assistance source selection must never be keyword-triggered, probabilistic, model-selected, token-budget-evicted, inferred from accepted prose or candidates, derived from author-private notes, or taken from hidden UI state.
+
+Assistance prompts must:
+
+- compile deterministically: identical declared source records and fields, assistance-request inputs, template version, compiler version, and compiler-contract version must produce an identical prompt;
 - be inspectable before sending, under the same audit boundaries as §22;
-- be gated by deterministic validation: hard contradictions, impossible
-  state, and unsafe provider/policy configuration block assistance compilation
-  and sending exactly as they block prose generation; prose-launch readiness
-  requirements (e.g. the manual directive) apply only where the assistance
-  purpose needs them;
+- use purpose-appropriate deterministic gating: structurally malformed or unrepresentable source data and unsafe provider/policy configuration block the affected operation; prose-launch readiness requirements apply only when the assistance purpose needs them; a diagnostic assistance prompt must not be blocked merely because it detects the contradiction, overlap, redundancy, or staleness it exists to inspect;
+- never use an LLM intermediary to select, rank, summarize, repair, rewrite, or omit records during compilation;
 - never produce story prose, and never be used to request story prose;
-- never have their output enter any prose prompt, story record, or
-  generation-time field automatically (§26 assistance-output rules).
+- never have their output enter any prose prompt, story record, active working set, or generation-time field automatically (§26 assistance-output rules).
 
 The local-prose stop rule and the prohibition on requesting alternatives,
 plans, or summaries (§4.6, §11 item 7, §19, §29.5) scope to the prose prompt
-class; an assistance prompt may request non-prose alternatives such as
-premise-level ideas or questions, because no prose writer is being asked to
-branch the story.
+class; an assistance prompt may request non-prose alternatives, questions, comparisons, or review findings because no prose writer is being asked to branch the story.
 
 The template must remain portable, inspectable, and model-provider-neutral. Markdown with XML-style section boundaries is the constitutional default because it is readable to humans and gives models stable semantic boundaries.
 
-Provider-specific wrappers, hacks, hidden adapters, or model-specific prompt forks must not enter the v1 core. Future provider-specific compatibility layers may exist only if explicitly justified and only if they preserve the universal prompt contract.
+Provider-specific wrappers, hacks, hidden adapters, or model-specific prompt forks must not enter the v1 core. Future provider-specific compatibility layers may exist only if explicitly justified and only if they preserve the declared assistance source profile and output quarantine.
 
 The universal prompt must preserve these conceptual sections:
 
@@ -1006,7 +1008,8 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 
 ### 29.3 Active working set hard fails
 
-- Does it silently include records the user did not select?
+- Does it silently include records the user did not select in a prose prompt, or treat records outside the active working set as authority for prose generation?
+- Does a project-review assistance prompt hide, vary, or incompletely render its declared whole-project source predicate?
 - Does it silently remove selected records?
 - Does it silently compress active/onstage cast dossiers?
 - Does it treat inactive records as branches?
@@ -1019,6 +1022,9 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it include accepted prose in generated prompts?
 - Does it preserve provider-specific prompt hacks as v1 core behavior?
 - Does it omit one of the universal prompt contract sections (prose prompts) other than the designated optional sections enumerated in §9 (present minor cast, offstage relevance, hard canon) without constitutional amendment, or omit even a designated optional section nondeterministically?
+- Does an assistance prompt use a source profile that is not explicitly named and deterministically specified in its domain authority and the compiler contract?
+- Does a project-review assistance prompt cause its source records to enter a prose prompt or alter active-working-set membership?
+- Does an assistance prompt select, rank, omit, or evict source records by keyword activation, probability, model judgment, hidden embeddings, token budget, accepted prose, candidates, author-private notes, or hidden UI state?
 
 ### 29.5 Validation hard fails
 
@@ -1034,6 +1040,7 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it treat blank optional `soft_unit_guidance` as a blocker even though the universal stop rule remains compiled?
 - Does it make `generation_context` depend on a UI-only local default instead of deterministic normalization from accepted-segment count?
 - Does it let a warning gate Preview, Generate, prompt compilation, provider sending, candidate generation, or draft saving?
+- Does a diagnostic assistance prompt block merely because the questionable condition it exists to inspect is present, when its declared source remains structurally representable and safe to send?
 
 ### 29.6 POV and reveal hard fails
 

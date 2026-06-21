@@ -15,6 +15,7 @@ const generationBriefMock = vi.hoisted(() => ({
     generate: 0,
     generationBrief: 0,
     ideate: 0,
+    recordHygiene: 0,
     preview: 0,
     records: 0,
     notes: 0,
@@ -76,6 +77,12 @@ vi.mock("../ideate/IdeateView.js", () => ({
     return <h2>Ideate</h2>;
   }
 }));
+vi.mock("../record-hygiene/RecordHygieneView.js", () => ({
+  RecordHygieneView: () => {
+    generationBriefMock.viewRenders.recordHygiene += 1;
+    return <h2>Record Hygiene</h2>;
+  }
+}));
 vi.mock("../accepted-segments/AcceptedSegmentsView.js", () => ({
   AcceptedSegmentsView: () => {
     generationBriefMock.viewRenders.acceptedSegments += 1;
@@ -109,7 +116,7 @@ afterEach(() => {
 });
 
 describe("AppShell", () => {
-  it("promotes Generate / Candidate, Ideate, and Accepted Segments to enabled routes", async () => {
+  it("promotes Generate / Candidate, Ideate, Record Hygiene, and Accepted Segments to enabled routes", async () => {
     render(
       <MemoryRouter>
         <AppShell loadState={{ status: "ready", runtime: runtimeStatus }} />
@@ -118,9 +125,11 @@ describe("AppShell", () => {
 
     const generateLink = screen.getByRole("link", { name: "Generate / Candidate" });
     const ideateLink = screen.getByRole("link", { name: "Ideate" });
+    const recordHygieneLink = screen.getByRole("link", { name: "Record Hygiene" });
     const acceptedSegmentsLink = screen.getByRole("link", { name: "Accepted Segments" });
     expect(generateLink).toBeTruthy();
     expect(ideateLink).toBeTruthy();
+    expect(recordHygieneLink).toBeTruthy();
     expect(acceptedSegmentsLink).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Generate/Candidate" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Accepted Segments" })).toBeNull();
@@ -132,6 +141,10 @@ describe("AppShell", () => {
     fireEvent.click(ideateLink);
 
     expect(await screen.findByRole("heading", { name: "Ideate" })).toBeTruthy();
+
+    fireEvent.click(recordHygieneLink);
+
+    expect(await screen.findByRole("heading", { name: "Record Hygiene" })).toBeTruthy();
 
     fireEvent.click(acceptedSegmentsLink);
 
@@ -190,6 +203,7 @@ describe("AppShell", () => {
       "Validation / Prompt Preview",
       "Generate / Candidate",
       "Ideate",
+      "Record Hygiene",
       "Accepted Segments",
       "Story Configuration"
     ].map((name) => within(primaryNav).getByRole("link", { name }));
@@ -218,6 +232,7 @@ describe("AppShell", () => {
     ["/preview", "preview"],
     ["/generate", "generate"],
     ["/ideate", "ideate"],
+    ["/record-hygiene", "recordHygiene"],
     ["/accepted-segments", "acceptedSegments"],
     ["/story-config", "storyConfig"]
   ] as const)("guards %s when no project is open", async (path, renderKey) => {
@@ -259,6 +274,7 @@ function resetViewRenders(): void {
   generationBriefMock.viewRenders.generate = 0;
   generationBriefMock.viewRenders.generationBrief = 0;
   generationBriefMock.viewRenders.ideate = 0;
+  generationBriefMock.viewRenders.recordHygiene = 0;
   generationBriefMock.viewRenders.preview = 0;
   generationBriefMock.viewRenders.records = 0;
   generationBriefMock.viewRenders.storyConfig = 0;

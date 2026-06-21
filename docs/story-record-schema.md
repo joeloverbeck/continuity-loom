@@ -988,6 +988,16 @@ Prompt treatment:
 - Compile as behavioral pressure and surface expression.
 - Non-POV emotion is rendered through behavior/speech unless prose mode permits direct interiority.
 
+### 9.3 Story-record hygiene assistance projection
+
+The story-record hygiene assistance prompt is a project-review surface, not a prose-prompt source and not an active-working-set selector. It adds no stored schema fields.
+
+The projection includes only non-archived records of these atomic types when their projected status is hygiene-active: FACT (`active`), EVENT (`active`), BELIEF (`active`), SECRET (`hidden`, `partially_revealed`, `revealed`), EMOTION (`active`, `suppressed`, `transformed`, `dissociated`), RELATIONSHIP (`active`), INTENTION (`active`, `blocked`), PLAN (`active`, `blocked`, `suspended`), CLOCK (`active`, `paused`), OBLIGATION (`open`, `escalated`), CONSEQUENCE (`pending`, `active`, `escalated`), OPEN THREAD (`active`, `escalated`), LOCATION (`active`), OBJECT (`active`), VISIBLE AFFORDANCE (`available`, `blocked`), and every non-archived ENTITY STATUS.
+
+Each included record renders its full payload as escaped canonical JSON plus deterministic display labels, projected status, citation key, and reference summaries. ENTITY and CAST MEMBER payloads are excluded; references to those records may resolve only to stored display labels. Accepted prose, candidates, story notes, story configuration, generation-time brief fields, active-working-set membership, timestamps, user-order values, and provider settings are not part of this projection.
+
+Hygiene findings are advisory assistance output. They do not mutate lifecycle, do not satisfy validation, do not add validation diagnostics, and do not change prose compilation or active-working-set membership.
+
 ## 10. Compiler contract and minimum prompt completeness
 
 The authoritative placeholder mapping, section order, empty-state rendering rules, validation matrix, and blocker/warning taxonomy live in `compiler-contract.md`.
@@ -999,6 +1009,7 @@ Schema/template synchronization rules:
 - Every schema field used primarily for prompt compilation must name its prompt destination either here or in the compiler contract.
 - Every validation-only field must be explicitly marked not prompt-facing by default.
 - Adding, renaming, or deleting a prompt placeholder requires a compiler-contract update in the same change.
+- Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/story-record-hygiene-prompt-template.md`, this schema where applicable, `docs/compiler-contract.md`, compiler/template versions, and golden tests in the same change.
 
 Minimum prompt completeness for v1:
 

@@ -51,7 +51,7 @@ function ideationSnapshot() {
     records,
     generationSession: demoGenerationSession,
     storyConfig: demoStoryConfig,
-    versions: { template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" }
+    versions: { template: "1.2.0", compiler: "1.4.0", contract: "1.5.0" }
   });
 }
 
@@ -176,7 +176,7 @@ describe("compiler ideation golden prompt", () => {
       const inlinePrompt = promptWithoutSection(first.prompt, "ideation_slots");
       expect(Array.from(inlinePrompt.matchAll(escapeRegExp(key))).length).toBe(1);
     }
-    expect(first.metadata.versions).toEqual({ template: "1.1.0", compiler: "1.3.0", contract: "1.4.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.2.0", compiler: "1.4.0", contract: "1.5.0" });
   });
 });
 

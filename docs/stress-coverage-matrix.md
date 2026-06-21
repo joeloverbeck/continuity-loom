@@ -51,6 +51,33 @@ Same-change maintenance rule: a new stress case in `docs/stress-suite.md` must l
 | Case 38 | Object holder/location incoherence | Object use and transfer; physical continuity | `object-location-holder-incoherence` blocks `current_location: carried_by_holder` when `carried_by` is `none`. |
 | Case 39 | Relationship self-reference | Relationship pressure integrity | `relationship-self-reference` is a validation blocker, not a schema refinement, so bad saved records remain loadable and actionable. |
 
+## Record Hygiene Assistance Coverage
+
+Record Hygiene coverage is advisory-assistance coverage, not validation coverage. These rows must stay complete with the RH-01-RH-20 cases in `docs/stress-suite.md`: every RH case needs a row here, and every row must name the proof surface that keeps the review complete, quarantined, citation-grounded, and non-mutating.
+
+| # | Stress case | Risk area | Required proof surface |
+|---|---|---|---|
+| RH-01 | Exact duplicate active facts | Duplicate detection | Core golden prompt includes both records; parser accepts two valid same-type citations. |
+| RH-02 | Near duplicate facts with material scope difference | Near-match discrimination | Prompt renders scope/salience/visibility fields; UI action labels distinguish keep-distinct from edit recommendations. |
+| RH-03 | Belief restates a fact as held knowledge | Cross-type authority separation | Parser rejects cross-type `MERGE`; findings remain scratch. |
+| RH-04 | False report versus canon fact | Belief truth relation | Validation inventory note confirms hygiene findings are not diagnostics or gates. |
+| RH-05 | Stale active event shadow | Stale-shadow review | Active EVENT predicate includes current-relevance records; terminal events are excluded. |
+| RH-06 | Complementary fragments split across records | Fragment consolidation | Parser survivor rules and malformed quarantine tests cover merge/remove discipline. |
+| RH-07 | Broad and narrow plan overlap | Broad/narrow distinction | Deterministic type order and full display labels appear in the hygiene prompt. |
+| RH-08 | Active plan and intention duplicate motive | Cross-type merge prevention | Parser rejects cross-type merge/remove; web links citations only. |
+| RH-09 | Clock and obligation duplicate deadline pressure | Deadline pressure overlap | Complete-source compiler includes active CLOCK and OBLIGATION records. |
+| RH-10 | Consequence restates resolved event | Terminal-source exclusion | Hygiene-active predicate excludes terminal events while keeping active consequences. |
+| RH-11 | Open thread duplicates obligation | Type-aware overlap | Counts by type and citation chips make both records inspectable. |
+| RH-12 | Location and affordance overlap | Physical constraint restatement | Prompt includes active LOCATION and VISIBLE AFFORDANCE records while excluding ENTITY/CAST payloads. |
+| RH-13 | Object state and fact duplicate ownership | Structured-field authority | Web surface has navigation only and no apply/write action. |
+| RH-14 | Secret and belief reveal-boundary overlap | Hidden payload disclosure | Web send confirmation states hidden SECRET content leaves only on explicit analyze. |
+| RH-15 | Relationship and emotion duplicate affect | Non-color-only caution | Finding-card tests cover high-stakes action labels and absence of mutation controls. |
+| RH-16 | Active record outside working set | Whole-project completeness | Server builder uses all non-archived hygiene-active records, not the active working set. |
+| RH-17 | Archived duplicate excluded | Archive exclusion | Source predicate and web source disclosure name archived records as excluded. |
+| RH-18 | Malformed record row | Fail-closed source build | Snapshot-builder tests cover `malformed-hygiene-source` without silent skipping. |
+| RH-19 | Malformed model output | Output quarantine | Parser and UI tests quarantine raw output as non-canonical scratch. |
+| RH-20 | Oversized project review | No eviction/retry | Route test covers `prompt-too-large` with no reduced-record retry. |
+
 ## Readiness and draftability coverage
 
 The numbered table above maps each stress case to implemented behavior. This readiness table cuts across Cases 27-31 by shared product surface so draftability, normalization, warning behavior, and provider separation stay visible without duplicating every case row.

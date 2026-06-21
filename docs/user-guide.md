@@ -85,6 +85,16 @@ Ideas are AI-suggested scratch. They are not story state, not records, not Gener
 
 Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.
 
+## Record Hygiene - Review Overlapping Active Records
+
+Use Record Hygiene when a project has grown enough that active atomic records may overlap, restate one another, drift stale, or need manual consolidation. Open it from the primary navigation, inspect the compiled record-hygiene prompt locally, review the source counts and exclusions, then optionally confirm a one-time OpenRouter send.
+
+The record-hygiene prompt reviews the complete non-archived hygiene-active atomic record set. It excludes accepted prose, candidates, private notes, archived records, terminal records, ENTITY payloads, and CAST MEMBER payloads. Citation chips navigate back to Records with the exact cited record id.
+
+Findings are AI-suggested review scratch. They are not validation diagnostics, not story state, not records, not working-set entries, not Generation Brief fields, and not prompt context for prose generation. There is no apply, merge, delete, deactivate, archive, accept, fix-all, or use-as-prose action. If a finding is useful, navigate to the cited records and edit them manually.
+
+Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the review scratch or keepers when you no longer need them.
+
 ## OpenRouter Settings
 
 OpenRouter is the external prose transport. It is not a continuity authority.
@@ -117,6 +127,8 @@ Use "Expand all" when you want whole-story reading or browser find across the fu
 The archive also lets you filter and export accepted output. Export always uses the complete archive in story order, independent of filters or expansion state. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
+
+Record Hygiene can help review overlapping active records after acceptance, but it never updates records automatically. Use it as an optional manual audit step when accepted prose causes you to create or revise several atomic records.
 
 ## Backup And Recoverability
 

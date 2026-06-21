@@ -9,6 +9,7 @@ import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js"
 import { GenerateView } from "../generate/GenerateView.js";
 import { IdeateView } from "../ideate/IdeateView.js";
 import { PromptPreviewView } from "../preview/PromptPreviewView.js";
+import { RecordHygieneView } from "../record-hygiene/RecordHygieneView.js";
 import { RecordBrowser } from "../records/RecordBrowser.js";
 import { NotesView } from "../notes/NotesView.js";
 import { WorkingSetView } from "../working-set/WorkingSetView.js";
@@ -34,6 +35,7 @@ const primaryRoutes = [
   { to: "/preview", label: "Validation / Prompt Preview", requiresProject: true },
   { to: "/generate", label: "Generate / Candidate", requiresProject: true },
   { to: "/ideate", label: "Ideate", requiresProject: true },
+  { to: "/record-hygiene", label: "Record Hygiene", requiresProject: true },
   { to: "/accepted-segments", label: "Accepted Segments", requiresProject: true },
   { to: "/story-config", label: "Story Configuration", requiresProject: true },
   { to: "/settings", label: "Settings", requiresProject: false }
@@ -128,6 +130,7 @@ function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
               <Route path="/preview" element={<RequireProject><PromptPreviewView /></RequireProject>} />
               <Route path="/generate" element={<RequireProject><GenerateView /></RequireProject>} />
               <Route path="/ideate" element={<RequireProject><IdeateView /></RequireProject>} />
+              <Route path="/record-hygiene" element={<RequireProject><RecordHygieneView /></RequireProject>} />
               <Route path="/accepted-segments" element={<RequireProject><AcceptedSegmentsView /></RequireProject>} />
               <Route path="/story-config" element={<RequireProject><StoryConfigEditor /></RequireProject>} />
               <Route path="/settings" element={<SettingsSurface />} />

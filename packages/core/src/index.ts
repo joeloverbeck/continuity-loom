@@ -24,6 +24,28 @@ export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export { compileRecordHygienePrompt, orderHygieneRecords } from "./compiler/hygiene/compile-record-hygiene-prompt.js";
+export { hygieneCitationKeysFor } from "./compiler/hygiene/citation-keys.js";
+export {
+  HYGIENE_LIVE_STATUSES,
+  HYGIENE_RECORD_TYPES,
+  isHygieneActive,
+  isHygieneRecordType
+} from "./compiler/hygiene/active-predicate.js";
+export { HYGIENE_TYPE_ORDER } from "./compiler/hygiene/types.js";
+export type {
+  HygieneActiveCandidate
+} from "./compiler/hygiene/active-predicate.js";
+export type {
+  HygieneRecord,
+  HygieneRecordType,
+  HygieneReferenceSummary,
+  RecordHygieneRequest,
+  StoryRecordHygieneSnapshot,
+  StoryRecordHygieneVersions
+} from "./compiler/hygiene/types.js";
+export { EMPTY_HYGIENE_RECORDS_STATE, RECORD_HYGIENE_SECTION_ORDER } from "./compiler/hygiene/template.js";
+export type { RecordHygieneSectionId } from "./compiler/hygiene/template.js";
 export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
 export { displayLabel } from "./compiler/labels.js";
 export { IDEATION_OPERATORS, REINCORPORATE_DORMANT_OPERATOR } from "./compiler/ideation/operators.js";

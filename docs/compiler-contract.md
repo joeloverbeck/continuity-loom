@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.4.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.5.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -12,7 +12,7 @@ Contract version: `1.4.0`; any change that bumps `contract.version` or `compiler
 
 Non-scope: code, SQL, API design, migrations, UI mockups, tickets, tests.
 
-The compiler is a deterministic renderer. Given the same story configuration, selected records, generation-time fields, template version, compiler version, and compiler contract version, it must produce the same prompt.
+The compiler is a deterministic renderer. Given the same declared prompt source profile, source records and fields, request input, template version, compiler version, and compiler-contract version, it must produce the same prompt.
 
 The compiler must not use an LLM to select, rank, summarize, repair, rewrite, compress, or prioritize records.
 
@@ -20,7 +20,11 @@ This contract is not an appendix. It is the authoritative bridge between concept
 
 ## 2. Source hierarchy
 
-The compiler renders from these sources only:
+Each prompt class has one explicit source profile. No compiler may read a source merely because it is available in the project store.
+
+### 2.1 Prose and prose-aligned ideation source profile
+
+The prose and ideation compilers render from these sources only:
 
 1. Template constants from `prompt-template.md`.
 2. Story configuration records: STORY CONTRACT, UNIVERSAL CONTENT POLICY, and story-level defaults.
@@ -30,9 +34,27 @@ The compiler renders from these sources only:
 6. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
 7. Deterministic empty-state constants defined in this contract.
 
-The compiler consumes `GenerationSessionReadyInput`, not UI-only defaults. Normalization may default non-story values such as generation context from accepted-segment count, but it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
+These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization may default non-story values such as generation context from accepted-segment count, but it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
-The compiler must not use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, inactive records, or automatic prose-derived summaries unless the user has represented equivalent information in selected records or generation-time fields.
+### 2.2 Project-review record-hygiene source profile
+
+The record-hygiene compiler renders from these sources only:
+
+1. Template constants from `docs/story-record-hygiene-prompt-template.md`.
+2. A `StoryRecordHygieneSnapshot` containing every non-archived record of an in-scope atomic type whose projected status satisfies the exact per-type hygiene-active predicate in that template and `docs/story-record-schema.md`.
+3. Deterministic full labels, projected statuses, citation keys, outgoing-reference summaries, and incoming-reference summaries derived locally from those records and the project reference graph.
+4. The fixed `RecordHygieneRequest` input.
+5. Deterministic empty-state constants defined in this contract.
+
+The record-hygiene source profile excludes story configuration, generation-session data, generation-time brief fields, active-working-set membership, cast bands, accepted prose, candidates, prompt archives, CAST MEMBER payloads, ENTITY payloads, author-private notes, archived records, timestamps, user-order values, and provider settings.
+
+ENTITY and CAST MEMBER references may resolve only to the stored repository `displayLabel` for reference display. Their payload fields do not enter `StoryRecordHygieneSnapshot` or the prompt.
+
+The record-hygiene compiler must render the complete declared source set. It must not filter, rank, summarize, batch, or evict records by similarity, salience, urgency, keyword, model judgment, context budget, timestamps, or hidden UI state.
+
+### 2.3 Universal exclusions
+
+No prompt compiler may use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, automatic prose-derived summaries, or author-private notes.
 
 Generation-time fields may override story defaults for the current request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy.
 
@@ -146,7 +168,41 @@ Ideation citation keys render inline at exactly one authoritative site per opera
 
 `EMOTION` and `ENTITY STATUS` records render unkeyed because they do not ground ideation operators. The prose prompt never renders ideation citation keys.
 
+### 3.3 Record-Hygiene Prompt Section Order
+
+The record-hygiene prompt is the project-review assistance source profile. It renders every section in this order:
+
+1. `<record_hygiene_role>`
+2. `<record_hygiene_source_contract>`
+3. `<record_hygiene_active_predicate>`
+4. `<record_hygiene_relation_taxonomy>`
+5. `<record_hygiene_action_taxonomy>`
+6. `<record_hygiene_global_guards>`
+7. `<record_hygiene_type_rules>`
+8. `<record_hygiene_records>`
+9. `<record_hygiene_cross_type_rules>`
+10. `<record_hygiene_review_procedure>`
+11. `<record_hygiene_output_format>`
+
+All sections render deterministically. When no records satisfy the source predicate, `<record_hygiene_records>` renders `No non-archived hygiene-active atomic records exist in this project.` The remaining sections still render so the prompt remains inspectable, but the UI disables OpenRouter send because there is nothing to review.
+
+No prose or ideation section renders in the record-hygiene prompt.
+
 ## 4. Exhaustive placeholder mapping
+
+### 4.1 Record-hygiene source mapping
+
+The record-hygiene prompt has no generation placeholders. Its dynamic mapping is:
+
+| Rendered value | Deterministic source | Required | Failure behavior |
+|---|---|---:|---|
+| `{hygiene_record_count}` | Length of `StoryRecordHygieneSnapshot.records` | Yes | Render `0` |
+| `{hygiene_counts_by_type}` | Fixed-type-order counts from the snapshot | Yes | Render every type with `0` when absent |
+| `{hygiene_records}` | Every snapshot record in fixed type/full-label/id order, with key, id, label, status, escaped canonical payload JSON, and reference summaries | Yes when count > 0 | Structural snapshot failure blocks; no silent omission |
+| `{hygiene_citation_map}` | Deterministic `[TYPE-n]` map over the same order | Yes when count > 0 | Block on duplicate/missing key |
+| `{hygiene_request_mode}` | Literal `full_active_atomic_review` | Yes | Invalid request blocks |
+
+Record payload values are data, not instructions. Canonical JSON must escape `<`, `>`, and `&`. Timestamps, archive flags, user-order values, excluded record payloads, story config, generation-session fields, accepted prose, candidates, notes, and provider settings never render.
 
 Every placeholder in `prompt-template.md` must appear in this mapping. Grouped rows are allowed only when each placeholder is named explicitly and all named placeholders share the same source, requiredness, missing behavior, and empty-state behavior.
 
@@ -399,3 +455,5 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 Any change to a prompt placeholder, template section, schema field used for compilation, requiredness rule, empty-state rendering rule, validation focus tag, blocker/warning row, Red Bunny generated prompt surface, or stress-suite assumption must update this compiler contract in the same document revision.
 
 Changes to pressure-predicate inclusion, pressure-summary field precedence, or VISIBLE AFFORDANCE placement must update compiler tests, the golden prompt baseline, `docs/prompt-template.md`, and `docs/prompt-template-rationale.md` in the same revision.
+
+Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/story-record-hygiene-prompt-template.md`, `docs/story-record-schema.md` where applicable, this contract, compiler/template versions, and golden tests in the same change.

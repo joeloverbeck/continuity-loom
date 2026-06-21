@@ -8,7 +8,7 @@ Authority: domain authority for ideation prompt template (see docs/ACTIVE-DOCS.m
 Output expected from external LLM: premise-level ideas or author-facing questions, never prose.
 Style: portable Markdown/XML hybrid.
 
-The ideation prompt is the sanctioned assistance prompt class from `docs/FOUNDATIONS.md` Section 9.1. It is deterministic, inspectable before send, and compiled from the same authority sources as the prose prompt: story configuration, the active working set, and generation-time fields. Its output is quarantined scratch. It is not a story record, not a generation-time brief field, not accepted prose, and not context for prose generation.
+The ideation prompt is the `prose-aligned` assistance source profile sanctioned by `docs/FOUNDATIONS.md` Section 9.1. It is deterministic, inspectable before send, and compiled from the prose-aligned source set: story configuration, selected active-working-set records, and generation-time fields. Its output is quarantined scratch. It is not a story record, not a generation-time brief field, not accepted prose, and not context for prose generation.
 
 ## Request Shape
 
