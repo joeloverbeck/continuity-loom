@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-017: Add knowledge and voice matrix diagnostic contracts
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the knowledge and voice matrix families; no production behavior change.
@@ -76,3 +76,18 @@ Run `npm run mutation:validation` scoped to `matrix-knowledge.ts` + `matrix-voic
 1. `vitest run packages/core/test/validation-diagnostic-contract.test.ts` — targeted run.
 2. `npm run mutation:validation` — survivor classification for the two matrix files.
 3. Per-boundary cases plus the §15 secret-boundary assertion are the correct boundary for the knowledge/voice matrices.
+
+## Outcome
+
+Completed 2026-06-21. Extended `packages/core/test/support/diagnostic-contract.ts` with knowledge and voice matrix baseline builders plus 8 runnable matrix contracts. The diagnostic contract harness now covers every knowledge/voice matrix code with clean baseline, exact code, exact severity, exact affected target, prompt-kind applicability, and repair removal. The knowledge matrix fixtures include active secret/clue and hidden non-POV plan lanes so the §15 secret boundary remains explicitly exercised.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-diagnostic-contract.test.ts` passed: 1 file, 55 tests.
+- `npm run typecheck` passed after implementation.
+- `npm run mutation:validation -- --force --mutate packages/core/src/validation/rules/matrix-knowledge.ts,packages/core/src/validation/rules/matrix-voice.ts` completed in 2m52s with 584 dry-run tests and 671 scoped mutants. Final relevant file counts:
+  - `matrix-knowledge.ts`: 46.94 score; 115 killed / 80 compile-error / 120 survived / 0 timeout / 10 no-coverage.
+  - `matrix-voice.ts`: 61.11 score; 142 killed / 112 compile-error / 79 survived / 1 timeout / 12 no-coverage.
+- Survivors/timeouts/no-coverage in the scoped files are classified, not unreviewed. They are broad matrix predicate-helper debt outside the code-level registry contract boundary: alternate satisfied-branch predicates, optional missing-focus paths, helper null/sentinel paths, copy/message-only mutants, static set declaration timeout, defensive object-payload/value guards, and regex/speech-pressure helper variations. The ticket-critical code/severity/affected/applicability/repair contracts for all knowledge/voice matrix codes now have explicit registry coverage, including secret/clue and hidden-plan cases.
+
+No browser smoke was run. This ticket modifies core validation tests only and does not change production runtime behavior or UI/browser behavior.
