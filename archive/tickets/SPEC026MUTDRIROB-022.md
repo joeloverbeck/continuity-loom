@@ -1,10 +1,16 @@
-# SPEC026MUTDRIROB-022: Activate mutation floors and reviewed ratchets
+# SPEC026MUTDRIROB-022: Mutation hardening closeout
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
-**Engine Changes**: Yes — activates Stryker break floors, commits the reviewed compact baseline, and makes the changed-source + coverage checks required; no production behavior change.
+**Engine Changes**: Yes — completed as validation mutation hardening and closeout; no production behavior change.
 **Deps**: archive/tickets/SPEC026MUTDRIROB-019.md, archive/tickets/SPEC026MUTDRIROB-020.md, archive/tickets/SPEC026MUTDRIROB-021.md
+
+## Closeout Amendment (2026-06-21)
+
+By user direction, this ticket is considered finished as a hardening closeout rather than as the originally scoped floor-activation capstone.
+
+The original activation plan required Stryker break floors P1/P2 90 and P3 95. The validation pillar was hardened substantially, but the latest measured validation score is `89.30 total / 90.17 covered`, so activating the originally specified validation break floor would be dishonest and would fail. No floor, baseline-authority, branch-protection, runtime, schema, diagnostic, or contract-version change was made under this closeout.
 
 ## Problem
 
@@ -81,3 +87,30 @@ Make `core-coverage` and `mutation-changed` required; record the required-status
 1. `grep -n "break" stryker.*.config.mjs` — floors 90/90/95 active.
 2. `npm run mutation:core` — confirm floors enforce and the ratchet gates on the reviewed baseline.
 3. Config grep-proof + a forced sub-floor failure is the correct boundary: the deliverable is gate activation, not new test content.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+
+- Hardened validation mutation coverage across focused rule suites instead of activating unsupported break floors.
+- Added targeted tests for validation knowledge matrix, universal completeness, onstage cast-band presence, record-internal references, and structural contradiction edge cases.
+- Improved the validation mutation report from `87.65 total / 88.60 covered` at the start of the hardening continuation to `89.30 total / 90.17 covered`.
+
+Deviations from original plan:
+
+- Did not set `thresholds.break` in Stryker config files.
+- Did not flip `tools/robustness/mutation-baseline.json` to authoritative.
+- Did not modify CI required checks or `docs/robustness-testing.md`.
+- Did not run the original forced sub-floor failure proof, because the activation target was deliberately not applied.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-matrix-knowledge.test.ts` — passed.
+- `npx vitest run packages/core/test/validation-completeness.test.ts` — passed.
+- `npx vitest run packages/core/test/validation-onstage-cast-band.test.ts` — passed.
+- `npx vitest run packages/core/test/validation-record-internal.test.ts` — passed.
+- `npx vitest run packages/core/test/validation-structural-contradiction.test.ts` — passed.
+- `npm run typecheck` — passed after each committed hardening slice.
+- Targeted `npm run mutation:validation -- --force --mutate ...` runs passed for the hardened validation rule files, with the latest validation report at `89.30 total / 90.17 covered`.
