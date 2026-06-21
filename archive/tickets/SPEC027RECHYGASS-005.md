@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-005: Server snapshot builder + response parser
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — new `@loom/server` modules `record-hygiene-snapshot-builder.ts` and `record-hygiene-parse.ts` plus their tests. No change to any existing route or behavior.
@@ -77,3 +77,24 @@ The server must build the complete `StoryRecordHygieneSnapshot` from project sta
 1. `npm test -- record-hygiene-snapshot-builder record-hygiene-parse` — targeted builder + parser coverage.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline gate.
 3. Unit tests against a fixture repository are the correct boundary here because builder + parser are pure server functions; the end-to-end route + provider path is exercised in SPEC027RECHYGASS-006 and the capstone (009).
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added `packages/server/src/record-hygiene-snapshot-builder.ts` with `buildStoryRecordHygieneSnapshot`, fail-closed malformed-source handling, duplicate/unsupported-type guards, hygiene-active filtering, projected labels/statuses, and label-only reference summaries.
+- Added `packages/server/src/record-hygiene-parse.ts` with strict flat-output parsing, citation validation, count/end-marker checks, duplicate finding/cluster detection, same-type `MERGE`/`REMOVE` survivor enforcement, and malformed-output quarantine.
+- Added focused tests for builder inclusion/exclusion/failure behavior and parser valid/malformed cases.
+
+Deviations:
+- Reference summaries render label plus id as strings in the existing `HygieneReferenceSummary` shape; excluded `ENTITY`/`CAST MEMBER` payloads do not enter the snapshot.
+- Snapshot `versions` are placeholder values in the builder because `compileRecordHygienePrompt` supplies current version metadata at compile time.
+
+Verification:
+- `npm test -- record-hygiene-snapshot-builder record-hygiene-parse` passed: 2 files, 11 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 139 files, 1043 tests.
+- Path-scoped `npx eslint packages/server/src/record-hygiene-snapshot-builder.ts packages/server/src/record-hygiene-parse.ts packages/server/src/record-hygiene-snapshot-builder.test.ts packages/server/src/record-hygiene-parse.test.ts` passed.
+- `npm run lint` did not pass because the pre-existing untracked `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files. This was unrelated to SPEC027RECHYGASS-005 and was left untouched.
