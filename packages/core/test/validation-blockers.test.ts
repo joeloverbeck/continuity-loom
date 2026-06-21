@@ -533,6 +533,28 @@ describe("universal blocker validation", () => {
   });
 
   it.each([
+    ["continue-through directive with stop-after guidance", "Continue through the argument.", "Stop after the first response point."],
+    ["do-not-stop directive with first-response guidance", "Do not stop until the door opens.", "Stop after the first response point."],
+    ["keep-going directive with next-response guidance", "Keep going until the alarm starts.", "Stop at the next response point."],
+    ["stop-immediately directive with continue-through guidance", "Stop immediately after one look.", "Continue through the later consequence."],
+    ["single-line directive with later-consequence guidance", "Keep this to a single line.", "Continue through the later consequence."]
+  ])("blocks directive/stop marker pair: %s", (_name, directiveText, stopText) => {
+    expectBlock(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement, (input) => {
+      input.generationSession.manual_moment_directive!.must_render = [directiveText];
+      input.generationSession.stop_guidance!.soft_unit_guidance = stopText;
+    });
+  });
+
+  it.each([
+    "This contradicts current state.",
+    "This is not the current state."
+  ])("blocks handoff contradiction marker '%s'", (handoffText) => {
+    expectBlock(DIAGNOSTIC_CODES.handoffCurrentStateContradiction, (input) => {
+      input.generationSession.immediate_handoff!.recent_causal_context = handoffText;
+    });
+  });
+
+  it.each([
     ["unknown entity location", { entity_id: entityId, life: "alive", agency: "free", location: "unknown" }],
     ["missing entity id", { life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000333" }],
     ["missing location", { entity_id: entityId, life: "alive", agency: "free" }]
@@ -551,14 +573,35 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
   });
 
+  it("does not block duplicate entity-status records when they agree on the same current location", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      statusRecord(recordA, entityId, "019b0298-5c00-7000-8000-000000000111"),
+      statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000111")
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
   it.each([
     ["owner none", { owner: "none", carried_by: entityId }],
     ["carrier none", { owner: povId, carried_by: "none" }],
     ["owner unknown", { owner: "unknown", carried_by: entityId }],
-    ["same holder", { owner: povId, carried_by: povId }]
+    ["carrier unknown", { owner: povId, carried_by: "unknown" }],
+    ["same holder", { owner: povId, carried_by: povId }],
+    ["missing owner", { carried_by: entityId }],
+    ["missing carrier", { owner: povId }]
   ])("does not block object holder state when %s", (_name, payload) => {
     const input = cleanInput();
     input.records = [...input.records, { id: recordA, type: "OBJECT", payload }];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
+  });
+
+  it("does not inspect non-object records for owner and carrier conflicts", () => {
+    const input = cleanInput();
+    input.records = [...input.records, { id: recordA, type: "FACT", payload: { owner: povId, carried_by: entityId } }];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
   });
@@ -596,6 +639,7 @@ describe("universal blocker validation", () => {
     ["resources", { resources: ["phone"], fallback_steps: [], current_step: "Wait." }],
     ["fallback steps", { resources: [], fallback_steps: ["send another person"], current_step: "Wait." }],
     ["remote current step", { resources: [], fallback_steps: [], current_step: "Send a remote signal." }],
+    ["message current step", { resources: [], fallback_steps: [], current_step: "Send a message." }],
     ["delegate current step", { resources: [], fallback_steps: [], current_step: "Delegate through a proxy." }]
   ])("allows inactive active-plan holder when plausible means come from %s", (_name, planPatch) => {
     const input = cleanInput();
@@ -620,10 +664,43 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
   });
 
+  it.each([
+    ["non-active plan", { plan_status: "paused", holder: entityId }],
+    ["missing holder", { plan_status: "active" }],
+    ["no selected holder status", { plan_status: "active", holder: entityId }]
+  ])("does not block active-plan holder when %s", (_name, planPayload) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: [],
+          ...planPayload
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
   it("does not run the secret firewall for omniscient POV", () => {
     const input = cleanInput();
     input.generationSession.active_working_set!.selected_pov = "omniscient";
     input.storyConfig.proseMode!.pov_character = "omniscient";
+    input.records = [...input.records, hiddenKnownSecret()];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("does not run the secret firewall when no effective POV is selected", () => {
+    const input = cleanInput();
+    input.generationSession.active_working_set!.selected_pov = undefined;
+    input.storyConfig.proseMode!.pov_character = "";
     input.records = [...input.records, hiddenKnownSecret()];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
@@ -646,6 +723,29 @@ describe("universal blocker validation", () => {
           forbidden_reveals: ["Do not state the whole name."],
           reveal_permission: "clue_only",
           allowed_surface_cues: ["a chill"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("does not block all-except-holders protection when the selected POV is not modeled as a holder", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [entityId],
+          non_holders_to_protect: "all_except_holders",
+          pov_access: "knows",
+          forbidden_reveals: ["Do not reveal the motive to non-holders."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["a careful pause"]
         }
       }
     ];
@@ -676,6 +776,10 @@ describe("universal blocker validation", () => {
       input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex.";
       input.generationSession.current_cast_voice_pressure[0]!.current_must_preserve = ["Explicit sex description."];
     }],
+    ["voice avoid lane", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-explicit and non-graphic.";
+      input.generationSession.current_cast_voice_pressure[0]!.current_must_avoid = ["Do not use graphic gore."];
+    }],
     ["voice override", (input: BuildValidationSnapshotInput) => {
       input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
       input.generationSession.cast_voice_overrides = [{
@@ -687,6 +791,25 @@ describe("universal blocker validation", () => {
     }]
   ])("blocks content envelope contradiction from %s", (_name, mutate) => {
     expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, mutate);
+  });
+
+  it.each([
+    ["non-explicit policy with graphic sex", "Non-explicit only.", "Render graphic sex."],
+    ["no-explicit-sex policy with explicit sex", "No explicit sex.", "Render explicit sex."],
+    ["non-graphic policy with graphic gore", "Non-graphic only.", "Render graphic gore."]
+  ])("blocks content envelope marker pair: %s", (_name, policy, directive) => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, (input) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = policy;
+      input.generationSession.manual_moment_directive!.must_render = [directive];
+    });
+  });
+
+  it("does not block content envelope when policy is absent", () => {
+    const input = cleanInput();
+    delete input.storyConfig.universalContentPolicy;
+    input.generationSession.manual_moment_directive!.must_render = ["Render graphic gore."];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.contentEnvelopeContradiction);
   });
 
   it("blocks when the compiler version source is missing", () => {
