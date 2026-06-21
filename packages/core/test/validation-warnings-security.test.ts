@@ -250,6 +250,12 @@ describe("warnings and security validation", () => {
     ];
     expect(warningCodes(emptySampleArray)).toContain(DIAGNOSTIC_CODES.noSampleUtterances);
 
+    const nullSamples = baseInput();
+    nullSamples.records = [
+      record("cast", "CAST MEMBER", { voice_anchor: {}, identity: {}, sample_utterances: null }, "active_onstage_cast_full")
+    ];
+    expect(warningCodes(nullSamples)).toContain(DIAGNOSTIC_CODES.noSampleUtterances);
+
     const dialogueExpected = voiceInput(["dialogue_expected"]);
     dialogueExpected.generationSession.current_cast_voice_pressure = [];
     expect(warningByCode(dialogueExpected, DIAGNOSTIC_CODES.localVoicePressureMayHelp)).toMatchObject({
@@ -260,6 +266,13 @@ describe("warnings and security validation", () => {
     const noDialogueFocus = voiceInput([]);
     noDialogueFocus.generationSession.current_cast_voice_pressure = [];
     expect(warningCodes(noDialogueFocus)).not.toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
+
+    const dialogueFocusFromDurableLane = voiceInput([]);
+    dialogueFocusFromDurableLane.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      "dialogue_expected" as never
+    ];
+    dialogueFocusFromDurableLane.generationSession.current_cast_voice_pressure = [];
+    expect(warningCodes(dialogueFocusFromDurableLane)).toContain(DIAGNOSTIC_CODES.localVoicePressureMayHelp);
 
     const narratorFocus = voiceInput(["dialogue_expected"], ["cast-a"]);
     narratorFocus.generationSession.active_working_set = {
@@ -301,6 +314,11 @@ describe("warnings and security validation", () => {
   });
 
   it("pins ensemble voice distinction gates and duplicate pressure normalization", () => {
+    const missingWorkingSet = voiceInput(["ensemble_dialogue_expected"]);
+    delete missingWorkingSet.generationSession.active_working_set;
+    missingWorkingSet.generationSession.current_cast_voice_pressure = [];
+    expect(warningCodes(missingWorkingSet)).not.toContain(DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk);
+
     const twoSpeakers = voiceInput(["ensemble_dialogue_expected"], ["cast-a", "cast-b"]);
     twoSpeakers.generationSession.current_cast_voice_pressure = [];
     expect(warningCodes(twoSpeakers)).not.toContain(DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk);
@@ -311,6 +329,7 @@ describe("warnings and security validation", () => {
       castPressure("cast-b", "B is guarded.", "B answers.", "none")
     ];
     expect(warningByCode(missingPins, DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk)).toMatchObject({
+      message: "Ensemble dialogue is structurally ready, but absent or repeated local voice pins may blur speakers.",
       affected: [{ field: "generationSession.current_cast_voice_pressure" }]
     });
 
@@ -364,6 +383,9 @@ describe("warnings and security validation", () => {
     const boundary = baseInput();
     boundary.generationSession.manual_moment_directive = manualDirective("x".repeat(80));
     expect(warningCodes(boundary)).not.toContain(DIAGNOSTIC_CODES.lowDramaScenePressure);
+
+    const noDirective = baseInput();
+    expect(warningCodes(noDirective)).toContain(DIAGNOSTIC_CODES.lowDramaScenePressure);
 
     for (const type of ["SECRET", "RELATIONSHIP", "EMOTION"]) {
       const input = baseInput();
@@ -491,6 +513,10 @@ describe("warnings and security validation", () => {
     expect(warningByCode(stalePayload, DIAGNOSTIC_CODES.staleSelectedRecord)).toMatchObject({
       affected: [{ field: "record:abandoned" }]
     });
+
+    const staleSupersededPayload = baseInput();
+    staleSupersededPayload.records = [record("superseded", "EVENT", { status: "superseded" })];
+    expect(warningCodes(staleSupersededPayload)).toContain(DIAGNOSTIC_CODES.staleSelectedRecord);
   });
 
   it("keeps warning diagnostics non-blocking with the shared warning payload", () => {
