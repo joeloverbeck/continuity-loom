@@ -1,6 +1,6 @@
 # SPEC-027 — Record-Hygiene Assistance Prompt and Quarantined Review Page
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 feature spec; adds a second assistance prompt class (project-review record hygiene) plus its menu-accessible review page — gated on a sign-off-required `docs/FOUNDATIONS.md` amendment (Deliverable 0)
 Depends on: the existing deterministic prose/ideation compilers, the ideation assistance surface (`/api/ideate`, `IdeateView`, session keepers), the record repository (`listRecords`), the OpenRouter client, and the core import-boundary rule
 Governing authority: `docs/FOUNDATIONS.md` (constitutional — this spec proposes an amendment to it)
@@ -465,3 +465,38 @@ boundary).
   v1 request to `{ mode: "full_active_atomic_review" }` with no filters; any future
   request variant is out of scope and would require revisiting §6.1 and the
   compiler contract.
+
+## Outcome
+
+Completed: 2026-06-21
+
+Implemented the SPEC-027 record-hygiene assistance surface across the governing
+docs, core compiler, server API, web UI, user docs, stress coverage, and capstone
+regression proof. The work added the signed-off `docs/FOUNDATIONS.md` amendment,
+the hygiene-active predicate and deterministic record-hygiene compiler, the
+dedicated prompt template and contract/version documentation, server snapshot
+building and strict response parsing, dedicated compile/analyze routes, the
+menu-accessible Record Hygiene page with session-only keepers, and documentation
+for the workflow and stress cases. All nine implementation tickets were completed
+and archived under `archive/tickets/`.
+
+Deviations from the original plan:
+
+- The capstone includes an automated end-to-end regression around the server route
+  and prompt surfaces rather than a live paid OpenRouter run; the archived final
+  ticket preserves a manual live-analyze runbook.
+- Root `npm run lint` remains blocked by unrelated generated files under
+  `.codex/worktrees/spec026-mutdrirob`; owned package/path lint checks passed.
+
+Verification performed:
+
+- Targeted suites covered the hygiene predicate, compiler golden behavior,
+  snapshot builder, parser quarantine rules, API routes, web view, shell route,
+  documentation grep checks, and capstone conformance.
+- Full `npm run typecheck`, `npm run build`, and `npm test` passed after the
+  capstone test was added. The final full test run covered 142 files and 1057
+  tests.
+- `npm run lint --workspace @loom/server`, `npm run lint --workspace @loom/web`,
+  and path-focused ESLint checks for owned changed files passed; root
+  `npm run lint` failed only on the unrelated `.codex/worktrees/spec026-mutdrirob`
+  generated-output tree.
