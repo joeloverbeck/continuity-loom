@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-014: Mutation-tighten P3 engine, readiness, applicability, and reference classification
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds gate/sort/dedupe/immutability/applicability/reference-classification property tests; no production behavior change.
@@ -77,3 +77,29 @@ Run `npm run mutation:validation` scoped to the five modules; classify every sur
 1. `vitest run packages/core/test/validation-engine.property.test.ts packages/core/test/validation-reference-classification.property.test.ts` — targeted run.
 2. `npm run mutation:validation` — survivor classification for the five modules.
 3. Gate properties + the independent applicability matrix are the correct boundary: they assert exact gating behavior, not a diagnostic count.
+
+## Outcome
+
+Completed 2026-06-21. Added mutation-focused validation engine/readiness/applicability property coverage in `packages/core/test/validation-engine.property.test.ts` and exact reference-classification property coverage in `packages/core/test/validation-reference-classification.property.test.ts`.
+
+The new tests pin:
+
+- `runValidation` blocker/warning split, `isBlocked`, diagnostic sort order, repeated output, and frozen return values.
+- Missing-vs-populated affected reference sort keys, including record-only affected references.
+- `buildValidationSnapshot` record ordering by id and type.
+- Warning-only readiness, provider-only generate blocking, validation blocker preview/generate blocking, duplicate warning dedupe, and ideation applicability from an independent prose-only diagnostic table.
+- Reference classification for selected, unselected, dangling, wrong-target-type, expected-type omission, permutation determinism, and archive/remove fallback.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-engine.property.test.ts packages/core/test/validation-reference-classification.property.test.ts` passed: 2 files, 12 tests.
+- `npm run mutation:validation -- --force --mutate packages/core/src/validation/engine.ts,packages/core/src/validation/readiness.ts,packages/core/src/validation/kind-applicability.ts,packages/core/src/validation/reference-classification.ts,packages/core/src/validation/snapshot.ts` completed in 3m27s with 537 dry-run tests and 525 scoped mutants. Final relevant file counts:
+  - `engine.ts`: 100.00 score; 28 killed / 13 compile-error / 0 survived / 0 timeout / 0 no-coverage.
+  - `kind-applicability.ts`: 100.00 score; 7 killed / 5 compile-error / 0 survived / 0 timeout / 0 no-coverage.
+  - `reference-classification.ts`: 100.00 score; 8 killed / 9 compile-error / 0 survived / 0 timeout / 0 no-coverage.
+  - `snapshot.ts`: 100.00 score; 10 killed / 15 compile-error / 0 survived / 0 timeout / 0 no-coverage.
+  - `readiness.ts`: 58.19 score; 112 killed / 131 compile-error / 117 survived / 62 timeout / 8 no-coverage.
+- `readiness.ts` survivors/timeouts/no-coverage are classified as presentation-layer readiness debt, not unclassified gate/classification defects for this ticket. The surviving mutants are concentrated in author-facing copy strings, fallback display-label formatting, action label wording, readiness summary text/count wording, affected/action dedupe-key detail, and optional copy object branches. The timed-out mutants are static string-copy mutants in the large readiness copy table. The no-coverage mutants are unreachable optional/fallback copy branches in existing presentation helpers. The gate-critical behavior covered by this ticket has explicit assertions: warnings do not block, blockers do block preview/generate, provider configuration blocks generate but not preview, ideation filters prose-only diagnostics through the independent table, duplicate warning paths merge, and reference classes remain exact.
+- `npm run typecheck` passed after implementation.
+
+No browser smoke was run. This ticket only adds core validation property tests and mutation evidence; it does not change production runtime behavior or UI/browser behavior.

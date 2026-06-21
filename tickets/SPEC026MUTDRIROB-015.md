@@ -47,7 +47,7 @@ Run `npm run mutation:validation` scoped to the four family files; classify ever
 ## Out of Scope
 
 - Matrix families (SPEC026MUTDRIROB-016, -017) and security/warning/taxonomy (SPEC026MUTDRIROB-018).
-- Engine/readiness/applicability properties (SPEC026MUTDRIROB-014).
+- Engine/readiness/applicability properties (archive/tickets/SPEC026MUTDRIROB-014.md).
 - Any change to rule production logic.
 
 ## Acceptance Criteria
