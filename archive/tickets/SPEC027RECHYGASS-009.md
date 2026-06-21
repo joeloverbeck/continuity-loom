@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-009: Capstone regression + conformance
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a cross-surface e2e/conformance test surface; no production behavior change (it exercises the pipeline the earlier tickets composed).
@@ -70,3 +70,37 @@ Implementer checklist: (a) copy a demo/fixture project to a disposable location;
 1. `npm test -- record-hygiene.e2e` — targeted cross-surface conformance.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline regression gate (all three packages).
 3. The split boundary is deliberate: CI assertions cover every deterministic/structural invariant, while the live-LLM `Analyze` path is a manual runbook because no live-model harness exists in the project's test infra.
+
+## Manual Live Analyze Runbook
+
+Use a disposable copy or demo project.
+
+1. Configure a local OpenRouter key and model in Settings.
+2. Open Record Hygiene from the primary navigation.
+3. Inspect the prompt and source disclosure before sending.
+4. Confirm the send disclosure and click `Analyze with OpenRouter`.
+5. Verify parsed findings or non-canonical raw output render as scratch, with citation provenance and no apply/merge/delete/deactivate/archive/accept/fix-all/working-set/brief/use-as-prose control.
+6. Verify no record, working set, generation brief, accepted segment, note, or project schema table is created or changed by the analyze action.
+7. Verify server logs do not contain the compiled prompt, full record payloads, raw model output, parsed findings, citation maps carrying story content, or the OpenRouter key.
+8. Clear the scratch surface and confirm session keepers/results are gone and no project-store residue exists.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added `packages/server/src/record-hygiene.e2e.test.ts`, a CI-runnable capstone that composes demo project setup, accepted-prose and private-note sentinels, an unselected active fact, hygiene compile, mocked analyze parsing, persistence checks, table/schema checks, diagnostic-code checks, prose/ideation prompt isolation, and existing reference-integrity archive/delete failures.
+- Added the live OpenRouter manual runbook above for the one path that cannot run in CI.
+
+Deviations:
+- No production logic changed.
+- The CI capstone proves the deterministic server pipeline and persisted-state invariants. Browser rendering remains covered by `RecordHygieneView.test.tsx`; the live provider round-trip remains manual because the repo has no live-model harness.
+
+Verification:
+- `npm test -- record-hygiene.e2e` passed: 1 file, 1 test.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 142 files, 1057 tests.
+- `npm run lint --workspace @loom/server` passed.
+- Path-scoped `npx eslint packages/server/src/record-hygiene.e2e.test.ts` passed.
+- `npm run lint` did not pass because the pre-existing unrelated `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files and worktree test files, producing 626 errors. This is unrelated to SPEC027RECHYGASS-009 and was left untouched.
