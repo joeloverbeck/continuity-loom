@@ -1,24 +1,26 @@
 ---
 name: ticket-series
-description: Use in Continuity Loom for goals that implement a glob or series of tickets from tickets/ in dependency order, align each ticket with active docs under docs/ except triage/, verify acceptance, archive completed tickets/specs, repair active references, and commit completed work one ticket at a time.
+description: Use in Continuity Loom for goals that implement, close out, or archive one ticket, a capstone ticket, or a glob/series of tickets from tickets/ in dependency order; align work with active docs under docs/ except triage/, verify acceptance or amended scope honestly, archive completed tickets/specs, repair active references, and commit completed work one ticket at a time.
 ---
 
 # Ticket Series
 
-Use this skill when the user asks to implement a Continuity Loom ticket family,
-for example `tickets/SPEC012DURCHAREM-*`, with or without a referenced active
-spec. Work from the live checkout, not remembered state.
+Use this skill when the user asks to implement or close out Continuity Loom
+tickets. The target may be one ticket, a capstone ticket, or a ticket family
+such as `tickets/SPEC012DURCHAREM-*`, with or without a referenced active spec.
+Work from the live checkout, not remembered state.
 
 ## Inputs
 
-- Ticket selector: usually a glob under `tickets/`.
+- Ticket selector: a single ticket path, capstone ticket, or glob under
+  `tickets/`.
 - Reference spec selector: if provided, usually under `specs/`.
 - Explicit sequencing, verification, archival, commit, or no-commit constraints
   from the prompt.
 
 If a selector is ambiguous, inspect matching paths and choose only when the repo
-context makes the intended family clear. Ask before proceeding if multiple
-families plausibly match.
+context makes the intended ticket or family clear. Ask before proceeding if
+multiple targets plausibly match.
 
 ## Startup
 
@@ -132,6 +134,14 @@ npm run build
    status and an `Outcome` section following `docs/archival-workflow.md`.
    Append the `Outcome` at the bottom of the ticket before moving it, after the
    existing ticket sections.
+
+   If the user explicitly changes the closeout scope, for example by saying to
+   consider a ticket finished and amend it if necessary, record that user
+   direction in the ticket before archive. The amended closeout must state what
+   original acceptance items were not performed, why they are no longer being
+   claimed, and what verification actually supports the completed status. Do
+   not mark skipped gates, floor activation, baseline flips, or required-status
+   changes as passed unless they really ran and passed.
 7. Archive the ticket:
    - Create `archive/tickets/` if absent.
    - Use `git mv` for tracked tickets.
@@ -156,8 +166,11 @@ npm run build
     pre-existing changes are staged, unstage only those unrelated entries before
     committing the ticket. After `git mv`, stage rename/deletion pairs with a
     scoped command such as `git add -A tickets archive/tickets` when direct
-    staging of the old path fails, then re-check the cached name-status before
-    committing.
+    staging of the old path fails. When a ticket or spec was edited before or
+    after the move, also inspect `git diff --cached --stat` or
+    `git diff --cached -- <archive-path>` to confirm the status and `Outcome`
+    edits are staged, not just the rename. Then re-check the cached name-status
+    before committing.
 11. Commit the completed ticket work before moving on unless the user explicitly
     asked not to commit. Use a concise message naming the ticket.
 
