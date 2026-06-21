@@ -10,6 +10,7 @@ import {
 } from "../src/index.js";
 import {
   diagnosticContractRegistry,
+  expectedRunnableDiagnosticCodes,
   runnableDiagnosticContracts,
   type RunnableDiagnosticContract
 } from "./support/diagnostic-contract.js";
@@ -22,15 +23,10 @@ describe("validation diagnostic contract harness", () => {
     expect(registryCodes).toEqual(exportedCodes);
   });
 
-  it("seeds runnable contracts for engine, readiness, and universal diagnostics", () => {
-    expect(runnableDiagnosticContracts.map((contract) => contract.code).sort()).toEqual([
-      DIAGNOSTIC_CODES.missingConstitutionalSection,
-      DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
-      DIAGNOSTIC_CODES.missingImmediateHandoff,
-      DIAGNOSTIC_CODES.missingManualDirective,
-      DIAGNOSTIC_CODES.missingStoryConfig,
-      DIAGNOSTIC_CODES.povKnowledgeMissing
-    ].sort());
+  it("seeds runnable contracts for the SPEC026MUTDRIROB-015 diagnostic families", () => {
+    expect(runnableDiagnosticContracts.map((contract) => contract.code).sort()).toEqual(
+      [...expectedRunnableDiagnosticCodes].sort()
+    );
   });
 
   it.each(runnableDiagnosticContracts)("satisfies the defect -> exact diagnostic -> repair relation for $code", (contract) => {

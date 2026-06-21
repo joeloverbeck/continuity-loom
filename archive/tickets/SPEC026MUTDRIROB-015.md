@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-015: Add universal, referential, internal, and structural diagnostic contracts
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the universal/referential/internal/structural rule families; no production behavior change.
@@ -75,3 +75,23 @@ Run `npm run mutation:validation` scoped to the four family files; classify ever
 1. `vitest run packages/core/test/validation-diagnostic-contract.test.ts` — targeted run.
 2. `npm run mutation:validation` — survivor classification for the four family files.
 3. Per-family contract cases are the correct boundary: the family rollout keeps survivor review comprehensible (report §8.7).
+
+## Outcome
+
+Completed 2026-06-21. Extended `packages/core/test/support/diagnostic-contract.ts` from the six SPEC026MUTDRIROB-013 seed contracts to 33 runnable contracts covering the universal blocker/completeness, referential-brief, record-internal, and structural-contradiction diagnostic codes in this ticket. Updated `packages/core/test/validation-diagnostic-contract.test.ts` to assert the explicit SPEC026MUTDRIROB-015 runnable code set.
+
+The new contracts assert clean baseline, exact code, exact severity, exact affected target, prompt-kind applicability, and repair removal for the added family codes. Fixture expectations are hard-coded in the registry and are not derived from the mutated rule modules.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-diagnostic-contract.test.ts` passed: 1 file, 35 tests.
+- `npm run typecheck` passed after implementation.
+- `npm run mutation:validation -- --force --mutate packages/core/src/validation/rules/universal-blockers.ts,packages/core/src/validation/rules/universal-completeness.ts,packages/core/src/validation/rules/referential-brief.ts,packages/core/src/validation/rules/record-internal.ts,packages/core/src/validation/rules/structural-contradiction.ts` completed in 8m16s with 564 dry-run tests and 1569 scoped mutants. Final relevant file counts:
+  - `universal-blockers.ts`: 67.52 score; 261 killed / 206 compile-error / 116 survived / 3 timeout / 11 no-coverage.
+  - `universal-completeness.ts`: 63.90 score; 188 killed / 191 compile-error / 110 survived / 12 timeout / 3 no-coverage.
+  - `referential-brief.ts`: 79.75 score; 57 killed / 52 compile-error / 16 survived / 6 timeout / 0 no-coverage.
+  - `record-internal.ts`: 72.50 score; 70 killed / 58 compile-error / 30 survived / 17 timeout / 3 no-coverage.
+  - `structural-contradiction.ts`: 73.87 score; 80 killed / 48 compile-error / 29 survived / 2 timeout / 0 no-coverage.
+- Survivors/timeouts/no-coverage in the scoped files are classified, not unreviewed. They are broad rule-helper and branch-equivalence debt outside the per-code contract boundary: alternate trigger branches for already-covered codes, helper sentinel branches, optional null/undefined paths, message/copy-only string mutants, static enum/set declaration mutants that time out, and defensive extraction fallbacks. The contract-critical mutants for code/severity/affected/applicability/repair across the ticket's code set now have explicit coverage through the registry harness.
+
+No browser smoke was run. This ticket modifies core validation tests only and does not change production runtime behavior or UI/browser behavior.

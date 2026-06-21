@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — extends the diagnostic contract registry with the security/warning/remaining families and completes the full P3 mutation campaign; no production behavior change.
-**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md, archive/tickets/SPEC026MUTDRIROB-014.md, SPEC026MUTDRIROB-015, SPEC026MUTDRIROB-016, SPEC026MUTDRIROB-017
+**Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md, archive/tickets/SPEC026MUTDRIROB-014.md, archive/tickets/SPEC026MUTDRIROB-015.md, SPEC026MUTDRIROB-016, SPEC026MUTDRIROB-017
 
 ## Problem
 
@@ -47,7 +47,7 @@ Run `npm run mutation:validation` across the full P3 glob; classify every surviv
 ## Out of Scope
 
 - Cross-pillar contracts (SPEC026MUTDRIROB-019); activating floors/ratchets (SPEC026MUTDRIROB-022).
-- Engine/readiness properties (archive/tickets/SPEC026MUTDRIROB-014.md) and other family contracts (SPEC026MUTDRIROB-015..017).
+- Engine/readiness properties (archive/tickets/SPEC026MUTDRIROB-014.md) and other family contracts (archive/tickets/SPEC026MUTDRIROB-015.md, SPEC026MUTDRIROB-016..017).
 - Any change to rule production logic.
 
 ## Acceptance Criteria

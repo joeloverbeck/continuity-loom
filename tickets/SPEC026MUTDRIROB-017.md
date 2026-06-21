@@ -48,7 +48,7 @@ Run `npm run mutation:validation` scoped to `matrix-knowledge.ts` + `matrix-voic
 ## Out of Scope
 
 - Durable/physical matrices (SPEC026MUTDRIROB-016); security/warning/taxonomy (SPEC026MUTDRIROB-018).
-- Universal/referential/internal/structural families (SPEC026MUTDRIROB-015).
+- Universal/referential/internal/structural families (archive/tickets/SPEC026MUTDRIROB-015.md).
 - Any change to matrix rule production logic.
 
 ## Acceptance Criteria
