@@ -19,6 +19,10 @@ describe("onstage cast-band validation", () => {
 
     expect(codes(result.blockers)).toContain(DIAGNOSTIC_CODES.onstageCastBandMissing);
     expect(result.blockers[0]?.message).toContain("\"Mara Vale\" is Unassigned");
+    expect(result.blockers[0]?.whyItMatters).toBe(
+      "An onstage character must have its dossier rendered as present cast so voice, body, and pressure authority compile deterministically."
+    );
+    expect(result.blockers[0]?.suggestedActions).toEqual(["promote-cast", "revise", "deselect"]);
     expect(result.isBlocked).toBe(true);
   });
 
@@ -39,10 +43,59 @@ describe("onstage cast-band validation", () => {
     }
   });
 
+  it("uses the offstage relevance state in the blocker message", () => {
+    const result = validate(baseInput("offstage_relevant_cast"));
+
+    expect(result.blockers[0]?.message).toContain("\"Mara Vale\" is in offstage relevance");
+    expect(result.blockers[0]?.message).not.toContain("Unassigned");
+  });
+
+  it("stays silent when no onstage entities are listed", () => {
+    const input = baseInput();
+    input.generationSession.current_authoritative_state!.onstage_entities = [];
+
+    expect(codes(validate(input).blockers)).not.toContain(DIAGNOSTIC_CODES.onstageCastBandMissing);
+  });
+
   it("does not block an onstage entity with no linked selected cast member", () => {
     const input = baseInput();
     input.records = input.records.filter((record) => record.type !== "CAST MEMBER");
 
+    expect(codes(validate(input).blockers)).not.toContain(DIAGNOSTIC_CODES.onstageCastBandMissing);
+  });
+
+  it("does not treat non-cast records with matching entity ids as cast dossiers", () => {
+    const input = baseInput();
+    input.records = [
+      {
+        id: "fact-with-entity",
+        type: "FACT",
+        payload: {
+          entity_id: entityId,
+          summary: "Mara is in the room."
+        }
+      }
+    ];
+
+    expect(codes(validate(input).blockers)).not.toContain(DIAGNOSTIC_CODES.onstageCastBandMissing);
+  });
+
+  it.each([
+    ["array payload", []],
+    ["null payload", null],
+    ["missing entity id", { note: "No link." }]
+  ])("ignores cast records with %s", (_name, payload) => {
+    const input = baseInput();
+    input.records = input.records.map((record) =>
+      record.id === castId
+        ? {
+            ...record,
+            payload
+          }
+        : record
+    );
+
+    expect(() => validate(input)).not.toThrow();
     expect(codes(validate(input).blockers)).not.toContain(DIAGNOSTIC_CODES.onstageCastBandMissing);
   });
 });

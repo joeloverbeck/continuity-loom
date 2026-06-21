@@ -3,9 +3,15 @@ import {
   DIAGNOSTIC_CODES,
   runValidation,
   type BuildValidationSnapshotInput,
+  type ValidationRecord,
   type ValidationResult
 } from "../src/index.js";
-import { recordInternalReferenceRules } from "../src/validation/rules/record-internal.js";
+import {
+  expectedRecordReferenceTypes,
+  isRecordReferenceRequired,
+  recordInternalReferences,
+  recordInternalReferenceRules
+} from "../src/validation/rules/record-internal.js";
 import { warningRules } from "../src/validation/rules/warnings.js";
 import { describe, expect, it } from "vitest";
 
@@ -48,6 +54,19 @@ describe("record-internal reference validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
   });
 
+  it("does not require unselected secret references when the secret is inactive", () => {
+    const input = baseInput();
+    input.records = [
+      ...input.records,
+      record(sourceId, "SECRET", secretPayload({ holders: [unselectedEntityId], status: "resolved" }))
+    ];
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
   it("treats hidden-plan holder references as required when the focus demands hidden plan behavior", () => {
     const input = baseInput();
     input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId }))];
@@ -69,6 +88,63 @@ describe("record-internal reference validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
   });
 
+  it("allows optional PLAN holder references when the plan is inactive and unselected", () => {
+    const input = baseInput();
+    input.records = [
+      ...input.records,
+      record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId, plan_status: "abandoned" }))
+    ];
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
+  it("allows optional PLAN holder references when the plan is inactive but selected", () => {
+    const input = baseInput();
+    input.records = [
+      ...input.records,
+      record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId, plan_status: "abandoned" }))
+    ];
+    input.generationSession.active_working_set!.selected_records = [
+      ...input.generationSession.active_working_set!.selected_records,
+      sourceId
+    ];
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
+  it("does not require PLAN holder references when hidden-plan focus tags are absent", () => {
+    const input = baseInput();
+    input.records = [...input.records, record(sourceId, "PLAN", planPayload({ holder: unselectedEntityId }))];
+    delete input.generationSession.generation_validation_focus;
+
+    const result = validate(input);
+
+    expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
+    expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
+  });
+
+  it("allows OBJECT current_location to target an object container", () => {
+    const input = baseInput();
+    const containerId = "019b0298-5c00-7000-8000-000000000507";
+    input.records = [
+      ...input.records,
+      record(containerId, "OBJECT", objectPayload({ current_location: locationId })),
+      record(sourceId, "OBJECT", objectPayload({ current_location: containerId }))
+    ];
+    input.projectRecordIndex = {
+      ...input.projectRecordIndex,
+      [containerId]: "OBJECT"
+    };
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.recordReferenceTypeMismatch);
+  });
+
   it("warns without blocking for unselected references in optional record-internal lanes", () => {
     const input = baseInput();
     input.records = [...input.records, record(sourceId, "RELATIONSHIP", relationshipPayload({ from: unselectedEntityId, to: entityId }))];
@@ -78,6 +154,55 @@ describe("record-internal reference validation", () => {
     expect(codes(result.blockers)).not.toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
     expect(codes(result.warnings)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedOptional);
     expect(result.isBlocked).toBe(false);
+  });
+
+  it("ignores extracted references with blank target ids", () => {
+    const input = baseInput();
+    input.records = [...input.records, record(sourceId, "BELIEF", beliefPayload(""))];
+
+    const snapshot = buildValidationSnapshot(input);
+
+    expect(
+      recordInternalReferences(snapshot).some(({ sourceRecord }) => sourceRecord.id === sourceId)
+    ).toBe(false);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.recordReferenceDangling);
+  });
+
+  it("exposes role-specific expected target types", () => {
+    expect(expectedRecordReferenceTypes("current_location", record(sourceId, "OBJECT", {}) as ValidationRecord)).toEqual([
+      "LOCATION",
+      "OBJECT"
+    ]);
+    expect(expectedRecordReferenceTypes("current_location", record(sourceId, "ENTITY STATUS", {}) as ValidationRecord)).toEqual([
+      "LOCATION"
+    ]);
+    expect(expectedRecordReferenceTypes("holder", record(sourceId, "PLAN", {}) as ValidationRecord)).toEqual(["ENTITY", "CAST MEMBER"]);
+  });
+
+  it.each([
+    ["hidden secret holder", record(sourceId, "SECRET", secretPayload({ status: "hidden" })), "secret_holder", true],
+    [
+      "partially revealed protected non-holder",
+      record(sourceId, "SECRET", secretPayload({ status: "partially_revealed" })),
+      "non_holder_to_protect",
+      true
+    ],
+    ["revealed secret holder", record(sourceId, "SECRET", secretPayload({ status: "revealed" })), "secret_holder", true],
+    ["resolved secret holder", record(sourceId, "SECRET", secretPayload({ status: "resolved" })), "secret_holder", false],
+    ["non-secret secret-holder role", record(sourceId, "BELIEF", beliefPayload(entityId)), "secret_holder", false],
+    ["selected active plan holder", record(sourceId, "PLAN", planPayload()), "holder", true],
+    ["selected inactive plan holder", record(sourceId, "PLAN", planPayload({ plan_status: "abandoned" })), "holder", false],
+    ["selected active plan participant", record(sourceId, "PLAN", planPayload()), "participant", false]
+  ])("classifies required-reference status for %s", (_name, sourceRecord, refRole, expected) => {
+    const input = baseInput();
+    input.records = [...input.records, sourceRecord];
+    input.generationSession.active_working_set!.selected_records = [
+      ...input.generationSession.active_working_set!.selected_records,
+      sourceId
+    ];
+    const snapshot = buildValidationSnapshot(input);
+
+    expect(isRecordReferenceRequired(snapshot, sourceRecord as ValidationRecord, refRole)).toBe(expected);
   });
 });
 
@@ -175,7 +300,7 @@ function objectPayload(overrides: Partial<{ current_location: string }> = {}) {
   };
 }
 
-function secretPayload(overrides: Partial<{ holders: string[] }> = {}) {
+function secretPayload(overrides: Partial<{ holders: string[]; status: string }> = {}) {
   return {
     id: sourceId,
     status: "hidden",
@@ -195,7 +320,7 @@ function secretPayload(overrides: Partial<{ holders: string[] }> = {}) {
   };
 }
 
-function planPayload(overrides: Partial<{ holder: string }> = {}) {
+function planPayload(overrides: Partial<{ holder: string; plan_status: string }> = {}) {
   return {
     id: sourceId,
     plan_status: "active",

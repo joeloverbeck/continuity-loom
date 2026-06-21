@@ -55,7 +55,7 @@ function parseInventoryRows(): InventoryRow[] {
 
 function deriveRegisteredSeverities(): Map<string, Severity> {
   const severityByCode = new Map(reservedSeverityByCode);
-  const rulesDir = new URL("../src/validation/rules", import.meta.url).pathname;
+  const rulesDir = resolveSourcePath(new URL("../src/validation/rules", import.meta.url).pathname);
   const codeByKey = new Map<string, string>(Object.entries(DIAGNOSTIC_CODES).map(([key, value]) => [key, value]));
 
   for (const file of readdirSync(rulesDir).filter((entry) => entry.endsWith(".ts") && !["index.ts", "types.ts"].includes(entry))) {
@@ -79,6 +79,26 @@ function deriveRegisteredSeverities(): Map<string, Severity> {
   }
 
   return severityByCode;
+}
+
+function resolveSourcePath(pathname: string): string {
+  const sandboxMarker = "/.stryker-tmp/";
+  const markerIndex = pathname.indexOf(sandboxMarker);
+
+  if (markerIndex === -1) {
+    return pathname;
+  }
+
+  const originalRoot = process.env.INIT_CWD;
+
+  if (!originalRoot) {
+    return pathname;
+  }
+
+  const packageMarker = "/packages/";
+  const packageIndex = pathname.indexOf(packageMarker, markerIndex + sandboxMarker.length);
+
+  return packageIndex === -1 ? pathname : join(originalRoot, pathname.slice(packageIndex + 1));
 }
 
 function deriveFileSeverity(file: string, source: string): Severity {

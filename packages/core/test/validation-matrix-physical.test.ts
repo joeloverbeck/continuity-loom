@@ -81,10 +81,120 @@ describe("physical/perception/offstage matrix validation", () => {
 
     expect(blockerCodes(input)).toContain(code);
   });
+
+  it.each([
+    ["missing state", (input: BuildValidationSnapshotInput) => {
+      delete input.generationSession.current_authoritative_state;
+    }],
+    ["blank location", (input: BuildValidationSnapshotInput) => setStateField(input, "current_location", "")],
+    ["missing onstage entities", (input: BuildValidationSnapshotInput) => setStateField(input, "onstage_entities", [])],
+    ["blank visibility", (input: BuildValidationSnapshotInput) => setStateField(input, "line_of_sight_and_visibility", "")],
+    ["missing routes", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["blank time", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")],
+    ["missing current locks", (input: BuildValidationSnapshotInput) => setStateField(input, "current_locks", [])]
+  ])("blocks physical interaction when %s", (_name, mutate) => {
+    expectMatrixBlock("physical_interaction_expected", DIAGNOSTIC_CODES.matrixPhysicalInteractionIncomplete, mutate);
+  });
+
+  it.each([
+    ["offstage status is absent", (input: BuildValidationSnapshotInput) => removeRecord(input, statusId)],
+    ["status has wrong type", (input: BuildValidationSnapshotInput) => setRecord(input, statusId, { type: "FACT" })],
+    ["status has blank entity id", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { entity_id: "" })],
+    ["status points at a different entity", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { entity_id: entityId })],
+    ["status location is blank", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "" })],
+    ["status visibility is blank", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { visibility_to_pov: "" })],
+    ["routes are missing", (input: BuildValidationSnapshotInput) => setStateField(input, "routes_and_exits", [])],
+    ["time is blank", (input: BuildValidationSnapshotInput) => setStateField(input, "available_time", "")],
+    ["awareness lock is missing", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.current_locks = ["The roof exit is blocked."];
+    }]
+  ])("blocks offstage interruption when %s", (_name, mutate) => {
+    expectMatrixBlock("offstage_interruption_possible", DIAGNOSTIC_CODES.matrixOffstageInterruptionIncomplete, mutate);
+  });
+
+  it.each([
+    ["awareness mechanism", "Awareness mechanism: the phone buzzes."],
+    ["interruption route", "Interruption route: phone call."],
+    ["communication route", "Communication route: radio call."]
+  ])("accepts offstage interruption awareness through %s", (_name, lock) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+    input.generationSession.current_authoritative_state!.current_locks = [lock];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixOffstageInterruptionIncomplete);
+  });
+
+  it.each([
+    ["missing short description", (input: BuildValidationSnapshotInput) => setRecordPayload(input, institutionId, { short_description: "" })],
+    ["missing entity status", (input: BuildValidationSnapshotInput) => removeRecord(input, statusId)],
+    ["status points at wrong entity", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { entity_id: entityId })],
+    ["blank status location", (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "" })],
+    ["missing mechanism lock", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.current_locks = ["The roof exit is blocked."];
+    }],
+    ["non-person entity is mistyped as person", (input: BuildValidationSnapshotInput) => setRecordPayload(input, institutionId, { entity_kind: "person" })]
+  ])("blocks nonhuman or institutional pressure when %s", (_name, mutate) => {
+    expectMatrixBlock("nonhuman_or_institutional_pressure_expected", DIAGNOSTIC_CODES.matrixNonhumanPressureIncomplete, mutate);
+  });
+
+  it.each([
+    ["pressure mechanism", "Pressure mechanism: institutional warning."],
+    ["authority relation", "Authority relation: office can sanction."],
+    ["agency limit", "Agency limit: institution has no interiority."]
+  ])("accepts nonhuman pressure mechanism through %s", (_name, lock) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "nonhuman_or_institutional_pressure_expected"
+    ];
+    input.generationSession.current_authoritative_state!.current_locks = [lock];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixNonhumanPressureIncomplete);
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function expectMatrixBlock(
+  tag: ExpectedLocalMode,
+  code: string,
+  mutate: (input: BuildValidationSnapshotInput) => void
+): void {
+  const input = cleanInput();
+  input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [tag];
+  mutate(input);
+
+  expect(blockerCodes(input), tag).toContain(code);
+}
+
+function setStateField(
+  input: BuildValidationSnapshotInput,
+  field: keyof NonNullable<BuildValidationSnapshotInput["generationSession"]["current_authoritative_state"]>,
+  value: unknown
+): void {
+  input.generationSession.current_authoritative_state = {
+    ...input.generationSession.current_authoritative_state!,
+    [field]: value
+  };
+}
+
+function setRecordPayload(input: BuildValidationSnapshotInput, id: string, patch: Record<string, unknown>): void {
+  input.records = input.records.map((record) =>
+    record.id === id ? { ...record, payload: { ...(record.payload as Record<string, unknown>), ...patch } } : record
+  );
+}
+
+function setRecord(
+  input: BuildValidationSnapshotInput,
+  id: string,
+  patch: Partial<BuildValidationSnapshotInput["records"][number]>
+): void {
+  input.records = input.records.map((record) => record.id === id ? { ...record, ...patch } : record);
+}
+
+function removeRecord(input: BuildValidationSnapshotInput, id: string): void {
+  input.records = input.records.filter((record) => record.id !== id);
 }
 
 function cleanInput(): BuildValidationSnapshotInput {

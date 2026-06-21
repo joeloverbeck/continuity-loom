@@ -1,6 +1,6 @@
 interface:
   display_name: "Ticket Series"
-  short_description: "Implement Continuity Loom ticket series."
-  default_prompt: "$ticket-series Implement the ticket series TICKETS_GLOB in dependency order. Use SPEC_GLOB if provided, and align the work with the active Continuity Loom docs."
+  short_description: "Implement or close out Continuity Loom tickets."
+  default_prompt: "$ticket-series Implement or close out TICKET_OR_TICKETS_GLOB in dependency order. Use SPEC_GLOB if provided, and align the work with the active Continuity Loom docs."
 policy:
   allow_implicit_invocation: false

@@ -212,6 +212,235 @@ describe("universal blocker validation", () => {
     expect(diagnostic?.severity).toBe("blocker");
   });
 
+  it.each([
+    {
+      name: "non-local directive",
+      code: DIAGNOSTIC_CODES.localProseScopeViolation,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.manual_moment_directive!.must_render = ["Write the whole chapter outline."];
+      },
+      expected: {
+        affected: [{ field: "generationSession.manual_moment_directive.must_render[0]" }],
+        message: "Directive or stop guidance asks for non-local prose scope.",
+        whyItMatters: "Generation must render only the next local prose unit, not chapters, outlines, plot packages, or multiple response points.",
+        suggestedActions: ["change-directive"]
+      }
+    },
+    {
+      name: "non-local stop guidance",
+      code: DIAGNOSTIC_CODES.localProseScopeViolation,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through future consequences.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.stop_guidance.soft_unit_guidance" }],
+        message: "Directive or stop guidance asks for non-local prose scope.",
+        whyItMatters: "Generation must render only the next local prose unit, not chapters, outlines, plot packages, or multiple response points.",
+        suggestedActions: ["change-stop-guidance"]
+      }
+    },
+    {
+      name: "directive stop conflict",
+      code: DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.manual_moment_directive!.must_render = ["Continue through the later consequence."];
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the first response point.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.manual_moment_directive" }],
+        message: "Manual directive and stop guidance disagree about the local unit.",
+        whyItMatters: "The prompt cannot deterministically tell the writer both to continue past and stop at the same local boundary.",
+        suggestedActions: ["change-directive", "change-stop-guidance"]
+      }
+    },
+    {
+      name: "handoff state contradiction",
+      code: DIAGNOSTIC_CODES.handoffCurrentStateContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.last_visible_moment = "This contradicts current state.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff" }],
+        message: "Immediate handoff explicitly contradicts current authoritative state.",
+        whyItMatters: "The prompt cannot launch from one current state while the handoff tells the writer a different state is true.",
+        suggestedActions: ["revise", "add-current-state"]
+      }
+    },
+    {
+      name: "entity current location conflict",
+      code: DIAGNOSTIC_CODES.entityCurrentLocationContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [
+          ...input.records,
+          statusRecord(recordA, entityId, "019b0298-5c00-7000-8000-000000000111"),
+          statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000222")
+        ];
+      },
+      expected: {
+        affected: [{ recordId: entityId, field: "ENTITY STATUS.location" }],
+        message: "Selected records place one entity in more than one current location.",
+        whyItMatters: "A character or entity cannot be physically current in two different places unless the records explicitly model a special means.",
+        suggestedActions: ["revise", "remove", "deselect"]
+      }
+    },
+    {
+      name: "object holder conflict",
+      code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, { id: recordA, type: "OBJECT", payload: { owner: povId, carried_by: entityId } }];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "OBJECT.owner/carried_by" }],
+        message: "Selected object has two different current holders.",
+        whyItMatters: "Object possession must be deterministic before the prompt can render use, transfer, loss, or physical action.",
+        suggestedActions: ["revise", "remove", "deselect"]
+      }
+    },
+    {
+      name: "inactive active-plan holder",
+      code: DIAGNOSTIC_CODES.inactivePlanHolder,
+      mutate: addUnableActivePlan,
+      expected: {
+        affected: [{ recordId: recordB, field: "PLAN.holder" }],
+        message: "Active plan is held by an entity that currently cannot plausibly act.",
+        whyItMatters: "A plan cannot drive local prose if its holder is dead, captive, unconscious, incapacitated, absent, or otherwise without means.",
+        suggestedActions: ["revise", "deselect"]
+      }
+    },
+    {
+      name: "known hidden secret",
+      code: DIAGNOSTIC_CODES.secretRevealContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, hiddenKnownSecret()];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "SECRET.holders/non_holders_to_protect" }],
+        message: "Selected secret is both known by and hidden from the selected POV.",
+        whyItMatters: "The prompt must not give a POV both protected ignorance and confirmed knowledge of the same secret.",
+        suggestedActions: ["add-knowledge-constraint", "add-reveal-permission"]
+      }
+    },
+    {
+      name: "hidden truth in POV knowledge",
+      code: DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, hiddenKnownSecret()];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "SECRET.pov_access" }],
+        message: "Hidden secret truth appears in a POV knowledge field.",
+        whyItMatters: "A hidden truth cannot be simultaneously modeled as POV-held knowledge without breaking reveal discipline.",
+        suggestedActions: ["add-knowledge-constraint"]
+      }
+    },
+    {
+      name: "offstage interruption route",
+      code: DIAGNOSTIC_CODES.offstageInterruptionMissingRoute,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+        input.generationSession.current_authoritative_state!.routes_and_exits = [];
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Offstage interruption lacks route, timing, communication, or awareness context.",
+        whyItMatters: "An offstage interruption needs a deterministic way to enter, communicate, be heard, or arrive at the local moment.",
+        suggestedActions: ["add-current-state", "add-route"]
+      }
+    },
+    {
+      name: "physical action context",
+      code: DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["physical_interaction_expected"];
+        input.generationSession.current_authoritative_state!.available_time = "";
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Physical action lacks required bodies, routes, visibility, time, or consent/force context.",
+        whyItMatters: "The prompt cannot safely render physical action without deterministic physical and consent/force conditions.",
+        suggestedActions: ["add-current-state", "add-route"]
+      }
+    },
+    {
+      name: "content envelope conflict",
+      code: DIAGNOSTIC_CODES.contentEnvelopeContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex.";
+        input.generationSession.manual_moment_directive!.must_render = ["Render explicit sex."];
+      },
+      expected: {
+        affected: [{ field: "storyConfig.universalContentPolicy.allowed_content_scope" }],
+        message: "Manual directive contradicts the active content envelope.",
+        whyItMatters: "The prompt cannot ask the provider to render material that the story configuration or policy envelope excludes.",
+        suggestedActions: ["revise", "change-directive"]
+      }
+    },
+    {
+      name: "prompt-facing contamination",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.recent_causal_context = "Copied accepted prose goes here.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff.recent_causal_context" }],
+        message: "Prompt-facing field appears to contain accepted, rejected, superseded, or automatic prose-derived text.",
+        whyItMatters: "Accepted and candidate prose are not canon for future prompts; durable changes must be represented in records or current state.",
+        suggestedActions: ["revise", "remove"]
+      }
+    },
+    {
+      name: "first-segment continuation phrasing",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.begin_after = "As above.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff" }],
+        message: "First segment handoff must not depend on accepted prose or continuation phrasing.",
+        whyItMatters: "A first segment prompt must be self-sufficient from current state and records.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "continuation contamination",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
+        input.generationSession.immediate_handoff!.begin_after = "Use the rejected candidate.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff.begin_after" }],
+        message: "Prompt-facing field appears to contain accepted, rejected, superseded, or automatic prose-derived text.",
+        whyItMatters: "Accepted and candidate prose are not canon for future prompts; durable changes must be represented in records or current state.",
+        suggestedActions: ["revise", "remove"]
+      }
+    },
+    {
+      name: "missing constitutional source",
+      code: DIAGNOSTIC_CODES.missingConstitutionalSection,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.versions.compiler = "";
+      },
+      expected: {
+        affected: [{ field: "versions" }],
+        message: "Template or compiler version is missing for constitutional prompt sections.",
+        whyItMatters: "Required constitutional sections must have deterministic template and compiler sources before prompt compilation.",
+        suggestedActions: ["revise"]
+      }
+    }
+  ])("emits exact diagnostic contract for $name", ({ code, mutate, expected }) => {
+    const input = cleanInput();
+    mutate(input);
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code,
+      ...expected
+    });
+  });
+
   it("blocks first segment continuation phrasing and preserves the clean no-accepted-prose note", () => {
     const input = cleanInput();
 
@@ -289,10 +518,652 @@ describe("universal blocker validation", () => {
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
+
+  it("emits the continuation-context contamination diagnostic alongside prompt-facing field contamination", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
+    input.generationSession.immediate_handoff!.last_visible_moment = "Copied accepted prose: she opened the door.";
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find(
+      (item) => item.message === "Continuation handoff contains accepted/candidate prose contamination instead of user-authored state."
+    );
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      affected: [{ field: "generationSession.immediate_handoff" }],
+      message: "Continuation handoff contains accepted/candidate prose contamination instead of user-authored state.",
+      whyItMatters: "Continuation handoff may refer to user-authored durable state, but it must not paste candidate or accepted prose into prompt inputs.",
+      suggestedActions: ["revise"]
+    });
+  });
+
+  it.each([
+    ["generation context", "generation_context"],
+    ["expected local mode", "expected_local_modes"],
+    ["possible durable change", "possible_durable_changes"]
+  ] as const)("reads offstage-interruption focus tags from %s", (_name, tagField) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags = {
+      generation_context: [],
+      expected_local_modes: [],
+      possible_durable_changes: [],
+      [tagField]: ["offstage_interruption_possible"]
+    };
+    input.generationSession.current_authoritative_state!.routes_and_exits = [];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute);
+  });
+
+  it("accepts non-array, non-string route values as present offstage context", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+    input.generationSession.current_authoritative_state!.offstage_pressuring_entities = ["radio"];
+    input.generationSession.current_authoritative_state!.routes_and_exits = { route: "speaker" } as unknown as string[];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute);
+  });
+
+  type FocusTags = NonNullable<
+    NonNullable<BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]>["validation_focus_tags"]
+  >;
+  type ExpectedLocalMode = NonNullable<FocusTags["expected_local_modes"]>[number];
+  type PossibleDurableChange = NonNullable<FocusTags["possible_durable_changes"]>[number];
+  const physicalActionTagRows = [
+    ["expected_local_modes", "physical_interaction_expected"],
+    ["possible_durable_changes", "object_use_possible"],
+    ["possible_durable_changes", "object_transfer_possible"],
+    ["possible_durable_changes", "location_change_possible"],
+    ["possible_durable_changes", "restraint_or_coercion_possible"],
+    ["possible_durable_changes", "intimacy_or_sex_possible"],
+    ["possible_durable_changes", "violence_or_injury_possible"]
+  ] satisfies readonly (
+    | readonly ["expected_local_modes", ExpectedLocalMode]
+    | readonly ["possible_durable_changes", PossibleDurableChange]
+  )[];
+
+  it.each(physicalActionTagRows)("requires physical context for %s.%s", (field, tag) => {
+    const input = cleanInput();
+    if (field === "expected_local_modes") {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [tag];
+    } else {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [tag];
+    }
+    input.generationSession.current_authoritative_state!.consent_or_force_conditions = "";
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.impossibleActionPhysicalContext);
+  });
+
+  it.each([
+    ["stop-immediately directive versus continuing stop guidance", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.must_render = ["Stop immediately after one look."];
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through the later consequence.";
+    }],
+    ["single-line directive versus later-consequence stop guidance", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.do_not_force = ["Keep this to a single line."];
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through the later consequence.";
+    }]
+  ])("blocks directive/stop boundary conflict from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement, mutate);
+  });
+
+  it.each([
+    ["continue-through directive with stop-after guidance", "Continue through the argument.", "Stop after the first response point."],
+    ["do-not-stop directive with first-response guidance", "Do not stop until the door opens.", "Stop after the first response point."],
+    ["keep-going directive with next-response guidance", "Keep going until the alarm starts.", "Stop at the next response point."],
+    ["stop-immediately directive with continue-through guidance", "Stop immediately after one look.", "Continue through the later consequence."],
+    ["single-line directive with later-consequence guidance", "Keep this to a single line.", "Continue through the later consequence."]
+  ])("blocks directive/stop marker pair: %s", (_name, directiveText, stopText) => {
+    expectBlock(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement, (input) => {
+      input.generationSession.manual_moment_directive!.must_render = [directiveText];
+      input.generationSession.stop_guidance!.soft_unit_guidance = stopText;
+    });
+  });
+
+  it.each([
+    ["matching stop guidance without directive marker", "B asks for the key.", "Stop after the first response point."],
+    ["matching directive without stop marker", "Continue through the argument.", "End once B speaks."],
+    ["later-consequence stop without immediate-stop directive", "B asks for the key.", "Continue through the later consequence."],
+    ["immediate-stop directive without later-consequence stop", "Stop immediately after one look.", "End once B speaks."]
+  ])("does not invent directive/stop conflict for %s", (_name, directiveText, stopText) => {
+    const input = cleanInput();
+    input.generationSession.manual_moment_directive!.must_render = [directiveText];
+    input.generationSession.stop_guidance!.soft_unit_guidance = stopText;
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement);
+  });
+
+  it.each([
+    "This contradicts current state.",
+    "This is not the current state."
+  ])("blocks handoff contradiction marker '%s'", (handoffText) => {
+    expectBlock(DIAGNOSTIC_CODES.handoffCurrentStateContradiction, (input) => {
+      input.generationSession.immediate_handoff!.recent_causal_context = handoffText;
+    });
+  });
+
+  it.each([
+    ["unknown entity location", { entity_id: entityId, life: "alive", agency: "free", location: "unknown" }],
+    ["missing entity id", { life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000333" }],
+    ["missing location", { entity_id: entityId, life: "alive", agency: "free" }]
+  ])("does not treat %s as a second current location", (_name, payload) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      { id: recordB, type: "ENTITY STATUS", payload }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
+  it("does not inspect non-status records for current-location conflicts", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: { entity_id: entityId, life: "alive", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000222")
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
+  it("does not block duplicate entity-status records when they agree on the same current location", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      statusRecord(recordA, entityId, "019b0298-5c00-7000-8000-000000000111"),
+      statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000111")
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.entityCurrentLocationContradiction);
+  });
+
+  it.each([
+    ["owner none", { owner: "none", carried_by: entityId }],
+    ["carrier none", { owner: povId, carried_by: "none" }],
+    ["owner unknown", { owner: "unknown", carried_by: entityId }],
+    ["carrier unknown", { owner: povId, carried_by: "unknown" }],
+    ["same holder", { owner: povId, carried_by: povId }],
+    ["missing owner", { carried_by: entityId }],
+    ["missing carrier", { owner: povId }]
+  ])("does not block object holder state when %s", (_name, payload) => {
+    const input = cleanInput();
+    input.records = [...input.records, { id: recordA, type: "OBJECT", payload }];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
+  });
+
+  it("does not inspect non-object records for owner and carrier conflicts", () => {
+    const input = cleanInput();
+    input.records = [...input.records, { id: recordA, type: "FACT", payload: { owner: povId, carried_by: entityId } }];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
+  });
+
+  it.each([
+    ["dead holder", { life: "dead", agency: "free", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["captive holder", { life: "alive", agency: "captive", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["incapacitated holder", { life: "alive", agency: "incapacitated", location: "019b0298-5c00-7000-8000-000000000111" }],
+    ["offstage holder", { life: "alive", agency: "free", location: "offstage" }]
+  ])("blocks active plan from %s without plausible means", (_name, statusPatch) => {
+    expectBlock(DIAGNOSTIC_CODES.inactivePlanHolder, (input) => {
+      input.records = [
+        ...input.records,
+        {
+          id: recordA,
+          type: "ENTITY STATUS",
+          payload: { entity_id: entityId, ...statusPatch }
+        },
+        {
+          id: recordB,
+          type: "PLAN",
+          payload: {
+            plan_status: "active",
+            holder: entityId,
+            current_step: "Wait.",
+            resources: [],
+            fallback_steps: []
+          }
+        }
+      ];
+    });
+  });
+
+  it.each([
+    ["resources", { resources: ["phone"], fallback_steps: [], current_step: "Wait." }],
+    ["fallback steps", { resources: [], fallback_steps: ["send another person"], current_step: "Wait." }],
+    ["remote current step", { resources: [], fallback_steps: [], current_step: "Send a remote signal." }],
+    ["message current step", { resources: [], fallback_steps: [], current_step: "Send a message." }],
+    ["delegate current step", { resources: [], fallback_steps: [], current_step: "Delegate through a proxy." }]
+  ])("allows inactive active-plan holder when plausible means come from %s", (_name, planPatch) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "alive", agency: "unconscious", location: "019b0298-5c00-7000-8000-000000000111" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          ...planPatch
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it.each([
+    ["non-active plan", { plan_status: "paused", holder: entityId }],
+    ["missing holder", { plan_status: "active" }],
+    ["no selected holder status", { plan_status: "active", holder: entityId }]
+  ])("does not block active-plan holder when %s", (_name, planPayload) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: [],
+          ...planPayload
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("ignores malformed entity-status payloads when indexing active plan holders", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("does not use non-status records as active-plan holder status", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: { entity_id: entityId, life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("does not treat non-plan records with plan-shaped payloads as active plans", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "FACT",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("does not run the secret firewall for omniscient POV", () => {
+    const input = cleanInput();
+    input.generationSession.active_working_set!.selected_pov = "omniscient";
+    input.storyConfig.proseMode!.pov_character = "omniscient";
+    input.records = [...input.records, hiddenKnownSecret()];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("does not run the secret firewall when no effective POV is selected", () => {
+    const input = cleanInput();
+    input.generationSession.active_working_set!.selected_pov = undefined;
+    input.storyConfig.proseMode!.pov_character = "";
+    input.records = [...input.records, hiddenKnownSecret()];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("allows a partly known POV secret that is also protected from fuller reveal", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "partially_revealed",
+          holders: [povId],
+          non_holders_to_protect: [povId],
+          pov_access: "knows_partly",
+          forbidden_reveals: ["Do not state the whole name."],
+          reveal_permission: "clue_only",
+          allowed_surface_cues: ["a chill"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("does not run the secret firewall on non-secret records with secret-shaped payloads", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: [povId],
+          pov_access: "hidden"
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("does not block malformed secret-holder containers as known-by-POV", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: povId,
+          non_holders_to_protect: [povId],
+          pov_access: "hidden"
+        }
+      },
+      {
+        id: recordB,
+        type: "SECRET",
+        payload: {
+          id: recordB,
+          status: "hidden",
+          holders: [entityId],
+          non_holders_to_protect: povId,
+          pov_access: "knows"
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("does not block all-except-holders protection when the selected POV is not modeled as a holder", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [entityId],
+          non_holders_to_protect: "all_except_holders",
+          pov_access: "knows",
+          forbidden_reveals: ["Do not reveal the motive to non-holders."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["a careful pause"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("does not treat all-except-holders protection as hiding a secret from holders", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: "all_except_holders",
+          pov_access: "knows",
+          forbidden_reveals: ["Do not reveal the motive."],
+          reveal_permission: "locked",
+          allowed_surface_cues: ["a careful pause"]
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("treats array payloads as empty objects for blocker payload guards", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      { id: recordA, type: "SECRET", payload: [povId] },
+      { id: recordB, type: "PLAN", payload: [entityId] }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it.each([
+    ["manual may-render lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.may_render_if_naturally_caused = ["Use the accepted segment text."];
+    }],
+    ["manual do-not-force lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.manual_moment_directive!.do_not_force = ["Do not contradict the superseded regeneration."];
+    }],
+    ["stop guidance lane", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the auto-summary resolves.";
+    }]
+  ])("blocks prompt-facing contamination from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.promptFacingProseContamination, mutate);
+  });
+
+  it.each([
+    ["voice pressure", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.current_cast_voice_pressure[0]!.dialogue_pressure = "Demand graphic sex.";
+    }],
+    ["voice preserve lane", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex.";
+      input.generationSession.current_cast_voice_pressure[0]!.current_must_preserve = ["Explicit sex description."];
+    }],
+    ["voice avoid lane", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-explicit and non-graphic.";
+      input.generationSession.current_cast_voice_pressure[0]!.current_must_avoid = ["Do not use graphic gore."];
+    }],
+    ["voice override", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.cast_voice_overrides = [{
+        cast_member_id: castId,
+        reason: "Temporary read.",
+        applies_to: ["dialogue"],
+        override_text: "Push into graphic gore."
+      }];
+    }]
+  ])("blocks content envelope contradiction from %s", (_name, mutate) => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, mutate);
+  });
+
+  it.each([
+    ["non-explicit policy with graphic sex", "Non-explicit only.", "Render graphic sex."],
+    ["no-explicit-sex policy with explicit sex", "No explicit sex.", "Render explicit sex."],
+    ["non-graphic policy with graphic gore", "Non-graphic only.", "Render graphic gore."]
+  ])("blocks content envelope marker pair: %s", (_name, policy, directive) => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, (input) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = policy;
+      input.generationSession.manual_moment_directive!.must_render = [directive];
+    });
+  });
+
+  it("blocks content-envelope pressure when voice lists are omitted", () => {
+    expectBlock(DIAGNOSTIC_CODES.contentEnvelopeContradiction, (input) => {
+      input.storyConfig.universalContentPolicy!.allowed_content_scope = "Non-graphic only.";
+      input.generationSession.current_cast_voice_pressure = [{
+        cast_member_id: castId,
+        current_voice_pressure: "Push into graphic gore.",
+        dialogue_pressure: "none",
+        pov_narration_pressure: "none",
+        nonverbal_or_silence_pressure: "none"
+      } as never];
+    });
+  });
+
+  it("does not block content envelope when policy is absent", () => {
+    const input = cleanInput();
+    delete input.storyConfig.universalContentPolicy;
+    input.generationSession.manual_moment_directive!.must_render = ["Render graphic gore."];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.contentEnvelopeContradiction);
+  });
+
+  it.each([
+    "object_use_possible",
+    "object_transfer_possible",
+    "location_change_possible",
+    "restraint_or_coercion_possible",
+    "intimacy_or_sex_possible",
+    "violence_or_injury_possible"
+  ])("blocks missing physical context for focus tag %s", (focusTag) => {
+    expectBlock(DIAGNOSTIC_CODES.impossibleActionPhysicalContext, (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [focusTag as never];
+      input.generationSession.current_authoritative_state!.available_time = null as never;
+    });
+  });
+
+  it("blocks missing offstage route when the focus tag comes from durable changes", () => {
+    expectBlock(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute, (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [];
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "offstage_interruption_possible" as never
+      ];
+      input.generationSession.current_authoritative_state!.routes_and_exits = undefined as never;
+    });
+  });
+
+  it("blocks when the compiler version source is missing", () => {
+    expectBlock(DIAGNOSTIC_CODES.missingConstitutionalSection, (input) => {
+      input.versions.compiler = "";
+    });
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function expectBlock(code: string, mutate: (input: BuildValidationSnapshotInput) => void): void {
+  const input = cleanInput();
+  mutate(input);
+
+  const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+  expect(diagnostic?.severity).toBe("blocker");
+}
+
+function statusRecord(id: string, entityIdValue: string, location: string) {
+  return {
+    id,
+    type: "ENTITY STATUS",
+    payload: { entity_id: entityIdValue, life: "alive", agency: "free", location }
+  };
+}
+
+function addUnableActivePlan(input: BuildValidationSnapshotInput): void {
+  input.records = [
+    ...input.records,
+    {
+      id: recordA,
+      type: "ENTITY STATUS",
+      payload: { entity_id: entityId, life: "alive", agency: "unconscious", location: "019b0298-5c00-7000-8000-000000000111" }
+    },
+    {
+      id: recordB,
+      type: "PLAN",
+      payload: {
+        plan_status: "active",
+        holder: entityId,
+        current_step: "Wait.",
+        resources: [],
+        fallback_steps: []
+      }
+    }
+  ];
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
