@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds cross-pillar validation→compilation contract tests; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-009, SPEC026MUTDRIROB-012, SPEC026MUTDRIROB-018
+**Deps**: archive/tickets/SPEC026MUTDRIROB-009.md, SPEC026MUTDRIROB-012, SPEC026MUTDRIROB-018
 
 ## Problem
 
@@ -12,7 +12,7 @@ The three pillars can each be internally tight yet still mis-cooperate at their 
 
 ## Assumption Reassessment (2026-06-20)
 
-1. The prose compiler (`compile-prompt.ts`), ideation compiler, and validation engine exist and are individually hardened by SPEC026MUTDRIROB-009 (P1), -012 (P2), -018 (P3) — hence the Deps on those three pillar-completion tickets.
+1. The prose compiler (`compile-prompt.ts`), ideation compiler, and validation engine exist and are individually hardened by archive/tickets/SPEC026MUTDRIROB-009.md (P1), -012 (P2), -018 (P3) — hence the Deps on those three pillar-completion tickets.
 2. SPEC-026 §Deliverables D7 + report §8.8 define the cross-pillar relations (clean-prose-readiness → compiles; blocker → prevents send + not prompt text; warning-only → compilation available + not in prompt; clean ideation-ready → deterministic grounded prompt; compilation never mutates the validated snapshot).
 3. Cross-artifact boundary under audit: this suite crosses the locked pillars **without duplicating server behavior** — it exercises `@loom/core` validation + compilation only, reusing the self-contained snapshot generators from Phase B/D.
 4. FOUNDATIONS principle restated: §8 determinism + §11 fail-closed gating + §10 context firewall — a blocker is not converted to prompt text and a warning never enters the prompt; properties pin the seam without changing production source.

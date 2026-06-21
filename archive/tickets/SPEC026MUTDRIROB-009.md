@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-009: Add P1 metamorphic and contamination properties; run full prose campaign
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds prose-compiler metamorphic + context-firewall property tests and completes the full P1 mutation campaign; no production behavior change.
@@ -77,3 +77,38 @@ Run `npm run mutation:prose` across the entire P1 glob; classify every survivor 
 1. `vitest run packages/core/test/compiler-prose-metamorphic.property.test.ts packages/core/test/compiler-context-firewall.test.ts` — targeted run.
 2. `npm run mutation:prose` — full P1 campaign + survivor classification.
 3. The full-glob mutation campaign is the P1 acceptance boundary; the targeted Vitest run is the fast inner loop.
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+
+- Added `packages/core/test/support/arbitraries/prose-snapshots.ts`, a self-contained prose snapshot generator covering minimal, hard-canon, cast-band, material, and optional-section variants.
+- Added `packages/core/test/compiler-prose-metamorphic.property.test.ts` for whole-prompt permutation invariance, repeatability, deep-freeze purity, and optional-section rendering properties with fixed seeds.
+- Added `packages/core/test/compiler-context-firewall.test.ts` for accepted/rejected/superseded/auto-derived prose and author-private note canaries at the snapshot boundary, plus prompt-facing handoff contamination blockers and schema rejection of automatic-summary/note fields.
+- No new compiler parameter or production behavior was introduced; canaries use the snapshot-build boundary and existing validation/schema paths.
+- The existing prose golden file was not modified.
+
+Full P1 mutation campaign:
+
+- Command: `npm run mutation:prose`.
+- Latest result: completed successfully under the configured Stryker gate; overall score 83.49, covered score 84.63.
+- File totals from `reports/mutation/prose/mutation.json`: sections 177 survived / 15 no coverage; `compile-prompt.ts` 31 survived / 4 no coverage / 3 timeout; `labels.ts` 3 survived; `ordering.ts` 2 survived; `fingerprint.ts` 1 timeout; placeholder, empty-state, and template-constant surfaces stayed at 100%.
+- No unclassified P1 survivors remain. Remaining survivors/timeouts are grouped as already-understood residual classes: section helper-equivalent and malformed-payload branches classified in SPEC026MUTDRIROB-008, compile orchestrator trim/filter/default optional-section mutations with no prompt-byte delta under valid fixtures, scheduler timeouts in fingerprint/compile boolean mutants without observed semantic failure, and ordering/label helper fallback mutations already classified by the earlier P1 tickets.
+- No contamination survivor exposed a real prompt leak. The firewall canaries stayed out of compiled prompts, and prompt-facing contamination remained validation-blocked.
+
+Verification:
+
+- `npx vitest run packages/core/test/compiler-prose-metamorphic.property.test.ts packages/core/test/compiler-context-firewall.test.ts` — passed, 2 files / 9 tests.
+- `npx vitest run packages/core/test/compiler-golden.test.ts` — passed, 1 file / 5 tests.
+- `npm run mutation:prose` — completed; full P1 survivor/timeout set classified above.
+- `npm run lint` — passed.
+- `npm run typecheck` — passed.
+- `npm test` — passed, 142 files / 1091 tests.
+- `npm run build` — passed under escalation because sandboxed build output paths are read-only in this worktree; Vite reported the existing large-chunk warning.
+
+Deviations:
+
+- Full P1 mutation score remains below the future recommended 90 break floor from SPEC-026, but this ticket uses the currently configured advisory gate. Floor activation and ratcheting remain owned by SPEC026MUTDRIROB-022.
+- Snapshot-boundary pins for forbidden sources that cannot reach core directly remain deferred to the S1 snapshot-boundary follow-up named by the ticket; this ticket asserts the core boundary does not ingest out-of-band source arrays or author-private notes.
