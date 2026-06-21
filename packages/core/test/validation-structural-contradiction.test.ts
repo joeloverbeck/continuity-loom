@@ -37,6 +37,20 @@ describe("structural contradiction validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.onstageEntityStatusContradiction);
   });
 
+  it("emits exact diagnostic copy for offstage onstage-entity status", () => {
+    const input = baseInput();
+    input.records = [...input.records, entityStatus({ location: "offstage" })];
+
+    expect(findBlocker(input, DIAGNOSTIC_CODES.onstageEntityStatusContradiction)).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.onstageEntityStatusContradiction,
+      affected: [{ recordId, field: "ENTITY STATUS.location" }],
+      message: "An onstage entity has a selected status placing it offstage or concealed.",
+      whyItMatters: "Onstage participation requires physical continuity that does not contradict the selected entity status.",
+      suggestedActions: ["revise", "remove", "deselect"]
+    });
+  });
+
   it("blocks onstage entity statuses at a different record-id current location", () => {
     const input = baseInput();
     input.records = [...input.records, entityStatus({ location: otherLocationId })];
@@ -69,6 +83,7 @@ describe("structural contradiction validation", () => {
   it.each([
     ["non-status record", record(recordId, "FACT", { entity_id: entityId, location: "offstage" })],
     ["missing entity id", entityStatus({ entity_id: undefined } as never)],
+    ["blank entity id with contradictory location", entityStatus({ entity_id: "", location: "offstage" } as never)],
     ["unselected entity id", entityStatus({ entity_id: otherEntityId } as never)],
     ["missing location", entityStatus({ location: undefined } as never)],
     ["array payload", record(recordId, "ENTITY STATUS", [entityId, "offstage"])]
@@ -130,6 +145,7 @@ describe("structural contradiction validation", () => {
   it.each([
     ["non-relationship record", record(recordId, "FACT", relationshipPayload({ from: entityId, to: entityId }))],
     ["missing from endpoint", record(recordId, "RELATIONSHIP", relationshipPayload({ from: "" }))],
+    ["blank endpoints", record(recordId, "RELATIONSHIP", relationshipPayload({ from: "", to: "" }))],
     ["array payload", record(recordId, "RELATIONSHIP", [entityId, entityId])]
   ])("does not inspect %s as relationship self-reference", (_name, candidate) => {
     const input = baseInput();
