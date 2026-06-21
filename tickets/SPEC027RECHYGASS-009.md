@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds a cross-surface e2e/conformance test surface; no production behavior change (it exercises the pipeline the earlier tickets composed).
-**Deps**: SPEC027RECHYGASS-007
+**Deps**: `archive/tickets/SPEC027RECHYGASS-007.md`
 
 ## Problem
 
@@ -14,7 +14,7 @@ The feature spans `@loom/core`, `@loom/server`, and `@loom/web` plus many docs. 
 
 1. **Upstream surfaces exist (codebase, post-batch).** The capstone exercises — and introduces no new production logic over — the predicate (`archive/tickets/SPEC027RECHYGASS-002.md`), compiler/golden (004), snapshot builder/parser (005), routes (006), and web page (007). Counts are re-enumerated from a fixture at test start rather than hardcoded.
 2. **Spec/doc authority.** `specs/SPEC-027` Deliverable 7 + §Verification (Core / Server / Web / Cross-surface) + source proposal §15. The §Verification bullets are this ticket's acceptance sub-cases.
-3. **Cross-artifact boundary under audit.** The capstone composes the full pipeline (compile → inspect → [manual send] → parse → render) gated on the implementation leaf `SPEC027RECHYGASS-007` (transitive head of the linear chain reaching `archive/tickets/SPEC027RECHYGASS-001.md` through `archive/tickets/SPEC027RECHYGASS-006.md`). The parallel docs leaf (008) is excluded from the gate — the capstone proves *behavior*, which the docs ticket does not carry.
+3. **Cross-artifact boundary under audit.** The capstone composes the full pipeline (compile → inspect → [manual send] → parse → render) gated on the implementation leaf `archive/tickets/SPEC027RECHYGASS-007.md` (transitive head of the linear chain reaching `archive/tickets/SPEC027RECHYGASS-001.md` through `archive/tickets/SPEC027RECHYGASS-006.md`). The parallel docs leaf (008) is excluded from the gate — the capstone proves *behavior*, which the docs ticket does not carry.
 4. **FOUNDATIONS principle motivating this ticket.** §8 deterministic compilation (regression: identical inputs+versions → identical prompts; prose/ideation contracts unchanged) + §22 prompt audit boundaries (no prompts/output persisted by default). These are the regression invariants under audit.
 5. **Determinism + audit conformance (§8/§22) — verify, do not weaken.** Confirm via test that **no** DB migration, persisted hygiene output, run table, or similarity/embedding cache exists; the prose + ideation goldens are unchanged except expected version metadata; accepted prose and author-private notes are excluded from every prompt; active-working-set compilation remains selected-record-only; the readiness/validation diagnostic inventories are unchanged; and existing record archive/delete reference-integrity behavior remains authoritative.
 

@@ -132,6 +132,41 @@ export type IdeateResponse =
   | ApiFailure
   | TransportFailure;
 
+export type RecordHygieneCompileMetadata = CompileResult["metadata"] & {
+  recordCount: number;
+  countsByType: Record<string, number>;
+};
+
+export type RecordHygieneCompileResponse =
+  | {
+      ok: true;
+      prompt: string;
+      metadata: RecordHygieneCompileMetadata;
+      citations: Record<string, string>;
+    }
+  | ApiFailure;
+
+export interface ParsedRecordHygieneFinding {
+  number: number;
+  cluster: string;
+  relation: string;
+  action: string;
+  citations: readonly string[];
+  sharedCore: string;
+  materialDifferences: string;
+  whyItMatters: string;
+  manualRecommendation: string;
+  survivor: string | null;
+  referenceCaution: string;
+  confidence: string;
+}
+
+export type RecordHygieneAnalyzeResponse =
+  | { ok: true; findings: readonly ParsedRecordHygieneFinding[]; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
+  | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
+  | ApiFailure
+  | TransportFailure;
+
 export interface AcceptedSegmentRef {
   id: number;
   sequence: number;
@@ -456,6 +491,18 @@ export async function generate(): Promise<GenerateResponse> {
 
 export async function ideate(request: Partial<IdeationRequest> = {}): Promise<IdeateResponse> {
   return postJson<IdeateResponse>("/api/ideate", request);
+}
+
+export async function recordHygieneCompile(): Promise<RecordHygieneCompileResponse> {
+  return postJson<RecordHygieneCompileResponse>("/api/record-hygiene/compile", {
+    mode: "full_active_atomic_review"
+  });
+}
+
+export async function recordHygieneAnalyze(): Promise<RecordHygieneAnalyzeResponse> {
+  return postJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
+    mode: "full_active_atomic_review"
+  });
 }
 
 export async function acceptCandidate(input: {

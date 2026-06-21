@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-007: Web Record Hygiene page + API client + route
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — new `@loom/web` modules under `packages/web/src/record-hygiene/`, two `api.ts` client functions, and an `AppShell.tsx` menu entry + route. Adds the Record Hygiene page; no change to existing pages.
@@ -87,3 +87,29 @@ Add `{ to:"/record-hygiene", label:"Record Hygiene", requiresProject:true }` and
 1. `npm test -- RecordHygieneView` — targeted page coverage.
 2. `npm run build && npm run typecheck && npm run lint && npm test` — full-pipeline gate.
 3. RTL component tests are the correct boundary for the DOM/handler-absence and sessionStorage invariants; the live OpenRouter `Analyze` round-trip is exercised by the capstone manual runbook (SPEC027RECHYGASS-009).
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Added typed web client functions `recordHygieneCompile()` and `recordHygieneAnalyze()` in `packages/web/src/api.ts`.
+- Added the Record Hygiene page under `packages/web/src/record-hygiene/`, including the prompt/source disclosure surface, explicit OpenRouter confirmation, parsed finding cards, citation navigation, malformed raw-output quarantine, copy controls, and session-only keepers.
+- Added the Record Hygiene navigation entry and project-required route in `packages/web/src/shell/AppShell.tsx`.
+- Added RTL coverage for prompt inspection/copy, source and network disclosures, no mutation-style controls, citation navigation, high-stakes action labels, session keeper lifecycle, malformed output, and AppShell route guarding.
+
+Deviations:
+- `AppShell.tsx` lives at `packages/web/src/shell/AppShell.tsx`; the ticket's `packages/web/src/shell/AppShell.tsx` file list is the correct path and the earlier prose shorthand was stale.
+- The existing Records page already consumes `recordId` from the query string, so no Records-page change was needed for citation deep-linking.
+- Keeper removal is labeled `Unkeep` to avoid exposing a misleading record-mutation action label in this quarantined scratch surface.
+
+Verification:
+- `npm test -- RecordHygieneView` passed: 1 file, 4 tests.
+- `npm test -- AppShell` passed: 1 file, 14 tests.
+- `npm test -- RecordHygieneView AppShell` passed: 2 files, 18 tests.
+- `npm run build` passed.
+- `npm run typecheck` passed.
+- `npm test` passed: 141 files, 1056 tests.
+- `npm run lint --workspace @loom/web` passed.
+- Path-scoped `npx eslint packages/web/src/api.ts packages/web/src/shell/AppShell.tsx packages/web/src/shell/AppShell.test.tsx packages/web/src/record-hygiene/RecordHygieneView.tsx packages/web/src/record-hygiene/RecordHygieneView.test.tsx packages/web/src/record-hygiene/HygieneFindingCard.tsx packages/web/src/record-hygiene/keepers.ts` passed.
+- `npm run lint` did not pass because the pre-existing unrelated `.codex/worktrees/spec026-mutdrirob` checkout is inside the repo and ESLint traversed its generated `dist` files and worktree test files, producing 627 errors. This is unrelated to SPEC027RECHYGASS-007 and was left untouched.
