@@ -34,6 +34,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 | Low-drama / minimalist prose quality | 13, 16 | Guards against generic filler and manufactured incident without fake validators. |
 | Large-context salience / cast dossier bloat | 12, 15, 31, 32 | Warnings, voice pins, and core-first dossier order must preserve salience without compression or repeated warning spam. |
 | False reports and belief truth relations | 10 | Prevents testimony from becoming canon. |
+| Record hygiene assistance | RH-01-RH-20 | Covers complete-source compilation, parser quarantine, citation discipline, no-write UI, OpenRouter disclosure, and stress cases for duplicate/overlap/stale-shadow review. |
 
 ---
 
@@ -1251,3 +1252,169 @@ Expected readiness outcome:
 Prompt-quality risk:
 
 - Relationship pressure becomes ambiguous or nonsensical because the source and target are the same.
+
+---
+
+## Record Hygiene Assistance Stress Cases
+
+These cases are conceptual review cases for the Record Hygiene assistance surface. They are not validation gates and do not add diagnostic codes.
+
+### RH-01 — Exact duplicate active facts
+
+Stress target: two active FACT records have the same statement with different display labels.
+
+Expected hygiene review: exact duplicate relation with a manual consolidation recommendation.
+
+Proof surface: compiler golden includes both records; parser requires two valid citations; UI renders advisory scratch only.
+
+### RH-02 — Near duplicate facts with material scope difference
+
+Stress target: two FACT records share a core claim but differ by `scope`, salience, or audience visibility.
+
+Expected hygiene review: near duplicate or legitimate near match, with material differences called out.
+
+Proof surface: prompt includes both payloads and action labels distinguish `KEEP_DISTINCT` from edit recommendations.
+
+### RH-03 — Belief restates a fact as held knowledge
+
+Stress target: BELIEF claim overlaps an active FACT but remains character-held perspective.
+
+Expected hygiene review: cross-type restatement or legitimate near match, never an automatic merge.
+
+Proof surface: parser rejects cross-type `MERGE`; UI provides no apply control.
+
+### RH-04 — False report versus canon fact
+
+Stress target: BELIEF or EVENT testimony contradicts a FACT while truth relation marks it false or uncertain.
+
+Expected hygiene review: conflict or uncertain relation with human review recommendation.
+
+Proof surface: findings remain non-validation scratch and do not affect readiness.
+
+### RH-05 — Stale active event shadow
+
+Stress target: EVENT current relevance is still active but newer records supersede its stated pressure.
+
+Expected hygiene review: stale shadow relation with deactivate or reword recommendation.
+
+Proof surface: source predicate includes active events and excludes terminal events.
+
+### RH-06 — Complementary fragments split across records
+
+Stress target: two records are not duplicates but each carries half of one durable state.
+
+Expected hygiene review: complementary fragment relation and manual merge or make-specific recommendation.
+
+Proof surface: parser requires a cited survivor for merge/remove actions and quarantines malformed survivor claims.
+
+### RH-07 — Broad and narrow plan overlap
+
+Stress target: one PLAN states a broad objective while another active PLAN states a specific step.
+
+Expected hygiene review: broad-narrow relation, usually keep distinct or make specific.
+
+Proof surface: prompt preserves type order and full labels so the distinction is visible.
+
+### RH-08 — Active plan and intention duplicate motive
+
+Stress target: INTENTION and PLAN repeat the same objective without enough operational difference.
+
+Expected hygiene review: cross-type restatement or partial overlap with no cross-type merge.
+
+Proof surface: parser rejects cross-type merge/remove and UI links citations to records.
+
+### RH-09 — Clock and obligation duplicate deadline pressure
+
+Stress target: CLOCK threshold and OBLIGATION terms both encode the same impending deadline.
+
+Expected hygiene review: partial overlap with manual recommendation to clarify separate functions.
+
+Proof surface: complete-source compilation includes both active pressure records.
+
+### RH-10 — Consequence restates resolved event
+
+Stress target: CONSEQUENCE remains active while its triggering EVENT is resolved or terminal.
+
+Expected hygiene review: stale shadow or broad-narrow relation with reference caution.
+
+Proof surface: hygiene-active predicate excludes terminal source records and includes active consequence records.
+
+### RH-11 — Open thread duplicates obligation
+
+Stress target: OPEN THREAD question and OBLIGATION terms both track the same unresolved promise.
+
+Expected hygiene review: partial overlap or complementary fragment with manual clarification.
+
+Proof surface: counts by type and citations make both record kinds inspectable.
+
+### RH-12 — Location and affordance overlap
+
+Stress target: LOCATION hazards/rules and VISIBLE AFFORDANCE availability repeat the same physical constraint.
+
+Expected hygiene review: cross-type restatement with keep-distinct caution if they serve different prompt lanes.
+
+Proof surface: prompt includes active LOCATION and VISIBLE AFFORDANCE records without ENTITY/CAST payloads.
+
+### RH-13 — Object state and fact duplicate ownership
+
+Stress target: OBJECT holder/owner and FACT statement both assert the same possession state.
+
+Expected hygiene review: cross-type restatement with recommendation to keep the structured OBJECT field authoritative.
+
+Proof surface: UI provides navigation only; durable edits remain manual.
+
+### RH-14 — Secret and belief reveal-boundary overlap
+
+Stress target: SECRET hidden truth and BELIEF held by a non-holder contain overlapping wording.
+
+Expected hygiene review: conflict or legitimate near match depending on holder/protection state.
+
+Proof surface: OpenRouter send disclosure covers hidden SECRET payload leaving the machine only on explicit analyze.
+
+### RH-15 — Relationship and emotion duplicate affect
+
+Stress target: RELATIONSHIP pressure and EMOTION state repeat the same interpersonal tension.
+
+Expected hygiene review: complementary fragment or partial overlap, not a delete recommendation by default.
+
+Proof surface: high-stakes actions carry non-color-only labels and no mutation controls.
+
+### RH-16 — Active record outside working set
+
+Stress target: duplicate candidates exist outside the active working set.
+
+Expected hygiene review: both records appear because Record Hygiene is whole-project, not selected-record scoped.
+
+Proof surface: server builder uses `listRecords({ includeArchived: false })`; page source disclosure states complete active review.
+
+### RH-17 — Archived duplicate excluded
+
+Stress target: an archived record duplicates an active record.
+
+Expected hygiene review: archived duplicate does not enter the prompt.
+
+Proof surface: source predicate and user-facing source disclosure name archived records as excluded.
+
+### RH-18 — Malformed record row
+
+Stress target: one stored row cannot parse into a supported record payload.
+
+Expected hygiene review: route fails closed with malformed hygiene source rather than silently skipping it.
+
+Proof surface: server snapshot-builder tests and route error path.
+
+### RH-19 — Malformed model output
+
+Stress target: OpenRouter returns prose, JSON, unknown citations, missing end marker, or invalid action fields.
+
+Expected hygiene review: raw output is quarantined as non-canonical scratch.
+
+Proof surface: parser tests and UI malformed-output test.
+
+### RH-20 — Oversized project review
+
+Stress target: full active review exceeds known selected model context length.
+
+Expected hygiene review: prompt-too-large response with no record eviction and no retry with fewer records.
+
+Proof surface: route test covers no-eviction fail-fast behavior.

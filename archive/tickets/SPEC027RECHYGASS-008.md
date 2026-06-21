@@ -1,6 +1,6 @@
 # SPEC027RECHYGASS-008: Cross-cutting documentation sync
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Small
 **Engine Changes**: Yes — modifies six documentation surfaces (`docs/ideation-prompt-template.md`, `docs/validation-rule-inventory.md`, `docs/user-guide.md`, `README.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`); no production behavior change.
@@ -89,3 +89,26 @@ Add the Record-hygiene row group mapping each case to its proof surface and the 
 1. `grep -nE "prose-aligned|record hygiene|Record Hygiene" docs/ideation-prompt-template.md docs/user-guide.md README.md` — doctrinal + workflow presence.
 2. `grep -nic "hygiene" docs/stress-suite.md docs/stress-coverage-matrix.md` — stress-case + coverage-row presence (expect the 20-case block and the row group).
 3. Grep-proofs against the post-implementation tree are the correct boundary because this ticket is documentation-only; the behaviors the docs describe are gated by the capstone (SPEC027RECHYGASS-009).
+
+## Outcome
+
+Completed: 2026-06-21
+
+What changed:
+- Reworded `docs/ideation-prompt-template.md` to name ideation as the `prose-aligned` assistance source profile.
+- Added a documentary-only `docs/validation-rule-inventory.md` note that Record Hygiene findings are not validation diagnostics and do not gate operations.
+- Added Record Hygiene workflow guidance to `docs/user-guide.md` and `README.md`, including the explicit OpenRouter disclosure and non-canonical/no-auto-write warning.
+- Added RH-01 through RH-20 Record Hygiene assistance stress cases to `docs/stress-suite.md`.
+- Added the matching Record Hygiene assistance coverage row group to `docs/stress-coverage-matrix.md`.
+
+Deviations:
+- No production code changed.
+- No validation diagnostic code or validation-rule table row was added.
+- The stress cases are conceptual review cases and explicitly do not create gates.
+
+Verification:
+- `grep -nE "prose-aligned|record hygiene|Record Hygiene" docs/ideation-prompt-template.md docs/user-guide.md README.md` returned the reworded ideation opening and workflow sections.
+- `grep -c "compiled from the same authority sources as the prose prompt" docs/ideation-prompt-template.md` returned `0` (grep exited 1 because there was no match).
+- `grep -ni "hygiene" docs/validation-rule-inventory.md` returned only the documentary note.
+- `grep -nic "hygiene" docs/stress-suite.md docs/stress-coverage-matrix.md` returned `docs/stress-suite.md:24` and `docs/stress-coverage-matrix.md:7`.
+- `rg -n "^### RH-|^\\| RH-" docs/stress-suite.md docs/stress-coverage-matrix.md` returned RH-01 through RH-20 in both files.

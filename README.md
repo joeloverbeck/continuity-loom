@@ -4,6 +4,8 @@ Track story record continuity, generate deterministic prompts, and handle story 
 
 Continuity Loom runs as a local-first web app: a Node process serves a React UI and a localhost-only API. There is no account, login, or cloud service — your data stays on your machine.
 
+Core capabilities include deterministic prompt preview, OpenRouter-assisted generation and ideation, local accepted-segment handling, private notes that stay out of prompts, and Record Hygiene review for overlapping active story records.
+
 ## Prerequisites
 
 - **Node.js ≥ 24.** The version is pinned in `.nvmrc`; with [nvm](https://github.com/nvm-sh/nvm) run `nvm use` in the repo root. npm ships with Node.
@@ -61,3 +63,9 @@ These four checks also run on every push to `main` and every pull request via Gi
 ## Networking
 
 Every server — dev, API, and production launch — binds to `127.0.0.1` (localhost) only. The app is never exposed to your LAN.
+
+## Record Hygiene
+
+Record Hygiene is a project-required menu view for reviewing overlap, stale shadows, and consolidation candidates across non-archived hygiene-active atomic records. Compile and inspect the prompt locally first; the OpenRouter send requires an explicit confirmation because the active record payload, including hidden SECRET content, leaves the machine for that request.
+
+Record Hygiene findings are non-canonical scratch. The page has no apply, merge, delete, deactivate, archive, accept, fix-all, working-set, brief-insertion, or use-as-prose action. Use citation links to open records and make any durable edits yourself.

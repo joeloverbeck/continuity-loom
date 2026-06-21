@@ -7,6 +7,8 @@ This inventory lists every value in `DIAGNOSTIC_CODES` from `packages/core/src/v
 
 Same-change rule: adding, removing, or re-severitying a diagnostic code must update this inventory in the same revision. The drift test in `packages/core/test/validation-rule-inventory.test.ts` checks the rule ID set and severity column.
 
+Record hygiene findings are non-deterministic advisory assistance output, not validation diagnostics. They do not appear in `DIAGNOSTIC_CODES`, do not add rule IDs to this inventory, and do not gate save, preview, generate, accept, archive, or record editing operations.
+
 FOUNDATIONS §11 taxonomy clauses used below:
 
 1. Compiler cannot produce a structurally valid universal prompt.

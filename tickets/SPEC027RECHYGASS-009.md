@@ -44,7 +44,7 @@ Implementer checklist: (a) copy a demo/fixture project to a disposable location;
 ## Out of Scope
 
 - Any production logic or modification of upstream tickets' files (the capstone exercises, it does not change them).
-- The trailing docs sync (SPEC027RECHYGASS-008) — a parallel leaf, not gated here.
+- The trailing docs sync (`archive/tickets/SPEC027RECHYGASS-008.md`) — a parallel leaf, not gated here.
 
 ## Acceptance Criteria
 
