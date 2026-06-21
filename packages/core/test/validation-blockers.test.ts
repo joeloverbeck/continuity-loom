@@ -519,6 +519,81 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.promptFacingProseContamination);
   });
 
+  it("emits the continuation-context contamination diagnostic alongside prompt-facing field contamination", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
+    input.generationSession.immediate_handoff!.last_visible_moment = "Copied accepted prose: she opened the door.";
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find(
+      (item) => item.message === "Continuation handoff contains accepted/candidate prose contamination instead of user-authored state."
+    );
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      affected: [{ field: "generationSession.immediate_handoff" }],
+      message: "Continuation handoff contains accepted/candidate prose contamination instead of user-authored state.",
+      whyItMatters: "Continuation handoff may refer to user-authored durable state, but it must not paste candidate or accepted prose into prompt inputs.",
+      suggestedActions: ["revise"]
+    });
+  });
+
+  it.each([
+    ["generation context", "generation_context"],
+    ["expected local mode", "expected_local_modes"],
+    ["possible durable change", "possible_durable_changes"]
+  ] as const)("reads offstage-interruption focus tags from %s", (_name, tagField) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags = {
+      generation_context: [],
+      expected_local_modes: [],
+      possible_durable_changes: [],
+      [tagField]: ["offstage_interruption_possible"]
+    };
+    input.generationSession.current_authoritative_state!.routes_and_exits = [];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute);
+  });
+
+  it("accepts non-array, non-string route values as present offstage context", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+    input.generationSession.current_authoritative_state!.offstage_pressuring_entities = ["radio"];
+    input.generationSession.current_authoritative_state!.routes_and_exits = { route: "speaker" } as unknown as string[];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.offstageInterruptionMissingRoute);
+  });
+
+  type FocusTags = NonNullable<
+    NonNullable<BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]>["validation_focus_tags"]
+  >;
+  type ExpectedLocalMode = NonNullable<FocusTags["expected_local_modes"]>[number];
+  type PossibleDurableChange = NonNullable<FocusTags["possible_durable_changes"]>[number];
+  const physicalActionTagRows = [
+    ["expected_local_modes", "physical_interaction_expected"],
+    ["possible_durable_changes", "object_use_possible"],
+    ["possible_durable_changes", "object_transfer_possible"],
+    ["possible_durable_changes", "location_change_possible"],
+    ["possible_durable_changes", "restraint_or_coercion_possible"],
+    ["possible_durable_changes", "intimacy_or_sex_possible"],
+    ["possible_durable_changes", "violence_or_injury_possible"]
+  ] satisfies readonly (
+    | readonly ["expected_local_modes", ExpectedLocalMode]
+    | readonly ["possible_durable_changes", PossibleDurableChange]
+  )[];
+
+  it.each(physicalActionTagRows)("requires physical context for %s.%s", (field, tag) => {
+    const input = cleanInput();
+    if (field === "expected_local_modes") {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [tag];
+    } else {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [tag];
+    }
+    input.generationSession.current_authoritative_state!.consent_or_force_conditions = "";
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.impossibleActionPhysicalContext);
+  });
+
   it.each([
     ["stop-immediately directive versus continuing stop guidance", (input: BuildValidationSnapshotInput) => {
       input.generationSession.manual_moment_directive!.must_render = ["Stop immediately after one look."];
