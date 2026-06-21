@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-012: Mutation-tighten P2 citation keys and ideation rendering; run full ideation campaign
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds citation-key bijection properties + exact request-field rendering assertions and completes the full P2 mutation campaign; no production behavior change.
@@ -78,3 +78,23 @@ Run `npm run mutation:ideation` across the full P2 glob; classify every survivor
 1. `vitest run packages/core/test/ideation-citation-keys.property.test.ts packages/core/test/ideation-request-rendering.test.ts` — targeted run.
 2. `npm run mutation:ideation` — full P2 campaign + survivor classification.
 3. The full-glob mutation campaign is the P2 acceptance boundary; the targeted Vitest run is the fast inner loop.
+
+## Outcome
+
+Completed 2026-06-21. Added `packages/core/test/ideation-citation-keys.property.test.ts`, `packages/core/test/ideation-request-rendering.test.ts`, and `packages/core/test/support/arbitraries/ideation-slates.ts`; extended `packages/core/test/support/arbitraries/ideation-records.ts` to support explicit test labels.
+
+The new tests pin citation-key one-to-one mapping, uniqueness, contiguous per-type ordinals, type/full-label/id ordering, storage-order permutation invariance, slot-ground key resolvability, direct single-record `citationKey` behavior, avoid-list trimming, exact ideation slot rendering, empty-slot rendering, and absence of prose-only continuation sections in ideation prompts. The existing ideation golden file was not modified.
+
+Verification:
+
+1. `npx vitest run packages/core/test/ideation-citation-keys.property.test.ts packages/core/test/ideation-request-rendering.test.ts` — passed, 10 tests.
+2. `npm run mutation:ideation -- --force` — full P2 campaign completed at 95.88 overall mutation score / 98.41 covered score: 186 killed, 84 compile-error mutants, 3 survived, 5 no-coverage, 0 timeout. `citation-keys.ts`, `operators.ts`, `types.ts`, and `sections/ideation.ts` each reported 100.00 mutation score.
+   - Classified survivors: `slot-assignment.ts` line 25 `slots.length < request.count` changed to `true` / `<=` is equivalent under the current schema because `dormantSlot: true` computes `nonDormantTarget` as `count - 1`, so the dormant branch can only be reached while `slots.length < count`; line 48 `operator.id === "reveal"` changed to `true` is equivalent because the reveal branch falls back to all matching records when no revealable record exists, making non-reveal operators byte-identical.
+   - Classified no-coverage: `slot-assignment.ts` line 74 nullish fallback is unreachable because `REINCORPORATE_DORMANT_OPERATOR` is a module constant present in this build; line 90 citation fallback is unreachable because `citationKeysFor(records)` is built from the same records passed to `toSlot`; line 100 missing-`updatedAt` fallbacks are unreachable after `dormantTargetRecords` filters for string `metadata.updatedAt`.
+3. `git status --short packages/core/test/golden-ideation.prompt.txt packages/core/test/compiler-ideation-golden.test.ts` — no output; the ideation golden and its existing test were unchanged.
+4. `npm run lint` — passed.
+5. `npm run typecheck` — passed.
+6. `npm test` — passed, 146 files / 1138 tests.
+7. `npm run build` — passed under escalation due prior sandbox write restrictions; Vite emitted the existing chunk-size warning.
+
+No browser smoke was run because this ticket changes only core test coverage and self-contained test arbitraries.

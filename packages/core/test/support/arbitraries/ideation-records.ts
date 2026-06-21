@@ -57,9 +57,9 @@ export function recordsForPresence(vector: IdeationPresenceVector): ValidationRe
 export function ideationRecord(
   type: IdeationRecordType,
   id: string,
-  options: { revealable?: boolean | "directive_required"; updatedAt?: string } = {}
+  options: { label?: string; revealable?: boolean | "directive_required"; updatedAt?: string } = {}
 ): ValidationRecord {
-  const label = `${type} ${id}`;
+  const label = options.label ?? `${type} ${id}`;
 
   return {
     id,
