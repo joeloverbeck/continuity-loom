@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — adds cross-pillar validation→compilation contract tests; no production behavior change.
-**Deps**: archive/tickets/SPEC026MUTDRIROB-009.md, archive/tickets/SPEC026MUTDRIROB-012.md, SPEC026MUTDRIROB-018
+**Deps**: archive/tickets/SPEC026MUTDRIROB-009.md, archive/tickets/SPEC026MUTDRIROB-012.md, archive/tickets/SPEC026MUTDRIROB-018.md
 
 ## Problem
 

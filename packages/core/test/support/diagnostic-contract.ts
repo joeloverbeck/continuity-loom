@@ -67,27 +67,36 @@ const matrixIds = Object.freeze({
   secret: "019b0298-5c00-7000-8000-000000000219",
   belief: "019b0298-5c00-7000-8000-000000000220",
   emotion: "019b0298-5c00-7000-8000-000000000221",
-  plan: "019b0298-5c00-7000-8000-000000000222"
+  plan: "019b0298-5c00-7000-8000-000000000222",
+  dangling: "019b0298-5c00-7000-8000-000000000223"
 });
 
 export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.activeCastIncomplete,
   DIAGNOSTIC_CODES.activePhysicalContextIncomplete,
   DIAGNOSTIC_CODES.activeSecretIncomplete,
+  DIAGNOSTIC_CODES.apiKeyLikePromptFacingText,
+  DIAGNOSTIC_CODES.castBandDuplicateMembership,
+  DIAGNOSTIC_CODES.castBandReferenceInvalid,
+  DIAGNOSTIC_CODES.castSalienceRisk,
   DIAGNOSTIC_CODES.contentEnvelopeContradiction,
   DIAGNOSTIC_CODES.currentLocationReferenceInvalid,
   DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement,
   DIAGNOSTIC_CODES.entityCurrentLocationContradiction,
   DIAGNOSTIC_CODES.entityStatusesReferenceInvalid,
+  DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional,
+  DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk,
   DIAGNOSTIC_CODES.focusTagCountInvalid,
   DIAGNOSTIC_CODES.handoffCurrentStateContradiction,
   DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge,
   DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
   DIAGNOSTIC_CODES.inactivePlanHolder,
   DIAGNOSTIC_CODES.localProseScopeViolation,
-  DIAGNOSTIC_CODES.matrixClockTickIncomplete,
+  DIAGNOSTIC_CODES.localVoicePressureMayHelp,
+  DIAGNOSTIC_CODES.lowDramaScenePressure,
   DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete,
   DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete,
+  DIAGNOSTIC_CODES.matrixClockTickIncomplete,
   DIAGNOSTIC_CODES.matrixDialogueIncomplete,
   DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete,
   DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete,
@@ -105,25 +114,39 @@ export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete,
   DIAGNOSTIC_CODES.matrixSecretClueIncomplete,
   DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete,
+  DIAGNOSTIC_CODES.manyHighSalienceRecords,
   DIAGNOSTIC_CODES.missingConstitutionalSection,
   DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
   DIAGNOSTIC_CODES.missingImmediateHandoff,
   DIAGNOSTIC_CODES.missingManualDirective,
   DIAGNOSTIC_CODES.missingStoryConfig,
+  DIAGNOSTIC_CODES.noActiveClockPressure,
+  DIAGNOSTIC_CODES.noSampleUtterances,
   DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
   DIAGNOSTIC_CODES.objectLocationHolderIncoherence,
+  DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional,
   DIAGNOSTIC_CODES.offstageEntityReferenceInvalid,
   DIAGNOSTIC_CODES.offstageInterruptionMissingRoute,
+  DIAGNOSTIC_CODES.onstageCastBandMissing,
   DIAGNOSTIC_CODES.onstageEntityReferenceInvalid,
   DIAGNOSTIC_CODES.onstageEntityStatusContradiction,
   DIAGNOSTIC_CODES.onstageOffstageEntityOverlap,
   DIAGNOSTIC_CODES.povKnowledgeMissing,
   DIAGNOSTIC_CODES.promptFacingProseContamination,
+  DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
   DIAGNOSTIC_CODES.recordReferenceDangling,
   DIAGNOSTIC_CODES.recordReferenceTypeMismatch,
   DIAGNOSTIC_CODES.recordReferenceUnselectedRequired,
+  DIAGNOSTIC_CODES.recordReferenceUnselectedOptional,
   DIAGNOSTIC_CODES.relationshipSelfReference,
-  DIAGNOSTIC_CODES.secretRevealContradiction
+  DIAGNOSTIC_CODES.secretRevealContradiction,
+  DIAGNOSTIC_CODES.selectedPovConflictsWithProseMode,
+  DIAGNOSTIC_CODES.selectedPovReferenceInvalid,
+  DIAGNOSTIC_CODES.selectedPovRequiredForVariableMode,
+  DIAGNOSTIC_CODES.sparseSettingTexture,
+  DIAGNOSTIC_CODES.staleSelectedRecord,
+  DIAGNOSTIC_CODES.voicePressureAttachmentInvalid,
+  DIAGNOSTIC_CODES.voicePressureOrphanedAttachment
 ] as const;
 
 const coveredContracts = [
@@ -769,20 +792,281 @@ const coveredContracts = [
       );
     },
     expectedAffected: [{ field: "generationSession.active_working_set.present_minor_cast_compressed" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.apiKeyLikePromptFacingText,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.manual_moment_directive = {
+        must_render: ["Remove sk-or-v1-abcdefghijklmnopqrstuvwxyz123456 before generation."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      };
+    },
+    expectedAffected: [{ field: "generationSession.manual_moment_directive.must_render[0]" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.castBandDuplicateMembership,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.active_working_set!.present_minor_cast_compressed = [matrixIds.cast];
+    },
+    expectedAffected: [{ field: "generationSession.active_working_set" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.castBandReferenceInvalid,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.active_working_set!.active_onstage_cast_full = [
+        { cast_member_id: matrixIds.dangling, local_function: "active_speaker" }
+      ];
+    },
+    expectedAffected: [{ field: "generationSession.active_working_set.active_onstage_cast_full" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.selectedPovReferenceInvalid,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.active_working_set!.selected_pov = matrixIds.dangling;
+    },
+    expectedAffected: [{ field: "generationSession.active_working_set.selected_pov" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.selectedPovRequiredForVariableMode,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      delete input.generationSession.active_working_set!.selected_pov;
+    },
+    expectedAffected: [{ field: "generationSession.active_working_set.selected_pov" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.selectedPovConflictsWithProseMode,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.storyConfig.proseMode!.pov_character = matrixIds.castB;
+    },
+    expectedAffected: [{ field: "generationSession.active_working_set.selected_pov" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.voicePressureAttachmentInvalid,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.current_cast_voice_pressure = [matrixPressure(matrixIds.dangling, "x", "x", "none")];
+    },
+    expectedAffected: [{ field: "generationSession.current_cast_voice_pressure" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.onstageCastBandMissing,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: onstageBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = input.records.map((record) =>
+        record.id === matrixIds.cast ? withoutCastBand(record) : record
+      );
+    },
+    expectedAffected: [{ recordId: matrixIds.cast, field: "generationSession.active_working_set" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.promptMiddleSalienceRisk,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = [simpleRecord("big", "FACT", { statement: "x".repeat(6000) })];
+    },
+    expectedAffected: [{ field: "records" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.manyHighSalienceRecords,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = Array.from({ length: 7 }, (_, index) => simpleRecord(`high-${index}`, "FACT", { salience: "critical" }));
+    },
+    expectedAffected: [{ field: "records" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.noSampleUtterances,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = [simpleRecord(matrixIds.cast, "CAST MEMBER", { voice_anchor: {}, identity: {} }, "active_onstage_cast_full")];
+    },
+    expectedAffected: [{ field: "CAST MEMBER.sample_utterances" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.sparseSettingTexture,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = input.records.filter((record) => record.type !== "LOCATION");
+      input.generationSession.current_authoritative_state = {
+        ...minimalCurrentState(),
+        environmental_conditions: "Bare."
+      };
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.environmental_conditions" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.noActiveClockPressure,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = input.records.filter((record) => !["CLOCK", "OBLIGATION", "OPEN THREAD"].includes(record.type));
+      input.generationSession.manual_moment_directive = {
+        must_render: ["Ask for the key."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      };
+    },
+    expectedAffected: [{ field: "records" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.localVoicePressureMayHelp,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: warningVoiceBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.current_cast_voice_pressure = [];
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
+    },
+    expectedAffected: [{ field: "generationSession.current_cast_voice_pressure" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.ensembleVoiceDistinctionRisk,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: warningVoiceBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["ensemble_dialogue_expected"];
+      input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
+        entry.cast_member_id === matrixIds.cast || entry.cast_member_id === matrixIds.castB
+          ? { ...entry, current_voice_pressure: "same" }
+          : entry
+      );
+    },
+    expectedAffected: [{ field: "generationSession.current_cast_voice_pressure" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.castSalienceRisk,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = [simpleRecord(matrixIds.cast, "CAST MEMBER", { biography: "x".repeat(1300) })];
+    },
+    expectedAffected: [{ field: "generationSession.current_cast_voice_pressure" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.lowDramaScenePressure,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = input.records.filter((record) => !["CLOCK", "OBLIGATION", "OPEN THREAD", "SECRET", "RELATIONSHIP", "EMOTION"].includes(record.type));
+      input.generationSession.manual_moment_directive = {
+        must_render: ["Pause."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      };
+    },
+    expectedAffected: [{ field: "generationSession.manual_moment_directive.must_render" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.staleSelectedRecord,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: minimalBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = [simpleRecord("old", "EVENT", { status: "resolved" })];
+    },
+    expectedAffected: [{ field: "record:old" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: referenceBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [auxIds.unselectedEntity];
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.offstage_pressuring_entities" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.entityStatusesReferenceUnselectedOptional,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: referenceBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.current_authoritative_state!.entity_statuses = [auxIds.unselectedStatus];
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.entity_statuses" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.voicePressureOrphanedAttachment,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: castBandBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.current_cast_voice_pressure = [matrixPressure(matrixIds.castB, "x", "x", "none")];
+    },
+    expectedAffected: [{ field: "generationSession.current_cast_voice_pressure" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.recordReferenceUnselectedOptional,
+    severity: "warning",
+    promptKinds: "applies",
+    buildValidBaseline: referenceBaseline,
+    introduceMinimalDefect: (input) => {
+      input.records = [...input.records, relationshipRecord({ from: auxIds.unselectedEntity, to: validationIds.entity })];
+    },
+    expectedAffected: [{ field: "RELATIONSHIP.from" }]
   })
 ] as const satisfies readonly RunnableDiagnosticContract[];
 
 export const diagnosticContractRegistry: ReadonlyMap<string, DiagnosticContract> = new Map(
   Object.values(DIAGNOSTIC_CODES).map((code) => {
     const covered = coveredContracts.find((contract) => contract.code === code);
-    return [
-      code,
+    if (code === DIAGNOSTIC_CODES.castMissingCoreDossier) {
+      return [
+        code,
+        {
+          status: "deferred",
+          code,
+          reason:
+            "Reserved taxonomy/UI fixture code; validation-rule-inventory.test.ts documents it is not emitted by the current validation rule registry."
+        }
+      ] as const satisfies readonly [string, DiagnosticContract];
+    }
+    const contract: DiagnosticContract =
       covered ?? {
         status: "deferred",
         code,
         reason: "Deferred to later SPEC026MUTDRIROB P3 family contract ticket."
-      }
-    ];
+      };
+    return [
+      code,
+      contract
+    ] as const satisfies readonly [string, DiagnosticContract];
   })
 );
 
@@ -808,6 +1092,114 @@ function restoreFrom(buildValidBaseline: () => BuildValidationSnapshotInput): (i
   return (input) => {
     Object.assign(input, buildValidBaseline());
   };
+}
+
+function minimalBaseline(): BuildValidationSnapshotInput {
+  const input = cleanValidationInput();
+  input.records = input.records.map((record) =>
+    record.id === validationIds.cast
+      ? {
+          ...record,
+          payload: {
+            ...(record.payload as Record<string, unknown>),
+            sample_utterances: ["I heard it turn."]
+          }
+        }
+      : record
+  );
+  input.records = [
+    ...input.records,
+    locationRecord(auxIds.location),
+    {
+      id: matrixIds.clock,
+      type: "CLOCK",
+      payload: {
+        id: matrixIds.clock,
+        status: "active",
+        current_pressure: "The alarm is close.",
+        tick_trigger: "Door opens.",
+        next_threshold: "Alarm sounds.",
+        possible_effects: ["guards arrive"]
+      }
+    }
+  ];
+  return input;
+}
+
+function minimalCurrentState(): NonNullable<BuildValidationSnapshotInput["generationSession"]["current_authoritative_state"]> {
+  return {
+    current_time: "Night.",
+    current_location: "Warehouse.",
+    onstage_entities: [],
+    immediate_situation_summary: "The room is quiet before the next beat.",
+    offstage_pressuring_entities: [],
+    positions: "No one has moved yet.",
+    possessions: "Nothing changes hands.",
+    visible_conditions: ["dim"],
+    environmental_conditions: "Rain outside the warehouse.",
+    entity_statuses: "No status changes.",
+    line_of_sight_and_visibility: "The room is visible.",
+    routes_and_exits: ["loading door"],
+    available_time: "A few seconds.",
+    consent_or_force_conditions: "none",
+    current_locks: []
+  };
+}
+
+function castBandBaseline(): BuildValidationSnapshotInput {
+  const input = cleanValidationInput();
+  input.records = [
+    entityRecord(matrixIds.entity),
+    matrixCastRecord(matrixIds.cast, matrixIds.entity, "active_speaker"),
+    matrixCastRecord(matrixIds.castB, matrixIds.entity, "active_speaker"),
+    factRecord(matrixIds.fact)
+  ];
+  input.generationSession = matrixGenerationSession({
+    selectedRecords: [matrixIds.entity, matrixIds.cast, matrixIds.castB, matrixIds.fact],
+    activeCast: [{ cast_member_id: matrixIds.cast, local_function: "active_speaker" }],
+    onstageEntities: [matrixIds.entity],
+    currentLocks: ["A remains visible in the warehouse."],
+    currentCastVoicePressure: [matrixPressure(matrixIds.cast, "A is clipped.", "A asks directly.", "none")]
+  });
+  input.generationSession.active_working_set!.selected_pov = matrixIds.entity;
+  input.storyConfig = matrixStoryConfig();
+  input.storyConfig.proseMode!.pov_character = "variable";
+  return input;
+}
+
+function onstageBandBaseline(): BuildValidationSnapshotInput {
+  return castBandBaseline();
+}
+
+function warningVoiceBaseline(): BuildValidationSnapshotInput {
+  const input = voiceMatrixBaseline();
+  input.generationSession.active_working_set!.active_onstage_cast_full = input.generationSession.active_working_set!.active_onstage_cast_full.map(
+    (entry) => ({ ...entry, local_function: "active_speaker" })
+  );
+  return input;
+}
+
+function simpleRecord(
+  id: string,
+  type: string,
+  payload: Record<string, unknown>,
+  castBand?: ValidationRecord["castBand"]
+): ValidationRecord {
+  const record: ValidationRecord = {
+    id,
+    type,
+    payload: { id, ...payload }
+  };
+  if (castBand) {
+    record.castBand = castBand;
+  }
+  return record;
+}
+
+function withoutCastBand(record: ValidationRecord): ValidationRecord {
+  const copy: ValidationRecord = { ...record };
+  delete copy.castBand;
+  return copy;
 }
 
 function referenceBaseline(): BuildValidationSnapshotInput {

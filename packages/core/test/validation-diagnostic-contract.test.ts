@@ -67,13 +67,21 @@ function expectReadinessApplicability(contract: RunnableDiagnosticContract, diag
   const validation = validationResultFor(diagnostic);
   const proseReadiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map(), "prose");
   const ideationReadiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map(), "ideation");
+  const proseItems = contract.severity === "blocker" ? proseReadiness.blockers : proseReadiness.warnings;
+  const ideationItems = contract.severity === "blocker" ? ideationReadiness.blockers : ideationReadiness.warnings;
 
-  expect(proseReadiness.blockers.map((item) => item.technical.legacyCode)).toContain(contract.code);
+  expect(proseItems.map((item) => item.technical.legacyCode)).toContain(contract.code);
+
+  if (contract.severity === "warning") {
+    expect(proseReadiness.canPreview).toBe(true);
+    expect(proseReadiness.canGenerate).toBe(true);
+    expect(proseReadiness.status).toBe("ready-with-warnings");
+  }
 
   if (contract.promptKinds === "applies") {
-    expect(ideationReadiness.blockers.map((item) => item.technical.legacyCode)).toContain(contract.code);
+    expect(ideationItems.map((item) => item.technical.legacyCode)).toContain(contract.code);
   } else {
-    expect(ideationReadiness.blockers.map((item) => item.technical.legacyCode)).not.toContain(contract.code);
+    expect(ideationItems.map((item) => item.technical.legacyCode)).not.toContain(contract.code);
   }
 }
 

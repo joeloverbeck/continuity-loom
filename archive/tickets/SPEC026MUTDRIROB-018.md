@@ -1,10 +1,26 @@
 # SPEC026MUTDRIROB-018: Add security, warning, and remaining taxonomy contracts; run full validation campaign
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — extends the diagnostic contract registry with the security/warning/remaining families and completes the full P3 mutation campaign; no production behavior change.
 **Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-013.md, archive/tickets/SPEC026MUTDRIROB-014.md, archive/tickets/SPEC026MUTDRIROB-015.md, archive/tickets/SPEC026MUTDRIROB-016.md, archive/tickets/SPEC026MUTDRIROB-017.md
+
+## Outcome
+
+- Extended the diagnostic contract harness with the security, warning, cast-band, onstage-band, and remaining emitted validation taxonomy cases. Warning contracts now assert warning severity plus non-gating `ready-with-warnings` readiness behavior.
+- Kept `castMissingCoreDossier` as an explicit reserved/non-emitted registry classification, matching `validation-rule-inventory.test.ts` rather than forcing a synthetic runnable case.
+- Full validation mutation campaign completed with Stryker exit 0 and reviewed baseline score `62.71%` total / `64.18%` covered across the P3 validation glob: `1622` killed, `130` timed out, `978` survived, `64` no coverage, `1323` compile/error mutants. Report: `reports/mutation/validation/mutation.json`.
+- No browser smoke was run; this ticket only changes core validation test contracts and mutation evidence.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-diagnostic-contract.test.ts` (77 tests passed)
+- `npm run mutation:validation -- --force` (full P3 campaign passed; score/counts above)
+- `npm run lint` (passed)
+- `npm run typecheck` (passed)
+- `npm test` (149 files, 1227 tests passed)
+- `npm run build` (passed)
 
 ## Problem
 
