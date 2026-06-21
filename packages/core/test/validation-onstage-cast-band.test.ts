@@ -90,7 +90,7 @@ describe("onstage cast-band validation", () => {
       record.id === castId
         ? {
             ...record,
-            payload: payload as never
+            payload
           }
         : record
     );

@@ -162,13 +162,9 @@ describe("record-internal reference validation", () => {
 
     const snapshot = buildValidationSnapshot(input);
 
-    expect(recordInternalReferences(snapshot)).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          sourceRecord: expect.objectContaining({ id: sourceId })
-        })
-      ])
-    );
+    expect(
+      recordInternalReferences(snapshot).some(({ sourceRecord }) => sourceRecord.id === sourceId)
+    ).toBe(false);
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.recordReferenceDangling);
   });
 

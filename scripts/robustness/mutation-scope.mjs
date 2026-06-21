@@ -28,8 +28,8 @@ export function classifyChangedPaths(paths, options = {}) {
 
   if (normalizedPaths.some(isFullCampaignTrigger)) {
     return {
-      status: "in-scope",
-      reason: "robustness-infrastructure-change",
+      status: "full-campaign-deferred",
+      reason: "robustness-infrastructure-change requires scheduled/manual full mutation",
       changedPaths: normalizedPaths,
       campaigns: Object.keys(PILLARS).map((pillar) => campaignPlan(pillar, [], cacheExists))
     };
@@ -186,6 +186,14 @@ function printPlan(plan, json) {
   }
 
   console.log(`mutation-changed: ${plan.reason}`);
+  if (plan.status === "full-campaign-deferred") {
+    for (const campaign of plan.campaigns) {
+      const cache = campaign.cacheHit ? "cache hit" : "cache miss";
+      console.log(`- ${campaign.pillar}: full campaign deferred to scheduled/manual robustness workflow (${cache})`);
+    }
+    return;
+  }
+
   for (const campaign of plan.campaigns) {
     const scope = campaign.mutate.length === 0 ? "full campaign" : campaign.mutate.join(", ");
     const cache = campaign.cacheHit ? "cache hit" : "cache miss; forced fallback";
@@ -216,7 +224,7 @@ async function main() {
 
   printPlan(plan, args.json);
 
-  if (args.dry || plan.status === "out-of-scope") {
+  if (args.dry || plan.status === "out-of-scope" || plan.status === "full-campaign-deferred") {
     return;
   }
 

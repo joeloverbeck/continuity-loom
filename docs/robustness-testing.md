@@ -92,7 +92,9 @@ must still be mutation-gated:
 
 - changed P1/P2/P3 source forces mutation of each changed source file;
 - Stryker, Vitest, TypeScript, package manifest, lockfile, robustness script, or
-  test-support generator changes force all three pillar campaigns;
+  test-support generator changes are full-campaign triggers, but the PR
+  changed-file job reports and defers those full campaigns to the scheduled or
+  manual robustness workflow instead of running them inline;
 - cache misses fall back to real forced-scope mutation work, never a skipped
   status;
 - out-of-scope changes report an explicit no-op status.
@@ -102,7 +104,9 @@ must still be mutation-gated:
 PR cadence:
 
 - run lint, typecheck, default tests, build, scoped coverage, and changed-file
-  mutation when in scope;
+  mutation when changed locked-pillar source is in scope;
+- for full-campaign triggers, the PR job must finish quickly with an explicit
+  deferred-full-campaign status rather than occupying ordinary PR latency;
 - keep the full mutation matrix out of ordinary PR latency.
 
 Scheduled/manual cadence:

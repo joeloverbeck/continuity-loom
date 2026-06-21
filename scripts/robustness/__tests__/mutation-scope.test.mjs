@@ -32,7 +32,7 @@ test("maps changed pillar source files to forced mutate targets", () => {
   );
 });
 
-test("forces all campaigns for robustness infrastructure changes", () => {
+test("defers full campaigns for robustness infrastructure changes in changed-file scope", () => {
   const plan = classifyChangedPaths(
     [
       "package-lock.json",
@@ -42,8 +42,8 @@ test("forces all campaigns for robustness infrastructure changes", () => {
     { cacheExists: cacheHit }
   );
 
-  assert.equal(plan.status, "in-scope");
-  assert.equal(plan.reason, "robustness-infrastructure-change");
+  assert.equal(plan.status, "full-campaign-deferred");
+  assert.equal(plan.reason, "robustness-infrastructure-change requires scheduled/manual full mutation");
   assert.deepEqual(
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.mutate]),
     [
