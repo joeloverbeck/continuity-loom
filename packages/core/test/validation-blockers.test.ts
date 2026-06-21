@@ -762,6 +762,56 @@ describe("universal blocker validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
   });
 
+  it("does not use non-status records as active-plan holder status", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: { entity_id: entityId, life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "PLAN",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
+  it("does not treat non-plan records with plan-shaped payloads as active plans", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "ENTITY STATUS",
+        payload: { entity_id: entityId, life: "dead", agency: "unconscious", location: "offstage" }
+      },
+      {
+        id: recordB,
+        type: "FACT",
+        payload: {
+          plan_status: "active",
+          holder: entityId,
+          current_step: "Wait.",
+          resources: [],
+          fallback_steps: []
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.inactivePlanHolder);
+  });
+
   it("does not run the secret firewall for omniscient POV", () => {
     const input = cleanInput();
     input.generationSession.active_working_set!.selected_pov = "omniscient";
@@ -803,6 +853,59 @@ describe("universal blocker validation", () => {
     ];
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+  });
+
+  it("does not run the secret firewall on non-secret records with secret-shaped payloads", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "FACT",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: [povId],
+          non_holders_to_protect: [povId],
+          pov_access: "hidden"
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
+  });
+
+  it("does not block malformed secret-holder containers as known-by-POV", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: recordA,
+        type: "SECRET",
+        payload: {
+          id: recordA,
+          status: "hidden",
+          holders: povId,
+          non_holders_to_protect: [povId],
+          pov_access: "hidden"
+        }
+      },
+      {
+        id: recordB,
+        type: "SECRET",
+        payload: {
+          id: recordB,
+          status: "hidden",
+          holders: [entityId],
+          non_holders_to_protect: povId,
+          pov_access: "knows"
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.secretRevealContradiction);
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge);
   });
 
   it("does not block all-except-holders protection when the selected POV is not modeled as a holder", () => {
