@@ -212,6 +212,235 @@ describe("universal blocker validation", () => {
     expect(diagnostic?.severity).toBe("blocker");
   });
 
+  it.each([
+    {
+      name: "non-local directive",
+      code: DIAGNOSTIC_CODES.localProseScopeViolation,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.manual_moment_directive!.must_render = ["Write the whole chapter outline."];
+      },
+      expected: {
+        affected: [{ field: "generationSession.manual_moment_directive.must_render[0]" }],
+        message: "Directive or stop guidance asks for non-local prose scope.",
+        whyItMatters: "Generation must render only the next local prose unit, not chapters, outlines, plot packages, or multiple response points.",
+        suggestedActions: ["change-directive"]
+      }
+    },
+    {
+      name: "non-local stop guidance",
+      code: DIAGNOSTIC_CODES.localProseScopeViolation,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Continue through future consequences.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.stop_guidance.soft_unit_guidance" }],
+        message: "Directive or stop guidance asks for non-local prose scope.",
+        whyItMatters: "Generation must render only the next local prose unit, not chapters, outlines, plot packages, or multiple response points.",
+        suggestedActions: ["change-stop-guidance"]
+      }
+    },
+    {
+      name: "directive stop conflict",
+      code: DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.manual_moment_directive!.must_render = ["Continue through the later consequence."];
+        input.generationSession.stop_guidance!.soft_unit_guidance = "Stop after the first response point.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.manual_moment_directive" }],
+        message: "Manual directive and stop guidance disagree about the local unit.",
+        whyItMatters: "The prompt cannot deterministically tell the writer both to continue past and stop at the same local boundary.",
+        suggestedActions: ["change-directive", "change-stop-guidance"]
+      }
+    },
+    {
+      name: "handoff state contradiction",
+      code: DIAGNOSTIC_CODES.handoffCurrentStateContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.last_visible_moment = "This contradicts current state.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff" }],
+        message: "Immediate handoff explicitly contradicts current authoritative state.",
+        whyItMatters: "The prompt cannot launch from one current state while the handoff tells the writer a different state is true.",
+        suggestedActions: ["revise", "add-current-state"]
+      }
+    },
+    {
+      name: "entity current location conflict",
+      code: DIAGNOSTIC_CODES.entityCurrentLocationContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [
+          ...input.records,
+          statusRecord(recordA, entityId, "019b0298-5c00-7000-8000-000000000111"),
+          statusRecord(recordB, entityId, "019b0298-5c00-7000-8000-000000000222")
+        ];
+      },
+      expected: {
+        affected: [{ recordId: entityId, field: "ENTITY STATUS.location" }],
+        message: "Selected records place one entity in more than one current location.",
+        whyItMatters: "A character or entity cannot be physically current in two different places unless the records explicitly model a special means.",
+        suggestedActions: ["revise", "remove", "deselect"]
+      }
+    },
+    {
+      name: "object holder conflict",
+      code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, { id: recordA, type: "OBJECT", payload: { owner: povId, carried_by: entityId } }];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "OBJECT.owner/carried_by" }],
+        message: "Selected object has two different current holders.",
+        whyItMatters: "Object possession must be deterministic before the prompt can render use, transfer, loss, or physical action.",
+        suggestedActions: ["revise", "remove", "deselect"]
+      }
+    },
+    {
+      name: "inactive active-plan holder",
+      code: DIAGNOSTIC_CODES.inactivePlanHolder,
+      mutate: addUnableActivePlan,
+      expected: {
+        affected: [{ recordId: recordB, field: "PLAN.holder" }],
+        message: "Active plan is held by an entity that currently cannot plausibly act.",
+        whyItMatters: "A plan cannot drive local prose if its holder is dead, captive, unconscious, incapacitated, absent, or otherwise without means.",
+        suggestedActions: ["revise", "deselect"]
+      }
+    },
+    {
+      name: "known hidden secret",
+      code: DIAGNOSTIC_CODES.secretRevealContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, hiddenKnownSecret()];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "SECRET.holders/non_holders_to_protect" }],
+        message: "Selected secret is both known by and hidden from the selected POV.",
+        whyItMatters: "The prompt must not give a POV both protected ignorance and confirmed knowledge of the same secret.",
+        suggestedActions: ["add-knowledge-constraint", "add-reveal-permission"]
+      }
+    },
+    {
+      name: "hidden truth in POV knowledge",
+      code: DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = [...input.records, hiddenKnownSecret()];
+      },
+      expected: {
+        affected: [{ recordId: recordA, field: "SECRET.pov_access" }],
+        message: "Hidden secret truth appears in a POV knowledge field.",
+        whyItMatters: "A hidden truth cannot be simultaneously modeled as POV-held knowledge without breaking reveal discipline.",
+        suggestedActions: ["add-knowledge-constraint"]
+      }
+    },
+    {
+      name: "offstage interruption route",
+      code: DIAGNOSTIC_CODES.offstageInterruptionMissingRoute,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["offstage_interruption_possible"];
+        input.generationSession.current_authoritative_state!.routes_and_exits = [];
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Offstage interruption lacks route, timing, communication, or awareness context.",
+        whyItMatters: "An offstage interruption needs a deterministic way to enter, communicate, be heard, or arrive at the local moment.",
+        suggestedActions: ["add-current-state", "add-route"]
+      }
+    },
+    {
+      name: "physical action context",
+      code: DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["physical_interaction_expected"];
+        input.generationSession.current_authoritative_state!.available_time = "";
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Physical action lacks required bodies, routes, visibility, time, or consent/force context.",
+        whyItMatters: "The prompt cannot safely render physical action without deterministic physical and consent/force conditions.",
+        suggestedActions: ["add-current-state", "add-route"]
+      }
+    },
+    {
+      name: "content envelope conflict",
+      code: DIAGNOSTIC_CODES.contentEnvelopeContradiction,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.storyConfig.universalContentPolicy!.allowed_content_scope = "No explicit sex.";
+        input.generationSession.manual_moment_directive!.must_render = ["Render explicit sex."];
+      },
+      expected: {
+        affected: [{ field: "storyConfig.universalContentPolicy.allowed_content_scope" }],
+        message: "Manual directive contradicts the active content envelope.",
+        whyItMatters: "The prompt cannot ask the provider to render material that the story configuration or policy envelope excludes.",
+        suggestedActions: ["revise", "change-directive"]
+      }
+    },
+    {
+      name: "prompt-facing contamination",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.recent_causal_context = "Copied accepted prose goes here.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff.recent_causal_context" }],
+        message: "Prompt-facing field appears to contain accepted, rejected, superseded, or automatic prose-derived text.",
+        whyItMatters: "Accepted and candidate prose are not canon for future prompts; durable changes must be represented in records or current state.",
+        suggestedActions: ["revise", "remove"]
+      }
+    },
+    {
+      name: "first-segment continuation phrasing",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.immediate_handoff!.begin_after = "As above.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff" }],
+        message: "First segment handoff must not depend on accepted prose or continuation phrasing.",
+        whyItMatters: "A first segment prompt must be self-sufficient from current state and records.",
+        suggestedActions: ["revise"]
+      }
+    },
+    {
+      name: "continuation contamination",
+      code: DIAGNOSTIC_CODES.promptFacingProseContamination,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.generation_validation_focus!.validation_focus_tags.generation_context = ["continuation_after_accepted_segment"];
+        input.generationSession.immediate_handoff!.begin_after = "Use the rejected candidate.";
+      },
+      expected: {
+        affected: [{ field: "generationSession.immediate_handoff.begin_after" }],
+        message: "Prompt-facing field appears to contain accepted, rejected, superseded, or automatic prose-derived text.",
+        whyItMatters: "Accepted and candidate prose are not canon for future prompts; durable changes must be represented in records or current state.",
+        suggestedActions: ["revise", "remove"]
+      }
+    },
+    {
+      name: "missing constitutional source",
+      code: DIAGNOSTIC_CODES.missingConstitutionalSection,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.versions.compiler = "";
+      },
+      expected: {
+        affected: [{ field: "versions" }],
+        message: "Template or compiler version is missing for constitutional prompt sections.",
+        whyItMatters: "Required constitutional sections must have deterministic template and compiler sources before prompt compilation.",
+        suggestedActions: ["revise"]
+      }
+    }
+  ])("emits exact diagnostic contract for $name", ({ code, mutate, expected }) => {
+    const input = cleanInput();
+    mutate(input);
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code,
+      ...expected
+    });
+  });
+
   it("blocks first segment continuation phrasing and preserves the clean no-accepted-prose note", () => {
     const input = cleanInput();
 
@@ -478,6 +707,36 @@ function expectBlock(code: string, mutate: (input: BuildValidationSnapshotInput)
   const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
 
   expect(diagnostic?.severity).toBe("blocker");
+}
+
+function statusRecord(id: string, entityIdValue: string, location: string) {
+  return {
+    id,
+    type: "ENTITY STATUS",
+    payload: { entity_id: entityIdValue, life: "alive", agency: "free", location }
+  };
+}
+
+function addUnableActivePlan(input: BuildValidationSnapshotInput): void {
+  input.records = [
+    ...input.records,
+    {
+      id: recordA,
+      type: "ENTITY STATUS",
+      payload: { entity_id: entityId, life: "alive", agency: "unconscious", location: "019b0298-5c00-7000-8000-000000000111" }
+    },
+    {
+      id: recordB,
+      type: "PLAN",
+      payload: {
+        plan_status: "active",
+        holder: entityId,
+        current_step: "Wait.",
+        resources: [],
+        fallback_steps: []
+      }
+    }
+  ];
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
