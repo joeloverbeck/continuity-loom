@@ -229,6 +229,124 @@ describe("knowledge/secret/POV matrix validation", () => {
   ])("blocks hidden-plan behavior when %s", (_name, tag, code, mutate) => {
     expectKnowledgeBlock(tag, code, mutate);
   });
+
+  it.each([
+    {
+      name: "introspection",
+      tag: "introspection_expected",
+      code: DIAGNOSTIC_CODES.matrixIntrospectionIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.records = input.records.filter((record) => record.type !== "EMOTION");
+      },
+      expected: {
+        affected: [{ field: "generationSession.generation_validation_focus.validation_focus_tags.expected_local_modes" }],
+        message: "Introspection focus lacks POV belief, emotion pressure, prose-mode, or non-POV interiority constraints.",
+        whyItMatters: "Introspection must be bounded by what the POV believes, feels, and is allowed to know without leaking non-POV interiority.",
+        suggestedActions: ["add-knowledge-constraint", "add-current-state"]
+      }
+    },
+    {
+      name: "ambiguous perception",
+      tag: "ambiguous_perception_expected",
+      code: DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        input.generationSession.current_authoritative_state!.line_of_sight_and_visibility = "";
+      },
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state" }],
+        message: "Ambiguous perception focus lacks line-of-sight, uncertainty, POV perception limits, or audience/writer knowledge difference.",
+        whyItMatters: "Ambiguous perception must identify what can be perceived, what cannot, and where the audience or writer may know more than the POV.",
+        suggestedActions: ["add-current-state", "add-knowledge-constraint"]
+      }
+    },
+    {
+      name: "secret or clue pressure",
+      tag: "secret_or_clue_pressure",
+      code: DIAGNOSTIC_CODES.matrixSecretClueIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        setRecordPayload(input, secretId, { reveal_permission: "" });
+      },
+      expected: {
+        affected: [{ field: "SECRET" }],
+        message: "Secret or clue pressure focus lacks a complete active secret/reveal lane.",
+        whyItMatters: "Secret pressure needs claim, holders, protected non-holders, POV access, audience visibility, allowed clues, forbidden reveals, and reveal permission.",
+        suggestedActions: ["add-knowledge-constraint", "add-reveal-permission"]
+      }
+    },
+    {
+      name: "hidden non-POV plan",
+      tag: "non_pov_hidden_plan_behavior",
+      code: DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => {
+        setRecordPayload(input, planId, { current_step: "" });
+      },
+      expected: {
+        affected: [{ field: "PLAN" }],
+        message: "Non-POV hidden plan focus lacks holder status, means, current step, POV visibility, or non-interiority constraint.",
+        whyItMatters: "A hidden non-POV plan can shape behavior only through deterministic external cues, not leaked interiority.",
+        suggestedActions: ["add-knowledge-constraint", "add-current-state"]
+      }
+    }
+  ])("emits exact diagnostic contract for $name", ({ tag, code, mutate, expected }) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      tag as ExpectedLocalMode
+    ];
+    mutate(input);
+
+    const diagnostic = runValidation(buildValidationSnapshot(input)).blockers.find((item) => item.code === code);
+
+    expect(diagnostic).toEqual({
+      severity: "blocker",
+      code,
+      ...expected
+    });
+  });
+
+  it.each([
+    ["POV cannot perceive", "POV cannot perceive the figure behind the glass."],
+    ["misread", "A may misread the reflection."],
+    ["uncertain", "The reflection is uncertain."]
+  ])("accepts ambiguous perception boundary from %s lock", (_name, lock) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "ambiguous_perception_expected"
+    ];
+    input.generationSession.current_authoritative_state!.current_locks = [lock, "No non-POV interiority leak."];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete);
+  });
+
+  it.each([
+    ["secret audience visibility only", (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.type !== "BELIEF");
+    }],
+    ["belief truth relation only", (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.type !== "SECRET");
+    }]
+  ])("accepts ambiguous perception knowledge difference from %s", (_name, mutate) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "ambiguous_perception_expected"
+    ];
+    mutate(input);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete);
+  });
+
+  it.each([
+    ["resources", { resources: ["reflection"], blockers: [], fallback_steps: [] }],
+    ["blockers", { resources: [], blockers: ["must wait for the door"], fallback_steps: [] }],
+    ["fallback steps", { resources: [], blockers: [], fallback_steps: ["signal later"] }]
+  ])("accepts hidden non-POV plan means from %s", (_name, patch) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "non_pov_hidden_plan_behavior"
+    ];
+    setRecordPayload(input, planId, patch);
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete);
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
