@@ -538,11 +538,37 @@ describe("universal completeness validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
   });
 
+  it("does not treat non-secret records with hidden status as active secrets", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: "hidden-fact",
+        type: "FACT",
+        payload: {
+          status: "hidden",
+          holders: [],
+          non_holders_to_protect: [],
+          forbidden_reveals: [],
+          reveal_permission: ""
+        }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeSecretIncomplete);
+  });
+
   it.each([
     ["public fact", (input: BuildValidationSnapshotInput) => {
       input.records = input.records.map((record) =>
         record.id === factId ? { ...record, payload: { id: factId, known_by: "public" } } : record
       );
+    }],
+    ["public event", (input: BuildValidationSnapshotInput) => {
+      input.records = [
+        ...input.records.filter((record) => record.id !== factId),
+        { id: "event", type: "EVENT", payload: { known_by: "public", summary: "The alarm sounded." } }
+      ];
     }],
     ["POV belief", (input: BuildValidationSnapshotInput) => {
       input.records = [
@@ -567,6 +593,22 @@ describe("universal completeness validation", () => {
     mutate(input);
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.povKnowledgeMissing);
+  });
+
+  it.each([
+    ["private fact for another holder", { type: "FACT", payload: { known_by: [entityId] } }],
+    ["event with non-public audience marker", { type: "EVENT", payload: { known_by: "private" } }],
+    ["belief held by another entity", { type: "BELIEF", payload: { holder: entityId } }],
+    ["secret held by another entity", { type: "SECRET", payload: { status: "hidden", holders: [entityId] } }],
+    ["entity status for another entity", { type: "ENTITY STATUS", payload: { entity_id: entityId } }]
+  ])("does not count %s as selected POV knowledge", (_name, record) => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records.filter((existingRecord) => existingRecord.id !== factId),
+      { id: "wrong-knowledge", ...record }
+    ];
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.povKnowledgeMissing);
   });
 
   it("does not require POV knowledge for omniscient prose mode", () => {
@@ -696,6 +738,74 @@ describe("universal completeness validation", () => {
     });
 
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
+
+  it("does not require a core cast dossier for active system cast records", () => {
+    const input = cleanInput();
+    input.records = input.records.map((record) => {
+      if (record.id === entityId) {
+        return { ...record, payload: { id: entityId, entity_kind: "system" } };
+      }
+      if (record.id === castId) {
+        return {
+          ...record,
+          payload: { entity_id: entityId }
+        };
+      }
+      return record;
+    });
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
+
+  it("ignores inactive and non-cast records when checking active cast dossiers", () => {
+    const input = cleanInput();
+    input.records = [
+      ...input.records,
+      {
+        id: "inactive-cast",
+        type: "CAST MEMBER",
+        castBand: "offstage_relevant_cast",
+        payload: { entity_id: entityId }
+      },
+      {
+        id: "entity-shaped-like-cast",
+        type: "ENTITY",
+        castBand: "active_onstage_cast_full",
+        payload: { id: "entity-shaped-like-cast", entity_kind: "person" }
+      }
+    ];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
+
+  it("blocks array payloads for material active cast records", () => {
+    const input = cleanInput();
+    input.records = input.records.map((record) =>
+      record.id === castId
+        ? {
+            ...record,
+            payload: [] as never
+          }
+        : record
+    );
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.activeCastIncomplete);
+  });
+
+  it("blocks non-string text fields without throwing", () => {
+    const input = cleanInput();
+    input.storyConfig.storyContract!.title = ["Continuity Test"] as never;
+
+    expect(() => runValidation(buildValidationSnapshot(input))).not.toThrow();
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingStoryConfig);
+  });
+
+  it("blocks null value fields that require presence", () => {
+    const input = cleanInput();
+    input.storyConfig.storyContract!.genre_mode = null as never;
+
+    expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.missingStoryConfig);
   });
 
   it.each([
