@@ -4,7 +4,8 @@ import {
   DIAGNOSTIC_CODES,
   buildValidationSnapshot,
   runValidation,
-  type BuildValidationSnapshotInput
+  type BuildValidationSnapshotInput,
+  type Diagnostic
 } from "../src/index.js";
 
 type DurableChangeTag = NonNullable<
@@ -184,6 +185,104 @@ describe("durable-change matrix validation", () => {
   ])("blocks obligation breach when %s", (_name, code, tag, mutate) => {
     expectDurableBlock(tag, code, mutate);
   });
+
+  it.each([
+    {
+      tag: "object_use_possible",
+      code: DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeRecord(input, objectId),
+      expected: {
+        affected: [{ field: "OBJECT" }],
+        message: "Object use focus lacks object state, usable affordance, current positions, visibility, or constraints."
+      }
+    },
+    {
+      tag: "object_transfer_possible",
+      code: DIAGNOSTIC_CODES.matrixObjectTransferIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "resulting holder"),
+      expected: {
+        affected: [{ field: "OBJECT" }],
+        message: "Object transfer focus lacks object holder/location state, body positions, consent/force, transfer route, or resulting holder state."
+      }
+    },
+    {
+      tag: "location_change_possible",
+      code: DIAGNOSTIC_CODES.matrixLocationChangeIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "destination"),
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state.routes_and_exits" }],
+        message: "Location change focus lacks source location, reachable route, available time, movement constraints, or arrival consequence."
+      }
+    },
+    {
+      tag: "restraint_or_coercion_possible",
+      code: DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "power relationship"),
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }],
+        message: "Restraint or coercion focus lacks agency/status, consent/force, positions, exits, power relationship, time, or constraints."
+      }
+    },
+    {
+      tag: "intimacy_or_sex_possible",
+      code: DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => setAllowedContentScope(input, "No intimacy in this scene."),
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }],
+        message: "Intimacy or sex focus lacks active cast status, content-envelope consistency, consent/force, privacy/body positions, relationship pressure, or affordance state."
+      }
+    },
+    {
+      tag: "violence_or_injury_possible",
+      code: DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "injury consequence"),
+      expected: {
+        affected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }],
+        message: "Violence or injury focus lacks agency/status, positions, force conditions, injury consequence, visibility, time, or location constraints."
+      }
+    },
+    {
+      tag: "institutional_involvement_possible",
+      code: DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "authority relation"),
+      expected: {
+        affected: [{ field: "ENTITY" }],
+        message: "Institutional involvement focus lacks an institution/entity, communication/access route, authority relation, or current opportunity."
+      }
+    },
+    {
+      tag: "clock_tick_possible",
+      code: DIAGNOSTIC_CODES.matrixClockTickIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "clock tick cause"),
+      expected: {
+        affected: [{ field: "CLOCK" }],
+        message: "Clock tick focus lacks active clock pressure, tick trigger, next threshold, possible effects, or a concrete visible cause."
+      }
+    },
+    {
+      tag: "obligation_breach_possible",
+      code: DIAGNOSTIC_CODES.matrixObligationBreachIncomplete,
+      mutate: (input: BuildValidationSnapshotInput) => removeLock(input, "obligation opportunity"),
+      expected: {
+        affected: [{ field: "OBLIGATION" }],
+        message: "Obligation breach focus lacks obligation terms, parties, visibility, consequence, or current opportunity pressure."
+      }
+    }
+  ])("emits exact diagnostic contract for $tag", ({ tag, code, mutate, expected }) => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+      tag as DurableChangeTag
+    ];
+    mutate(input);
+
+    expect(findDiagnostic(input, code)).toEqual({
+      severity: "blocker",
+      code,
+      ...expected,
+      whyItMatters: "Durable-change tags are validation gates; they require explicit state support before the writer can be asked to render durable change.",
+      suggestedActions: ["add-current-state", "add-route"]
+    });
+  });
 });
 
 const allDurableTags = [
@@ -212,6 +311,10 @@ const allDurableCodes = [
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function findDiagnostic(input: BuildValidationSnapshotInput, code: string): Diagnostic | undefined {
+  return runValidation(buildValidationSnapshot(input)).blockers.find((diagnostic) => diagnostic.code === code);
 }
 
 function expectDurableBlock(
