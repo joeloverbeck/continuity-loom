@@ -57,7 +57,7 @@ export function recordsForPresence(vector: IdeationPresenceVector): ValidationRe
 export function ideationRecord(
   type: IdeationRecordType,
   id: string,
-  options: { revealable?: boolean; updatedAt?: string } = {}
+  options: { revealable?: boolean | "directive_required"; updatedAt?: string } = {}
 ): ValidationRecord {
   const label = `${type} ${id}`;
 
@@ -67,7 +67,14 @@ export function ideationRecord(
     payload: {
       ...labelPayload(type, label),
       ...(type === "SECRET"
-        ? { reveal_permission: options.revealable ? "natural_reveal_allowed" : "locked" }
+        ? {
+            reveal_permission:
+              options.revealable === "directive_required"
+                ? "directive_required"
+                : options.revealable
+                  ? "natural_reveal_allowed"
+                  : "locked"
+          }
         : {})
     },
     metadata: {

@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds citation-key bijection properties + exact request-field rendering assertions and completes the full P2 mutation campaign; no production behavior change.
-**Deps**: SPEC026MUTDRIROB-001, archive/tickets/SPEC026MUTDRIROB-010.md, SPEC026MUTDRIROB-011
+**Deps**: SPEC026MUTDRIROB-001, archive/tickets/SPEC026MUTDRIROB-010.md, archive/tickets/SPEC026MUTDRIROB-011.md
 
 ## Problem
 
@@ -48,7 +48,7 @@ Run `npm run mutation:ideation` across the full P2 glob; classify every survivor
 
 ## Out of Scope
 
-- Operator eligibility / slot assignment (archive/tickets/SPEC026MUTDRIROB-010.md, SPEC026MUTDRIROB-011).
+- Operator eligibility / slot assignment (archive/tickets/SPEC026MUTDRIROB-010.md, archive/tickets/SPEC026MUTDRIROB-011.md).
 - Cross-pillar contracts (SPEC026MUTDRIROB-019); activating floors/ratchets (SPEC026MUTDRIROB-022).
 - Any change to citation/rendering production logic or the existing ideation golden.
 

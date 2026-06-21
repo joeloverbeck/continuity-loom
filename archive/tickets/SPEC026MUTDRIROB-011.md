@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-011: Mutation-tighten P2 slot assignment
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — adds slot-assignment boundary and metamorphic property tests; no production behavior change.
@@ -74,3 +74,22 @@ Run `npm run mutation:ideation` scoped to `slot-assignment.ts`; classify every s
 1. `vitest run packages/core/test/ideation-slot-assignment.property.test.ts` — targeted run.
 2. `npm run mutation:ideation` — survivor classification for `slot-assignment.ts`.
 3. Exact boundary assertions + metamorphic relations are the correct boundary: they assert the exact result or error, not merely call success.
+
+## Outcome
+
+Completed 2026-06-21. Added `packages/core/test/ideation-slot-assignment.property.test.ts` and `packages/core/test/support/arbitraries/ideation-requests.ts`; extended `packages/core/test/support/arbitraries/ideation-records.ts` to create `directive_required` test secrets.
+
+The new property test pins count boundaries/defaults, no-padding and shrink truth, dormant slot reservation and omission, oldest/ID dormant tie-breaks, storage-order permutation invariance, ineligible-record no-op behavior, and reveal-permission guard behavior. No production code changed.
+
+Verification:
+
+1. `npx vitest run packages/core/test/ideation-slot-assignment.property.test.ts` — passed, 10 tests.
+2. `npm run mutation:ideation -- --force --mutate packages/core/src/compiler/ideation/slot-assignment.ts` — completed with `slot-assignment.ts` at 90.59 mutation score: 77 killed, 45 compile-error mutants, 3 survived, 5 no-coverage, 0 timeout.
+   - Classified survivors: line 25 `slots.length < request.count` changed to `true` / `<=` is equivalent under the current schema because `dormantSlot: true` computes `nonDormantTarget` as `count - 1`, so the dormant branch can only be reached while `slots.length < count`; line 48 `operator.id === "reveal"` changed to `true` is equivalent because the reveal branch falls back to all matching records when no revealable record exists, making non-reveal operators byte-identical.
+   - Classified no-coverage: line 74 nullish fallback is unreachable because `REINCORPORATE_DORMANT_OPERATOR` is a module constant present in this build; line 90 citation fallback is unreachable because `citationKeysFor(records)` is built from the same records passed to `toSlot`; line 100 missing-`updatedAt` fallbacks are unreachable after `dormantTargetRecords` filters for string `metadata.updatedAt`.
+3. `npm run lint` — passed.
+4. `npm run typecheck` — passed.
+5. `npm test` — passed, 144 files / 1128 tests.
+6. `npm run build` — passed under escalation due prior sandbox write restrictions; Vite emitted the existing chunk-size warning.
+
+No browser smoke was run because this ticket changes only core test coverage and self-contained test arbitraries.
