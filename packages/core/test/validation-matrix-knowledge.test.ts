@@ -169,10 +169,107 @@ describe("knowledge/secret/POV matrix validation", () => {
 
     expect(blockerCodes(input)).toContain(code);
   });
+
+  it.each([
+    ["missing POV belief", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, beliefId, { holder: nonPovId })],
+    ["blank POV belief claim", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, beliefId, { claim: "" })],
+    ["missing POV emotion", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, emotionId, { holder: nonPovId })],
+    ["blank emotion surface", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, emotionId, { surface_expression: "" })],
+    ["missing prose mode", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => {
+      delete input.storyConfig.proseMode;
+    }],
+    ["missing non-POV lock", "introspection_expected", DIAGNOSTIC_CODES.matrixIntrospectionIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "non-pov interiority")]
+  ])("blocks introspection when %s", (_name, tag, code, mutate) => {
+    expectKnowledgeBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["missing state", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      delete input.generationSession.current_authoritative_state;
+    }],
+    ["blank line of sight", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => setStateField(input, "line_of_sight_and_visibility", "")],
+    ["empty visible conditions", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => setStateField(input, "visible_conditions", [])],
+    ["missing uncertainty lock", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.current_locks = ["No non-POV interiority leak."];
+    }],
+    ["secret already known by POV", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.type !== "BELIEF");
+      setRecordPayload(input, secretId, { pov_access: "knows" });
+    }],
+    ["secret lacks audience visibility", "ambiguous_perception_expected", DIAGNOSTIC_CODES.matrixAmbiguousPerceptionIncomplete, (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.type !== "BELIEF");
+      setRecordPayload(input, secretId, { audience_visibility: "" });
+    }]
+  ])("blocks ambiguous perception when %s", (_name, tag, code, mutate) => {
+    expectKnowledgeBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["no active secret", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { status: "resolved" })],
+    ["partially revealed secret with blank claim", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { status: "partially_revealed", secret_claim: "" })],
+    ["missing holders", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { holders: [] })],
+    ["missing protected non-holders", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { non_holders_to_protect: [] })],
+    ["missing POV access", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { pov_access: "" })],
+    ["missing allowed cues", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { allowed_surface_cues: [] })],
+    ["missing reveal permission", "secret_or_clue_pressure", DIAGNOSTIC_CODES.matrixSecretClueIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, secretId, { reveal_permission: "" })]
+  ])("blocks secret pressure when %s", (_name, tag, code, mutate) => {
+    expectKnowledgeBlock(tag, code, mutate);
+  });
+
+  it.each([
+    ["plan belongs to POV", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { holder: povId })],
+    ["plan holder blank", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { holder: "" })],
+    ["plan visible to POV", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { visibility_to_pov: "known" })],
+    ["plan current step blank", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { current_step: "" })],
+    ["plan has no means", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, planId, { resources: [], blockers: [], fallback_steps: [] })],
+    ["holder status unknown location", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "unknown" })],
+    ["holder status not applicable location", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { location: "not_applicable" })],
+    ["status missing entity id", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => setRecordPayload(input, statusId, { entity_id: "" })],
+    ["missing non-POV lock", "non_pov_hidden_plan_behavior", DIAGNOSTIC_CODES.matrixHiddenPlanIncomplete, (input: BuildValidationSnapshotInput) => removeLock(input, "non-pov interiority")]
+  ])("blocks hidden-plan behavior when %s", (_name, tag, code, mutate) => {
+    expectKnowledgeBlock(tag, code, mutate);
+  });
 });
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).blockers.map((diagnostic) => diagnostic.code);
+}
+
+function expectKnowledgeBlock(
+  tag: string,
+  code: string,
+  mutate: (input: BuildValidationSnapshotInput) => void
+): void {
+  const input = cleanInput();
+  input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+    tag as ExpectedLocalMode
+  ];
+  mutate(input);
+
+  expect(blockerCodes(input), tag).toContain(code);
+}
+
+function setRecordPayload(input: BuildValidationSnapshotInput, id: string, patch: Record<string, unknown>): void {
+  input.records = input.records.map((record) =>
+    record.id === id ? { ...record, payload: { ...(record.payload as Record<string, unknown>), ...patch } } : record
+  );
+}
+
+function setStateField(
+  input: BuildValidationSnapshotInput,
+  field: keyof NonNullable<BuildValidationSnapshotInput["generationSession"]["current_authoritative_state"]>,
+  value: unknown
+): void {
+  input.generationSession.current_authoritative_state = {
+    ...input.generationSession.current_authoritative_state!,
+    [field]: value
+  };
+}
+
+function removeLock(input: BuildValidationSnapshotInput, marker: string): void {
+  input.generationSession.current_authoritative_state!.current_locks = input.generationSession.current_authoritative_state!.current_locks.filter(
+    (lock) => !lock.toLowerCase().includes(marker)
+  );
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
