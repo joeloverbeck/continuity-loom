@@ -42,5 +42,8 @@
   },
   "allowScripts": {
     "esbuild": true
+  },
+  "overrides": {
+    "qs": "6.15.2"
   }
 }

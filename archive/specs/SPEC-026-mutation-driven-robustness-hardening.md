@@ -1,6 +1,6 @@
 # SPEC-026 — Mutation-Driven Robustness Hardening for Prompt Compilation and Validation
 
-**Status**: DRAFT
+**Status**: ✅ COMPLETED
 Phase: post-v1 development-assurance spec; test-tooling + property/metamorphic/golden suite hardening for the three locked `@loom/core` pillars (no runtime behavior change)
 Depends on: the existing deterministic prose compiler, the ideation prompt compiler, the deterministic validation engine, the established `lint` / `typecheck` / `test` / `build` CI gates, and the core import-boundary rule
 Governing authority: `docs/FOUNDATIONS.md`
@@ -434,3 +434,38 @@ authority.
 | A campaign exposes a real product defect | Behavior-fix flag: reproducing test + separate behavior-correction ticket; never weaken the expectation; no version bump for test-only work. |
 | Floor calibration | Floors above are post-calibration recommendations; E3 sets them only after baseline survivor classification, and the ratchet is `max(break floor, reviewed baseline)`. |
 | Open: exact diagnostic-code inventory surface for D1's completeness check | Resolve at D1 implementation by reading the exported inventory used by the existing diagnostic-inventory drift tests; do not derive expected severities/applicability from it. |
+
+---
+
+## Outcome
+
+**Completion date:** 2026-06-21 (merged via PR #66, commit `c10355e`).
+
+**What actually changed.** All five phases / 23 deliverables landed under the
+`SPEC026MUTDRIROB-001..023` ticket family:
+
+- **Phase A (tooling):** the six exact-pinned assurance devDependencies
+  (`@stryker-mutator/core|vitest-runner|typescript-checker` 9.6.1,
+  `@vitest/coverage-v8` 4.1.9, `fast-check` 4.8.0, `@fast-check/vitest` 0.4.1);
+  `scripts/robustness/stryker-base.mjs` factory plus the three root pillar configs
+  (`stryker.{prose,ideation,validation}.config.mjs`); the scoped V8 `coverage`
+  block in `vitest.config.ts`; `docs/robustness-testing.md` registered in
+  `docs/ACTIVE-DOCS.md`; and the advisory `tools/robustness/mutation-baseline.json`.
+- **Phases B/C/D (suites):** P1/P2/P3 property, metamorphic, and diagnostic-contract
+  tests — including `packages/core/test/support/diagnostic-contract.ts`,
+  `cross-pillar-contracts.test.ts`, `validation-blockers.test.ts`,
+  `validation-completeness.test.ts`, `validation-matrix-voice.test.ts`, and the
+  fast-check arbitraries under `test/support/arbitraries/`.
+- **Phase E (enforcement):** `scripts/robustness/mutation-scope.mjs`,
+  `mutation-gate.mjs`, `run-core-mutation.mjs`, and the scheduled/manual
+  `.github/workflows/robustness.yml`; secondary-tier follow-ups queued (E4).
+
+**Deviations from original plan.** None material. The baseline shipped in its
+**advisory** state (`status: "advisory"`, `reviewedScore: null`) as designed for
+the initial landing; Stryker break floors are activated on baseline-survivor
+classification per E3, not at merge time.
+
+**Verification results.** `npm run lint`, `npm run typecheck`, `npm test`, and
+`npm run build` gates remained green; no `packages/core/src/version.ts` change; no
+prompt/diagnostic/schema/contract change. Spec confirmed implemented by direct
+inspection of the working tree before archival on 2026-06-21.
