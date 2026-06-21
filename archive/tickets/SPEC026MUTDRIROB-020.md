@@ -1,10 +1,29 @@
 # SPEC026MUTDRIROB-020: Add changed-file mutation scope and fail-safe cache behavior
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — adds the changed-file mutation-scope script and the `mutation-changed` CI job; no production behavior change.
 **Deps**: archive/tickets/SPEC026MUTDRIROB-001.md, archive/tickets/SPEC026MUTDRIROB-003.md
+
+## Outcome
+
+- Added `scripts/robustness/mutation-scope.mjs`, an importable changed-path classifier and runner for `mutation-changed`. It maps changed P1/P2/P3 source files to forced `--mutate` targets, forces all three campaigns for robustness/config/dependency/test-support drift, reports an explicit out-of-scope success, and treats cache misses as forced real-work fallback rather than skip.
+- Added `scripts/robustness/__tests__/mutation-scope.test.mjs` covering pillar source mapping, full-campaign infrastructure triggers, out-of-scope status, and cache-miss forced changed-file planning.
+- Added `npm run mutation:changed` and an additive `.github/workflows/ci.yml` `mutation-changed` job with base-ref checkout, npm install, Stryker cache restore, and status-producing changed-file mutation execution.
+- Baseline ratchet activation remains out of scope for archive/tickets/SPEC026MUTDRIROB-022.md; this ticket wires the changed-file status and fail-safe scope behavior.
+- No browser smoke was run; this ticket only changes CI/tooling scripts.
+
+Verification:
+
+- `node --test scripts/robustness/__tests__/mutation-scope.test.mjs` (4 tests passed)
+- `node scripts/robustness/mutation-scope.mjs --dry --changed "packages/core/src/validation/readiness.ts" --json` (classified validation changed-file scope)
+- `node scripts/robustness/mutation-scope.mjs --dry --changed "README.md docs/user-guide.md"` (reported out-of-scope success)
+- `npm run mutation:changed -- --dry --changed "packages/core/src/compiler/compile-prompt.ts" --json` (package script classified prose changed-file scope)
+- `npm run lint` (passed)
+- `npm run typecheck` (passed)
+- `npm test` (150 files, 1232 tests passed)
+- `npm run build` (passed; existing Vite large-chunk warning)
 
 ## Problem
 

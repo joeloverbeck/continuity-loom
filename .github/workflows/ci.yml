@@ -57,6 +57,27 @@ jobs:
       - run: npm ci
       - run: npm run test:coverage:core
 
+  mutation-changed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Restore Stryker incremental cache
+        uses: actions/cache@v4
+        with:
+          path: .cache/stryker
+          key: stryker-${{ runner.os }}-${{ hashFiles('package-lock.json', 'stryker.*.config.mjs', 'vitest.config.ts', 'scripts/robustness/**') }}
+          restore-keys: |
+            stryker-${{ runner.os }}-
+      - name: Run changed-file mutation scope
+        run: npm run mutation:changed
+
   build:
     runs-on: ubuntu-latest
     steps:

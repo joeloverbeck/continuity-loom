@@ -40,7 +40,7 @@ Add `.github/workflows/robustness.yml`: a scheduled cron trigger and `workflow_d
 
 ## Out of Scope
 
-- The PR changed-file job (SPEC026MUTDRIROB-020) and required-status enforcement (SPEC026MUTDRIROB-022).
+- The PR changed-file job (archive/tickets/SPEC026MUTDRIROB-020.md) and required-status enforcement (SPEC026MUTDRIROB-022).
 - Any pillar test content.
 
 ## Acceptance Criteria

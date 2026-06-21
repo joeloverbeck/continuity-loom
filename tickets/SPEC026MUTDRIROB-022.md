@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — activates Stryker break floors, commits the reviewed compact baseline, and makes the changed-source + coverage checks required; no production behavior change.
-**Deps**: archive/tickets/SPEC026MUTDRIROB-019.md, SPEC026MUTDRIROB-020, SPEC026MUTDRIROB-021
+**Deps**: archive/tickets/SPEC026MUTDRIROB-019.md, archive/tickets/SPEC026MUTDRIROB-020.md, SPEC026MUTDRIROB-021
 
 ## Problem
 
