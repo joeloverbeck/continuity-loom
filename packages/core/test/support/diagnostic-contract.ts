@@ -45,6 +45,23 @@ const auxIds = Object.freeze({
   unselectedLocation: "019b0298-5c00-7000-8000-000000000114"
 });
 
+const matrixIds = Object.freeze({
+  object: "019b0298-5c00-7000-8000-000000000201",
+  useAffordance: "019b0298-5c00-7000-8000-000000000202",
+  transferAffordance: "019b0298-5c00-7000-8000-000000000203",
+  harmAffordance: "019b0298-5c00-7000-8000-000000000204",
+  bondAffordance: "019b0298-5c00-7000-8000-000000000205",
+  entity: "019b0298-5c00-7000-8000-000000000206",
+  institution: "019b0298-5c00-7000-8000-000000000207",
+  clock: "019b0298-5c00-7000-8000-000000000208",
+  obligation: "019b0298-5c00-7000-8000-000000000209",
+  cast: "019b0298-5c00-7000-8000-000000000210",
+  fact: "019b0298-5c00-7000-8000-000000000211",
+  status: "019b0298-5c00-7000-8000-000000000212",
+  relationship: "019b0298-5c00-7000-8000-000000000213",
+  consequence: "019b0298-5c00-7000-8000-000000000214"
+});
+
 export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.activeCastIncomplete,
   DIAGNOSTIC_CODES.activePhysicalContextIncomplete,
@@ -60,6 +77,18 @@ export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
   DIAGNOSTIC_CODES.inactivePlanHolder,
   DIAGNOSTIC_CODES.localProseScopeViolation,
+  DIAGNOSTIC_CODES.matrixClockTickIncomplete,
+  DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete,
+  DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete,
+  DIAGNOSTIC_CODES.matrixLocationChangeIncomplete,
+  DIAGNOSTIC_CODES.matrixNonhumanPressureIncomplete,
+  DIAGNOSTIC_CODES.matrixObjectTransferIncomplete,
+  DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
+  DIAGNOSTIC_CODES.matrixObligationBreachIncomplete,
+  DIAGNOSTIC_CODES.matrixOffstageInterruptionIncomplete,
+  DIAGNOSTIC_CODES.matrixPhysicalInteractionIncomplete,
+  DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete,
+  DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete,
   DIAGNOSTIC_CODES.missingConstitutionalSection,
   DIAGNOSTIC_CODES.missingCurrentAuthoritativeState,
   DIAGNOSTIC_CODES.missingImmediateHandoff,
@@ -452,6 +481,162 @@ const coveredContracts = [
       input.records = [...input.records, relationshipRecord({ from: auxIds.actor, to: auxIds.actor })];
     },
     expectedAffected: [{ recordId: auxIds.relationship, field: "RELATIONSHIP.from/to" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "object_use_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.object);
+    },
+    expectedAffected: [{ field: "OBJECT" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixObjectTransferIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "object_transfer_possible"
+      ];
+      removeMatrixLock(input, "resulting holder");
+    },
+    expectedAffected: [{ field: "OBJECT" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixLocationChangeIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "location_change_possible"
+      ];
+      removeMatrixLock(input, "destination");
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.routes_and_exits" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixRestraintOrCoercionIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "restraint_or_coercion_possible"
+      ];
+      removeMatrixLock(input, "power relationship");
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixIntimacyOrSexIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "intimacy_or_sex_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.bondAffordance);
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "violence_or_injury_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.harmAffordance);
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.consent_or_force_conditions" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixInstitutionalInvolvementIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "institutional_involvement_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.institution);
+    },
+    expectedAffected: [{ field: "ENTITY" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixClockTickIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "clock_tick_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.clock);
+    },
+    expectedAffected: [{ field: "CLOCK" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixObligationBreachIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: durableMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.possible_durable_changes = [
+        "obligation_breach_possible"
+      ];
+      removeMatrixRecord(input, matrixIds.obligation);
+    },
+    expectedAffected: [{ field: "OBLIGATION" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixPhysicalInteractionIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: physicalMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+        "physical_interaction_expected"
+      ];
+      input.generationSession.current_authoritative_state!.positions = [];
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixOffstageInterruptionIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: physicalMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+        "offstage_interruption_possible"
+      ];
+      input.generationSession.current_authoritative_state!.offstage_pressuring_entities = [];
+    },
+    expectedAffected: [{ field: "generationSession.current_authoritative_state.offstage_pressuring_entities" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.matrixNonhumanPressureIncomplete,
+    severity: "blocker",
+    promptKinds: "applies",
+    buildValidBaseline: physicalMatrixBaseline,
+    introduceMinimalDefect: (input) => {
+      input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+        "nonhuman_or_institutional_pressure_expected"
+      ];
+      removeMatrixRecord(input, matrixIds.institution);
+    },
+    expectedAffected: [{ field: "ENTITY" }]
   })
 ] as const satisfies readonly RunnableDiagnosticContract[];
 
@@ -555,6 +740,276 @@ function structuralBaseline(): BuildValidationSnapshotInput {
   return input;
 }
 
+function durableMatrixBaseline(): BuildValidationSnapshotInput {
+  return {
+    records: [
+      {
+        id: matrixIds.object,
+        type: "OBJECT",
+        payload: {
+          owner: matrixIds.entity,
+          carried_by: matrixIds.entity,
+          current_location: "carried_by_holder",
+          visibility_to_pov: "visible",
+          usable_affordances: ["unlock", "hand over"],
+          constraints: ["requires consent"]
+        }
+      },
+      matrixAffordance(matrixIds.useAffordance, ["use"]),
+      matrixAffordance(matrixIds.transferAffordance, ["transfer"]),
+      matrixAffordance(matrixIds.harmAffordance, ["harm"]),
+      matrixAffordance(matrixIds.bondAffordance, ["bond"]),
+      {
+        id: matrixIds.entity,
+        type: "ENTITY STATUS",
+        payload: {
+          entity_id: matrixIds.entity,
+          life: "alive",
+          agency: "free",
+          location: auxIds.location
+        }
+      },
+      {
+        id: matrixIds.institution,
+        type: "ENTITY",
+        payload: {
+          id: matrixIds.institution,
+          entity_kind: "institution",
+          short_description: "A local office with immediate authority."
+        }
+      },
+      {
+        id: matrixIds.relationship,
+        type: "RELATIONSHIP",
+        payload: { status: "active", pressure_text: "Tense trust.", current_expression: "Careful distance." }
+      },
+      {
+        id: matrixIds.consequence,
+        type: "CONSEQUENCE",
+        payload: { status: "active", current_effect: "A bruise would change the next beat." }
+      },
+      {
+        id: matrixIds.clock,
+        type: "CLOCK",
+        payload: {
+          status: "active",
+          current_pressure: "The alarm is close.",
+          tick_trigger: "Door opens.",
+          next_threshold: "Alarm sounds.",
+          possible_effects: ["guards arrive"]
+        }
+      },
+      {
+        id: matrixIds.obligation,
+        type: "OBLIGATION",
+        payload: {
+          status: "open",
+          terms: "Return the key.",
+          owed_by: [matrixIds.entity],
+          owed_to: "institution",
+          visibility: "public",
+          consequence_if_broken: "Sanction."
+        }
+      }
+    ],
+    generationSession: {
+      current_cast_voice_pressure: [],
+      cast_voice_overrides: [],
+      current_authoritative_state: {
+        current_time: "Night.",
+        current_location: "Warehouse.",
+        onstage_entities: [matrixIds.entity],
+        immediate_situation_summary: "A is at the loading door while the key changes hands.",
+        offstage_pressuring_entities: [matrixIds.institution],
+        positions: "A stands by the loading door.",
+        possessions: "The key is in A's hand.",
+        visible_conditions: ["dim"],
+        environmental_conditions: "Rain outside.",
+        entity_statuses: "A is awake.",
+        line_of_sight_and_visibility: "A can see the door and key.",
+        routes_and_exits: ["loading door", "phone call"],
+        available_time: "A few seconds.",
+        consent_or_force_conditions: "Consent is uncertain; force is possible.",
+        current_locks: [
+          "resulting holder must be stated",
+          "destination is the loading bay",
+          "movement constraint: blocked roof exit",
+          "power relationship: institution over A",
+          "physical constraint: narrow doorway",
+          "injury consequence: bruise changes the next beat",
+          "authority relation: institution can sanction",
+          "current opportunity: phone line is open",
+          "clock tick cause: door opens",
+          "obligation opportunity: A can refuse the key"
+        ]
+      },
+      immediate_handoff: {
+        recent_causal_context: "A arrived with the key.",
+        last_visible_moment: "B noticed the key.",
+        begin_after: "B noticing the key."
+      },
+      manual_moment_directive: {
+        must_render: ["B asks for the key."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: [],
+          possible_durable_changes: []
+        }
+      },
+      stop_guidance: { soft_unit_guidance: "Stop after B's first response point." }
+    },
+    storyConfig: {
+      universalContentPolicy: {
+        rating_label: "Mature",
+        allowed_content_scope: "Tense but non-graphic.",
+        tonal_handling: "Grounded.",
+        character_bias_handling: "Render bias as character belief, not endorsement."
+      }
+    },
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
+  };
+}
+
+function physicalMatrixBaseline(): BuildValidationSnapshotInput {
+  return {
+    records: [
+      {
+        id: matrixIds.entity,
+        type: "ENTITY",
+        payload: { id: matrixIds.entity, entity_kind: "person" }
+      },
+      {
+        id: matrixIds.institution,
+        type: "ENTITY",
+        payload: {
+          id: matrixIds.institution,
+          entity_kind: "institution",
+          short_description: "A local office that can apply immediate pressure."
+        }
+      },
+      {
+        id: matrixIds.status,
+        type: "ENTITY STATUS",
+        payload: {
+          entity_id: matrixIds.institution,
+          life: "not_applicable",
+          agency: "not_applicable",
+          location: auxIds.location,
+          visibility_to_pov: "audible"
+        }
+      },
+      {
+        id: matrixIds.cast,
+        type: "CAST MEMBER",
+        castBand: "active_onstage_cast_full",
+        localFunction: "active_speaker",
+        payload: completeCastPayload(matrixIds.entity)
+      },
+      {
+        id: matrixIds.fact,
+        type: "FACT",
+        payload: { id: matrixIds.fact, known_by: [validationIds.pov] }
+      }
+    ],
+    generationSession: {
+      active_working_set: {
+        selected_records: [matrixIds.cast, matrixIds.fact, matrixIds.institution, matrixIds.status],
+        active_onstage_cast_full: [{ cast_member_id: matrixIds.cast, local_function: "active_speaker" }],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: [],
+        selected_pov: validationIds.pov
+      },
+      current_authoritative_state: {
+        current_time: "Night.",
+        current_location: "Warehouse.",
+        onstage_entities: [matrixIds.entity],
+        immediate_situation_summary: "A and B are at the loading door while the key changes hands.",
+        offstage_pressuring_entities: [matrixIds.institution],
+        positions: "A and B stand near the loading door.",
+        possessions: "The key is in A's hand.",
+        visible_conditions: ["dim", "phone buzzing"],
+        environmental_conditions: "Rain outside.",
+        entity_statuses: "A is awake.",
+        line_of_sight_and_visibility: "They can see each other.",
+        routes_and_exits: ["loading door", "phone call"],
+        available_time: "A few seconds.",
+        consent_or_force_conditions: "none",
+        current_locks: [
+          "The roof exit is blocked.",
+          "Awareness mechanism: the phone buzzes.",
+          "Interruption route: phone call.",
+          "Pressure mechanism: institutional warning.",
+          "Agency limit: institution has no interiority."
+        ]
+      },
+      immediate_handoff: {
+        recent_causal_context: "A arrived with the key.",
+        last_visible_moment: "B noticed the key.",
+        begin_after: "B noticing the key."
+      },
+      manual_moment_directive: {
+        must_render: ["B asks for the key."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      },
+      current_cast_voice_pressure: [
+        {
+          cast_member_id: matrixIds.cast,
+          current_voice_pressure: "B is clipped and afraid.",
+          dialogue_pressure: "Direct question.",
+          pov_narration_pressure: "none",
+          nonverbal_or_silence_pressure: "none",
+          current_must_preserve: [],
+          current_must_avoid: []
+        }
+      ],
+      cast_voice_overrides: [],
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"],
+          expected_local_modes: [],
+          possible_durable_changes: []
+        }
+      },
+      stop_guidance: { soft_unit_guidance: "Stop after B's first response point." }
+    },
+    storyConfig: {
+      storyContract: {
+        title: "Continuity Test",
+        premise: "A city keeps its promises badly.",
+        genre_mode: "urban fantasy",
+        tone: "tense and intimate",
+        setting_baseline: "Rainy districts under old bargains.",
+        content_intensity: "mature",
+        explicitness: "Render mature material only when earned.",
+        language_register: "controlled contemporary prose"
+      },
+      universalContentPolicy: {
+        rating_label: "Mature",
+        allowed_content_scope: "Tense but non-graphic.",
+        tonal_handling: "Grounded.",
+        character_bias_handling: "Render bias as character belief, not endorsement."
+      },
+      proseMode: {
+        pov_character: validationIds.pov,
+        person: "third",
+        tense: "past",
+        psychic_distance: "close",
+        interiority_mode: "filtered",
+        dialogue_density: "balanced",
+        paragraphing: "mixed",
+        language_output: "English",
+        special_style_constraints: []
+      }
+    },
+    versions: { template: "0.0.0", compiler: "0.0.0", contract: "1.0.0" }
+  };
+}
+
 function entityRecord(id: string): ValidationRecord {
   return {
     id,
@@ -577,6 +1032,28 @@ function factRecord(id: string): ValidationRecord {
     type: "FACT",
     payload: { id, statement: "The hatch is locked.", known_by: "public" }
   };
+}
+
+function matrixAffordance(id: string, actionFamilies: readonly string[]): ValidationRecord {
+  return {
+    id,
+    type: "VISIBLE AFFORDANCE",
+    payload: {
+      status: "available",
+      action_families: actionFamilies,
+      prompt_text: "A concrete available action."
+    }
+  };
+}
+
+function removeMatrixRecord(input: BuildValidationSnapshotInput, id: string): void {
+  input.records = input.records.filter((record) => record.id !== id);
+}
+
+function removeMatrixLock(input: BuildValidationSnapshotInput, marker: string): void {
+  input.generationSession.current_authoritative_state!.current_locks = input.generationSession.current_authoritative_state!.current_locks.filter(
+    (lock) => !lock.toLowerCase().includes(marker)
+  );
 }
 
 function entityStatus(

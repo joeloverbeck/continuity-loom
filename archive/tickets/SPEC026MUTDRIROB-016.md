@@ -1,6 +1,6 @@
 # SPEC026MUTDRIROB-016: Add durable and physical matrix diagnostic contracts
 
-**Status**: PENDING
+**Status**: COMPLETED (2026-06-21)
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends the diagnostic contract registry with the durable and physical matrix families; no production behavior change.
@@ -75,3 +75,18 @@ Run `npm run mutation:validation` scoped to `matrix-durable.ts` + `matrix-physic
 1. `vitest run packages/core/test/validation-diagnostic-contract.test.ts` — targeted run.
 2. `npm run mutation:validation` — survivor classification for the two matrix files.
 3. Per-boundary cases are the correct boundary: matrix predicates are exactly the comparisons mutation synthesizes.
+
+## Outcome
+
+Completed 2026-06-21. Extended `packages/core/test/support/diagnostic-contract.ts` with durable and physical matrix baseline builders plus 12 runnable matrix contracts. The diagnostic contract harness now covers every durable/physical matrix code with clean baseline, exact code, exact severity, exact affected target, prompt-kind applicability, and repair removal.
+
+Verification:
+
+- `npx vitest run packages/core/test/validation-diagnostic-contract.test.ts` passed: 1 file, 47 tests.
+- `npm run typecheck` passed after implementation.
+- `npm run mutation:validation -- --force --mutate packages/core/src/validation/rules/matrix-durable.ts,packages/core/src/validation/rules/matrix-physical.ts` completed in 2m51s with 576 dry-run tests and 573 scoped mutants. Final relevant file counts:
+  - `matrix-durable.ts`: 49.43 score; 121 killed / 89 compile-error / 126 survived / 9 timeout / 7 no-coverage.
+  - `matrix-physical.ts`: 34.04 score; 38 killed / 80 compile-error / 84 survived / 10 timeout / 9 no-coverage.
+- Survivors/timeouts/no-coverage in the scoped files are classified, not unreviewed. They are broad matrix predicate-helper debt outside the code-level registry contract boundary: alternate satisfied-branch predicates for existing support fields, helper null/sentinel paths, static rule declaration mutants that time out, message/copy-only mutants, and defensive object-payload/value guards. The ticket-critical code/severity/affected/applicability/repair contracts for all durable/physical matrix codes now have explicit registry coverage.
+
+No browser smoke was run. This ticket modifies core validation tests only and does not change production runtime behavior or UI/browser behavior.
