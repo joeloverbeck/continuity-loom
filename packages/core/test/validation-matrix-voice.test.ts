@@ -11,6 +11,7 @@ import {
 type ExpectedLocalMode = NonNullable<
   BuildValidationSnapshotInput["generationSession"]["generation_validation_focus"]
 >["validation_focus_tags"]["expected_local_modes"][number];
+type CastVoiceOverride = BuildValidationSnapshotInput["generationSession"]["cast_voice_overrides"][number];
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
 const castA = "019b0298-5c00-7000-8000-000000000002";
@@ -118,6 +119,96 @@ describe("voice/dialogue/presence matrix validation", () => {
     expect(blockerCodes(input)).toContain(code);
   });
 
+  it.each([
+    ["there are no active speakers", (input: BuildValidationSnapshotInput) => setActiveCast(input, [
+      { cast_member_id: castA, local_function: "active_silent" }
+    ])],
+    ["language output is blank", (input: BuildValidationSnapshotInput) => {
+      input.storyConfig.proseMode!.language_output = " ";
+    }],
+    ["POV knowledge context is absent", (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.id !== factId);
+    }],
+    ["active speaker record is missing", (input: BuildValidationSnapshotInput) => removeRecord(input, castA)],
+    ["active speaker record has wrong type", (input: BuildValidationSnapshotInput) => setRecord(input, castA, { type: "FACT" })],
+    ["active speaker voice anchor is not an object", (input: BuildValidationSnapshotInput) => setRecordPayload(input, castA, { voice_anchor: "formal" })]
+  ])("blocks dialogue when %s", (_name, mutate) => {
+    expectMatrixBlock("dialogue_expected", DIAGNOSTIC_CODES.matrixDialogueIncomplete, mutate);
+  });
+
+  it.each([
+    ["only two speakers are active", (input: BuildValidationSnapshotInput) => setActiveCast(input, [
+      { cast_member_id: castA, local_function: "active_speaker" },
+      { cast_member_id: castB, local_function: "pov_narrator" }
+    ])],
+    ["relationship and status context are absent", (input: BuildValidationSnapshotInput) => {
+      input.records = input.records.filter((record) => record.id !== relationshipId && record.id !== statusId);
+    }],
+    ["current state is absent", (input: BuildValidationSnapshotInput) => {
+      delete input.generationSession.current_authoritative_state;
+    }],
+    ["visibility is blank", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.line_of_sight_and_visibility = "";
+    }],
+    ["positions are absent", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.positions = [];
+    }]
+  ])("blocks ensemble dialogue when %s", (_name, mutate) => {
+    setAllActiveSpeakersAndExpectBlock("ensemble_dialogue_expected", DIAGNOSTIC_CODES.matrixEnsembleDialogueIncomplete, mutate);
+  });
+
+  it.each([
+    ["no active silent cast member is present", (input: BuildValidationSnapshotInput) => setActiveCast(input, [
+      { cast_member_id: castA, local_function: "active_speaker" }
+    ])],
+    ["silent cast body presence is missing", (input: BuildValidationSnapshotInput) => {
+      setRecordPayload(input, castC, { body_presence_core: undefined });
+    }],
+    ["silent pressure is blank", (input: BuildValidationSnapshotInput) => {
+      setVoicePressure(input, castC, { nonverbal_or_silence_pressure: " " });
+    }],
+    ["current state is absent", (input: BuildValidationSnapshotInput) => {
+      delete input.generationSession.current_authoritative_state;
+    }],
+    ["positions are empty", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.positions = [];
+    }],
+    ["visibility is empty", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.line_of_sight_and_visibility = "";
+    }],
+    ["current locks are empty", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_authoritative_state!.current_locks = [];
+    }]
+  ])("blocks active silent presence when %s", (_name, mutate) => {
+    expectMatrixBlock("active_silent_presence_expected", DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete, mutate);
+  });
+
+  it.each([
+    ["minor list is empty", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.active_working_set!.present_minor_cast_compressed = [];
+    }],
+    ["minor pressure has no dialogue guidance", (input: BuildValidationSnapshotInput) => {
+      setVoicePressure(input, minorId, { dialogue_pressure: "", current_voice_pressure: "waits nearby" });
+    }],
+    ["minor override points at a different cast member", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_cast_voice_pressure = [];
+      input.generationSession.cast_voice_overrides = [dialogueOverride(castA, "Minor may answer.")];
+    }],
+    ["minor override has the wrong target", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_cast_voice_pressure = [];
+      input.generationSession.cast_voice_overrides = [{
+        ...dialogueOverride(minorId, "Minor may answer."),
+        applies_to: ["pov_narration"]
+      }];
+    }],
+    ["minor override text is blank", (input: BuildValidationSnapshotInput) => {
+      input.generationSession.current_cast_voice_pressure = [];
+      input.generationSession.cast_voice_overrides = [dialogueOverride(minorId, " ")];
+    }]
+  ])("blocks present minor speech when %s", (_name, mutate) => {
+    expectMatrixBlock("present_minor_speech_possible", DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete, mutate);
+  });
+
   it("does not block dialogue when speakers have durable voice anchors but no local pressure pins", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = ["dialogue_expected"];
@@ -197,6 +288,34 @@ describe("voice/dialogue/presence matrix validation", () => {
     expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
   });
 
+  it("accepts present minor speech through all-prompted voice overrides", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "present_minor_speech_possible"
+    ];
+    input.generationSession.current_cast_voice_pressure = [];
+    input.generationSession.cast_voice_overrides = [{
+      ...dialogueOverride(minorId, "Let the minor answer in one clipped factual line."),
+      applies_to: ["all_prompted_voice"]
+    }];
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
+  });
+
+  it("accepts present minor speech when the minor is promoted onstage", () => {
+    const input = cleanInput();
+    input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
+      "present_minor_speech_possible"
+    ];
+    input.generationSession.current_cast_voice_pressure = [];
+    input.generationSession.active_working_set!.active_onstage_cast_full.push({
+      cast_member_id: minorId,
+      local_function: "active_speaker"
+    });
+
+    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.matrixPresentMinorSpeechIncomplete);
+  });
+
   it("accepts present minor speech when current pressure asks for a reply", () => {
     const input = cleanInput();
     input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [
@@ -229,6 +348,77 @@ function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
 
 function warningCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return runValidation(buildValidationSnapshot(input)).warnings.map((diagnostic) => diagnostic.code);
+}
+
+function expectMatrixBlock(
+  tag: ExpectedLocalMode,
+  code: string,
+  mutate: (input: BuildValidationSnapshotInput) => void
+): void {
+  const input = cleanInput();
+  input.generationSession.generation_validation_focus!.validation_focus_tags.expected_local_modes = [tag];
+  mutate(input);
+
+  expect(blockerCodes(input), tag).toContain(code);
+}
+
+function setAllActiveSpeakersAndExpectBlock(
+  tag: ExpectedLocalMode,
+  code: string,
+  mutate: (input: BuildValidationSnapshotInput) => void
+): void {
+  expectMatrixBlock(tag, code, (input) => {
+    setActiveCast(input, [
+      { cast_member_id: castA, local_function: "active_speaker" },
+      { cast_member_id: castB, local_function: "pov_narrator" },
+      { cast_member_id: castC, local_function: "active_speaker" }
+    ]);
+    mutate(input);
+  });
+}
+
+function setActiveCast(
+  input: BuildValidationSnapshotInput,
+  activeCast: NonNullable<BuildValidationSnapshotInput["generationSession"]["active_working_set"]>["active_onstage_cast_full"]
+): void {
+  input.generationSession.active_working_set!.active_onstage_cast_full = activeCast;
+}
+
+function setRecordPayload(input: BuildValidationSnapshotInput, id: string, patch: Record<string, unknown>): void {
+  input.records = input.records.map((record) =>
+    record.id === id ? { ...record, payload: { ...(record.payload as Record<string, unknown>), ...patch } } : record
+  );
+}
+
+function setRecord(
+  input: BuildValidationSnapshotInput,
+  id: string,
+  patch: Partial<BuildValidationSnapshotInput["records"][number]>
+): void {
+  input.records = input.records.map((record) => record.id === id ? { ...record, ...patch } : record);
+}
+
+function removeRecord(input: BuildValidationSnapshotInput, id: string): void {
+  input.records = input.records.filter((record) => record.id !== id);
+}
+
+function setVoicePressure(
+  input: BuildValidationSnapshotInput,
+  castMemberId: string,
+  patch: Partial<ReturnType<typeof pressure>>
+): void {
+  input.generationSession.current_cast_voice_pressure = input.generationSession.current_cast_voice_pressure.map((entry) =>
+    entry.cast_member_id === castMemberId ? { ...entry, ...patch } : entry
+  );
+}
+
+function dialogueOverride(castMemberId: string, overrideText: string): CastVoiceOverride {
+  return {
+    cast_member_id: castMemberId,
+    reason: "Minor can answer one direct question.",
+    applies_to: ["dialogue"],
+    override_text: overrideText
+  };
 }
 
 function cleanInput(): BuildValidationSnapshotInput {
