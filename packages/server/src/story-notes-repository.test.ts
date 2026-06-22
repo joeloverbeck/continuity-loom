@@ -103,7 +103,7 @@ describe("StoryNotesRepository", () => {
     }
   });
 
-  it("lists notes deterministically by pinned state, sort option, search rank, and id tie-break", () => {
+  it("lists notes deterministically by pinned state, sort option, filters, and id tie-break", () => {
     vi.useFakeTimers();
     const { database, repository } = createRepository();
     try {
@@ -149,8 +149,8 @@ describe("StoryNotesRepository", () => {
         "Silver"
       ]);
       expect(repository.listNotes({ q: "silver" }).map((note) => note.id)).toEqual([
-        pinnedExact.id,
         exact.id,
+        pinnedExact.id,
         pinnedBody.id,
         body.id
       ]);
@@ -159,6 +159,121 @@ describe("StoryNotesRepository", () => {
         pinnedBody.id
       ]);
       expect(repository.listNotes({ pinned: "unpinned" }).map((note) => note.id)).toEqual([exact.id, body.id]);
+    } finally {
+      database.close();
+    }
+  });
+
+  it("uses FTS5 relevance with title, tag, body weighting and trigger-synced updates", () => {
+    const { database, repository } = createRepository();
+    try {
+      const body = repository.createNote({
+        title: "Body source",
+        body: "needleword appears in the private body.",
+        tags: ["body"]
+      });
+      const tag = repository.createNote({
+        title: "Tag source",
+        body: "Plain text.",
+        tags: ["needleword"]
+      });
+      const title = repository.createNote({
+        title: "needleword title",
+        body: "Plain text.",
+        tags: ["title"]
+      });
+
+      const ranked = repository.listNotes({ q: "needleword" });
+
+      expect(ranked.map((note) => note.id)).toEqual([title.id, tag.id, body.id]);
+      expect(ranked[0]).toMatchObject({
+        id: title.id,
+        mode: "scratch",
+        titleHighlight: expect.stringContaining("LOOM_NOTE_HIGHLIGHT_START"),
+        bodyPreview: "Plain text."
+      });
+      expect(ranked[1]?.matchedTags).toEqual(["needleword"]);
+      expect(ranked[2]?.bodySnippet).toContain("LOOM_NOTE_HIGHLIGHT_START");
+
+      repository.updateNote(body.id, {
+        title: "Body source",
+        body: "Plain text after update.",
+        tags: ["body"],
+        pinned: false
+      });
+
+      expect(repository.listNotes({ q: "needleword" }).map((note) => note.id)).toEqual([title.id, tag.id]);
+    } finally {
+      database.close();
+    }
+  });
+
+  it("treats FTS operators as literal text and uses parameterized short-term fallback", () => {
+    const { database, repository } = createRepository();
+    try {
+      const operatorText = repository.createNote({
+        title: "alpha:beta",
+        body: 'Literal "quoted" text.',
+        tags: ["ops"]
+      });
+      const orText = repository.createNote({
+        title: "literal OR optoken",
+        body: "Plain.",
+        tags: ["ops"]
+      });
+      const notText = repository.createNote({
+        title: "literal NOT nottoken",
+        body: "Plain.",
+        tags: ["ops"]
+      });
+      const shortText = repository.createNote({
+        title: "QQ note",
+        body: "Pair lookup.",
+        tags: ["short"]
+      });
+      const mixed = repository.createNote({
+        title: "silver q mark",
+        body: "Mixed terms.",
+        tags: ["mixed"]
+      });
+      repository.createNote({
+        title: "silver only",
+        body: "Missing the short marker.",
+        tags: ["mixed"]
+      });
+
+      expect(repository.listNotes({ q: "alpha:beta" }).map((note) => note.id)).toEqual([operatorText.id]);
+      expect(repository.listNotes({ q: "OR optoken" }).map((note) => note.id)).toEqual([orText.id]);
+      expect(repository.listNotes({ q: "NOT nottoken" }).map((note) => note.id)).toEqual([notText.id]);
+      expect(repository.listNotes({ q: '"quoted"' }).map((note) => note.id)).toEqual([operatorText.id]);
+      expect(repository.listNotes({ q: "QQ" }).map((note) => note.id)).toEqual([shortText.id]);
+      expect(repository.listNotes({ q: "silver q" }).map((note) => note.id)).toEqual([mixed.id]);
+    } finally {
+      database.close();
+    }
+  });
+
+  it("filters by multiple authoritative tags and note mode", () => {
+    const { database, repository } = createRepository();
+    try {
+      const prep = repository.createNote({
+        title: "Prep",
+        body: "Scene material.",
+        tags: ["Research", "Scene"],
+        mode: "scene-prep"
+      });
+      repository.createNote({
+        title: "Scratch",
+        body: "Scene material.",
+        tags: ["Research"],
+        mode: "scratch"
+      });
+
+      expect(repository.listNotes({ tag: ["research", "scene"] }).map((note) => note.id)).toEqual([prep.id]);
+      expect(repository.listNotes({ mode: "scene-prep" }).map((note) => note.id)).toEqual([prep.id]);
+      expect(repository.listNotes({ q: "scene", tag: ["research", "scene"], mode: "scene-prep" })).toEqual([
+        expect.objectContaining({ id: prep.id, mode: "scene-prep" })
+      ]);
     } finally {
       database.close();
     }
@@ -182,6 +297,10 @@ describe("StoryNotesRepository", () => {
       expect(first[0]?.bodyPreview.length).toBeLessThanOrEqual(240);
       expect(first[0]?.bodyPreview).not.toContain("[");
       expect(repository.listTags()).toEqual(["research", "Worldbuilding"]);
+      expect(repository.listTagCounts()).toEqual([
+        { tag: "research", count: 1 },
+        { tag: "Worldbuilding", count: 1 }
+      ]);
     } finally {
       database.close();
     }

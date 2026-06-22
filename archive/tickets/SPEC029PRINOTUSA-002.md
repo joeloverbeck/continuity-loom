@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-002: Repository FTS5 ranked search + tag-list rebuild
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/server` `StoryNotesRepository` search path (FTS5 query, literal query builder, derived read fields, relevance sort), `StoryNoteSummary` gains `mode` + derived fields; production behavior change (search engine replaced)
@@ -118,3 +118,26 @@ fields the find pane needs — while keeping all of it author-private.
 
 1. `npm test --workspace @loom/server -- story-notes-repository`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Replaced the old `includesQuery` / `searchRank` / `allNotes()` search path with SQL-backed search over `story_notes_fts` for long terms and parameterized `instr()` predicates for 1–2 character terms.
+- Added literal FTS phrase construction so operator-like text such as `OR`, `NOT`, quotes, and column punctuation is treated as note text rather than query syntax.
+- Added `mode`, `relevance`, inert marker highlights, body snippets, and `matchedTags` to repository list summaries only.
+- Added multi-tag AND filtering from parsed authoritative `story_notes.tags_json`, plus `mode` filtering.
+- Rebuilt tag listing to read only `tags_json`, and added a tag-count helper while preserving the existing `listTags()` string API.
+- Expanded repository tests for weighted title/tag/body relevance, literal operators, short and mixed query fallback, multi-tag AND, mode filtering, trigger-synced FTS updates, safe marker snippets, and tag counts.
+
+Deviations:
+- The public route/client query parsing remains for SPEC029PRINOTUSA-004, so repeated HTTP `tag` params are not exposed yet. The repository now accepts `tag: string | string[]`.
+- The existing `listTags()` return shape is preserved for current callers; count data is available through `listTagCounts()` for later UI/API work.
+
+Verification:
+- `npm test --workspace @loom/server -- story-notes-repository` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1681 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.
