@@ -8,6 +8,10 @@ import { buildStoryRecordHygieneSnapshot } from "./record-hygiene-snapshot-build
 import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
 
 const defaultRequest: RecordHygieneRequest = { mode: "full_active_atomic_review" };
+const requestModes = new Set<RecordHygieneRequest["mode"]>([
+  "full_active_atomic_review",
+  "active_working_set_atomic_review"
+]);
 const allowedRequestKeys = new Set(["mode"]);
 
 export function registerRecordHygieneRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
@@ -106,7 +110,7 @@ function compileFromOpenProject(manager: ProjectStoreManager, request: RecordHyg
     };
   }
 
-  const snapshotResult = buildStoryRecordHygieneSnapshot(repository);
+  const snapshotResult = buildStoryRecordHygieneSnapshot(repository, request);
   if (!snapshotResult.ok) {
     return snapshotResult;
   }
@@ -133,11 +137,11 @@ function parseRecordHygieneRequest(body: unknown):
   }
 
   const mode = (body as { mode?: unknown }).mode;
-  if (mode !== undefined && mode !== defaultRequest.mode) {
-    return invalidRequest(["mode must be full_active_atomic_review."]);
+  if (mode !== undefined && (typeof mode !== "string" || !requestModes.has(mode as RecordHygieneRequest["mode"]))) {
+    return invalidRequest(["mode must be full_active_atomic_review or active_working_set_atomic_review."]);
   }
 
-  return { ok: true, value: defaultRequest };
+  return { ok: true, value: { mode: mode === undefined ? defaultRequest.mode : mode as RecordHygieneRequest["mode"] } };
 }
 
 function invalidRequest(issues: string[]): { ok: false; body: { ok: false; kind: "invalid-record-hygiene-request"; issues: string[] } } {

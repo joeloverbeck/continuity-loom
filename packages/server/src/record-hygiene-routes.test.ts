@@ -76,6 +76,53 @@ describe("record hygiene routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("accepts working-set mode, scopes by selected records, and does not mutate the working set", async () => {
+    const fastify = app();
+    const { alphaId } = await prepareHygieneProject(fastify);
+    await putWorkingSet(fastify, [alphaId]);
+    const before = await getWorkingSet(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/record-hygiene/compile",
+      payload: { mode: "active_working_set_atomic_review" }
+    });
+    const after = await getWorkingSet(fastify);
+    const body = response.json() as {
+      prompt: string;
+      metadata: { recordCount: number; countsByType: Record<string, number> };
+      citations: Record<string, string>;
+    };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.prompt).toContain("request_mode: active_working_set_atomic_review");
+    expect(body.prompt).toContain("hygiene_scope: active_working_set");
+    expect(body.prompt).toContain("Alpha fact");
+    expect(body.prompt).not.toContain("Beta fact");
+    expect(body.metadata.recordCount).toBe(1);
+    expect(body.metadata.countsByType.FACT).toBe(1);
+    expect(body.citations).toEqual({ "[FACT-1]": alphaId });
+    expect(after).toEqual(before);
+  });
+
+  it("rejects unsupported record hygiene modes", async () => {
+    const fastify = app();
+    await prepareHygieneProject(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/record-hygiene/compile",
+      payload: { mode: "unknown" }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      ok: false,
+      kind: "invalid-record-hygiene-request",
+      issues: ["mode must be full_active_atomic_review or active_working_set_atomic_review."]
+    });
+  });
+
   it("rejects client-supplied prompt, subset, edit, and write fields before transport", async () => {
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -199,10 +246,12 @@ function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeo
   return fastify;
 }
 
-async function prepareHygieneProject(fastify: ReturnType<typeof createServer>): Promise<void> {
+async function prepareHygieneProject(fastify: ReturnType<typeof createServer>): Promise<{ alphaId: string; betaId: string }> {
   await openProject(fastify);
-  await createFact(fastify, "Alpha fact", `${promptSecretText} The cellar door is locked.`);
-  await createFact(fastify, "Beta fact", "The cellar door remains locked after Niko tests it.");
+  const alphaId = await createFact(fastify, "Alpha fact", `${promptSecretText} The cellar door is locked.`);
+  const betaId = await createFact(fastify, "Beta fact", "The cellar door remains locked after Niko tests it.");
+
+  return { alphaId, betaId };
 }
 
 async function openProject(fastify: ReturnType<typeof createServer>): Promise<void> {
@@ -252,6 +301,23 @@ async function putSettings(fastify: ReturnType<typeof createServer>, payload: Re
   });
 
   expect(response.statusCode).toBe(200);
+}
+
+async function putWorkingSet(fastify: ReturnType<typeof createServer>, selectedRecordIds: string[]): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/working-set",
+    payload: { selectedRecordIds }
+  });
+
+  expect(response.statusCode).toBe(200);
+}
+
+async function getWorkingSet(fastify: ReturnType<typeof createServer>): Promise<unknown> {
+  const response = await fastify.inject({ method: "GET", url: "/api/working-set" });
+
+  expect(response.statusCode).toBe(200);
+  return response.json();
 }
 
 async function listRecords(fastify: ReturnType<typeof createServer>): Promise<unknown> {

@@ -9,6 +9,8 @@ const idC = "019b0298-5c00-7000-8000-000000000003";
 const idD = "019b0298-5c00-7000-8000-000000000004";
 const idE = "019b0298-5c00-7000-8000-000000000005";
 const idF = "019b0298-5c00-7000-8000-000000000006";
+const wholeProject = { mode: "full_active_atomic_review" } as const;
+const workingSet = { mode: "active_working_set_atomic_review" } as const;
 
 describe("record hygiene snapshot builder", () => {
   it("includes all non-archived hygiene-active records and excludes archived, terminal, ENTITY, and CAST payloads", () => {
@@ -21,7 +23,7 @@ describe("record hygiene snapshot builder", () => {
       ok(record(idF, "FACT", "Archived fact", factPayload(idF), true))
     ]);
 
-    const result = buildStoryRecordHygieneSnapshot(repository);
+    const result = buildStoryRecordHygieneSnapshot(repository, wholeProject);
 
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -35,7 +37,7 @@ describe("record hygiene snapshot builder", () => {
   });
 
   it("fails closed on malformed rows, duplicate ids, and unsupported types", () => {
-    expect(buildStoryRecordHygieneSnapshot(fakeRepository([{ ok: false, kind: "malformed-record", message: "bad", id: idA }]))).toMatchObject({
+    expect(buildStoryRecordHygieneSnapshot(fakeRepository([{ ok: false, kind: "malformed-record", message: "bad", id: idA }]), wholeProject)).toMatchObject({
       ok: false,
       status: 422,
       body: { kind: "malformed-hygiene-source" }
@@ -44,19 +46,93 @@ describe("record hygiene snapshot builder", () => {
     expect(buildStoryRecordHygieneSnapshot(fakeRepository([
       ok(record(idA, "FACT", "One", factPayload(idA), false)),
       ok(record(idA, "FACT", "Two", factPayload(idA), false))
-    ]))).toMatchObject({ ok: false, body: { kind: "malformed-hygiene-source" } });
+    ]), wholeProject)).toMatchObject({ ok: false, body: { kind: "malformed-hygiene-source" } });
 
     expect(buildStoryRecordHygieneSnapshot(fakeRepository([
       ok(record("bad-type", "UNKNOWN", "Unknown", {}, false))
-    ]))).toMatchObject({ ok: false, body: { kind: "malformed-hygiene-source" } });
+    ]), wholeProject)).toMatchObject({ ok: false, body: { kind: "malformed-hygiene-source" } });
+  });
+
+  it("keeps whole-project mode independent from the working set", () => {
+    const repository = fakeRepository([
+      ok(record(idA, "FACT", "Hard fact", factPayload(idA), false)),
+      ok(record(idB, "BELIEF", "Active belief", beliefPayload(idB), false))
+    ], [idA]);
+
+    const result = buildStoryRecordHygieneSnapshot(repository, wholeProject);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.snapshot.records.map((item) => item.id)).toEqual([idA, idB]);
+  });
+
+  it("restricts working-set mode to selected hygiene-active records in fixed output order", () => {
+    const repository = fakeRepository([
+      ok(record(idB, "BELIEF", "Active belief", beliefPayload(idB), false)),
+      ok(record(idA, "FACT", "Hard fact", factPayload(idA), false)),
+      ok(record(idC, "PLAN", "Fulfilled plan", planPayload(idC, "fulfilled"), false)),
+      ok(record(idF, "FACT", "Archived fact", factPayload(idF), true))
+    ], [idB, idA, idC, idF, "missing-record"]);
+
+    const result = buildStoryRecordHygieneSnapshot(repository, workingSet);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.snapshot.records.map((item) => item.id)).toEqual([idA, idB]);
+  });
+
+  it("treats absent or malformed sessions as an empty working-set scope", () => {
+    const records = [ok(record(idA, "FACT", "Hard fact", factPayload(idA), false))];
+
+    for (const generationSession of [
+      { ok: false, kind: "not-found", message: "No generation session." } as const,
+      { ok: false, kind: "malformed-json", message: "Bad generation session." } as const,
+      { ok: true, payload: { active_working_set: { selected_records: "bad-shape" } } } as const
+    ]) {
+      const result = buildStoryRecordHygieneSnapshot(fakeRepository(records, generationSession), workingSet);
+
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.snapshot.records).toEqual([]);
+      }
+    }
+  });
+
+  it("fails closed on malformed rows selected into working-set scope but ignores malformed rows outside scope", () => {
+    const malformedRow = { ok: false, kind: "malformed-record", message: "bad", id: idB } as const;
+
+    expect(buildStoryRecordHygieneSnapshot(fakeRepository([
+      ok(record(idA, "FACT", "Hard fact", factPayload(idA), false)),
+      malformedRow
+    ], [idA]), workingSet)).toMatchObject({ ok: true });
+
+    expect(buildStoryRecordHygieneSnapshot(fakeRepository([
+      ok(record(idA, "FACT", "Hard fact", factPayload(idA), false)),
+      malformedRow
+    ], [idB]), workingSet)).toMatchObject({
+      ok: false,
+      status: 422,
+      body: { kind: "malformed-hygiene-source" }
+    });
   });
 });
 
-function fakeRepository(results: RecordReadResult[]): RecordHygieneRepository {
+function fakeRepository(
+  results: RecordReadResult[],
+  generationSession: readonly string[] | ReturnType<RecordHygieneRepository["getGenerationSession"]> = []
+): RecordHygieneRepository {
   return {
     listRecords: () => results,
     referencesForRecord: (id) => (id === idB ? [{ refRole: "holder", targetId: idD }] : []),
-    incomingReferencesForRecord: () => []
+    incomingReferencesForRecord: () => [],
+    getGenerationSession: () =>
+      Array.isArray(generationSession)
+        ? { ok: true, payload: { active_working_set: { selected_records: generationSession } } }
+        : generationSession
   };
 }
 

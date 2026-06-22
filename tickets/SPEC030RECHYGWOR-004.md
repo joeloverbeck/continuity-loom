@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds a scope selector + scope disclosure to `RecordHygieneView`; widens the `recordHygieneCompile`/`recordHygieneAnalyze` API client to pass the selected mode; refines the quarantine conformance test. No server or compiler change.
-**Deps**: SPEC030RECHYGWOR-003
+**Deps**: `archive/tickets/SPEC030RECHYGWOR-003.md`
 
 ## Problem
 
@@ -58,7 +58,7 @@ Add any minimal styling for the scope radio to `packages/web/src/styles.css` (co
 
 ## Out of Scope
 
-- Server scope selection / route plumbing (SPEC030RECHYGWOR-003) and the core mode/compiler (`archive/tickets/SPEC030RECHYGWOR-002.md`).
+- Server scope selection / route plumbing (`archive/tickets/SPEC030RECHYGWOR-003.md`) and the core mode/compiler (`archive/tickets/SPEC030RECHYGWOR-002.md`).
 - Persisting a scope preference beyond the current view state (keepers remain sessionStorage-only; no new persistence).
 - Any working-set mutation, record-write, apply/merge/archive control on this page.
 - Docs (SPEC030RECHYGWOR-005) and capstone regression (SPEC030RECHYGWOR-006).

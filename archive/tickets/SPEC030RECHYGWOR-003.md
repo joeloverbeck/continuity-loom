@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-003: Server snapshot scope selection and route mode plumbing
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends the `RecordHygieneRepository` interface and `buildStoryRecordHygieneSnapshot` to apply a user-selected scope; threads the request mode through the record-hygiene routes; adds a read-not-write working-set test. No change to prose/ideation compilation.
@@ -86,3 +86,27 @@ In `packages/server/src/record-hygiene-routes.ts`, pass the parsed mode from `co
 1. `npm test -- record-hygiene` (targeted server hygiene unit + route tests).
 2. `npm run typecheck && npm test && npm run lint` (proves the breaking signature change co-lands with its caller + test double across the package).
 3. A package-scoped `npm test` is sufficient here because the change is confined to `@loom/server`; the core version bump and goldens are proved by -002.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Extended `RecordHygieneRepository` with `getGenerationSession()` and changed `buildStoryRecordHygieneSnapshot(repository, request)` to apply working-set scope before the hygiene-active predicate.
+- Preserved whole-project mode behavior while making working-set mode an explicit selected-ID set test with fixed type/full-label/id output order.
+- Treated absent, malformed, or wrong-shaped generation-session working-set data as an empty working-set scope.
+- Kept malformed selected source rows fail-closed as `422 malformed-hygiene-source` while ignoring malformed rows outside the selected working-set scope.
+- Threaded both request modes through `/api/record-hygiene/compile` and `/api/record-hygiene/analyze`, with unsupported modes rejected.
+- Added route coverage proving working-set mode reads the selected IDs by producing a scoped prompt and does not mutate the working set.
+
+Deviations:
+
+- No browser smoke was run for this server-only ticket. The request shape was exercised through Fastify route injection against a temporary project; the UI/browser selector is owned by SPEC030RECHYGWOR-004 and cross-surface end-to-end proof is owned by SPEC030RECHYGWOR-006.
+
+Verification:
+
+- `npm test -- record-hygiene` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run lint` passed.
