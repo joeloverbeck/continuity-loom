@@ -30,10 +30,11 @@ contains the §2 read-list):
 > commit `<HEAD>` — the manifest reflects that tree. (If a referenced report cites a different
 > "commit of record," note the divergence here and use the verified HEAD, not the report's string.)
 
-If this brief **continues a prior one** (a multi-block campaign, or a follow-up to earlier
-research), name the predecessor `reports/<...>-research-brief.md` and state what it already
-delivered, so Session 2 treats this as a *delta* — not a cold start — and does not re-commission
-completed work. **If the predecessor's deliverable was already implemented** (its recommendations
+If this brief **continues a prior one** (a multi-block campaign, a follow-up to earlier
+research, or an extension of an already-shipped spec), name the predecessor
+(`reports/<...>-research-brief.md` and/or the implemented `archive/specs/SPEC-NNN-*.md` when the
+feature already shipped) and state what it already delivered, so Session 2 treats this as a
+*delta* — not a cold start — and does not re-commission completed work. **If the predecessor's deliverable was already implemented** (its recommendations
 became merged code, not just completed research), the delta is a *baseline shift*, not just prior
 findings: name the implementing commit/PR, declare the post-implementation baseline, list the
 now-live changes so Session 2 does not re-recommend them as new, and state whether those
