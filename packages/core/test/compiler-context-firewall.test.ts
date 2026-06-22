@@ -14,7 +14,11 @@ const canaries = {
   rejected: "P1_REJECTED_CANDIDATE_CANARY_DO_NOT_PROMPT",
   superseded: "P1_SUPERSEDED_CANDIDATE_CANARY_DO_NOT_PROMPT",
   derived: "P1_AUTO_DERIVED_SUMMARY_CANARY_DO_NOT_PROMPT",
-  note: "P1_AUTHOR_PRIVATE_NOTE_CANARY_DO_NOT_PROMPT"
+  note: "P1_AUTHOR_PRIVATE_NOTE_CANARY_DO_NOT_PROMPT",
+  prepNote: "P1_SCENE_PREP_NOTE_CANARY_DO_NOT_PROMPT",
+  clip: "P1_STORY_NOTE_CLIP_CANARY_DO_NOT_PROMPT",
+  clipSourceTitle: "P1_STORY_NOTE_CLIP_SOURCE_TITLE_CANARY_DO_NOT_PROMPT",
+  clipTimestamp: "2026-06-22T00:00:00.000Z_P1_STORY_NOTE_CLIP_TIMESTAMP_CANARY"
 } as const;
 
 const promptFacingHandoffFields = [
@@ -31,12 +35,27 @@ describe("compiler context firewall", () => {
       supersededCandidates?: readonly string[];
       automaticProseSummaries?: readonly string[];
       storyNotes?: readonly { title: string; body: string }[];
+      storyNoteClips?: readonly {
+        content: string;
+        sourceTitleSnapshot: string;
+        sourceUpdatedAtAtCapture: string;
+      }[];
     };
     input.acceptedSegments = [canaries.accepted];
     input.rejectedCandidates = [canaries.rejected];
     input.supersededCandidates = [canaries.superseded];
     input.automaticProseSummaries = [canaries.derived];
-    input.storyNotes = [{ title: "Private note", body: canaries.note }];
+    input.storyNotes = [
+      { title: "Private note", body: canaries.note },
+      { title: "Scene prep", body: canaries.prepNote }
+    ];
+    input.storyNoteClips = [
+      {
+        content: canaries.clip,
+        sourceTitleSnapshot: canaries.clipSourceTitle,
+        sourceUpdatedAtAtCapture: canaries.clipTimestamp
+      }
+    ];
 
     const prompt = compilePrompt(buildValidationSnapshot(input)).prompt;
 

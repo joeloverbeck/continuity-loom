@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-005: Isolation + compiler-context firewall tests
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — new/modified test surfaces in `packages/server/src/story-notes-isolation.test.ts` and `packages/core/test/compiler-context-firewall.test.ts`; no production behavior change
@@ -114,3 +114,23 @@ makes them easy to create (firewall-first, per SPEC-029 Deliverable 7 and propos
 
 1. `npm test --workspace @loom/core -- compiler-context-firewall && npm test --workspace @loom/server -- story-notes-isolation`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Expanded the core compiler-context firewall canary set with scene-prep-note and clip-shaped author-private inputs, including clip content, source-title snapshot, and source timestamp canaries.
+- Expanded the server isolation capstone to create real scratch notes, scene-prep notes, whole-note clips, excerpt clips, FTS-searchable note content, edited source state, and deleted source state.
+- Asserted all new canaries remain absent from validation, readiness, prose compile, ideation compile, generation, ideation, OpenRouter request capture, and logs, while remaining visible through `/api/notes…` surfaces.
+
+Deviations:
+- No production code changed, as intended.
+- The existing server capstone covers prompt/validation/OpenRouter/log/record/working-set/accepted-segment surfaces already present in this repo; no separate prompt-inspection endpoint was introduced.
+
+Verification:
+- `npm test --workspace @loom/core -- compiler-context-firewall && npm test --workspace @loom/server -- story-notes-isolation` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1689 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.

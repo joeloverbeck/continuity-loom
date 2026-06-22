@@ -15,7 +15,17 @@ import { createServer } from "./server.js";
 
 const apps: ReturnType<typeof createServer>[] = [];
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
-const sentinel = "NOTE_SENTINEL_DO_NOT_PROMPT_9f7e3c1b";
+const sentinels = {
+  scratchTitle: "NOTE_SENTINEL_TITLE_DO_NOT_PROMPT_9f7e3c1b",
+  scratchBody: "NOTE_SENTINEL_BODY_DO_NOT_PROMPT_9f7e3c1b",
+  prepTitle: "NOTE_SENTINEL_PREP_TITLE_DO_NOT_PROMPT_9f7e3c1b",
+  prepBody: "NOTE_SENTINEL_PREP_BODY_DO_NOT_PROMPT_9f7e3c1b",
+  prepTag: "NOTE_SENTINEL_PREP_TAG_9f7e3c1b",
+  sourceTitle: "NOTE_SENTINEL_SOURCE_TITLE_DO_NOT_PROMPT_9f7e3c1b",
+  clipWhole: "NOTE_SENTINEL_CLIP_WHOLE_DO_NOT_PROMPT_9f7e3c1b",
+  clipExcerpt: "NOTE_SENTINEL_CLIP_EXCERPT_DO_NOT_PROMPT_9f7e3c1b",
+  editedSource: "NOTE_SENTINEL_EDITED_SOURCE_DO_NOT_PROMPT_9f7e3c1b"
+} as const;
 const apiKey = "sk-or-story-notes-isolation";
 
 describe("story notes isolation capstone", () => {
@@ -61,8 +71,12 @@ describe("story notes isolation capstone", () => {
     try {
       await createDemo(fastify, "sentinel-demo");
       await putSettings(fastify);
-      const note = await createSentinelNote(fastify);
-      expect(JSON.stringify(note)).toContain(sentinel);
+      const notesSurface = await createSentinelNotesWorkspace(fastify);
+      const allowedNotesJson = JSON.stringify(notesSurface);
+      expect(allowedNotesJson).toContain(sentinels.scratchBody);
+      expect(allowedNotesJson).toContain(sentinels.prepBody);
+      expect(allowedNotesJson).toContain(sentinels.clipWhole);
+      expect(allowedNotesJson).toContain(sentinels.clipExcerpt);
 
       const validation = await fastify.inject({ method: "POST", url: "/api/validate" });
       const readiness = await fastify.inject({ method: "POST", url: "/api/readiness" });
@@ -83,18 +97,22 @@ describe("story notes isolation capstone", () => {
       expect(ideate.statusCode).toBe(200);
       expect(sendChatCompletionMock).toHaveBeenCalledTimes(2);
 
-      expect(validation.body).not.toContain(sentinel);
-      expect(readiness.body).not.toContain(sentinel);
-      expect(proseCompile.body).not.toContain(sentinel);
-      expect(ideationCompile.body).not.toContain(sentinel);
-      expect(generate.body).not.toContain(sentinel);
-      expect(ideate.body).not.toContain(sentinel);
-      expect(JSON.stringify(sendChatCompletionMock.mock.calls)).not.toContain(sentinel);
+      for (const sentinel of Object.values(sentinels)) {
+        expect(validation.body).not.toContain(sentinel);
+        expect(readiness.body).not.toContain(sentinel);
+        expect(proseCompile.body).not.toContain(sentinel);
+        expect(ideationCompile.body).not.toContain(sentinel);
+        expect(generate.body).not.toContain(sentinel);
+        expect(ideate.body).not.toContain(sentinel);
+        expect(JSON.stringify(sendChatCompletionMock.mock.calls)).not.toContain(sentinel);
+      }
     } finally {
       logOutput = capture.restore();
     }
 
-    expect(logOutput).not.toContain(sentinel);
+    for (const sentinel of Object.values(sentinels)) {
+      expect(logOutput).not.toContain(sentinel);
+    }
   });
 
   it("leaves record graph, working set, and accepted archive unchanged across note CRUD", async () => {
@@ -175,20 +193,80 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
   expect(response.statusCode).toBe(200);
 }
 
-async function createSentinelNote(fastify: ReturnType<typeof createServer>): Promise<unknown> {
-  const response = await fastify.inject({
+async function createSentinelNotesWorkspace(fastify: ReturnType<typeof createServer>): Promise<unknown[]> {
+  const scratch = await fastify.inject({
     method: "POST",
     url: "/api/notes",
     payload: {
-      title: `Private ${sentinel}`,
-      body: `Scratch body ${sentinel}`,
+      title: `Private ${sentinels.scratchTitle}`,
+      body: `Scratch body ${sentinels.scratchBody}`,
       tags: ["sentinel"],
       pinned: true
     }
   });
+  expect(scratch.statusCode).toBe(201);
 
-  expect(response.statusCode).toBe(201);
-  return response.json();
+  const prep = await fastify.inject({
+    method: "POST",
+    url: "/api/notes",
+    payload: {
+      title: `Prep ${sentinels.prepTitle}`,
+      body: `Prep body ${sentinels.prepBody}`,
+      tags: [sentinels.prepTag],
+      mode: "scene-prep"
+    }
+  });
+  expect(prep.statusCode).toBe(201);
+  const prepNote = prep.json() as { note: { id: string } };
+
+  const source = await fastify.inject({
+    method: "POST",
+    url: "/api/notes",
+    payload: {
+      title: `Source ${sentinels.sourceTitle}`,
+      body: `${sentinels.clipWhole}\n\nExact excerpt ${sentinels.clipExcerpt}`,
+      tags: ["clip-source"]
+    }
+  });
+  expect(source.statusCode).toBe(201);
+  const sourceNote = source.json() as { note: { id: string; updatedAt: string } };
+
+  const capture = await fastify.inject({
+    method: "POST",
+    url: `/api/notes/${prepNote.note.id}/clips`,
+    payload: [
+      { captureKind: "whole-note", sourceNoteId: sourceNote.note.id },
+      {
+        captureKind: "excerpt",
+        sourceNoteId: sourceNote.note.id,
+        selectedText: `Exact excerpt ${sentinels.clipExcerpt}`,
+        sourceUpdatedAt: sourceNote.note.updatedAt
+      }
+    ]
+  });
+  expect(capture.statusCode).toBe(201);
+
+  const edited = await fastify.inject({
+    method: "PUT",
+    url: `/api/notes/${sourceNote.note.id}`,
+    payload: {
+      title: `Edited ${sentinels.sourceTitle}`,
+      body: `Edited body ${sentinels.editedSource}`,
+      tags: ["clip-source"],
+      pinned: false
+    }
+  });
+  expect(edited.statusCode).toBe(200);
+
+  const sourceDeleted = await fastify.inject({ method: "DELETE", url: `/api/notes/${sourceNote.note.id}` });
+  expect(sourceDeleted.statusCode).toBe(200);
+
+  const list = await fastify.inject({ method: "GET", url: `/api/notes?q=${sentinels.scratchBody}` });
+  expect(list.statusCode).toBe(200);
+  const clips = await fastify.inject({ method: "GET", url: `/api/notes/${prepNote.note.id}/clips` });
+  expect(clips.statusCode).toBe(200);
+
+  return [scratch.json(), prep.json(), capture.json(), list.json(), clips.json()];
 }
 
 async function inertProjectSurfaces(fastify: ReturnType<typeof createServer>, databasePath: string): Promise<unknown> {
