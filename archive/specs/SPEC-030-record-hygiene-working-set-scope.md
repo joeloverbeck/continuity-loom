@@ -1,6 +1,6 @@
 # SPEC-030 — User-Selected Scope for the Record-Hygiene Assistance Prompt
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 feature spec; adds an explicit, user-selected, disclosed *scope* to the existing `project-review` record-hygiene assistance prompt (whole-project default + active-working-set option) — gated on a sign-off-required `docs/FOUNDATIONS.md` amendment (Deliverable 0)
 Depends on: the SPEC-027 record-hygiene surface (core `compileRecordHygienePrompt`, `buildStoryRecordHygieneSnapshot`, `/api/record-hygiene/*` routes, `RecordHygieneView`), the active-working-set store (`active_working_set.selected_records` on the generation session), and the core import-boundary rule
 Governing authority: `docs/FOUNDATIONS.md` (constitutional — this spec proposes an amendment to it)
@@ -446,3 +446,37 @@ Gate every ticket on `npm run lint`, `npm run typecheck`, `npm test`, `npm run b
   assert both, not just the filtering behavior.
 - **Slug.** This spec uses `record-hygiene-working-set-scope`; rename before
   decomposition if preferred.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Applied the signed-off `docs/FOUNDATIONS.md` amendment allowing explicit, user-selected, disclosed project-review scopes.
+- Added two record-hygiene request modes: whole-project default and active-working-set scope.
+- Added compiled-prompt scope disclosure with `request_mode` and `hygiene_scope`.
+- Bumped template/compiler/contract versions to `1.4.0` / `1.6.0` / `1.7.0` and updated §8-bound and trailing docs.
+- Implemented server-side working-set scope selection using `active_working_set.selected_records` without working-set mutation or storage migration.
+- Added the Record Hygiene UI scope selector, scope-aware disclosure, empty-scope message, and API client mode plumbing.
+- Extended core, server, web, and e2e coverage for both modes, scoped completeness, empty scope, selected terminal exclusion, route analyze behavior, and prose/ideation non-interference.
+
+Deviations:
+
+- The same-revision exception was used for SPEC030RECHYGWOR-001 and SPEC030RECHYGWOR-002, as required by FOUNDATIONS §1.1.
+- Reversible/bulk archive remains out of scope.
+- Scope preference is not persisted beyond view state, as specified.
+- The first full `npm test` during capstone failed in an unrelated accepted-segments view assertion; the focused accepted-segments rerun passed and the broad test rerun passed.
+
+Verification:
+
+- `npm test -- record-hygiene-golden` passed.
+- `npm test -- record-hygiene` passed.
+- `npm test -- RecordHygieneView` passed.
+- Browser smoke passed on `http://127.0.0.1:5173/record-hygiene` with disposable project `/tmp/loom-hygiene-scope-smoke-VUwoqH` removed afterward.
+- `npm test -- record-hygiene.e2e` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` passed on rerun after unrelated accepted-segments focused rerun.
+- `npm run build` passed.
+- Migration/storage grep for hygiene persistence returned no matches.
