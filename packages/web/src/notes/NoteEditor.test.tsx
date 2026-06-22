@@ -49,7 +49,12 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.mocked(createNote).mockResolvedValue({ ok: true, note: savedNote({ id: "note-new", title: "Fresh note", pinned: false }) });
   vi.mocked(updateNote).mockResolvedValue({ ok: true, note: savedNote() });
-  vi.mocked(deleteNote).mockResolvedValue({ ok: true });
+  vi.mocked(deleteNote).mockResolvedValue({
+    ok: true,
+    deleted: true,
+    cascadedClipCount: 0,
+    detachedSourceClipCount: 0
+  });
 });
 
 afterEach(() => {

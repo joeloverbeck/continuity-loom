@@ -44,7 +44,12 @@ describe("story note routes", () => {
       { method: "GET", url: "/api/notes/missing" },
       { method: "POST", url: "/api/notes", payload: { title: "No project" } },
       { method: "PUT", url: "/api/notes/missing", payload: { title: "No project", body: "", tags: [], pinned: false } },
-      { method: "DELETE", url: "/api/notes/missing" }
+      { method: "DELETE", url: "/api/notes/missing" },
+      { method: "GET", url: "/api/notes/missing/clips" },
+      { method: "POST", url: "/api/notes/missing/clips", payload: [] },
+      { method: "PUT", url: "/api/notes/missing/clips/order", payload: [] },
+      { method: "DELETE", url: "/api/notes/missing/clips/clip" },
+      { method: "POST", url: "/api/notes/delete-batch", payload: ["missing"] }
     ] as const) {
       const response = await fastify.inject(request);
       expect(response.statusCode).toBe(409);
@@ -94,8 +99,8 @@ describe("story note routes", () => {
     expect(list.json()).toMatchObject({
       ok: true,
       notes: [
-        { id: secondNote.id, title: "Pinned reminder", pinned: true },
-        { id: firstNote.id, title: "Bridge economy", bodyPreview: "Need to decide the bridge toll.", pinned: false }
+        { id: secondNote.id, title: "Pinned reminder", pinned: true, mode: "scratch" },
+        { id: firstNote.id, title: "Bridge economy", bodyPreview: "Need to decide the bridge toll.", pinned: false, mode: "scratch" }
       ],
       tags: ["later", "todo", "worldbuilding"]
     });
@@ -116,6 +121,9 @@ describe("story note routes", () => {
 
     const tag = await fastify.inject({ method: "GET", url: "/api/notes?tag=worldbuilding" });
     expect(tag.json()).toMatchObject({ ok: true, notes: [{ id: firstNote.id }] });
+
+    const multiTag = await fastify.inject({ method: "GET", url: "/api/notes?tag=worldbuilding&tag=later" });
+    expect(multiTag.json()).toMatchObject({ ok: true, notes: [{ id: firstNote.id }] });
 
     const update = await fastify.inject({
       method: "PUT",
@@ -138,8 +146,9 @@ describe("story note routes", () => {
       }
     });
 
-    expect((await fastify.inject({ method: "DELETE", url: `/api/notes/${firstNote.id}` })).json()).toEqual({
-      ok: true
+    expect((await fastify.inject({ method: "DELETE", url: `/api/notes/${firstNote.id}` })).json()).toMatchObject({
+      ok: true,
+      deleted: true
     });
     const afterDelete = await fastify.inject({ method: "GET", url: `/api/notes/${firstNote.id}` });
     expect(afterDelete.statusCode).toBe(404);
@@ -176,6 +185,139 @@ describe("story note routes", () => {
     expect(missingDelete.statusCode).toBe(404);
     expect(missingGet.json()).toMatchObject({ ok: false, kind: "not-found" });
     expect(missingDelete.json()).toMatchObject({ ok: false, kind: "not-found" });
+  });
+
+  it("captures, lists, reorders, deletes clips, and reports route errors", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    const prep = await fastify.inject({
+      method: "POST",
+      url: "/api/notes",
+      payload: { title: "Prep", mode: "scene-prep" }
+    });
+    const prepNote = prep.json().note as { id: string };
+    const source = await fastify.inject({
+      method: "POST",
+      url: "/api/notes",
+      payload: { title: "Source", body: "First paragraph.\n\nSecond paragraph.", tags: ["research"] }
+    });
+    const sourceNote = source.json().note as { id: string; updatedAt: string };
+
+    const capture = await fastify.inject({
+      method: "POST",
+      url: `/api/notes/${prepNote.id}/clips`,
+      payload: [
+        { captureKind: "whole-note", sourceNoteId: sourceNote.id },
+        {
+          captureKind: "excerpt",
+          sourceNoteId: sourceNote.id,
+          selectedText: "Second paragraph.",
+          sourceUpdatedAt: sourceNote.updatedAt
+        }
+      ]
+    });
+    expect(capture.statusCode).toBe(201);
+    const clips = capture.json().clips as Array<{ id: string; content: string; sourceStatus: string }>;
+    expect(clips).toEqual([
+      expect.objectContaining({ content: "First paragraph.\n\nSecond paragraph.", sourceStatus: "current" }),
+      expect.objectContaining({ content: "Second paragraph.", sourceStatus: "current" })
+    ]);
+
+    const list = await fastify.inject({ method: "GET", url: `/api/notes/${prepNote.id}/clips` });
+    expect(list.json()).toMatchObject({ ok: true, clips: [{ id: clips[0]?.id }, { id: clips[1]?.id }] });
+
+    const reorder = await fastify.inject({
+      method: "PUT",
+      url: `/api/notes/${prepNote.id}/clips/order`,
+      payload: [clips[1]?.id, clips[0]?.id]
+    });
+    expect(reorder.json()).toMatchObject({ ok: true, clips: [{ id: clips[1]?.id }, { id: clips[0]?.id }] });
+
+    const staleTray = await fastify.inject({
+      method: "PUT",
+      url: `/api/notes/${prepNote.id}/clips/order`,
+      payload: [clips[0]?.id]
+    });
+    expect(staleTray.statusCode).toBe(409);
+    expect(staleTray.json()).toMatchObject({ ok: false, kind: "stale-tray" });
+
+    const staleSource = await fastify.inject({
+      method: "POST",
+      url: `/api/notes/${prepNote.id}/clips`,
+      payload: [
+        {
+          captureKind: "excerpt",
+          sourceNoteId: sourceNote.id,
+          selectedText: "Second paragraph.",
+          sourceUpdatedAt: "2026-01-01T00:00:00.000Z"
+        }
+      ]
+    });
+    expect(staleSource.statusCode).toBe(409);
+    expect(staleSource.json()).toMatchObject({ ok: false, kind: "stale-source" });
+    expect(JSON.stringify(staleSource.json())).not.toContain("Second paragraph");
+
+    const downgrade = await fastify.inject({
+      method: "PUT",
+      url: `/api/notes/${prepNote.id}`,
+      payload: { title: "Prep", body: "", tags: [], pinned: false, mode: "scratch" }
+    });
+    expect(downgrade.statusCode).toBe(409);
+    expect(downgrade.json()).toMatchObject({ ok: false, kind: "prep-has-clips" });
+
+    const missingClip = await fastify.inject({
+      method: "DELETE",
+      url: `/api/notes/${prepNote.id}/clips/019b0298-5c00-7000-8000-000000000777`
+    });
+    expect(missingClip.statusCode).toBe(404);
+    expect(missingClip.json()).toMatchObject({ ok: false, kind: "clip-not-found" });
+
+    const deleteClip = await fastify.inject({ method: "DELETE", url: `/api/notes/${prepNote.id}/clips/${clips[0]?.id}` });
+    expect(deleteClip.json()).toEqual({ ok: true });
+  });
+
+  it("batch deletes notes atomically and reports clip effects", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    const prep = await fastify.inject({
+      method: "POST",
+      url: "/api/notes",
+      payload: { title: "Prep", mode: "scene-prep" }
+    });
+    const prepNote = prep.json().note as { id: string };
+    const source = await fastify.inject({
+      method: "POST",
+      url: "/api/notes",
+      payload: { title: "Source", body: "Snapshot body." }
+    });
+    const sourceNote = source.json().note as { id: string };
+    await fastify.inject({
+      method: "POST",
+      url: `/api/notes/${prepNote.id}/clips`,
+      payload: [{ captureKind: "whole-note", sourceNoteId: sourceNote.id }]
+    });
+
+    const invalid = await fastify.inject({
+      method: "POST",
+      url: "/api/notes/delete-batch",
+      payload: [sourceNote.id, "019b0298-5c00-7000-8000-000000000777"]
+    });
+    expect(invalid.statusCode).toBe(409);
+    expect(invalid.json()).toMatchObject({ ok: false, kind: "source-not-found" });
+    expect((await fastify.inject({ method: "GET", url: `/api/notes/${sourceNote.id}` })).statusCode).toBe(200);
+
+    const deleted = await fastify.inject({
+      method: "POST",
+      url: "/api/notes/delete-batch",
+      payload: [sourceNote.id, prepNote.id]
+    });
+    expect(deleted.json()).toMatchObject({
+      ok: true,
+      deleted: true,
+      cascadedClipCount: 1,
+      detachedSourceClipCount: 1
+    });
   });
 
   it("does not log note title, body, or tags on success or validation failure", async () => {

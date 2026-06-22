@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-004: Notes/clip/batch routes + typed client
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `@loom/server` `story-note-routes` (extended `GET/POST/PUT/DELETE /api/notes`, new tray routes, `POST /api/notes/delete-batch`, new error kinds, safe logging), `@loom/web` `api.ts` typed client fns + `StoryNoteSummary.mode`; production behavior change
@@ -121,3 +121,26 @@ mirror of the `StoryNoteSummary.mode` field (reassessment finding M1, web side).
 
 1. `npm test --workspace @loom/server -- story-note-routes`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Extended `GET /api/notes` with repeated `tag` params, `mode`, `sort=relevance`, and `relevance=true` validation.
+- Exposed route envelopes for note delete effects, clip list/capture/reorder/delete, and atomic batch note delete.
+- Mapped repository errors to structured `409` / `404` envelopes including `prep-has-clips`, `stale-source`, `stale-tray`, `source-not-found`, and `clip-not-found`.
+- Updated PUT note behavior to surface the prep downgrade gate through the route.
+- Added typed web API query fields, summary derived fields, clip read/capture types, tray client functions, and batch-delete client function.
+- Expanded route tests for new no-open-project guards, multi-tag query parsing, clip lifecycle, stale-source/stale-tray envelopes, prep downgrade blocking, clip 404, and batch-delete atomicity.
+
+Deviations:
+- Delete responses are richer than the prior `{ ok: true }` shape; existing callers remain compatible because they only check `ok`, and tests were updated to provide the additive fields.
+- `listTags()` remains the existing string list in `/api/notes`; count data remains repository-local for later UI work.
+
+Verification:
+- `npm test --workspace @loom/server -- story-note-routes` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1689 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.

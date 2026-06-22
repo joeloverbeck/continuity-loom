@@ -5,6 +5,7 @@ import type {
   OpenProjectResult,
   ProjectStatus,
   StoryNote,
+  StoryNoteClip,
   StoryNoteCreateInput,
   StoryNoteUpdateInput,
   ValidationResult,
@@ -257,23 +258,47 @@ export interface GenerationBriefDefaults {
 export type GenerationBriefResponse = { ok: true; session: unknown; defaults: GenerationBriefDefaults } | ApiFailure;
 export type SetGenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
 
-export type NoteSort = "updated-desc" | "updated-asc" | "created-desc" | "created-asc" | "title-asc";
+export type NoteSort = "updated-desc" | "updated-asc" | "created-desc" | "created-asc" | "title-asc" | "relevance";
 
 export interface NoteListQuery {
   q?: string;
-  tag?: string;
+  tag?: string | string[];
+  mode?: "all" | StoryNote["mode"];
   pinned?: "all" | "only" | "unpinned";
   sort?: NoteSort;
+  relevance?: boolean;
 }
 
 export type StoryNoteSummary = Pick<StoryNote, "id" | "title" | "tags" | "pinned" | "createdAt" | "updatedAt"> & {
   bodyPreview: string;
+  mode: StoryNote["mode"];
+  relevance?: number;
+  titleHighlight?: string;
+  bodySnippet?: string;
+  matchedTags?: string[];
 };
+
+export type StoryNoteClipRead = StoryNoteClip & {
+  sourceStatus: "current" | "edited" | "deleted";
+};
+
+export type ClipCaptureInput =
+  | { captureKind: "whole-note"; sourceNoteId: string }
+  | { captureKind: "excerpt"; sourceNoteId: string; selectedText: string; sourceUpdatedAt: string };
 
 export type ListNotesResponse = { ok: true; notes: StoryNoteSummary[]; tags: string[] } | ApiFailure;
 export type GetNoteResponse = { ok: true; note: StoryNote } | ApiFailure;
 export type SaveNoteResponse = { ok: true; note: StoryNote } | ApiFailure;
-export type DeleteNoteResponse = { ok: true } | ApiFailure;
+export type DeleteNoteResponse =
+  | { ok: true; deleted: boolean; cascadedClipCount: number; detachedSourceClipCount: number }
+  | ApiFailure;
+export type ListNoteClipsResponse = { ok: true; clips: StoryNoteClipRead[] } | ApiFailure;
+export type CaptureNoteClipsResponse = { ok: true; clips: StoryNoteClipRead[] } | ApiFailure;
+export type ReorderNoteClipsResponse = { ok: true; clips: StoryNoteClipRead[] } | ApiFailure;
+export type DeleteNoteClipResponse = { ok: true } | ApiFailure;
+export type DeleteNotesBatchResponse =
+  | { ok: true; deleted: boolean; cascadedClipCount: number; detachedSourceClipCount: number }
+  | ApiFailure;
 
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url, {
@@ -314,11 +339,17 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
   return requestJson<T>(url, "POST", body);
 }
 
-function queryString(filters: Record<string, string | boolean | undefined>): string {
+function queryString(filters: Record<string, string | string[] | boolean | undefined>): string {
   const params = new URLSearchParams();
 
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== "") {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== "") {
+          params.append(key, item);
+        }
+      }
+    } else if (value !== undefined && value !== "") {
       params.set(key, String(value));
     }
   }
@@ -403,8 +434,10 @@ export async function listNotes(query: NoteListQuery = {}): Promise<ListNotesRes
     `/api/notes${queryString({
       q: query.q,
       tag: query.tag,
+      mode: query.mode,
       pinned: query.pinned,
-      sort: query.sort
+      sort: query.sort,
+      relevance: query.relevance
     })}`
   );
 }
@@ -423,6 +456,39 @@ export async function updateNote(id: string, input: StoryNoteUpdateInput): Promi
 
 export async function deleteNote(id: string): Promise<DeleteNoteResponse> {
   return requestJson<DeleteNoteResponse>(`/api/notes/${encodeURIComponent(id)}`, "DELETE");
+}
+
+export async function listNoteClips(prepNoteId: string): Promise<ListNoteClipsResponse> {
+  return fetchJson<ListNoteClipsResponse>(`/api/notes/${encodeURIComponent(prepNoteId)}/clips`);
+}
+
+export async function captureNoteClips(
+  prepNoteId: string,
+  captures: ClipCaptureInput[]
+): Promise<CaptureNoteClipsResponse> {
+  return postJson<CaptureNoteClipsResponse>(`/api/notes/${encodeURIComponent(prepNoteId)}/clips`, captures);
+}
+
+export async function reorderNoteClips(
+  prepNoteId: string,
+  orderedClipIds: string[]
+): Promise<ReorderNoteClipsResponse> {
+  return requestJson<ReorderNoteClipsResponse>(
+    `/api/notes/${encodeURIComponent(prepNoteId)}/clips/order`,
+    "PUT",
+    orderedClipIds
+  );
+}
+
+export async function deleteNoteClip(prepNoteId: string, clipId: string): Promise<DeleteNoteClipResponse> {
+  return requestJson<DeleteNoteClipResponse>(
+    `/api/notes/${encodeURIComponent(prepNoteId)}/clips/${encodeURIComponent(clipId)}`,
+    "DELETE"
+  );
+}
+
+export async function deleteNotesBatch(noteIds: string[]): Promise<DeleteNotesBatchResponse> {
+  return postJson<DeleteNotesBatchResponse>("/api/notes/delete-batch", noteIds);
 }
 
 export async function getStoryConfig(kind: StoryConfigKind): Promise<StoryConfigResponse> {

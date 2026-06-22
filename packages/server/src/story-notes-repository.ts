@@ -340,11 +340,18 @@ export class StoryNotesRepository {
   }
 
   updateNote(id: string, input: StoryNoteUpdateInput): StoryNote | undefined {
-    if (!this.getNote(id)) {
+    const existing = this.getNote(id);
+
+    if (!existing) {
       return undefined;
     }
 
     const parsed = storyNoteUpdateInputSchema.parse(input);
+
+    if (existing.mode === "scene-prep" && parsed.mode === "scratch" && this.clipCountForPrep(id) > 0) {
+      throw new StoryNotesRepositoryError("prep-has-clips", "A prep sheet with clips cannot become a scratch note.");
+    }
+
     const timestamp = nowIso();
     this.database
       .prepare(

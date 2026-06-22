@@ -21,6 +21,7 @@ const summaries: StoryNoteSummary[] = [
     bodyPreview: "Remember the bridge toll.",
     tags: ["todo", "worldbuilding"],
     pinned: true,
+    mode: "scratch",
     createdAt: "2026-06-15T10:00:00.000Z",
     updatedAt: "2026-06-15T10:05:00.000Z"
   },
@@ -30,6 +31,7 @@ const summaries: StoryNoteSummary[] = [
     bodyPreview: "Archive fragment.",
     tags: ["research"],
     pinned: false,
+    mode: "scratch",
     createdAt: "2026-06-15T09:00:00.000Z",
     updatedAt: "2026-06-15T09:15:00.000Z"
   }
@@ -63,7 +65,12 @@ beforeEach(() => {
       updatedAt: "2026-06-15T10:30:00.000Z"
     }
   });
-  vi.mocked(deleteNote).mockResolvedValue({ ok: true });
+  vi.mocked(deleteNote).mockResolvedValue({
+    ok: true,
+    deleted: true,
+    cascadedClipCount: 0,
+    detachedSourceClipCount: 0
+  });
   vi.mocked(getNote).mockResolvedValue({
     ok: true,
     note: {
