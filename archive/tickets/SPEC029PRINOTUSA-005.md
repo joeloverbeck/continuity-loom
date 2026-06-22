@@ -22,7 +22,7 @@ makes them easy to create (firewall-first, per SPEC-029 Deliverable 7 and propos
    `packages/core/test/compiler-context-firewall.test.ts` (note canary never reaches a prompt;
    compiler modules do not import `story-notes`). The route/repository surfaces that create the
    new data classes land in SPEC029PRINOTUSA-001…-004.
-2. Spec authority: `specs/SPEC-029-private-notes-usability.md` Deliverable 7 + Verification
+2. Spec authority: `archive/specs/SPEC-029-private-notes-usability.md` Deliverable 7 + Verification
    ("every new canary … absent from every compiled prose/ideation/assistance prompt,
    validation/readiness diagnostic, compiler fingerprint input+output, prompt-inspection
    payload, OpenRouter request body, log, working set, record-reference graph, and

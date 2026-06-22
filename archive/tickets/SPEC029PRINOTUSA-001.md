@@ -30,7 +30,7 @@ that would bridge a per-layer split). This ticket lands that vertical green.
    `story_notes` (`:65`) with indexes `story_notes_pinned_updated_idx` / `_title_idx` /
    `_updated_idx` (`:75–82`). `rowToStoryNote` at `story-notes-repository.ts:47`,
    `createNote:190`, `updateNote:222`, `summarize:136`.
-2. Spec authorities: `specs/SPEC-029-private-notes-usability.md` Deliverables 1–3 and
+2. Spec authorities: `archive/specs/SPEC-029-private-notes-usability.md` Deliverables 1–3 and
    Scope-decisions 1–7; `docs/FOUNDATIONS.md` §6.6 (`:235–248`) admits the surface
    without constraining internal structure. Novelty grep (repo-wide) for
    `story_note_clips` / `story_notes_fts` / `note_mode` / `StoryNoteClip` returns zero —

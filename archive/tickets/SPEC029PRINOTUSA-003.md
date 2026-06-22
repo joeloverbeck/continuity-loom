@@ -22,7 +22,7 @@ actions do not fire at runtime and must be enforced explicitly in the repository
    `story_note_clips` table + `StoryNoteClip`/capture/reorder/batch Zod schemas are created
    by SPEC029PRINOTUSA-001; the FTS read path lands in SPEC029PRINOTUSA-002 (this ticket
    sequences after it on the shared `story-notes-repository.ts`).
-2. Spec authority: `specs/SPEC-029-private-notes-usability.md` Deliverable 4 (clip path),
+2. Spec authority: `archive/specs/SPEC-029-private-notes-usability.md` Deliverable 4 (clip path),
    Approach §B/§D, Scope-decisions 2–4, Risks 4–7, and the reassessment I1 fix in Deliverable
    3/4 and §Risks 6.
 3. Boundary under audit: clip rows reference `story_notes(id)` twice — `prep_note_id`

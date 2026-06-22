@@ -1,6 +1,6 @@
 # SPEC-029 — Private Notes Usability: Scene Prep Workspace, Local FTS5 Search, and Snapshot Clips
 
-**Status**: DRAFT
+**Status**: COMPLETED
 Phase: post-v1 product-behavior spec; author-private Notes surface (§6.6) usability change — adds a `scene-prep` note mode, a `StoryNoteClip` source tray, local SQLite FTS5 ranked search, a three-pane find/read/compose layout, and batch permanent deletion, behind a `LOOM_SCHEMA_VERSION = 3` additive migration. No continuity, prompt-compilation, validation, OpenRouter, or network surface moves.
 Depends on: the shipped Private Notes feature from archived `SPEC-023` (`packages/core/src/story-notes.ts`, `packages/server/src/{record-tables,story-notes-repository,story-note-routes,project-store}.ts`, `packages/web/src/notes/*`, `packages/web/src/{api,shell/AppShell}.ts(x)`); the Node ≥ 24 runtime and its built-in `node:sqlite` binding with `SQLITE_ENABLE_FTS5`; the established `lint` / `typecheck` / `test` / `build` CI gates; the core import-boundary rule (`packages/core/test/boundary.test.ts`); and the existing isolation/firewall proofs.
 Governing authority: `docs/FOUNDATIONS.md`
@@ -531,6 +531,35 @@ packages (proposal §6.5, §9):
 Gates: `npm run lint`, `npm run typecheck`, `npm test` (builds `@loom/core`
 first), `npm run build` — all green before completion. The `docs/user-guide.md`
 Scene Prep section ships in the same change as the feature.
+
+## Outcome
+
+Completed 2026-06-22 through the SPEC029PRINOTUSA ticket series.
+
+Ticket commits:
+
+- `726f1cc` — SPEC029PRINOTUSA-001 schema v3, note mode, clip tables, FTS tables/triggers, migrations, and row mapping.
+- `429de90` — SPEC029PRINOTUSA-002 local FTS/literal search, list summaries, tag counts, and fallback behavior.
+- `b88786f` — SPEC029PRINOTUSA-003 clip repository capture/list/reorder/delete behavior and source/prep delete handling.
+- `1624b42` — SPEC029PRINOTUSA-004 clip and batch-delete API/client routes.
+- `b4ea33e` — SPEC029PRINOTUSA-005 expanded firewall canaries for scene-prep, clips, FTS-derived values, and prompt/validation isolation.
+- `d6ed490` — SPEC029PRINOTUSA-006 three-pane Scene Prep web workspace, tray controls, deletion dialog, and web tests.
+- `3f3db15` — SPEC029PRINOTUSA-007 user-guide section, browser capstone, and source-delete tray refresh regression fix.
+
+Final verification:
+
+- `grep -n "Scene Prep" docs/user-guide.md`
+- Manual browser smoke against `/tmp/spec029-smoke`: author-private badge/copy, local highlighted search, whole-note and exact-excerpt collection, tray reorder, insert/append, edited-source labels, deleted-source preserved-copy labels, permanent delete warnings, and prep-sheet tray cascade.
+- `npm test --workspace @loom/web -- notes`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`
+
+Notes:
+
+- The final browser capstone found and fixed a UI refresh bug after source-note deletion: the app could keep stale source selection/status until reload. `NotesView` now removes deleted notes from local state immediately and reloads active prep clips after non-prep source deletion.
+- The production build completed successfully with Vite's existing large-chunk warning.
 
 ---
 

@@ -22,7 +22,7 @@ fields the find pane needs — while keeping all of it author-private.
    `SELECT * FROM story_notes` (`:257`), `summarize` (`:136`) building `StoryNoteSummary`
    (`:23`, currently `Pick<StoryNote,…> & { bodyPreview }`, no `mode`). `story_notes_fts`
    (`note_id`,`title`,`tags`,`body`, trigram) is created by SPEC029PRINOTUSA-001.
-2. Spec authority: `specs/SPEC-029-private-notes-usability.md` Approach §A + Deliverable 4
+2. Spec authority: `archive/specs/SPEC-029-private-notes-usability.md` Approach §A + Deliverable 4
    (read path) — bm25 title>tags>body, literal FTS phrase escaping, trigram for ≥3-char
    terms, parameterized `instr()`/`LIKE` for 1–2-char terms, exact tag AND from the
    authoritative row, `relevance` sort default only while a non-empty query is active.

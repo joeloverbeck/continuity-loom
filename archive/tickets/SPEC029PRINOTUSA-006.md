@@ -21,7 +21,7 @@ controls, safe highlighting, and the constitutional boundary language.
    and `notes/safe-markdown.tsx:7` (`SafeMarkdown`, ReactMarkdown with filtered `a`/`img`) exist.
    `shell/AppShell.tsx:32` already has the single "Private Notes" sidebar entry and `:127` the
    project-gated `/notes` route — **no AppShell change** (one route, one entry stay).
-2. Spec authority: `specs/SPEC-029-private-notes-usability.md` Deliverable 6 + Approach §C/§D/§E;
+2. Spec authority: `archive/specs/SPEC-029-private-notes-usability.md` Deliverable 6 + Approach §C/§D/§E;
    the typed client fns (`listNoteClips`/`captureNoteClips`/`reorderNoteClips`/`deleteNoteClip`/
    `deleteNotesBatch`) + `StoryNoteSummary.mode` land in SPEC029PRINOTUSA-004.
 3. Boundary under audit: the panes consume the `web/src/api.ts` client contract (004); the prep

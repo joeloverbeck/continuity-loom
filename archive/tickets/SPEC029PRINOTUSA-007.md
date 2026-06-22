@@ -21,7 +21,7 @@ smoke plus the doc.
    Deliverable 8: "no new `docs/ACTIVE-DOCS.md` entry"). The CI-runnable verification surfaces it
    would otherwise duplicate already live in: migration/schema tests (SPEC029PRINOTUSA-001),
    repository tests (-002/-003), route tests (-004), firewall canaries (-005), web tests (-006).
-2. Spec authority: `specs/SPEC-029-private-notes-usability.md` Deliverable 8 + §Verification. The
+2. Spec authority: `archive/specs/SPEC-029-private-notes-usability.md` Deliverable 8 + §Verification. The
    spec explicitly forbids adding note fields to `docs/story-record-schema.md` or anything to
    `docs/compiler-contract.md`, and forbids changing prompt/template/contract versions — so the
    user guide is the **only** doc surface (neither §8-bound doc is touched).
