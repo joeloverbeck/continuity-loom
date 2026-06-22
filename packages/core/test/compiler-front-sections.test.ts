@@ -433,9 +433,9 @@ describe("compiler front-section resolvers", () => {
   });
 
   it("records the deliberate compiler and contract version bump", () => {
-    expect(versionInfo.templates.version).toBe("1.3.0");
-    expect(versionInfo.compiler.version).toBe("1.5.0");
-    expect(versionInfo.contract.version).toBe("1.6.0");
+    expect(versionInfo.templates.version).toBe("1.4.0");
+    expect(versionInfo.compiler.version).toBe("1.6.0");
+    expect(versionInfo.contract.version).toBe("1.7.0");
   });
 
   it("renders omniscient literally and resolves variable POV through selected_pov", () => {

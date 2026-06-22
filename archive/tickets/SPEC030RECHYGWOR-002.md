@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-002: Core request modes, compiler scope disclosure, version bump, and §8 contract docs
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — widens `RecordHygieneRequest.mode`; adds a scope-disclosure line to the record-hygiene compiler; bumps the template/compiler/contract version triple in `packages/core/src/version.ts`; co-lands the §8-bound prompt-contract docs (`docs/compiler-contract.md`, `docs/story-record-hygiene-prompt-template.md`, `docs/story-record-schema.md §9.3`); refreshes all goldens asserting the produced version triple.
@@ -118,3 +118,28 @@ In `packages/core/src/version.ts`: `templates.version` → `1.4.0`, `compiler.ve
 ## Same-Revision Co-Landing Constraint (FOUNDATIONS §1.1)
 
 This ticket is the first dependent behavior of the SPEC030RECHYGWOR-001 FOUNDATIONS amendment and must land in the **same revision (commit/PR)** as -001 — never as a standalone code change ahead of the amendment, and never the amendment standalone ahead of this code. `Deps: SPEC030RECHYGWOR-001` encodes the ordering; this constraint forbids the standalone-ahead merge an ordinary Deps would permit.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Widened `RecordHygieneRequest.mode` to accept `full_active_atomic_review` and `active_working_set_atomic_review`, with invalid modes still rejected.
+- Added deterministic `hygiene_scope` rendering to the record-hygiene records section while leaving the compiler as a renderer over the supplied snapshot.
+- Bumped shared produced versions to template `1.4.0`, compiler `1.6.0`, and contract `1.7.0`, then refreshed produced-version assertions.
+- Added core hygiene coverage for both modes, working-set scope disclosure over a supplied snapshot, empty working-set-scope rendering, and invalid-mode rejection.
+- Updated §8-bound docs: `docs/compiler-contract.md`, `docs/story-record-hygiene-prompt-template.md`, and `docs/story-record-schema.md`.
+
+Deviations:
+
+- Co-landed in the same revision as SPEC030RECHYGWOR-001, as required. `docs/ACTIVE-DOCS.md` remains on the old version note intentionally because SPEC030RECHYGWOR-005 owns that non-§8 registry/user-doc pass.
+
+Verification:
+
+- `npm test -- record-hygiene-golden` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run build` passed.
+- Grep proof confirmed `docs/compiler-contract.md` pins contract `1.7.0`, the compiler/template docs name `active_working_set_atomic_review`, and `docs/story-record-schema.md` names `active_working_set.selected_records`.

@@ -20,7 +20,7 @@ export const HYGIENE_TYPE_ORDER = [
 export type HygieneRecordType = (typeof HYGIENE_TYPE_ORDER)[number];
 
 export interface RecordHygieneRequest {
-  mode: "full_active_atomic_review";
+  mode: "full_active_atomic_review" | "active_working_set_atomic_review";
 }
 
 export interface HygieneRecord {

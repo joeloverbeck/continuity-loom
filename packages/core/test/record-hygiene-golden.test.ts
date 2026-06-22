@@ -4,6 +4,7 @@ import {
   compileRecordHygienePrompt,
   HYGIENE_TYPE_ORDER,
   RECORD_HYGIENE_SECTION_ORDER,
+  type RecordHygieneRequest,
   type HygieneRecord,
   type StoryRecordHygieneSnapshot
 } from "../src/index.js";
@@ -14,11 +15,13 @@ describe("record hygiene compiler", () => {
 
     expect(sectionOrder(result.prompt)).toEqual(RECORD_HYGIENE_SECTION_ORDER);
     expect(result.prompt).toContain("# Story-Record Hygiene Prompt");
+    expect(result.prompt).toContain("request_mode: full_active_atomic_review");
+    expect(result.prompt).toContain("hygiene_scope: whole_project");
     expect(result.prompt).toContain("hygiene_record_count: 16");
     expect(result.prompt).toContain("<record key=\"[FACT-1]\"");
     expect(result.prompt).toContain("<record key=\"[ENTITY STATUS-1]\"");
     expect(result.prompt).toContain("outgoing: holder -> [FACT-1]");
-    expect(result.metadata.versions).toEqual({ template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" });
+    expect(result.metadata.versions).toEqual({ template: "1.4.0", compiler: "1.6.0", contract: "1.7.0" });
     expect(result.metadata.countsByType?.FACT).toBe(1);
     expect(result.metadata.citationMap?.["[FACT-1]"]).toBe("fact-a");
   });
@@ -27,9 +30,44 @@ describe("record hygiene compiler", () => {
     const result = compileRecordHygienePrompt(snapshot([]));
 
     expect(sectionOrder(result.prompt)).toEqual(RECORD_HYGIENE_SECTION_ORDER);
+    expect(result.prompt).toContain("hygiene_scope: whole_project");
     expect(result.prompt).toContain("hygiene_record_count: 0");
     expect(result.prompt).toContain("No non-archived hygiene-active atomic records exist in this project.");
     expect(result.metadata.countsByType?.FACT).toBe(0);
+  });
+
+  it("accepts both request modes and rejects unknown modes", () => {
+    const wholeProject = compileRecordHygienePrompt(snapshot([]), { mode: "full_active_atomic_review" });
+    const workingSet = compileRecordHygienePrompt(snapshot([]), { mode: "active_working_set_atomic_review" });
+
+    expect(wholeProject.prompt).toContain("hygiene_scope: whole_project");
+    expect(workingSet.prompt).toContain("hygiene_scope: active_working_set");
+    expect(() =>
+      compileRecordHygienePrompt(snapshot([]), { mode: "unsupported_mode" as RecordHygieneRequest["mode"] })
+    ).toThrow("Invalid record hygiene request mode: unsupported_mode");
+  });
+
+  it("renders working-set scope over the supplied snapshot without compiler filtering", () => {
+    const suppliedRecords = [
+      record("fact-b", "FACT", "B fact", { statement: "Second in scope" }),
+      record("belief-a", "BELIEF", "A belief", { belief: "First in scope" })
+    ];
+    const result = compileRecordHygienePrompt(snapshot(suppliedRecords), { mode: "active_working_set_atomic_review" });
+
+    expect(result.prompt).toContain("request_mode: active_working_set_atomic_review");
+    expect(result.prompt).toContain("hygiene_scope: active_working_set");
+    expect(result.prompt).toContain("hygiene_record_count: 2");
+    expect(result.prompt).toContain("<record key=\"[FACT-1]\" record_id=\"fact-b\"");
+    expect(result.prompt).toContain("<record key=\"[BELIEF-1]\" record_id=\"belief-a\"");
+  });
+
+  it("renders an empty working-set scope as the truthful empty source state", () => {
+    const result = compileRecordHygienePrompt(snapshot([]), { mode: "active_working_set_atomic_review" });
+
+    expect(result.prompt).toContain("request_mode: active_working_set_atomic_review");
+    expect(result.prompt).toContain("hygiene_scope: active_working_set");
+    expect(result.prompt).toContain("hygiene_record_count: 0");
+    expect(result.prompt).toContain("No non-archived hygiene-active atomic records exist in this project.");
   });
 
   it("escapes hostile payload text inside record data blocks", () => {

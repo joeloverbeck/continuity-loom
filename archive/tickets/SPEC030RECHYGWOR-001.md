@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-001: FOUNDATIONS amendment — explicit user-selected scope for project-review assistance prompts
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Small
 **Engine Changes**: Yes — `docs/FOUNDATIONS.md` §9.1 project-review bullet, a new §9.1 scope paragraph, and the §29.3 project-review hard-fail bullet; no production code change.
@@ -83,3 +83,27 @@ Replace the existing bullet with the Deliverable-0 §0.3 "To" wording: "Does a p
 ## Same-Revision Co-Landing Constraint (FOUNDATIONS §1.1)
 
 This amendment must land in the **same revision (commit/PR)** as SPEC030RECHYGWOR-002 (the first dependent behavior), never standalone ahead of it. -002 declares `Deps: SPEC030RECHYGWOR-001` and carries the mirror of this constraint. The amendment wording is already signed off (`specs/SPEC-030-record-hygiene-working-set-scope.md:247`).
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Updated `docs/FOUNDATIONS.md` §9.1 so `project-review` assistance prompts may use an explicit, user-selected, disclosed scope, with whole-project as the default and active working set as an allowed narrower scope.
+- Added the signed-off §9.1 paragraph requiring scope disclosure in compiled prompts and inspection UI, complete predicate rendering within scope, no working-set mutation, and no keyword/model/token-budget/hidden-state scope selection.
+- Reworded the §29.3 hard-fail bullet to reject incomplete rendering within the declared scope, unselected scopes, and missing prompt/UI disclosure.
+
+Deviations:
+
+- Co-landed in the same revision as SPEC030RECHYGWOR-002, as required by FOUNDATIONS §1.1 and this ticket's same-revision constraint.
+
+Verification:
+
+- `grep -F "drawn from an explicit, user-selected, disclosed scope" docs/FOUNDATIONS.md && grep -F "apply a scope the user did not explicitly select" docs/FOUNDATIONS.md` passed.
+- `grep -ni "whole.project\|across the project" docs/FOUNDATIONS.md` returned only the new §9.1 scope wording, with no old whole-project-only project-review bullet.
+- `npm test -- record-hygiene-golden` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- `npm run build` passed.

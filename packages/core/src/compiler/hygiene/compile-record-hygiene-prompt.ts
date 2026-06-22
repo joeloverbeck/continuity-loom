@@ -17,6 +17,10 @@ import {
 } from "./types.js";
 
 const defaultRequest: RecordHygieneRequest = { mode: "full_active_atomic_review" };
+const requestModes = new Set<RecordHygieneRequest["mode"]>([
+  "full_active_atomic_review",
+  "active_working_set_atomic_review"
+]);
 const typeRank = new Map<string, number>(HYGIENE_TYPE_ORDER.map((recordType, index) => [recordType, index]));
 
 export function compileRecordHygienePrompt(
@@ -57,11 +61,13 @@ export function orderHygieneRecords(records: readonly HygieneRecord[]): readonly
 }
 
 function normalizeRequest(request: Partial<RecordHygieneRequest>): RecordHygieneRequest {
-  if (request.mode !== undefined && request.mode !== "full_active_atomic_review") {
+  if (request.mode !== undefined && !requestModes.has(request.mode)) {
     throw new Error(`Invalid record hygiene request mode: ${String(request.mode)}`);
   }
 
-  return defaultRequest;
+  return {
+    mode: request.mode ?? defaultRequest.mode
+  };
 }
 
 function renderPrompt(
@@ -93,6 +99,7 @@ function renderRecordsSection(
 ): string {
   const lines = [
     `request_mode: ${request.mode}`,
+    `hygiene_scope: ${scopeFor(request.mode)}`,
     `hygiene_record_count: ${records.length}`,
     "hygiene_counts_by_type:",
     ...HYGIENE_TYPE_ORDER.map((recordType) => `- ${recordType}: ${countsByType[recordType] ?? 0}`),
@@ -108,6 +115,14 @@ function renderRecordsSection(
   }
 
   return tag("record_hygiene_records", lines.join("\n"));
+}
+
+function scopeFor(mode: RecordHygieneRequest["mode"]): "whole_project" | "active_working_set" {
+  if (mode === "active_working_set_atomic_review") {
+    return "active_working_set";
+  }
+
+  return "whole_project";
 }
 
 function countsFor(records: readonly HygieneRecord[]): Readonly<Record<HygieneRecordType, number>> {

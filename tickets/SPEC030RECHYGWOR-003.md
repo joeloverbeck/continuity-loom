@@ -4,7 +4,7 @@
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — extends the `RecordHygieneRepository` interface and `buildStoryRecordHygieneSnapshot` to apply a user-selected scope; threads the request mode through the record-hygiene routes; adds a read-not-write working-set test. No change to prose/ideation compilation.
-**Deps**: SPEC030RECHYGWOR-002
+**Deps**: `archive/tickets/SPEC030RECHYGWOR-002.md`
 
 ## Problem
 
@@ -55,7 +55,7 @@ In `packages/server/src/record-hygiene-routes.ts`, pass the parsed mode from `co
 
 ## Out of Scope
 
-- Core request type / compiler scope line / version bump (SPEC030RECHYGWOR-002).
+- Core request type / compiler scope line / version bump (`archive/tickets/SPEC030RECHYGWOR-002.md`).
 - Web scope selector / API client (SPEC030RECHYGWOR-004).
 - The §8 contract docs (co-landed in -002) and trailing docs (-005).
 - Any new storage, schema field, or migration; any working-set mutation.

@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.5.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.7.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -41,12 +41,14 @@ These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Nor
 The record-hygiene compiler renders from these sources only:
 
 1. Template constants from `docs/story-record-hygiene-prompt-template.md`.
-2. A `StoryRecordHygieneSnapshot` containing every non-archived record of an in-scope atomic type whose projected status satisfies the exact per-type hygiene-active predicate in that template and `docs/story-record-schema.md`.
+2. A `StoryRecordHygieneSnapshot` containing every non-archived record of an in-scope atomic type whose projected status satisfies the exact per-type hygiene-active predicate in that template and `docs/story-record-schema.md`, already restricted to the user-selected scope when the request uses working-set scope.
 3. Deterministic full labels, projected statuses, citation keys, outgoing-reference summaries, and incoming-reference summaries derived locally from those records and the project reference graph.
-4. The fixed `RecordHygieneRequest` input.
+4. The `RecordHygieneRequest` input, with mode `full_active_atomic_review` or `active_working_set_atomic_review`.
 5. Deterministic empty-state constants defined in this contract.
 
-The record-hygiene source profile excludes story configuration, generation-session data, generation-time brief fields, active-working-set membership, cast bands, accepted prose, candidates, prompt archives, CAST MEMBER payloads, ENTITY payloads, author-private notes, archived records, timestamps, user-order values, and provider settings.
+Whole-project mode is the default. Working-set mode reads `active_working_set.selected_records` in the server snapshot builder only to form the selected scope; the compiler does not read, filter, or mutate the working set.
+
+The record-hygiene source profile excludes story configuration, generation-time brief fields, active-working-set membership as a prose-prompt source, cast bands, accepted prose, candidates, prompt archives, CAST MEMBER payloads, ENTITY payloads, author-private notes, archived records, timestamps, user-order values, and provider settings. Generation-session data may be read only for the explicit working-set scope input in `active_working_set_atomic_review` mode.
 
 ENTITY and CAST MEMBER references may resolve only to the stored repository `displayLabel` for reference display. Their payload fields do not enter `StoryRecordHygieneSnapshot` or the prompt.
 
@@ -210,7 +212,8 @@ The record-hygiene prompt has no generation placeholders. Its dynamic mapping is
 | `{hygiene_counts_by_type}` | Fixed-type-order counts from the snapshot | Yes | Render every type with `0` when absent |
 | `{hygiene_records}` | Every snapshot record in fixed type/full-label/id order, with key, id, label, status, escaped canonical payload JSON, and reference summaries | Yes when count > 0 | Structural snapshot failure blocks; no silent omission |
 | `{hygiene_citation_map}` | Deterministic `[TYPE-n]` map over the same order | Yes when count > 0 | Block on duplicate/missing key |
-| `{hygiene_request_mode}` | Literal `full_active_atomic_review` | Yes | Invalid request blocks |
+| `{hygiene_request_mode}` | `RecordHygieneRequest.mode`: `full_active_atomic_review` or `active_working_set_atomic_review` | Yes | Invalid request blocks |
+| `{hygiene_scope}` | `whole_project` for `full_active_atomic_review`; `active_working_set` for `active_working_set_atomic_review` | Yes | Invalid request blocks |
 
 Record payload values are data, not instructions. Canonical JSON must escape `<`, `>`, and `&`. Timestamps, archive flags, user-order values, excluded record payloads, story config, generation-session fields, accepted prose, candidates, notes, and provider settings never render.
 

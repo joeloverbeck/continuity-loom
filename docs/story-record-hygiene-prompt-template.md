@@ -1,6 +1,6 @@
 # Story-Record Hygiene Prompt Template
 
-Status: active reference — whole-project atomic-record hygiene assistance prompt, source predicate, type-aware overlap rules, action taxonomy, and output contract
+Status: active reference — whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap rules, action taxonomy, and output contract
 Authority: domain authority for story-record hygiene prompt template (see docs/ACTIVE-DOCS.md)
 
 ---
@@ -8,13 +8,15 @@ Authority: domain authority for story-record hygiene prompt template (see docs/A
 Output expected from external LLM: provenance-bearing advisory findings about possible record overlap and redundancy, never story prose and never record-write instructions.
 Style: portable Markdown/XML hybrid.
 
-The record-hygiene prompt is the `project-review` assistance source profile permitted by `docs/FOUNDATIONS.md` §9.1. It compiles deterministically from the complete set of non-archived hygiene-active atomic records declared below. It does not read story configuration, active-working-set membership, generation-time fields, accepted prose, candidates, CAST MEMBER dossiers, ENTITY payloads, or author-private notes. Its output is quarantined scratch and has no authority until the user manually edits records in the Records surface.
+The record-hygiene prompt is the `project-review` assistance source profile permitted by `docs/FOUNDATIONS.md` §9.1. It compiles deterministically from the complete set of non-archived hygiene-active atomic records declared below within the user-selected scope. Whole-project scope is the default; active-working-set scope reads working-set membership only to honor that explicit scope choice. It does not read story configuration, generation-time fields, accepted prose, candidates, CAST MEMBER dossiers, ENTITY payloads, or author-private notes. Its output is quarantined scratch and has no authority until the user manually edits records in the Records surface.
 
 ## 1. Source Contract
 
 In scope: `FACT`, `EVENT`, `BELIEF`, `SECRET`, `EMOTION`, `RELATIONSHIP`, `INTENTION`, `PLAN`, `CLOCK`, `OBLIGATION`, `CONSEQUENCE`, `OPEN THREAD`, `LOCATION`, `OBJECT`, `VISIBLE AFFORDANCE`, and `ENTITY STATUS`.
 
-Excluded: `ENTITY`, `CAST MEMBER`, story configuration, generation-time brief fields, active-working-set membership, accepted prose, candidates, prompt archives, author-private notes, archived records, timestamps, user-order values, provider settings, embeddings, similarity scores, and hidden UI state.
+Scope: whole project by default, or the active working set when the user explicitly selects `active_working_set_atomic_review`. The archive and per-type status predicates below apply identically within the selected scope, and every qualifying record in that scope must render.
+
+Excluded: `ENTITY`, `CAST MEMBER`, story configuration, generation-time brief fields, active-working-set membership except as the explicit working-set scope input, accepted prose, candidates, prompt archives, author-private notes, archived records, timestamps, user-order values, provider settings, embeddings, similarity scores, and hidden UI state.
 
 The source must be complete. The compiler and server must not filter, rank, summarize, batch, or evict records by similarity, salience, urgency, keyword, model judgment, context budget, timestamps, or UI sort. Provider context overflow is a send failure, not permission to truncate.
 
@@ -75,7 +77,7 @@ ENTITY and CAST MEMBER may appear only as resolved display labels in reference s
 
 ## 8. Request And Sections
 
-The only v1 request is `{ mode: "full_active_atomic_review" }`.
+The v1 requests are `{ mode: "full_active_atomic_review" }` and `{ mode: "active_working_set_atomic_review" }`. The prompt renders both `request_mode` and `hygiene_scope` in `<record_hygiene_records>`.
 
 The prompt renders exactly:
 
@@ -131,4 +133,4 @@ Findings require at least two distinct citations. `MERGE` and `REMOVE` require s
 
 The Record Hygiene page must show a quarantine banner, source counts/exclusions, prompt inspector, copy prompt, explicit OpenRouter disclosure/confirmation, parsed finding cards, record navigation, sessionStorage keepers, copy findings, and clear.
 
-It must not include apply, merge, delete, deactivate, archive, accept, fix-all, brief-insertion, working-set, use-as-prose, notes-import, background-scan, persisted-history, or automatic record-write controls. Clearing findings performs no server write.
+It must not include apply, merge, delete, deactivate, archive, accept, fix-all, brief-insertion, working-set mutation, use-as-prose, notes-import, background-scan, persisted-history, or automatic record-write controls. A read-only scope selector may mention the active working set only to choose the request scope. Clearing findings performs no server write.

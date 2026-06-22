@@ -58,7 +58,7 @@ Add any minimal styling for the scope radio to `packages/web/src/styles.css` (co
 
 ## Out of Scope
 
-- Server scope selection / route plumbing (SPEC030RECHYGWOR-003) and the core mode/compiler (SPEC030RECHYGWOR-002).
+- Server scope selection / route plumbing (SPEC030RECHYGWOR-003) and the core mode/compiler (`archive/tickets/SPEC030RECHYGWOR-002.md`).
 - Persisting a scope preference beyond the current view state (keepers remain sessionStorage-only; no new persistence).
 - Any working-set mutation, record-write, apply/merge/archive control on this page.
 - Docs (SPEC030RECHYGWOR-005) and capstone regression (SPEC030RECHYGWOR-006).

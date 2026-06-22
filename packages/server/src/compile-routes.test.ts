@@ -157,7 +157,7 @@ describe("compile routes", () => {
 
     expect(first.statusCode).toBe(200);
     expect(firstBody.prompt).toContain("<final_output_instruction>");
-    expect(firstBody.metadata.versions).toEqual({ template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" });
+    expect(firstBody.metadata.versions).toEqual({ template: "1.4.0", compiler: "1.6.0", contract: "1.7.0" });
     expect(secondBody.prompt).toBe(firstBody.prompt);
     expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
   });
@@ -186,7 +186,7 @@ describe("compile routes", () => {
     expect(body.prompt).toContain("<ideation_slots>");
     expect(body.prompt).toContain("Mode: questions.");
     expect(body.prompt).not.toContain("<final_output_instruction>");
-    expect(body.metadata.versions).toEqual({ template: "1.3.0", compiler: "1.5.0", contract: "1.6.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.4.0", compiler: "1.6.0", contract: "1.7.0" });
   });
 
   it("fails closed when validation is blocked and emits no prompt", async () => {

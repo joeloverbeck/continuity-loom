@@ -317,9 +317,11 @@ An assistance prompt is a deterministic, inspectable prompt whose declared sourc
 Every assistance prompt must declare exactly one source profile in the applicable domain authority and in `docs/compiler-contract.md`:
 
 - **prose-aligned:** the same authority sources as the prose prompt: story configuration, the active working set, and only the generation-time fields needed by the assistance purpose; or
-- **project-review:** a deterministic records-only projection of explicitly named story-record types across the project, with explicit archive and per-type status predicates.
+- **project-review:** a deterministic records-only projection of explicitly named story-record types, drawn from an explicit, user-selected, disclosed scope — the whole project by default, or a narrower scope the user has explicitly chosen (for example, the active working set) — with explicit archive and per-type status predicates applied identically to every record within that scope.
 
 A project-review assistance prompt does not change the active working set and grants no record outside the active working set authority in a prose prompt. Assistance source selection must never be keyword-triggered, probabilistic, model-selected, token-budget-evicted, inferred from accepted prose or candidates, derived from author-private notes, or taken from hidden UI state.
+
+A project-review assistance prompt may offer more than one scope only when every scope is an explicit, user-selected, deterministic, and disclosed projection. The active scope must be named in the compiled prompt and surfaced in the inspection UI, and the declared archive and per-type status predicates must render every qualifying record within the selected scope — none hidden, ranked, summarized, or omitted. Reading active-working-set membership to honor a user-selected working-set scope is not a working-set mutation and grants no record any prose authority. Scope selection, exactly like source selection, must never be keyword-triggered, probabilistic, model-selected, token-budget-evicted, inferred from accepted prose or candidates, derived from author-private notes, or taken from hidden UI state.
 
 Assistance prompts must:
 
@@ -1009,7 +1011,7 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 ### 29.3 Active working set hard fails
 
 - Does it silently include records the user did not select in a prose prompt, or treat records outside the active working set as authority for prose generation?
-- Does a project-review assistance prompt hide, vary, or incompletely render its declared whole-project source predicate?
+- Does a project-review assistance prompt hide, vary, or incompletely render the source predicate within its declared, user-selected scope; apply a scope the user did not explicitly select; or fail to disclose its active scope in the compiled prompt and the inspection UI?
 - Does it silently remove selected records?
 - Does it silently compress active/onstage cast dossiers?
 - Does it treat inactive records as branches?
