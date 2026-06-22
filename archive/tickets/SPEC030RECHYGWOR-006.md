@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-006: Capstone — cross-surface scope regression
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends `packages/server/src/record-hygiene.e2e.test.ts` with both-mode end-to-end coverage and cross-surface regression assertions; no production behavior change.
@@ -75,3 +75,26 @@ Assert (by running the existing suites / targeted checks) that prose and ideatio
 1. `npm test -- record-hygiene.e2e` (targeted end-to-end conformance).
 2. `npm run lint && npm run typecheck && npm test && npm run build` (the full capstone gate proving the composed feature regresses nothing across packages).
 3. The full pipeline is the correct boundary because the capstone's purpose is whole-feature regression across core + server + web; a narrower command cannot prove cross-surface non-interference.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Extended `packages/server/src/record-hygiene.e2e.test.ts` with a both-mode capstone case.
+- The new case compiles whole-project and active-working-set hygiene prompts against one temporary project, proves whole-project includes an active unselected fact, proves working-set scope includes only selected hygiene-active records, excludes a selected terminal plan, discloses `hygiene_scope: active_working_set`, and sends the scoped prompt on analyze.
+- The existing e2e case continues to cover full-project determinism, accepted prose/private notes exclusion, prose/ideation non-interference, no persisted hygiene output, and reference-integrity guardrails.
+
+Deviations:
+
+- The first full `npm test` run failed in unrelated `AcceptedSegmentsView` UI test `keeps display indices stable under filters and restores tracked expansion after clearing`. The focused rerun of that file passed, and the broad `npm test` rerun passed.
+
+Verification:
+
+- `npm test -- record-hygiene.e2e` passed.
+- `npm run lint` passed.
+- `npm run typecheck` passed.
+- `npm test` initially failed in the unrelated accepted-segments assertion noted above; `npm test -- AcceptedSegmentsView` passed; broad `npm test` rerun passed.
+- `npm run build` passed.
+- `rg -n "hygiene|record_hygiene|record-hygiene" packages/server/src/*migration*.ts packages/server/src/project-store.ts packages/server/src/record-repository.ts packages/server/src/version-schema.ts` returned no matches.

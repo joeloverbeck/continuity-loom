@@ -21,6 +21,8 @@ const apiKey = "sk-or-record-hygiene-e2e";
 const acceptedSentinel = "ACCEPTED_PROSE_HYGIENE_E2E_SENTINEL";
 const noteSentinel = "PRIVATE_NOTE_HYGIENE_E2E_SENTINEL";
 const unselectedFactSentinel = "UNSELECTED_FACT_HYGIENE_E2E_SENTINEL";
+const selectedScopeSentinel = "SELECTED_SCOPE_HYGIENE_E2E_SENTINEL";
+const terminalScopeSentinel = "TERMINAL_SCOPE_HYGIENE_E2E_SENTINEL";
 
 describe("record hygiene end-to-end conformance", () => {
   let configDir: string;
@@ -105,6 +107,53 @@ describe("record hygiene end-to-end conformance", () => {
 
     await expectReferencedRecordProtection(fastify);
   });
+
+  it("composes whole-project and working-set scope modes end to end", async () => {
+    sendChatCompletionMock.mockImplementation(async ({ prompt }) => ({
+      ok: true,
+      candidate: { text: validHygieneResponse(citationsFromPrompt(prompt)) }
+    }));
+    const fastify = app();
+    await createDemo(fastify);
+    await putSettings(fastify);
+    await addUnselectedFact(fastify);
+    const selectedA = await createFact(fastify, "Selected scope alpha", `Selected alpha ${selectedScopeSentinel} A.`);
+    const selectedB = await createFact(fastify, "Selected scope beta", `Selected beta ${selectedScopeSentinel} B.`);
+    const terminalPlan = await createFulfilledPlan(fastify, selectedA);
+    await putWorkingSet(fastify, [selectedA, terminalPlan, selectedB]);
+
+    const wholeProject = await compileRecordHygiene(fastify, "full_active_atomic_review");
+    const workingSet = await compileRecordHygiene(fastify, "active_working_set_atomic_review");
+    const emptyBeforeAnalyze = await persistedSurfaces(fastify, join((await projectStatus(fastify)).folderPath, "loom.sqlite"));
+    const analyze = await fastify.inject({
+      method: "POST",
+      url: "/api/record-hygiene/analyze",
+      payload: { mode: "active_working_set_atomic_review" }
+    });
+    const emptyAfterAnalyze = await persistedSurfaces(fastify, join((await projectStatus(fastify)).folderPath, "loom.sqlite"));
+    const analyzeBody = analyze.json() as { ok: true; findings: unknown[]; metadata: { fingerprint: string; recordCount: number } };
+
+    expect(wholeProject.prompt).toContain("request_mode: full_active_atomic_review");
+    expect(wholeProject.prompt).toContain("hygiene_scope: whole_project");
+    expect(wholeProject.prompt).toContain(unselectedFactSentinel);
+    expect(wholeProject.prompt).toContain(selectedScopeSentinel);
+
+    expect(workingSet.prompt).toContain("request_mode: active_working_set_atomic_review");
+    expect(workingSet.prompt).toContain("hygiene_scope: active_working_set");
+    expect(workingSet.prompt).toContain(selectedScopeSentinel);
+    expect(workingSet.prompt).not.toContain(unselectedFactSentinel);
+    expect(workingSet.prompt).not.toContain(terminalScopeSentinel);
+    expect(workingSet.metadata.recordCount).toBe(2);
+    expect(Object.values(workingSet.citations).sort()).toEqual([selectedA, selectedB].sort());
+
+    expect(analyze.statusCode).toBe(200);
+    expect(analyzeBody.ok).toBe(true);
+    expect(analyzeBody.findings).toHaveLength(1);
+    expect(analyzeBody.metadata.fingerprint).toBe(workingSet.metadata.fingerprint);
+    expect(analyzeBody.metadata.recordCount).toBe(2);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).toBe(workingSet.prompt);
+    expect(emptyAfterAnalyze).toEqual(emptyBeforeAnalyze);
+  });
 });
 
 function app(): FastifyApp {
@@ -177,16 +226,20 @@ async function addPrivateNote(fastify: FastifyApp): Promise<void> {
   expect(response.statusCode).toBe(201);
 }
 
-async function addUnselectedFact(fastify: FastifyApp): Promise<void> {
+async function addUnselectedFact(fastify: FastifyApp): Promise<string> {
+  return createFact(fastify, "Unselected hygiene fact", `This active fact appears only in project-review hygiene prompts: ${unselectedFactSentinel}`);
+}
+
+async function createFact(fastify: FastifyApp, displayLabel: string, statement: string): Promise<string> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/records",
     payload: {
       type: "FACT",
-      displayLabel: "Unselected hygiene fact",
+      displayLabel,
       payload: {
         fact_kind: "current_state",
-        statement: `This active fact appears only in project-review hygiene prompts: ${unselectedFactSentinel}`,
+        statement,
         scope: "current_segment",
         known_by: "public",
         audience_visibility: "explicit",
@@ -194,8 +247,46 @@ async function addUnselectedFact(fastify: FastifyApp): Promise<void> {
       }
     }
   });
+  const body = response.json() as { record: { id: string } };
 
   expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
+async function createFulfilledPlan(fastify: FastifyApp, holder: string): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "PLAN",
+      displayLabel: "Selected fulfilled plan",
+      payload: {
+        plan_status: "fulfilled",
+        holder,
+        objective: `Fulfilled plan should stay outside hygiene scope ${terminalScopeSentinel}.`,
+        resources: [],
+        blockers: [],
+        current_step: "Already completed.",
+        fallback_steps: [],
+        visibility_to_pov: "visible",
+        salience: "medium"
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
+async function putWorkingSet(fastify: FastifyApp, selectedRecordIds: string[]): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/working-set",
+    payload: { selectedRecordIds }
+  });
+
+  expect(response.statusCode).toBe(200);
 }
 
 async function compileProse(fastify: FastifyApp): Promise<{ prompt: string; metadata: { fingerprint: string; versions: Record<string, string> } }> {
@@ -216,7 +307,7 @@ async function compileIdeation(fastify: FastifyApp): Promise<{ prompt: string; m
   return response.json() as { prompt: string; metadata: { fingerprint: string } };
 }
 
-async function compileRecordHygiene(fastify: FastifyApp): Promise<{
+async function compileRecordHygiene(fastify: FastifyApp, mode: "full_active_atomic_review" | "active_working_set_atomic_review" = "full_active_atomic_review"): Promise<{
   prompt: string;
   metadata: { fingerprint: string; recordCount: number };
   citations: Record<string, string>;
@@ -224,7 +315,7 @@ async function compileRecordHygiene(fastify: FastifyApp): Promise<{
   const response = await fastify.inject({
     method: "POST",
     url: "/api/record-hygiene/compile",
-    payload: { mode: "full_active_atomic_review" }
+    payload: { mode }
   });
 
   expect(response.statusCode).toBe(200);
@@ -233,6 +324,13 @@ async function compileRecordHygiene(fastify: FastifyApp): Promise<{
     metadata: { fingerprint: string; recordCount: number };
     citations: Record<string, string>;
   };
+}
+
+async function projectStatus(fastify: FastifyApp): Promise<{ folderPath: string }> {
+  const response = await fastify.inject({ method: "GET", url: "/api/project" });
+
+  expect(response.statusCode).toBe(200);
+  return response.json() as { folderPath: string };
 }
 
 async function listRecords(fastify: FastifyApp): Promise<{ records: Array<{ id: string; type: string }> }> {
