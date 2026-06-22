@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-006: Web three-pane Scene Prep workspace + web tests
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `@loom/web` notes surface refactored into Find/Source/Prep panes (`NotesSearchPane`, `NoteSourcePane`, `ScenePrepPane`, `NoteClipTray`, `PermanentDeleteDialog`), `NotesView` orchestration shell, boundary labeling, plain CSS; production UI behavior change
@@ -131,3 +131,27 @@ controls, safe highlighting, and the constitutional boundary language.
 
 1. `npm test --workspace @loom/web -- notes`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Refactored `NotesView` into a three-pane Find / Source / Prep workspace on the existing `/notes` route.
+- Added `NotesSearchPane` with search, mode/pinned/sort filters, multi-tag chips, multi-select, text-node marker highlighting, collect-selected, and permanent-delete actions.
+- Added `NoteSourcePane` with safe preview, Markdown-source view, whole-note collection, exact textarea selection collection, source edit, and source delete.
+- Added `ScenePrepPane`, `NoteClipTray`, and `PermanentDeleteDialog` for prep-sheet selection/creation/conversion, existing `NoteEditor` reuse, clip listing/status/actions, keyboard-style move controls, retained-copy deletion language, and prep-cascade language.
+- Updated `styles.css` for the three-pane workspace, chips, source textarea, tray items, and responsive stacking.
+- Updated web notes tests for the new shell, additive API contract, boundary language, tag chips, and batch-delete behavior.
+
+Deviations:
+- Pane behavior is covered through `NotesView.test.tsx` and existing note editor tests rather than separate `NotesSearchPane.test.tsx` / `ScenePrepPane.test.tsx` files.
+- Clip `Insert` and `Append` both append through the current prep note body update path; a cursor-aware prep-editor insertion API can be refined later without changing the server contract.
+- The final real-browser/manual runbook is left to SPEC029PRINOTUSA-007 as planned.
+
+Verification:
+- `npm test --workspace @loom/web -- notes` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1689 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.

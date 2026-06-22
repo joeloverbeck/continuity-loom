@@ -1658,6 +1658,22 @@ button:disabled:hover {
   justify-content: space-between;
 }
 
+.notesHeaderActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
 .notesBoundaryBadge {
   border: 1px solid #8fa2bc;
   border-radius: 999px;
@@ -1693,11 +1709,63 @@ button:disabled:hover {
   min-width: 0;
 }
 
-.notesLayout {
+.notesWorkspace {
   display: grid;
-  grid-template-columns: minmax(240px, 0.78fr) minmax(320px, 1.22fr);
+  grid-template-columns: minmax(240px, 0.9fr) minmax(320px, 1.1fr) minmax(340px, 1.15fr);
   gap: 14px;
   align-items: start;
+}
+
+.notesPane {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  align-content: start;
+}
+
+.notesPaneHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.notesPaneHeader h3,
+.notesPaneHeader h4 {
+  margin: 0;
+}
+
+.notesCount {
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #39445a;
+  padding: 2px 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.notesTagChips,
+.notesBulkActions,
+.notesSegmentedControl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.notesTagChips button,
+.notesSegmentedControl button {
+  border: 1px solid #c9d2df;
+  background: #ffffff;
+  color: #39445a;
+}
+
+.notesTagChips button.selected,
+.notesSegmentedControl button.selected {
+  border-color: #245a8d;
+  background: #eef6ff;
+  color: #15395d;
 }
 
 .notesList {
@@ -1708,7 +1776,8 @@ button:disabled:hover {
 
 .notesListItem {
   display: grid;
-  gap: 5px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
   width: 100%;
   min-height: 92px;
   border: 1px solid #c9d2df;
@@ -1717,15 +1786,29 @@ button:disabled:hover {
   color: #202124;
   padding: 10px;
   text-align: left;
-  cursor: pointer;
 }
 
 .notesListItem:hover,
-.notesListItem:focus-visible,
 .notesListItem.selected {
   border-color: #245a8d;
   background: #eef6ff;
   outline: none;
+}
+
+.notesListItem button {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.notesListItem button:focus-visible {
+  outline: 2px solid #245a8d;
+  outline-offset: 3px;
 }
 
 .notesListTitle {
@@ -1826,6 +1909,68 @@ button:disabled:hover {
   padding: 12px;
 }
 
+.notesSourceTextarea {
+  min-height: 24rem;
+  resize: vertical;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+.scenePrepPane .notesEditor,
+.notesSourcePane .notesEditor {
+  padding: 12px;
+}
+
+.noteClipTray {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #c9d2df;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.noteClipList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.noteClipItem {
+  display: grid;
+  gap: 6px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.noteClipKind,
+.noteClipStatus {
+  display: inline-block;
+  margin-right: 6px;
+  border: 1px solid #c9d2df;
+  border-radius: 999px;
+  padding: 2px 7px;
+  color: #39445a;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.noteClipTitle,
+.noteClipPreview {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.noteClipTitle {
+  font-weight: 800;
+}
+
+.noteClipPreview {
+  color: #5c677d;
+}
+
 .notesDialog {
   position: fixed;
   inset: 0;
@@ -1922,7 +2067,7 @@ button:disabled:hover {
     grid-template-columns: 1fr;
   }
 
-  .notesLayout {
+  .notesWorkspace {
     grid-template-columns: 1fr;
   }
 
