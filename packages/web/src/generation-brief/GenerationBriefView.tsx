@@ -35,11 +35,6 @@ function editableLines(value: string | readonly string[] | undefined): string {
   return typeof value === "string" ? value : (value ?? []).join("\n");
 }
 
-function proseLikePaste(value: string): boolean {
-  const trimmed = value.trim();
-  return trimmed.length > 240 || trimmed.split(/[.!?]\s+/).length >= 4 || /\n\n/.test(trimmed);
-}
-
 function parseSession(value: unknown): GenerationSession {
   return generationSessionDraftSchema.parse(value ?? {});
 }
@@ -308,10 +303,6 @@ export function GenerationBriefView(): React.JSX.Element {
   };
   const generationContext = validationFocusTags.generation_context?.[0] ?? defaultGenerationContext;
   const stopGuidance = { soft_unit_guidance: session.stop_guidance?.soft_unit_guidance ?? "" };
-  const pasteWarning = useMemo(
-    () => proseLikePaste([immediateHandoff.recent_causal_context, immediateHandoff.last_visible_moment, immediateHandoff.begin_after].join("\n")),
-    [immediateHandoff.begin_after, immediateHandoff.last_visible_moment, immediateHandoff.recent_causal_context]
-  );
   const nonLocalStopWarning = nonLocalStopPattern.test(stopGuidance.soft_unit_guidance);
 
   function updateSurface<K extends keyof GenerationSession>(key: K, value: GenerationSession[K]): void {
@@ -659,7 +650,6 @@ export function GenerationBriefView(): React.JSX.Element {
               onChange={(event) => updateSurface("immediate_handoff", { ...immediateHandoff, last_visible_moment: event.target.value })}
             />
           </BriefFieldRow>
-          {pasteWarning ? <p className="status statusWarning">This looks like pasted prose. Use user-authored launch context instead.</p> : null}
           <BriefFieldRow path="immediate_handoff.begin_after" schemaLabel="begin_after" generationContext={generationContext}>
             <textarea
               name="generationSession.immediate_handoff.begin_after"
