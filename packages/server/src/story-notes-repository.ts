@@ -1,12 +1,17 @@
 import {
   generateStoryNoteId,
   normalizeStoryNoteTags,
+  storyNoteBatchDeleteInputSchema,
+  storyNoteClipBatchCaptureInputSchema,
+  storyNoteClipReorderInputSchema,
+  storyNoteClipSchema,
   storyNoteCreateInputSchema,
   storyNoteModeSchema,
   storyNoteSchema,
   storyNoteTagsSchema,
   storyNoteUpdateInputSchema,
   type StoryNote,
+  type StoryNoteClip,
   type StoryNoteCreateInput,
   type StoryNoteMode,
   type StoryNoteUpdateInput
@@ -36,6 +41,38 @@ export type StoryNoteTagCount = {
   tag: string;
   count: number;
 };
+
+export type StoryNoteClipSourceStatus = "current" | "edited" | "deleted";
+
+export type StoryNoteClipRead = StoryNoteClip & {
+  sourceStatus: StoryNoteClipSourceStatus;
+};
+
+export type StoryNoteDeleteEffects = {
+  deleted: boolean;
+  cascadedClipCount: number;
+  detachedSourceClipCount: number;
+};
+
+export type StoryNotesRepositoryErrorKind =
+  | "clip-not-found"
+  | "not-a-prep-note"
+  | "prep-has-clips"
+  | "prep-not-found"
+  | "self-capture"
+  | "source-not-found"
+  | "stale-source"
+  | "stale-tray";
+
+export class StoryNotesRepositoryError extends Error {
+  constructor(
+    readonly kind: StoryNotesRepositoryErrorKind,
+    message: string
+  ) {
+    super(message);
+    this.name = "StoryNotesRepositoryError";
+  }
+}
 
 const HIGHLIGHT_START = "\u0002LOOM_NOTE_HIGHLIGHT_START\u0002";
 const HIGHLIGHT_END = "\u0002LOOM_NOTE_HIGHLIGHT_END\u0002";
@@ -72,6 +109,21 @@ function rowToStoryNote(row: Record<string, unknown>): StoryNote {
     tags: parseTagsJson(String(row.tags_json)),
     pinned: boolFromInteger(row.pinned),
     mode: parseMode(row.note_mode),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  });
+}
+
+function rowToStoryNoteClip(row: Record<string, unknown>): StoryNoteClip {
+  return storyNoteClipSchema.parse({
+    id: row.id,
+    prepNoteId: row.prep_note_id,
+    sourceNoteId: row.source_note_id,
+    captureKind: row.capture_kind,
+    sourceTitleSnapshot: row.source_title_snapshot,
+    content: row.content,
+    sourceUpdatedAtAtCapture: row.source_updated_at_at_capture,
+    position: row.position,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   });
@@ -313,9 +365,183 @@ export class StoryNotesRepository {
     return this.getNote(id);
   }
 
-  deleteNote(id: string): boolean {
-    const result = this.database.prepare("DELETE FROM story_notes WHERE id = ?").run(id);
+  setNoteMode(id: string, mode: StoryNoteMode): StoryNote | undefined {
+    const note = this.getNote(id);
+
+    if (!note) {
+      return undefined;
+    }
+
+    if (note.mode === "scene-prep" && mode === "scratch" && this.clipCountForPrep(id) > 0) {
+      throw new StoryNotesRepositoryError("prep-has-clips", "A prep sheet with clips cannot become a scratch note.");
+    }
+
+    const timestamp = nowIso();
+    this.database
+      .prepare("UPDATE story_notes SET note_mode = ?, updated_at = ? WHERE id = ?")
+      .run(storyNoteModeSchema.parse(mode), timestamp, id);
+    return this.getNote(id);
+  }
+
+  listClips(prepNoteId: string): StoryNoteClipRead[] {
+    this.requirePrepNote(prepNoteId);
+    const rows = this.database
+      .prepare(
+        `SELECT c.*, s.updated_at AS source_updated_at
+           FROM story_note_clips c
+           LEFT JOIN story_notes s ON s.id = c.source_note_id
+          WHERE c.prep_note_id = ?
+          ORDER BY c.position ASC, c.created_at ASC, c.id ASC`
+      )
+      .all(prepNoteId) as Record<string, unknown>[];
+
+    return rows.map((row) => {
+      const clip = rowToStoryNoteClip(row);
+      return {
+        ...clip,
+        sourceStatus: sourceStatus(clip, row.source_updated_at)
+      };
+    });
+  }
+
+  captureClips(prepNoteId: string, input: unknown): StoryNoteClipRead[] {
+    const captures = storyNoteClipBatchCaptureInputSchema.parse(input);
+    const prep = this.requirePrepNote(prepNoteId);
+    const timestamp = nowIso();
+    const nextPosition = this.nextClipPosition(prep.id);
+    const prepared = captures.map((capture, index) => {
+      const source = this.getNote(capture.sourceNoteId);
+
+      if (!source) {
+        throw new StoryNotesRepositoryError("source-not-found", "The source note does not exist.");
+      }
+
+      if (source.id === prep.id) {
+        throw new StoryNotesRepositoryError("self-capture", "A prep sheet cannot capture itself.");
+      }
+
+      const content =
+        capture.captureKind === "whole-note"
+          ? source.body
+          : this.verifiedExcerptContent(source, capture.selectedText, capture.sourceUpdatedAt);
+
+      return storyNoteClipSchema.parse({
+        id: generateStoryNoteId(),
+        prepNoteId: prep.id,
+        sourceNoteId: source.id,
+        captureKind: capture.captureKind,
+        sourceTitleSnapshot: source.title,
+        content,
+        sourceUpdatedAtAtCapture: source.updatedAt,
+        position: nextPosition + index,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      });
+    });
+
+    this.transaction(() => {
+      const insert = this.database.prepare(
+        `INSERT INTO story_note_clips (
+          id, prep_note_id, source_note_id, capture_kind, source_title_snapshot, content,
+          source_updated_at_at_capture, position, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
+
+      for (const clip of prepared) {
+        insert.run(
+          clip.id,
+          clip.prepNoteId,
+          clip.sourceNoteId,
+          clip.captureKind,
+          clip.sourceTitleSnapshot,
+          clip.content,
+          clip.sourceUpdatedAtAtCapture,
+          clip.position,
+          clip.createdAt,
+          clip.updatedAt
+        );
+      }
+    });
+
+    return this.listClips(prep.id).filter((clip) => prepared.some((created) => created.id === clip.id));
+  }
+
+  reorderClips(prepNoteId: string, orderedClipIds: unknown): StoryNoteClipRead[] {
+    const parsedIds = storyNoteClipReorderInputSchema.parse(orderedClipIds);
+    this.requirePrepNote(prepNoteId);
+    const currentIds = this.clipIdsForPrep(prepNoteId);
+
+    if (currentIds.length !== parsedIds.length || currentIds.some((id) => !parsedIds.includes(id))) {
+      throw new StoryNotesRepositoryError("stale-tray", "The submitted clip order does not match the current tray.");
+    }
+
+    const timestamp = nowIso();
+    this.transaction(() => {
+      const update = this.database.prepare(
+        "UPDATE story_note_clips SET position = ?, updated_at = ? WHERE id = ? AND prep_note_id = ?"
+      );
+
+      parsedIds.forEach((clipId, position) => {
+        update.run(position, timestamp, clipId, prepNoteId);
+      });
+    });
+
+    return this.listClips(prepNoteId);
+  }
+
+  deleteClip(prepNoteId: string, clipId: string): boolean {
+    this.requirePrepNote(prepNoteId);
+    const result = this.database
+      .prepare("DELETE FROM story_note_clips WHERE id = ? AND prep_note_id = ?")
+      .run(clipId, prepNoteId);
     return result.changes > 0;
+  }
+
+  deleteNote(id: string): boolean {
+    return this.deleteNoteWithEffects(id).deleted;
+  }
+
+  deleteNoteWithEffects(id: string): StoryNoteDeleteEffects {
+    const note = this.getNote(id);
+
+    if (!note) {
+      return { deleted: false, cascadedClipCount: 0, detachedSourceClipCount: 0 };
+    }
+
+    let effects: StoryNoteDeleteEffects;
+
+    this.transaction(() => {
+      effects = this.deleteExistingNoteInTransaction(id);
+    });
+
+    return effects!;
+  }
+
+  deleteNotesBatch(input: unknown): StoryNoteDeleteEffects {
+    const ids = storyNoteBatchDeleteInputSchema.parse(input);
+    const existingIds = new Set(
+      (
+        this.database
+          .prepare(`SELECT id FROM story_notes WHERE id IN (${ids.map(() => "?").join(", ")})`)
+          .all(...ids) as Array<{ id: string }>
+      ).map((row) => row.id)
+    );
+
+    if (ids.some((id) => !existingIds.has(id))) {
+      throw new StoryNotesRepositoryError("source-not-found", "Every note in a batch delete must exist.");
+    }
+
+    const totals: StoryNoteDeleteEffects = { deleted: false, cascadedClipCount: 0, detachedSourceClipCount: 0 };
+    this.transaction(() => {
+      for (const id of ids) {
+        const effects = this.deleteExistingNoteInTransaction(id);
+        totals.deleted ||= effects.deleted;
+        totals.cascadedClipCount += effects.cascadedClipCount;
+        totals.detachedSourceClipCount += effects.detachedSourceClipCount;
+      }
+    });
+
+    return totals;
   }
 
   listTags(): string[] {
@@ -414,4 +640,92 @@ export class StoryNotesRepository {
         return "ORDER BY n.pinned DESC, n.updated_at DESC, n.id ASC";
     }
   }
+
+  private requirePrepNote(id: string): StoryNote {
+    const note = this.getNote(id);
+
+    if (!note) {
+      throw new StoryNotesRepositoryError("prep-not-found", "The prep note does not exist.");
+    }
+
+    if (note.mode !== "scene-prep") {
+      throw new StoryNotesRepositoryError("not-a-prep-note", "The note is not a scene-prep sheet.");
+    }
+
+    return note;
+  }
+
+  private verifiedExcerptContent(source: StoryNote, selectedText: string, sourceUpdatedAt: string): string {
+    if (source.updatedAt !== sourceUpdatedAt || !source.body.includes(selectedText)) {
+      throw new StoryNotesRepositoryError("stale-source", "The selected source text is no longer current.");
+    }
+
+    return selectedText;
+  }
+
+  private nextClipPosition(prepNoteId: string): number {
+    const row = this.database
+      .prepare("SELECT COALESCE(MAX(position), -1) + 1 AS next_position FROM story_note_clips WHERE prep_note_id = ?")
+      .get(prepNoteId) as { next_position: number };
+    return row.next_position;
+  }
+
+  private clipCountForPrep(prepNoteId: string): number {
+    const row = this.database
+      .prepare("SELECT COUNT(*) AS count FROM story_note_clips WHERE prep_note_id = ?")
+      .get(prepNoteId) as { count: number };
+    return row.count;
+  }
+
+  private clipIdsForPrep(prepNoteId: string): string[] {
+    return (
+      this.database
+        .prepare("SELECT id FROM story_note_clips WHERE prep_note_id = ? ORDER BY position ASC, created_at ASC, id ASC")
+        .all(prepNoteId) as Array<{ id: string }>
+    ).map((row) => row.id);
+  }
+
+  private transaction<T>(callback: () => T): T {
+    this.database.exec("BEGIN IMMEDIATE");
+
+    try {
+      const result = callback();
+      this.database.exec("COMMIT");
+      return result;
+    } catch (error) {
+      try {
+        this.database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+
+      throw error;
+    }
+  }
+
+  private deleteExistingNoteInTransaction(id: string): StoryNoteDeleteEffects {
+    const cascadedClipCount = this.clipCountForPrep(id);
+    this.database.prepare("DELETE FROM story_note_clips WHERE prep_note_id = ?").run(id);
+
+    const timestamp = nowIso();
+    const detached = this.database
+      .prepare("UPDATE story_note_clips SET source_note_id = NULL, updated_at = ? WHERE source_note_id = ?")
+      .run(timestamp, id);
+
+    this.database.prepare("DELETE FROM story_notes WHERE id = ?").run(id);
+
+    return {
+      deleted: true,
+      cascadedClipCount,
+      detachedSourceClipCount: Number(detached.changes)
+    };
+  }
+}
+
+function sourceStatus(clip: StoryNoteClip, sourceUpdatedAt: unknown): StoryNoteClipSourceStatus {
+  if (!clip.sourceNoteId || typeof sourceUpdatedAt !== "string") {
+    return "deleted";
+  }
+
+  return sourceUpdatedAt === clip.sourceUpdatedAtAtCapture ? "current" : "edited";
 }

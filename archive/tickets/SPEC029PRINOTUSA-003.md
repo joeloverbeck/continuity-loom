@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-003: Repository clip operations + explicit cascade/null
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Medium
 **Engine Changes**: Yes — `@loom/server` `StoryNotesRepository` clip lifecycle (capture, excerpt verification, transactional batch capture, complete-tray reorder, mode conversion, explicit cascade-on-prep-delete + null-on-source-delete, atomic batch note delete); production behavior change
@@ -124,3 +124,27 @@ actions do not fire at runtime and must be enforced explicitly in the repository
 
 1. `npm test --workspace @loom/server -- story-notes-repository`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Added repository clip read/capture/reorder/delete operations with derived `sourceStatus`.
+- Added `StoryNotesRepositoryError` kinds for prep/source/clip/stale/self-capture/mode-gate failures so routes can map them in SPEC029PRINOTUSA-004.
+- Implemented whole-note and excerpt snapshot capture with server-owned source title/timestamp capture, timestamp equality, exact selected-text containment, self-capture rejection, and validate-before-insert batch behavior.
+- Implemented complete-tray reorder with exact current clip-ID set validation.
+- Added `setNoteMode` with scene-prep-to-scratch downgrade blocked while clips exist.
+- Implemented explicit prep-delete cascade and source-delete pointer nulling inside repository transactions, including atomic batch delete.
+- Expanded repository tests for capture/stale/self/empty/non-prep cases, reorder/stale tray, mode gate, explicit cascade/null on reopened stores, and batch delete atomicity/effects.
+
+Deviations:
+- Added `deleteNoteWithEffects` and `deleteNotesBatch` alongside the existing boolean `deleteNote` API so current callers keep working until SPEC029PRINOTUSA-004 exposes the richer route response.
+- Added route-ready repository error kinds now, but no HTTP envelope or client type changes were made in this ticket.
+
+Verification:
+- `npm test --workspace @loom/server -- story-notes-repository` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1687 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.
