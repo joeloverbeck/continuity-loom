@@ -1,9 +1,9 @@
 # SPEC029PRINOTUSA-007: User-guide Scene Prep section + manual verification capstone
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
-**Engine Changes**: Yes — `docs/user-guide.md` Scene Prep section + a manual UI verification runbook; no production behavior change
+**Engine Changes**: Yes — `docs/user-guide.md` Scene Prep section + manual UI verification runbook; production deletion-refresh fix added from runbook finding
 **Deps**: SPEC029PRINOTUSA-005, SPEC029PRINOTUSA-006
 
 ## Problem
@@ -108,3 +108,38 @@ Implementer-checklist runbook (run against a copy of a project store):
 
 1. `grep -n "Scene Prep" docs/user-guide.md`
 2. `npm run lint && npm run typecheck && npm test && npm run build`
+
+## Outcome
+
+Completed 2026-06-22.
+
+Changed:
+
+- Added the Scene Prep user-guide section to `docs/user-guide.md`, covering Find / Source / Prep, local ranked search, snapshot clips, source deletion preservation, and permanent delete consequences.
+- Ran the manual browser capstone against a disposable `/tmp/spec029-smoke` project store.
+- Fixed a capstone-found UI bug where deleting a source note could leave stale source selection and stale tray source-status state until a reload. `NotesView` now removes deleted notes from local lists immediately, clears related selections, and reloads clips for the active prep sheet after non-prep source deletion.
+- Added a `NotesView` regression test for active prep clip reload without refetching the deleted source note.
+
+Manual browser runbook:
+
+- `/notes` rendered the Author-private badge and inert-scratch explanatory sentence.
+- Created a scene-prep sheet; searched for `Bridge`; local results showed ranked/highlighted matches across the source and prep sheet.
+- Captured one whole-note clip and one exact excerpt; tray showed kind, captured time, and source status.
+- Reordered the excerpt ahead of the whole-note clip; `Insert` and `Append` updated the prep sheet body. Cursor-specific insertion is still represented by the existing append-backed UI path from SPEC029PRINOTUSA-006.
+- Edited the source note, reloaded/select-refetched the prep sheet, and confirmed clips showed `Source edited since capture` while preserving captured text.
+- Deleted the source note and confirmed clips showed `Source deleted; captured text preserved` while retaining captured text.
+- Used `Permanently delete selected` on the prep sheet and confirmed the dialog included `This cannot be undone`, retained source-copy warning, and prep-sheet cascade warning; confirmation removed the prep sheet and its tray clips.
+
+Notes:
+
+- A first attempt to create the fixed demo project hit an unrelated existing-demo `409 Conflict`; the smoke continued in `/tmp/spec029-smoke`.
+- The browser smoke initially exposed the source-delete refresh bug above; the runbook was repeated after the fix and passed.
+
+Verification:
+
+- `grep -n "Scene Prep" docs/user-guide.md`
+- `npm test --workspace @loom/web -- notes`
+- `npm run lint`
+- `npm run typecheck`
+- `npm test`
+- `npm run build`

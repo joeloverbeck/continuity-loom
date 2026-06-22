@@ -200,11 +200,21 @@ export function NotesView(): React.JSX.Element {
   }
 
   function handleDeleted(id: string): void {
+    setNotes((current) => current.filter((note) => note.id !== id));
+    setPrepNotes((current) => current.filter((note) => note.id !== id));
     setSourceNote((current) => (current?.id === id ? null : current));
     setSelectedPrep((current) => (current?.id === id ? null : current));
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
     setEditingSource(null);
     setDeleteCandidates([]);
     setNotice(null);
+    if (selectedPrep && selectedPrep.id !== id) {
+      void loadClips(selectedPrep.id);
+    }
     loadNotes();
   }
 

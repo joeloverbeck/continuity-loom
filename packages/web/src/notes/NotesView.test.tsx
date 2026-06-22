@@ -13,6 +13,7 @@ import {
   listNotes,
   reorderNoteClips,
   updateNote,
+  type StoryNoteClipRead,
   type StoryNoteSummary
 } from "../api.js";
 import { NotesView } from "./NotesView.js";
@@ -225,5 +226,94 @@ describe("NotesView", () => {
     await waitFor(() => expect(deleteNotesBatch).toHaveBeenCalledWith(["note-1"]));
     await waitFor(() => expect(screen.getByText("No private notes.")).toBeTruthy());
     expect(getNote).toHaveBeenCalledTimes(getNoteCallsAfterSelection);
+  });
+
+  it("reloads active prep clips without refetching a deleted source note", async () => {
+    const prepSummary: StoryNoteSummary = {
+      id: "prep-1",
+      title: "Scene Prep",
+      bodyPreview: "Prepared.",
+      tags: ["scene-prep"],
+      pinned: false,
+      mode: "scene-prep",
+      createdAt: "2026-06-15T11:00:00.000Z",
+      updatedAt: "2026-06-15T11:00:00.000Z"
+    };
+    const clip: StoryNoteClipRead = {
+      id: "clip-1",
+      prepNoteId: "prep-1",
+      sourceNoteId: "note-1",
+      sourceTitleSnapshot: "Pinned reminder",
+      captureKind: "whole-note",
+      content: "Remember the bridge toll.",
+      sourceUpdatedAtAtCapture: "2026-06-15T10:05:00.000Z",
+      position: 0,
+      createdAt: "2026-06-15T11:05:00.000Z",
+      updatedAt: "2026-06-15T11:05:00.000Z",
+      sourceStatus: "current"
+    };
+    let deleted = false;
+
+    vi.mocked(listNotes).mockImplementation((query = {}) => {
+      const allNotes = deleted ? [prepSummary] : [summaries[0]!, prepSummary];
+      const notes = query.mode === "scene-prep" ? [prepSummary] : allNotes;
+      return Promise.resolve({ ok: true, notes, tags: deleted ? ["scene-prep"] : ["todo", "scene-prep"] });
+    });
+    vi.mocked(getNote).mockImplementation((id) => {
+      if (id === "prep-1") {
+        return Promise.resolve({
+          ok: true,
+          note: {
+            id: "prep-1",
+            title: "Scene Prep",
+            body: "Prepared.",
+            tags: ["scene-prep"],
+            pinned: false,
+            mode: "scene-prep",
+            createdAt: "2026-06-15T11:00:00.000Z",
+            updatedAt: "2026-06-15T11:00:00.000Z"
+          }
+        });
+      }
+
+      return Promise.resolve({
+        ok: true,
+        note: {
+          id: "note-1",
+          title: "Pinned reminder",
+          body: "Remember the bridge toll.",
+          tags: ["todo"],
+          pinned: true,
+          mode: "scratch",
+          createdAt: "2026-06-15T10:00:00.000Z",
+          updatedAt: "2026-06-15T10:05:00.000Z"
+        }
+      });
+    });
+    vi.mocked(listNoteClips).mockResolvedValue({ ok: true, clips: [clip] });
+    vi.mocked(deleteNotesBatch).mockImplementation(() => {
+      deleted = true;
+      return Promise.resolve({ ok: true, deleted: true, cascadedClipCount: 0, detachedSourceClipCount: 1 });
+    });
+
+    render(<NotesView />);
+
+    await screen.findByRole("heading", { name: "Pinned reminder" });
+    fireEvent.change(screen.getByLabelText("Prep sheet"), { target: { value: "prep-1" } });
+    await screen.findByText("Source current");
+    const deletedSourceFetchesAfterPrepSelection = vi.mocked(getNote).mock.calls.filter(([id]) => id === "note-1").length;
+
+    const sourcePane = screen.getByRole("heading", { name: "Pinned reminder" }).closest<HTMLElement>(".notesSourcePane");
+    expect(sourcePane).not.toBeNull();
+    if (!sourcePane) {
+      return;
+    }
+
+    fireEvent.click(within(sourcePane).getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete note" }));
+
+    await waitFor(() => expect(deleteNotesBatch).toHaveBeenCalledWith(["note-1"]));
+    await waitFor(() => expect(listNoteClips).toHaveBeenCalledTimes(2));
+    expect(vi.mocked(getNote).mock.calls.filter(([id]) => id === "note-1")).toHaveLength(deletedSourceFetchesAfterPrepSelection);
   });
 });
