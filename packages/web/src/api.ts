@@ -4,6 +4,7 @@ import type {
   IdeationRequest,
   OpenProjectResult,
   ProjectStatus,
+  RecordHygieneRequest,
   StoryNote,
   StoryNoteClip,
   StoryNoteCreateInput,
@@ -559,15 +560,15 @@ export async function ideate(request: Partial<IdeationRequest> = {}): Promise<Id
   return postJson<IdeateResponse>("/api/ideate", request);
 }
 
-export async function recordHygieneCompile(): Promise<RecordHygieneCompileResponse> {
+export async function recordHygieneCompile(mode: RecordHygieneRequest["mode"] = "full_active_atomic_review"): Promise<RecordHygieneCompileResponse> {
   return postJson<RecordHygieneCompileResponse>("/api/record-hygiene/compile", {
-    mode: "full_active_atomic_review"
+    mode
   });
 }
 
-export async function recordHygieneAnalyze(): Promise<RecordHygieneAnalyzeResponse> {
+export async function recordHygieneAnalyze(mode: RecordHygieneRequest["mode"] = "full_active_atomic_review"): Promise<RecordHygieneAnalyzeResponse> {
   return postJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
-    mode: "full_active_atomic_review"
+    mode
   });
 }
 

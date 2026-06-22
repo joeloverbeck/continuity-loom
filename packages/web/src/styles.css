@@ -982,6 +982,28 @@ button:disabled:hover {
   gap: 8px;
 }
 
+.hygieneScopeControl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin: 0 0 10px;
+  border: 1px solid #d8dee8;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.hygieneScopeControl legend {
+  padding: 0 4px;
+  font-weight: 700;
+}
+
+.hygieneScopeControl label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
 .promptSearch {
   max-width: 420px;
 }

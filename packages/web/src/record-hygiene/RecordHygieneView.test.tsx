@@ -42,11 +42,15 @@ describe("RecordHygieneView", () => {
 
     expect(await screen.findByRole("heading", { name: "Record Hygiene" })).toBeTruthy();
     expect(screen.getByText("AI-suggested review scratch - not story state.")).toBeTruthy();
-    expect(screen.getByText(/Full active atomic story-record review/)).toBeTruthy();
+    expect(screen.getByRole<HTMLInputElement>("radio", { name: "Whole project" }).checked).toBe(true);
+    expect(screen.getByRole<HTMLInputElement>("radio", { name: "Active working set" }).checked).toBe(false);
+    expect(screen.getByText(/Active scope: Whole project/)).toBeTruthy();
+    expect(screen.getByText(/Full active atomic story-record review within the selected scope/)).toBeTruthy();
     expect(screen.getByText(/ENTITY payloads/)).toBeTruthy();
     expect(screen.getByText(/accepted prose/)).toBeTruthy();
     expect(screen.getAllByText("2").length).toBeGreaterThanOrEqual(2);
     expect((await screen.findByTestId("prompt-body")).textContent).toContain("# Story-Record Hygiene Prompt");
+    expect(recordHygieneCompile).toHaveBeenCalledWith("full_active_atomic_review");
 
     fireEvent.click(screen.getByRole("button", { name: "Copy prompt" }));
 
@@ -82,6 +86,7 @@ describe("RecordHygieneView", () => {
     expect(screen.queryByRole("button", { name: /merge/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /delete/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /archive/i })).toBeNull();
+    expect(screen.getByRole("radio", { name: "Active working set" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /working set/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /generation brief/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /use as prose/i })).toBeNull();
@@ -91,6 +96,46 @@ describe("RecordHygieneView", () => {
     fireEvent.click(screen.getAllByRole("button", { name: "[FACT-1]" })[0]!);
 
     await waitFor(() => expect(screen.getByTestId("location").textContent).toBe("/records?recordId=fact-a"));
+  });
+
+  it("switches to working-set scope, discloses exclusion, and keeps empty-scope send behavior unchanged", async () => {
+    vi.mocked(recordHygieneCompile).mockImplementation((mode = "full_active_atomic_review") =>
+      Promise.resolve(
+        mode === "active_working_set_atomic_review"
+          ? compileResponse({
+            prompt: "# Story-Record Hygiene Prompt\nEMPTY ACTIVE SCOPE",
+            recordCount: 0,
+            countsByType: { FACT: 0, SECRET: 0 },
+            citations: {}
+          })
+          : compileResponse()
+      )
+    );
+    vi.mocked(recordHygieneAnalyze).mockResolvedValue({
+      ok: true,
+      findings: [],
+      metadata: analyzeMetadata()
+    });
+
+    renderRecordHygiene();
+
+    await screen.findByText(/Active scope: Whole project/);
+    fireEvent.click(screen.getByRole("radio", { name: "Active working set" }));
+
+    await waitFor(() => expect(recordHygieneCompile).toHaveBeenLastCalledWith("active_working_set_atomic_review"));
+    expect(screen.getByRole<HTMLInputElement>("radio", { name: "Active working set" }).checked).toBe(true);
+    expect(screen.getByText(/Active scope: Active working set/)).toBeTruthy();
+    expect(screen.getByText(/excluded by your scope choice, not by archive or status/i)).toBeTruthy();
+    expect(screen.getByText("Nothing in your current scope to review.")).toBeTruthy();
+    expect((await screen.findByTestId("prompt-body")).textContent).toContain("EMPTY ACTIVE SCOPE");
+
+    const analyzeButton = screen.getByRole<HTMLButtonElement>("button", { name: "Analyze with OpenRouter" });
+    expect(analyzeButton.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText("Confirm this one-time send"));
+    expect(analyzeButton.disabled).toBe(false);
+    fireEvent.click(analyzeButton);
+
+    await waitFor(() => expect(recordHygieneAnalyze).toHaveBeenCalledWith("active_working_set_atomic_review"));
   });
 
   it("keeps findings in session scratch and clear removes session residue", async () => {
@@ -162,10 +207,15 @@ function LocationProbe(): React.JSX.Element {
   return <span data-testid="location">{`${location.pathname}${location.search}`}</span>;
 }
 
-function compileResponse() {
+function compileResponse(overrides: Partial<{
+  prompt: string;
+  recordCount: number;
+  countsByType: Record<string, number>;
+  citations: Record<string, string>;
+}> = {}) {
   return {
     ok: true as const,
-    prompt: "# Story-Record Hygiene Prompt\nFACT payload",
+    prompt: overrides.prompt ?? "# Story-Record Hygiene Prompt\nFACT payload",
     metadata: {
       versions: {
         template: "template-hygiene",
@@ -175,13 +225,13 @@ function compileResponse() {
       fingerprint: "fingerprint-1",
       lengthEstimate: 42,
       tokenEstimate: 11,
-      recordCount: 2,
-      countsByType: {
+      recordCount: overrides.recordCount ?? 2,
+      countsByType: overrides.countsByType ?? {
         FACT: 2,
         SECRET: 0
       }
     },
-    citations: {
+    citations: overrides.citations ?? {
       "[FACT-1]": "fact-a",
       "[FACT-2]": "fact-b"
     }

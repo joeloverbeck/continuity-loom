@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-004: Web scope selector, disclosure, and API client
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: MEDIUM
 **Effort**: Large
 **Engine Changes**: Yes — adds a scope selector + scope disclosure to `RecordHygieneView`; widens the `recordHygieneCompile`/`recordHygieneAnalyze` API client to pass the selected mode; refines the quarantine conformance test. No server or compiler change.
@@ -87,3 +87,27 @@ Add any minimal styling for the scope radio to `packages/web/src/styles.css` (co
 1. `npm test -- RecordHygieneView` (targeted web component test).
 2. `npm test && npm run typecheck && npm run lint` (full web + cross-package; the mode value is core-owned, so typecheck spans packages).
 3. The component-scoped test is the correct targeted boundary because the change is confined to the Record Hygiene view + its API client; server behavior is proved by -003 and end-to-end by -006.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Added a read-only Record Hygiene scope radio group with whole-project as the default and active-working-set as the opt-in scope.
+- Threaded the selected request mode through `recordHygieneCompile` and `recordHygieneAnalyze`.
+- Updated source disclosure to name the active scope, show returned in-scope counts, and explain that working-set exclusions come from the user's scope choice, not archive or status.
+- Added the distinct empty working-set-scope message while leaving the existing send confirmation/enablement behavior unchanged.
+- Refined quarantine tests so the read-only working-set scope selector is allowed while working-set mutation buttons remain absent.
+
+Deviations:
+
+- None.
+
+Verification:
+
+- `npm test -- RecordHygieneView` passed.
+- `npm run typecheck` passed.
+- `npm test` passed.
+- `npm run lint` passed.
+- Browser smoke passed on `http://127.0.0.1:5173/record-hygiene` with API `127.0.0.1:5174`, using disposable project `/tmp/loom-hygiene-scope-smoke-VUwoqH` (removed afterward): default whole-project scope showed 2 records and `hygiene_scope: whole_project`; switching to Active working set showed 1 record, the scope-choice exclusion note, `request_mode: active_working_set_atomic_review`, and `hygiene_scope: active_working_set`. Console output contained only the standard React DevTools info message.

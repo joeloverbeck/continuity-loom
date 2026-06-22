@@ -4,7 +4,7 @@
 **Priority**: MEDIUM
 **Effort**: Medium
 **Engine Changes**: Yes — extends `packages/server/src/record-hygiene.e2e.test.ts` with both-mode end-to-end coverage and cross-surface regression assertions; no production behavior change.
-**Deps**: SPEC030RECHYGWOR-004
+**Deps**: `archive/tickets/SPEC030RECHYGWOR-004.md`
 
 ## Problem
 

@@ -1,4 +1,4 @@
-import type { CompileResult } from "@loom/core";
+import type { CompileResult, RecordHygieneRequest } from "@loom/core";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -28,24 +28,27 @@ type ScratchState =
   | { status: "malformed"; raw: string }
   | { status: "error"; message: string };
 
+type HygieneMode = RecordHygieneRequest["mode"];
+
 export function RecordHygieneView(): React.JSX.Element {
   const [compileState, setCompileState] = useState<CompileState>({ status: "loading" });
   const [scratchState, setScratchState] = useState<ScratchState>({ status: "empty" });
   const [keepers, setKeepers] = useState<readonly RecordHygieneKeeper[]>(() => listKeepers());
   const [searchTerm, setSearchTerm] = useState("");
   const [sendConfirmed, setSendConfirmed] = useState(false);
+  const [hygieneMode, setHygieneMode] = useState<HygieneMode>("full_active_atomic_review");
   const navigate = useNavigate();
 
   useEffect(() => {
     void refreshPrompt();
-  }, []);
+  }, [hygieneMode]);
 
   async function refreshPrompt(): Promise<void> {
     setCompileState({ status: "loading" });
     setSearchTerm("");
 
     try {
-      const result = await recordHygieneCompile();
+      const result = await recordHygieneCompile(hygieneMode);
       if (!result.ok) {
         setCompileState({ status: "error", message: errorMessage(result) });
         return;
@@ -66,7 +69,7 @@ export function RecordHygieneView(): React.JSX.Element {
     setScratchState({ status: "sending" });
 
     try {
-      const result = await recordHygieneAnalyze();
+      const result = await recordHygieneAnalyze(hygieneMode);
       if (result.ok) {
         if ("malformed" in result) {
           setScratchState({ status: "malformed", raw: result.raw });
@@ -101,7 +104,16 @@ export function RecordHygieneView(): React.JSX.Element {
     void navigator.clipboard?.writeText(text);
   }
 
+  function changeMode(mode: HygieneMode): void {
+    setHygieneMode(mode);
+    setScratchState({ status: "empty" });
+  }
+
   const promptResult = compileState.status === "ready" ? toCompileResult(compileState.prompt, compileState.metadata) : null;
+  const scopeLabel = hygieneMode === "active_working_set_atomic_review" ? "Active working set" : "Whole project";
+  const emptyWorkingSetScope = hygieneMode === "active_working_set_atomic_review"
+    && compileState.status === "ready"
+    && compileState.metadata.recordCount === 0;
 
   return (
     <section className="surface previewSurface ideateSurface" aria-labelledby="record-hygiene-title">
@@ -126,7 +138,36 @@ export function RecordHygieneView(): React.JSX.Element {
         <section className="previewStack">
           <section className="configPanel" aria-labelledby="hygiene-source-title">
             <h3 id="hygiene-source-title">Source Disclosure</h3>
-            <p className="muted">Full active atomic story-record review. Excludes archived records, terminal records, ENTITY payloads, CAST MEMBER payloads, accepted prose, candidates, and private notes.</p>
+            <fieldset className="hygieneScopeControl" aria-label="Review scope">
+              <legend>Review scope</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="record-hygiene-scope"
+                  value="full_active_atomic_review"
+                  checked={hygieneMode === "full_active_atomic_review"}
+                  onChange={() => changeMode("full_active_atomic_review")}
+                />
+                Whole project
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="record-hygiene-scope"
+                  value="active_working_set_atomic_review"
+                  checked={hygieneMode === "active_working_set_atomic_review"}
+                  onChange={() => changeMode("active_working_set_atomic_review")}
+                />
+                Active working set
+              </label>
+            </fieldset>
+            <p className="muted">Active scope: {scopeLabel}. Full active atomic story-record review within the selected scope. Excludes archived records, terminal records, ENTITY payloads, CAST MEMBER payloads, accepted prose, candidates, and private notes.</p>
+            {hygieneMode === "active_working_set_atomic_review" ? (
+              <p className="muted">Records you have not added to the active working set are excluded by your scope choice, not by archive or status.</p>
+            ) : null}
+            {emptyWorkingSetScope ? (
+              <p className="status statusWarning" role="status">Nothing in your current scope to review.</p>
+            ) : null}
             <dl className="metadataGrid">
               <div>
                 <dt>Records</dt>

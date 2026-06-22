@@ -4,7 +4,7 @@
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — updates `docs/ACTIVE-DOCS.md`, `docs/user-guide.md`, `README.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`; no production behavior change.
-**Deps**: SPEC030RECHYGWOR-004
+**Deps**: `archive/tickets/SPEC030RECHYGWOR-004.md`
 
 ## Problem
 
