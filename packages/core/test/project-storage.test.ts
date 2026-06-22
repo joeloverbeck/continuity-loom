@@ -51,14 +51,17 @@ describe("projectMetadataSchema", () => {
 describe("evaluateStoreCompatibility", () => {
   it("returns ok for matching app and store schema versions", () => {
     expect(evaluateStoreCompatibility(1, 1)).toBe("ok");
+    expect(evaluateStoreCompatibility(3, 3)).toBe("ok");
   });
 
   it("requires migration when the store is older than the app", () => {
     expect(evaluateStoreCompatibility(2, 1)).toBe("migration-required");
+    expect(evaluateStoreCompatibility(3, 2)).toBe("migration-required");
   });
 
   it("marks the store incompatible when it is newer than the app", () => {
     expect(evaluateStoreCompatibility(1, 2)).toBe("incompatible-version");
+    expect(evaluateStoreCompatibility(3, 4)).toBe("incompatible-version");
   });
 });
 

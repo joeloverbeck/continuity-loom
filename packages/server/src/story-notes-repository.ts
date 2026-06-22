@@ -51,6 +51,7 @@ function rowToStoryNote(row: Record<string, unknown>): StoryNote {
     body: row.body,
     tags: parseTagsJson(String(row.tags_json)),
     pinned: boolFromInteger(row.pinned),
+    mode: typeof row.note_mode === "string" ? row.note_mode : "scratch",
     createdAt: row.created_at,
     updatedAt: row.updated_at
   });
@@ -197,14 +198,15 @@ export class StoryNotesRepository {
       body: parsed.body,
       tags: parsed.tags,
       pinned: parsed.pinned,
+      mode: parsed.mode,
       createdAt: timestamp,
       updatedAt: timestamp
     });
 
     this.database
       .prepare(
-        `INSERT INTO story_notes (id, title, body, tags_json, pinned, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO story_notes (id, title, body, tags_json, pinned, note_mode, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         note.id,
@@ -212,6 +214,7 @@ export class StoryNotesRepository {
         note.body,
         canonicalJson(note.tags),
         integerFromBool(note.pinned),
+        note.mode,
         note.createdAt,
         note.updatedAt
       );
@@ -229,7 +232,7 @@ export class StoryNotesRepository {
     this.database
       .prepare(
         `UPDATE story_notes
-           SET title = ?, body = ?, tags_json = ?, pinned = ?, updated_at = ?
+           SET title = ?, body = ?, tags_json = ?, pinned = ?, note_mode = COALESCE(?, note_mode), updated_at = ?
          WHERE id = ?`
       )
       .run(
@@ -237,6 +240,7 @@ export class StoryNotesRepository {
         parsed.body,
         canonicalJson(parsed.tags),
         integerFromBool(parsed.pinned),
+        parsed.mode ?? null,
         timestamp,
         id
       );

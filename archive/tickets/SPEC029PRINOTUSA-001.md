@@ -1,6 +1,6 @@
 # SPEC029PRINOTUSA-001: Schema v3 migration vertical — `mode`, clip & FTS tables
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: HIGH
 **Effort**: Large
 **Engine Changes**: Yes — `@loom/core` story-note domain (`StoryNote.mode`, `StoryNoteClip` + Zod schemas), `LOOM_SCHEMA_VERSION` 2→3, `@loom/server` `story_notes.note_mode` column + `story_note_clips` + `story_notes_fts` tables/triggers, ordered-step-runner open-time migration, `rowToStoryNote` mode mapping; production behavior change (new on-disk schema v3)
@@ -193,3 +193,27 @@ that would bridge a per-layer split). This ticket lands that vertical green.
 
 1. `npm test --workspace @loom/core && npm test --workspace @loom/server`
 2. `npm run typecheck && npm run lint && npm test && npm run build`
+
+## Outcome
+
+Completed: 2026-06-22
+
+Changed:
+- Added `StoryNote.mode`, `StoryNoteClip`, clip capture/reorder/batch-delete schemas, and core exports.
+- Bumped `LOOM_SCHEMA_VERSION` to 3 without changing prompt/template/compiler/contract versions.
+- Added v3 `story_notes.note_mode`, `story_note_clips`, `story_notes_fts`, and FTS triggers; retained a legacy v2 story-note table helper for v1→v2 migration.
+- Refactored open-time migration into ordered v1→v2→v3 steps with FTS5 preflight, v2 rollback on failure, v1 chain migration, v3 idempotence, and metadata/user-version updates.
+- Updated `StoryNotesRepository` create/update/read mapping to persist `mode`.
+- Updated produced schema-version assertions and test fixtures affected by the required `StoryNote.mode` member.
+
+Deviations:
+- `StoryNote.mode` is storage-defaulted but type-required, so existing full `StoryNote` test fixtures in the web package were updated in this ticket to preserve a typecheck-green vertical.
+- The migration dispatcher leaves stores below the registered migration floor as `migration-required` instead of attempting an unsupported migration and reporting `migration-failed`.
+
+Verification:
+- `npm test --workspace @loom/core -- story-notes project-storage` — passed.
+- `npm test --workspace @loom/server -- story-notes-migration story-notes-repository project-store record-layer` — passed.
+- `npm run typecheck` — passed.
+- `npm run lint` — passed.
+- `npm test` — passed, 158 files / 1678 tests.
+- `npm run build` — passed; Vite emitted the pre-existing large chunk warning.

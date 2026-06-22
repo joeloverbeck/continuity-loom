@@ -19,6 +19,7 @@ const existingNote: StoryNote = {
   body: "Remember the bridge toll.",
   tags: ["todo"],
   pinned: true,
+  mode: "scratch",
   createdAt: "2026-06-15T10:00:00.000Z",
   updatedAt: "2026-06-15T10:05:00.000Z"
 };

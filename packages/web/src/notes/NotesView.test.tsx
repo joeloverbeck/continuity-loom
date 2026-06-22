@@ -45,6 +45,7 @@ beforeEach(() => {
       body: "",
       tags: [],
       pinned: false,
+      mode: "scratch",
       createdAt: "2026-06-15T10:30:00.000Z",
       updatedAt: "2026-06-15T10:30:00.000Z"
     }
@@ -57,6 +58,7 @@ beforeEach(() => {
       body: "Updated body.",
       tags: ["todo"],
       pinned: true,
+      mode: "scratch",
       createdAt: "2026-06-15T10:00:00.000Z",
       updatedAt: "2026-06-15T10:30:00.000Z"
     }
@@ -70,6 +72,7 @@ beforeEach(() => {
       body: "# Heading\n\nRemember **the bridge toll**.\n\n<script>bad()</script>\n\n![remote](https://example.invalid/x.png)",
       tags: ["todo", "worldbuilding"],
       pinned: true,
+      mode: "scratch",
       createdAt: "2026-06-15T10:00:00.000Z",
       updatedAt: "2026-06-15T10:05:00.000Z"
     }
@@ -134,6 +137,7 @@ describe("NotesView", () => {
         body: "First body.",
         tags: ["todo"],
         pinned: true,
+        mode: "scratch",
         createdAt: "2026-06-15T10:00:00.000Z",
         updatedAt: "2026-06-15T10:05:00.000Z"
       }
@@ -145,6 +149,7 @@ describe("NotesView", () => {
         body: "Second body.",
         tags: ["research"],
         pinned: false,
+        mode: "scratch",
         createdAt: "2026-06-15T09:00:00.000Z",
         updatedAt: "2026-06-15T09:15:00.000Z"
       }

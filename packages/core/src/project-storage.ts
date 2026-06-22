@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Changing this value would make existing project stores look foreign to the app.
 export const LOOM_APPLICATION_ID = 0x4c4f4f4d;
-export const LOOM_SCHEMA_VERSION = 2;
+export const LOOM_SCHEMA_VERSION = 3;
 
 export const projectMetadataSchema = z
   .object({

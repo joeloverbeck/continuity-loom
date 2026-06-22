@@ -20,7 +20,7 @@ import { migrateGenerationSessionDraft } from "./generation-session-draft-migrat
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { migrateRecordPayloads } from "./record-payload-cleanup-migration.js";
 import { RecordRepository } from "./record-repository.js";
-import { ensureRecordTables, ensureStoryNoteTables } from "./record-tables.js";
+import { ensureRecordTables, ensureStoryNoteTables, ensureStoryNoteV2Tables } from "./record-tables.js";
 import { StoryNotesRepository } from "./story-notes-repository.js";
 import { repairWorkingSetReferences } from "./working-set-integrity-migration.js";
 
@@ -175,7 +175,7 @@ async function migrateStoreFromV1ToV2(
 ): Promise<ProjectMetadata> {
   try {
     database.exec("BEGIN IMMEDIATE");
-    ensureStoryNoteTables(database);
+    ensureStoryNoteV2Tables(database);
     database.exec("PRAGMA user_version = 2");
     database.exec("COMMIT");
   } catch (error) {
@@ -197,6 +197,110 @@ async function migrateStoreFromV1ToV2(
   });
   await writeFile(metadataPath(folderPath), `${JSON.stringify(migratedMetadata, null, 2)}\n`, "utf8");
   return migratedMetadata;
+}
+
+function preflightStoryNotesFts5(database: DatabaseSync): void {
+  database.exec(`
+    CREATE VIRTUAL TABLE temp.loom_fts5_preflight USING fts5(value, tokenize = 'trigram');
+    DROP TABLE temp.loom_fts5_preflight;
+  `);
+}
+
+function storyNoteColumnExists(database: DatabaseSync, columnName: string): boolean {
+  const rows = database.prepare("PRAGMA table_info(story_notes)").all() as Array<{ name: string }>;
+  return rows.some((row) => row.name === columnName);
+}
+
+function assertStoryNotesV3(database: DatabaseSync): void {
+  const invalidMode = database
+    .prepare("SELECT id FROM story_notes WHERE note_mode NOT IN ('scratch', 'scene-prep') LIMIT 1")
+    .get();
+
+  if (invalidMode) {
+    throw new Error("Invalid story note mode during v3 migration.");
+  }
+
+  const baseCount = database.prepare("SELECT COUNT(*) AS count FROM story_notes").get() as { count: number };
+  const ftsCount = database.prepare("SELECT COUNT(*) AS count FROM story_notes_fts").get() as { count: number };
+
+  if (baseCount.count !== ftsCount.count) {
+    throw new Error("Story note FTS row count does not match base table.");
+  }
+}
+
+async function migrateStoreFromV2ToV3(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata
+): Promise<ProjectMetadata> {
+  preflightStoryNotesFts5(database);
+
+  try {
+    database.exec("BEGIN IMMEDIATE");
+
+    if (!storyNoteColumnExists(database, "note_mode")) {
+      database.exec(`
+        ALTER TABLE story_notes
+          ADD COLUMN note_mode TEXT NOT NULL DEFAULT 'scratch' CHECK (note_mode IN ('scratch', 'scene-prep'));
+      `);
+    }
+
+    ensureStoryNoteTables(database);
+    database.exec(`
+      DELETE FROM story_notes_fts;
+      INSERT INTO story_notes_fts (note_id, title, tags, body)
+        SELECT id, title, tags_json, body FROM story_notes;
+    `);
+    assertStoryNotesV3(database);
+    database.exec("PRAGMA user_version = 3");
+    database.exec("COMMIT");
+  } catch (error) {
+    if (database.isOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+    }
+
+    throw error;
+  }
+
+  const migratedMetadata = projectMetadataSchema.parse({
+    ...metadata,
+    schemaMinVersion: 3,
+    updatedAt: new Date().toISOString()
+  });
+  await writeFile(metadataPath(folderPath), `${JSON.stringify(migratedMetadata, null, 2)}\n`, "utf8");
+  return migratedMetadata;
+}
+
+async function migrateStoreToCurrentSchema(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata,
+  storeUserVersion: number
+): Promise<{ metadata: ProjectMetadata; storeUserVersion: number }> {
+  let migratedMetadata = metadata;
+  let currentVersion = storeUserVersion;
+
+  const migrations: Record<number, (db: DatabaseSync, path: string, data: ProjectMetadata) => Promise<ProjectMetadata>> = {
+    1: migrateStoreFromV1ToV2,
+    2: migrateStoreFromV2ToV3
+  };
+
+  while (currentVersion < LOOM_SCHEMA_VERSION) {
+    const migrate = migrations[currentVersion];
+
+    if (!migrate) {
+      throw new Error(`No migration registered from schema version ${currentVersion}.`);
+    }
+
+    migratedMetadata = await migrate(database, folderPath, migratedMetadata);
+    currentVersion = readPragmaNumber(database, "user_version");
+  }
+
+  return { metadata: migratedMetadata, storeUserVersion: currentVersion };
 }
 
 function failure(kind: Exclude<OpenProjectResult, { ok: true }>["kind"], message: string): OpenProjectResult {
@@ -383,9 +487,10 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
       try {
         let compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
 
-        if (compatibility === "migration-required" && LOOM_SCHEMA_VERSION === 2 && storeUserVersion === 1) {
-          metadata = await migrateStoreFromV1ToV2(database, folderPath, metadata);
-          storeUserVersion = readPragmaNumber(database, "user_version");
+        if (compatibility === "migration-required" && storeUserVersion >= 1) {
+          const migrated = await migrateStoreToCurrentSchema(database, folderPath, metadata, storeUserVersion);
+          metadata = migrated.metadata;
+          storeUserVersion = migrated.storeUserVersion;
           compatibility = evaluateStoreCompatibility(LOOM_SCHEMA_VERSION, storeUserVersion);
         }
 
