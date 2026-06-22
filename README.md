@@ -66,6 +66,6 @@ Every server — dev, API, and production launch — binds to `127.0.0.1` (local
 
 ## Record Hygiene
 
-Record Hygiene is a project-required menu view for reviewing overlap, stale shadows, and consolidation candidates across non-archived hygiene-active atomic records. Compile and inspect the prompt locally first; the OpenRouter send requires an explicit confirmation because the active record payload, including hidden SECRET content, leaves the machine for that request.
+Record Hygiene is a project-required menu view for reviewing overlap, stale shadows, and consolidation candidates across non-archived hygiene-active atomic records. Whole project is the default scope and is the right choice for finding duplicates anywhere in the store. Active working set scope narrows review to the records you are currently working with, useful after you sideline records from the next generation without archiving them. Compile and inspect the prompt locally first; the OpenRouter send requires an explicit confirmation because the in-scope active record payload, including hidden SECRET content, leaves the machine for that request.
 
-Record Hygiene findings are non-canonical scratch. The page has no apply, merge, delete, deactivate, archive, accept, fix-all, working-set, brief-insertion, or use-as-prose action. Use citation links to open records and make any durable edits yourself.
+Record Hygiene findings are non-canonical scratch. The page has no apply, merge, delete, deactivate, archive, accept, fix-all, working-set mutation, brief-insertion, or use-as-prose action. Use citation links to open records and make any durable edits yourself.

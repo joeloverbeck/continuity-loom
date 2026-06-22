@@ -53,7 +53,7 @@ Same-change maintenance rule: a new stress case in `docs/stress-suite.md` must l
 
 ## Record Hygiene Assistance Coverage
 
-Record Hygiene coverage is advisory-assistance coverage, not validation coverage. These rows must stay complete with the RH-01-RH-20 cases in `docs/stress-suite.md`: every RH case needs a row here, and every row must name the proof surface that keeps the review complete, quarantined, citation-grounded, and non-mutating.
+Record Hygiene coverage is advisory-assistance coverage, not validation coverage. These rows must stay complete with the RH-01-RH-25 cases in `docs/stress-suite.md`: every RH case needs a row here, and every row must name the proof surface that keeps the review complete, scoped, quarantined, citation-grounded, and non-mutating.
 
 | # | Stress case | Risk area | Required proof surface |
 |---|---|---|---|
@@ -72,11 +72,16 @@ Record Hygiene coverage is advisory-assistance coverage, not validation coverage
 | RH-13 | Object state and fact duplicate ownership | Structured-field authority | Web surface has navigation only and no apply/write action. |
 | RH-14 | Secret and belief reveal-boundary overlap | Hidden payload disclosure | Web send confirmation states hidden SECRET content leaves only on explicit analyze. |
 | RH-15 | Relationship and emotion duplicate affect | Non-color-only caution | Finding-card tests cover high-stakes action labels and absence of mutation controls. |
-| RH-16 | Active record outside working set | Whole-project completeness | Server builder uses all non-archived hygiene-active records, not the active working set. |
+| RH-16 | Active record outside working set | Whole-project completeness | Whole-project mode includes all non-archived hygiene-active records even when absent from the active working set. |
 | RH-17 | Archived duplicate excluded | Archive exclusion | Source predicate and web source disclosure name archived records as excluded. |
 | RH-18 | Malformed record row | Fail-closed source build | Snapshot-builder tests cover `malformed-hygiene-source` without silent skipping. |
 | RH-19 | Malformed model output | Output quarantine | Parser and UI tests quarantine raw output as non-canonical scratch. |
 | RH-20 | Oversized project review | No eviction/retry | Route test covers `prompt-too-large` with no reduced-record retry. |
+| RH-21 | Working-set scope disclosure | Scope transparency | Core hygiene golden and Record Hygiene view tests assert request mode, `hygiene_scope`, and UI scope copy for both modes. |
+| RH-22 | Working-set predicate completeness | Scoped source completeness | Server snapshot-builder and route tests cover selected in-scope inclusion, fixed output order, and route/compiler composition. |
+| RH-23 | Empty working-set scope | Truthful scoped empty state | Core hygiene golden covers empty working-set prompt rendering; Record Hygiene view tests cover the distinct empty-scope UI message and unchanged send enablement. |
+| RH-24 | Selected archived or terminal record excluded | Predicate preservation within scope | Server snapshot-builder tests cover selected archived/terminal exclusion. |
+| RH-25 | Whole-project scope unchanged | Default mode regression | Server snapshot-builder tests prove whole-project mode ignores working-set membership; Record Hygiene view tests and browser smoke keep default whole-project disclosure visible. |
 
 ## Readiness and draftability coverage
 

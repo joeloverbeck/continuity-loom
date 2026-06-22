@@ -34,7 +34,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 | Low-drama / minimalist prose quality | 13, 16 | Guards against generic filler and manufactured incident without fake validators. |
 | Large-context salience / cast dossier bloat | 12, 15, 31, 32 | Warnings, voice pins, and core-first dossier order must preserve salience without compression or repeated warning spam. |
 | False reports and belief truth relations | 10 | Prevents testimony from becoming canon. |
-| Record hygiene assistance | RH-01-RH-20 | Covers complete-source compilation, parser quarantine, citation discipline, no-write UI, OpenRouter disclosure, and stress cases for duplicate/overlap/stale-shadow review. |
+| Record hygiene assistance | RH-01-RH-25 | Covers complete-source compilation, explicit scope disclosure, parser quarantine, citation discipline, no-write UI, OpenRouter disclosure, and stress cases for duplicate/overlap/stale-shadow review. |
 
 ---
 
@@ -1418,3 +1418,43 @@ Stress target: full active review exceeds known selected model context length.
 Expected hygiene review: prompt-too-large response with no record eviction and no retry with fewer records.
 
 Proof surface: route test covers no-eviction fail-fast behavior.
+
+### RH-21 — Working-set scope disclosure
+
+Stress target: active-working-set review must be explicit and inspectable.
+
+Expected hygiene review: the compiled prompt and UI disclose `active_working_set` scope, while whole-project remains the default.
+
+Proof surface: core hygiene golden and Record Hygiene view tests assert request mode, `hygiene_scope`, and UI scope copy for both modes.
+
+### RH-22 — Working-set predicate completeness
+
+Stress target: every selected hygiene-active record must render completely within working-set scope.
+
+Expected hygiene review: selected records satisfying the archive and per-type status predicate appear in deterministic order with full payload, projected status, citation key, and references.
+
+Proof surface: server snapshot-builder and route tests cover selected in-scope inclusion, fixed output order, and route/compiler composition.
+
+### RH-23 — Empty working-set scope
+
+Stress target: the user selects working-set scope when the active working set is empty or has no hygiene-active records.
+
+Expected hygiene review: the prompt remains inspectable with the truthful empty-source state, and the UI shows a distinct "nothing in your current scope" message.
+
+Proof surface: core hygiene golden covers empty working-set prompt rendering; Record Hygiene view tests cover the distinct empty-scope UI message and unchanged send enablement.
+
+### RH-24 — Selected archived or terminal record excluded
+
+Stress target: active-working-set scope must not override archive or per-type terminal-status predicates.
+
+Expected hygiene review: a selected archived or terminal record is excluded by the normal predicate, while selected hygiene-active records remain included.
+
+Proof surface: server snapshot-builder tests cover selected archived/terminal exclusion.
+
+### RH-25 — Whole-project scope unchanged
+
+Stress target: adding a working-set option must not weaken the original whole-project review.
+
+Expected hygiene review: whole-project mode includes all non-archived hygiene-active atomic records even when records are absent from the active working set.
+
+Proof surface: server snapshot-builder tests prove whole-project mode ignores working-set membership; Record Hygiene view tests and browser smoke keep default whole-project disclosure visible.

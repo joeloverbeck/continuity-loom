@@ -30,7 +30,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/compiler-contract.md` | Deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy. | reference | domain authority for prompt compiler and validation bridge |
 | `docs/prompt-template.md` | Universal prose prompt template text and placeholder structure. | reference | domain authority for universal prompt template |
 | `docs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | reference | domain authority for ideation prompt template |
-| `docs/story-record-hygiene-prompt-template.md` | Whole-project atomic-record hygiene assistance prompt, source predicate, type-aware overlap/action rules, and output contract. | reference | domain authority for story-record hygiene prompt template |
+| `docs/story-record-hygiene-prompt-template.md` | Whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap/action rules, and output contract. | reference | domain authority for story-record hygiene prompt template |
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
 | `docs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | audit | domain authority for implemented validation-rule inventory |
@@ -158,6 +158,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-028 ideation taxonomy update, template is `1.3.0`, compiler is `1.5.0`, and compiler contract is `1.6.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-030 record-hygiene working-set scope update, template is `1.4.0`, compiler is `1.6.0`, and compiler contract is `1.7.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

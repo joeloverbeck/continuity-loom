@@ -1,6 +1,6 @@
 # SPEC030RECHYGWOR-005: Trailing docs — ACTIVE-DOCS, user guide, README, stress suite/matrix
 
-**Status**: PENDING
+**Status**: COMPLETED
 **Priority**: LOW
 **Effort**: Medium
 **Engine Changes**: Yes — updates `docs/ACTIVE-DOCS.md`, `docs/user-guide.md`, `README.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`; no production behavior change.
@@ -80,3 +80,25 @@ Add record-hygiene scope cases: working-set scope discloses the active scope; th
 1. `grep -F "template is \`1.4.0\`" docs/ACTIVE-DOCS.md || grep -F "1.4.0" docs/ACTIVE-DOCS.md` (version-note proof).
 2. `npm run lint`
 3. A doc-grep boundary is correct because this ticket changes only usage/registry/stress prose; the behavior those docs describe is proved by -002/-003/-004 and exercised end-to-end by -006.
+
+## Outcome
+
+Completed: 2026-06-22
+
+What changed:
+
+- Updated `docs/ACTIVE-DOCS.md` to describe the whole-project-default-plus-working-set-scope hygiene template and the bumped template/compiler/contract versions.
+- Updated `README.md` and `docs/user-guide.md` to describe the two Record Hygiene scopes, when to use active-working-set scope, and the no-working-set-mutation quarantine boundary.
+- Added RH-21 through RH-25 scope stress cases to `docs/stress-suite.md`.
+- Added matching RH-21 through RH-25 rows to `docs/stress-coverage-matrix.md`.
+
+Deviations:
+
+- None. This was docs-only; no production behavior changed.
+
+Verification:
+
+- `grep -F "template is \`1.4.0\`" docs/ACTIVE-DOCS.md && grep -F "compiler is \`1.6.0\`" docs/ACTIVE-DOCS.md && grep -F "compiler contract is \`1.7.0\`" docs/ACTIVE-DOCS.md` passed.
+- `grep -F "Active working set scope" docs/user-guide.md README.md && grep -F "Whole project" docs/user-guide.md README.md` passed.
+- `grep -F "RH-25" docs/stress-suite.md docs/stress-coverage-matrix.md && grep -F "Working-set scope disclosure" docs/stress-suite.md docs/stress-coverage-matrix.md && grep -F "Empty working-set scope" docs/stress-suite.md docs/stress-coverage-matrix.md` passed.
+- `npm run lint` passed.
