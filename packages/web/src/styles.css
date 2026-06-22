@@ -1778,6 +1778,7 @@ button:disabled:hover {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 8px;
+  box-sizing: border-box;
   width: 100%;
   min-height: 92px;
   border: 1px solid #c9d2df;
