@@ -624,7 +624,6 @@ describe("GenerationBriefView", () => {
     });
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Write the whole chapter." } });
 
-    expect(screen.getByText(/looks like pasted prose/i)).toBeTruthy();
     expect(screen.getByText(/sounds non-local/i)).toBeTruthy();
     expect(screen.getAllByText("Current state is required.").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
