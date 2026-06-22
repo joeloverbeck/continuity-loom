@@ -183,18 +183,30 @@ export type { WorkingSetPruneResult } from "./records/working-set-integrity.js";
 export {
   generateStoryNoteId,
   normalizeStoryNoteTags,
+  excerptClipCaptureInputSchema,
   storyNoteBodySchema,
+  storyNoteBatchDeleteInputSchema,
+  storyNoteClipBatchCaptureInputSchema,
+  storyNoteClipCaptureInputSchema,
+  storyNoteClipCaptureKindSchema,
+  storyNoteClipReorderInputSchema,
+  storyNoteClipSchema,
   storyNoteCreateInputSchema,
   storyNoteIdSchema,
+  storyNoteModeSchema,
   storyNoteSchema,
   storyNoteTagSchema,
   storyNoteTagsSchema,
   storyNoteTitleSchema,
-  storyNoteUpdateInputSchema
+  storyNoteUpdateInputSchema,
+  wholeNoteClipCaptureInputSchema
 } from "./story-notes.js";
 export type {
   StoryNote,
+  StoryNoteClip,
+  StoryNoteClipCaptureKind,
   StoryNoteCreateInput,
+  StoryNoteMode,
   StoryNoteUpdateInput
 } from "./story-notes.js";
 export {

@@ -19,6 +19,7 @@ const existingNote: StoryNote = {
   body: "Remember the bridge toll.",
   tags: ["todo"],
   pinned: true,
+  mode: "scratch",
   createdAt: "2026-06-15T10:00:00.000Z",
   updatedAt: "2026-06-15T10:05:00.000Z"
 };
@@ -48,7 +49,12 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.mocked(createNote).mockResolvedValue({ ok: true, note: savedNote({ id: "note-new", title: "Fresh note", pinned: false }) });
   vi.mocked(updateNote).mockResolvedValue({ ok: true, note: savedNote() });
-  vi.mocked(deleteNote).mockResolvedValue({ ok: true });
+  vi.mocked(deleteNote).mockResolvedValue({
+    ok: true,
+    deleted: true,
+    cascadedClipCount: 0,
+    detachedSourceClipCount: 0
+  });
 });
 
 afterEach(() => {

@@ -8,6 +8,10 @@ import {
   getRecordTypeDefinition,
   normalizeStoryNoteTags,
   recordTypes,
+  storyNoteBatchDeleteInputSchema,
+  storyNoteClipBatchCaptureInputSchema,
+  storyNoteClipReorderInputSchema,
+  storyNoteClipSchema,
   storyNoteCreateInputSchema,
   storyNoteSchema,
   storyNoteTagSchema,
@@ -47,6 +51,7 @@ describe("story note data model", () => {
       body: "",
       tags: ["Worldbuilding", "TODO", "two words"],
       pinned: true,
+      mode: "scratch",
       createdAt: "2026-06-15T00:00:00.000Z",
       updatedAt: "2026-06-15T00:05:00.000Z"
     });
@@ -75,7 +80,11 @@ describe("story note data model", () => {
       title: "Draft",
       body: "",
       tags: [],
-      pinned: false
+      pinned: false,
+      mode: "scratch"
+    });
+    expect(storyNoteCreateInputSchema.parse({ title: "Prep", mode: "scene-prep" })).toMatchObject({
+      mode: "scene-prep"
     });
     expect(normalizeStoryNoteTags(["todo", "TODO", "to-do", "two   words"])).toEqual([
       "todo",
@@ -93,6 +102,46 @@ describe("story note data model", () => {
 
     expect(ids).toEqual([...ids].sort());
     expect(ids[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  });
+
+  it("validates story note clip snapshots and batch operation inputs", () => {
+    const clip = {
+      id: "019b0298-5c00-7000-8000-000000000011",
+      prepNoteId: "019b0298-5c00-7000-8000-000000000012",
+      sourceNoteId: "019b0298-5c00-7000-8000-000000000013",
+      captureKind: "excerpt",
+      sourceTitleSnapshot: "Source",
+      content: "Captured paragraph.",
+      sourceUpdatedAtAtCapture: "2026-06-15T00:05:00.000Z",
+      position: 0,
+      createdAt: "2026-06-15T00:06:00.000Z",
+      updatedAt: "2026-06-15T00:06:00.000Z"
+    };
+
+    expect(storyNoteClipSchema.parse(clip)).toEqual(clip);
+    expect(() => storyNoteClipSchema.parse({ ...clip, extra: "not allowed" })).toThrow();
+    expect(() => storyNoteClipSchema.parse({ ...clip, content: "x".repeat(200_001) })).toThrow();
+    expect(() => storyNoteClipSchema.parse({ ...clip, position: -1 })).toThrow();
+
+    expect(
+      storyNoteClipBatchCaptureInputSchema.parse([
+        { captureKind: "whole-note", sourceNoteId: clip.sourceNoteId },
+        {
+          captureKind: "excerpt",
+          sourceNoteId: clip.sourceNoteId,
+          selectedText: "Captured paragraph.",
+          sourceUpdatedAt: "2026-06-15T00:05:00.000Z"
+        }
+      ])
+    ).toHaveLength(2);
+    expect(() => storyNoteClipBatchCaptureInputSchema.parse([])).toThrow();
+    expect(() =>
+      storyNoteClipBatchCaptureInputSchema.parse(
+        Array.from({ length: 101 }, () => ({ captureKind: "whole-note", sourceNoteId: clip.sourceNoteId }))
+      )
+    ).toThrow();
+    expect(() => storyNoteClipReorderInputSchema.parse([clip.id, clip.id])).toThrow();
+    expect(() => storyNoteBatchDeleteInputSchema.parse([clip.prepNoteId, clip.prepNoteId])).toThrow();
   });
 
   it("keeps story notes out of record registry and generation readiness", () => {
@@ -118,6 +167,7 @@ describe("story note data model", () => {
             body: "Never prompt this.",
             tags: [],
             pinned: false,
+            mode: "scene-prep",
             createdAt: "2026-06-15T00:00:00.000Z",
             updatedAt: "2026-06-15T00:05:00.000Z"
           }

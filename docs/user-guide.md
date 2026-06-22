@@ -65,6 +65,20 @@ Private Notes are never records, working-set entries, Generation Brief fields, v
 
 A note can influence generation only when you manually re-author its substance into a real story record or a generation-time field. Treat that as a deliberate authoring step, not a transfer or sync feature.
 
+## Scene Prep In Private Notes
+
+Scene Prep is a workspace inside Private Notes for finding loose material, reading sources, and composing a prep sheet beside them. It is still author-private scratch. Prep sheets and clips are not records, not active working set entries, not readiness input, not prompt context, and not accepted prose.
+
+The workspace has three panes:
+
+- **Find** searches private notes locally, including note titles, tags, and bodies. Search is ranked in the local SQLite store; it does not call OpenRouter or any remote service.
+- **Source** shows the selected note as a safe preview or Markdown source. Use the source view to collect an exact selected excerpt.
+- **Prep** edits a scene-prep sheet and shows its source tray of collected clips.
+
+Collected clips are snapshots. A whole-note clip copies the source note body at capture time. An excerpt clip copies the exact selected Markdown text after the app confirms the source has not changed. Later source edits do not silently change collected clips, and collected copies survive deletion of their source note.
+
+Use permanent deletion carefully. Private Notes have no archive, undo, recycle bin, or soft-delete state. Deleting a source note leaves already collected tray copies intact. Deleting a prep sheet deletes that prep sheet's tray clips, but leaves source notes untouched.
+
 ## Prompt Preview
 
 Prompt preview shows the deterministic prompt that will be sent for generation. It is gated by validation.

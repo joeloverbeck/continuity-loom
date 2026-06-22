@@ -11,7 +11,7 @@ import {
 } from "./project-store.js";
 
 const EXPECTED_APPLICATION_ID = 0x4c4f4f4d;
-const EXPECTED_SCHEMA_VERSION = 2;
+const EXPECTED_SCHEMA_VERSION = 3;
 const managers: ProjectStoreManager[] = [];
 const storyContractPayload = {
   title: "Continuity Test",

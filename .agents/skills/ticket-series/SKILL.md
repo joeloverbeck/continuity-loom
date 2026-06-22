@@ -141,7 +141,11 @@ npm run build
    live-provider caveat. If you decide this smoke rule is not applicable, or
    that a narrow component/API change is sufficiently proven without a real
    localhost or browser smoke, record the rationale in the ticket `Outcome` and
-   final response.
+   final response. If the smoke or manual runbook exposes an in-scope
+   acceptance failure, fix it under the current ticket, add regression coverage
+   when practical, and record the deviation in the ticket `Outcome`. If the
+   finding is adjacent or outside the ticket scope, document it as a follow-up
+   or ask before expanding scope.
 6. Before marking the ticket complete, re-read its `What to Change`,
    `Files to Touch`, `Acceptance Criteria`, and `Test Plan` sections. For each
    major surface, confirm it is fulfilled, intentionally deferred, not
@@ -231,6 +235,9 @@ npm run build
 5. Repair active references and implementation-order/index surfaces found in the
    repo. Do not edit archived historical artifacts after the move unless needed
    for accurate provenance, security, or legal reasons.
+   When archiving a reference spec after a ticket series, also sweep the
+   just-completed ticket archives for the old live spec path and retarget those
+   same-series provenance links to `archive/specs/...`.
 6. For docs/spec-heavy families, run any applicable capstone checks from the
    spec plus lightweight repository truth checks before archiving:
    - registry completeness for active docs, when `docs/ACTIVE-DOCS.md` is in

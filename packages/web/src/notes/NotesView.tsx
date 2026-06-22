@@ -1,23 +1,34 @@
+import type { StoryNote } from "@loom/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  deleteNote,
+  captureNoteClips,
+  createNote,
+  deleteNoteClip,
+  deleteNotesBatch,
   getNote,
+  listNoteClips,
   listNotes,
+  reorderNoteClips,
+  updateNote,
+  type ClipCaptureInput,
   type NoteListQuery,
+  type StoryNoteClipRead,
   type StoryNoteSummary
 } from "../api.js";
-import type { StoryNote } from "@loom/core";
-import { NoteDetail } from "./NoteDetail.js";
 import { NoteEditor, type NoteEditorHandle } from "./NoteEditor.js";
+import { NoteSourcePane } from "./NoteSourcePane.js";
+import { NotesSearchPane } from "./NotesSearchPane.js";
+import { PermanentDeleteDialog } from "./PermanentDeleteDialog.js";
+import { ScenePrepPane } from "./ScenePrepPane.js";
 
-const sortOptions: Array<{ value: NonNullable<NoteListQuery["sort"]>; label: string }> = [
-  { value: "updated-desc", label: "Updated newest" },
-  { value: "updated-asc", label: "Updated oldest" },
-  { value: "created-desc", label: "Created newest" },
-  { value: "created-asc", label: "Created oldest" },
-  { value: "title-asc", label: "Title A-Z" }
-];
+type NotesFilters = {
+  q: string;
+  tag: string[];
+  mode: NonNullable<NoteListQuery["mode"]>;
+  pinned: NonNullable<NoteListQuery["pinned"]>;
+  sort: NonNullable<NoteListQuery["sort"]>;
+};
 
 function formatDate(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
@@ -28,17 +39,27 @@ function formatDate(value: string): string {
   }).format(new Date(value));
 }
 
+function noteToDeleteItem(note: StoryNote | StoryNoteSummary): Pick<StoryNote, "id" | "title" | "mode"> {
+  return { id: note.id, title: note.title, mode: note.mode };
+}
+
 export function NotesView(): React.JSX.Element {
   const [notes, setNotes] = useState<StoryNoteSummary[]>([]);
+  const [prepNotes, setPrepNotes] = useState<StoryNoteSummary[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedNote, setSelectedNote] = useState<StoryNote | null>(null);
-  const [editingNote, setEditingNote] = useState<StoryNote | null | "new">(null);
-  const [deleteCandidate, setDeleteCandidate] = useState<StoryNote | null>(null);
+  const [sourceNote, setSourceNote] = useState<StoryNote | null>(null);
+  const [editingSource, setEditingSource] = useState<StoryNote | null | "new">(null);
+  const [selectedPrep, setSelectedPrep] = useState<StoryNote | null>(null);
+  const [clips, setClips] = useState<StoryNoteClipRead[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteCandidates, setDeleteCandidates] = useState<Array<Pick<StoryNote, "id" | "title" | "mode">>>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const editorRef = useRef<NoteEditorHandle | null>(null);
-  const [filters, setFilters] = useState<Required<Pick<NoteListQuery, "pinned" | "sort">> & Pick<NoteListQuery, "q" | "tag">>({
+  const sourceEditorRef = useRef<NoteEditorHandle | null>(null);
+  const prepEditorRef = useRef<NoteEditorHandle | null>(null);
+  const [filters, setFilters] = useState<NotesFilters>({
     q: "",
-    tag: "",
+    tag: [],
+    mode: "all",
     pinned: "all",
     sort: "updated-desc"
   });
@@ -46,9 +67,10 @@ export function NotesView(): React.JSX.Element {
   const query = useMemo<NoteListQuery>(
     () => ({
       ...(filters.q ? { q: filters.q } : {}),
-      ...(filters.tag ? { tag: filters.tag } : {}),
+      ...(filters.tag.length ? { tag: filters.tag } : {}),
+      mode: filters.mode,
       pinned: filters.pinned,
-      sort: filters.sort
+      sort: filters.q && filters.sort === "relevance" ? "relevance" : filters.sort === "relevance" ? "updated-desc" : filters.sort
     }),
     [filters]
   );
@@ -56,33 +78,33 @@ export function NotesView(): React.JSX.Element {
   const loadNotes = useCallback(() => {
     let active = true;
 
-    void listNotes(query)
-      .then((response) => {
+    void Promise.all([
+      listNotes(query),
+      listNotes({ mode: "scene-prep", sort: "updated-desc" })
+    ])
+      .then(([listResponse, prepResponse]) => {
         if (!active) {
           return;
         }
 
-        if (!response.ok) {
-          setNotice(response.message);
+        if (!listResponse.ok) {
+          setNotice(listResponse.message);
           setNotes([]);
           setTags([]);
-          setSelectedNote(null);
           return;
         }
 
         setNotice(null);
-        setNotes(response.notes);
-        setTags(response.tags);
-        if (response.notes.length === 0) {
-          setSelectedNote(null);
-        }
+        setNotes(listResponse.notes);
+        setTags(listResponse.tags);
+        setPrepNotes(prepResponse.ok ? prepResponse.notes : []);
+        setSelectedIds((current) => new Set([...current].filter((id) => listResponse.notes.some((note) => note.id === id))));
       })
       .catch(() => {
         if (active) {
           setNotice("Could not load private notes.");
           setNotes([]);
           setTags([]);
-          setSelectedNote(null);
         }
       });
 
@@ -94,70 +116,299 @@ export function NotesView(): React.JSX.Element {
   useEffect(() => loadNotes(), [loadNotes]);
 
   useEffect(() => {
-    if (selectedNote || editingNote || notes.length === 0) {
+    if (sourceNote || editingSource || notes.length === 0) {
       return;
     }
 
-    void selectNote(notes[0]!);
-  }, [notes, selectedNote, editingNote]);
+    void selectSource(notes[0]!);
+  }, [notes, sourceNote, editingSource]);
 
-  async function flushEditorBeforeLeaving(): Promise<boolean> {
-    if (!editorRef.current?.hasDirtyChanges()) {
-      return true;
+  useEffect(() => {
+    if (!selectedPrep) {
+      setClips([]);
+      return;
     }
 
-    const saved = await editorRef.current.flush();
-    if (!saved) {
-      setNotice("Save failed. Your private note edits are still open.");
+    void loadClips(selectedPrep.id);
+  }, [selectedPrep?.id]);
+
+  async function flushEditors(): Promise<boolean> {
+    for (const editor of [sourceEditorRef.current, prepEditorRef.current]) {
+      if (editor?.hasDirtyChanges()) {
+        const saved = await editor.flush();
+        if (!saved) {
+          setNotice("Save failed. Your private note edits are still open.");
+          return false;
+        }
+      }
     }
-    return saved;
+
+    return true;
   }
 
-  async function selectNote(summary: StoryNoteSummary): Promise<void> {
-    if (!(await flushEditorBeforeLeaving())) {
+  async function selectSource(summaryOrId: StoryNoteSummary | string): Promise<void> {
+    if (!(await flushEditors())) {
       return;
     }
 
-    setEditingNote(null);
-    setSelectedNote((current) => current ?? null);
-    const response = await getNote(summary.id);
-
+    const id = typeof summaryOrId === "string" ? summaryOrId : summaryOrId.id;
+    setEditingSource(null);
+    const response = await getNote(id);
     if (response.ok) {
-      setSelectedNote(response.note);
+      setSourceNote(response.note);
       return;
     }
 
     setNotice(response.message);
   }
 
+  async function selectPrep(id: string): Promise<void> {
+    if (!id || !(await flushEditors())) {
+      if (!id) {
+        setSelectedPrep(null);
+      }
+      return;
+    }
+
+    const response = await getNote(id);
+    if (response.ok) {
+      setSelectedPrep(response.note);
+      return;
+    }
+
+    setNotice(response.message);
+  }
+
+  async function loadClips(prepNoteId: string): Promise<void> {
+    const response = await listNoteClips(prepNoteId);
+    if (response.ok) {
+      setClips(response.clips);
+    } else {
+      setNotice(response.message);
+      setClips([]);
+    }
+  }
+
   function handleSaved(note: StoryNote): void {
-    setSelectedNote(note);
+    if (note.mode === "scene-prep") {
+      setSelectedPrep(note);
+    } else {
+      setSourceNote(note);
+    }
     setNotice(null);
     loadNotes();
   }
 
   function handleDeleted(id: string): void {
     setNotes((current) => current.filter((note) => note.id !== id));
-    setSelectedNote((current) => (current?.id === id ? null : current));
-    setEditingNote(null);
-    setDeleteCandidate(null);
+    setPrepNotes((current) => current.filter((note) => note.id !== id));
+    setSourceNote((current) => (current?.id === id ? null : current));
+    setSelectedPrep((current) => (current?.id === id ? null : current));
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      next.delete(id);
+      return next;
+    });
+    setEditingSource(null);
+    setDeleteCandidates([]);
     setNotice(null);
+    if (selectedPrep && selectedPrep.id !== id) {
+      void loadClips(selectedPrep.id);
+    }
     loadNotes();
   }
 
-  async function confirmDetailDelete(): Promise<void> {
-    if (!deleteCandidate) {
+  function toggleSelected(id: string): void {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function capture(prepNoteId: string, captures: ClipCaptureInput[]): Promise<void> {
+    if (!(await flushEditors())) {
       return;
     }
 
-    const response = await deleteNote(deleteCandidate.id);
+    const response = await captureNoteClips(prepNoteId, captures);
+    if (!response.ok) {
+      setNotice(response.message);
+      return;
+    }
+
+    await loadClips(prepNoteId);
+    setSelectedIds(new Set());
+  }
+
+  async function collectWhole(note: StoryNote): Promise<void> {
+    if (!selectedPrep) {
+      setNotice("Choose a scene-prep sheet before collecting source material.");
+      return;
+    }
+
+    await capture(selectedPrep.id, [{ captureKind: "whole-note", sourceNoteId: note.id }]);
+  }
+
+  async function collectSelection(note: StoryNote, selectedText: string): Promise<void> {
+    if (!selectedPrep) {
+      setNotice("Choose a scene-prep sheet before collecting source material.");
+      return;
+    }
+
+    await capture(selectedPrep.id, [
+      {
+        captureKind: "excerpt",
+        sourceNoteId: note.id,
+        selectedText,
+        sourceUpdatedAt: note.updatedAt
+      }
+    ]);
+  }
+
+  async function collectSelected(): Promise<void> {
+    if (!selectedPrep) {
+      setNotice("Choose a scene-prep sheet before collecting source material.");
+      return;
+    }
+
+    const captures = [...selectedIds].map((sourceNoteId) => ({ captureKind: "whole-note" as const, sourceNoteId }));
+    await capture(selectedPrep.id, captures);
+  }
+
+  async function newPrepSheet(): Promise<void> {
+    const response = await createNote({
+      title: "Scene Prep",
+      body: "",
+      tags: ["scene-prep"],
+      pinned: false,
+      mode: "scene-prep"
+    });
+
     if (response.ok) {
-      handleDeleted(deleteCandidate.id);
+      setSelectedPrep(response.note);
+      loadNotes();
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function useSourceAsPrep(): Promise<void> {
+    if (!sourceNote) {
+      setNotice("Select a source note first.");
+      return;
+    }
+
+    const response = await updateNote(sourceNote.id, {
+      title: sourceNote.title,
+      body: sourceNote.body,
+      tags: sourceNote.tags,
+      pinned: sourceNote.pinned,
+      mode: "scene-prep"
+    });
+
+    if (response.ok) {
+      setSelectedPrep(response.note);
+      setSourceNote(response.note);
+      loadNotes();
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function appendClipToPrep(clip: StoryNoteClipRead): Promise<void> {
+    if (!selectedPrep || !(await flushEditors())) {
+      return;
+    }
+
+    const separator = selectedPrep.body.trim().length > 0 ? "\n\n" : "";
+    const response = await updateNote(selectedPrep.id, {
+      title: selectedPrep.title,
+      body: `${selectedPrep.body}${separator}${clip.content}`,
+      tags: selectedPrep.tags,
+      pinned: selectedPrep.pinned,
+      mode: "scene-prep"
+    });
+
+    if (response.ok) {
+      setSelectedPrep(response.note);
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function moveClip(clipId: string, direction: -1 | 1): Promise<void> {
+    if (!selectedPrep) {
+      return;
+    }
+
+    const index = clips.findIndex((clip) => clip.id === clipId);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= clips.length) {
+      return;
+    }
+
+    const ordered = [...clips];
+    const [clip] = ordered.splice(index, 1);
+    ordered.splice(target, 0, clip!);
+    const response = await reorderNoteClips(selectedPrep.id, ordered.map((item) => item.id));
+    if (response.ok) {
+      setClips(response.clips);
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function removeClip(clipId: string): Promise<void> {
+    if (!selectedPrep) {
+      return;
+    }
+
+    const response = await deleteNoteClip(selectedPrep.id, clipId);
+    if (response.ok) {
+      setClips((current) => current.filter((clip) => clip.id !== clipId));
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function confirmDelete(): Promise<void> {
+    const ids = deleteCandidates.map((note) => note.id);
+    const response = await deleteNotesBatch(ids);
+    if (response.ok) {
+      for (const id of ids) {
+        handleDeleted(id);
+      }
       return;
     }
 
     setNotice(response.message);
   }
+
+  const sourcePanel = editingSource ? (
+    <section className="notesPane notesSourcePane" aria-label="Source editor">
+      <NoteEditor
+        ref={sourceEditorRef}
+        note={editingSource === "new" ? null : editingSource}
+        onSaved={handleSaved}
+        onDeleted={handleDeleted}
+        onCancel={() => setEditingSource(null)}
+      />
+    </section>
+  ) : (
+    <NoteSourcePane
+      note={sourceNote}
+      onEdit={(note) => setEditingSource(note)}
+      onDelete={(note) => setDeleteCandidates([noteToDeleteItem(note)])}
+      onCollectWhole={(note) => void collectWhole(note)}
+      onCollectSelection={(note, selectedText) => void collectSelection(note, selectedText)}
+      formatDate={formatDate}
+    />
+  );
 
   return (
     <section className="surface notesSurface" aria-labelledby="notes-title">
@@ -166,73 +417,16 @@ export function NotesView(): React.JSX.Element {
           <p className="eyebrow">Private Notes</p>
           <h2 id="notes-title">Private Notes</h2>
         </div>
-        <span className="notesBoundaryBadge">Author-private · never sent to prompts</span>
+        <div className="notesHeaderActions">
+          <span className="notesBoundaryBadge">Author-private · never sent to prompts</span>
+          <button type="button" onClick={() => setEditingSource("new")}>
+            New Note
+          </button>
+        </div>
       </div>
       <p className="notesBoundaryCopy">
-        Per-story scratchpad. Notes are not records, not working set entries, and not prompt context.
+        Notes and prep sheets are inert scratch. They never affect records, readiness, generation, or accepted prose.
       </p>
-
-      <div className="notesToolbar" aria-label="Private note filters">
-        <button
-          type="button"
-          onClick={() => {
-            setEditingNote("new");
-            setSelectedNote(null);
-            setNotice(null);
-          }}
-        >
-          New Note
-        </button>
-        <label>
-          Search
-          <input
-            value={filters.q}
-            onChange={(event) => setFilters((current) => ({ ...current, q: event.target.value }))}
-          />
-        </label>
-        <label>
-          Tag
-          <select
-            value={filters.tag}
-            onChange={(event) => setFilters((current) => ({ ...current, tag: event.target.value }))}
-          >
-            <option value="">All tags</option>
-            {tags.map((tag) => (
-              <option key={tag} value={tag}>
-                {tag}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Pinned
-          <select
-            value={filters.pinned}
-            onChange={(event) =>
-              setFilters((current) => ({ ...current, pinned: event.target.value as NonNullable<NoteListQuery["pinned"]> }))
-            }
-          >
-            <option value="all">All</option>
-            <option value="only">Pinned only</option>
-            <option value="unpinned">Unpinned</option>
-          </select>
-        </label>
-        <label>
-          Sort
-          <select
-            value={filters.sort}
-            onChange={(event) =>
-              setFilters((current) => ({ ...current, sort: event.target.value as NonNullable<NoteListQuery["sort"]> }))
-            }
-          >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
 
       {notice ? (
         <p role="alert" className="status statusError">
@@ -240,65 +434,47 @@ export function NotesView(): React.JSX.Element {
         </p>
       ) : null}
 
-      <div className="notesLayout">
-        <div className="notesList" aria-label="Private notes">
-          {notes.length === 0 ? (
-            <div className="emptyState">
-              <p className="status">No private notes.</p>
-            </div>
-          ) : (
-            notes.map((note) => (
-              <button
-                key={note.id}
-                type="button"
-                className={`notesListItem${selectedNote?.id === note.id ? " selected" : ""}`}
-                onClick={() => void selectNote(note)}
-              >
-                <span className="notesListTitle">
-                  {note.pinned ? "Pinned · " : ""}
-                  {note.title}
-                </span>
-                <span className="notesListPreview">{note.bodyPreview || "No body text."}</span>
-                <span className="notesListMeta">
-                  {note.tags.length ? note.tags.join(", ") : "No tags"} · {formatDate(note.updatedAt)}
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-        {editingNote ? (
-          <NoteEditor
-            ref={editorRef}
-            note={editingNote === "new" ? null : editingNote}
-            onSaved={handleSaved}
-            onDeleted={handleDeleted}
-            onCancel={() => setEditingNote(null)}
-          />
-        ) : (
-          <NoteDetail
-            note={selectedNote}
-            onEdit={(note) => setEditingNote(note)}
-            onDelete={(note) => setDeleteCandidate(note)}
-          />
-        )}
+      <div className="notesWorkspace">
+        <NotesSearchPane
+          notes={notes}
+          tags={tags}
+          filters={filters}
+          selectedNoteId={sourceNote?.id ?? null}
+          selectedIds={selectedIds}
+          onFiltersChange={setFilters}
+          onSelectNote={(note) => void selectSource(note)}
+          onToggleSelected={toggleSelected}
+          onCollectSelected={() => void collectSelected()}
+          onDeleteSelected={() =>
+            setDeleteCandidates(notes.filter((note) => selectedIds.has(note.id)).map(noteToDeleteItem))
+          }
+          formatDate={formatDate}
+        />
+        {sourcePanel}
+        <ScenePrepPane
+          prepNotes={prepNotes}
+          selectedPrep={selectedPrep}
+          clips={clips}
+          editorRef={prepEditorRef}
+          onSelectPrep={(id) => void selectPrep(id)}
+          onNewPrep={() => void newPrepSheet()}
+          onUseSourceAsPrep={() => void useSourceAsPrep()}
+          onSaved={handleSaved}
+          onDeleted={handleDeleted}
+          onAppendClip={(clip) => void appendClipToPrep(clip)}
+          onInsertClip={(clip) => void appendClipToPrep(clip)}
+          onOpenSource={(id) => void selectSource(id)}
+          onRemoveClip={(id) => void removeClip(id)}
+          onMoveClip={(id, direction) => void moveClip(id, direction)}
+          formatDate={formatDate}
+        />
       </div>
 
-      {deleteCandidate ? (
-        <div role="dialog" aria-modal="true" aria-labelledby="note-detail-delete-title" className="notesDialog">
-          <div className="notesDialogPanel">
-            <h4 id="note-detail-delete-title">Delete "{deleteCandidate.title}"?</h4>
-            <p>This permanently removes the private note.</p>
-            <div className="notesDetailActions">
-              <button type="button" onClick={() => setDeleteCandidate(null)}>
-                Cancel
-              </button>
-              <button type="button" onClick={() => void confirmDetailDelete()}>
-                Delete note
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <PermanentDeleteDialog
+        notes={deleteCandidates}
+        onCancel={() => setDeleteCandidates([])}
+        onConfirm={() => void confirmDelete()}
+      />
     </section>
   );
 }

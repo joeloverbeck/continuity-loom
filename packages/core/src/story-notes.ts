@@ -8,15 +8,19 @@ export type StoryNote = {
   body: string;
   tags: string[];
   pinned: boolean;
+  mode: StoryNoteMode;
   createdAt: string;
   updatedAt: string;
 };
+
+export type StoryNoteMode = "scratch" | "scene-prep";
 
 export type StoryNoteCreateInput = {
   title: string;
   body?: string;
   tags?: string[];
   pinned?: boolean;
+  mode?: StoryNoteMode | undefined;
 };
 
 export type StoryNoteUpdateInput = {
@@ -24,9 +28,27 @@ export type StoryNoteUpdateInput = {
   body: string;
   tags: string[];
   pinned: boolean;
+  mode?: StoryNoteMode | undefined;
+};
+
+export type StoryNoteClipCaptureKind = "whole-note" | "excerpt";
+
+export type StoryNoteClip = {
+  id: string;
+  prepNoteId: string;
+  sourceNoteId: string | null;
+  captureKind: StoryNoteClipCaptureKind;
+  sourceTitleSnapshot: string;
+  content: string;
+  sourceUpdatedAtAtCapture: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export const storyNoteIdSchema = z.uuid();
+export const storyNoteModeSchema = z.enum(["scratch", "scene-prep"]);
+export const storyNoteClipCaptureKindSchema = z.enum(["whole-note", "excerpt"]);
 export const storyNoteTitleSchema = z.string().trim().min(1).max(160);
 export const storyNoteBodySchema = z.string().max(200_000);
 export const storyNoteTagSchema = z
@@ -67,6 +89,7 @@ export const storyNoteSchema = z
     body: storyNoteBodySchema,
     tags: storyNoteTagsSchema,
     pinned: z.boolean(),
+    mode: storyNoteModeSchema.default("scratch"),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime()
   })
@@ -77,7 +100,8 @@ export const storyNoteCreateInputSchema = z
     title: storyNoteTitleSchema,
     body: storyNoteBodySchema.default(""),
     tags: storyNoteTagsSchema,
-    pinned: z.boolean().default(false)
+    pinned: z.boolean().default(false),
+    mode: storyNoteModeSchema.default("scratch")
   })
   .strict();
 
@@ -86,9 +110,73 @@ export const storyNoteUpdateInputSchema = z
     title: storyNoteTitleSchema,
     body: storyNoteBodySchema,
     tags: storyNoteTagsSchema,
-    pinned: z.boolean()
+    pinned: z.boolean(),
+    mode: storyNoteModeSchema.optional()
   })
   .strict();
+
+export const storyNoteClipSchema = z
+  .object({
+    id: storyNoteIdSchema,
+    prepNoteId: storyNoteIdSchema,
+    sourceNoteId: storyNoteIdSchema.nullable(),
+    captureKind: storyNoteClipCaptureKindSchema,
+    sourceTitleSnapshot: storyNoteTitleSchema,
+    content: storyNoteBodySchema,
+    sourceUpdatedAtAtCapture: z.iso.datetime(),
+    position: z.int().min(0),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime()
+  })
+  .strict();
+
+export const wholeNoteClipCaptureInputSchema = z
+  .object({
+    sourceNoteId: storyNoteIdSchema
+  })
+  .strict();
+
+export const excerptClipCaptureInputSchema = z
+  .object({
+    sourceNoteId: storyNoteIdSchema,
+    selectedText: storyNoteBodySchema.min(1),
+    sourceUpdatedAt: z.iso.datetime()
+  })
+  .strict();
+
+export const storyNoteClipCaptureInputSchema = z.discriminatedUnion("captureKind", [
+  z
+    .object({
+      captureKind: z.literal("whole-note"),
+      sourceNoteId: storyNoteIdSchema
+    })
+    .strict(),
+  z
+    .object({
+      captureKind: z.literal("excerpt"),
+      sourceNoteId: storyNoteIdSchema,
+      selectedText: storyNoteBodySchema.min(1),
+      sourceUpdatedAt: z.iso.datetime()
+    })
+    .strict()
+]);
+
+export const storyNoteClipBatchCaptureInputSchema = z.array(storyNoteClipCaptureInputSchema).min(1).max(100);
+
+export const storyNoteClipReorderInputSchema = z
+  .array(storyNoteIdSchema)
+  .min(1)
+  .max(100)
+  .refine((ids) => new Set(ids).size === ids.length, {
+    message: "Clip ids must be unique."
+  });
+
+export const storyNoteBatchDeleteInputSchema = z.array(storyNoteIdSchema).min(1).max(100).refine(
+  (ids) => new Set(ids).size === ids.length,
+  {
+    message: "Story note ids must be unique."
+  }
+);
 
 function randomBytes(length: number): Uint8Array {
   const crypto = globalThis.crypto;
