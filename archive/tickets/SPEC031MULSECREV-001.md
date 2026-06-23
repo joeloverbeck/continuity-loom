@@ -83,7 +83,7 @@ Add multi-secret coverage to `compiler-front-sections.test.ts` (per-line label, 
 - **No secret-grouped block restructure** (SPEC-031 rejected Approach B): the six-lane per-placeholder structure, section order, and §8 empty-state model are retained.
 - **No new product behavior, no new secret schema fields, no validation-rule changes.** Holder/non-holder/clue/reveal-permission data, blockers, and §29.6 gating are unchanged in substance.
 - **No lane-render-reordering** (SPEC-031 OQ-3 ascending-ordinal rendering) beyond what the ordinal requires.
-- **`docs/ACTIVE-DOCS.md` version note and the multi-secret stress case** — owned by SPEC031MULSECREV-002 (non-§8 trailing docs).
+- **`docs/ACTIVE-DOCS.md` version note and the multi-secret stress case** — owned by `archive/tickets/SPEC031MULSECREV-002.md` (non-§8 trailing docs).
 - **No change to the record-hygiene prompt** (does not render this section); its golden test is touched only for the version-pin assertion.
 
 ## Acceptance Criteria
@@ -128,7 +128,7 @@ Deviations from original plan:
 
 - `packages/core/src/compiler/compile-prompt.ts` and `packages/core/src/compiler/ideation/citation-keys.ts` did not require edits; the shared behavior was implemented in `packages/core/src/compiler/sections/front.ts` using the existing citation-key helper.
 - No browser or localhost smoke was run. This ticket changes deterministic compiler output, contract docs, and tests only; no browser-facing request shape or UI workflow changed.
-- `docs/ACTIVE-DOCS.md` and stress-suite documentation remain intentionally active for SPEC031MULSECREV-002.
+- `docs/ACTIVE-DOCS.md` and stress-suite documentation remain intentionally active for `archive/tickets/SPEC031MULSECREV-002.md`.
 
 Verification results:
 
