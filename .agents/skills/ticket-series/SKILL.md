@@ -146,6 +146,13 @@ npm run build
    when practical, and record the deviation in the ticket `Outcome`. If the
    finding is adjacent or outside the ticket scope, document it as a follow-up
    or ask before expanding scope.
+
+   If a local smoke setup command fails because sandboxing blocks loopback API
+   access, for example `connect EPERM 127.0.0.1:<port>`, rerun the same
+   local-only command with the required approval or escalation instead of
+   changing the smoke scope. When seeding through `/api/project/create`, create
+   the disposable parent directory first, for example with `mkdtemp` under
+   `/tmp`; the route expects an existing parent path.
 6. Before marking the ticket complete, re-read its `What to Change`,
    `Files to Touch`, `Acceptance Criteria`, and `Test Plan` sections. For each
    major surface, confirm it is fulfilled, intentionally deferred, not
@@ -227,17 +234,35 @@ npm run build
    Treat a repeat in-scope failure as a blocker. Report the original failure,
    the targeted rerun or scoped substitute, and the broad rerun outcome when one
    is applicable.
+
+   If the only edits after a successful gate are ticket/spec `Outcome` text,
+   archive moves, archive-provenance retargets, or other docs-only closeout
+   bookkeeping, run `git diff --check` plus the relevant doc/lint truth checks
+   and record that no source, test, or active authority behavior changed after
+   the gate. Useful closeout-only proof includes active-path absence checks,
+   archive file presence checks, archived `Status`/`Outcome` greps, active
+   reference sweeps, and `git diff --check`. Rerun `npm run lint` when active
+   docs or lint-covered files changed after the last lint gate; for pure archive
+   moves, `Outcome` text, or archive-provenance retargets after a current lint
+   result, lint may be skipped if the doc/truth checks prove no active linted
+   authority changed. If any source file, test file, or active authority doc
+   changes after a gate result, rerun the affected gate or mark the earlier
+   result as preliminary in the ticket/spec `Outcome`.
 3. Update the spec with final status and an `Outcome` section following
    `docs/archival-workflow.md`. Append the `Outcome` at the bottom of the spec
    before moving it, after the existing spec sections.
 4. Archive completed active specs to `archive/specs/`, using `git mv` when
-   tracked.
+   tracked and plain `mv` when untracked. Confirm the original `specs/` path is
+   gone.
 5. Repair active references and implementation-order/index surfaces found in the
    repo. Do not edit archived historical artifacts after the move unless needed
    for accurate provenance, security, or legal reasons.
    When archiving a reference spec after a ticket series, also sweep the
    just-completed ticket archives for the old live spec path and retarget those
-   same-series provenance links to `archive/specs/...`.
+   same-series provenance links to `archive/specs/...`. Also sweep
+   just-completed same-series ticket archives for references to sibling tickets
+   that were archived later, and retarget provenance references to
+   `archive/tickets/...` when needed.
 6. For docs/spec-heavy families, run any applicable capstone checks from the
    spec plus lightweight repository truth checks before archiving:
    - registry completeness for active docs, when `docs/ACTIVE-DOCS.md` is in
