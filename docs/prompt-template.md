@@ -173,6 +173,7 @@ If the audience knows something the POV does not, you may let that truth shape s
 
 <secrets_and_reveal_constraints>
 Render only populated value-lines in this section. Always keep the section tag and final reveal-permission rule. The affirmative `forbidden_reveals: "none"` sentinel is populated content and still renders its deterministic sentence.
+Each rendered secret line is prefixed with a deterministic `Secret N` label. `N` is the same ordinal used for that SECRET record's ideation citation key; the writer-visible hidden-truth lane renders `Secret N [secret_kind] <secret_claim>`, and the other lanes render `Secret N: <lane value>`. Omitted value-lines carry no label, and non-writer-visible lanes do not restate `secret_claim`.
 
 Writer-visible hidden truths:
 {writer_visible_hidden_truths}

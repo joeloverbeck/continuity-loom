@@ -70,6 +70,7 @@ The ideation prompt uses prompt-kind-specific variants for shared contract secti
 - `<content_policy>` resolves the same policy placeholders as the prose prompt, but its trailer says not to inject assistant disclaimers, warnings, analysis, or conventional safety moralizing into the output.
 - `<immediate_handoff>` labels `begin_after` as "The next prose segment will begin after this point" and uses a trailer that treats the handoff as user-authored continuity context for ideas rather than a prose launch command.
 - `<manual_directive>` labels `must_render` as "The author's directive for the next segment (binding context: ideas must be compatible with it)".
+- `<secrets_and_reveal_constraints>` uses the same six-lane secret structure as the prose prompt. The writer-visible hidden-truth lane uses the `[SECRET-n]` citation key as the legend; the other populated secret lanes are prefixed with `Secret N:`, where `N` is the same ordinal as `[SECRET-n]`. Omitted value-lines carry no label and non-writer-visible lanes do not restate `secret_claim`.
 
 ### `<relationship_and_emotion_pressure>`
 
@@ -162,7 +163,7 @@ The compiler assigns slots deterministically from selected records only:
 
 ## Citation Keys
 
-Every selected record used for ideation receives a deterministic bracketed citation key in the form `[<TYPE>-<n>]`, for example `[BELIEF-1]` or `[VISIBLE AFFORDANCE-1]`. The ordinal is the record's 1-based position among selected records of the same type under the compiler's deterministic full-label sort. Keys are stable for identical selected records and versions, but no cross-session identity is promised after selection or record edits.
+Every selected record used for ideation receives a deterministic bracketed citation key in the form `[<TYPE>-<n>]`, for example `[BELIEF-1]` or `[VISIBLE AFFORDANCE-1]`. The ordinal is the record's 1-based position among selected records of the same type under the compiler's deterministic full-label sort. Keys are stable for identical selected records and versions, but no cross-session identity is promised after selection or record edits. SECRET value-lane labels in `<secrets_and_reveal_constraints>` use the same ordinal as `Secret N`.
 
 Keys render inline once at the record's authoritative ideation section:
 

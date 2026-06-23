@@ -5,6 +5,7 @@ import {
   versionInfo,
   type BuildValidationSnapshotInput
 } from "../src/index.js";
+import { citationKeysFor } from "../src/compiler/ideation/citation-keys.js";
 import { describe, expect, it } from "vitest";
 
 const povId = "019b0298-5c00-7000-8000-000000000001";
@@ -17,6 +18,8 @@ const locationId = "019b0298-5c00-7000-8000-000000000007";
 const entityStatusId = "019b0298-5c00-7000-8000-000000000008";
 const danglingLocationId = "019b0298-5c00-7000-8000-000000000009";
 const danglingStatusId = "019b0298-5c00-7000-8000-000000000010";
+const secondSecretId = "019b0298-5c00-7000-8000-000000000011";
+const inactiveSecretId = "019b0298-5c00-7000-8000-000000000012";
 
 function populatedInput(): BuildValidationSnapshotInput {
   return {
@@ -176,6 +179,58 @@ function emptyInput(): BuildValidationSnapshotInput {
   };
 }
 
+function multiSecretInput(): BuildValidationSnapshotInput {
+  const input = populatedInput();
+  input.records = [
+    ...input.records,
+    {
+      id: secondSecretId,
+      type: "SECRET",
+      metadata: metadata(secondSecretId, "Second hidden injury"),
+      payload: {
+        id: secondSecretId,
+        status: "hidden",
+        secret_kind: "body_state",
+        secret_claim: "Jon's left hand is numb from the old curse.",
+        holders: [povId],
+        non_holders_to_protect: [holderId],
+        audience_visibility: "hidden",
+        pov_access: "knows",
+        allowed_surface_cues: ["Jon flexes his fingers before reaching."],
+        forbidden_reveals: ["Do not name the curse yet."],
+        reveal_permission: "clue_only",
+        reveal_triggers: ["Only if Jon must grip the key."]
+      }
+    },
+    {
+      id: inactiveSecretId,
+      type: "SECRET",
+      metadata: metadata(inactiveSecretId, "Inactive revealed truth"),
+      payload: {
+        id: inactiveSecretId,
+        status: "revealed",
+        secret_kind: "other",
+        secret_claim: "The bell rope was replaced last winter.",
+        holders: [povId],
+        non_holders_to_protect: "none",
+        audience_visibility: "explicit",
+        pov_access: "knows",
+        allowed_surface_cues: ["The rope looks new."],
+        forbidden_reveals: "none",
+        reveal_permission: "natural_reveal_allowed",
+        reveal_triggers: []
+      }
+    }
+  ];
+  input.generationSession.active_working_set!.selected_records = [
+    ...input.generationSession.active_working_set!.selected_records,
+    secondSecretId,
+    inactiveSecretId
+  ];
+
+  return input;
+}
+
 function sectionBody(prompt: string, section: string): string {
   const pattern = new RegExp(`<${section}(?:\\s[^>]*)?>([\\s\\S]*?)</${section}>`);
   return prompt.match(pattern)?.[1] ?? "";
@@ -183,6 +238,18 @@ function sectionBody(prompt: string, section: string): string {
 
 function sectionLines(prompt: string, section: string): string[] {
   return sectionBody(prompt, section).split("\n").filter((line) => line.trim().length > 0);
+}
+
+function secretLabelFor(input: BuildValidationSnapshotInput, recordId: string): string {
+  const snapshot = buildValidationSnapshot(input);
+  const key = citationKeysFor(snapshot.records).get(recordId);
+  const ordinal = key?.match(/^\[SECRET-(\d+)\]$/)?.[1];
+
+  if (!ordinal) {
+    throw new Error(`No SECRET citation key for ${recordId}`);
+  }
+
+  return `Secret ${ordinal}`;
 }
 
 describe("compiler front-section resolvers", () => {
@@ -433,9 +500,9 @@ describe("compiler front-section resolvers", () => {
   });
 
   it("records the deliberate compiler and contract version bump", () => {
-    expect(versionInfo.templates.version).toBe("1.4.0");
-    expect(versionInfo.compiler.version).toBe("1.6.0");
-    expect(versionInfo.contract.version).toBe("1.7.0");
+    expect(versionInfo.templates.version).toBe("1.5.0");
+    expect(versionInfo.compiler.version).toBe("1.7.0");
+    expect(versionInfo.contract.version).toBe("1.8.0");
   });
 
   it("renders omniscient literally and resolves variable POV through selected_pov", () => {
@@ -471,14 +538,79 @@ describe("compiler front-section resolvers", () => {
     const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
     const audienceSection = sectionBody(prompt, "audience_knowledge");
 
-    expect(secretSection).toContain("[other] Mara stole the archive key.");
-    expect(secretSection).toContain("Secret holders:\n- Mara Lorne");
-    expect(secretSection).toContain("Characters who must not know yet:\n- Jon Vale");
+    expect(secretSection).toContain("Secret 1 [other] Mara stole the archive key.");
+    expect(secretSection).toContain("Secret holders:\n- Secret 1: Mara Lorne");
+    expect(secretSection).toContain("Characters who must not know yet:\n- Secret 1: Jon Vale");
     expect(secretSection).not.toContain(holderId);
     expect(secretSection).not.toContain(povId);
     expect(povSection).not.toContain("POV knows:\n- Mara stole the archive key.");
     expect(povSection).toContain("POV does not know:\n- Mara stole the archive key.");
     expect(audienceSection).toContain("Audience already knows:\n- Mara stole the archive key.");
+  });
+
+  it("labels every populated multi-secret reveal lane with the citation-key ordinal", () => {
+    const input = multiSecretInput();
+    const firstLabel = secretLabelFor(input, secretId);
+    const secondLabel = secretLabelFor(input, secondSecretId);
+    const prosePrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
+    const ideationPrompt = compilePrompt(buildValidationSnapshot(input), {
+      promptKind: "ideation",
+      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    }).prompt;
+    const proseSecrets = sectionBody(prosePrompt, "secrets_and_reveal_constraints");
+    const ideationSecrets = sectionBody(ideationPrompt, "secrets_and_reveal_constraints");
+    const firstKey = citationKeysFor(buildValidationSnapshot(input).records).get(secretId);
+    const secondKey = citationKeysFor(buildValidationSnapshot(input).records).get(secondSecretId);
+
+    expect(firstLabel).not.toBe(secondLabel);
+    expect(proseSecrets).toContain(`- ${firstLabel} [other] Mara stole the archive key.`);
+    expect(proseSecrets).toContain(`- ${secondLabel} [body_state] Jon's left hand is numb from the old curse.`);
+    expect(proseSecrets).toContain(`Secret holders:\n- ${firstLabel}: Mara Lorne\n- ${secondLabel}: Jon Vale`);
+    expect(proseSecrets).toContain(`Characters who must not know yet:\n- ${firstLabel}: Jon Vale\n- ${secondLabel}: Mara Lorne`);
+    expect(proseSecrets).toContain(
+      `Allowed clues and surface cues now:\n- ${firstLabel}: Mara avoids the desk drawer.\n- ${secondLabel}: Jon flexes his fingers before reaching.`
+    );
+    expect(proseSecrets).toContain(
+      `Forbidden reveals now:\n- ${firstLabel}: Do not state that Mara has the key.\n- ${secondLabel}: Do not name the curse yet.`
+    );
+    expect(proseSecrets).toContain(
+      `Reveal permission:\n- ${firstLabel}: clue_only; triggers: Only if Mara is directly searched.\n- ${secondLabel}: clue_only; triggers: Only if Jon must grip the key.`
+    );
+    expect(proseSecrets).not.toContain("The bell rope was replaced last winter.");
+
+    expect(firstKey).toMatch(/^\[SECRET-\d+\]$/);
+    expect(secondKey).toMatch(/^\[SECRET-\d+\]$/);
+    expect(firstLabel).toBe(`Secret ${firstKey?.match(/\d+/)?.[0]}`);
+    expect(secondLabel).toBe(`Secret ${secondKey?.match(/\d+/)?.[0]}`);
+    expect(ideationSecrets).toContain(`${firstKey} [other] Mara stole the archive key.`);
+    expect(ideationSecrets).toContain(`${secondKey} [body_state] Jon's left hand is numb from the old curse.`);
+    expect(ideationSecrets).not.toContain(`${firstLabel} ${firstKey}`);
+    expect(ideationSecrets).toContain(`- ${firstLabel}: Mara Lorne`);
+    expect(ideationSecrets).toContain(`- ${secondLabel}: Jon Vale`);
+  });
+
+  it("keeps remaining secret lines self-identifying when one secret omits a lane", () => {
+    const input = multiSecretInput();
+    input.records = input.records.map((record) =>
+      record.id === secondSecretId
+        ? {
+            ...record,
+            payload: {
+              ...(record.payload as Record<string, unknown>),
+              allowed_surface_cues: [],
+              clue_carriers: []
+            }
+          }
+        : record
+    );
+    const firstLabel = secretLabelFor(input, secretId);
+    const secondLabel = secretLabelFor(input, secondSecretId);
+    const secretSection = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints");
+
+    expect(secretSection).toContain(`Allowed clues and surface cues now:\n- ${firstLabel}: Mara avoids the desk drawer.`);
+    expect(secretSection).not.toContain(`Allowed clues and surface cues now:\n- ${secondLabel}:`);
+    expect(secretSection).toContain(`Forbidden reveals now:\n- ${firstLabel}: Do not state that Mara has the key.`);
+    expect(secretSection).toContain(`- ${secondLabel}: Do not name the curse yet.`);
   });
 
   it("does not reuse line-of-sight state as POV cannot-perceive text", () => {
@@ -604,7 +736,7 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(input));
 
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
-      `Secret holders:\n- ${danglingHolderId}`
+      `Secret holders:\n- Secret 1: ${danglingHolderId}`
     );
   });
 
@@ -629,7 +761,7 @@ describe("compiler front-section resolvers", () => {
       const { prompt } = compilePrompt(buildValidationSnapshot(input));
 
       expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
-        `Characters who must not know yet:\n- ${phrase}`
+        `Characters who must not know yet:\n- Secret 1: ${phrase}`
       );
       expect(sectionBody(prompt, "secrets_and_reveal_constraints")).not.toContain(`- ${sentinel}`);
     }
@@ -666,7 +798,9 @@ describe("compiler front-section resolvers", () => {
 
     const secretSection = sectionBody(compilePrompt(buildValidationSnapshot(input)).prompt, "secrets_and_reveal_constraints");
 
-    expect(secretSection).toContain("Allowed clues and surface cues now:\n- Mara avoids the desk drawer., A clean scrape marks the drawer edge.");
+    expect(secretSection).toContain(
+      "Allowed clues and surface cues now:\n- Secret 1: Mara avoids the desk drawer., A clean scrape marks the drawer edge."
+    );
     expect(secretSection).not.toContain("A broken lock hidden under the papers.");
     expect(secretSection).not.toContain(`discovered_by`);
     expect(secretSection).not.toContain(povId);
@@ -732,7 +866,7 @@ describe("compiler front-section resolvers", () => {
     const secretSection = sectionBody(prompt, "secrets_and_reveal_constraints");
 
     expect(secretSection).toContain("Forbidden reveals now:");
-    expect(secretSection).toContain("- No reveals are forbidden beyond the stated reveal permission.");
+    expect(secretSection).toContain("- Secret 1: No reveals are forbidden beyond the stated reveal permission.");
     expect(secretSection).not.toContain(`Forbidden reveals now:\n${EMPTY_STATE_CONSTANTS.forbidden_reveals}`);
   });
 
@@ -740,7 +874,7 @@ describe("compiler front-section resolvers", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput()));
 
     expect(sectionBody(prompt, "secrets_and_reveal_constraints")).toContain(
-      "- Do not state that Mara has the key."
+      "- Secret 1: Do not state that Mara has the key."
     );
   });
 

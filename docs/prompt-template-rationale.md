@@ -127,6 +127,8 @@ A single “secret” paragraph is too blunt. The writer may need hidden truth t
 
 The template keeps separate lanes for writer-visible hidden truths, holders, protected non-holders, allowed clues, forbidden reveals, and reveal permission. Hidden truth may shape visible behavior, silence, timing, object handling, and evasions. It must not leak into the wrong mind or narrator.
 
+Each rendered lane line carries a deterministic `Secret N` label, with `N` shared with the SECRET ideation citation-key ordinal. Keeping the lane structure preserves the placeholder contract, while the label prevents multi-secret prompts from relying on positional correlation across independent lists. The label is metadata only: non-writer-visible lanes still do not restate `secret_claim`.
+
 ## 14. Why audience knowledge is separate from POV knowledge
 
 Audience knowledge can differ from POV knowledge. Dramatic irony is allowed, but it must not become POV leakage. The audience-knowledge section tells the prose writer which truths can shape reader-facing tension while remaining unavailable to the narrator or current POV.

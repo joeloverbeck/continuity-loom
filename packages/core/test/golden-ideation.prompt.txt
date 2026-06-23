@@ -147,19 +147,19 @@ Writer-visible hidden truths:
 - [SECRET-1] [artifact_truth] The sealed letter says a market ledger page was replaced before Orin's audit.
 
 Secret holders:
-- Elin Vale
+- Secret 1: Elin Vale
 
 Characters who must not know yet:
-- Niko Bram
+- Secret 1: Niko Bram
 
 Allowed clues and surface cues now:
-- Elin guards the flour bin too carefully., Niko may notice the letter exists but not read or infer its contents., A clean scrape in flour dust around the rear hinge.
+- Secret 1: Elin guards the flour bin too carefully., Niko may notice the letter exists but not read or infer its contents., A clean scrape in flour dust around the rear hinge.
 
 Forbidden reveals now:
-- Do not state the exact ledger page or culprit., Do not let Niko learn the letter's contents in this segment.
+- Secret 1: Do not state the exact ledger page or culprit., Do not let Niko learn the letter's contents in this segment.
 
 Reveal permission:
-- clue_only; triggers: Elin may decide later to show Niko the seal, not the text.
+- Secret 1: clue_only; triggers: Elin may decide later to show Niko the seal, not the text.
 
 A secret may be revealed only if its reveal permission allows reveal in this generation. `locked` means no reveal even if the moment would become more dramatic. `clue_only` permits clues but not confirmation. `natural_reveal_allowed` permits reveal only when immediate causality earns it. `directive_required` permits reveal only when the manual directive explicitly requires or permits it. The manual directive cannot override locked secrets or higher-priority continuity constraints. Otherwise, use surface action, evasions, misdirection, timing, omissions, object handling, charged silence, or clue pressure without leaking the hidden truth into the wrong mind or narrator.
 </secrets_and_reveal_constraints>

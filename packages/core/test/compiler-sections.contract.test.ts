@@ -147,12 +147,12 @@ describe("compiler section renderer contract", () => {
       ["audience_does_not_know", "None specified"],
       ["dramatic_irony_permissions", "- The clerk copied the archive key."],
       ["audience_perception_ambiguous", "None specified"],
-      ["writer_visible_hidden_truths", "- [security] The clerk copied the archive key."],
-      ["secret_holders", "- The guard may return soon."],
-      ["secret_non_holders_to_protect", "- Everyone except the secret holders"],
-      ["allowed_clues_and_surface_cues", "- Mara notices wax on the key ring., A wax smear marks the copied key."],
-      ["forbidden_reveals", "- No reveals are forbidden beyond the stated reveal permission."],
-      ["reveal_permissions", "- clue_only; triggers: Mara studies the key."],
+      ["writer_visible_hidden_truths", "- Secret 1 [security] The clerk copied the archive key."],
+      ["secret_holders", "- Secret 1: The guard may return soon."],
+      ["secret_non_holders_to_protect", "- Secret 1: Everyone except the secret holders"],
+      ["allowed_clues_and_surface_cues", "- Secret 1: Mara notices wax on the key ring., A wax smear marks the copied key."],
+      ["forbidden_reveals", "- Secret 1: No reveals are forbidden beyond the stated reveal permission."],
+      ["reveal_permissions", "- Secret 1: clue_only; triggers: Mara studies the key."],
       ["soft_unit_guidance", ""]
     ];
 
@@ -260,8 +260,12 @@ describe("compiler section renderer contract", () => {
     });
 
     expect(FRONT_PLACEHOLDER_RESOLVERS.soft_unit_guidance?.resolve(snapshot)).toBe("Stop at the next touch.");
-    expect(FRONT_PLACEHOLDER_RESOLVERS.secret_holders?.resolve(snapshot)).toBe("- Mara guards the archive., missing-holder");
-    expect(FRONT_PLACEHOLDER_RESOLVERS.secret_non_holders_to_protect?.resolve(snapshot)).toBe("- Mara guards the archive.");
+    expect(FRONT_PLACEHOLDER_RESOLVERS.secret_holders?.resolve(snapshot)).toBe(
+      "- Secret 1: Mara guards the archive., missing-holder"
+    );
+    expect(FRONT_PLACEHOLDER_RESOLVERS.secret_non_holders_to_protect?.resolve(snapshot)).toBe(
+      "- Secret 1: Mara guards the archive."
+    );
     expect(FRONT_PLACEHOLDER_RESOLVERS.reveal_permissions?.resolve(snapshot)).toBe("No active secrets or reveal locks selected");
     expect(FRONT_PLACEHOLDER_RESOLVERS.audience_perception_ambiguous?.resolve(snapshot)).toBe("- The clerk copied the archive key.");
     expect(renderFrontPlaceholder("writer_visible_hidden_truths", snapshot, { citationKeys: new Map([[secretId, "[S1]"]]) })).toBe(

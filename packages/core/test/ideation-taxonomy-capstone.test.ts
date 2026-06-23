@@ -134,7 +134,7 @@ function snapshotWith(records: readonly ValidationRecord[]) {
     records,
     generationSession,
     storyConfig: demoStoryConfig,
-    versions: { template: "1.4.0", compiler: "1.6.0", contract: "1.7.0" }
+    versions: { template: "1.5.0", compiler: "1.7.0", contract: "1.8.0" }
   });
 }
 

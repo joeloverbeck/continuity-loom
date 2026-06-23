@@ -1,6 +1,7 @@
 import { resolveEffectivePov } from "../../records/effective-pov.js";
 import type { ValidationRecord, ValidationSnapshot } from "../../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
+import { citationKeysFor } from "../ideation/citation-keys.js";
 import { displayLabel, resolveRecordLabel } from "../labels.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
@@ -137,24 +138,23 @@ const frontResolvers: ResolverMap = {
 
   writer_visible_hidden_truths: (snapshot) => renderWriterVisibleHiddenTruths(snapshot),
   secret_holders: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => resolveEntityLabels(snapshot, payload.holders)).join("\n") ||
+    secretLaneRecords(snapshot, (payload) => resolveEntityLabels(snapshot, payload.holders)).join("\n") ||
     EMPTY_STATE_CONSTANTS.secret_holders,
   secret_non_holders_to_protect: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
-      resolveEntityLabels(snapshot, payload.non_holders_to_protect)
-    ).join("\n") || EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
+    secretLaneRecords(snapshot, (payload) => resolveEntityLabels(snapshot, payload.non_holders_to_protect)).join("\n") ||
+    EMPTY_STATE_CONSTANTS.secret_non_holders_to_protect,
   allowed_clues_and_surface_cues: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) => listLine(allowedClueLines(payload))).join("\n") ||
+    secretLaneRecords(snapshot, (payload) => listLine(allowedClueLines(payload))).join("\n") ||
     EMPTY_STATE_CONSTANTS.allowed_clues_and_surface_cues,
   forbidden_reveals: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
+    secretLaneRecords(snapshot, (payload) =>
       payload.forbidden_reveals === "none"
         ? "No reveals are forbidden beyond the stated reveal permission."
         : listLine(payload.forbidden_reveals)
     ).join("\n") ||
     EMPTY_STATE_CONSTANTS.forbidden_reveals,
   reveal_permissions: (snapshot) =>
-    bulletRecords(snapshot, "SECRET", isActiveSecret, (payload) =>
+    secretLaneRecords(snapshot, (payload) =>
       [asString(payload.reveal_permission), listLine(payload.reveal_triggers)].filter(Boolean).join("; triggers: ")
     ).join("\n") || EMPTY_STATE_CONSTANTS.reveal_permissions
 };
@@ -251,6 +251,29 @@ function bulletRecords(
     .map((line) => `- ${line}`);
 }
 
+function secretLaneRecords(snapshot: ValidationSnapshot, project: (payload: JsonRecord, record: ValidationRecord) => string): string[] {
+  const secretLabels = secretLabelMap(snapshot);
+
+  return bulletRecords(snapshot, "SECRET", isActiveSecret, (payload, record) => {
+    const line = project(payload, record);
+    return line ? `${secretLabels.get(record.id) ?? "Secret ?"}: ${line}` : "";
+  });
+}
+
+function secretLabelMap(snapshot: ValidationSnapshot): ReadonlyMap<string, string> {
+  const citationKeys = citationKeysFor(snapshot.records);
+  const labels = new Map<string, string>();
+
+  for (const [recordId, key] of citationKeys) {
+    const ordinal = key.match(/^\[SECRET-(\d+)\]$/)?.[1];
+    if (ordinal) {
+      labels.set(recordId, `Secret ${ordinal}`);
+    }
+  }
+
+  return labels;
+}
+
 function payloadOf(record: ValidationRecord): JsonRecord {
   return record.payload && typeof record.payload === "object" ? (record.payload as JsonRecord) : {};
 }
@@ -316,11 +339,31 @@ function renderWriterVisibleHiddenTruth(payload: JsonRecord): string {
 }
 
 function renderWriterVisibleHiddenTruths(snapshot: ValidationSnapshot, options: FrontRenderOptions = {}): string {
+  const secretLabels = secretLabelMap(snapshot);
+
   return (
     bulletRecords(snapshot, "SECRET", isActiveSecret, (payload, record) =>
-      keyedText(renderWriterVisibleHiddenTruth(payload), record, options)
+      renderWriterVisibleHiddenTruthLine(renderWriterVisibleHiddenTruth(payload), record, secretLabels, options)
     ).join("\n") || EMPTY_STATE_CONSTANTS.writer_visible_hidden_truths
   );
+}
+
+function renderWriterVisibleHiddenTruthLine(
+  text: string,
+  record: ValidationRecord,
+  secretLabels: ReadonlyMap<string, string>,
+  options: FrontRenderOptions
+): string {
+  if (!text) {
+    return "";
+  }
+
+  const keyed = keyedText(text, record, options);
+  if (keyed !== text) {
+    return keyed;
+  }
+
+  return `${secretLabels.get(record.id) ?? "Secret ?"} ${text}`;
 }
 
 function keyedText(text: string, record: ValidationRecord, options: FrontRenderOptions): string {
