@@ -50,6 +50,7 @@ Same-change maintenance rule: a new stress case in `docs/stress-suite.md` must l
 | Case 37 | Onstage state contradiction | Physical presence contradiction | `onstage-offstage-entity-overlap` and `onstage-entity-status-contradiction` block current-state/status disagreement about whether an entity is present. |
 | Case 38 | Object holder/location incoherence | Object use and transfer; physical continuity | `object-location-holder-incoherence` blocks `current_location: carried_by_holder` when `carried_by` is `none`. |
 | Case 39 | Relationship self-reference | Relationship pressure integrity | `relationship-self-reference` is a validation blocker, not a schema refinement, so bad saved records remain loadable and actionable. |
+| Case 40 | Multi-secret reveal-constraint correlation | POV/audience/secrets separation; compiler rendering correlation | `archive/tickets/SPEC031MULSECREV-001.md` pins `Secret N` labels in `compiler-front-sections.test.ts`, `golden-first-segment.prompt.txt`, and `golden-ideation.prompt.txt` so multi-secret reveal lanes are self-identifying even when one lane omits a value. |
 
 ## Record Hygiene Assistance Coverage
 

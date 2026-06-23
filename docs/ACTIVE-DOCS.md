@@ -158,6 +158,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-030 record-hygiene working-set scope update, template is `1.4.0`, compiler is `1.6.0`, and compiler contract is `1.7.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-031 per-secret reveal-constraint label update, template is `1.5.0`, compiler is `1.7.0`, and compiler contract is `1.8.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

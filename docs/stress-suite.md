@@ -25,7 +25,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 | Local-prose-only stop boundary | 13, 26 | The universal stop rule must define a response point; optional stop guidance may narrow it but is not required. |
 | Dialogue voice distinction | 1, 12, 14, 15, 20, 31 | Covers two-speaker, ensemble, present-minor, large-cast voice risks, and deduplicated optional voice-pin warnings. |
 | Active silent cast / body presence | 21 | Prevents silent active characters from disappearing. |
-| POV/audience/secrets separation | 1, 6, 9, 19, 22, 23 | Covers hidden truths, non-POV behavior shaping, multi-POV projects, and ambiguous perception. |
+| POV/audience/secrets separation | 1, 6, 9, 19, 22, 23, 40 | Covers hidden truths, non-POV behavior shaping, multi-POV projects, ambiguous perception, and multi-secret reveal-lane correlation. |
 | Physical continuity | 2, 3, 4, 5, 21, 23, 24, 25 | Covers routes, exits, line of sight, body positions, time, objects, and force/consent. |
 | Object use and transfer | 3, 24 | Separates use from holder change. |
 | Offstage / institutional / nonhuman pressure | 4, 18 | Requires route, reach, authority, communication, or operating mechanism. |
@@ -1252,6 +1252,36 @@ Expected readiness outcome:
 Prompt-quality risk:
 
 - Relationship pressure becomes ambiguous or nonsensical because the source and target are the same.
+
+---
+
+## Case 40 — Multi-secret reveal-constraint correlation
+
+Stress target: two or more active secrets in `<secrets_and_reveal_constraints>` where holders, protected non-holders, allowed clues, forbidden reveals, and reveal permission must remain attributable to the correct hidden truth even when one lane omits a value for one secret.
+
+Required records:
+
+- At least two active SECRET records with distinct `secret_claim`, `secret_kind`, holders, protected non-holders, forbidden reveals, and reveal permission.
+- At least one selected inactive SECRET record when testing non-contiguous SECRET ordinals.
+- One active secret with an omitted optional cue lane, such as no `allowed_surface_cues` and no available clue carrier.
+- Current POV/audience knowledge records or fields sufficient to keep hidden-truth access explicit.
+
+Validation focus tags:
+
+- `secret_or_clue_pressure`
+- `introspection_expected` if close POV could leak a hidden truth.
+
+Expected blockers:
+
+- Active secret lacks holders, protected non-holders, or reveal permission.
+- POV knowledge profile grants a hidden secret while the secret says protected.
+- Any selected secret references required holder/non-holder records that are not selected.
+
+Prompt-quality risk:
+
+- The writer correlates holders, non-holders, clues, forbidden reveals, or permission by list position rather than by `Secret N`.
+- A missing clue lane shifts later bullets and attaches one secret's reveal constraints to another secret.
+- Ideation citation keys and prose `Secret N` labels diverge.
 
 ---
 
