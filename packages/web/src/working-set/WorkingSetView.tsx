@@ -214,63 +214,65 @@ export function WorkingSetView(): React.JSX.Element {
         {groupByType(selectedRecords).map(([type, typeRecords]) => (
           <section className="configPanel" key={type} aria-labelledby={`${type.replace(/\W+/g, "-").toLowerCase()}-working-set`}>
             <h3 id={`${type.replace(/\W+/g, "-").toLowerCase()}-working-set`}>{type}</h3>
-            <table className="recordTable">
-              <thead>
-                <tr>
-                  <th>Label</th>
-                  <th>Status</th>
-                  {type === "CAST MEMBER" ? <th>Cast band</th> : null}
-                  <th>Membership</th>
-                </tr>
-              </thead>
-              <tbody>
-                {typeRecords.map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.displayLabel}</td>
-                    <td>{record.status ?? "none"}</td>
-                    {type === "CAST MEMBER" ? (
-                      <td>
-                        <label>
-                          band
-                          <select
-                            aria-label={`Cast band for ${record.displayLabel}`}
-                            value={castBand(record.id, activeWorkingSet)}
-                            onChange={(event) => void assignCastBand(record.id, event.target.value as "none" | "active" | "present_minor" | "offstage")}
-                          >
-                            <option value="none">Unassigned</option>
-                            <option value="active">active/onstage full</option>
-                            <option value="present_minor">present-minor compressed</option>
-                            <option value="offstage">offstage relevance</option>
-                          </select>
-                        </label>
-                        {castBand(record.id, activeWorkingSet) === "active" ? (
+            <div className="recordTableScroll">
+              <table className="recordTable workingSetTable">
+                <thead>
+                  <tr>
+                    <th className="labelCol">Label</th>
+                    <th className="statusCol">Status</th>
+                    {type === "CAST MEMBER" ? <th className="bandCol">Cast band</th> : null}
+                    <th className="membershipCol">Membership</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {typeRecords.map((record) => (
+                    <tr key={record.id}>
+                      <td className="labelCol">{record.displayLabel}</td>
+                      <td className="statusCol">{record.status ?? "none"}</td>
+                      {type === "CAST MEMBER" ? (
+                        <td className="bandCol">
                           <label>
-                            local_function
+                            band
                             <select
-                              aria-label={`Local function for ${record.displayLabel}`}
-                              value={
-                                activeWorkingSet.active_onstage_cast_full.find((entry) => entry.cast_member_id === record.id)
-                                  ?.local_function ?? "active_speaker"
-                              }
-                              onChange={(event) => void updateLocalFunction(record.id, event.target.value as typeof activeLocalFunctions[number])}
+                              aria-label={`Cast band for ${record.displayLabel}`}
+                              value={castBand(record.id, activeWorkingSet)}
+                              onChange={(event) => void assignCastBand(record.id, event.target.value as "none" | "active" | "present_minor" | "offstage")}
                             >
-                              {activeLocalFunctions.map((value) => (
-                                <option key={value} value={value}>{value}</option>
-                              ))}
+                              <option value="none">Unassigned</option>
+                              <option value="active">active/onstage full</option>
+                              <option value="present_minor">present-minor compressed</option>
+                              <option value="offstage">offstage relevance</option>
                             </select>
                           </label>
-                        ) : null}
+                          {castBand(record.id, activeWorkingSet) === "active" ? (
+                            <label>
+                              local_function
+                              <select
+                                aria-label={`Local function for ${record.displayLabel}`}
+                                value={
+                                  activeWorkingSet.active_onstage_cast_full.find((entry) => entry.cast_member_id === record.id)
+                                    ?.local_function ?? "active_speaker"
+                                }
+                                onChange={(event) => void updateLocalFunction(record.id, event.target.value as typeof activeLocalFunctions[number])}
+                              >
+                                {activeLocalFunctions.map((value) => (
+                                  <option key={value} value={value}>{value}</option>
+                                ))}
+                              </select>
+                            </label>
+                          ) : null}
+                        </td>
+                      ) : null}
+                      <td className="membershipCol">
+                        <button type="button" onClick={() => void removeRecord(record.id)}>
+                          Remove
+                        </button>
                       </td>
-                    ) : null}
-                    <td>
-                      <button type="button" onClick={() => void removeRecord(record.id)}>
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
         ))}
       </div>
