@@ -63,6 +63,10 @@ multiple targets plausibly match.
   the correction is material.
 - Do not add compatibility aliases, duplicate authority paths, or shims unless
   an active spec deliberately requires them.
+- When a ticket or spec amends `docs/FOUNDATIONS.md`, confirm the exact
+  amendment wording has explicit owner sign-off before editing. Record the
+  sign-off source, such as the user prompt or PR description, in the relevant
+  ticket or spec `Outcome`.
 
 ## Per-Ticket Loop
 
@@ -153,6 +157,13 @@ npm run build
    changing the smoke scope. When seeding through `/api/project/create`, create
    the disposable parent directory first, for example with `mkdtemp` under
    `/tmp`; the route expects an existing parent path.
+
+   Before archiving a browser-facing, request-shape-sensitive, or provider-route
+   ticket, verify the ticket `Outcome` contains either `Smoke:` with the
+   loopback URL, project or fixture path, covered UI/API steps, artifact cleanup
+   status, and live-provider caveat if any, or `Smoke skipped:` with the explicit
+   reason the automated and manual proof is sufficient without a real
+   localhost/browser smoke.
 6. Before marking the ticket complete, re-read its `What to Change`,
    `Files to Touch`, `Acceptance Criteria`, and `Test Plan` sections. For each
    major surface, confirm it is fulfilled, intentionally deferred, not
@@ -258,11 +269,13 @@ npm run build
    repo. Do not edit archived historical artifacts after the move unless needed
    for accurate provenance, security, or legal reasons.
    When archiving a reference spec after a ticket series, also sweep the
-   just-completed ticket archives for the old live spec path and retarget those
-   same-series provenance links to `archive/specs/...`. Also sweep
-   just-completed same-series ticket archives for references to sibling tickets
-   that were archived later, and retarget provenance references to
-   `archive/tickets/...` when needed.
+   just-completed ticket archives for the old live spec path. Retarget those
+   same-series provenance links to `archive/specs/...` or record the exact
+   historical reason for preserving the old live path in the spec `Outcome`.
+   Also sweep just-completed same-series ticket archives for references to
+   sibling tickets that were archived later, and retarget provenance references
+   to `archive/tickets/...` when needed, or record the exception in the spec
+   `Outcome`.
 6. For docs/spec-heavy families, run any applicable capstone checks from the
    spec plus lightweight repository truth checks before archiving:
    - registry completeness for active docs, when `docs/ACTIVE-DOCS.md` is in
@@ -296,6 +309,23 @@ npm run build
    active reference sweeps are clean or intentionally point to archive paths,
    final gates are current, and the worktree contains no unreported task
    residue.
+
+## Pre-Completion Hard Gate
+
+Before a final response or `/goal` completion, stop and verify:
+
+- Required commits are present, or the user's explicit no-commit constraint is
+  recorded in the final response and the relevant `Outcome`.
+- `git status --short` has been reviewed after the last archive, reference, or
+  docs edit.
+- No completed ticket or spec remains at an active `tickets/` or `specs/` path.
+- Archived tickets and specs have final status plus an `Outcome`.
+- Same-series archived provenance paths are retargeted or explicitly justified
+  by the final spec `Outcome`.
+- Browser, request-shape, and provider-route tickets have `Smoke:` or
+  `Smoke skipped:` closeout evidence in their `Outcome`.
+- Final gates are current for every source, test, or active authority doc edit
+  since the last successful run.
 
 ## Reporting
 

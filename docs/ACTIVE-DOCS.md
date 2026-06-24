@@ -31,6 +31,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/prompt-template.md` | Universal prose prompt template text and placeholder structure. | reference | domain authority for universal prompt template |
 | `docs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | reference | domain authority for ideation prompt template |
 | `docs/story-record-hygiene-prompt-template.md` | Whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap/action rules, and output contract. | reference | domain authority for story-record hygiene prompt template |
+| `docs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | reference | domain authority for the segment-reconciliation assistance prompt template |
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
 | `docs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | audit | domain authority for implemented validation-rule inventory |
@@ -61,6 +62,7 @@ These explain how the implemented local app is installed, run, verified, and use
 - `docs/prompt-template.md`
 - `docs/ideation-prompt-template.md`
 - `docs/story-record-hygiene-prompt-template.md`
+- `docs/segment-reconciliation-prompt-template.md`
 - `docs/prompt-template-rationale.md`
 - `docs/story-record-schema.md`
 
@@ -158,6 +160,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-031 per-secret reveal-constraint label update, template is `1.5.0`, compiler is `1.7.0`, and compiler contract is `1.8.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after the SPEC-032 segment-reconciliation assistance update, template is `1.6.0`, compiler is `1.8.0`, and compiler contract is `1.9.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

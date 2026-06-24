@@ -74,6 +74,10 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ ok: false, kind: "no-open-project", message: "No open project." }));
   }
 
+  if (url === "/api/segment-reconciliation/compile") {
+    return Promise.resolve(jsonResponse({ ok: false, kind: "no-accepted-segment", message: "No accepted segment exists to reconcile." }));
+  }
+
   if (url === "/api/settings/openrouter") {
     return Promise.resolve(
       jsonResponse({
@@ -162,6 +166,10 @@ describe("App", () => {
 
     fireEvent.click(screen.getByRole("link", { name: "Generate / Candidate" }));
     expect(await screen.findByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "Segment Reconciliation" }));
+    expect(await screen.findByRole("heading", { name: "Segment Reconciliation" })).toBeTruthy();
+    expect(await screen.findByText("Accept a segment before reconciling.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Accepted Segments" }));
     expect(await screen.findByRole("heading", { name: "Accepted Segments" })).toBeTruthy();

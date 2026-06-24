@@ -216,6 +216,7 @@ Rules:
 - For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no recent causal context exists.
 - For `continuation_after_accepted_segment`, a user-authored handoff is required. The required continuation handoff must include a recent causal bridge and either a last visible moment or a begin-after point.
 - Durable changes from accepted prose must be represented in selected records or current state before the next prompt.
+- Segment Reconciliation may inspect the saved-draft values of `recent_causal_context`, `last_visible_moment`, and `begin_after` alongside exactly one latest accepted segment and may return paraphrased advisory replacements or fills. Those suggestions are not user-authored generation-time fields, do not satisfy readiness, and must not be inserted automatically. No proposal may contain a material verbatim passage from accepted prose; provenance uses accepted-segment span keys instead of quotations. The user must independently author any accepted handoff value in the Generation Brief editor.
 
 ### 3.4 MANUAL MOMENT DIRECTIVE
 
@@ -998,6 +999,72 @@ Each included record renders its full payload as escaped canonical JSON plus det
 
 Hygiene findings are advisory assistance output. They do not mutate lifecycle, do not satisfy validation, do not add validation diagnostics, and do not change prose compilation or active-working-set membership.
 
+### 9.4 Segment-reconciliation assistance projection
+
+Segment Reconciliation is a `segment-reconciliation` assistance surface, not a prose-prompt source, not a validation authority, and not a mutation surface. It adds no stored schema fields.
+
+Its accepted-prose source is exactly one accepted segment selected by the explicit request. The only v1 selection is the latest accepted segment. No accepted-segment range, archive, candidate, regeneration, or automatic prose-derived summary is part of the projection.
+
+Its generation-time projection contains exactly these saved-draft CURRENT AUTHORITATIVE STATE paths:
+
+- `current_time`
+- `current_location`
+- `onstage_entities`
+- `immediate_situation_summary`
+- `offstage_pressuring_entities`
+- `positions`
+- `possessions`
+- `visible_conditions`
+- `environmental_conditions`
+- `entity_statuses`
+- `line_of_sight_and_visibility`
+- `pov_cannot_perceive_now`
+- `routes_and_exits`
+- `available_time`
+- `consent_or_force_conditions`
+- `current_locks`
+
+and exactly these saved-draft IMMEDIATE HANDOFF paths:
+
+- `recent_causal_context`
+- `last_visible_moment`
+- `begin_after`
+
+MANUAL MOMENT DIRECTIVE, STOP GUIDANCE, CURRENT CAST VOICE PRESSURE, CAST VOICE OVERRIDES, ACTIVE WORKING SET curation, selected POV, cast bands, GENERATION VALIDATION FOCUS, normalized `generation_context`, STORY CONTRACT, UNIVERSAL CONTENT POLICY, and PROSE MODE are excluded from proposal targets and prompt source except that active-working-set membership may be read solely to honor the explicit working-set record scope.
+
+The record projection uses one explicit user-selected scope:
+
+- `active_working_set`: every non-archived record named by `active_working_set.selected_records`, all registered types and lifecycle states; or
+- `whole_project`: every non-archived project record, all registered types and lifecycle states.
+
+`active_working_set` is the v1 default. Neither scope applies a semantic-active predicate. Every qualifying record renders its full payload in deterministic registry/type-label-id order. Archived records are excluded. Minimal id/type/display-label reference stubs may render for non-scope targets referenced by included source data; stubs do not become record-change targets and grant no prose authority.
+
+The record-creation schema catalog is generated deterministically from the registered record payload validators. It includes every registered record type, required and optional fields, defaults, union/literal alternatives, every enum vocabulary, repository-managed id rules, reference-bearing paths, lifecycle fields, and legal deactivation destinations. Runtime code must not maintain a second handwritten copy of type or enum vocabularies.
+
+The registered type set at adoption is ENTITY, ENTITY STATUS, CAST MEMBER, FACT, BELIEF, SECRET, LOCATION, OBJECT, VISIBLE AFFORDANCE, EVENT, INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD, RELATIONSHIP, and EMOTION. Tests compare the generated catalog to the registry so the catalog follows future same-change schema amendments.
+
+Legal Segment Reconciliation deactivation destinations are:
+
+- ENTITY, ENTITY STATUS, CAST MEMBER, FACT: none;
+- BELIEF: `resolved`, `abandoned`;
+- SECRET: `disproven`, `abandoned`;
+- LOCATION: `inactive`, `destroyed`, `inaccessible`;
+- OBJECT: `lost`, `destroyed`, `transferred`, `inactive`;
+- VISIBLE AFFORDANCE: `unavailable`;
+- EVENT: `resolved`, `background`, `abandoned`;
+- INTENTION: `satisfied`, `abandoned`;
+- PLAN: `fulfilled`, `failed`, `abandoned`, `revised` through `plan_status`;
+- CLOCK: `resolved`, `abandoned`;
+- OBLIGATION: `closed`, `abandoned`, `transferred`;
+- CONSEQUENCE: `resolved`, `abandoned`;
+- OPEN THREAD: `answered`, `resolved`, `abandoned`, `superseded`;
+- RELATIONSHIP: `resolved`, `abandoned`;
+- EMOTION: `settled`.
+
+A deactivation proposal names one destination above and may include additional non-lifecycle field updates. It never means archive, delete, remove, or merge.
+
+Every advisory proposal carries one or more deterministic accepted-segment span keys plus current field/record contrast keys. Creation proposals must name a registered type, use only schema-valid fields and enum values, and pass the same payload parser after temporary reference-token resolution. Output never mutates records, generation-time fields, lifecycle, validation, prose compilation, or active-working-set membership.
+
 ## 10. Compiler contract and minimum prompt completeness
 
 The authoritative placeholder mapping, section order, empty-state rendering rules, validation matrix, and blocker/warning taxonomy live in `compiler-contract.md`.
@@ -1010,6 +1077,7 @@ Schema/template synchronization rules:
 - Every validation-only field must be explicitly marked not prompt-facing by default.
 - Adding, renaming, or deleting a prompt placeholder requires a compiler-contract update in the same change.
 - Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/story-record-hygiene-prompt-template.md`, this schema where applicable, `docs/compiler-contract.md`, compiler/template versions, and golden tests in the same change.
+- Any change to the Segment Reconciliation accepted-segment source, allowed generation-field projection, record scope, registered schema catalog, lifecycle destinations, reference-token rules, proposal shapes, or parser validation must update `docs/segment-reconciliation-prompt-template.md`, this schema, `docs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
 
 Minimum prompt completeness for v1:
 

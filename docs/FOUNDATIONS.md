@@ -271,23 +271,24 @@ It must:
 
 - compile a prose prompt or prose-aligned assistance prompt only from the records and generation-time fields declared by that prompt's source profile;
 - compile a project-review assistance prompt only from the explicit deterministic project-record projection declared by that prompt's source profile;
+- compile a segment-reconciliation assistance prompt only from exactly one explicitly selected accepted segment, the purpose-limited generation-time field projection, the explicit user-selected record-contrast scope, and the deterministic record-schema catalog declared by that prompt's source profile;
 - use stable section names and deterministic ordering;
-- render records into purpose-specific, inspectable prompt sections rather than raw database dumps;
+- render records and accepted-segment evidence into purpose-specific, inspectable prompt sections rather than raw database or archive dumps;
 - preserve author-written nuance fields needed by the declared prompt purpose;
 - keep operational fields meaningful for validation, formatting, or review;
 - expose every compiled prompt to the user for inspection before sending.
 
 It must not:
 
-- use an LLM to choose source records;
-- use an LLM to summarize source records during compilation;
-- use an LLM to repair contradictions during compilation;
+- use an LLM to choose source records, accepted segments, fields, or evidence spans;
+- use an LLM to summarize source records or accepted prose during compilation;
+- use an LLM to repair contradictions or malformed assistance output during compilation or parsing;
 - decide by intuition what matters;
-- silently compress or omit records required by the declared source profile;
-- infer source material from accepted prose, candidates, author-private notes, or hidden UI state;
-- include accepted prose text in prompts;
-- mutate story records; or
-- let a project-review assistance source alter active-working-set membership or prose-prompt content.
+- silently compress or omit records or accepted-segment text required by the declared source profile;
+- infer source material from accepted prose, candidates, author-private notes, or hidden UI state; the segment-reconciliation profile's direct, explicit read of one selected accepted segment is not inference;
+- include accepted prose text in any prose prompt or in any assistance prompt other than the exact segment-reconciliation profile declared in §9.1;
+- mutate story records, generation-time fields, active-working-set membership, or accepted prose; or
+- let a project-review or segment-reconciliation assistance source grant any record authority in a prose prompt.
 
 Structured fields carry operational meaning. Author-written prose fields carry nuance. The compiler must respect both. A relationship axis, status enum, or salience tag may help sort, validate, or review records, but purpose-facing rendering should use human-authored text whenever nuance matters.
 
@@ -295,7 +296,7 @@ Compiler mapping is part of deterministic compilation, not a convenience appendi
 
 A prose or prose-aligned assistance compiler receives normalized readiness input. Normalization may apply deterministic non-story defaults, such as first-segment versus continuation derived from accepted-segment count. Normalization must not invent story facts, handoff prose, current situation, routes, positions, voice pressure, or directive content.
 
-A project-review assistance compiler receives its own typed deterministic snapshot. It must not reuse generation readiness input when doing so would add undeclared sources or omit declared project-review records.
+A project-review assistance compiler receives its own typed deterministic snapshot. A segment-reconciliation assistance compiler receives its own typed deterministic snapshot containing the one selected accepted segment and only the declared reconciliation sources. Neither compiler may reuse generation readiness input when doing so would add undeclared sources, omit declared sources, or block the diagnostic purpose on the condition it exists to inspect.
 
 
 ---
@@ -312,31 +313,48 @@ by §9.1 and §26.
 
 ### 9.1 Assistance prompt class
 
-An assistance prompt is a deterministic, inspectable prompt whose declared source profile is limited to user-authored continuity authority appropriate to its assistance purpose and whose output is never story text.
+An assistance prompt is a deterministic, inspectable prompt whose declared source profile is explicitly sanctioned for its assistance purpose and whose output is never story text or continuity authority.
 
 Every assistance prompt must declare exactly one source profile in the applicable domain authority and in `docs/compiler-contract.md`:
 
 - **prose-aligned:** the same authority sources as the prose prompt: story configuration, the active working set, and only the generation-time fields needed by the assistance purpose; or
-- **project-review:** a deterministic records-only projection of explicitly named story-record types, drawn from an explicit, user-selected, disclosed scope — the whole project by default, or a narrower scope the user has explicitly chosen (for example, the active working set) — with explicit archive and per-type status predicates applied identically to every record within that scope.
+- **project-review:** a deterministic records-only projection of explicitly named story-record types, drawn from an explicit, user-selected, disclosed scope — the whole project by default, or a narrower scope the user has explicitly chosen — with explicit archive and per-type status predicates applied identically to every record within that scope; or
+- **segment-reconciliation:** exactly one accepted segment selected by the explicit assistance request — the latest accepted segment is the only v1 selection — plus only the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF fields declared by the segment-reconciliation domain authority, every non-archived record in an explicit user-selected and disclosed record-contrast scope, minimal declared reference-label metadata, and a deterministic schema catalog derived from registered record types and validators. The accepted segment is bounded evidence for advisory reconciliation, not canon authority and not prose-prompt authority.
 
-A project-review assistance prompt does not change the active working set and grants no record outside the active working set authority in a prose prompt. Assistance source selection must never be keyword-triggered, probabilistic, model-selected, token-budget-evicted, inferred from accepted prose or candidates, derived from author-private notes, or taken from hidden UI state.
+A project-review or segment-reconciliation assistance prompt does not change the active working set and grants no record outside the active working set authority in a prose prompt. Assistance source selection must never be keyword-triggered, probabilistic, model-selected, embedding-selected, token-budget-evicted, derived from author-private notes, taken from hidden UI state, or inferred from accepted prose or candidates. The segment-reconciliation profile's direct read of the one accepted segment named by its explicit request is the sole accepted-prose source exception; no model or compiler chooses that segment by content.
 
-A project-review assistance prompt may offer more than one scope only when every scope is an explicit, user-selected, deterministic, and disclosed projection. The active scope must be named in the compiled prompt and surfaced in the inspection UI, and the declared archive and per-type status predicates must render every qualifying record within the selected scope — none hidden, ranked, summarized, or omitted. Reading active-working-set membership to honor a user-selected working-set scope is not a working-set mutation and grants no record any prose authority. Scope selection, exactly like source selection, must never be keyword-triggered, probabilistic, model-selected, token-budget-evicted, inferred from accepted prose or candidates, derived from author-private notes, or taken from hidden UI state.
+A project-review or segment-reconciliation assistance prompt may offer more than one record scope only when every scope is an explicit, user-selected, deterministic, and disclosed projection. The active scope must be named in the compiled prompt and surfaced in the inspection UI. The declared archive and status rules must render every qualifying record within the selected scope — none hidden, ranked, summarized, batched, or omitted. Reading active-working-set membership to honor a user-selected working-set scope is not a working-set mutation and grants no record prose authority.
+
+The segment-reconciliation profile has these additional source constraints:
+
+- it reads exactly one accepted segment and never a range, rolling window, archive dump, candidate, regeneration, automatic prose-derived summary, or model-selected excerpt;
+- the v1 request value is `latest`, selected explicitly by the user invoking the operation, and the server fetches one latest accepted row directly;
+- it renders the complete selected segment as escaped evidence spans with deterministic citation keys; evidence spans are local compiler partitions, not model-selected retrieval;
+- it renders only the purpose-limited generation-time fields and record scope registered in its domain authority and compiler contract;
+- it may expose schema and enum vocabularies only from deterministic registered validators and declared lifecycle/reference metadata;
+- an oversize prompt fails visibly; no source may be trimmed, summarized, compressed, or evicted to fit a context budget.
 
 Assistance prompts must:
 
-- compile deterministically: identical declared source records and fields, assistance-request inputs, template version, compiler version, and compiler-contract version must produce an identical prompt;
+- compile deterministically: identical declared source records and fields, accepted-segment source where permitted, assistance-request inputs, template version, compiler version, and compiler-contract version must produce an identical prompt;
 - be inspectable before sending, under the same audit boundaries as §22;
-- use purpose-appropriate deterministic gating: structurally malformed or unrepresentable source data and unsafe provider/policy configuration block the affected operation; prose-launch readiness requirements apply only when the assistance purpose needs them; a diagnostic assistance prompt must not be blocked merely because it detects the contradiction, overlap, redundancy, or staleness it exists to inspect;
-- never use an LLM intermediary to select, rank, summarize, repair, rewrite, or omit records during compilation;
-- never produce story prose, and never be used to request story prose;
+- use purpose-appropriate deterministic gating: structurally malformed or unrepresentable source data and unsafe provider/policy configuration block the affected operation; prose-launch readiness requirements apply only when the assistance purpose needs them; a diagnostic assistance prompt must not be blocked merely because it detects the contradiction, overlap, redundancy, staleness, missing field, or durable change it exists to inspect;
+- never use an LLM intermediary to select, rank, summarize, repair, rewrite, or omit sources during compilation;
+- never produce story prose and never be used to request story prose;
 - never have their output enter any prose prompt, story record, active working set, or generation-time field automatically (§26 assistance-output rules).
 
-The local-prose stop rule and the prohibition on requesting alternatives,
-plans, or summaries (§4.6, §11 item 7, §19, §29.5) scope to the prose prompt
-class; an assistance prompt may request non-prose alternatives, questions, comparisons, or review findings because no prose writer is being asked to branch the story.
+Segment-reconciliation assistance output must additionally:
 
-The template must remain portable, inspectable, and model-provider-neutral. Markdown with XML-style section boundaries is the constitutional default because it is readable to humans and gives models stable semantic boundaries.
+- attach one or more valid accepted-segment span citations to every proposed brief update, record change, lifecycle deactivation, or record creation;
+- carry the current field or record contrast keys used to form the proposal;
+- use only registered record types, schema-valid field shapes, real enum values, and declared lifecycle destinations;
+- omit accepted-prose quotations and independently paraphrase any proposed prose value;
+- be validated locally as one complete structured response and quarantined in full when malformed, stale, schema-invalid, reference-invalid, provenance-invalid, or materially verbatim;
+- remain ephemeral scratch, with no project-store write, prompt reuse, automatic editor insertion, or automatic retry/repair.
+
+The local-prose stop rule and the prohibition on requesting alternatives, plans, or summaries (§4.6, §11 item 7, §19, §29.5) scope to the prose prompt class. An assistance prompt may request non-prose alternatives, questions, comparisons, review findings, or structured advisory deltas because no prose writer is being asked to branch the story.
+
+The template must remain portable, inspectable, and model-provider-neutral. Markdown with XML-style section boundaries is the constitutional default because it is readable to humans and gives models stable semantic boundaries. A provider's schema-constrained response mode may enforce the same inspected output contract, but provider-specific hidden source selection, repair, compression, or prompt forks must not enter the v1 core.
 
 Provider-specific wrappers, hacks, hidden adapters, or model-specific prompt forks must not enter the v1 core. Future provider-specific compatibility layers may exist only if explicitly justified and only if they preserve the declared assistance source profile and output quarantine.
 
@@ -379,34 +397,27 @@ The universal prompt always contains the local-unit stop rule. Optional stop gui
 
 ---
 
-## 10. No accepted prose in generated prompts
+## 10. Accepted prose is excluded from prose prompts and continuity authority
 
 Accepted prose segments must not be included in generated prose prompts.
 
-This is a hard constitutional rule.
+This remains a hard constitutional rule.
 
-The reason is continuity discipline. Accepted prose encourages phrase echo, style mimicry, accidental leakage, context bloat, and prose-as-canon drift. Continuity Loom must not ask the external prose writer to derive continuity from prior prose.
+The sole prompt-source exception is the `segment-reconciliation` assistance profile in §9.1. That profile may read exactly one accepted segment — the latest accepted segment is the only v1 selection — as bounded evidence for quarantined advisory proposals. It may not read a range, archive, candidate, regeneration, model-selected excerpt, or automatic prose-derived summary.
 
-The correct mechanism for carrying prior events forward is structured story state, especially:
+The exception does not make accepted prose canon authority. Accepted prose must never be used automatically to populate or mutate a story record, generation-time field, active-working-set entry, story configuration field, or prose prompt. Assistance output derived from it remains non-canonical until the user independently reviews and authors a change in the canonical editor.
 
-- EVENT;
-- CURRENT AUTHORITATIVE STATE;
-- IMMEDIATE HANDOFF;
-- FACT;
-- BELIEF;
-- RELATIONSHIP;
-- EMOTION;
-- PLAN;
-- CLOCK;
-- OBLIGATION;
-- CONSEQUENCE;
-- OPEN THREAD;
-- LOCATION;
-- OBJECT;
-- AFFORDANCE;
-- CAST MEMBER.
+Segment-reconciliation output must not quote or copy accepted prose into proposed handoff, current-state, record, label, or rationale text. Provenance is represented by deterministic span keys that point back to the readable accepted segment; proposed prose values must be independently paraphrased and must pass the declared verbatim-echo guard before display as valid output.
 
-The only allowed continuation-launch material is user-authored generation-time context, such as recent causal context, last visible moment, begin-exactly-after-this guidance, manual directive, relevant current state, and selected EVENT records.
+Outside this narrow assistance exception, the reason for the prohibition is unchanged. Accepted prose encourages phrase echo, style mimicry, accidental leakage, context bloat, and prose-as-canon drift. Continuity Loom must not ask the external prose writer to derive continuity from prior prose.
+
+The correct mechanism for carrying prior events forward is user-maintained structured story state, especially EVENT, CURRENT AUTHORITATIVE STATE, IMMEDIATE HANDOFF, FACT, BELIEF, RELATIONSHIP, EMOTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD, LOCATION, OBJECT, VISIBLE AFFORDANCE, ENTITY STATUS, and CAST MEMBER.
+
+The only allowed continuation-launch material is user-authored generation-time context, such as recent causal context, last visible moment, begin-after guidance, manual directive, relevant current state, and selected records. Segment-reconciliation suggestions are not continuation-launch material unless and until the user independently authors equivalent content into those canonical fields or records.
+
+Prompt-facing prose-generation schema fields must not use accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries as their source. The segment-reconciliation domain may label its bounded data section as accepted-segment evidence, but it must not expose a reusable "accepted prose summary" or any stored prompt-facing accepted-prose field.
+
+If a prior accepted segment created continuity-relevant durable change, that change belongs in user-authored story records, current authoritative state, immediate handoff, or selected records before the next prose prompt is generated. Segment Reconciliation may help the user identify and phrase candidate changes; it does not perform that transfer.
 
 Prompt, schema, and compiler surfaces must not name or label any prompt field as “most recent accepted prose,” “accepted prose summary,” or anything that implies accepted prose is a prompt source.
 
@@ -766,7 +777,7 @@ Accepted segments are readable story output.
 
 They are not canon authority for future generation.
 
-The app should allow the user to see accepted segments individually and in order. Segment browsing is a reading and review affordance, not a prompt source.
+The app should allow the user to see accepted segments individually and in order. Segment browsing is a reading and review affordance, not a prose-prompt source. The sole assistance-source exception is the `segment-reconciliation` profile in §9.1, which reads exactly one explicitly requested accepted segment — latest only in v1 — for quarantined advisory review. That exception does not authorize archive ranges, prose generation, stored summaries, or automatic continuity writes.
 
 Accepted segment metadata should include:
 
@@ -782,7 +793,7 @@ The app does not need to mark whether the user edited the candidate before accep
 
 Discarded candidates and regenerated candidates should not be stored.
 
-After acceptance, the app should remind the user that durable changes likely require manual record updates.
+After acceptance, the app should remind the user that durable changes likely require manual record updates. The reminder may link to Segment Reconciliation, but opening or using that assistance surface must not acknowledge the reminder or imply that canonical updates are complete.
 
 ---
 
@@ -942,13 +953,17 @@ Author-facing generation diagnostics should be presented as a readiness checklis
 
 The following conclusions are settled for this project.
 
-### 28.1 Prior accepted prose should not be included in prompts
+### 28.1 Prior accepted prose must not become prose-prompt context or automatic canon
 
-Accepted prose should not be included by default and should not be included in v1 at all. Structured records and user-authored handoff fields are the continuity mechanism. This avoids prose echo, style mimicry, context bloat, and prose-as-canon drift.
+Accepted prose must never be included in a prose prompt. Structured records and user-authored handoff fields remain the continuity mechanism. This avoids prose echo, style mimicry, context bloat, and prose-as-canon drift.
 
-### 28.2 Long-context capability does not justify archive dumping
+One narrow v1 assistance exception is allowed: the `segment-reconciliation` profile may inspect exactly the latest accepted segment as bounded evidence for quarantined advisory updates. The segment remains non-authoritative; the model must not quote it into proposed fields; and no result is stored or reused without explicit, independent user authorship in a canonical surface.
+
+### 28.2 Long-context capability does not justify archive dumping or hidden source loss
 
 Long context windows are useful, but they do not make indiscriminate context safe. Important information can be underused when buried in the middle of long prompts. Continuity Loom should use stable sections, place hard state and final stop/output instructions near prompt edges, and avoid dumping prose archives.
+
+Segment Reconciliation therefore reads one complete accepted segment only. It must not read a multi-segment range, retrieve excerpts by similarity or keyword, summarize an archive, or silently truncate/compress the segment or selected record scope. If the declared complete source cannot fit, the operation fails and asks the user to choose the explicit narrower record scope or a compatible model; the compiler never decides what to omit.
 
 ### 28.3 Record-grounded generation resembles RAG/context engineering
 
@@ -1001,17 +1016,21 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 
 ### 29.2 Continuity authority hard fails
 
-- Does it let an LLM make authoritative record changes?
-- Does it infer canon automatically from accepted prose?
-- Does it mutate records without explicit user review and acceptance?
+- Does it let an LLM make authoritative record or generation-brief changes?
+- Does it infer canon automatically from accepted prose or assistance output?
+- Does it treat an accepted segment as continuity authority rather than bounded reconciliation evidence?
+- Does it mutate records or generation-time fields without explicit user review and independent authorship in the canonical editor?
 - Does it allow the external prose writer to update records?
-- Does it hide continuity changes inside generation, regeneration, or acceptance?
-- Does it let assistance output enter a prose prompt, a story record, or a generation-time field without explicit per-item user action?
+- Does it hide continuity changes inside generation, regeneration, acceptance, reconciliation, or reminder acknowledgement?
+- Does it let assistance output enter a prose prompt, a story record, a generation-time field, or the active working set automatically or through an assistance-surface prefill/staging control?
+- Does it copy accepted prose verbatim into a proposed canonical field or record value?
 
-### 29.3 Active working set hard fails
+### 29.3 Active working set and assistance-scope hard fails
 
 - Does it silently include records the user did not select in a prose prompt, or treat records outside the active working set as authority for prose generation?
-- Does a project-review assistance prompt hide, vary, or incompletely render the source predicate within its declared, user-selected scope; apply a scope the user did not explicitly select; or fail to disclose its active scope in the compiled prompt and the inspection UI?
+- Does a record-scoped assistance prompt hide, vary, or incompletely render the source predicate within its declared user-selected scope; apply a scope the user did not explicitly select; or fail to disclose its active scope in the compiled prompt and inspection UI?
+- Does Segment Reconciliation apply a hidden status predicate, retrieval/ranking rule, reference closure, or token-budget omission instead of rendering every non-archived record in the selected contrast scope?
+- Does it let a reference-label stub become a change target or import an out-of-scope payload without explicit whole-project selection?
 - Does it silently remove selected records?
 - Does it silently compress active/onstage cast dossiers?
 - Does it treat inactive records as branches?
@@ -1019,14 +1038,19 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 
 ### 29.4 Prompt compilation hard fails
 
-- Does it use an LLM intermediary to select, rank, summarize, repair, or rewrite records during prompt compilation?
+- Does it use an LLM intermediary to select, rank, summarize, repair, rewrite, or omit records, accepted prose, fields, or evidence spans during prompt compilation?
 - Does it make prompt output nondeterministic for identical inputs and versions?
-- Does it include accepted prose in generated prompts?
+- Does any prose prompt include accepted prose?
+- Does any assistance prompt include accepted prose outside the exact `segment-reconciliation` profile?
+- Does Segment Reconciliation read more than one accepted segment; read any non-selected segment, candidate, regeneration, archive range, or automatic prose-derived summary; choose source by content; or substitute a model/compiler summary for the complete selected segment?
+- Does Segment Reconciliation silently trim, compress, retrieve, rank, or token-budget-evict any accepted-segment text or qualifying record?
+- Does it treat accepted-segment data as prompt instructions, expose an uninspected provider transform, or use hidden response repair?
 - Does it preserve provider-specific prompt hacks as v1 core behavior?
-- Does it omit one of the universal prompt contract sections (prose prompts) other than the designated optional sections enumerated in §9 (present minor cast, offstage relevance, hard canon) without constitutional amendment, or omit even a designated optional section nondeterministically?
+- Does it omit one of the universal prompt contract sections for prose prompts other than the designated optional sections enumerated in §9 without constitutional amendment, or omit even a designated optional section nondeterministically?
 - Does an assistance prompt use a source profile that is not explicitly named and deterministically specified in its domain authority and the compiler contract?
-- Does a project-review assistance prompt cause its source records to enter a prose prompt or alter active-working-set membership?
-- Does an assistance prompt select, rank, omit, or evict source records by keyword activation, probability, model judgment, hidden embeddings, token budget, accepted prose, candidates, author-private notes, or hidden UI state?
+- Does a project-review or segment-reconciliation assistance prompt cause its source records or output to enter a prose prompt or alter active-working-set membership?
+- Does an assistance prompt select, rank, omit, or evict source records by keyword activation, probability, model judgment, hidden embeddings, token budget, candidates, author-private notes, or hidden UI state?
+- Does Segment Reconciliation accept a client-supplied prompt instead of rebuilding and fingerprint-checking the declared source?
 
 ### 29.5 Validation hard fails
 
@@ -1062,18 +1086,25 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 ### 29.8 Accepted prose archive hard fails
 
 - Does it store rejected candidates by default?
-- Does it use accepted segments as prompt context?
+- Does it use accepted segments as prose-prompt context?
+- Does it use accepted prose as assistance-prompt context outside the exact one-segment `segment-reconciliation` profile?
+- Does Segment Reconciliation read a range/archive, expose an older-segment chooser in v1, include a model-selected excerpt, or allow a provider transform to omit part of the selected segment?
+- Does it automatically store, summarize, canonize, or reuse information mined from accepted prose?
 - Does it require accepted segments to mark whether the user edited them?
 - Does it hide accepted segments from user review?
 - Does it fail to remind the user to update records after accepted durable changes?
+- Does opening Segment Reconciliation automatically acknowledge or clear that reminder?
 
-### 29.9 Prompt audit and secrets hard fails
+### 29.9 Prompt audit, assistance scratch, and secrets hard fails
 
-- Does it permanently archive prompts by default?
+- Does it permanently archive prompts or assistance responses by default?
 - Does it commit prompt logs to git?
+- Does it persist accepted-segment prompt copies, raw reconciliation output, parsed proposals, or keeper state in the project store by default?
+- Does clearing assistance scratch leave project-store, working-set, prompt, log, or persisted browser residue?
 - Does it expose API keys in prompt inspection UI?
 - Does it store API keys in story files?
 - Does it log API keys or embed them in prompts?
+- Does it send accepted prose or record secrets without an explicit source disclosure and user-initiated provider action?
 - Does it fail unclearly when no OpenRouter key is configured?
 
 ### 29.10 Data ownership hard fails

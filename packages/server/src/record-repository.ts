@@ -52,6 +52,13 @@ export interface AcceptedSegmentReminderRef {
   createdAt: string;
 }
 
+export interface AcceptedSegmentReconciliationSource {
+  id: number;
+  sequence: number;
+  acceptedAt: string;
+  text: string;
+}
+
 export interface CreateRecordInput {
   type: string;
   displayLabel: string;
@@ -444,6 +451,23 @@ export class RecordRepository {
     }
 
     return { sequence: Number(row.sequence), createdAt: String(row.created_at) };
+  }
+
+  getLatestAcceptedSegmentForReconciliation(): AcceptedSegmentReconciliationSource | null {
+    const row = this.database
+      .prepare("SELECT id, sequence, text, created_at FROM accepted_segments ORDER BY sequence DESC LIMIT 1")
+      .get() as { id: number; sequence: number; text: string; created_at: string } | undefined;
+
+    if (!row) {
+      return null;
+    }
+
+    return {
+      id: Number(row.id),
+      sequence: Number(row.sequence),
+      acceptedAt: String(row.created_at),
+      text: String(row.text)
+    };
   }
 
   getReminderAcknowledgedSequence(): number {

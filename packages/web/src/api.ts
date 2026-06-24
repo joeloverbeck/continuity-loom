@@ -5,10 +5,12 @@ import type {
   OpenProjectResult,
   ProjectStatus,
   RecordHygieneRequest,
+  SegmentReconciliationRequest,
   StoryNote,
   StoryNoteClip,
   StoryNoteCreateInput,
   StoryNoteUpdateInput,
+  SegmentReconciliationParsedOutput,
   ValidationResult,
   VersionInfo
 } from "@loom/core";
@@ -166,6 +168,62 @@ export interface ParsedRecordHygieneFinding {
 export type RecordHygieneAnalyzeResponse =
   | { ok: true; findings: readonly ParsedRecordHygieneFinding[]; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
   | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
+  | ApiFailure
+  | TransportFailure;
+
+export type SegmentReconciliationCompileMetadata = CompileResult["metadata"] & {
+  recordCount: number;
+  countsByType: Record<string, number>;
+};
+
+export interface SegmentReconciliationDisclosure {
+  sourceProfile: "segment-reconciliation";
+  acceptedSegment: {
+    id: string;
+    sequence: number;
+    acceptedAt: string;
+    spanCount: number;
+  };
+  recordScope: SegmentReconciliationRequest["recordScope"];
+  recordCount: number;
+  referenceStubCount: number;
+  briefFieldCount: number;
+}
+
+export interface SegmentReconciliationSourceMetadata {
+  segmentSelection: SegmentReconciliationRequest["segmentSelection"];
+  recordScope: SegmentReconciliationRequest["recordScope"];
+  acceptedSegmentId: string;
+  acceptedSegmentSequence: number;
+  acceptedSegmentAcceptedAt: string;
+}
+
+export type SegmentReconciliationCompileResponse =
+  | {
+      ok: true;
+      prompt: string;
+      metadata: SegmentReconciliationCompileMetadata;
+      citations: Record<string, string>;
+      disclosure: SegmentReconciliationDisclosure;
+      outputSchema: unknown;
+      source: SegmentReconciliationSourceMetadata;
+    }
+  | ApiFailure;
+
+export type SegmentReconciliationAnalyzeResponse =
+  | {
+      ok: true;
+      proposals: SegmentReconciliationParsedOutput;
+      metadata: GenerationMetadata & SegmentReconciliationCompileMetadata;
+    }
+  | {
+      ok: true;
+      malformed: true;
+      reasonCode: string;
+      summary: string;
+      raw: string;
+      metadata: GenerationMetadata & SegmentReconciliationCompileMetadata;
+    }
   | ApiFailure
   | TransportFailure;
 
@@ -570,6 +628,18 @@ export async function recordHygieneAnalyze(mode: RecordHygieneRequest["mode"] = 
   return postJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
     mode
   });
+}
+
+export async function segmentReconciliationCompile(
+  request: SegmentReconciliationRequest
+): Promise<SegmentReconciliationCompileResponse> {
+  return postJson<SegmentReconciliationCompileResponse>("/api/segment-reconciliation/compile", request);
+}
+
+export async function segmentReconciliationAnalyze(
+  request: SegmentReconciliationRequest & { expectedPromptFingerprint: string }
+): Promise<SegmentReconciliationAnalyzeResponse> {
+  return postJson<SegmentReconciliationAnalyzeResponse>("/api/segment-reconciliation/analyze", request);
 }
 
 export async function acceptCandidate(input: {
