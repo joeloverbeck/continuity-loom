@@ -3,9 +3,9 @@
 Status: active reference — domain authority for the segment-reconciliation assistance prompt template
 Authority: domain authority for the segment-reconciliation assistance prompt template (see `docs/ACTIVE-DOCS.md`)
 Profile id: `segment-reconciliation`
-Template version: `1.6.0`
-Compiler version: `1.8.0`
-Compiler-contract version: `1.9.0`
+Template version: `1.7.0`
+Compiler version: `1.9.0`
+Compiler-contract version: `1.10.0`
 
 ## Purpose
 
@@ -18,12 +18,14 @@ The output remains scratch until the user independently authors any accepted cha
 The prompt renders from these sources only:
 
 1. The explicit request: `segmentSelection: "latest"` and `recordScope: "active_working_set" | "whole_project"`.
-2. Exactly one accepted segment: the latest accepted segment fetched by the server as one complete row with id, sequence, accepted timestamp, and full text.
+2. Exactly one accepted segment: the latest accepted segment fetched by the server as one complete row with id, sequence, and full text.
 3. The saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF field projection listed in this document.
 4. Every complete non-archived record in the selected record-contrast scope, all registered types and lifecycle states.
 5. Minimal reference stubs for out-of-scope referenced records: id, type, and stored display label only.
 6. A schema catalog generated from `recordTypeRegistry`, registered payload validators, lifecycle metadata, and reference metadata.
 7. Template/compiler/contract versions and deterministic citation, span, empty-state, output-shape, and echo-guard constants.
+
+`<segment_reconciliation_request>` renders only the source profile, segment selection, record scope, and selected accepted segment id and sequence. Source counts, accepted timestamps, span counts, prompt fingerprints, and version pins remain local metadata or other section data; they do not render in the request block.
 
 The prompt must not read older accepted segments, accepted-segment ranges, candidates, regenerations, automatic prose-derived summaries, author-private notes, story configuration, prompt archives, prior assistance output, provider memory, hidden UI state, archived records, or generation-time fields outside the listed projection.
 
@@ -94,7 +96,7 @@ The compiler normalizes CRLF and lone CR to LF for rendering and fingerprinting.
 
 Spans are split at blank-line paragraph boundaries, then at sentence boundaries no longer than 800 UTF-16 code units, then whitespace, then hard 800-code-unit boundaries. The compiler must not select excerpts, summarize, retrieve by similarity or keyword, silently truncate, compress, or evict accepted text.
 
-Accepted-segment text is rendered as escaped data, never as prompt instructions or headings. `<`, `>`, and `&` are escaped in JSON data blocks.
+Accepted-segment text is rendered as escaped data, never as prompt instructions or headings. Each `<segment_span>` carries only its deterministic `key` attribute; offsets and sequence numbers remain local typed span metadata. `<`, `>`, and `&` are escaped in JSON data blocks.
 
 ## Schema Catalog
 

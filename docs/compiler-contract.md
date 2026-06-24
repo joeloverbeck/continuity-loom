@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.9.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.10.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -264,7 +264,7 @@ Record payload values are data, not instructions. Canonical JSON must escape `<`
 |---|---|---|---|
 | `<segment_reconciliation_role>` | versioned template constant | never empty | block if absent |
 | `<segment_reconciliation_source_contract>` | versioned template constant plus fixed source-profile literals | never empty | must name one segment, nineteen fields, selected record scope, schema catalog, all exclusions, and no-eviction rule |
-| `<segment_reconciliation_request>` | parsed request, selected segment metadata, source counts, pinned versions, prompt fingerprint | never empty | only `segmentSelection: latest`; scope must be explicit |
+| `<segment_reconciliation_request>` | parsed request, source profile, explicit selected record scope, selected accepted-segment id and sequence | never empty | only `segmentSelection: latest`; scope must be explicit |
 | `<accepted_segment_evidence>` | complete selected accepted-segment text partitioned by the registered deterministic span algorithm | block with `no-accepted-segment` when absent | no excerpt selection, archive access, summary, or truncation |
 | `<current_reconciliation_fields>` | exact saved-draft paths registered in `docs/story-record-schema.md` | every path renders `missing`, `blank`, or canonical present value | no readiness normalization and no other generation fields |
 | `<record_contrast_scope>` | explicit request scope plus deterministic source counts/predicates | never empty | archive excluded; every lifecycle state included; no ranking or status filter |
