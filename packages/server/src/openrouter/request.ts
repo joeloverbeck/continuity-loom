@@ -12,14 +12,31 @@ export interface OpenRouterRequest {
   max_completion_tokens: number;
   top_p?: number;
   stream: false;
+  response_format?: unknown;
+  provider?: unknown;
+  plugins?: readonly unknown[];
+  transforms?: readonly string[];
+  tools?: readonly unknown[];
+  tool_choice?: unknown;
+}
+
+export interface OpenRouterRequestOptions {
+  response_format?: unknown;
+  provider?: unknown;
+  plugins?: readonly unknown[];
+  transforms?: readonly string[];
+  tools?: readonly unknown[];
+  tool_choice?: unknown;
 }
 
 export function buildChatCompletionRequest({
   prompt,
-  settings
+  settings,
+  requestOptions
 }: {
   prompt: string;
   settings: OpenRouterSettings;
+  requestOptions?: OpenRouterRequestOptions;
 }): OpenRouterRequest {
   const request: OpenRouterRequest = {
     model: settings.model,
@@ -33,5 +50,5 @@ export function buildChatCompletionRequest({
     request.top_p = settings.topP;
   }
 
-  return request;
+  return requestOptions === undefined ? request : { ...request, ...requestOptions };
 }

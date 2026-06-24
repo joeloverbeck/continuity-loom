@@ -62,6 +62,25 @@ export const IDEATION_SECTION_ORDER = Object.freeze([
 
 export type IdeationSectionId = (typeof IDEATION_SECTION_ORDER)[number];
 
+export const RECONCILIATION_SECTION_ORDER = Object.freeze([
+  "segment_reconciliation_role",
+  "segment_reconciliation_source_contract",
+  "segment_reconciliation_request",
+  "accepted_segment_evidence",
+  "current_reconciliation_fields",
+  "record_contrast_scope",
+  "record_contrast_records",
+  "segment_reconciliation_field_rules",
+  "segment_reconciliation_record_rules",
+  "record_creation_schema_catalog",
+  "segment_reconciliation_creation_rules",
+  "segment_reconciliation_provenance_and_paraphrase_rules",
+  "segment_reconciliation_review_procedure",
+  "segment_reconciliation_output_format"
+] as const);
+
+export type ReconciliationSectionId = (typeof RECONCILIATION_SECTION_ORDER)[number];
+
 export const COMPOSITE_SECTION_TEMPLATES = Object.freeze({
   relevant_facts_beliefs_events: {
     emptyState: "None specified",

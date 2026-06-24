@@ -1,7 +1,7 @@
 import type { OpenRouterSettings } from "../settings.js";
 
 import { normalizeOpenRouterError, type NormalizedTransportError } from "./errors.js";
-import { buildChatCompletionRequest } from "./request.js";
+import { buildChatCompletionRequest, type OpenRouterRequestOptions } from "./request.js";
 
 const defaultChatCompletionEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -21,6 +21,7 @@ export interface SendChatCompletionInput {
   apiKey?: string;
   signal?: AbortSignal;
   config?: OpenRouterRequestConfig;
+  requestOptions?: OpenRouterRequestOptions;
 }
 
 export async function sendChatCompletion({
@@ -28,17 +29,21 @@ export async function sendChatCompletion({
   settings,
   apiKey = process.env.OPENROUTER_API_KEY,
   signal,
-  config
+  config,
+  requestOptions
 }: SendChatCompletionInput): Promise<TransportResult> {
   if (!apiKey) {
     return { ok: false, ...normalizeOpenRouterError(undefined, { category: "missing-key" }) };
   }
 
   try {
+    const chatCompletionRequest = requestOptions === undefined
+      ? buildChatCompletionRequest({ prompt, settings })
+      : buildChatCompletionRequest({ prompt, settings, requestOptions });
     const requestInit: RequestInit = {
       method: "POST",
       headers: buildHeaders(apiKey, config),
-      body: JSON.stringify(buildChatCompletionRequest({ prompt, settings }))
+      body: JSON.stringify(chatCompletionRequest)
     };
     if (signal !== undefined) {
       requestInit.signal = signal;

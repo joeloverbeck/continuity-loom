@@ -818,6 +818,13 @@ describe("SPEC-003 record tables and repository", () => {
     expect(latest).not.toHaveProperty("text");
     expect(latest).not.toHaveProperty("metadata");
 
+    expect(repository.getLatestAcceptedSegmentForReconciliation()).toEqual({
+      id: third.id,
+      sequence: third.sequence,
+      acceptedAt: third.createdAt,
+      text: third.text
+    });
+
     const databasePath = join(status.folderPath, "loom.sqlite");
     const beforeCounts = tableCounts(databasePath);
     const beforeRows = stableRows(databasePath, [

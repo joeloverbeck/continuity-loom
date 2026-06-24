@@ -4,7 +4,7 @@ Status: active reference — development-assurance policy for compiler and valid
 Authority: development-assurance (see docs/ACTIVE-DOCS.md)
 
 This document owns the operational policy for mutation testing, scoped coverage,
-property tests, metamorphic tests, and focused goldens used to harden the three
+property tests, metamorphic tests, and focused goldens used to harden the four
 locked `@loom/core` pillars. It is subordinate to `docs/FOUNDATIONS.md` and the
 domain contracts named in `docs/ACTIVE-DOCS.md`.
 
@@ -26,12 +26,16 @@ P2 ideation compiler:
 - `packages/core/src/compiler/ideation/**/*.ts`
 - `packages/core/src/compiler/sections/ideation.ts`
 
-P3 validation engine:
+P3 segment-reconciliation compiler and parser:
+
+- `packages/core/src/compiler/reconciliation/**/*.ts`
+
+P4 validation engine:
 
 - `packages/core/src/validation/**/*.ts`
 
 Root robustness tooling lives under `scripts/robustness/`, `tools/robustness/`,
-the three `stryker.*.config.mjs` files, and dedicated CI workflows/jobs.
+the four `stryker.*.config.mjs` files, and dedicated CI workflows/jobs.
 
 ## Commands And Versions
 
@@ -49,8 +53,9 @@ Commands:
 - `npm run test:coverage:core` runs scoped V8 coverage for compiler and validation sources.
 - `npm run mutation:prose` runs the P1 Stryker config.
 - `npm run mutation:ideation` runs the P2 Stryker config.
-- `npm run mutation:validation` runs the P3 Stryker config.
-- `npm run mutation:core` runs the three pillar mutation configs sequentially.
+- `npm run mutation:segment-reconciliation` runs the P3 Stryker config.
+- `npm run mutation:validation` runs the P4 Stryker config.
+- `npm run mutation:core` runs the four pillar mutation configs sequentially.
 - `npm run mutation:gate -- <mutation.json> [floor|null]` summarizes Stryker JSON into compact counts and gate decisions.
 
 Default `npm test` remains coverage-free and mutation-free.
@@ -73,14 +78,15 @@ Configured floors:
 
 ## Mutation Floors
 
-Break floors activate only after all baseline survivors across P1, P2, and P3
+Break floors activate only after all baseline survivors across P1, P2, P3, and P4
 have been reviewed and classified.
 
 Configured final floors:
 
 - P1 prose compiler: green `95`, warning `92`, break `90`
 - P2 ideation compiler: green `95`, warning `92`, break `90`
-- P3 validation engine: green `98`, warning `96`, break `95`
+- P3 segment-reconciliation compiler and parser: green `95`, warning `92`, break `90`
+- P4 validation engine: green `98`, warning `96`, break `95`
 
 Until activation, `thresholds.break` remains `null` and mutation output is
 advisory.
@@ -90,7 +96,7 @@ advisory.
 Ordinary PRs do not run the full mutation matrix. Changed locked-pillar source
 must still be mutation-gated:
 
-- changed P1/P2/P3 source forces mutation of each changed source file;
+- changed P1/P2/P3/P4 source forces mutation of each changed source file;
 - Stryker, Vitest, TypeScript, package manifest, lockfile, robustness script, or
   test-support generator changes are full-campaign triggers, but the PR
   changed-file job reports and defers those full campaigns to the scheduled or
@@ -111,7 +117,7 @@ PR cadence:
 
 Scheduled/manual cadence:
 
-- run the uncached full P1/P2/P3 matrix on a schedule and through
+- run the uncached full P1/P2/P3/P4 matrix on a schedule and through
   `workflow_dispatch`;
 - use `--force` for scheduled score-of-record runs;
 - record seed and summary data in job output and short-lived artifacts.

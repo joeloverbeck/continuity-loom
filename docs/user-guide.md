@@ -109,6 +109,26 @@ Findings are AI-suggested review scratch. They are not validation diagnostics, n
 
 Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the review scratch or keepers when you no longer need them.
 
+## Segment Reconciliation - Review Latest Accepted Segment
+
+Use Segment Reconciliation after accepting prose when you want help finding durable continuity changes that may need manual record or Generation Brief updates. It is optional assistance. It may be wrong, incomplete, or over-specific, and it never updates canon automatically.
+
+The optional loop is:
+
+1. Accept the final segment you want to keep.
+2. Read the durable-change reminder checklist.
+3. Open Segment Reconciliation from the primary navigation or the reminder CTA.
+4. Choose Active working set or Whole project scope.
+5. Inspect the compiled prompt and source disclosure, including whether SECRET records are included.
+6. Confirm the one-time OpenRouter send only if you want advisory review.
+7. Review the grouped proposals for Generation Brief fields, existing records, and possible new records.
+8. Keep, copy, or navigate from useful suggestions, but author any real changes manually in the canonical editor.
+9. Clear the scratch surface when finished, then acknowledge the durable-change reminder only when you decide the canonical updates are complete.
+
+Segment Reconciliation reads exactly the latest accepted segment as bounded evidence for review. It does not read older accepted segments, rejected candidates, private notes, prompt archives, or automatic prose summaries. The accepted segment is not canon authority for future prompts; records and user-authored Generation Brief fields remain the authority.
+
+Every proposal is suggestion-only scratch. There is no apply, prefill, create, deactivate, archive, merge, remove, working-set mutation, or use-as-prose action. Malformed model output is quarantined as raw scratch. Keepers are session-scoped by project and prompt fingerprint in browser session storage, not project data.
+
 ## OpenRouter Settings
 
 OpenRouter is the external prose transport. It is not a continuity authority.
@@ -142,7 +162,7 @@ The archive also lets you filter and export accepted output. Export always uses 
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
 
-Record Hygiene can help review overlapping active records after acceptance, but it never updates records automatically. Use it as an optional manual audit step when accepted prose causes you to create or revise several atomic records.
+Segment Reconciliation can help review the latest accepted segment against current records and Generation Brief fields, but it never applies changes automatically. Record Hygiene can help review overlapping active records after acceptance, but it never updates records automatically. Use both surfaces as optional manual audit steps when accepted prose causes you to create or revise several atomic records.
 
 ## Backup And Recoverability
 

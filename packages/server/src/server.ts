@@ -13,6 +13,7 @@ import { registerRecordHygieneRoutes } from "./record-hygiene-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
 import { registerReminderRoutes } from "./reminder-routes.js";
+import { registerSegmentReconciliationRoutes } from "./segment-reconciliation-routes.js";
 import { registerSettingsRoutes } from "./settings-routes.js";
 import { registerStoryNoteRoutes } from "./story-note-routes.js";
 import { registerStoryConfigRoutes } from "./story-config-routes.js";
@@ -93,6 +94,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerGenerateRoutes(app, projectStoreManager);
   registerIdeateRoutes(app, projectStoreManager);
   registerRecordHygieneRoutes(app, projectStoreManager);
+  registerSegmentReconciliationRoutes(app, projectStoreManager);
   registerAcceptedRoutes(app, projectStoreManager);
   registerReminderRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {

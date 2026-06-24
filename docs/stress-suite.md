@@ -35,6 +35,7 @@ This matrix exists to prevent drift. It does not replace the cases; it shows whe
 | Large-context salience / cast dossier bloat | 12, 15, 31, 32 | Warnings, voice pins, and core-first dossier order must preserve salience without compression or repeated warning spam. |
 | False reports and belief truth relations | 10 | Prevents testimony from becoming canon. |
 | Record hygiene assistance | RH-01-RH-25 | Covers complete-source compilation, explicit scope disclosure, parser quarantine, citation discipline, no-write UI, OpenRouter disclosure, and stress cases for duplicate/overlap/stale-shadow review. |
+| Segment reconciliation assistance | SR-01-SR-12 | Covers latest-segment-only evidence, prompt-injection escaping, oversize/no-eviction failures, empty scope, secret reveal, object transfer, movement/visibility updates, pressure-record lifecycle changes, new-record dependencies, parser quarantine, echo guard, and stale-fingerprint rejection. |
 
 ---
 
@@ -1488,3 +1489,103 @@ Stress target: adding a working-set option must not weaken the original whole-pr
 Expected hygiene review: whole-project mode includes all non-archived hygiene-active atomic records even when records are absent from the active working set.
 
 Proof surface: server snapshot-builder tests prove whole-project mode ignores working-set membership; Record Hygiene view tests and browser smoke keep default whole-project disclosure visible.
+
+## Segment Reconciliation Assistance Stress Cases
+
+These cases are conceptual review cases for the Segment Reconciliation assistance surface. They are not validation gates and do not add diagnostic codes.
+
+### SR-01 — Long injection segment
+
+Stress target: the latest accepted segment contains XML-like prompt tags, imperative prompt-injection text, and long paragraphs.
+
+Expected reconciliation review: the complete segment renders as escaped evidence spans, never as prompt instructions or headings.
+
+Proof surface: segment-reconciliation golden prompt covers escaped accepted evidence and single output-format section.
+
+### SR-02 — Near-context-limit segment
+
+Stress target: one latest accepted segment nearly fills the selected model context window.
+
+Expected reconciliation review: compile remains deterministic if it fits; analyze fails before transport if the prompt plus output budget exceeds context.
+
+Proof surface: route prompt-too-large tests cover fail-fast behavior without compression, middle-out, span eviction, or retry.
+
+### SR-03 — Oversize whole project
+
+Stress target: whole-project record scope exceeds model context when combined with the latest accepted segment and schema catalog.
+
+Expected reconciliation review: `segment-reconciliation-prompt-too-large` blocks send with no record ranking, summarization, batching, or fallback scope.
+
+Proof surface: server route tests assert no transport call on oversize.
+
+### SR-04 — No selected records
+
+Stress target: active-working-set scope is selected while no records are selected.
+
+Expected reconciliation review: the prompt remains inspectable with the accepted segment, nineteen brief fields, an empty record scope, and no silent whole-project substitution.
+
+Proof surface: core golden and route compile tests cover truthful empty record rendering.
+
+### SR-05 — Secret reveal
+
+Stress target: accepted prose reveals a hidden SECRET or changes a holder/non-holder boundary.
+
+Expected reconciliation review: advisory proposals cite segment spans and contrast keys, warn through UI disclosure that SECRET records may leave the machine, and never auto-edit records.
+
+Proof surface: web view tests cover secret-source disclosure and suggestion-only controls.
+
+### SR-06 — Object transfer
+
+Stress target: the segment moves an OBJECT from one holder/location to another.
+
+Expected reconciliation review: proposals may suggest brief possession text or OBJECT patch review, with segment evidence and existing-record contrast.
+
+Proof surface: parser and UI card tests cover JSON patch proposals with copy/navigation/keeper controls only.
+
+### SR-07 — Entrance, exit, and line-of-sight change
+
+Stress target: characters enter or leave the scene and visibility changes.
+
+Expected reconciliation review: proposals may target current-state onstage entities, positions, line of sight, and routes as whole-field brief deltas.
+
+Proof surface: parser field-path allowlist tests and web grouped-card rendering cover brief proposals.
+
+### SR-08 — PLAN, CLOCK, OBLIGATION, and CONSEQUENCE transitions
+
+Stress target: one segment fulfills a plan step, ticks a clock, transfers an obligation, and activates a consequence.
+
+Expected reconciliation review: existing-record lifecycle and patch proposals remain advisory and must cite the accepted segment plus current record contrast.
+
+Proof surface: parser lifecycle-destination validation and route typed-output tests cover record-change proposals.
+
+### SR-09 — New ENTITY plus CAST MEMBER dependency
+
+Stress target: the segment introduces a new person who needs both ENTITY and CAST MEMBER records.
+
+Expected reconciliation review: creation proposals use `NEW-###` dependencies and no repository ids; the user opens blank typed editors manually if useful.
+
+Proof surface: parser creation-dependency tests and web card tests cover new-record suggestions without apply/create controls.
+
+### SR-10 — Invented enum response
+
+Stress target: the model returns a lifecycle or payload enum value that the registry does not define.
+
+Expected reconciliation review: the full response is quarantined as malformed; no partial salvage occurs.
+
+Proof surface: parser `invalid-enum` tests cover registry-derived enum enforcement.
+
+### SR-11 — Accepted-handoff quote response
+
+Stress target: the model copies a long accepted-prose phrase into a proposed handoff, record value, label, or rationale.
+
+Expected reconciliation review: the verbatim-echo firewall marks the whole response malformed.
+
+Proof surface: parser echo-guard tests cover accepted-prose substring/token-run rejection.
+
+### SR-12 — Post-inspection new acceptance
+
+Stress target: a user inspects a prompt, accepts another segment, then sends the old analysis request.
+
+Expected reconciliation review: analyze rebuilds the source, detects fingerprint drift, and returns `reconciliation-source-changed` without provider transport.
+
+Proof surface: route and web stale-prompt tests cover 409 handling and prompt refresh requirements.
