@@ -166,7 +166,7 @@ function compileResponse(fingerprint: string): SegmentReconciliationCompileRespo
     ok: true,
     prompt: `PROMPT_BODY ${fingerprint}`,
     metadata: {
-      versions: { template: "1.6.0", compiler: "1.8.0", contract: "1.9.0" },
+      versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" },
       fingerprint,
       lengthEstimate: 1200,
       tokenEstimate: 300,
@@ -260,7 +260,7 @@ function analyzeMetadata(fingerprint: string): SegmentReconciliationAnalyzeRespo
     provider: "openrouter",
     temperature: 0.4,
     maxOutputTokens: 1800,
-    versions: { template: "1.6.0", compiler: "1.8.0", contract: "1.9.0" },
+    versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" },
     fingerprint,
     lengthEstimate: 1200,
     tokenEstimate: 300,

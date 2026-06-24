@@ -13,9 +13,9 @@ import { parseRecordPayload, recordTypeRegistry, recordTypes } from "../src/reco
 
 describe("segment reconciliation schema catalog", () => {
   it("derives the registered type set and schemas from the record registry", () => {
-    const catalog = buildSegmentReconciliationSchemaCatalog("1.9.0");
+    const catalog = buildSegmentReconciliationSchemaCatalog("1.10.0");
 
-    expect(catalog.catalogVersion).toBe("1.9.0");
+    expect(catalog.catalogVersion).toBe("1.10.0");
     expect(catalog.recordTypes.map((entry) => entry.recordType)).toEqual(recordTypes);
 
     for (const entry of catalog.recordTypes) {
@@ -38,7 +38,7 @@ describe("segment reconciliation schema catalog", () => {
   });
 
   it("declares the signed-off lifecycle deactivation destinations", () => {
-    const catalog = buildSegmentReconciliationSchemaCatalog("1.9.0");
+    const catalog = buildSegmentReconciliationSchemaCatalog("1.10.0");
     const destinations = Object.fromEntries(
       catalog.recordTypes.map((entry) => [entry.recordType, entry.lifecycle.allowedDeactivationDestinations])
     );
@@ -56,7 +56,7 @@ describe("segment reconciliation schema catalog", () => {
   it("fails closed when a registered type cannot be represented", () => {
     expect(() =>
       buildSegmentReconciliationSchemaCatalog(
-        "1.9.0",
+        "1.10.0",
         {
           EMPTY: {
             recordType: "EMPTY",

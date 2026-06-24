@@ -3,6 +3,7 @@ import { spawnSync, execFileSync } from "node:child_process";
 import { readMutationReport, summarizeMutationReport } from "./mutation-gate.mjs";
 
 const ADVERSE_STATUSES = Object.freeze(["Survived", "NoCoverage", "Timeout", "RuntimeError", "Pending"]);
+const PRE_ACTIVATION_PILLARS = Object.freeze(new Set(["segment-reconciliation"]));
 
 export const PILLARS = Object.freeze({
   prose: {
@@ -14,6 +15,11 @@ export const PILLARS = Object.freeze({
     config: "stryker.ideation.config.mjs",
     report: "reports/mutation/ideation/mutation.json",
     cache: ".cache/stryker/ideation.json"
+  },
+  "segment-reconciliation": {
+    config: "stryker.segment-reconciliation.config.mjs",
+    report: "reports/mutation/segment-reconciliation/mutation.json",
+    cache: ".cache/stryker/segment-reconciliation.json"
   },
   validation: {
     config: "stryker.validation.config.mjs",
@@ -92,7 +98,8 @@ function campaignPlan(pillar, mutate, cacheExists) {
     report: PILLARS[pillar].report,
     cache,
     cacheHit: cacheExists(cache),
-    mutate
+    mutate,
+    deferred: PRE_ACTIVATION_PILLARS.has(pillar)
   };
 }
 
@@ -103,6 +110,7 @@ function isFullCampaignTrigger(path) {
     path === "tsconfig.json" ||
     path === "stryker.prose.config.mjs" ||
     path === "stryker.ideation.config.mjs" ||
+    path === "stryker.segment-reconciliation.config.mjs" ||
     path === "stryker.validation.config.mjs" ||
     path.startsWith("scripts/robustness/") ||
     path.startsWith("packages/core/test/support/");
@@ -119,6 +127,10 @@ function pillarForSourcePath(path) {
     path.endsWith(".ts")
   ) {
     return "ideation";
+  }
+
+  if (path.startsWith("packages/core/src/compiler/reconciliation/") && path.endsWith(".ts")) {
+    return "segment-reconciliation";
   }
 
   if (path.startsWith("packages/core/src/compiler/") && path.endsWith(".ts")) {
@@ -195,6 +207,11 @@ function printPlan(plan, json) {
   }
 
   for (const campaign of plan.campaigns) {
+    if (campaign.deferred) {
+      console.log(`- ${campaign.pillar}: deferred to scheduled/manual robustness workflow (advisory; pre-activation pillar)`);
+      continue;
+    }
+
     const scope = campaign.mutate.length === 0 ? "full campaign" : campaign.mutate.join(", ");
     const cache = campaign.cacheHit ? "cache hit" : "cache miss; forced fallback";
     console.log(`- ${campaign.pillar}: ${scope} (${cache})`);
@@ -229,6 +246,10 @@ async function main() {
   }
 
   for (const campaign of plan.campaigns) {
+    if (campaign.deferred) {
+      continue;
+    }
+
     runCampaign(campaign);
   }
 }

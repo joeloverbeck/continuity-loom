@@ -106,19 +106,7 @@ function renderRequest(snapshot: SegmentReconciliationSnapshot, request: Segment
     record_scope: request.recordScope,
     accepted_segment: {
       id: snapshot.acceptedSegment.id,
-      sequence: snapshot.acceptedSegment.sequence,
-      accepted_at: snapshot.acceptedSegment.acceptedAt,
-      span_count: snapshot.acceptedSegmentSpans.length
-    },
-    source_counts: {
-      reconciliation_field_count: snapshot.briefFields.length,
-      full_record_count: snapshot.records.length,
-      reference_stub_count: snapshot.referenceStubs.length
-    },
-    versions: {
-      template: versionInfo.templates.version,
-      compiler: versionInfo.compiler.version,
-      contract: versionInfo.contract.version
+      sequence: snapshot.acceptedSegment.sequence
     }
   });
 }
@@ -131,7 +119,7 @@ function renderAcceptedSegmentEvidence(spans: readonly AcceptedSegmentSpan[]): s
   return spans
     .map((span) =>
       [
-        `<segment_span key="${escapeAttribute(span.key)}" sequence="${span.sequence}" start="${span.startOffset}" end="${span.endOffset}">`,
+        `<segment_span key="${escapeAttribute(span.key)}">`,
         canonicalBlock({ text: span.text }),
         "</segment_span>"
       ].join("\n")

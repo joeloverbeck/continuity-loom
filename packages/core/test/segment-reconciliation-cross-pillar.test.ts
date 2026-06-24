@@ -36,7 +36,7 @@ describe("segment reconciliation cross-pillar capstone", () => {
       records: demoRecords,
       generationSession: demoGenerationSession,
       storyConfig: demoStoryConfig,
-      versions: { template: "1.6.0", compiler: "1.8.0", contract: "1.9.0" }
+      versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" }
     });
     const prosePrompt = compilePrompt(snapshot).prompt;
     const ideationPrompt = compilePrompt(snapshot, {
@@ -55,6 +55,7 @@ describe("segment reconciliation cross-pillar capstone", () => {
     expect(countOccurrences(reconciliationPrompt, "<segment_span ")).toBe(reconciliationSnapshot.acceptedSegmentSpans.length);
     expect(reconciliationPrompt).toContain('"accepted_segment":');
     expect(reconciliationPrompt).toContain('"sequence": 9');
+    expect(reconciliationPrompt).not.toMatch(/<segment_span[^>]+(?:sequence|start|end)=/);
   });
 
   it("keeps the reconciliation schema catalog aligned with the record registry", () => {

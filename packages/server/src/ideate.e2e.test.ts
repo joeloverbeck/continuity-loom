@@ -94,7 +94,7 @@ describe("ideation end-to-end capstone", () => {
       unknownCitations: ["[UNKNOWN-99]"]
     });
     expect(body.ideas[0]?.grounds).toContain("[SECRET-1]");
-    expect(body.metadata.versions).toEqual({ template: "1.6.0", compiler: "1.8.0", contract: "1.9.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);
     expect(response.body).not.toContain(keySecretText);

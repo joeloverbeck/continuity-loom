@@ -20,6 +20,7 @@ P1 prose compiler:
 - `packages/core/src/compiler/**/*.ts`
 - excluding `packages/core/src/compiler/ideation/**/*.ts`
 - excluding `packages/core/src/compiler/sections/ideation.ts`
+- excluding `packages/core/src/compiler/reconciliation/**/*.ts`
 
 P2 ideation compiler:
 
@@ -97,6 +98,10 @@ Ordinary PRs do not run the full mutation matrix. Changed locked-pillar source
 must still be mutation-gated:
 
 - changed P1/P2/P3/P4 source forces mutation of each changed source file;
+- changed source for a pre-activation pillar with no reviewed baseline and
+  `thresholds.break: null` reports and defers that pillar's changed-source
+  mutation to the scheduled/manual robustness workflow instead of failing the PR
+  inline; `segment-reconciliation` is the current pre-activation pillar;
 - Stryker, Vitest, TypeScript, package manifest, lockfile, robustness script, or
   test-support generator changes are full-campaign triggers, but the PR
   changed-file job reports and defers those full campaigns to the scheduled or
