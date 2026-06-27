@@ -1,5 +1,5 @@
 import type { StoryNote } from "@loom/core";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { SafeMarkdown } from "./safe-markdown.js";
 
@@ -22,6 +22,7 @@ export function NoteSourcePane({
 }: NoteSourcePaneProps): React.JSX.Element {
   const [sourceMode, setSourceMode] = useState<"preview" | "source">("preview");
   const [selectedText, setSelectedText] = useState("");
+  const paneRef = useRef<HTMLElement | null>(null);
   const sourceRef = useRef<HTMLTextAreaElement | null>(null);
 
   function refreshSelection(): void {
@@ -34,6 +35,17 @@ export function NoteSourcePane({
     setSelectedText(textarea.value.slice(textarea.selectionStart, textarea.selectionEnd));
   }
 
+  useEffect(() => {
+    if (!note) {
+      return;
+    }
+
+    paneRef.current?.scrollIntoView?.({
+      block: "start",
+      behavior: prefersReducedMotion() ? "auto" : "smooth"
+    });
+  }, [note?.id]);
+
   if (!note) {
     return (
       <section className="notesPane notesSourcePane notesDetailEmpty" aria-label="Source">
@@ -43,7 +55,7 @@ export function NoteSourcePane({
   }
 
   return (
-    <section className="notesPane notesSourcePane" aria-labelledby="note-source-title">
+    <section ref={paneRef} className="notesPane notesSourcePane" aria-labelledby="note-source-title">
       <div className="notesPaneHeader">
         <div>
           <p className="eyebrow">Source</p>
@@ -111,4 +123,8 @@ export function NoteSourcePane({
       )}
     </section>
   );
+}
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
