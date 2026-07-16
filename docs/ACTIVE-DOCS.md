@@ -41,6 +41,9 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/stress-coverage-matrix.md` | Stress-case coverage matrix tying cases to validation rules, compiler behavior, and regression surfaces. | audit | support |
 | `docs/demo-blocker-recipes.md` | Demo-fixture smoke recipes for validation blockers and warnings. | how-to | support |
 | `docs/user-guide.md` | User-facing local install, run, verify, and app workflow guidance. | how-to | support |
+| `docs/agents/issue-tracker.md` | Engineering-skill GitHub issue-tracker commands and external-PR request-surface policy. | reference | support |
+| `docs/agents/triage-labels.md` | Canonical triage roles mapped to this repository's GitHub label vocabulary. | reference | support |
+| `docs/agents/domain.md` | Engineering-skill rules for consuming the repository's single-context domain glossary and ADRs. | reference | support |
 | `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
 
 ### Constitutional authority
@@ -80,6 +83,9 @@ Use these when changing validation coverage, demo fixture behavior, prompt/compi
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `docs/agents/issue-tracker.md`
+- `docs/agents/triage-labels.md`
+- `docs/agents/domain.md`
 - `docs/archival-workflow.md`
 - `tickets/README.md`
 - `tickets/_TEMPLATE.md`

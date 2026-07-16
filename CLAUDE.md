@@ -56,6 +56,20 @@ Use a new spec for broad or risky behavior changes: compiler, validation, storag
 
 Completed specs, tickets, requirements sets, and reports move under `archive/` according to `docs/archival-workflow.md`. Do not revive archived v1 requirements as active backlog.
 
+## Agent skills
+
+### Issue tracker
+
+Engineering-workflow issues and PRDs are tracked in GitHub Issues; external pull requests are also a triage request surface. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix` labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. Read the root `CONTEXT.md` and `docs/adr/` when present. See `docs/agents/domain.md`.
+
 ## Conventions
 
 - **ESM only** (`"type": "module"`) — no CommonJS `require`.
