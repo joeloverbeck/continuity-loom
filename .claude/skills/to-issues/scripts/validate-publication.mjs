@@ -1,0 +1,493 @@
+#!/usr/bin/env node
+
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+
+export const CHECKLIST_ITEMS = [
+  "package source cited",
+  "decision-point contract named",
+  "required, optional, skippable, and severity-dependent fields visible where relevant",
+  "doctrine at the actual decision point",
+  "prompt packet preview, source manifest, and cold external LLM test",
+  "advisory/canon separation visible",
+  "skip path and reason storage",
+  "blockers/substance validation",
+  "current, next, and resume state",
+  "read-side audit or provenance link",
+  "cognitive walkthrough scenario",
+];
+
+const COMPOSITE_CHECKLIST_COMPONENTS = new Map([
+  ["required, optional, skippable, and severity-dependent fields visible where relevant", [
+    ["required", /\brequired\b/i],
+    ["optional", /\boptional\b/i],
+    ["skippable", /\bskippable\b/i],
+    ["severity-dependent", /\bseverity[- ]dependent\b/i],
+  ]],
+  ["prompt packet preview, source manifest, and cold external LLM test", [
+    ["prompt packet preview", /\bprompt packet preview\b/i],
+    ["source manifest", /\bsource manifest\b/i],
+    ["cold external LLM test", /\bcold external LLM test\b/i],
+  ]],
+  ["advisory/canon separation visible", [
+    ["advisory", /\badvisory\b/i],
+    ["canon", /\bcanon\b/i],
+  ]],
+  ["skip path and reason storage", [
+    ["skip path", /\b(?:skip path|defer(?:ral|red|ring)?|governed decline)\b/i],
+    ["reason storage", /\breason storage\b|(?:\b(?:reason|rationale)\b[\s\S]{0,240}\b(?:persist\w*|record\w*|retain\w*|history|provenance)\b)|(?:\b(?:persist\w*|record\w*|retain\w*|history|provenance)\b[\s\S]{0,240}\b(?:reason|rationale)\b)/i],
+  ]],
+  ["blockers/substance validation", [
+    ["blockers", /\bblockers?\b/i],
+    ["substance validation", /\bsubstance validation\b|\bincomplete(?:\s+\w+){0,2}\s+(?:work|completion|step|material|evidence)\b/i],
+  ]],
+  ["current, next, and resume state", [
+    ["current", /\bcurrent\b/i],
+    ["next", /\bnext\b/i],
+    ["resume", /\bresume\b/i],
+  ]],
+]);
+
+const usage = `Usage:
+  node .claude/skills/to-issues/scripts/validate-publication.mjs child <body-file> [options]
+  node .claude/skills/to-issues/scripts/validate-publication.mjs ledger <body-file> [options]
+  node .claude/skills/to-issues/scripts/validate-publication.mjs run-sheet <run-sheet-file> [options]
+
+Child options:
+  --parent <token>             Require a parent reference.
+  --source <token>             Require a standalone source reference.
+  --source-relationship <text> Require the exact standalone source relationship.
+  --blocker <issue-ref>        Require exactly this blocker; repeat as needed.
+  --external-blocker <text>    Require exactly this non-tracker prerequisite; repeat as needed.
+  --expect-no-blocker          Require the house-style no-blocker phrase and zero tracker or external blockers.
+  --expect-stories             Require the user-story coverage section.
+  --expect-checklist-na        Require a checklist N/A summary.
+  --expect-ac-count <count>    Require an exact acceptance-criterion count.
+
+Ledger options:
+  --child <issue-ref>          Require a child reference; repeat as needed.
+
+Run-sheet options:
+  --slice-body <slice>=<path>  Require all canonical checklist rows for an affected slice.
+  --unaffected-slice <slice>   Require one checklist-N/A row for an unaffected slice.
+  --only-slice <slice>         Validate only this configured slice; repeat as needed.
+
+Shared options:
+  --placeholder-re <pattern>   Placeholder regex; defaults to #SLICE|PLACEHOLDER.
+  --forbid-pattern <pattern>   Reject a run-specific regex; repeat as needed.
+  --help                       Show this help.`;
+
+function failUsage(message) {
+  if (message) console.error(message);
+  console.error(usage);
+  process.exit(2);
+}
+
+function requireValue(args, index, option) {
+  const value = args[index + 1];
+  if (!value || value.startsWith("--")) failUsage(`${option} requires a value.`);
+  return value;
+}
+
+function parseSliceBody(value) {
+  const separator = value.indexOf("=");
+  if (separator < 1 || separator === value.length - 1) {
+    failUsage("--slice-body requires <slice>=<path>.");
+  }
+  return { slice: value.slice(0, separator), path: value.slice(separator + 1) };
+}
+
+function parseArgs(argv) {
+  if (argv.includes("--help")) {
+    console.log(usage);
+    process.exit(0);
+  }
+  const [mode, inputFile, ...args] = argv;
+  if (!["child", "ledger", "run-sheet"].includes(mode) || !inputFile) failUsage();
+
+  const options = {
+    blockers: [],
+    children: [],
+    externalBlockers: [],
+    expectAcCount: null,
+    expectChecklistNa: false,
+    expectNoBlocker: false,
+    expectStories: false,
+    forbidPatterns: [],
+    onlySlices: [],
+    parent: null,
+    placeholderRe: "#SLICE|PLACEHOLDER",
+    sliceBodies: [],
+    source: null,
+    sourceRelationship: null,
+    unaffectedSlices: [],
+  };
+
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--expect-no-blocker") options.expectNoBlocker = true;
+    else if (argument === "--expect-stories") options.expectStories = true;
+    else if (argument === "--expect-checklist-na") options.expectChecklistNa = true;
+    else if (["--parent", "--source", "--source-relationship", "--blocker", "--external-blocker", "--child", "--expect-ac-count", "--placeholder-re", "--forbid-pattern", "--slice-body", "--unaffected-slice", "--only-slice"].includes(argument)) {
+      const value = requireValue(args, index, argument);
+      if (argument === "--parent") options.parent = value;
+      else if (argument === "--source") options.source = value;
+      else if (argument === "--source-relationship") options.sourceRelationship = value;
+      else if (argument === "--blocker") options.blockers.push(value);
+      else if (argument === "--external-blocker") options.externalBlockers.push(value);
+      else if (argument === "--child") options.children.push(value);
+      else if (argument === "--placeholder-re") options.placeholderRe = value;
+      else if (argument === "--forbid-pattern") options.forbidPatterns.push(value);
+      else if (argument === "--slice-body") options.sliceBodies.push(parseSliceBody(value));
+      else if (argument === "--unaffected-slice") options.unaffectedSlices.push(value);
+      else if (argument === "--only-slice") options.onlySlices.push(value);
+      else {
+        const count = Number(value);
+        if (!Number.isInteger(count) || count < 1) failUsage("--expect-ac-count requires a positive integer.");
+        options.expectAcCount = count;
+      }
+      index += 1;
+    } else failUsage(`Unknown option: ${argument}`);
+  }
+
+  if (mode === "child" && options.expectNoBlocker && (options.blockers.length > 0 || options.externalBlockers.length > 0)) {
+    failUsage("Use --expect-no-blocker or blocker options, not both.");
+  }
+  if (mode === "child" && options.parent != null && options.source != null) {
+    failUsage("Use --parent or --source, not both.");
+  }
+  if (mode === "child" && options.parent == null && options.source == null) {
+    failUsage("child mode requires exactly one of --parent or --source.");
+  }
+  if (mode === "child" && ((options.source == null) !== (options.sourceRelationship == null))) {
+    failUsage("--source and --source-relationship must be provided together.");
+  }
+  if (mode === "run-sheet" && options.sliceBodies.length === 0 && options.unaffectedSlices.length === 0) {
+    failUsage("run-sheet mode requires --slice-body or --unaffected-slice.");
+  }
+  if (mode !== "run-sheet" && options.onlySlices.length > 0) {
+    failUsage("--only-slice is available only in run-sheet mode.");
+  }
+  return { inputFile, mode, options };
+}
+
+function readText(path) {
+  try {
+    const text = readFileSync(path, "utf8");
+    if (!text.trim()) throw new Error("file is empty");
+    return text;
+  } catch (error) {
+    console.error(`Cannot read ${path}: ${error.message}`);
+    process.exit(2);
+  }
+}
+
+function unique(values) {
+  return [...new Set(values)].sort();
+}
+
+function sectionBody(body, heading) {
+  const start = body.indexOf(heading);
+  if (start < 0) return "";
+  const remainder = body.slice(start + heading.length);
+  const nextHeading = remainder.search(/\n## /);
+  return nextHeading < 0 ? remainder : remainder.slice(0, nextHeading);
+}
+
+function compilePattern(pattern, option) {
+  try {
+    return new RegExp(pattern);
+  } catch (error) {
+    failUsage(`Invalid ${option}: ${error.message}`);
+  }
+}
+
+function commonArtifactChecks(body, options) {
+  const placeholderPattern = compilePattern(options.placeholderRe, "--placeholder-re");
+  const forbiddenPatterns = (options.forbidPatterns ?? [])
+    .map((pattern) => compilePattern(pattern, "--forbid-pattern"));
+  return {
+    hasContent: body.trim().length > 0,
+    noPatchMarkers: !/\*\*\* (Begin|End) Patch/.test(body),
+    noPlaceholders: !placeholderPattern.test(body),
+    noForbiddenPatterns: forbiddenPatterns.every((pattern) => !pattern.test(body)),
+  };
+}
+
+function commonBodyChecks(body, options) {
+  return {
+    ...commonArtifactChecks(body, options),
+    noHome: !body.includes("/home/"),
+    noTmp: !body.includes("/tmp"),
+  };
+}
+
+function acceptanceCriteria(body) {
+  return (body.match(/^- \[ \] .+$/gm) ?? [])
+    .map((line, index) => ({ ordinal: index + 1, text: line.replace(/^- \[ \] /, "").trim() }));
+}
+
+function acceptanceCount(body) {
+  return acceptanceCriteria(body).length;
+}
+
+function blockerEntries(body) {
+  return sectionBody(body, "## Blocked by")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("- "))
+    .map((line) => line.slice(2).trim());
+}
+
+export function validateChild(body, options) {
+  const entries = blockerEntries(body);
+  const expectedBlockers = unique(options.blockers);
+  const expectedExternalBlockers = unique(options.externalBlockers ?? []);
+  const expectedExternalSet = new Set(expectedExternalBlockers);
+  const actualExternalBlockers = unique(entries.filter((entry) =>
+    expectedExternalSet.has(entry) || !/#\d+/.test(entry)));
+  const trackerEntries = entries.filter((entry) => !actualExternalBlockers.includes(entry));
+  const actualBlockers = unique(trackerEntries.flatMap((entry) => entry.match(/#\d+/g) ?? []));
+  const count = acceptanceCount(body);
+  const sourceSection = sectionBody(body, "## Source and coordination");
+  const checks = {
+    ...commonBodyChecks(body, options),
+    hasParent: options.parent == null || body.includes(options.parent),
+    hasSourceHeading: options.source == null || body.includes("## Source and coordination"),
+    hasSource: options.source == null || sourceSection.includes(options.source),
+    hasSourceRelationship:
+      options.sourceRelationship == null || sourceSection.includes(options.sourceRelationship),
+    hasWhat: body.includes("## What to build"),
+    hasAcceptance: body.includes("## Acceptance criteria"),
+    hasAcceptanceItems: count > 0,
+    hasBlockedBy: body.includes("## Blocked by"),
+    hasPrinciples: body.includes("## Principles"),
+    hasStoryCoverage: !options.expectStories || body.includes("## User stories covered"),
+    hasChecklistNa:
+      !options.expectChecklistNa || /(?:Browser-visible guidance checklist mapped|checklist mapped): N\/A/i.test(body),
+    noBlockerExpectationPassed:
+      !options.expectNoBlocker ||
+      (body.includes("None - can start immediately") &&
+        actualBlockers.length === 0 &&
+        actualExternalBlockers.length === 0),
+    hasExpectedBlockers:
+      options.expectNoBlocker || expectedBlockers.every((reference) => actualBlockers.includes(reference)),
+    hasOnlyExpectedBlockers:
+      options.expectNoBlocker ||
+      options.blockers.length === 0 ||
+      actualBlockers.every((reference) => expectedBlockers.includes(reference)),
+    hasExpectedExternalBlockers:
+      options.expectNoBlocker ||
+      expectedExternalBlockers.every((blocker) => actualExternalBlockers.includes(blocker)),
+    hasOnlyExpectedExternalBlockers:
+      options.expectNoBlocker ||
+      actualExternalBlockers.every((blocker) => expectedExternalBlockers.includes(blocker)),
+    hasExpectedAcceptanceCount: options.expectAcCount == null || count === options.expectAcCount,
+  };
+  return {
+    acceptanceCount: count,
+    actualBlockers,
+    actualExternalBlockers,
+    expectedBlockers,
+    expectedExternalBlockers,
+    expectations: { noBlocker: options.expectNoBlocker },
+    forbiddenPatterns: unique(options.forbidPatterns ?? []),
+    checks,
+  };
+}
+
+function validateLedger(body, options) {
+  const checks = {
+    ...commonBodyChecks(body, options),
+    hasChildMap: body.includes("Child Issue Map"),
+    hasBreakdownDecisions: body.includes("Breakdown decisions"),
+    hasStoryCoverage: body.includes("Story coverage"),
+    hasChildren: options.children.every((reference) => body.includes(reference)),
+  };
+  return {
+    expectedChildren: unique(options.children),
+    forbiddenPatterns: unique(options.forbidPatterns ?? []),
+    checks,
+  };
+}
+
+function parseChecklistRows(body) {
+  return body
+    .split(/\r?\n/)
+    .filter((line) => /^\|.*\|$/.test(line.trim()))
+    .map((line) => line.split("|").slice(1, -1).map((cell) => cell.trim()))
+    .filter((cells) => cells.length === 4)
+    .filter((cells) => cells[0].toLowerCase() !== "slice")
+    .filter((cells) => !cells.every((cell) => /^-+$/.test(cell)));
+}
+
+function resolveCoverageMappings(coverage, criteria) {
+  const mappingPattern = /\bAC\s+(\d+)\s+-\s+"([^"]+)"/g;
+  const mappings = [...coverage.matchAll(mappingPattern)].map((match) => {
+    const ordinal = Number(match[1]);
+    const acceptanceText = criteria[ordinal - 1]?.text ?? null;
+    const excerpt = match[2];
+    return {
+      acceptanceText,
+      excerpt,
+      excerptMatches: acceptanceText != null && acceptanceText.includes(excerpt),
+      ordinal,
+    };
+  });
+  const remainder = coverage
+    .replace(mappingPattern, "")
+    .replace(/<br\s*\/?>|[;,\s]/gi, "");
+  return { mappings, syntaxValid: mappings.length > 0 && remainder.length === 0 };
+}
+
+function validateAffectedSlice(rows, slice, path, options) {
+  const body = readText(path);
+  const criteria = acceptanceCriteria(body);
+  const count = criteria.length;
+  const sliceRows = rows.filter((row) => row[0] === slice);
+  const actualItems = sliceRows.map((row) => row[1]);
+  const missingItems = CHECKLIST_ITEMS.filter((item) => !actualItems.includes(item));
+  const unexpectedItems = actualItems.filter((item) => !CHECKLIST_ITEMS.includes(item));
+  const duplicateItems = unique(actualItems.filter((item, index) => actualItems.indexOf(item) !== index));
+  const invalidCoverage = [];
+  const invalidExcerpts = [];
+  const invalidOrdinals = [];
+  const missingCompositeComponents = [];
+  const resolvedCoverage = [];
+
+  for (const [, item, coverage, reason] of sliceRows) {
+    const hasNa = /^N\/A - .+/.test(reason);
+    if (hasNa) continue;
+    const resolved = resolveCoverageMappings(coverage, criteria);
+    if (!resolved.syntaxValid) invalidCoverage.push(item);
+    for (const mapping of resolved.mappings) {
+      resolvedCoverage.push({ item, ...mapping });
+      if (mapping.acceptanceText == null) invalidOrdinals.push({ item, ordinal: mapping.ordinal });
+      else if (!mapping.excerptMatches) {
+        invalidExcerpts.push({
+          acceptanceText: mapping.acceptanceText,
+          excerpt: mapping.excerpt,
+          item,
+          ordinal: mapping.ordinal,
+        });
+      }
+    }
+    const resolvedText = unique(resolved.mappings
+      .map((mapping) => mapping.acceptanceText)
+      .filter((text) => text != null))
+      .join("\n");
+    const missing = (COMPOSITE_CHECKLIST_COMPONENTS.get(item) ?? [])
+      .filter(([, pattern]) => !pattern.test(resolvedText))
+      .map(([component]) => component);
+    if (missing.length > 0) {
+      missingCompositeComponents.push({ item, missing });
+    }
+  }
+
+  const checks = {
+    ...commonBodyChecks(body, options),
+    hasAcceptanceItems: count > 0,
+    hasExactRowCount: sliceRows.length === CHECKLIST_ITEMS.length,
+    hasNoMissingItems: missingItems.length === 0,
+    hasNoUnexpectedItems: unexpectedItems.length === 0,
+    hasNoDuplicateItems: duplicateItems.length === 0,
+    hasCoverageOrNa: invalidCoverage.length === 0,
+    hasValidAcceptanceOrdinals: invalidOrdinals.length === 0,
+    hasMatchingAcceptanceExcerpts: invalidExcerpts.length === 0,
+    hasCompleteCompositeCoverage: missingCompositeComponents.length === 0,
+  };
+  return {
+    acceptanceCount: count,
+    checks,
+    duplicateItems,
+    invalidCoverage,
+    invalidExcerpts,
+    invalidOrdinals,
+    missingItems,
+    missingCompositeComponents,
+    path,
+    resolvedCoverage,
+    slice,
+    unexpectedItems,
+  };
+}
+
+function validateUnaffectedSlice(rows, slice) {
+  const sliceRows = rows.filter((row) => row[0] === slice);
+  const expectedItem = "browser-visible guidance checklist";
+  const checks = {
+    hasSingleRow: sliceRows.length === 1,
+    hasChecklistLabel: sliceRows[0]?.[1] === expectedItem,
+    hasSpecificNaReason: /^N\/A - .+/.test(sliceRows[0]?.[3] ?? ""),
+  };
+  return { checks, rows: sliceRows, slice };
+}
+
+export function validateRunSheet(body, options) {
+  const rows = parseChecklistRows(body);
+  const onlySlices = new Set(options.onlySlices);
+  const selectedSliceBodies = options.onlySlices.length === 0
+    ? options.sliceBodies
+    : options.sliceBodies.filter(({ slice }) => onlySlices.has(slice));
+  const selectedUnaffectedSlices = options.onlySlices.length === 0
+    ? options.unaffectedSlices
+    : options.unaffectedSlices.filter((slice) => onlySlices.has(slice));
+  const configuredSliceNames = new Set([
+    ...options.sliceBodies.map(({ slice }) => slice),
+    ...options.unaffectedSlices,
+  ]);
+  const missingOnlySlices = unique(options.onlySlices.filter((slice) => !configuredSliceNames.has(slice)));
+  const selectedRows = options.onlySlices.length === 0
+    ? rows
+    : rows.filter((row) => onlySlices.has(row[0]));
+  const affected = selectedSliceBodies.map(({ slice, path }) =>
+    validateAffectedSlice(selectedRows, slice, path, options));
+  const unaffected = selectedUnaffectedSlices.map((slice) => validateUnaffectedSlice(selectedRows, slice));
+  const configuredSlices = new Set([
+    ...selectedSliceBodies.map(({ slice }) => slice),
+    ...selectedUnaffectedSlices,
+  ]);
+  const unconfiguredSlices = unique(selectedRows.map((row) => row[0]).filter((slice) => !configuredSlices.has(slice)));
+  const checks = {
+    ...commonArtifactChecks(body, options),
+    hasRows: rows.length > 0,
+    hasSelectedRows: options.onlySlices.length === 0 || selectedRows.length > 0,
+    hasNoMissingOnlySlices: missingOnlySlices.length === 0,
+    hasNoUnconfiguredSlices: unconfiguredSlices.length === 0,
+    affectedSlicesPass: affected.every((report) => Object.values(report.checks).every(Boolean)),
+    unaffectedSlicesPass: unaffected.every((report) => Object.values(report.checks).every(Boolean)),
+  };
+  return {
+    affected,
+    checklistItems: CHECKLIST_ITEMS,
+    checks,
+    forbiddenPatterns: unique(options.forbidPatterns ?? []),
+    missingOnlySlices,
+    onlySlices: unique(options.onlySlices),
+    rowCount: rows.length,
+    selectedRowCount: selectedRows.length,
+    unaffected,
+    unconfiguredSlices,
+  };
+}
+
+const main = () => {
+  const { inputFile, mode, options } = parseArgs(process.argv.slice(2));
+  const body = readText(inputFile);
+  const details =
+    mode === "child"
+      ? validateChild(body, options)
+      : mode === "ledger"
+        ? validateLedger(body, options)
+        : validateRunSheet(body, options);
+  const failedChecks = Object.entries(details.checks)
+    .filter(([, passed]) => !passed)
+    .map(([name]) => name);
+  const report = { mode, inputFile, ...details, failedChecks };
+
+  console.log(JSON.stringify(report, null, 2));
+  if (failedChecks.length > 0) process.exit(1);
+};
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main();
