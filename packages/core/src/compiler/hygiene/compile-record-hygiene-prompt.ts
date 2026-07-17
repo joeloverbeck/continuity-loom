@@ -55,7 +55,7 @@ export function orderHygieneRecords(records: readonly HygieneRecord[]): readonly
   return [...records].sort(
     (left, right) =>
       (typeRank.get(left.type) ?? Number.MAX_SAFE_INTEGER) - (typeRank.get(right.type) ?? Number.MAX_SAFE_INTEGER)
-      || left.fullDisplayLabel.localeCompare(right.fullDisplayLabel)
+      || left.displayLabel.localeCompare(right.displayLabel)
       || left.id.localeCompare(right.id)
   );
 }
@@ -110,7 +110,7 @@ function renderRecordsSection(
     lines.push(EMPTY_HYGIENE_RECORDS_STATE);
   } else {
     for (const record of records) {
-      lines.push(renderHygieneRecord(record, citationKeys.get(record.id) ?? "[UNKNOWN-0]", snapshot.referenceIndex[record.id] ?? { outgoing: [], incoming: [] }));
+      lines.push(renderHygieneRecord(record, citationKeys.get(record.id)!, snapshot.referenceIndex[record.id] ?? { outgoing: [], incoming: [] }));
     }
   }
 

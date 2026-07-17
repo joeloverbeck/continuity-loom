@@ -1,16 +1,21 @@
-import type { HygieneRecord, HygieneReferenceSummary } from "./types.js";
+import { escapeDataText } from "../escaping.js";
+import type {
+  HygieneIncomingReference,
+  HygieneOutgoingReference,
+  HygieneRecord,
+  HygieneReferenceSummary
+} from "./types.js";
 
 export function renderHygieneRecord(record: HygieneRecord, key: string, references: HygieneReferenceSummary): string {
   return [
     `<record key="${escapeAttribute(key)}" record_id="${escapeAttribute(record.id)}" type="${escapeAttribute(record.type)}">`,
-    `display_label: ${record.displayLabel}`,
-    `full_display_label: ${record.fullDisplayLabel}`,
+    `display_label: ${escapeDataText(record.displayLabel)}`,
     `projected_status: ${record.status ?? "none"}`,
     "payload_json:",
     canonicalEscapedJson(record.payload),
     "references:",
-    `  outgoing: ${renderReferenceList(references.outgoing)}`,
-    `  incoming: ${renderReferenceList(references.incoming)}`,
+    `  outgoing: ${renderReferenceList(references.outgoing.map(renderOutgoingReference))}`,
+    `  incoming: ${renderReferenceList(references.incoming.map(renderIncomingReference))}`,
     "</record>"
   ].join("\n");
 }
@@ -43,6 +48,14 @@ function sortJson(value: unknown): unknown {
   }
 
   return value;
+}
+
+function renderOutgoingReference(reference: HygieneOutgoingReference): string {
+  return `${escapeDataText(reference.refRole)} -> ${escapeDataText(reference.targetLabel)} (${escapeDataText(reference.targetId)})`;
+}
+
+function renderIncomingReference(reference: HygieneIncomingReference): string {
+  return `${escapeDataText(reference.sourceLabel)} (${escapeDataText(reference.sourceId)}):${escapeDataText(reference.refRole)}`;
 }
 
 function renderReferenceList(references: readonly string[]): string {

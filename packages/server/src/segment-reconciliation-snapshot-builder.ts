@@ -1,5 +1,6 @@
 import {
   briefFieldCitationKey,
+  deriveFullDisplayLabel,
   extractRecordReferences,
   getRecordTypeDefinition,
   normalizeAcceptedSegmentText,
@@ -165,7 +166,7 @@ function reconciliationRecord(record: {
     record: {
       id: record.id,
       type: record.type,
-      displayLabel: record.displayLabel,
+      displayLabel: deriveFullDisplayLabel(record.type, record.payload),
       payload: record.payload,
       lifecycleStatus: projectRecordStatus(record.type, record.payload)
     }

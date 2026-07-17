@@ -48,6 +48,8 @@ export type {
   HygieneActiveCandidate
 } from "./compiler/hygiene/active-predicate.js";
 export type {
+  HygieneIncomingReference,
+  HygieneOutgoingReference,
   HygieneRecord,
   HygieneRecordType,
   HygieneReferenceSummary,

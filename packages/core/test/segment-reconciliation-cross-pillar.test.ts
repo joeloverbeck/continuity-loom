@@ -79,7 +79,6 @@ function hygieneSnapshot(): StoryRecordHygieneSnapshot {
         id: record.id,
         type: record.type,
         displayLabel: label,
-        fullDisplayLabel: label,
         status: projectRecordStatus(record.type, record.payload),
         payload: record.payload
       };

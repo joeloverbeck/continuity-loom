@@ -3,9 +3,9 @@
 Status: active reference — domain authority for the segment-reconciliation assistance prompt template
 Authority: domain authority for the segment-reconciliation assistance prompt template (see `docs/ACTIVE-DOCS.md`)
 Profile id: `segment-reconciliation`
-Template version: `1.7.0`
-Compiler version: `1.9.0`
-Compiler-contract version: `1.10.0`
+Template version: `1.8.0`
+Compiler version: `1.10.0`
+Compiler-contract version: `1.11.0`
 
 ## Purpose
 
@@ -21,7 +21,7 @@ The prompt renders from these sources only:
 2. Exactly one accepted segment: the latest accepted segment fetched by the server as one complete row with id, sequence, and full text.
 3. The saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF field projection listed in this document.
 4. Every complete non-archived record in the selected record-contrast scope, all registered types and lifecycle states.
-5. Minimal reference stubs for out-of-scope referenced records: id, type, and stored display label only.
+5. Minimal reference stubs for out-of-scope referenced records: id, type, and complete payload-derived label only.
 6. A schema catalog generated from `recordTypeRegistry`, registered payload validators, lifecycle metadata, and reference metadata.
 7. Template/compiler/contract versions and deterministic citation, span, empty-state, output-shape, and echo-guard constants.
 
@@ -66,9 +66,9 @@ Every allowed brief field renders with a citation key and an explicit state: `mi
 
 `whole_project` includes every non-archived project record, all registered types and lifecycle states.
 
-Neither scope applies a semantic-active predicate, retrieval, ranking, batching, summarization, reference closure, or token-budget omission. Every qualifying record renders in deterministic registry order, then display label, then id.
+Neither scope applies a semantic-active predicate, retrieval, ranking, batching, summarization, reference closure, or token-budget omission. Every qualifying record renders one complete payload-derived label and orders in deterministic registry order, then that complete label, then id. The stored browse label does not enter record or stub text, ordering, citation assignment, or fingerprints.
 
-Reference stubs may render for records referenced by included source data but not included in the selected scope. Stubs are never proposal targets and never import out-of-scope payloads.
+Reference stubs may render for records referenced by included source data but not included in the selected scope. Stubs contain only id, type, and the target's complete payload-derived label; they are never proposal targets and never import any other out-of-scope payload field.
 
 ## Section Order
 

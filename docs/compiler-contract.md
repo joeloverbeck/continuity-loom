@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.10.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.11.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -36,6 +36,8 @@ The prose and ideation compilers render from these sources only:
 
 These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization may default non-story values such as generation context from accepted-segment count, but it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
+Every prompt-facing record label in these profiles is the complete label derived from the record payload. The stored repository `displayLabel` is browse-only and does not enter prompt text, record ordering, citation assignment, or prompt fingerprints. Records retain the existing family-specific semantic, authored-order, and priority dimensions; once those dimensions are tied, this complete payload-derived label precedes id.
+
 ### 2.2 Project-review record-hygiene source profile
 
 The record-hygiene compiler renders from these sources only:
@@ -50,7 +52,7 @@ Whole-project mode is the default. Working-set mode reads `active_working_set.se
 
 The record-hygiene source profile excludes story configuration, generation-time brief fields, active-working-set membership as a prose-prompt source, cast bands, accepted prose, candidates, prompt archives, CAST MEMBER payloads, ENTITY payloads, author-private notes, archived records, timestamps, user-order values, and provider settings. Generation-session data may be read only for the explicit working-set scope input in `active_working_set_atomic_review` mode.
 
-ENTITY and CAST MEMBER references may resolve only to the stored repository `displayLabel` for reference display. Their payload fields do not enter `StoryRecordHygieneSnapshot` or the prompt.
+Every record label and reference-summary label in this profile is the complete label derived from the relevant record payload. The stored repository `displayLabel` is browse-only and does not enter the snapshot, prompt text, ordering, or citation assignment. ENTITY and CAST MEMBER references may resolve only to that complete payload-derived label; their other payload fields do not enter `StoryRecordHygieneSnapshot` or the prompt.
 
 The record-hygiene compiler must render the complete declared source set. It must not filter, rank, summarize, batch, or evict records by similarity, salience, urgency, keyword, model judgment, context budget, timestamps, or hidden UI state.
 
@@ -62,7 +64,7 @@ The segment-reconciliation compiler renders from these sources only:
 2. A `SegmentReconciliationSnapshot` containing exactly one accepted segment selected by the request. The only v1 selection is `latest`; the server fetches one latest accepted row directly and includes its complete text, sequence, id, and accepted timestamp.
 3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
 4. Every complete non-archived story record in the explicit user-selected record scope: `active_working_set` by default or `whole_project`. All registered record types and lifecycle states are included. The active-working-set scope reads `active_working_set.selected_records` only to form the selected contrast set; neither mode changes working-set membership or prose authority.
-5. Deterministic reference stubs containing only id, type, and stored display label when an in-scope source references a non-rendered record. Reference stubs are not record-change targets and do not import out-of-scope payloads.
+5. Deterministic reference stubs containing only id, type, and the complete payload-derived label when an in-scope source references a non-rendered record. The stored repository `displayLabel` does not enter full-record or stub serialization, ordering, or citation assignment. Reference stubs are not record-change targets and do not import any other out-of-scope payload field.
 6. A deterministic record-creation schema catalog derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/story-record-schema.md`.
 7. A strict `SegmentReconciliationRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and the expected prompt fingerprint for analyze/send.
 8. Deterministic empty-state, span-partition, citation-key, output-schema, and verbatim-echo constants defined by this contract and the domain authority.

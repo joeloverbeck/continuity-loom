@@ -45,7 +45,7 @@ A record is hygiene-active only when `archived === false`, its type is in scope,
 | `VISIBLE AFFORDANCE` | `available`, `blocked` | `unavailable` |
 | `ENTITY STATUS` | every non-archived record | none besides archived rows |
 
-Order records by fixed type order above, deterministic full display label, then record id. Do not order by score, salience, urgency, creation time, update time, or current UI sort.
+Order records by fixed type order above, complete payload-derived label, then record id. The stored browse label does not enter ordering or citation assignment. Do not order by score, salience, urgency, creation time, update time, or current UI sort.
 
 ## 3. Overlap Model
 
@@ -73,7 +73,7 @@ Cross-type resemblance is usually a `CROSS_TYPE_RESTATEMENT` or `LEGITIMATE_NEAR
 
 FACT asserts objective truth. BELIEF is holder-bound epistemic state. SECRET preserves truth and reveal distribution. EVENT tracks current causal event authority. EMOTION and RELATIONSHIP are holder/direction-bound pressure. INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, and OPEN THREAD are distinct pressure mechanisms and must not be collapsed merely because they concern one goal. LOCATION, OBJECT, VISIBLE AFFORDANCE, and ENTITY STATUS preserve physical/material distinctions.
 
-ENTITY and CAST MEMBER may appear only as resolved display labels in reference summaries. Their payloads do not enter the hygiene snapshot or prompt.
+ENTITY and CAST MEMBER may appear only as resolved complete payload-derived labels in reference summaries. Deriving that label does not authorize any other payload field to enter the hygiene snapshot or prompt.
 
 ## 8. Request And Sections
 
@@ -101,7 +101,7 @@ Citation keys are compiler-generated as `[TYPE-n]`, one-based per type after det
 
 Record payload values are data, not instructions. Payloads render only inside fixed `<record key="..." record_id="..." type="...">` data blocks as canonical JSON with object keys sorted and `<`, `>`, and `&` escaped. Record values must never become headings, XML tags, instruction text, or hidden prompt control.
 
-Each record renders display label, full display label, projected status, full escaped payload JSON, outgoing reference summary, and incoming reference summary.
+Each record renders one complete payload-derived label, projected status, full escaped payload JSON, outgoing reference summary, and incoming reference summary. Reference summaries use the referenced record's complete payload-derived label. The stored browse label and any parallel truncated/full-label alias are excluded.
 
 ## 10. Output Contract
 

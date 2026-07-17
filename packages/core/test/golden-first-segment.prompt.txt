@@ -180,18 +180,18 @@ A secret may be revealed only if its reveal permission allows reveal in this gen
 These are current-pressure summaries. They are not exhaustive record dossiers. Use them to keep causal, knowledge, material, and voice pressure salient; use the later detail sections for full authority and metadata.
 
 Action pressure:
+- If Niko reads or carries the letter, he becomes harder to shield from the audit. [consequence pending]; Orin could treat him as a participant rather than a witness.
 - Elin Vale: Keep the sealed letter hidden until she knows whether Orin is already on the stair.; She delays Niko's reach and tries to move the conversation toward listening at the latch.
 - Niko Bram: Make Elin admit what kind of danger she has pulled him near.; He presses for truth without grabbing the hidden object.
 - Missing ledger page; The scene may hint at the ledger without naming the culprit or page.
-- If Niko reads or carries the letter, he becomes harder to shield from the audit. [consequence pending]; Orin could treat him as a participant rather than a witness.
 - listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.
 
 Knowledge pressure:
 - The sealed letter says a market ledger page was replaced before Orin's audit.
-- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.
+- Niko challenges her evasions and watches the flour bin.; Elin hid something connected to the audit, but he does not know it is a letter.
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.
 - Elin blocks Niko from touching the flour bin while trying not to lie outright.; Niko will be safer if he knows a letter exists but not what it says.
-- Niko challenges her evasions and watches the flour bin.; Elin hid something connected to the audit, but he does not know it is a letter.
+- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.
 
 Relationship and emotion pressure:
 - Elin is afraid of exposing Niko and ashamed that secrecy now looks like distrust.; She keeps one hand near the lantern shutter and answers too precisely.
@@ -199,10 +199,10 @@ Relationship and emotion pressure:
 - They trust each other's decency but disagree over whether protection justifies concealment.; Their affection makes every evasion feel personal.; Niko asks to be trusted; Elin tries to protect him by withholding the worst fact.
 
 Material pressure:
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
 - sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.
 - shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.
-- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.
-- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.
 - Vale bakery cellar; The stair door is behind Niko; the flour bin is against the far wall near Elin.
 
 Material pressure covers non-person entity, entity-status, location, and object constraints. Possible actions from visible affordances are summarized under action pressure and detailed under locations/objects/affordances.
@@ -276,8 +276,8 @@ Non-POV behavior-shaping beliefs:
 - Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace; visibility: shared
 
 Recent events:
-- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 - Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
+- The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>
@@ -285,10 +285,10 @@ Locations:
 - Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.; hazards or shelters: low beam over the bin, sacks that muffle footfalls; social rules: Customers should not be below stairs without Elin's invitation.
 
 Objects:
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
 - sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
 - shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; owner: Elin Vale; carried by: Elin Vale; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
-- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
-- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
 
 Visible affordances:
 - listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
@@ -311,12 +311,12 @@ Current bodies, posture, distance, routes, objects, exits, visibility, and envir
 - available time: One short exchange before footsteps or the shop bell may interrupt.
 - consent/force: No one is restrained; Elin can block access by position and refusal, not force.
 - locks: cellar latch is closed but not barred, letter seal is intact, non-POV interiority must not be rendered directly
+- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active
+- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; status: available
+- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active
 - sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active
 - shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: active
-- old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active
-- cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active
 - Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: active
-- listen at the stair door; Either onstage character can pause near the latch to check whether someone is coming.; status: available
 
 Do not move characters or objects without plausible action, route, time, consent/force where relevant, and physical possibility.
 </physical_continuity>

@@ -179,7 +179,7 @@ describe("compiler section renderer contract", () => {
       ["offstage_relevance_notes", "- The guard may return soon.; voice: Plainspoken and wary."]
     ];
     const pressureExpected: readonly [PlaceholderName, string][] = [
-      ["relationship_emotion_pressure", "- Mara is afraid; Her hands stay still.\n- Mara distrusts Jon; Trust is thin.; They speak around the ledger."],
+      ["relationship_emotion_pressure", "- Mara distrusts Jon; Trust is thin.; They speak around the ledger.\n- Mara is afraid; Her hands stay still."],
       ["active_intentions", "- Keep the ledger on the desk.; holder: Mara guards the archive.; urgency: high; Answers only what is asked."],
       ["active_plans", "- Delay the guard.; holder: Mara guards the archive.; current step: stand between guard and desk; resources: archive rules; blockers: Jon is watching; visibility: visible"],
       ["active_clocks", "- Audit round; pressure: The guard may return soon.; tick trigger: The bell rings.; next threshold: Someone reaches the stair.; possible effects: Mara must hide the ledger."],
@@ -190,11 +190,11 @@ describe("compiler section renderer contract", () => {
     const pressureResolverExpected: readonly [PlaceholderName, string][] = [
       [
         "active_action_pressure",
-        "- Mara guards the archive.: Delay the guard.; stand between guard and desk\n- The copied key could expose Mara.; Jon may suspect her.\n- Missing page; The scene may hint at the gap.\n- Mara guards the archive.: Keep the ledger on the desk.; Answers only what is asked.\n- Hide ledger; Mara can slide the ledger under papers.\n- Open drawer [affordance blocked]; The locked drawer cannot open."
+        "- Mara guards the archive.: Delay the guard.; stand between guard and desk\n- Mara guards the archive.: Keep the ledger on the desk.; Answers only what is asked.\n- Missing page; The scene may hint at the gap.\n- The copied key could expose Mara.; Jon may suspect her.\n- Hide ledger; Mara can slide the ledger under papers.\n- Open drawer [affordance blocked]; The locked drawer cannot open."
       ],
       [
         "active_knowledge_pressure",
-        "- The clerk copied the archive key.\n- The archive key is unique.\n- Mara keeps answers short.; Jon may be stalling for the guard.\n- The guard knocked once."
+        "- The clerk copied the archive key.\n- Mara keeps answers short.; Jon may be stalling for the guard.\n- The archive key is unique.\n- The guard knocked once."
       ],
       ["material_pressure", "- Archive; one narrow aisle\n- Ledger; A brass-bound ledger."]
     ];
@@ -212,7 +212,7 @@ describe("compiler section renderer contract", () => {
       ["unavailable_or_impossible_actions", "- Current lock: The desk drawer is locked.\n- Open drawer; status: blocked; The locked drawer cannot open.; requires: free hand"],
       [
         "physical_continuity",
-        "- time: Dawn.\n- location: Archive\n- positions: Mara stands by the locked desk.\n- statuses: guarding the ledger\n- possessions: The ledger is under Mara's hand.\n- visibility: The stair is visible from the desk.\n- routes/exits: stair, rear door\n- available time: One exchange.\n- locks: The desk drawer is locked.\n- Archive; Tall shelves.; status: active\n- Hide ledger; Mara can slide the ledger under papers.; status: available\n- Ledger; A brass-bound ledger.; status: active\n- entity: Mara guards the archive.; life: alive; agency: mobile; location: Archive; visibility: visible; activity: guarding the ledger\n- Open drawer; The locked drawer cannot open.; status: blocked"
+        "- time: Dawn.\n- location: Archive\n- positions: Mara stands by the locked desk.\n- statuses: guarding the ledger\n- possessions: The ledger is under Mara's hand.\n- visibility: The stair is visible from the desk.\n- routes/exits: stair, rear door\n- available time: One exchange.\n- locks: The desk drawer is locked.\n- Archive; Tall shelves.; status: active\n- entity: Mara guards the archive.; life: alive; agency: mobile; location: Archive; visibility: visible; activity: guarding the ledger\n- Hide ledger; Mara can slide the ledger under papers.; status: available\n- Ledger; A brass-bound ledger.; status: active\n- Open drawer; The locked drawer cannot open.; status: blocked"
       ]
     ];
 
@@ -307,10 +307,10 @@ describe("compiler section renderer contract", () => {
     });
 
     expect(PRESSURE_PLACEHOLDER_RESOLVERS.active_knowledge_pressure?.resolve(snapshot)).toBe(
-      "- The clerk copied the archive key.\n- The ink is still wet.\n- The archive key is unique.\n- The stair lock is loose.\n- Mara keeps answers short.; Jon may be stalling for the guard.\n- The guard knocked once."
+      "- The clerk copied the archive key.\n- The ink is still wet.\n- Mara keeps answers short.; Jon may be stalling for the guard.\n- The archive key is unique.\n- The guard knocked once.\n- The stair lock is loose."
     );
     expect(PRESSURE_PLACEHOLDER_RESOLVERS.material_pressure?.resolve(snapshot)).toBe(
-      "- Archive; one narrow aisle\n- Ledger; A brass-bound ledger.\n- Entity; Entity - cursed object; Hangs above the stair."
+      "- Archive; one narrow aisle\n- Entity; Entity - cursed object; Hangs above the stair.\n- Ledger; A brass-bound ledger."
     );
     expect(renderPressurePlaceholder("active_obligations", snapshot)).toBe(
       "- Protect archive records.; owed by: Mara guards the archive.; owed to: institution; urgency: high; if broken: Mara loses authority."
@@ -322,7 +322,7 @@ describe("compiler section renderer contract", () => {
 
   it("renders ideation physical continuity status summaries exactly", () => {
     expect(renderTailPlaceholder("physical_continuity", populatedSnapshot(), { ideation: true })).toBe(
-      "- time: Dawn.\n- location: Archive\n- positions: Mara stands by the locked desk.\n- statuses: guarding the ledger\n- possessions: The ledger is under Mara's hand.\n- visibility: The stair is visible from the desk.\n- routes/exits: stair, rear door\n- available time: One exchange.\n- locks: The desk drawer is locked.\n- Archive; status: active\n- Hide ledger; status: available\n- Ledger; status: active\n- entity: Mara guards the archive.; life: alive; agency: mobile; location: Archive; visibility: visible; activity: guarding the ledger\n- Open drawer; status: blocked"
+      "- time: Dawn.\n- location: Archive\n- positions: Mara stands by the locked desk.\n- statuses: guarding the ledger\n- possessions: The ledger is under Mara's hand.\n- visibility: The stair is visible from the desk.\n- routes/exits: stair, rear door\n- available time: One exchange.\n- locks: The desk drawer is locked.\n- Archive; status: active\n- entity: Mara guards the archive.; life: alive; agency: mobile; location: Archive; visibility: visible; activity: guarding the ledger\n- Hide ledger; status: available\n- Ledger; status: active\n- Open drawer; status: blocked"
     );
   });
 
@@ -363,7 +363,7 @@ describe("compiler section renderer contract", () => {
   it("renders pressure sections with exact compact summary labels", () => {
     const prompt = compiledPrompt("populated");
 
-    expect(sectionBody(prompt, "active_working_set")).toContain("Relationship and emotion pressure:\n- Mara is afraid; Her hands stay still.\n- Mara distrusts Jon; Trust is thin.; They speak around the ledger.");
+    expect(sectionBody(prompt, "active_working_set")).toContain("Relationship and emotion pressure:\n- Mara distrusts Jon; Trust is thin.; They speak around the ledger.\n- Mara is afraid; Her hands stay still.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("- Keep the ledger on the desk.; holder: Mara guards the archive.; urgency: high; Answers only what is asked.");
     expect(sectionBody(prompt, "active_plans_and_intentions")).toContain("- Delay the guard.; holder: Mara guards the archive.; current step: stand between guard and desk; resources: archive rules; blockers: Jon is watching; visibility: visible");
     expect(sectionBody(prompt, "active_clocks")).toContain("- Audit round; pressure: The guard may return soon.; tick trigger: The bell rings.; next threshold: Someone reaches the stair.; possible effects: Mara must hide the ledger.");

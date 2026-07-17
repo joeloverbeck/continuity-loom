@@ -233,8 +233,8 @@ Non-POV behavior-shaping beliefs:
 - [BELIEF-1] Elin hid something connected to the audit, but he does not know it is a letter.; behavior: Niko challenges her evasions and watches the flour bin.; mode: suspects; truth: partly_true; confidence: medium; access: object_trace; visibility: shared
 
 Recent events:
-- [EVENT-2] The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 - [EVENT-1] Niko followed flour smears to the cellar after seeing Elin close the shop early.; visibility: perceived_directly
+- [EVENT-2] The market bell rang early, warning Elin that Orin's audit rounds may start before noon.; visibility: inferred_from_trace
 </relevant_facts_beliefs_events>
 
 <locations_objects_affordances>
@@ -242,10 +242,10 @@ Locations:
 - [LOCATION-1] Vale bakery cellar; A low cellar below Elin's bakery, smelling of flour, rain damp, and cooling brick.; status: inactive; layout: The stair door is behind Niko; the flour bin is against the far wall near Elin.; routes: stair to bakery shop, narrow delivery hatch too small for a person; visibility/sound: Lantern light reaches the bin and latch; shop voices above are muffled but audible.; hazards or shelters: low beam over the bin, sacks that muffle footfalls; social rules: Customers should not be below stairs without Elin's invitation.
 
 Objects:
+- [OBJECT-1] cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
+- [OBJECT-2] old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
 - [OBJECT-3] sealed letter; A narrow letter in blue-gray paper, sealed with plain wax and hidden in oilcloth.; status: active; owner: Elin Vale; location: old flour bin; visibility: hidden; affordances: can be moved by Elin, can be shown sealed without revealing contents; constraints: Niko must not read it in the first segment., The wax seal is intact.
 - [OBJECT-4] shuttered lantern; A small tin lantern with a thumb shutter that narrows the light.; status: inactive; owner: Elin Vale; carried by: Elin Vale; location: carried_by_holder; visibility: visible; affordances: reveal flour marks, hide light from the stair; constraints: Its oil is low.
-- [OBJECT-2] old flour bin; A broad cedar bin with a rear hinge, enough flour dust to show any careless touch.; status: active; owner: Elin Vale; location: Vale bakery cellar; visibility: visible; affordances: conceal the letter, show tampering traces; constraints: Opening it too wide creaks toward the stair.
-- [OBJECT-1] cellar latch; An old iron latch at the stair door, sticky enough to announce anyone entering.; status: active; location: Vale bakery cellar; visibility: visible; affordances: bar entry, signal interruption; constraints: It can be lifted from outside with effort.
 
 Visible affordances:
 - [VISIBLE AFFORDANCE-1] listen at the stair door; status: available; Either onstage character can pause near the latch to check whether someone is coming.; available to: any_onstage; actions: perceive, protect, decide, use; requires: someone must stand near the latch; risk: secrecy; durability: local
@@ -268,12 +268,12 @@ Current bodies, posture, distance, routes, objects, exits, visibility, and envir
 - available time: One short exchange before footsteps or the shop bell may interrupt.
 - consent/force: No one is restrained; Elin can block access by position and refusal, not force.
 - locks: cellar latch is closed but not barred, letter seal is intact, non-POV interiority must not be rendered directly
+- cellar latch; status: active
+- listen at the stair door; status: available
+- old flour bin; status: active
 - sealed letter; status: active
 - shuttered lantern; status: inactive
-- old flour bin; status: active
-- cellar latch; status: active
 - Vale bakery cellar; status: inactive
-- listen at the stair door; status: available
 
 Do not move characters or objects without plausible action, route, time, consent/force where relevant, and physical possibility.
 </physical_continuity>

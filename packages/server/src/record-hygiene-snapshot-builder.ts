@@ -3,6 +3,7 @@ import {
   getRecordTypeDefinition,
   HYGIENE_TYPE_ORDER,
   isHygieneActive,
+  orderHygieneRecords,
   parseRecordPayload,
   projectRecordStatus,
   type HygieneRecord,
@@ -15,8 +16,6 @@ import type { IncomingRecordReference, JsonReadResult, RecordReadResult } from "
 export type BuildRecordHygieneSnapshotResult =
   | { ok: true; snapshot: StoryRecordHygieneSnapshot }
   | { ok: false; status: 422; body: { ok: false; kind: "malformed-hygiene-source"; message: string } };
-
-const typeRank = new Map<string, number>(HYGIENE_TYPE_ORDER.map((recordType, index) => [recordType, index]));
 
 export interface RecordHygieneRepository {
   listRecords(options: { includeArchived: false }): RecordReadResult[];
@@ -36,6 +35,10 @@ export function buildStoryRecordHygieneSnapshot(
   const labelsById = new Map<string, string>();
 
   for (const result of results) {
+    if (result.ok) {
+      labelsById.set(result.record.id, deriveFullDisplayLabel(result.record.type, result.record.payload));
+    }
+
     if (scopeIds && !isResultInScope(result, scopeIds)) {
       continue;
     }
@@ -49,7 +52,6 @@ export function buildStoryRecordHygieneSnapshot(
       return malformed(`Duplicate record id in hygiene source: ${record.id}`);
     }
     seenIds.add(record.id);
-    labelsById.set(record.id, record.displayLabel);
 
     if (!getRecordTypeDefinition(record.type)) {
       return malformed(`Unsupported record type in hygiene source: ${record.type}`);
@@ -69,11 +71,15 @@ export function buildStoryRecordHygieneSnapshot(
       return malformed(`Unsupported hygiene record type: ${record.type}`);
     }
 
+    const displayLabel = labelsById.get(record.id);
+    if (displayLabel === undefined) {
+      return malformed(`Missing complete display label for hygiene record: ${record.id}`);
+    }
+
     records.push({
       id: record.id,
       type: record.type as HygieneRecord["type"],
-      displayLabel: record.displayLabel,
-      fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
+      displayLabel,
       status: projectRecordStatus(record.type, record.payload),
       payload: record.payload
     });
@@ -89,15 +95,6 @@ export function buildStoryRecordHygieneSnapshot(
       versions: { template: "server-built", compiler: "server-built", contract: "server-built" }
     }
   };
-}
-
-function orderHygieneRecords(records: readonly HygieneRecord[]): readonly HygieneRecord[] {
-  return [...records].sort(
-    (left, right) =>
-      (typeRank.get(left.type) ?? Number.MAX_SAFE_INTEGER) - (typeRank.get(right.type) ?? Number.MAX_SAFE_INTEGER)
-      || left.fullDisplayLabel.localeCompare(right.fullDisplayLabel)
-      || left.id.localeCompare(right.id)
-  );
 }
 
 function scopeRecordIds(repository: RecordHygieneRepository, request: RecordHygieneRequest): ReadonlySet<string> | null {
@@ -127,8 +124,16 @@ function isResultInScope(result: RecordReadResult, scopeIds: ReadonlySet<string>
 
 function referenceSummary(repository: RecordHygieneRepository, recordId: string, labelsById: ReadonlyMap<string, string>) {
   return {
-    outgoing: repository.referencesForRecord(recordId).map((reference) => `${reference.refRole} -> ${labelFor(labelsById, reference.targetId)} (${reference.targetId})`),
-    incoming: repository.incomingReferencesForRecord(recordId).map((reference) => `${labelFor(labelsById, reference.fromRecordId)} (${reference.fromRecordId}):${reference.refRole}`)
+    outgoing: repository.referencesForRecord(recordId).map((reference) => ({
+      refRole: reference.refRole,
+      targetLabel: labelFor(labelsById, reference.targetId),
+      targetId: reference.targetId
+    })),
+    incoming: repository.incomingReferencesForRecord(recordId).map((reference) => ({
+      sourceLabel: labelFor(labelsById, reference.fromRecordId),
+      sourceId: reference.fromRecordId,
+      refRole: reference.refRole
+    }))
   };
 }
 

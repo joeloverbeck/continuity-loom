@@ -33,7 +33,39 @@ describe("record hygiene snapshot builder", () => {
     expect(result.snapshot.records.map((item) => item.id)).toEqual([idA, idB]);
     expect(JSON.stringify(result.snapshot)).not.toContain("Private cast pressure");
     expect(JSON.stringify(result.snapshot)).not.toContain("Person entity payload");
-    expect(result.snapshot.referenceIndex[idB]?.outgoing).toEqual([`holder -> Niko (${idD})`]);
+    expect(result.snapshot.referenceIndex[idB]?.outgoing).toEqual([
+      { refRole: "holder", targetLabel: "Niko", targetId: idD }
+    ]);
+  });
+
+  it("derives complete record and bidirectional reference labels without importing excluded payloads", () => {
+    const sharedPrefix = "H".repeat(80);
+    const browseLabel = `${sharedPrefix.slice(0, 77)}...`;
+    const fullFactLabel = `${sharedPrefix}Fact Ω < & complete`;
+    const fullEntityLabel = `${sharedPrefix}Entity ñ > complete`;
+    const fullCastLabel = `${sharedPrefix}Cast é < complete`;
+    const repository = fakeRepository([
+      ok(record(idA, "FACT", browseLabel, { ...factPayload(idA), statement: fullFactLabel }, false)),
+      ok(record(idB, "BELIEF", browseLabel, beliefPayload(idB), false)),
+      ok(record(idD, "ENTITY", browseLabel, { ...entityPayload(idD), display_name: fullEntityLabel }, false)),
+      ok(record(idE, "CAST MEMBER", browseLabel, { ...castPayload(idD), identity: { ...castPayload(idD).identity, one_line: fullCastLabel } }, false))
+    ]);
+
+    const result = buildStoryRecordHygieneSnapshot(repository, wholeProject);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    expect(result.snapshot.records.find((item) => item.id === idA)).toMatchObject({ displayLabel: fullFactLabel });
+    expect(result.snapshot.records.find((item) => item.id === idA)).not.toHaveProperty("fullDisplayLabel");
+    expect(result.snapshot.referenceIndex[idB]).toEqual({
+      outgoing: [{ refRole: "holder", targetLabel: fullEntityLabel, targetId: idD }],
+      incoming: [{ sourceLabel: fullCastLabel, sourceId: idE, refRole: "cast_subject" }]
+    });
+    expect(JSON.stringify(result.snapshot)).not.toContain("Person entity payload");
+    expect(JSON.stringify(result.snapshot)).not.toContain("Private cast pressure");
   });
 
   it("fails closed on malformed rows, duplicate ids, and unsupported types", () => {
@@ -128,7 +160,7 @@ function fakeRepository(
   return {
     listRecords: () => results,
     referencesForRecord: (id) => (id === idB ? [{ refRole: "holder", targetId: idD }] : []),
-    incomingReferencesForRecord: () => [],
+    incomingReferencesForRecord: (id) => id === idB ? [{ fromRecordId: idE, refRole: "cast_subject" }] : [],
     getGenerationSession: () =>
       Array.isArray(generationSession)
         ? { ok: true, payload: { active_working_set: { selected_records: generationSession } } }

@@ -97,12 +97,37 @@ describe("record hygiene routes", () => {
     expect(response.statusCode).toBe(200);
     expect(body.prompt).toContain("request_mode: active_working_set_atomic_review");
     expect(body.prompt).toContain("hygiene_scope: active_working_set");
-    expect(body.prompt).toContain("Alpha fact");
-    expect(body.prompt).not.toContain("Beta fact");
+    expect(body.prompt).toContain(`display_label: ${promptSecretText} The cellar door is locked.`);
+    expect(body.prompt).not.toContain("display_label: The cellar door remains locked after Niko tests it.");
     expect(body.metadata.recordCount).toBe(1);
     expect(body.metadata.countsByType.FACT).toBe(1);
     expect(body.citations).toEqual({ "[FACT-1]": alphaId });
     expect(after).toEqual(before);
+  });
+
+  it("shows complete payload-derived labels in both compile scopes without exposing the stored browse label", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    const sharedPrefix = "W".repeat(80);
+    const browseLabel = `${sharedPrefix.slice(0, 77)}...`;
+    const fullLabel = `${sharedPrefix}Complete Ω ñ < & > label`;
+    const recordId = await createFact(fastify, browseLabel, fullLabel);
+    await putWorkingSet(fastify, [recordId]);
+
+    for (const mode of ["full_active_atomic_review", "active_working_set_atomic_review"] as const) {
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/record-hygiene/compile",
+        payload: { mode }
+      });
+      const body = response.json() as { prompt: string };
+
+      expect(response.statusCode).toBe(200);
+      expect(body.prompt).toContain(`display_label: ${escapeDataText(fullLabel)}`);
+      expect(body.prompt).not.toContain(`display_label: ${browseLabel}`);
+      expect(body.prompt).not.toContain("full_display_label:");
+    }
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
   it("rejects unsupported record hygiene modes", async () => {
@@ -379,4 +404,8 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function escapeDataText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

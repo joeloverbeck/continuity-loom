@@ -27,14 +27,25 @@ export interface HygieneRecord {
   id: string;
   type: HygieneRecordType;
   displayLabel: string;
-  fullDisplayLabel: string;
   status: string | null;
   payload: unknown;
 }
 
+export interface HygieneOutgoingReference {
+  refRole: string;
+  targetLabel: string;
+  targetId: string;
+}
+
+export interface HygieneIncomingReference {
+  sourceLabel: string;
+  sourceId: string;
+  refRole: string;
+}
+
 export interface HygieneReferenceSummary {
-  outgoing: readonly string[];
-  incoming: readonly string[];
+  outgoing: readonly HygieneOutgoingReference[];
+  incoming: readonly HygieneIncomingReference[];
 }
 
 export interface StoryRecordHygieneVersions {

@@ -1,5 +1,6 @@
 import { whatWillCompile, type CompileDestinationFamilyId } from "../records/compile-destinations.js";
 import type { ValidationRecord } from "../validation/snapshot.js";
+import { displayLabel } from "./labels.js";
 
 const familyRank: Readonly<Record<CompileDestinationFamilyId, number>> = Object.freeze({
   story_contract_and_prose_mode: 0,
@@ -81,9 +82,7 @@ function compareNumbers(left: number, right: number): number {
 }
 
 function comparePriority(left: string | null | undefined, right: string | null | undefined): number {
+  // Stryker disable next-line StringLiteral: ordering.ts StringLiteral mutants that replace the absent-map key remain
+  // equivalent because every absent key misses priorityRank and resolves to fallback rank 4; reviewed in #88 (parent #84).
   return (priorityRank[left ?? ""] ?? 4) - (priorityRank[right ?? ""] ?? 4);
-}
-
-function displayLabel(record: ValidationRecord): string {
-  return record.metadata?.displayLabel ?? record.id;
 }

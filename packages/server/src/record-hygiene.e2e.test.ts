@@ -142,7 +142,11 @@ describe("record hygiene end-to-end conformance", () => {
     expect(workingSet.prompt).toContain("hygiene_scope: active_working_set");
     expect(workingSet.prompt).toContain(selectedScopeSentinel);
     expect(workingSet.prompt).not.toContain(unselectedFactSentinel);
-    expect(workingSet.prompt).not.toContain(terminalScopeSentinel);
+    expect(workingSet.prompt).toContain(
+      `incoming: Fulfilled plan should stay outside hygiene scope ${terminalScopeSentinel}. (${terminalPlan}):holder`
+    );
+    expect(workingSet.prompt).not.toContain(`record_id="${terminalPlan}"`);
+    expect(workingSet.prompt).not.toContain("Already completed.");
     expect(workingSet.metadata.recordCount).toBe(2);
     expect(Object.values(workingSet.citations).sort()).toEqual([selectedA, selectedB].sort());
 

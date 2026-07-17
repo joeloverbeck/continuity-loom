@@ -98,6 +98,45 @@ describe("segment reconciliation routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("shows complete payload-derived record and stub labels in both reconciliation scopes", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    const sharedPrefix = "Y".repeat(80);
+    const browseLabel = `${sharedPrefix.slice(0, 77)}...`;
+    const fullEntityLabel = `${sharedPrefix}Entity Ω < & complete`;
+    const fullBeliefLabel = `${sharedPrefix}Belief ñ > complete`;
+    const excludedEntityPayload = "ENTITY_PAYLOAD_EXCLUDED_FROM_STUB";
+    const entityId = await createEntity(fastify, browseLabel, fullEntityLabel, excludedEntityPayload);
+    const beliefId = await createBelief(fastify, browseLabel, fullBeliefLabel, entityId);
+    await putWorkingSet(fastify, [beliefId]);
+    await addAcceptedSegment(fastify, acceptedText);
+
+    const workingSetResponse = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/compile",
+      payload: { segmentSelection: "latest", recordScope: "active_working_set" }
+    });
+    const wholeProjectResponse = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/compile",
+      payload: { segmentSelection: "latest", recordScope: "whole_project" }
+    });
+    const workingSetPrompt = (workingSetResponse.json() as { prompt: string }).prompt;
+    const wholeProjectPrompt = (wholeProjectResponse.json() as { prompt: string }).prompt;
+
+    expect(workingSetResponse.statusCode).toBe(200);
+    expect(wholeProjectResponse.statusCode).toBe(200);
+    expect(workingSetPrompt).toContain(`display_label: ${escapeDataText(fullBeliefLabel)}`);
+    expect(workingSetPrompt).toContain(`display_label: ${escapeDataText(fullEntityLabel)}`);
+    expect(workingSetPrompt).toContain(`<reference_stub key="[REF-ENTITY-1]" record_id="${entityId}" type="ENTITY">`);
+    expect(workingSetPrompt).not.toContain(excludedEntityPayload);
+    expect(workingSetPrompt).not.toContain(`display_label: ${browseLabel}`);
+    expect(wholeProjectPrompt).toContain(`display_label: ${escapeDataText(fullBeliefLabel)}`);
+    expect(wholeProjectPrompt).toContain(`display_label: ${escapeDataText(fullEntityLabel)}`);
+    expect(wholeProjectPrompt).not.toContain("<reference_stub key=");
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
   it("rejects client-supplied prompt, records, segment, and schema fields before transport", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
@@ -267,6 +306,64 @@ async function createFact(fastify: FastifyApp, displayLabel: string, statement: 
   return body.record.id;
 }
 
+async function createEntity(
+  fastify: FastifyApp,
+  displayLabel: string,
+  fullDisplayName: string,
+  shortDescription: string
+): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "ENTITY",
+      displayLabel,
+      payload: {
+        display_name: fullDisplayName,
+        entity_kind: "person",
+        roles_in_story: ["primary_actor"],
+        short_description: shortDescription
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
+async function createBelief(
+  fastify: FastifyApp,
+  displayLabel: string,
+  claim: string,
+  holder: string
+): Promise<string> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/records",
+    payload: {
+      type: "BELIEF",
+      displayLabel,
+      payload: {
+        holder,
+        claim,
+        belief_mode: "believes",
+        truth_relation: "unknown",
+        confidence: "medium",
+        visibility: "private",
+        access_route: "inference",
+        behavioral_effect: "Checks the evidence twice.",
+        salience: "high",
+        status: "active"
+      }
+    }
+  });
+  const body = response.json() as { record: { id: string } };
+
+  expect(response.statusCode).toBe(201);
+  return body.record.id;
+}
+
 async function putWorkingSet(fastify: FastifyApp, selectedRecordIds: string[]): Promise<void> {
   const response = await fastify.inject({
     method: "PUT",
@@ -375,4 +472,8 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function escapeDataText(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

@@ -71,11 +71,54 @@ describe("compiler record ordering properties", () => {
     expect(orderCompilerRecords(input).map((record) => record.id)).toEqual(expectedIds);
   });
 
+  it("orders same-prefix browse labels by their complete payload-derived labels before the final id tie-break", () => {
+    const sharedPrefix = "A".repeat(80);
+    const browseLabel = `${sharedPrefix.slice(0, 77)}...`;
+    const laterByLabel = {
+      ...record("019b0298-5c00-7000-8000-000000000001", "FACT", browseLabel),
+      payload: { statement: `${sharedPrefix}Zulu Ω > final suffix` }
+    };
+    const earlierByLabel = {
+      ...record("019b0298-5c00-7000-8000-000000000002", "FACT", browseLabel),
+      payload: { statement: `${sharedPrefix}Alpha ñ < & final suffix` }
+    };
+
+    expect(orderCompilerRecords([laterByLabel, earlierByLabel]).map((item) => item.id)).toEqual([
+      earlierByLabel.id,
+      laterByLabel.id
+    ]);
+  });
+
   it("matches the independent expected ordering for generated records", () => {
     assertProperty(
       fc.property(orderingRecordsArbitrary, (records) => {
         expect(orderCompilerRecords(records).map((record) => record.id)).toEqual(expectedOrder(records).map((record) => record.id));
       })
+    );
+  });
+
+  it("keeps complete-label ordering stable across generated suffix pairs that share a browse prefix", () => {
+    assertProperty(
+      fc.property(
+        fc.uniqueArray(fc.string({ minLength: 1, maxLength: 24 }), { minLength: 2, maxLength: 2 }),
+        ([firstSuffix, secondSuffix]) => {
+          const sharedPrefix = "P".repeat(80);
+          const browseLabel = `${sharedPrefix.slice(0, 77)}...`;
+          const fullLabels = [`${sharedPrefix}${firstSuffix}`, `${sharedPrefix}${secondSuffix}`].sort((left, right) =>
+            left.localeCompare(right)
+          );
+          const earlier = {
+            ...record("019b0298-5c00-7000-8000-000000000002", "FACT", browseLabel),
+            payload: { statement: fullLabels[0] }
+          };
+          const later = {
+            ...record("019b0298-5c00-7000-8000-000000000001", "FACT", browseLabel),
+            payload: { statement: fullLabels[1] }
+          };
+
+          expect(orderCompilerRecords([later, earlier]).map((item) => item.id)).toEqual([earlier.id, later.id]);
+        }
+      )
     );
   });
 
@@ -177,9 +220,22 @@ function record(
   return {
     id,
     type,
-    payload: { id },
+    payload: payloadForLabel(type, label),
     metadata: recordMetadata(id, type, label, metadata)
   };
+}
+
+function payloadForLabel(type: string, label: string): Record<string, unknown> {
+  switch (type) {
+    case "FACT":
+      return { statement: label };
+    case "SECRET":
+      return { secret_claim: label };
+    case "CAST MEMBER":
+      return { identity: { one_line: label } };
+    default:
+      return { label };
+  }
 }
 
 function recordMetadata(

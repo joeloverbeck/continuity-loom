@@ -37,7 +37,7 @@ describe("segment reconciliation golden prompt", () => {
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(changed.metadata.fingerprint).not.toBe(first.metadata.fingerprint);
-    expect(first.metadata.versions).toEqual({ template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.8.0", compiler: "1.10.0", contract: "1.11.0" });
   });
 
   it("renders a slim request block with only orientation and selected segment identity", () => {
@@ -85,12 +85,43 @@ describe("segment reconciliation golden prompt", () => {
     expect(fields).toContain('"state": "missing"');
     expect(records).toContain("No non-archived records exist in the selected reconciliation scope.");
   });
+
+  it("renders one complete label and orders same-prefix records and stubs before the id tie-break", () => {
+    const sharedPrefix = "Q".repeat(80);
+    const earlierLabel = `${sharedPrefix}Alpha ñ < & complete`;
+    const laterLabel = `${sharedPrefix}Zulu Ω > complete`;
+    const earlierRecord = { id: "belief-z", type: "BELIEF", displayLabel: earlierLabel, payload: { claim: earlierLabel } };
+    const laterRecord = { id: "belief-a", type: "BELIEF", displayLabel: laterLabel, payload: { claim: laterLabel } };
+    const earlierStub = { id: "entity-z", type: "ENTITY", displayLabel: earlierLabel };
+    const laterStub = { id: "entity-a", type: "ENTITY", displayLabel: laterLabel };
+    const first = compileSegmentReconciliationPrompt(
+      snapshot({ records: [laterRecord, earlierRecord], referenceStubs: [laterStub, earlierStub] })
+    );
+    const second = compileSegmentReconciliationPrompt(
+      snapshot({ records: [earlierRecord, laterRecord], referenceStubs: [earlierStub, laterStub] })
+    );
+
+    expect(first.prompt).toContain(`display_label: ${sharedPrefix}Alpha ñ &lt; &amp; complete`);
+    expect(first.prompt).toContain(`display_label: ${sharedPrefix}Zulu Ω &gt; complete`);
+    expect(first.prompt).not.toContain(`display_label: ${earlierLabel}`);
+    expect(first.prompt).not.toContain(`display_label: ${laterLabel}`);
+    expect(first.prompt).not.toContain("full_display_label:");
+    expect(first.prompt.indexOf('record_id="belief-z"')).toBeLessThan(first.prompt.indexOf('record_id="belief-a"'));
+    expect(first.prompt.indexOf('record_id="entity-z"')).toBeLessThan(first.prompt.indexOf('record_id="entity-a"'));
+    expect(first.prompt).toContain("\\u003c \\u0026 complete");
+    expect(first.prompt).toContain("\\u003e complete");
+    expect(first.metadata.citationMap?.["[BELIEF-1]"]).toBe("belief-z");
+    expect(first.metadata.citationMap?.["[REF-ENTITY-1]"]).toBe("entity-z");
+    expect(second.prompt).toBe(first.prompt);
+    expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
+  });
 });
 
 function snapshot(
   opts: {
     acceptedText?: string;
     records?: SegmentReconciliationSnapshot["records"];
+    referenceStubs?: SegmentReconciliationSnapshot["referenceStubs"];
   } = {}
 ): SegmentReconciliationSnapshot {
   const acceptedSegment = {
@@ -127,7 +158,7 @@ function snapshot(
           }
         }
       ],
-    referenceStubs: [],
+    referenceStubs: opts.referenceStubs ?? [],
     versions: { template: "ignored", compiler: "ignored", contract: "ignored" },
     normalizedAcceptedSegmentText: acceptedSegment.text,
     acceptedSegmentSpans
