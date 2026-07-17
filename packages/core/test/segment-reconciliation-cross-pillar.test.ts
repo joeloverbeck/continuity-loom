@@ -63,7 +63,11 @@ describe("segment reconciliation cross-pillar capstone", () => {
 
     expect(catalog.recordTypes.map((entry) => entry.recordType)).toEqual([...recordTypes]);
     expect(catalog.recordTypes).toHaveLength(recordTypes.length);
-    expect(catalog.recordTypes.every((entry) => entry.payloadJsonSchema && entry.fields.length > 0)).toBe(true);
+    expect(
+      catalog.recordTypes.every(
+        (entry) => entry.fields.length > 0 && Array.isArray(entry.repositoryFields) && entry.lifecycle.kind.length > 0
+      )
+    ).toBe(true);
   });
 });
 

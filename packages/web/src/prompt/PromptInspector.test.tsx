@@ -13,8 +13,9 @@ afterEach(() => {
 describe("PromptInspector", () => {
   it("renders the compiled prompt, metadata, and prompt search highlighting", () => {
     const onSearchTermChange = vi.fn();
+    const prompt = "<role>\nA prompt line.\nAnother prompt line.";
 
-    render(<PromptInspector result={compileResult("<role>\nA prompt line.\nAnother prompt line.")} searchTerm="" onSearchTermChange={onSearchTermChange} />);
+    render(<PromptInspector result={compileResult(prompt)} searchTerm="" onSearchTermChange={onSearchTermChange} />);
 
     const promptBody = screen.getByTestId("prompt-body");
     expect(promptBody.textContent).toContain("<role>");
@@ -26,6 +27,8 @@ describe("PromptInspector", () => {
     expect(within(metadata).getByText("compiler-1")).toBeTruthy();
     expect(within(metadata).getByText("contract-1")).toBeTruthy();
     expect(within(metadata).getByText("fingerprint-1")).toBeTruthy();
+    expect(within(metadata).getByText(String(prompt.length))).toBeTruthy();
+    expect(within(metadata).getByText("7")).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Search within prompt"), { target: { value: "prompt" } });
     expect(onSearchTermChange).toHaveBeenCalledWith("prompt");
@@ -33,7 +36,7 @@ describe("PromptInspector", () => {
     cleanup();
     render(
       <PromptInspector
-        result={compileResult("<role>\nA prompt line.\nAnother prompt line.")}
+        result={compileResult(prompt)}
         searchTerm="prompt"
         onSearchTermChange={onSearchTermChange}
       />

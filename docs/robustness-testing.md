@@ -110,6 +110,27 @@ must still be mutation-gated:
   status;
 - out-of-scope changes report an explicit no-op status.
 
+### P3 Compact Catalog Assurance
+
+Changes to `packages/core/src/compiler/reconciliation/schema-catalog.ts` remain
+P3 changed-source work. The compact Segment Reconciliation catalog has two
+locked regression dimensions:
+
+- semantic coverage compares registry order and every compact field path,
+  required/optional/default state, schema shape, reference marker, lifecycle
+  marker, and repository-managed/forbidden marker, with synthetic boolean,
+  number, literal, union, nested-object, default, escaping, and unsupported-
+  constraint probes; and
+- size coverage compiles the reproducible zero-record fixture, measures the
+  complete catalog section in UTF-16 code units, enforces the `136328` baseline
+  maximum of `68164`, and locks the current measured ceiling at `18688`.
+
+The local payload parsers remain the behavior authority after reference-token
+resolution. Catalog coverage does not replace parser, golden, route, or
+component regressions. While P3 remains pre-activation, the changed-source
+mutation command reports and defers this source to the scheduled/manual
+workflow exactly as described above; it must not invent an inline break floor.
+
 ## Cadence
 
 PR cadence:

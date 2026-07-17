@@ -171,6 +171,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after adopting complete payload-derived labels across Prose, Ideate, Record Hygiene, and Segment Reconciliation, template is `1.8.0`, compiler is `1.10.0`, and compiler contract is `1.11.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after adopting the single compact Segment Reconciliation schema catalog, template is `1.9.0`, compiler is `1.11.0`, and compiler contract is `1.12.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

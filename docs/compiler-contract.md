@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.11.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.12.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -65,7 +65,7 @@ The segment-reconciliation compiler renders from these sources only:
 3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
 4. Every complete non-archived story record in the explicit user-selected record scope: `active_working_set` by default or `whole_project`. All registered record types and lifecycle states are included. The active-working-set scope reads `active_working_set.selected_records` only to form the selected contrast set; neither mode changes working-set membership or prose authority.
 5. Deterministic reference stubs containing only id, type, and the complete payload-derived label when an in-scope source references a non-rendered record. The stored repository `displayLabel` does not enter full-record or stub serialization, ordering, or citation assignment. Reference stubs are not record-change targets and do not import any other out-of-scope payload field.
-6. A deterministic record-creation schema catalog derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/story-record-schema.md`.
+6. One deterministic `segment_reconciliation.schema_catalog.v1` line grammar derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/story-record-schema.md`. It is the only prompt-facing record-creation representation; parallel JSON Schema, field-descriptor payloads, compatibility aliases, and handwritten type/enum vocabularies are forbidden.
 7. A strict `SegmentReconciliationRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and the expected prompt fingerprint for analyze/send.
 8. Deterministic empty-state, span-partition, citation-key, output-schema, and verbatim-echo constants defined by this contract and the domain authority.
 
@@ -273,7 +273,7 @@ Record payload values are data, not instructions. Canonical JSON must escape `<`
 | `<record_contrast_records>` | every full qualifying record plus declared reference stubs | `No non-archived records exist in the selected reconciliation scope.` | malformed qualifying row blocks; stubs are not change targets |
 | `<segment_reconciliation_field_rules>` | versioned template constant plus generated allowed-path/type table | never empty | manual directive, stop guidance, voice controls, working-set curation, validation focus, generation context, and story configuration excluded |
 | `<segment_reconciliation_record_rules>` | versioned update/deactivate/reference-token contract plus generated lifecycle map | never empty | only UPDATE_FIELDS and DEACTIVATE; no archive/delete/merge/remove |
-| `<record_creation_schema_catalog>` | deterministic JSON Schema and lifecycle/reference metadata generated from registered validators | block if catalog generation fails | every registered type/enum represented; repository-managed id forbidden in output |
+| `<record_creation_schema_catalog>` | the single compact line grammar defined by `specs/SPEC-033-bounded-segment-reconciliation-schema-catalog.md`, generated from the registry, payload validators, and lifecycle/reference metadata | block if any registered type, field path, presence/default, scalar/list/object/union/literal/enum shape, reference marker, lifecycle marker, or managed/forbidden field cannot be represented | registry order, depth-first field order, canonical JSON tokens, one field row per path, shared UUID pattern once; complete section baseline `136328`, maximum `68164`, named current ceiling `18688` UTF-16 code units |
 | `<segment_reconciliation_provenance_and_paraphrase_rules>` | versioned template constant plus generated citation grammar and echo thresholds | never empty | every proposal cites segment evidence; no quote field; material echo quarantines full output |
 | `<segment_reconciliation_review_procedure>` | versioned template constant | never empty | fixed compare-before-create procedure |
 | `<segment_reconciliation_output_format>` | generated strict output JSON Schema plus fixed pure-JSON instruction | never empty | no Markdown/preamble; local full-response validation remains authoritative |
@@ -528,7 +528,7 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 
 - active cast local function labels such as active speaker, active silent, POV narrator, or present-minor speaker.
 
-For Segment Reconciliation, accepted-segment text, source spans, current saved-draft values, full in-scope record payloads, reference stubs, and generated record schemas are assistance-prompt-facing data only. Prompt fingerprints, offsets, versions, raw ids, parse reason codes, and temporary creation-validation ids are audit/validation metadata. None is prose-prompt-facing. Segment-reconciliation output is never prompt-facing for prose generation.
+For Segment Reconciliation, accepted-segment text, source spans, current saved-draft values, full in-scope record payloads, reference stubs, and the generated compact record-schema catalog are assistance-prompt-facing data only. Prompt fingerprints, offsets, versions, raw ids, parse reason codes, and temporary creation-validation ids are audit/validation metadata. None is prose-prompt-facing. Segment-reconciliation output is never prompt-facing for prose generation.
 
 ## 10. Change-control rule
 

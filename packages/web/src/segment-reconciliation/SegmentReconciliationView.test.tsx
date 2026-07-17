@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -53,7 +53,13 @@ describe("SegmentReconciliationView", () => {
     expect(screen.getByText(/Latest accepted segment 1, 1 span/)).toBeTruthy();
     expect(screen.getByText(/Secret exposure warning/i)).toBeTruthy();
     expect(screen.getByLabelText("Search within prompt")).toBeTruthy();
-    expect(screen.getByTestId("prompt-body").textContent).toContain("PROMPT_BODY");
+    expect(screen.getByTestId("prompt-body").textContent).toContain(
+      'catalog "segment_reconciliation.schema_catalog.v1"'
+    );
+    const metadata = within(screen.getByLabelText("Prompt metadata"));
+    expect(metadata.getByText("1.9.0")).toBeTruthy();
+    expect(metadata.getByText("1.11.0")).toBeTruthy();
+    expect(metadata.getByText("1.12.0")).toBeTruthy();
 
     const send = screen.getByRole("button", { name: "Analyze with OpenRouter" });
     expect(send).toHaveProperty("disabled", true);
@@ -162,14 +168,15 @@ function renderView() {
 }
 
 function compileResponse(fingerprint: string): SegmentReconciliationCompileResponse {
+  const prompt = `PROMPT_BODY ${fingerprint}\ncatalog "segment_reconciliation.schema_catalog.v1" contract="1.12.0"`;
   return {
     ok: true,
-    prompt: `PROMPT_BODY ${fingerprint}`,
+    prompt,
     metadata: {
-      versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" },
+      versions: { template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" },
       fingerprint,
-      lengthEstimate: 1200,
-      tokenEstimate: 300,
+      lengthEstimate: prompt.length,
+      tokenEstimate: Math.ceil(prompt.length / 4),
       recordCount: 2,
       countsByType: { FACT: 1, SECRET: 1 },
       citationMap: { "[SEG-1-S001]": "1:0-12", "[FACT-1]": "fact-1" }
@@ -260,7 +267,7 @@ function analyzeMetadata(fingerprint: string): SegmentReconciliationAnalyzeRespo
     provider: "openrouter",
     temperature: 0.4,
     maxOutputTokens: 1800,
-    versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" },
+    versions: { template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" },
     fingerprint,
     lengthEstimate: 1200,
     tokenEstimate: 300,

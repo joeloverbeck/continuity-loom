@@ -75,8 +75,10 @@ export {
   renderReconciliationRecordSet
 } from "./compiler/reconciliation/record-renderer.js";
 export {
+  SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16,
   allowedDeactivationDestinationsFor,
-  buildSegmentReconciliationSchemaCatalog
+  buildSegmentReconciliationSchemaCatalog,
+  renderSegmentReconciliationSchemaCatalog
 } from "./compiler/reconciliation/schema-catalog.js";
 export {
   SEGMENT_RECONCILIATION_OUTPUT_CONTRACT,

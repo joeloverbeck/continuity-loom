@@ -1,7 +1,10 @@
 import { versionInfo } from "../../version.js";
 import { estimatePromptTokens, fingerprintPrompt } from "../fingerprint.js";
 import type { CompileResult } from "../types.js";
-import { buildSegmentReconciliationSchemaCatalog } from "./schema-catalog.js";
+import {
+  buildSegmentReconciliationSchemaCatalog,
+  renderSegmentReconciliationSchemaCatalog
+} from "./schema-catalog.js";
 import { renderReconciliationRecordSet } from "./record-renderer.js";
 import { RECONCILIATION_SECTION_ORDER, RECONCILIATION_STATIC_SECTIONS, type ReconciliationSectionId } from "./template.js";
 import type {
@@ -91,7 +94,7 @@ function renderSection(
     case "record_contrast_records":
       return tag(sectionId, renderRecordContrastRecords(renderedRecords));
     case "record_creation_schema_catalog":
-      return tag(sectionId, canonicalBlock(schemaCatalog));
+      return tag(sectionId, renderSegmentReconciliationSchemaCatalog(schemaCatalog));
     case "segment_reconciliation_output_format":
       return tag(sectionId, renderOutputFormat(snapshot, request));
     default:

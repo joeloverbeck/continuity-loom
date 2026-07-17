@@ -3,9 +3,9 @@
 Status: active reference — domain authority for the segment-reconciliation assistance prompt template
 Authority: domain authority for the segment-reconciliation assistance prompt template (see `docs/ACTIVE-DOCS.md`)
 Profile id: `segment-reconciliation`
-Template version: `1.8.0`
-Compiler version: `1.10.0`
-Compiler-contract version: `1.11.0`
+Template version: `1.9.0`
+Compiler version: `1.11.0`
+Compiler-contract version: `1.12.0`
 
 ## Purpose
 
@@ -100,9 +100,32 @@ Accepted-segment text is rendered as escaped data, never as prompt instructions 
 
 ## Schema Catalog
 
-The record-creation schema catalog is generated from registered record validators and includes every registered record type, required and optional fields, defaults, union/literal alternatives, enum values, repository-managed id rules, reference-bearing paths, lifecycle fields, and legal deactivation destinations.
+`<record_creation_schema_catalog>` contains exactly one prompt-facing
+representation: the line-oriented
+`segment_reconciliation.schema_catalog.v1` grammar specified by
+`specs/SPEC-033-bounded-segment-reconciliation-schema-catalog.md`. Parallel
+JSON Schema and field-descriptor payloads are removed; they must not survive as
+aliases or move behind another key.
 
-Runtime code must not maintain a second handwritten copy of record types or enum vocabularies. Catalog generation failure blocks the operation.
+The grammar is generated from the registered record validators and includes
+every registered record type; every nested field path and required/optional
+state; defaults; text/prose, boolean, number, literal, union, list, and closed
+object shapes; enum values; repository-managed/forbidden id rules; reference
+cardinality, role, and target types; lifecycle fields, projected lifecycle
+values, legal values, and deactivation destinations. Record blocks follow
+registry order and field rows use depth-first validator declaration order. JSON
+tokens are canonical and `<`, `>`, and `&` are escaped.
+
+The current-registry zero-record section baseline is `136328` UTF-16 code
+units. The compact section must remain at or below `68164`, and the named
+measured ceiling is
+`SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18688`.
+
+Runtime code must not maintain a second handwritten copy of record types,
+field paths, enum vocabularies, or reference/lifecycle values. An unknown schema
+keyword, open object, duplicate/missing path, mismatched lifecycle value, or
+incomplete reference/management marker blocks catalog generation rather than
+being omitted.
 
 Legal deactivation destinations are:
 

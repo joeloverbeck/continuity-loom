@@ -78,7 +78,7 @@ describe("segment reconciliation routes", () => {
     });
     const body = response.json() as {
       prompt: string;
-      metadata: { fingerprint: string; recordCount: number };
+      metadata: { fingerprint: string; lengthEstimate: number; tokenEstimate: number; recordCount: number };
       citations: Record<string, string>;
       disclosure: { acceptedSegment: { sequence: number; spanCount: number }; briefFieldCount: number };
       outputSchema: { type: string };
@@ -88,6 +88,11 @@ describe("segment reconciliation routes", () => {
     expect(response.statusCode).toBe(200);
     expect(body.prompt).toContain("# Segment Reconciliation Prompt");
     expect(body.prompt).toContain(acceptedText);
+    expect(body.prompt).toContain('catalog "segment_reconciliation.schema_catalog.v1" contract="1.12.0"');
+    expect(body.prompt).not.toContain("payloadJsonSchema");
+    expect(body.prompt).not.toContain('"fields": [');
+    expect(body.metadata.lengthEstimate).toBe(body.prompt.length);
+    expect(body.metadata.tokenEstimate).toBe(Math.ceil(body.prompt.length / 4));
     expect(body.metadata.recordCount).toBe(1);
     expect(body.disclosure.acceptedSegment.sequence).toBe(1);
     expect(body.disclosure.acceptedSegment.spanCount).toBeGreaterThan(0);

@@ -5,13 +5,18 @@ import {
   RECONCILIATION_SECTION_ORDER,
   briefFieldCitationKey,
   compileSegmentReconciliationPrompt,
-  partitionAcceptedSegmentSpans
+  partitionAcceptedSegmentSpans,
+  versionInfo
 } from "../src/index.js";
 import type {
   ReconciliationBriefField,
   ReconciliationBriefFieldPath,
   SegmentReconciliationSnapshot
 } from "../src/index.js";
+import * as schemaCatalogModule from "../src/compiler/reconciliation/schema-catalog.js";
+
+const PRE_CHANGE_CATALOG_SECTION_UTF16 = 136_328;
+const MAX_COMPACT_CATALOG_SECTION_UTF16 = PRE_CHANGE_CATALOG_SECTION_UTF16 / 2;
 
 describe("segment reconciliation golden prompt", () => {
   it("renders all thirteen sections with source contract at the front and output format at the final edge", () => {
@@ -37,7 +42,7 @@ describe("segment reconciliation golden prompt", () => {
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(changed.metadata.fingerprint).not.toBe(first.metadata.fingerprint);
-    expect(first.metadata.versions).toEqual({ template: "1.8.0", compiler: "1.10.0", contract: "1.11.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" });
   });
 
   it("renders a slim request block with only orientation and selected segment identity", () => {
@@ -86,6 +91,30 @@ describe("segment reconciliation golden prompt", () => {
     expect(records).toContain("No non-archived records exist in the selected reconciliation scope.");
   });
 
+  it("renders the compact catalog as the single line grammar", () => {
+    const catalog = sectionText(
+      compileSegmentReconciliationPrompt(snapshot({ records: [] })).prompt,
+      "record_creation_schema_catalog"
+    );
+
+    expect(catalog).toMatch(/^catalog "segment_reconciliation\.schema_catalog\.v1" contract=/);
+    expect(catalog).toContain("\nrecord \"ENTITY\"\n");
+    expect(catalog).toContain('field "id" ! uuid managed=repository output=forbidden');
+    expect(catalog).not.toContain("payloadJsonSchema");
+    expect(catalog).not.toContain('"fields": [');
+  });
+
+  it("locks the measured compact catalog length below half of the zero-record baseline", () => {
+    const prompt = compileSegmentReconciliationPrompt(catalogBaselineSnapshot()).prompt;
+    const section = fullSectionText(prompt, "record_creation_schema_catalog");
+    const namedCeiling = (schemaCatalogModule as unknown as {
+      SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16?: number;
+    }).SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16;
+
+    expect(section.length).toBeLessThanOrEqual(MAX_COMPACT_CATALOG_SECTION_UTF16);
+    expect(namedCeiling).toBe(section.length);
+  });
+
   it("renders one complete label and orders same-prefix records and stubs before the id tie-break", () => {
     const sharedPrefix = "Q".repeat(80);
     const earlierLabel = `${sharedPrefix}Alpha ñ < & complete`;
@@ -116,6 +145,35 @@ describe("segment reconciliation golden prompt", () => {
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
   });
 });
+
+function catalogBaselineSnapshot(): SegmentReconciliationSnapshot {
+  const acceptedSegment = {
+    id: "catalog-baseline-segment",
+    sequence: 1,
+    acceptedAt: "2026-07-17T00:00:00.000Z",
+    text: "The catalog baseline segment contains fixed accepted prose."
+  };
+
+  return {
+    request: { segmentSelection: "latest", recordScope: "active_working_set" },
+    acceptedSegment,
+    generationBriefDraft: {},
+    briefFields: RECONCILIATION_BRIEF_FIELD_PATHS.map((fieldPath) => ({
+      fieldPath,
+      citationKey: briefFieldCitationKey(fieldPath),
+      currentState: "missing"
+    })),
+    records: [],
+    referenceStubs: [],
+    versions: {
+      template: versionInfo.templates.version,
+      compiler: versionInfo.compiler.version,
+      contract: versionInfo.contract.version
+    },
+    normalizedAcceptedSegmentText: acceptedSegment.text,
+    acceptedSegmentSpans: partitionAcceptedSegmentSpans(acceptedSegment.text, acceptedSegment.sequence)
+  };
+}
 
 function snapshot(
   opts: {
@@ -195,4 +253,8 @@ function promptSectionOrder(prompt: string): string[] {
 
 function sectionText(prompt: string, section: string): string {
   return prompt.match(new RegExp(`<${section}(?:\\s[^>]*)?>\\n([\\s\\S]*?)\\n</${section}>`))?.[1] ?? "";
+}
+
+function fullSectionText(prompt: string, section: string): string {
+  return prompt.match(new RegExp(`<${section}(?:\\s[^>]*)?>\\n[\\s\\S]*?\\n</${section}>`))?.[0] ?? "";
 }
