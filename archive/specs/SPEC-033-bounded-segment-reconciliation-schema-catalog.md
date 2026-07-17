@@ -297,7 +297,7 @@ existing component seams are the required browser-visible regression proof.
 - Deviations: no material scope deviation. Review refined the ratified grammar
   within its implementation-discretion boundary by naming mixed reference
   cardinality and explicitly failing closed on additional UUID constraints.
-- Verification: focused catalog and golden coverage passed with 23 tests; the
+- Verification: focused catalog and golden coverage passed with 24 tests; the
   scoped core coverage gate cleared the repository's 95 percent threshold; the
   P3 changed-source workflow returned its documented pre-activation defer; and
   the root lint, typecheck, test, and build gates passed on the implementation
