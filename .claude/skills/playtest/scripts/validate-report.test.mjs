@@ -127,6 +127,27 @@ No relevant errors.
 One stochastic response.
 `;
 
+function withCounterfactualDisclosure(
+  body = BODY,
+  {
+    baseFingerprint = "a".repeat(64),
+    counterfactualFingerprint = "b".repeat(64)
+  } = {}
+) {
+  const disclosure = `### Targeted Counterfactual
+
+- Base prompt fingerprint: ${baseFingerprint}
+- Counterfactual prompt fingerprint: ${counterfactualFingerprint}
+- Changed field: manual_moment_directive.must_render
+- One-variable change: Removed the directive while preserving every other prompt byte.
+- Result: The comparison changed directive adherence, with stochastic variation still a confound.
+- App use: diagnostic only; response not used in app`;
+  return body.replace(
+    "\n## Generation Brief Field Influence",
+    `\n${disclosure}\n\n## Generation Brief Field Influence`
+  );
+}
+
 let caseNumber = 0;
 function fixture(fm = frontmatter(), body = BODY) {
   caseNumber += 1;
@@ -143,6 +164,49 @@ test("accepts a complete privacy-safe report", () => {
   const { errors, warnings } = validateReport(fixture());
   assert.deepEqual(errors, []);
   assert.deepEqual(warnings, []);
+});
+
+test("accepts one disclosed targeted counterfactual with different fingerprints", () => {
+  const report = fixture(
+    frontmatter({ counterfactual_probes: "1" }),
+    withCounterfactualDisclosure()
+  );
+  const { errors } = validateReport(report);
+  assert.deepEqual(errors, []);
+});
+
+test("accepts a disclosed targeted counterfactual in a CRLF report", () => {
+  const report = fixture(
+    frontmatter({ counterfactual_probes: "1" }).replace(/\n/g, "\r\n"),
+    withCounterfactualDisclosure().replace(/\n/g, "\r\n")
+  );
+  const { errors } = validateReport(report);
+  assert.deepEqual(errors, []);
+});
+
+test("rejects a counterfactual count without the required disclosure", () => {
+  const report = fixture(frontmatter({ counterfactual_probes: "1" }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("requires a ### Targeted Counterfactual")));
+});
+
+test("rejects an unchanged prompt mislabeled as a counterfactual", () => {
+  const fingerprint = "a".repeat(64);
+  const report = fixture(
+    frontmatter({ counterfactual_probes: "1" }),
+    withCounterfactualDisclosure(BODY, {
+      baseFingerprint: fingerprint,
+      counterfactualFingerprint: fingerprint
+    })
+  );
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("unchanged prompt is a retry")));
+});
+
+test("rejects a counterfactual disclosure when the count is zero", () => {
+  const report = fixture(frontmatter(), withCounterfactualDisclosure());
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("must be 1")));
 });
 
 test("rejects a missing required section", () => {

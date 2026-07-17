@@ -77,6 +77,7 @@ Supported verbs:
 
 - `goto <url>`
 - `click|dblclick|hover|focus|check <selector>`
+- `clear <selector>` to empty a visible editable control without a temporary file
 - `fill <selector> <value>` for short non-sensitive values
 - `fill-file <selector> <absolute-file>` for story prose or other long/sensitive values
 - `select <selector> <value>`

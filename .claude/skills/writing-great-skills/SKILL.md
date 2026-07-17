@@ -23,11 +23,17 @@ Pick model-invocation only when the agent must reach the skill on its own, or an
 
 Beyond this axis, the rest of a skill's front matter is plumbing, not a predictability lever — for a human-facing `description`, or to declare the `arguments` a skill accepts, copy the shape from a sibling skill rather than deriving it here.
 
-After choosing invocation, inspect sibling skills and sync every host metadata surface the repo uses: front matter, UI metadata such as `agents/openai.yaml`, and discovery mirrors such as `.agents/skills` symlinks. Treat generic validator output as a check on that host's schema, not as authority to overwrite the repo's house shape.
+After choosing invocation, inspect sibling skills and sync every host metadata surface the repo uses: front matter, invocation policy such as `agents/openai.yaml`, optional UI metadata, and discovery mirrors such as `.agents/skills` symlinks. A host policy that enforces user-only reach is required behavior, not optional display metadata. Treat generic validator output as a check on that host's schema, not as authority to overwrite the repo's house shape.
 
 When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each.
 
-Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata matches sibling skills, optional UI metadata is coherent, repo mirrors resolve where the repo uses them, and the final text has passed the failure-mode scan.
+Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata and policy match sibling skills, optional display metadata is coherent, repo mirrors resolve where the repo uses them, and the final text has passed the failure-mode scan.
+
+## Proving predictability
+
+Before shipping, enumerate every material **branch** and, for each, walk one representative raw invocation through the model-facing **description** or explicit entrypoint, every **context pointer** it should fire, the **steps** and **completion criteria** it reaches, and the artifact or terminal state it should produce. The proof is about process, not identical output.
+
+Mark an unexercised branch as unexercised; do not infer it from a neighboring branch. Use the repo's skill-creation or refactoring workflow for fixtures, forward tests, validator commands, custody, and mirror proof rather than duplicating those mechanics here.
 
 ## Writing the description
 

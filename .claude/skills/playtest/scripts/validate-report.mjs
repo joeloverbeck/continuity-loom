@@ -126,6 +126,89 @@ export function validateSectionOrder(markdown) {
   return errors;
 }
 
+function reportSection(markdown, heading) {
+  const lines = stripFrontmatter(markdown).split(/\r?\n/);
+  const start = lines.findIndex((line) => line === heading);
+  if (start < 0) return null;
+  const headingLevel = /^(#+) /.exec(heading)?.[1].length;
+  if (!headingLevel) return null;
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const candidateLevel = /^(#+) /.exec(lines[index])?.[1].length;
+    if (candidateLevel && candidateLevel <= headingLevel) {
+      end = index;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end).join("\n");
+}
+
+function disclosureValue(section, label) {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^- ${escapedLabel}:\\s*(.+?)\\s*$`, "m").exec(section)?.[1]?.trim() ?? null;
+}
+
+function counterfactualDisclosureErrors(markdown, probeCount) {
+  const errors = [];
+  const promptUsefulness = reportSection(markdown, "## Prompt Usefulness") ?? "";
+  const disclosure = reportSection(promptUsefulness, "### Targeted Counterfactual");
+  const hasDisclosure = disclosure !== null;
+
+  if (probeCount === 0) {
+    if (hasDisclosure) {
+      errors.push(
+        "counterfactual_probes must be 1 when a ### Targeted Counterfactual disclosure is present."
+      );
+    }
+    return errors;
+  }
+  if (probeCount !== 1) return errors;
+  if (!hasDisclosure) {
+    errors.push(
+      "counterfactual_probes: 1 requires a ### Targeted Counterfactual disclosure in ## Prompt Usefulness."
+    );
+    return errors;
+  }
+
+  const baseFingerprint = disclosureValue(disclosure, "Base prompt fingerprint");
+  const counterfactualFingerprint = disclosureValue(
+    disclosure,
+    "Counterfactual prompt fingerprint"
+  );
+  const fingerprintPattern = /^[a-f0-9]{64}$/;
+  if (!fingerprintPattern.test(baseFingerprint ?? "")) {
+    errors.push("Targeted Counterfactual requires a lowercase 64-character base fingerprint.");
+  }
+  if (!fingerprintPattern.test(counterfactualFingerprint ?? "")) {
+    errors.push(
+      "Targeted Counterfactual requires a lowercase 64-character counterfactual fingerprint."
+    );
+  }
+  if (
+    fingerprintPattern.test(baseFingerprint ?? "") &&
+    baseFingerprint === counterfactualFingerprint
+  ) {
+    errors.push(
+      "Targeted Counterfactual base and counterfactual fingerprints must differ; an unchanged prompt is a retry."
+    );
+  }
+
+  for (const label of ["Changed field", "One-variable change", "Result"]) {
+    if (!disclosureValue(disclosure, label)) {
+      errors.push(`Targeted Counterfactual requires a non-empty "${label}" disclosure.`);
+    }
+  }
+  if (
+    disclosureValue(disclosure, "App use") !==
+    "diagnostic only; response not used in app"
+  ) {
+    errors.push(
+      'Targeted Counterfactual requires "App use: diagnostic only; response not used in app".'
+    );
+  }
+  return errors;
+}
+
 export function relativeLinks(markdown) {
   const links = [];
   for (const match of stripFrontmatter(markdown).matchAll(
@@ -389,6 +472,9 @@ export function validateReport(reportPath) {
   }
   if ((counts.counterfactual_probes ?? 0) > 1) {
     errors.push("counterfactual_probes must not exceed 1.");
+  }
+  if (counts.counterfactual_probes !== null) {
+    errors.push(...counterfactualDisclosureErrors(markdown, counts.counterfactual_probes));
   }
 
   const providerAttempts = counts.provider_request_attempts ?? 0;

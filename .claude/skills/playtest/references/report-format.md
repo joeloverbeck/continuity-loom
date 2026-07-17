@@ -51,6 +51,19 @@ Allowed alternatives:
 - unreachable scalar values: `null`;
 - `candidate_intervention`: `none`, `light`, `substantial`, `rewrite`, or `not-reached`.
 
+Count unchanged-prompt cold attempts separately from diagnostic counterfactuals:
+
+- `cold_prose_attempts` counts initial and retry prose responses produced from the unchanged exact
+  prose prompt and eligible for candidate selection;
+- `cold_assistance_attempts` counts initial and retry assistance responses produced from unchanged
+  exact assistance prompts and evaluated for adoption; and
+- `counterfactual_probes` counts only a diagnostic cold response to a prompt copy that changes
+  exactly one field under [Targeted counterfactual](prompt-evaluation.md#targeted-counterfactual).
+
+An unchanged-prompt retry increments only its `cold_*_attempts` count. A diagnostic
+counterfactual increments only `counterfactual_probes`; its response is never eligible for use in
+the app.
+
 If a provider request was attempted, the browser guard should have blocked it. Record the real
 nonzero counts, set `status: blocked`, and use `provider-request-attempt`. Never falsify a zero to
 make validation pass.
@@ -116,6 +129,23 @@ the visible evidence makes one constraint unavoidable.
 
 Include prose and every invoked assistance prompt. Explain retry selection and any prompt-contract
 versus model-output distinction below the table.
+
+When `counterfactual_probes` is `1`, include this disclosure in `## Prompt Usefulness` after the
+table. Use the exact labels and lowercase SHA-256 fingerprints:
+
+```markdown
+### Targeted Counterfactual
+
+- Base prompt fingerprint: <64-character SHA-256>
+- Counterfactual prompt fingerprint: <different 64-character SHA-256>
+- Changed field: <one field name>
+- One-variable change: <what changed in that field only>
+- Result: <concise comparison and limitation>
+- App use: diagnostic only; response not used in app
+```
+
+Omit this subsection when `counterfactual_probes` is `0`. An unchanged-prompt retry is not a
+counterfactual even when its output differs substantially from the first response.
 
 ### Generation Brief field influence
 

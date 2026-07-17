@@ -13,6 +13,7 @@ const VERBS = new Set([
   "hover",
   "focus",
   "check",
+  "clear",
   "fill",
   "fill-file",
   "select",
@@ -38,6 +39,7 @@ function usage() {
 Verbs (selectors accept Playwright engines such as role= and text=):
   goto <url>
   click|dblclick|hover|focus|check <selector>
+  clear <selector>
   fill <selector> <short-value>
   fill-file <selector> </tmp/input-file>
   select <selector> <value>
@@ -99,6 +101,10 @@ export function appearsToContainCompiledPrompt(value) {
   );
 }
 
+export function isSupportedVerb(verb) {
+  return VERBS.has(verb);
+}
+
 function safeTerminalOutput(value) {
   if (appearsToContainCompiledPrompt(value)) {
     throw new Error(
@@ -154,6 +160,10 @@ async function settle(page, settleMs) {
   await page.waitForTimeout(settleMs);
 }
 
+export async function clearVisibleField(locator, timeout) {
+  await locator.fill("", { timeout });
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.help || args.positional.length === 0) {
@@ -172,7 +182,7 @@ async function main() {
   }
 
   const [verb, ...rest] = args.positional;
-  if (!VERBS.has(verb)) throw new Error(`Unknown verb: ${verb}\n\n${usage()}`);
+  if (!isSupportedVerb(verb)) throw new Error(`Unknown verb: ${verb}\n\n${usage()}`);
 
   const sessionPath = resolve(args.session, "session.json");
   if (!existsSync(sessionPath)) {
@@ -242,6 +252,11 @@ async function main() {
       case "check":
         requireArgs(verb, rest, 1);
         await target(rest[0]).check({ timeout: args.timeout });
+        break;
+      case "clear":
+        requireArgs(verb, rest, 1);
+        await clearVisibleField(target(rest[0]), args.timeout);
+        result.charCount = 0;
         break;
       case "fill": {
         requireArgs(verb, rest, 2);
