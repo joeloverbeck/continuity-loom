@@ -1,6 +1,6 @@
 # SPEC-033 — Bounded Segment Reconciliation Schema Catalog
 
-Status: active implementation contract
+**Status**: ✅ COMPLETED
 Parent: GitHub PRD #91
 Implementation issues: GitHub #92 and #93
 Governing authorities: `docs/FOUNDATIONS.md`, `docs/compiler-contract.md`, `docs/segment-reconciliation-prompt-template.md`, `docs/story-record-schema.md`, and `docs/robustness-testing.md`
@@ -76,6 +76,8 @@ The fixed tokens are:
   not enforce;
 - `uuid` — the exact registered UUID format and pattern; creation output still
   uses declared `$record:` and `$new:` reference tokens before local resolution;
+- reference cardinality is `one`, `many`, or `one_or_many`; the mixed value is
+  required when one field accepts either a single reference or a reference list;
 - `boolean` and `number` — their corresponding scalar shapes;
 - `literal(<canonical JSON>)` and `enum(<canonical JSON list>)` — literal and
   vocabulary constraints in validator declaration order;
@@ -96,7 +98,8 @@ rendering, `<`, `>`, and `&` in those JSON fragments are escaped as `\u003c`,
 `\u003e`, and `\u0026`. No story-controlled value becomes a heading or grammar
 token. The UUID pattern is represented once in the catalog header; every
 `uuid` field token refers to that exact pattern. Different UUID patterns in one
-registry are unrepresentable and fail closed.
+registry, or an additional UUID constraint such as `minLength` that the `uuid`
+token cannot express, are unrepresentable and fail closed.
 
 ## Deterministic Derivation And Ordering
 
@@ -173,7 +176,7 @@ metadata's UTF-16 code-unit measure.
 - Maximum permitted post-change section: `68164` UTF-16 code units (50 percent
   of the baseline).
 - Named post-change ceiling:
-  `SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18688`.
+  `SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18696`.
 
 Issue #93 sets that constant to the measured compact section length, not merely
 to the 50-percent threshold. The regression test requires the current
@@ -282,3 +285,20 @@ existing component seams are the required browser-visible regression proof.
 - **Parallel authority reintroduced later:** the old JSON Schema and descriptor
   payloads are removed from prompt bytes with no alias; this spec is the single
   grammar authority.
+
+## Outcome
+
+- Completion date: 2026-07-17.
+- What changed: Segment Reconciliation now renders one deterministic,
+  registry-derived `segment_reconciliation.schema_catalog.v1` representation.
+  The catalog preserves mixed single-or-list references as `one_or_many`,
+  rejects UUID constraints that its compact token cannot express, and locks the
+  complete zero-record section to a named ceiling of `18696` UTF-16 code units.
+- Deviations: no material scope deviation. Review refined the ratified grammar
+  within its implementation-discretion boundary by naming mixed reference
+  cardinality and explicitly failing closed on additional UUID constraints.
+- Verification: focused catalog and golden coverage passed with 23 tests; the
+  scoped core coverage gate cleared the repository's 95 percent threshold; the
+  P3 changed-source workflow returned its documented pre-activation defer; and
+  the root lint, typecheck, test, and build gates passed on the implementation
+  tree.

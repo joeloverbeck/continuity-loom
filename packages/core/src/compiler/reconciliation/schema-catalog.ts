@@ -7,7 +7,7 @@ import {
 } from "../../records/editor-descriptors.js";
 import { recordTypeRegistry, recordTypes, type RecordTypeDefinition } from "../../records/registry.js";
 
-export const SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18_688;
+export const SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18_696;
 
 export interface SegmentReconciliationSchemaCatalog {
   catalogVersion: string;
@@ -46,7 +46,7 @@ export interface SegmentReconciliationCatalogField {
 }
 
 export interface SegmentReconciliationReferenceCatalogEntry {
-  cardinality: "one" | "many";
+  cardinality: "one" | "many" | "one_or_many";
   refRole: string;
   targetTypes: readonly string[];
 }
@@ -298,7 +298,8 @@ function flattenSchemaFields(
     }
 
     if (metadata.reference) {
-      field.reference = metadata.reference;
+      const cardinality = referenceCardinalityForSchema(propertySchema, `${recordType}.${path}`);
+      field.reference = { ...metadata.reference, cardinality };
     }
 
     fields.push(field);
@@ -420,6 +421,9 @@ function stringShape(schema: JsonSchema, subject: string, context: CatalogBuildC
     if (schema.format !== "uuid" || typeof schema.pattern !== "string") {
       throw new Error(`Unsupported string format for ${subject}`);
     }
+    if (schema.minLength !== undefined) {
+      throw new Error(`Unsupported UUID constraint(s) for ${subject}: minLength`);
+    }
 
     if (context.uuidPattern && context.uuidPattern !== schema.pattern) {
       throw new Error(`Multiple UUID patterns are not representable for ${subject}`);
@@ -444,6 +448,43 @@ function stringShape(schema: JsonSchema, subject: string, context: CatalogBuildC
   }
 
   return constraints.length > 0 ? `text(${constraints.join(",")})` : "text";
+}
+
+function referenceCardinalityForSchema(
+  schema: JsonSchema,
+  subject: string
+): SegmentReconciliationReferenceCatalogEntry["cardinality"] {
+  const alternatives = Array.isArray(schema.anyOf)
+    ? schema.anyOf.map((value, index) => asSchemaObject(value, `${subject}.reference[${index}]`))
+    : [schema];
+  let acceptsOne = false;
+  let acceptsMany = false;
+
+  for (const alternative of alternatives) {
+    if (alternative.type === "array") {
+      const items = asSchemaObject(alternative.items, `${subject}[]`);
+      acceptsMany ||= containsUuidSchema(items);
+    } else {
+      acceptsOne ||= containsUuidSchema(alternative);
+    }
+  }
+
+  if (!acceptsOne && !acceptsMany) {
+    throw new Error(`Reference field ${subject} has no UUID-bearing shape`);
+  }
+  if (acceptsOne && acceptsMany) {
+    return "one_or_many";
+  }
+  return acceptsMany ? "many" : "one";
+}
+
+function containsUuidSchema(schema: JsonSchema): boolean {
+  if (schema.type === "string" && schema.format === "uuid") {
+    return true;
+  }
+
+  return Array.isArray(schema.anyOf)
+    && schema.anyOf.some((value, index) => containsUuidSchema(asSchemaObject(value, `reference union ${index}`)));
 }
 
 function nestedObjectSchema(schema: JsonSchema, subject: string): JsonSchema | null {

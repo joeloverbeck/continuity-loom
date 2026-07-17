@@ -102,8 +102,8 @@ Accepted-segment text is rendered as escaped data, never as prompt instructions 
 
 `<record_creation_schema_catalog>` contains exactly one prompt-facing
 representation: the line-oriented
-`segment_reconciliation.schema_catalog.v1` grammar specified by
-`specs/SPEC-033-bounded-segment-reconciliation-schema-catalog.md`. Parallel
+`segment_reconciliation.schema_catalog.v1` grammar defined by this section and
+`docs/compiler-contract.md`. Parallel
 JSON Schema and field-descriptor payloads are removed; they must not survive as
 aliases or move behind another key.
 
@@ -111,7 +111,7 @@ The grammar is generated from the registered record validators and includes
 every registered record type; every nested field path and required/optional
 state; defaults; text/prose, boolean, number, literal, union, list, and closed
 object shapes; enum values; repository-managed/forbidden id rules; reference
-cardinality, role, and target types; lifecycle fields, projected lifecycle
+cardinality (`one`, `many`, or `one_or_many`), role, and target types; lifecycle fields, projected lifecycle
 values, legal values, and deactivation destinations. Record blocks follow
 registry order and field rows use depth-first validator declaration order. JSON
 tokens are canonical and `<`, `>`, and `&` are escaped.
@@ -119,7 +119,7 @@ tokens are canonical and `<`, `>`, and `&` are escaped.
 The current-registry zero-record section baseline is `136328` UTF-16 code
 units. The compact section must remain at or below `68164`, and the named
 measured ceiling is
-`SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18688`.
+`SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16 = 18696`.
 
 Runtime code must not maintain a second handwritten copy of record types,
 field paths, enum vocabularies, or reference/lifecycle values. An unknown schema

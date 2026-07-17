@@ -123,7 +123,7 @@ locked regression dimensions:
   constraint probes; and
 - size coverage compiles the reproducible zero-record fixture, measures the
   complete catalog section in UTF-16 code units, enforces the `136328` baseline
-  maximum of `68164`, and locks the current measured ceiling at `18688`.
+  maximum of `68164`, and locks the current measured ceiling at `18696`.
 
 The local payload parsers remain the behavior authority after reference-token
 resolution. Catalog coverage does not replace parser, golden, route, or

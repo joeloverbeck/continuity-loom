@@ -99,6 +99,11 @@ describe("segment reconciliation schema catalog", () => {
       refRole: "record_link",
       targetTypes: recordTypes
     });
+    expect(field(catalog, "CONSEQUENCE", "holder_or_target")?.reference).toEqual({
+      cardinality: "one_or_many",
+      refRole: "holder_or_target",
+      targetTypes: ["ENTITY"]
+    });
     expect(field(catalog, "PLAN", "plan_status")).toMatchObject({
       shape: 'enum(["active","blocked","suspended","fulfilled","failed","abandoned","revised"])',
       deactivationDestinations: ["fulfilled", "failed", "abandoned", "revised"]
@@ -157,6 +162,24 @@ describe("segment reconciliation schema catalog", () => {
       ["SYNTHETIC"],
       { SYNTHETIC: [] }
     )).toThrow("Unsupported schema keyword(s) for SYNTHETIC.attributes: propertyNames");
+  });
+
+  it("fails closed when reference descriptor metadata has no UUID-bearing schema", () => {
+    const fauxUuid = z.string() as z.ZodString & { format: string };
+    fauxUuid.format = "uuid";
+
+    expect(() => buildSegmentReconciliationSchemaCatalog(
+      "synthetic",
+      {
+        OWNER: {
+          recordType: "OWNER",
+          payloadSchema: z.object({ owner: fauxUuid }).strict(),
+          extractReferences: () => []
+        }
+      },
+      ["OWNER"],
+      { OWNER: [] }
+    )).toThrow("Reference field OWNER.owner has no UUID-bearing shape");
   });
 
   it("round-trips representative demo payloads through the authoritative registry parser", () => {
@@ -305,6 +328,18 @@ describe("segment reconciliation schema catalog", () => {
       ["UUIDS"],
       { UUIDS: [] }
     )).toThrow("Multiple UUID patterns are not representable for UUIDS.related_id");
+    expect(() => buildSegmentReconciliationSchemaCatalog(
+      "synthetic",
+      {
+        UUID_MIN: {
+          recordType: "UUID_MIN",
+          payloadSchema: z.object({ id: z.uuid().min(50) }).strict(),
+          extractReferences: () => []
+        }
+      },
+      ["UUID_MIN"],
+      { UUID_MIN: [] }
+    )).toThrow("Unsupported UUID constraint(s) for UUID_MIN.id: minLength");
   });
 });
 
