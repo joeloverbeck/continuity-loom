@@ -28,7 +28,7 @@ Hard stops:
 - Run `git status --short` before the first edit. Record unrelated dirty files and leave them untouched unless they become in-scope.
 - Fetch exact PRD/issue bodies and comments for the requested work items. For GitHub, use exact issue lookups with comments and structured fields.
 - If a PRD issue is named, discover and verify related child issues, blockers, and linked implementation tickets before treating the parent as closable.
-- If any fetched PRD or issue has a `## Principles` section, read `docs/principles/README.md`, then read named principle and ADR docs before coding.
+- If any fetched PRD or issue has a `## Principles` section, complete the repo-native authority procedure in [references/scope-ledger.md](references/scope-ledger.md) before coding; do not assume a conventional principles path exists.
 - If any acceptance criterion requires proof outside normal repo-local tests, such as an external service, cold LLM or fresh subagent probe, browser automation, credentials, network access, or other nonlocal evidence, preflight that proof mechanism before editing. If it is unavailable, mark the affected issue closeout state `blocked`, name the exact criterion, and ask whether to proceed with code-only partial implementation.
 - Do not silently collapse multiple issues into a smaller "skeleton" or "first slice" when the user asked for the issues.
 
@@ -84,6 +84,8 @@ Before tracker closeout, decide whether the verified tree is represented by an i
 ## 4. Completion Audit and Issue Closeout
 
 Before declaring completion, closing issues, or closing a parent PRD, read [references/tracker-closeout-gates.md](references/tracker-closeout-gates.md). If a child family or parent rollup is involved, also read [references/child-family-closeout.md](references/child-family-closeout.md). If drafting a long closeout body or scratchpad, also read [references/closeout-templates.md](references/closeout-templates.md).
+
+Before filling a manifest-backed parent, sibling, or child-family closeout body, run the mandatory precomposition size/headroom gate in [references/closeout-templates.md](references/closeout-templates.md). Do not fill evidence until the size plan reports `ok`; on `low-headroom` or `exceeds-limit`, split the manifest and audit into disjoint chunks first.
 
 Tracker mutation is blocked until all of these are true:
 

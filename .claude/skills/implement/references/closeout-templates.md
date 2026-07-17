@@ -39,6 +39,54 @@ node .claude/skills/implement/scripts/validate-closeout-body.mjs "$body" --closi
 
 The capture helper calls exact structured `gh issue view` lookups without shell redirection and preserves issue order. For ordinary issues, the manifest scaffold assigns `AC1`, `AC2`, and so on in source order. For PRDs with `## Problem Statement` and `## Solution`, it also generates `Parent-Solution`, one exact `USN` check per numbered `## User Stories` entry, `Parent-Implementation-Decisions`, and `Parent-Testing-Decisions` when those sections exist. It adds one `Principles` check whenever the issue has a `## Principles` section. The closeout scaffold preserves those exact audit rows and emits the selected TDD/review/browser/identity/preflight field skeleton; it deliberately leaves angle-bracket placeholders, never changes `not done` to `satisfied`, and refuses output larger than 65,536 bytes by default, so it is not publishable until every field and row is completed and all applicable validators pass. `--review` accepts `normal` or `fallback`; add `--immediate-fix` only with `--review normal` when review findings were fixed so the scaffold emits the full normal-review immediate-fix block and final-reviewer statuses. `--fixed-child` accepts `none`, `pending`, or `final`. Preserve each generated ID and exact criterion text in the criterion cell. The audit-only validator checks the review-entry body without requiring final SHA/review/closeout fields; omit `--review-entry` for a truthful audit that still contains `blocked` or `not done` rows. The final manifest validator requires exactly one audit row for each generated check; it supplements, rather than replaces, exact body inspection. A closing validation requires `--expected-final-sha "$(git rev-parse HEAD)"`; on the last run before mutation, `--emit-preflight` prints the exact visible gate block to copy verbatim into the conversation.
 
+For multi-pass review or more than one TDD review fix, pass `--evidence-input <evidence.json>` together with `--immediate-fix --tdd-parent-rollup`. The builder validates the structured identities and derives the compact TDD rows, RF rows, review-finding ledger, finding counts and worst severities, issue/seam accounting, and repeated TDD/review summaries from this single input. Do not hand-copy those derived fields afterward. The JSON shape is:
+
+```json
+{
+  "tddRows": [
+    {
+      "issue": 368,
+      "contextStatus": "absent",
+      "authorityStatus": "active docs read",
+      "seam": "replay route",
+      "red": "exact red command and intended failure",
+      "green": "exact passing command and result",
+      "acceptance": "AC1; atoms: ...; proof surfaces: ...; sequence: ...",
+      "reviewDisposition": "review fixes mapped below"
+    }
+  ],
+  "tddReviewFixes": [
+    {
+      "id": "RF-1",
+      "finding": "short finding title",
+      "red": "exact red command and intended failure",
+      "green": "exact passing command and result",
+      "issue": 368,
+      "seam": "replay route",
+      "durability": "durable regression or reasoned N/A",
+      "browserFreshness": "freshness disposition",
+      "backendCurrentness": "currentness disposition",
+      "identityRefresh": "same-sink identity refresh disposition"
+    }
+  ],
+  "reviewFindings": [
+    {
+      "id": "P1-standards-1",
+      "severity": "high",
+      "reviewer": "reviewer ID or local fallback",
+      "originalFinding": "short finding title",
+      "repairClass": "behavior",
+      "tddDisposition": "RF-1",
+      "repair": "repair made",
+      "rerunEvidence": "exact rerun and result",
+      "finalStatus": "fixed"
+    }
+  ]
+}
+```
+
+Structured TDD input must contain exactly one row per manifest issue. Every `RF-N` must map to an exact structured issue/seam row, every RF reference in a review finding must exist, review IDs must use `P<pass>-<standards|spec>-N`, severities are `critical`, `high`, `medium`, or `low`, and final statuses are `fixed` or `accepted residual`. The `acceptance` value must contain the literal `atoms:`, `proof surfaces:`, and `sequence:` labels. Omitting `--evidence-input` preserves the placeholder scaffold workflow.
+
 Long parent rollup, sibling-issue rollup, or child-family audit bodies must include this table shape, either inline or by linking an already-posted durable audit sink:
 
 | Issue | Acceptance criterion or conformance check | Evidence | Status |
@@ -67,6 +115,7 @@ Durable sink/body inspected: <stable issue reference before tracker URL exists /
 Compact table/header: <present after structural check / N/A because no tdd skill was invoked>
 Rows accounted for: <issue numbers / N/A because no tdd skill was invoked>
 Pre-red recovery status: <N/A - pre-red preflight/table was visible before first red / listed with TDD recovery addendum / N/A because no red commands were run / N/A because no tdd skill was invoked / blocked because ...>
+Pre-red evidence reference: <durable sink plus heading/row anchor and chronology proof / anchored TDD recovery addendum / N/A because no red commands were run / N/A because no tdd skill was invoked / blocked because ...>
 CONTEXT.md status: <present/absent/N/A>
 ADRs/principles/docs status: <present/N/A>
 Acceptance atom map: <all rows list exact criterion plus authoritative atoms and proof surfaces / all criteria atomic and rows list proof surfaces / blocked because ... / N/A because no tdd skill was invoked>
@@ -81,16 +130,22 @@ Existing-test contract-change rows: <none/listed expectation-rewrite rows>
 
 | Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |
 |---|---|---|---|---|---|---|---|
-| #N | <present/absent/N/A> | <present/N/A> | <seam or evidence-only row> | <red command/failure or N/A because ...> | <green command or evidence> | <exact criterion or checkbox; atoms: authoritative atoms or atomic; proof surfaces: surface for each atom; sequence: ordered proof / N/A because criterion is not sequence-sensitive> | <N/A / review-fix red-first skip reason> |
+| #N | <present/absent/N/A> | <present/N/A> | <seam or evidence-only row> | <red command/failure or N/A because ...> | <green command or evidence> | <exact criterion or checkbox; atoms: authoritative atoms or atomic; proof surfaces: surface for each atom; sequence: ordered proof / N/A because criterion is not sequence-sensitive> | <N/A / RF-N plus review-fix or red-first skip reason> |
 
 For an existing-test contract-change row, use validator-exact wording:
 
 | #N | <present/absent/N/A> | <present/N/A> | existing contract-change expectation | existing contract-change expectation in `<test file>` because <old expected behavior no longer satisfied the issue/spec contract> | `<green command>` passed | <exact criterion authorizing the rewrite; atoms: authoritative atoms or atomic; proof surfaces: affected surface for each atom; sequence: ordered proof / N/A because criterion is not sequence-sensitive> | N/A |
 
+TDD review-fix map: <N/A because review created no TDD row changes / replace with completed keyed rows below>
+
+| Finding ID | Finding/source | Intended red command/failure | Green command/evidence | Updated TDD table row | Regression durability | Browser/manual evidence freshness | Backend process currentness | Evidence identity refresh |
+|---|---|---|---|---|---|---|---|---|
+| RF-1 | <one review finding/source> | <one red command/failure or explicit skip> | <one green command/evidence> | #N / <exact Seam cell> | <durable regression or reasoned N/A> | <freshness disposition> | <currentness disposition> | <same-sink identity refresh disposition> |
+
 TDD evidence gate passed: durable sink <stable issue reference before tracker URL exists / comment URL>; compact table/header <present after structural check>; seams accounted for <all listed / exceptions named>; CONTEXT.md status <present/absent/N/A>; ADRs/principles/docs status <present/N/A>; sequence evidence <present/N/A>; evidence identities <present/N/A>; partial-red / red-first skip reasons <none/listed>; evidence-only rows <none/listed>; proof server preflight <present/N/A>; existing-test contract-change rows <none/listed expectation-rewrite rows>.
 Review evidence:
 - Review: code-review against <fixed point>; outcome <no findings / findings fixed / accepted residuals recorded count/source/rationale with unhandled findings none beyond accepted residuals>; verification rerun <commands>.
-- Review subagents: Standards final reviewer <ID> completed; Spec final reviewer <ID> completed
+- Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed
 - Review subagent cleanup: Standards <closed / close operation unavailable after terminal completion / auto-disposed after terminal completion>; Spec <same>
 
 ## Standards
@@ -156,7 +211,7 @@ Closeout body check passed: audit table columns exact; every acceptance checkbox
 
 Within one identity category, separate multiple values with the canonical ` | ` delimiter. The shared review validator compares each normalized value independently, ignoring Markdown code/emphasis wrappers and trailing punctuation; legacy comma-separated lists are normalized only when every comma item is Markdown-wrapped. The sweep must therefore name each actual value, not the category's formatted raw string.
 
-The review portion above is the normal `code-review` path. A normal body must include `## Standards`, `## Spec`, and the full shared `Evidence identity refresh:` block, and must not contain `Review fallback:` or `Review fallback gate passed:` anywhere. Use `Historical red identities retained: none` when no red proof ran. For child issue families, give every zero-residual coverage row exact acceptance items plus `sequence:` ordered proof or a justified N/A, then run the normal validator with `--child-family`. When normal review findings were fixed, add the exact immediate-fix fields required by the normal-review validator: `Initial Standards outcome:`, `Initial Spec outcome:`, `Final Standards outcome:`, `Final Spec outcome:`, `Findings found:`, `Fixes made:`, `TDD/review-fix evidence:`, `TDD closeout gate:`, `Verification rerun:`, `Browser/manual evidence freshness:`, `Browser/manual console state:`, `Evidence identity refresh:`, and `Commit handling:`. Ensure the `Review:` line says `outcome findings fixed` and that `Review subagents:` names terminal final Standards and Spec reviewers.
+The review portion above is the normal `code-review` path. A normal body must include `## Standards`, `## Spec`, and the full shared `Evidence identity refresh:` block, and must not contain `Review fallback:` or `Review fallback gate passed:` anywhere. Use `Historical red identities retained: none` when no red proof ran. For child issue families, give every zero-residual coverage row exact acceptance items plus `sequence:` ordered proof or a justified N/A, then run the normal validator with `--child-family`. When normal review findings were fixed, add the exact immediate-fix fields required by the normal-review validator: `Initial Standards outcome:`, `Initial Spec outcome:`, `Final Standards outcome:`, `Final Spec outcome:`, `Findings found:`, the keyed review finding ledger from [review-evidence.md](review-evidence.md), `Fixes made:`, `TDD/review-fix evidence:`, `TDD closeout gate:`, `Verification rerun:`, `Browser/manual evidence freshness:`, `Browser/manual console state:`, `Evidence identity refresh:`, and `Commit handling:`. Ensure the `Review:` line says `outcome findings fixed in SHA <Final SHA>` and that this SHA matches both the `reviewed HEAD SHA` in the review frame and the body-level `Final SHA`; also ensure that `Review subagents:` names terminal initial and final Standards and Spec reviewer identities. `initial and final reviewer <same ID> completed` is valid when one reviewer performed both passes.
 
 For local fallback, replace the entire normal review portion with the full fallback block from [review-evidence.md](review-evidence.md); do not combine the two routes. The fallback body uses `Review fallback:`, the fallback `## Standards`/`## Spec` block, and the fallback validator.
 

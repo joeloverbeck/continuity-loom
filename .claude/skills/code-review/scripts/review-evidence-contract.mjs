@@ -1,4 +1,6 @@
 const childTableHeader = "| Issue | Acceptance source | Evidence reviewed | Findings/residuals |";
+const reviewFindingLedgerHeader =
+  "| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |";
 
 export const DEFAULT_REVIEW_CLOSEOUT_BODY_MAX_BYTES = 65_536;
 
@@ -42,6 +44,140 @@ const findRowsAfterTableHeader = (body) => {
     rows.push(trimmed);
   }
   return rows;
+};
+
+const findRowsAfterExactHeader = (body, header) => {
+  const lines = body.split(/\r?\n/);
+  const headerIndex = lines.findIndex((line) => line.trim() === header);
+  if (headerIndex === -1) return [];
+
+  const rows = [];
+  for (const line of lines.slice(headerIndex + 2)) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith("|")) break;
+    rows.push(trimmed);
+  }
+  return rows;
+};
+
+const leadingCount = (value) => {
+  const match = value.match(/^(\d+)(?:\s*\/|\b)/);
+  return match ? Number(match[1]) : undefined;
+};
+
+const validTddDisposition = (value) =>
+  /\bRF-\d+\b/i.test(value) ||
+  /^red-first skipped because\s+\S/i.test(value) ||
+  /^coverage-only review fix;\s*red-first N\/A because\s+\S/i.test(value) ||
+  /^partial red - wrong reason:\s*\S/i.test(value) ||
+  /\bred\b.+\bfailed\b.+\bgreen\b.+\bpassed\b/i.test(value) ||
+  /^N\/A because accepted residual\b.+/i.test(value);
+
+export const validateReviewFindingLedger = (body, errors, options = {}) => {
+  if (!body.includes(reviewFindingLedgerHeader)) {
+    errors.push(`missing review finding ledger header: ${reviewFindingLedgerHeader}`);
+    return;
+  }
+
+  const ledgerLines = body.split(/\r?\n/);
+  const headerIndex = ledgerLines.findIndex((line) => line.trim() === reviewFindingLedgerHeader);
+  if (ledgerLines[headerIndex + 1]?.trim() !== "|---|---|---|---|---|---|---|---|---|---|") {
+    errors.push("review finding ledger must use the exact 10-column separator");
+  }
+
+  const rows = findRowsAfterExactHeader(body, reviewFindingLedgerHeader);
+  if (!rows.length) {
+    errors.push("review finding ledger has no finding rows");
+    return;
+  }
+
+  const findingCount = leadingCount(fieldValue(body, "Findings found"));
+  if (findingCount === undefined) {
+    errors.push("Findings found must begin with an integer count");
+  } else if (findingCount !== rows.length) {
+    errors.push(`${findingCount} findings but the review finding ledger has ${rows.length} rows`);
+  }
+
+  const seenIds = new Set();
+  const parsedRows = [];
+  const allowedRepairClasses = /^(?:behavior|coverage-only|Standards-only|ADR-only|conformance-only|docs-only|evidence-only)$/i;
+
+  for (const [index, row] of rows.entries()) {
+    const rowNumber = index + 1;
+    const cells = splitMarkdownTableRow(row);
+    if (cells.length !== 10) {
+      errors.push(`review finding ledger row ${rowNumber} must have exactly 10 cells`);
+      continue;
+    }
+
+    const [findingId, reviewPass, axis, reviewer, originalFinding, repairClass, tddDisposition, repair, rerunEvidence, finalStatus] = cells;
+    const idMatch = findingId.match(/^P([1-9]\d*)-(standards|spec)-([1-9]\d*)$/i);
+    const passMatch = reviewPass.match(/^P([1-9]\d*)$/i);
+    if (!idMatch) {
+      errors.push(`review finding ledger row ${rowNumber} Finding ID must use P<N>-standards|spec-<ordinal>`);
+    } else {
+      const normalizedId = findingId.toLowerCase();
+      if (seenIds.has(normalizedId)) errors.push(`review finding ledger has duplicate Finding ID ${findingId}`);
+      seenIds.add(normalizedId);
+    }
+    if (!passMatch) errors.push(`review finding ledger row ${rowNumber} Review pass must use P<N>`);
+    if (!/^(?:Standards|Spec)$/i.test(axis)) {
+      errors.push(`review finding ledger row ${rowNumber} Axis must be Standards or Spec`);
+    }
+    if (idMatch && passMatch && idMatch[1] !== passMatch[1]) {
+      errors.push(`review finding ledger row ${rowNumber} Finding ID and Review pass disagree`);
+    }
+    if (idMatch && /standards/i.test(idMatch[2]) !== /^Standards$/i.test(axis)) {
+      errors.push(`review finding ledger row ${rowNumber} Finding ID and Axis disagree`);
+    }
+    for (const [label, value] of [
+      ["Reviewer", reviewer],
+      ["Original finding", originalFinding],
+      ["Repair", repair],
+      ["Rerun evidence", rerunEvidence]
+    ]) {
+      if (unresolvedValue(value)) errors.push(`review finding ledger row ${rowNumber} ${label} is empty or unresolved`);
+    }
+    if (!allowedRepairClasses.test(repairClass)) {
+      errors.push(`review finding ledger row ${rowNumber} Repair class is not recognized`);
+    }
+    if (!validTddDisposition(tddDisposition)) {
+      errors.push(`review finding ledger row ${rowNumber} TDD disposition must link RF-N or state structured red/green, coverage-only, red-first-skip, partial-red, or accepted-residual evidence`);
+    }
+    if (!/^(?:fixed|accepted residual)$/i.test(finalStatus)) {
+      errors.push(`review finding ledger row ${rowNumber} Final status must be fixed or accepted residual`);
+    }
+
+    parsedRows.push({
+      axis: /^Standards$/i.test(axis) ? "Standards" : /^Spec$/i.test(axis) ? "Spec" : "",
+      reviewPass,
+      finalStatus
+    });
+  }
+
+  if (options.validateAxisOutcomes) {
+    for (const axis of ["Standards", "Spec"]) {
+      const initialValue = fieldValue(body, `Initial ${axis} outcome`);
+      const initialCount = leadingCount(initialValue);
+      const initialRows = parsedRows.filter((row) => row.axis === axis && /^P1$/i.test(row.reviewPass)).length;
+      if (initialCount === undefined) {
+        errors.push(`Initial ${axis} outcome must begin with an integer count`);
+      } else if (initialCount !== initialRows) {
+        errors.push(`Initial ${axis} outcome reports ${initialCount} findings but ledger pass P1 has ${initialRows}`);
+      }
+
+      const finalValue = fieldValue(body, `Final ${axis} outcome`);
+      const finalCount = leadingCount(finalValue);
+      const residualRows = parsedRows.filter(
+        (row) => row.axis === axis && /^accepted residual$/i.test(row.finalStatus)
+      ).length;
+      if (finalCount === undefined) {
+        errors.push(`Final ${axis} outcome must begin with an integer count`);
+      } else if (finalCount !== residualRows) {
+        errors.push(`Final ${axis} outcome reports ${finalCount} findings but the ledger has ${residualRows} accepted residuals`);
+      }
+    }
+  }
 };
 
 const sourceEnumeratesAcceptanceItems = (source) =>

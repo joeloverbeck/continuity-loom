@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -8,19 +8,26 @@ import { fileURLToPath } from "node:url";
 
 const validatorPath = fileURLToPath(new URL("./validate-prd-body.mjs", import.meta.url));
 
-const checklistItems = [
-  "package source cited",
-  "decision-point contract named",
-  "required, optional, skippable, and severity-dependent fields visible",
-  "doctrine at the actual decision point",
-  "prompt packet preview, source manifest, and cold external LLM test",
-  "advisory/canon separation visible",
-  "skip path and reason storage",
-  "blockers/substance validation",
-  "current, next, and resume state",
-  "read-side audit or provenance link",
-  "cognitive walkthrough scenario",
+const issueTrackerPath = fileURLToPath(
+  new URL("../../../../docs/agents/issue-tracker.md", import.meta.url),
+);
+const expectedChecklistItems = [
+  "entry point and availability",
+  "user-visible states, actions, and outcomes",
+  "validation, warning, error, and recovery behavior",
+  "prompt preview contents and freshness",
+  "user-initiated external LLM boundary",
+  "canon and prose boundary visibility",
+  "persistence, migration, export, and provenance",
+  "browser and accessibility regression scenario",
 ];
+const checklistAuthority = readFileSync(issueTrackerPath, "utf8");
+const checklistBlock = checklistAuthority.match(
+  /<!-- browser-visible-guidance-checklist:start -->([\s\S]*?)<!-- browser-visible-guidance-checklist:end -->/,
+)?.[1];
+const checklistItems = [...(checklistBlock ?? "").matchAll(/^- `([^`]+)`: /gm)].map(
+  (match) => match[1],
+);
 
 const titleCase = (value) => value[0].toUpperCase() + value.slice(1);
 
@@ -76,6 +83,10 @@ const runValidator = (body, args = ["--stdin", "--expect-checklist"]) => {
 
 const validate = (body) => runValidator(body);
 
+test("loads the Continuity Loom checklist from the issue-tracker authority", () => {
+  assert.deepEqual(checklistItems, expectedChecklistItems);
+});
+
 test("accepts lowercase browser checklist labels", () => {
   const result = validate(bodyWithChecklist(checklistItems));
 
@@ -94,11 +105,11 @@ test("still rejects a genuinely missing browser checklist item", () => {
   const result = validate(bodyWithChecklist(checklistItems.slice(0, -1)));
 
   assert.equal(result.status, 1);
-  assert.deepEqual(result.report.checklistMissing, ["cognitive walkthrough scenario"]);
+  assert.deepEqual(result.report.checklistMissing, ["browser and accessibility regression scenario"]);
 });
 
 test("loads checklist and source policy from a reusable policy file", () => {
-  const directory = mkdtempSync(join(tmpdir(), "worldloom-prd-policy-"));
+  const directory = mkdtempSync(join(tmpdir(), "to-prd-policy-"));
   const policyFile = join(directory, "policy.json");
   try {
     writeFileSync(policyFile, JSON.stringify({
@@ -124,7 +135,7 @@ test("loads checklist and source policy from a reusable policy file", () => {
 });
 
 test("rejects mixing a policy file with inline policy options", () => {
-  const directory = mkdtempSync(join(tmpdir(), "worldloom-prd-policy-"));
+  const directory = mkdtempSync(join(tmpdir(), "to-prd-policy-"));
   const policyFile = join(directory, "policy.json");
   try {
     writeFileSync(policyFile, JSON.stringify({
@@ -148,7 +159,7 @@ test("rejects mixing a policy file with inline policy options", () => {
 });
 
 test("rejects malformed validator policy fields", () => {
-  const directory = mkdtempSync(join(tmpdir(), "worldloom-prd-policy-"));
+  const directory = mkdtempSync(join(tmpdir(), "to-prd-policy-"));
   const policyFile = join(directory, "policy.json");
   try {
     writeFileSync(policyFile, JSON.stringify({

@@ -69,7 +69,7 @@ A list of testing decisions that were made. Include:
 
 ## Principles
 
-The conformance-rule section this repo requires of every implementable issue (`docs/principles/README.md`): name the principle documents and ADRs this PRD touches, affirm non-contradiction with them, and flag any deliberate exception to the steward before implementation.
+The conformance section this repo requires of every implementable issue: name `docs/FOUNDATIONS.md` and the active domain authorities or ADRs the PRD touches, apply the §29 alignment checklist, affirm non-contradiction with them, and flag any deliberate exception to the steward before implementation.
 
 ## Out of Scope
 

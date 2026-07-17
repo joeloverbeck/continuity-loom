@@ -3,21 +3,19 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { validateChild, validateRunSheet } from "./validate-publication.mjs";
+import { CHECKLIST_ITEMS, validateChild, validateRunSheet } from "./validate-publication.mjs";
 
-const checklistItems = [
-  "package source cited",
-  "decision-point contract named",
-  "required, optional, skippable, and severity-dependent fields visible where relevant",
-  "doctrine at the actual decision point",
-  "prompt packet preview, source manifest, and cold external LLM test",
-  "advisory/canon separation visible",
-  "skip path and reason storage",
-  "blockers/substance validation",
-  "current, next, and resume state",
-  "read-side audit or provenance link",
-  "cognitive walkthrough scenario",
+const expectedChecklistItems = [
+  "entry point and availability",
+  "user-visible states, actions, and outcomes",
+  "validation, warning, error, and recovery behavior",
+  "prompt preview contents and freshness",
+  "user-initiated external LLM boundary",
+  "canon and prose boundary visibility",
+  "persistence, migration, export, and provenance",
+  "browser and accessibility regression scenario",
 ];
+const checklistItems = CHECKLIST_ITEMS;
 
 const issueBody = (blocker = "None - can start immediately") => `
 ## Parent
@@ -62,6 +60,7 @@ const options = (overrides = {}) => ({
   expectChecklistNa: false,
   expectNoBlocker: false,
   expectStories: false,
+  forbidLiterals: [],
   forbidPatterns: [],
   onlySlices: [],
   parent: null,
@@ -71,6 +70,10 @@ const options = (overrides = {}) => ({
   sourceRelationship: null,
   unaffectedSlices: [],
   ...overrides,
+});
+
+test("loads the Continuity Loom checklist from the issue-tracker authority", () => {
+  assert.deepEqual(checklistItems, expectedChecklistItems);
 });
 
 test("run-sheet mode requires every represented slice by default", () => {
@@ -114,7 +117,7 @@ ${checklistRows("Slice B")}
       sliceBodies: [{ slice: "Slice A", path: bodyA }],
     }));
     assert.deepEqual(report.onlySlices, ["Slice A"]);
-    assert.equal(report.selectedRowCount, 11);
+    assert.equal(report.selectedRowCount, checklistItems.length);
     assert.deepEqual(report.unconfiguredSlices, []);
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -166,14 +169,38 @@ ${checklistRows("Slice A")}
   }
 });
 
+test("run-sheet mode rejects exact run-specific forbidden text without regex escaping", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const bodyA = join(directory, "a.md");
+    const runSheet = join(directory, "run-sheet.md");
+    writeFileSync(bodyA, checklistIssueBody().replace("Build the slice.", "Build reports/.tmp-private.md."));
+    writeFileSync(runSheet, `
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+${checklistRows("Slice A")}
+`);
+
+    const report = validateRunSheet(readFile(runSheet), options({
+      forbidLiterals: ["reports/.tmp-private"],
+      sliceBodies: [{ slice: "Slice A", path: bodyA }],
+    }));
+    assert.equal(report.affected[0].checks.noForbiddenLiterals, false);
+    assert.deepEqual(report.forbiddenLiterals, ["reports/.tmp-private"]);
+    assert.equal(report.checks.affectedSlicesPass, false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("run-sheet mode resolves each verbatim excerpt against its exact acceptance criterion", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
   try {
     const bodyA = join(directory, "a.md");
     writeFileSync(bodyA, checklistIssueBody());
     const rows = checklistRows("Slice A").replace(
-      'AC 1 - "package source cited."',
-      'AC 2 - "package source cited."',
+      'AC 1 - "entry point and availability."',
+      'AC 2 - "entry point and availability."',
     );
 
     const report = validateRunSheet(`
@@ -184,12 +211,15 @@ ${rows}
 
     assert.equal(report.affected[0].checks.hasMatchingAcceptanceExcerpts, false);
     assert.deepEqual(report.affected[0].invalidExcerpts, [{
-      acceptanceText: "decision-point contract named.",
-      excerpt: "package source cited.",
-      item: "package source cited",
+      acceptanceText: "user-visible states, actions, and outcomes.",
+      excerpt: "entry point and availability.",
+      item: "entry point and availability",
       ordinal: 2,
     }]);
-    assert.equal(report.affected[0].resolvedCoverage[0].acceptanceText, "decision-point contract named.");
+    assert.equal(
+      report.affected[0].resolvedCoverage[0].acceptanceText,
+      "user-visible states, actions, and outcomes.",
+    );
     assert.equal(report.checks.affectedSlicesPass, false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -202,7 +232,7 @@ test("run-sheet mode rejects a bare AC ordinal without a verbatim excerpt", () =
     const bodyA = join(directory, "a.md");
     writeFileSync(bodyA, checklistIssueBody());
     const rows = checklistRows("Slice A").replace(
-      'AC 1 - "package source cited."',
+      'AC 1 - "entry point and availability."',
       "AC 1",
     );
 
@@ -212,7 +242,7 @@ test("run-sheet mode rejects a bare AC ordinal without a verbatim excerpt", () =
 ${rows}
 `, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
 
-    assert.deepEqual(report.affected[0].invalidCoverage, ["package source cited"]);
+    assert.deepEqual(report.affected[0].invalidCoverage, ["entry point and availability"]);
     assert.equal(report.checks.affectedSlicesPass, false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -224,12 +254,12 @@ test("run-sheet mode requires every component named by a composite checklist ite
   try {
     const bodyA = join(directory, "a.md");
     writeFileSync(bodyA, checklistIssueBody().replace(
-      "prompt packet preview, source manifest, and cold external LLM test.",
-      "prompt packet preview and source manifest.",
+      "user-visible states, actions, and outcomes.",
+      "user-visible states and actions.",
     ));
     const rows = checklistRows("Slice A").replace(
-      'AC 5 - "prompt packet preview, source manifest, and cold external LLM test."',
-      'AC 5 - "prompt packet preview and source manifest."',
+      'AC 2 - "user-visible states, actions, and outcomes."',
+      'AC 2 - "user-visible states and actions."',
     );
 
     const report = validateRunSheet(`
@@ -239,8 +269,8 @@ ${rows}
 `, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
 
     assert.deepEqual(report.affected[0].missingCompositeComponents, [{
-      item: "prompt packet preview, source manifest, and cold external LLM test",
-      missing: ["cold external LLM test"],
+      item: "user-visible states, actions, and outcomes",
+      missing: ["outcomes"],
     }]);
     assert.equal(report.affected[0].checks.hasCompleteCompositeCoverage, false);
     assert.equal(report.checks.affectedSlicesPass, false);
@@ -249,28 +279,45 @@ ${rows}
   }
 });
 
-test("run-sheet mode accepts repo-native governed-deferral and incomplete-work language", () => {
+test("run-sheet mode accepts plural entry points with availability", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
   try {
     const bodyA = join(directory, "a.md");
-    writeFileSync(bodyA, checklistIssueBody()
-      .replace(
-        "skip path and reason storage.",
-        "Governed deferral requires a rationale and records it in immutable history.",
-      )
-      .replace(
-        "blockers/substance validation.",
-        "Server blockers refuse incomplete specialized work and return remediation.",
-      ));
-    const rows = checklistRows("Slice A")
-      .replace(
-        'AC 7 - "skip path and reason storage."',
-        'AC 7 - "Governed deferral requires a rationale and records it in immutable history."',
-      )
-      .replace(
-        'AC 8 - "blockers/substance validation."',
-        'AC 8 - "Server blockers refuse incomplete specialized work and return remediation."',
-      );
+    const entryPointCriterion = "Prompt Preview and Ideate entry points remain available.";
+    writeFileSync(bodyA, checklistIssueBody().replace(
+      "entry point and availability.",
+      entryPointCriterion,
+    ));
+    const rows = checklistRows("Slice A").replace(
+      'AC 1 - "entry point and availability."',
+      `AC 1 - "${entryPointCriterion}"`,
+    );
+
+    const report = validateRunSheet(`
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+${rows}
+`, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
+
+    assert.deepEqual(report.affected[0].missingCompositeComponents, []);
+    assert.equal(report.affected[0].checks.hasCompleteCompositeCoverage, true);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("run-sheet mode accepts repo-native browser and accessibility wording", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const bodyA = join(directory, "a.md");
+    writeFileSync(bodyA, checklistIssueBody().replace(
+      "browser and accessibility regression scenario.",
+      "Browser regression and accessible-name coverage exercise the scenario.",
+    ));
+    const rows = checklistRows("Slice A").replace(
+      'AC 8 - "browser and accessibility regression scenario."',
+      'AC 8 - "Browser regression and accessible-name coverage exercise the scenario."',
+    );
 
     const report = validateRunSheet(`
 | Slice | Checklist item | Covered by final AC mapping | N/A reason |
@@ -286,17 +333,17 @@ ${rows}
   }
 });
 
-test("run-sheet mode still requires reason persistence for governed deferral", () => {
+test("run-sheet mode still requires prompt freshness coverage", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
   try {
     const bodyA = join(directory, "a.md");
     writeFileSync(bodyA, checklistIssueBody().replace(
-      "skip path and reason storage.",
-      "Governed deferral is available.",
+      "prompt preview contents and freshness.",
+      "Prompt preview shows complete contents.",
     ));
     const rows = checklistRows("Slice A").replace(
-      'AC 7 - "skip path and reason storage."',
-      'AC 7 - "Governed deferral is available."',
+      'AC 4 - "prompt preview contents and freshness."',
+      'AC 4 - "Prompt preview shows complete contents."',
     );
 
     const report = validateRunSheet(`
@@ -306,8 +353,8 @@ ${rows}
 `, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
 
     assert.deepEqual(report.affected[0].missingCompositeComponents, [{
-      item: "skip path and reason storage",
-      missing: ["reason storage"],
+      item: "prompt preview contents and freshness",
+      missing: ["freshness"],
     }]);
     assert.equal(report.checks.affectedSlicesPass, false);
   } finally {
@@ -315,17 +362,17 @@ ${rows}
   }
 });
 
-test("run-sheet mode still requires incomplete-work or substance validation", () => {
+test("run-sheet mode still requires accessibility coverage", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
   try {
     const bodyA = join(directory, "a.md");
     writeFileSync(bodyA, checklistIssueBody().replace(
-      "blockers/substance validation.",
-      "Server blockers return exact remediation.",
+      "browser and accessibility regression scenario.",
+      "Browser regression scenario.",
     ));
     const rows = checklistRows("Slice A").replace(
-      'AC 8 - "blockers/substance validation."',
-      'AC 8 - "Server blockers return exact remediation."',
+      'AC 8 - "browser and accessibility regression scenario."',
+      'AC 8 - "Browser regression scenario."',
     );
 
     const report = validateRunSheet(`
@@ -335,8 +382,8 @@ ${rows}
 `, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
 
     assert.deepEqual(report.affected[0].missingCompositeComponents, [{
-      item: "blockers/substance validation",
-      missing: ["substance validation"],
+      item: "browser and accessibility regression scenario",
+      missing: ["accessibility"],
     }]);
     assert.equal(report.checks.affectedSlicesPass, false);
   } finally {

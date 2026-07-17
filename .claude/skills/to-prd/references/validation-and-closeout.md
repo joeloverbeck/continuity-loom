@@ -12,8 +12,7 @@ Create the policy manifest with the environment-approved editing mechanism after
 {
   "expectChecklist": true,
   "approvedSources": [
-    "docs/principles/example.md",
-    "CONTEXT.md"
+    "docs/FOUNDATIONS.md"
   ],
   "disallowedSources": [
     "reports/example-local-prep.md"
@@ -27,7 +26,7 @@ POLICY_FILE=path/to/prd-body.policy.json
 node .claude/skills/to-prd/scripts/validate-prd-body.mjs "$BODY_FILE" --policy-file "$POLICY_FILE"
 ```
 
-If any item fails, edit the body before publishing. Set `expectChecklist` to `false` only when the gate does not apply; the validator rejects a checklist marker whose expectation was not declared. For a checklist-gated PRD, `checklistMissing` must be empty: every current issue-tracker checklist item must have a row or stable anchor in the PRD body, and each row must identify a covering PRD home or `N/A - <reason>`.
+If any item fails, edit the body before publishing. Set `expectChecklist` to `false` only when the gate does not apply; the validator rejects a checklist marker whose expectation was not declared. For a checklist-gated PRD, `checklistMissing` must be empty: every canonical item loaded from `docs/agents/issue-tracker.md` must have a row or stable anchor in the PRD body, and each row must identify a covering PRD home or `N/A - <reason>`.
 
 The validator also emits `localSourcePaths`, `unexpectedLocalSourcePaths`, `adrShorthands`, `resolvedAdrPaths`, and `unresolvedAdrShorthands`; its resolver does not replace the direct Git durability checks on the emitted paths. After publication, if validation shows a section is malformed or incomplete, edit the issue and re-run verification before final reporting.
 

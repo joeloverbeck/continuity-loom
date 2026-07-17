@@ -74,6 +74,8 @@ export const validateTddCloseoutBody = (body, options = {}) => {
   const compactHeader =
     "| Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |";
   const compactSeparator = "|---|---|---|---|---|---|---|---|";
+  const reviewFixMapHeader =
+    "| Finding ID | Finding/source | Intended red command/failure | Green command/evidence | Updated TDD table row | Regression durability | Browser/manual evidence freshness | Backend process currentness | Evidence identity refresh |";
   const summaryHeader = "| Issue | Seam | Red-first status | Green verification |";
   const gatePrefix = "TDD evidence gate passed:";
   const requiredGateLabels = [
@@ -101,24 +103,13 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     "proof surfaces:",
     "sequence:"
   ];
-  const reviewFixEquivalentLabels = [
-    "Finding:",
-    "Intended red command/failure:",
-    "Green command/evidence:",
-    "Updated TDD table row:",
-    "Backend process currentness:",
-    "Evidence identity refresh:"
-  ];
-  const reviewFixFreshnessLabels = [
-    "Browser/manual evidence freshness:",
-    "Browser/manual freshness:"
-  ];
   const requiredPreflightLabels = [
     "TDD closeout preflight:",
     "Durable sink/body inspected:",
     "Compact table/header:",
     "Rows accounted for:",
     "Pre-red recovery status:",
+    "Pre-red evidence reference:",
     "CONTEXT.md status:",
     "ADRs/principles/docs status:",
     "Acceptance atom map:",
@@ -480,6 +471,48 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     return "must state N/A because the pre-red preflight/table was visible before first red, listed with TDD recovery addendum, N/A because no red commands were run, or blocked because";
   };
 
+  const validatePreRedEvidenceReference = (status, reference) => {
+    const normalizedStatus = status.replace(/\s+/g, " ").trim();
+    const normalizedReference = reference.replace(/\s+/g, " ").trim();
+    if (!normalizedReference) return "is empty";
+    if (/^<.*>$/.test(normalizedReference) || /\b(?:TODO|TBD|pending|unknown)\b/i.test(normalizedReference)) {
+      return "is unresolved";
+    }
+
+    if (/\bno red commands? (?:were )?run\b/i.test(normalizedStatus)) {
+      return /^N\/A\b.+\bno red commands? (?:were )?run\b/i.test(normalizedReference)
+        ? ""
+        : "must be N/A because no red commands were run";
+    }
+    if (/\bno tdd skill was invoked\b/i.test(normalizedStatus)) {
+      return /^N\/A\b.+\bno tdd skill was invoked\b/i.test(normalizedReference)
+        ? ""
+        : "must be N/A because no tdd skill was invoked";
+    }
+    if (/\bblocked\b/i.test(normalizedStatus)) {
+      return /^blocked\b.+\b(because|reason|unable|cannot)\b/i.test(normalizedReference)
+        ? ""
+        : "must state blocked because when pre-red recovery status is blocked";
+    }
+
+    const namesDurableSink =
+      /https?:\/\/|#\d+\b|(?:^|[\s`(])\/?(?:[A-Za-z0-9._-]+\/)+[A-Za-z0-9._-]+\b|\b(?:conversation|comment|ledger|body|sink|artifact)\s+(?:URL|reference|message|entry|path|file|#?\d+)\b/i.test(
+        normalizedReference
+      );
+    const namesAnchor = /\b(?:anchor|heading|row|section|line)\b/i.test(normalizedReference);
+    if (/\blisted with TDD recovery addendum\b/i.test(normalizedStatus)) {
+      if (/\bTDD recovery addendum\b/i.test(normalizedReference) && namesDurableSink && namesAnchor) return "";
+      return "must name the TDD recovery addendum, its durable sink, and an exact heading/row/section/line anchor";
+    }
+
+    const namesChronology =
+      /\bchronology\b|\bbefore (?:the )?first red\b|\bprecedes? (?:the )?first red\b|\bfirst red command (?:follows|appears after)\b|\bsame-sink line order\b|\btimestamp\b|\brevision\b/i.test(
+        normalizedReference
+      );
+    if (namesDurableSink && namesAnchor && namesChronology) return "";
+    return "must name a durable sink, an exact heading/row/section/line anchor, and chronology proof that it precedes the first red command";
+  };
+
   for (let index = 0; index < lines.length; index += 1) {
     if (lines[index].trim() !== compactHeader) continue;
     for (let rowIndex = index + 2; rowIndex < lines.length; rowIndex += 1) {
@@ -536,12 +569,14 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     /["'`][^"'`]{3,}["'`]/.test(cell) ||
     /\b(?:criterion|checkbox)\s*(?:#?\d+|["'`:][^|]+|named\b)/i.test(cell);
 
-  const reviewCellNeedsAddendum = (cell) => {
+  const reviewCellNeedsMap = (cell) => {
     const normalized = cell.replace(/\s+/g, " ").trim();
     if (!normalized || /^N\/A\b/i.test(normalized)) return false;
     if (/\bexisting-test contract-change expectation\b/i.test(normalized)) return false;
     if (/\bcoverage-only existing behavior\b/i.test(normalized)) return false;
-    return /\b(review[- ]fix|finding fixed|coverage-only|partial-red|red-first skip)\b/i.test(normalized);
+    return /\bRF-[1-9]\d*\b|\b(review[- ]fix|finding fixed|coverage-only|partial-red|red-first skip)\b/i.test(
+      normalized
+    );
   };
 
   const externalProofKeywords =
@@ -622,6 +657,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     const localAbsolutePath = /(?:^|[\s\x60("'=])((?:\/(?!\/)|[A-Za-z]:\\)[^\s\x60"'),;]+)/;
     const publishableSinkValues = [
       { label: "Durable sink/body inspected", value: extractFieldValue("Durable sink/body inspected") },
+      { label: "Pre-red evidence reference", value: extractFieldValue("Pre-red evidence reference") },
       { label: "TDD evidence gate", value: gateLine }
     ];
 
@@ -723,6 +759,14 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     const preRedRecoveryStatusError = validatePreRedRecoveryStatusValue(preRedRecoveryStatusValue);
     if (preRedRecoveryStatusError) {
       errors.push(`Pre-red recovery status ${preRedRecoveryStatusError}`);
+    }
+    const preRedEvidenceReference = extractFieldValue("Pre-red evidence reference");
+    const preRedEvidenceReferenceError = validatePreRedEvidenceReference(
+      preRedRecoveryStatusValue,
+      preRedEvidenceReference
+    );
+    if (preRedEvidenceReferenceError) {
+      errors.push(`Pre-red evidence reference ${preRedEvidenceReferenceError}`);
     }
   }
 
@@ -909,15 +953,15 @@ export const validateTddCloseoutBody = (body, options = {}) => {
       );
     }
 
-    if (reviewCellNeedsAddendum(cells[7])) {
-      reviewFixRows.push(lineNumber);
+    const seamCell = cells[3] ?? "";
+    if (reviewCellNeedsMap(cells[7])) {
+      reviewFixRows.push({ lineNumber, issueId, seam: seamCell.trim(), cells });
     }
 
     if ((cells[3] ?? "").trim() === "existing contract-change expectation") {
       existingTestRows.push(lineNumber);
     }
 
-    const seamCell = cells[3] ?? "";
     if (
       /\b(evidence-only|browser evidence|manual|walkthrough|screenshot)\b/i.test(seamCell) &&
       /\b(browser|manual|screenshot|walkthrough|route|action|Playwright|DOM|page)\b/i.test(rowText)
@@ -993,81 +1037,110 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     errors.push("preflight says Existing-test contract-change rows none but compact table has existing contract-change expectation row(s)");
   }
 
-  const hasExplicitNoReviewFixAddendum =
-    /^\s*TDD review-fix addendum:\s*N\/A\b.+\bbecause\b/im.test(body);
-  const reviewFixAddendumBlocks = [];
-  for (let index = 0; index < lines.length; index += 1) {
-    const heading = lines[index].match(/^\s*TDD review-fix addendum:\s*(.*)$/i);
-    if (!heading || /^N\/A\b.+\bbecause\b/i.test(heading[1])) continue;
+  requireText("TDD review-fix map:", "TDD review-fix map disposition");
+  const hasExplicitNoReviewFixMap =
+    /^\s*TDD review-fix map:\s*N\/A\b.+\bbecause\b.+\bno TDD row changes\b/im.test(body);
+  const reviewFixMapRows = tableRowsAfter(reviewFixMapHeader);
+  const hasReviewFixMapHeader = body.includes(reviewFixMapHeader);
 
-    const blockLines = [lines[index]];
-    for (let blockIndex = index + 1; blockIndex < lines.length; blockIndex += 1) {
-      const line = lines[blockIndex];
-      if (!line.trim() || /^\s*TDD review-fix addendum:/i.test(line) || /^#{1,6}\s/.test(line)) break;
-      blockLines.push(line);
-    }
-    reviewFixAddendumBlocks.push(blockLines.join("\n"));
+  if (reviewFixRows.length && hasExplicitNoReviewFixMap) {
+    errors.push("TDD review-fix map says N/A but compact TDD rows contain review-fix evidence");
   }
-  const hasReviewFixSignal =
-    reviewFixRows.length > 0 ||
-    /TDD\/review-fix evidence|Review-fix red evidence/i.test(body) ||
-    (body.includes("TDD review-fix addendum:") && !hasExplicitNoReviewFixAddendum);
-  const hasReviewFixEquivalent =
-    reviewFixEquivalentLabels.every((label) => body.includes(label)) &&
-    reviewFixFreshnessLabels.some((label) => body.includes(label));
-
-  if (hasReviewFixSignal && !reviewFixAddendumBlocks.length && !hasReviewFixEquivalent) {
-    errors.push(
-      "review fix evidence must include TDD review-fix addendum or equivalent Finding/Intended red/Green/Updated row/Browser freshness/Backend currentness fields"
-    );
+  if (reviewFixRows.length && !hasReviewFixMapHeader) {
+    errors.push("review-fix TDD rows require the exact keyed TDD review-fix map header");
+  }
+  if (hasReviewFixMapHeader && !reviewFixMapRows.length) {
+    errors.push("TDD review-fix map must contain at least one keyed finding row");
   }
 
-  const validateReviewFixFields = (text, labelPrefix) => {
-    for (const label of reviewFixEquivalentLabels) {
-      if (!extractFieldValuesFrom(text, label.slice(0, -1)).length) {
-        errors.push(`${labelPrefix} missing ${label}`);
+  const seenReviewFixIds = new Set();
+  const reviewFixTargetLines = new Map();
+  for (const [index, cells] of reviewFixMapRows.entries()) {
+    const row = index + 1;
+    if (cells.length !== 9) {
+      errors.push(`TDD review-fix map row ${row} must contain exactly nine columns`);
+      continue;
+    }
+
+    const [findingId, finding, intendedRed, green, updatedRow, regressionDurability, freshness, backend, identity] = cells;
+    let hasUniqueFindingId = false;
+    if (!/^RF-[1-9]\d*$/.test(findingId)) {
+      errors.push(`TDD review-fix map row ${row} Finding ID must use RF-N with a positive integer`);
+    } else if (seenReviewFixIds.has(findingId)) {
+      errors.push(`TDD review-fix map row ${row} duplicates Finding ID ${findingId}`);
+    } else {
+      seenReviewFixIds.add(findingId);
+      hasUniqueFindingId = true;
+    }
+
+    for (const [label, value] of [
+      ["Finding/source", finding],
+      ["Intended red command/failure", intendedRed],
+      ["Green command/evidence", green],
+      ["Updated TDD table row", updatedRow],
+      ["Regression durability", regressionDurability],
+      ["Browser/manual evidence freshness", freshness],
+      ["Backend process currentness", backend],
+      ["Evidence identity refresh", identity]
+    ]) {
+      if (!value || /^<.*>$/.test(value) || /\b(?:TODO|TBD|pending|unknown)\b/i.test(value)) {
+        errors.push(`TDD review-fix map row ${row} ${label} is empty or unresolved`);
       }
     }
-    const freshnessLabel = reviewFixFreshnessLabels.find((label) =>
-      extractFieldValuesFrom(text, label.slice(0, -1)).length
-    );
-    if (!freshnessLabel) {
-      errors.push(`${labelPrefix} missing Browser/manual evidence freshness:`);
+
+    if (!hasConcreteRedEvidence(intendedRed)) {
+      errors.push(`TDD review-fix map row ${row} Intended red command/failure is not concrete`);
+    }
+    if (!hasConcreteGreenEvidence(green)) {
+      errors.push(`TDD review-fix map row ${row} Green command/evidence is not concrete`);
     }
 
-    const browserFreshnessValue =
-      extractFieldValuesFrom(text, "Browser/manual evidence freshness")[0] ||
-      extractFieldValuesFrom(text, "Browser/manual freshness")[0] ||
-      "";
-    if (browserFreshnessValue) {
-      const browserFreshnessError = validateFreshnessValue(browserFreshnessValue);
-      if (browserFreshnessError) {
-        errors.push(`${labelPrefix} Browser/manual evidence freshness ${browserFreshnessError}`);
+    const updatedMatch = updatedRow.match(/^#(\d+)\s*\/\s*(.+)$/);
+    if (!updatedMatch) {
+      errors.push(`TDD review-fix map row ${row} Updated TDD table row must use #N / <exact Seam>`);
+    } else {
+      const issueId = `#${updatedMatch[1]}`;
+      const seam = updatedMatch[2].trim();
+      const targetRow = compactRows.find(
+        ({ cells: targetCells }) =>
+          targetCells[0]?.match(/^#\d+/)?.[0] === issueId &&
+          (targetCells[3] ?? "").trim().toLowerCase() === seam.toLowerCase()
+      );
+      if (!targetRow) {
+        errors.push(`TDD review-fix map row ${row} targets missing compact row ${updatedRow}`);
+      } else if (!new RegExp(`(?:^|[^A-Za-z0-9])${findingId}(?=$|[^A-Za-z0-9])`).test(targetRow.cells[7] ?? "")) {
+        errors.push(
+          `TDD review-fix map row ${row} Finding ID ${findingId} is not repeated in compact row ${updatedRow}`
+        );
+      } else if (hasUniqueFindingId) {
+        reviewFixTargetLines.set(findingId, targetRow.lineNumber);
       }
     }
 
-    const reviewBackendCurrentnessValues = extractFieldValuesFrom(text, "Backend process currentness");
-    if (reviewBackendCurrentnessValues.length) {
-      validateBackendCurrentnessValues(`${labelPrefix} Backend process currentness`, reviewBackendCurrentnessValues);
+    const regressionDurabilityError = validateRegressionDurabilityValue(regressionDurability);
+    if (regressionDurabilityError) {
+      errors.push(`TDD review-fix map row ${row} Regression durability ${regressionDurabilityError}`);
     }
-
-    const intendedRedValue = extractFieldValuesFrom(text, "Intended red command/failure")[0] ?? "";
-    const usesTransientBrowserRed =
-      /\b(?:Playwright|browser|run-code|waitForResponse|page\.|manual probe|manual assertion)\b/i.test(intendedRedValue);
-    if (usesTransientBrowserRed) {
-      const regressionDurabilityValue = extractFieldValuesFrom(text, "Regression durability")[0] ?? "";
-      const regressionDurabilityError = validateRegressionDurabilityValue(regressionDurabilityValue);
-      if (regressionDurabilityError) {
-        errors.push(`${labelPrefix} Regression durability ${regressionDurabilityError}`);
-      }
+    const freshnessError = validateFreshnessValue(freshness);
+    if (freshnessError) {
+      errors.push(`TDD review-fix map row ${row} Browser/manual evidence freshness ${freshnessError}`);
     }
-  };
-
-  for (const block of reviewFixAddendumBlocks) {
-    validateReviewFixFields(block, "review-fix addendum");
+    validateBackendCurrentnessValues(`TDD review-fix map row ${row} Backend process currentness`, [backend]);
   }
-  if (hasReviewFixSignal && !reviewFixAddendumBlocks.length && hasReviewFixEquivalent) {
-    validateReviewFixFields(body, "review-fix evidence");
+
+  for (const { lineNumber, cells } of reviewFixRows) {
+    const ids = [...(cells[7] ?? "").matchAll(/\bRF-[1-9]\d*\b/g)].map((match) => match[0]);
+    if (!ids.length) {
+      errors.push(`compact TDD row ${lineNumber} review-fix evidence must cite at least one keyed RF-N map row`);
+      continue;
+    }
+    for (const id of ids) {
+      if (!seenReviewFixIds.has(id)) {
+        errors.push(`compact TDD row ${lineNumber} cites missing TDD review-fix map row ${id}`);
+      } else if (reviewFixTargetLines.get(id) !== lineNumber) {
+        errors.push(`compact TDD row ${lineNumber} cites ${id}, but that map row targets a different compact TDD row`);
+      }
+    }
   }
 
   forbidText("TDD evidence gate passed: yes", "TDD evidence gate shorthand");

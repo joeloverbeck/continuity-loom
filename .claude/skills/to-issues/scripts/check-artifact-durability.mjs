@@ -18,6 +18,17 @@ const runGit = (cwd, args) => {
   return result;
 };
 
+export const classifyGitExecutionFailure = (error) => {
+  const sandboxRestricted = error?.code === "EPERM" || /\bEPERM\b/.test(error?.message ?? "");
+  return {
+    error: error?.message ?? String(error),
+    kind: sandboxRestricted ? "sandbox-restricted" : "git-execution-failed",
+    recovery: sandboxRestricted
+      ? "Rerun with the host's approved execution escalation when available; otherwise use the documented per-path manual fallback."
+      : "Inspect the Git error and use the documented per-path manual fallback only when the helper itself cannot run.",
+  };
+};
+
 const requireGitSuccess = (cwd, args, label) => {
   const result = runGit(cwd, args);
   if (result.status !== 0) {
@@ -113,7 +124,7 @@ const main = () => {
     console.log(JSON.stringify(report, null, 2));
     process.exit(report.allDurable ? 0 : 1);
   } catch (error) {
-    console.error(JSON.stringify({ error: error.message }, null, 2));
+    console.error(JSON.stringify(classifyGitExecutionFailure(error), null, 2));
     process.exit(2);
   }
 };

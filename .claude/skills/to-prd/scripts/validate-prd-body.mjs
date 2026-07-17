@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const usage = `Usage:
   node .claude/skills/to-prd/scripts/validate-prd-body.mjs <body-file> [options]
@@ -14,25 +15,42 @@ Options:
   --extract-sources            Print citation and ADR discovery without validating.
   --help                       Show this help.`;
 
-const checklistItems = [
-  "package source cited",
-  "decision-point contract named",
-  "required, optional, skippable, and severity-dependent fields visible",
-  "doctrine at the actual decision point",
-  "prompt packet preview, source manifest, and cold external LLM test",
-  "advisory/canon separation visible",
-  "skip path and reason storage",
-  "blockers/substance validation",
-  "current, next, and resume state",
-  "read-side audit or provenance link",
-  "cognitive walkthrough scenario",
-];
+const checklistAuthorityPath = fileURLToPath(
+  new URL("../../../../docs/agents/issue-tracker.md", import.meta.url),
+);
+const checklistStartMarker = "<!-- browser-visible-guidance-checklist:start -->";
+const checklistEndMarker = "<!-- browser-visible-guidance-checklist:end -->";
 
 function failUsage(message) {
   if (message) console.error(message);
   console.error(usage);
   process.exit(2);
 }
+
+function loadChecklistItems() {
+  let authority;
+  try {
+    authority = readFileSync(checklistAuthorityPath, "utf8");
+  } catch (error) {
+    failUsage(`Cannot read browser checklist authority ${checklistAuthorityPath}: ${error.message}`);
+  }
+
+  const startIndex = authority.indexOf(checklistStartMarker);
+  const endIndex = authority.indexOf(checklistEndMarker);
+  if (startIndex < 0 || endIndex <= startIndex) {
+    failUsage("Browser checklist authority is missing its ordered start/end markers.");
+  }
+
+  const block = authority.slice(startIndex + checklistStartMarker.length, endIndex);
+  const items = [...block.matchAll(/^- `([^`]+)`: /gm)].map((match) => match[1]);
+  if (items.length === 0) failUsage("Browser checklist authority contains no canonical items.");
+  if (new Set(items).size !== items.length) {
+    failUsage("Browser checklist authority contains duplicate canonical item labels.");
+  }
+  return items;
+}
+
+const checklistItems = loadChecklistItems();
 
 function parsePolicyFile(policyFile) {
   let policy;
@@ -228,6 +246,8 @@ const report = {
   bodyFile: options.bodyFile,
   policyFile: options.policyFile,
   expectsChecklist: options.expectChecklist,
+  checklistAuthorityPath,
+  checklistItems,
   checks,
   storyCount: storyLines.length - badStories.length,
   badStories,

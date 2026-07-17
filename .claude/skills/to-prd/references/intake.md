@@ -36,6 +36,8 @@ gh issue view <number> --json number,title,state,url,labels,body --jq '{number,t
 
 If a candidate body is still too large or the house style remains unclear, fetch only the named section needed for the decision you are making before falling back to the full body.
 
+If the bounded search yields no published PRD title of the same kind, record `Same-kind PRD exemplar: none published` and use the local [PRD body contract](prd-body.md), the repository issue-tracker document, and the triage-label document as the bootstrap authorities. Absence of an exemplar is not a publication blocker and does not justify borrowing another repository's terminology. Carry the no-exemplar state into the publication-package decision so title and type-label fallbacks are applied explicitly.
+
 ## PRD-ready determination artifacts
 
 If the conversation or user references a PRD-ready determination artifact such as `reports/*-prd-prep.md`, read it before drafting. Refresh its source durability, tracker freshness, and any cited authority that could have drifted. Treat its selected first PRD as the intended publication scope unless the user revises it, asks only for a draft, or keeps decisions open. Preserve its deferred follow-on candidates in Out of Scope or Further Notes unless the user explicitly asks to publish a multi-PRD program or bundle them into the current PRD.

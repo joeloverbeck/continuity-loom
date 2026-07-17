@@ -4,151 +4,24 @@ description: "Use when a skill was exercised during the current session and you 
 user-invocable: true
 arguments:
   - name: skill-path
-    description: "Path to skill directory (e.g., .claude/skills/brainstorm)"
+    description: "Path to the skill directory or SKILL.md"
     required: true
 ---
 
 # Skill Audit
 
-Analyze a skill against the work done in the current Claude Code session to determine whether it has issues, could be improved, or needs new features. **Report only** during the audit — never modify the target skill. Editing happens only in the optional follow-up-implementation phase, and only when the user requests it.
+Claude host adapter for the cross-host skill-audit workflow.
 
 ## Invocation
 
-```
-/skill-audit <path-to-skill-directory>
-```
-
-Example: `/skill-audit .claude/skills/brainstorm`. The argument is the skill directory; the framework resolves `SKILL.md` within it. If the exact path doesn't resolve, glob `<path>*/SKILL.md` then `<path>**/SKILL.md` — use a single unique match and note the correction; on zero or multiple matches, stop and report the error.
-
-## Audit checklist (Steps 1–7)
-
-Steps 1–7 are the audit. Step 8 (follow-up implementation) fires only if the user requests it after the report.
-
-1. **Read the target skill.** Read its `SKILL.md` and parse name, description, and content. If it ships a `references/` or `templates/` directory, list that directory first so per-finding suggestions can cite exact file paths. (A Read is satisfied by in-context content from earlier this session; re-read only after compaction, or if the skill was modified this session.)
-
-2. **Read alignment documents.**
-   - Read `docs/FOUNDATIONS.md` — skip only if it's already in this session's context, and when skipping, name the load mechanism explicitly (e.g., "already in context via direct Read at message N"). It is the constitution: §1–§28 principles plus the §29 alignment checklist (hard-fail sections §29.1–§29.10, plus the §29.11 quality-and-workflow checks, which are not all hard fails).
-   - If a root `CLAUDE.md` exists, read it too — harness-injected `claudeMd` context or an earlier in-session read satisfies this read-only audit check; name the load mechanism when relying on it (a fresh Read-tool call is still required before *editing* any file, per Step 8.3). If absent, treat that as normal and skip the CLAUDE.md alignment check.
-   - **Meta-tooling carve-out**: when the target is itself a process/tooling skill (e.g., `brainstorm`, `skill-audit`), FOUNDATIONS alignment is N/A — these skills don't touch product behavior. The read may be skipped for such targets. Classification test: if the skill emits or modifies product code, stored data, or prompts, it is *not* meta-tooling. Exception for FOUNDATIONS-enforcing governance skills (e.g., `reassess-spec`, `spec-to-tickets`): direct product-alignment is still N/A, but the §Guardrails "FOUNDATIONS alignment is mandatory" rule continues to apply — verify no suggestion weakens the target skill's own FOUNDATIONS-enforcement guardrails (e.g., relaxing a mandated FOUNDATIONS read or a §29 check).
-
-3. **Session reflection.** Review the conversation for:
-   - Moments where the skill's instructions were unclear or ambiguous
-   - Steps that were skipped, reordered, or worked around
-   - Behaviors the skill didn't anticipate (edge cases, unexpected inputs)
-   - Places where Claude had to improvise because the skill gave no guidance
-   - Outcomes that diverged from what the skill intended
-   - Steps not exercised this session (mark "not exercised" — do not speculate about them)
-
-   **Self-audit** (target is `skill-audit` itself): use evidence from any prior invocation(s) this session, **including the Step 8 implementation phase if one ran** (often the richest evidence — cascade scan, premise re-evaluation, cross-skill check). If there were none, report "No session evidence available — self-audit with no prior invocations" and skip steps 3–6.
-
-4. **Cross-check alignment.** For each finding, check whether the skill contradicts or fails to implement:
-   - Principles from `docs/FOUNDATIONS.md` (reference by § number, including the §29 hard-fails)
-   - Conventions from `CLAUDE.md` (by section name) — skip if `CLAUDE.md` is absent
-
-5. **Classify each finding** into one bucket:
-   - **Issue** — something broken, misleading, or contradictory in the skill
-   - **Improvement** — a refinement to existing behavior that would make the skill more effective
-   - **Feature** — a new capability that fits the skill's stated intent but is currently missing
-
-6. **Severity-tag each finding** — CRITICAL / HIGH / MEDIUM / LOW:
-   - **CRITICAL** — skill produces wrong output, corrupts state, or violates a FOUNDATIONS principle. Fix before next use.
-   - **HIGH** — a missing guardrail/instruction that already caused rework or wrong output this session, or a plausible near-term failure on next use *that would produce wrong output or rework*; a failure mode that resolves in one recoverable round-trip (a re-posed question, a clarification) stays MEDIUM.
-   - **MEDIUM** — friction that cost non-trivial improvisation or non-obvious judgment to work around; the right outcome still emerged, but the path wasn't smooth.
-   - **LOW** — wording refinement, coverage gap, or polish that didn't block progress.
-
-   **Bypassed-guardrail tie-breaker** — a guardrail that exists in the skill but is structurally bypassed on some path (e.g. a rule homed in a step that certain flows legitimately skip), with no harm observed this session, is MEDIUM; escalate to HIGH only when the bypassed path is the common case. The same MEDIUM default applies to a guardrail present on the executed path but *attentionally missed* in execution with no harm observed — and for that case, target the finding's Suggestion at the rule's **placement or salience** (e.g. a gate line at the decision boundary), not at new rule content, since the content already exists.
-
-   **Input-conditional severity** — for a defect that produces wrong output only for a specific input class, tag CRITICAL when that input class is common or the wrong output is silent/corrupting; otherwise HIGH, naming the triggering input class. (Don't downgrade a real correctness bug to MEDIUM just because it isn't universal.)
-
-   **Pre-finalization verification** — before finalizing any finding tagged MEDIUM or higher whose Suggestion, Skill-gap, Current-behavior, or What's-missing field (i.e., any field, in any finding bucket, asserting content is present or absent) claims content is absent, missing, or undocumented, or mis-cites a specific location (phrasings like "Add X", "there is no documented Y", "the skill never mentions Z", "§W currently reads…"), verify the claim by a Read or grep of the cited file/section *before* writing the finding. Verbatim in-context file content loaded this session satisfies the check (the same allowance as Step 1); a fresh Read/grep is required only after compaction or if the file changed since it was loaded. The 30-second check keeps the report's premises true to the file's actual state, rather than to which content you happened to load. The same check applies to a claim that the session's **output artifacts** contain or lack something when that claim determines the severity tier (e.g. "already caused wrong output this session") — verify against the artifact before tagging. LOW findings are exempt from the mandatory check, but verify ad-hoc when you're unsure a claim holds.
-
-7. **Present the report** using the template below. Output it to the conversation — do not write a file, do not modify the target.
-
-## Report template
-
-```markdown
-# Skill Audit: <skill-name>
-
-**Skill path**: <path>
-**Session date**: YYYY-MM-DD
-**Session summary**: <1–2 sentences on the session work that exercised the target skill>
-
-## Alignment Check
-
-- **FOUNDATIONS.md**: <aligned / N violations found / N/A — meta-tooling skill>
-- **CLAUDE.md**: <aligned / N deviations found / skipped — not present>
-[If violations: bullets naming the specific § number or CLAUDE.md section and what conflicts]
-
-## Issues
-
-[If none: "No issues identified."]
-
-1. **[SEVERITY]** <title>
-   - **What happened**: <session evidence — what went wrong or was confusing>
-   - **Skill gap**: <what the skill says or fails to say that caused this>
-   - **Suggestion**: <how to fix the skill>
-
-## Improvements
-
-[If none: "No improvements identified."]
-
-1. **[SEVERITY]** <title>
-   - **Current behavior**: <what the skill currently says>
-   - **Why improve**: <session evidence or reasoning>
-   - **Suggestion**: <proposed change>
-
-## Features
-
-[If none: "No features identified."]
-
-1. **[SEVERITY]** <title>
-   - **What's missing**: <gap description>
-   - **Why it fits**: <how this aligns with the skill's stated intent>
-   - **Suggestion**: <proposed addition>
-
-## Not Exercised This Session
-
-[Optional — omit when every step/branch was exercised. Otherwise one-line bullets naming steps or branches the session didn't trigger, surfacing coverage gaps without speculating about them.]
-
-## Summary
-
-**Total**: N issues, N improvements, N features (N findings) — N CRITICAL, N HIGH, N MEDIUM, N LOW
+```text
+/skill-audit <path-to-skill-directory-or-SKILL.md>
 ```
 
-## Report conventions
+Canonical workflow ID: `skill-audit-workflow-v1`.
 
-- **Suggestion specificity** — when a fix could land in either `SKILL.md` or a `references/` file, cite the exact path (e.g., "Add to `references/X.md` §Section"). The bare `§Section` form is fine when the section name is unique across the skill's files.
-- **Severity-count double-check** — verify the Summary counts against the findings before presenting; if you correct a count after presenting, strike the wrong line and restate.
-- **Implement-all by default** — "implement all", "implement recommended", "implement suggestions" are synonymous: apply every numbered finding. Anything worth numbering is worth implementing. To surface a finding *without* auto-applying it, tag it on the title line: `— skip` (considered and declined), `— informational` (context, no code change), or append `— no change needed` to the Suggestion line. Tagged findings are excluded from "implement all"; everything else is applied.
-- **Step 8 invitation** — close the report with a one-line invitation naming the scope syntax, e.g. "Say *implement all* or name findings (*Issue 1*, *Improvement 2*) to apply them." Untagged findings imply implementability, but the closing line is what hands the user the vocabulary Step 8.1 parses.
-
-## Follow-up implementation (Step 8, on user request)
-
-After the report, the user may ask you to implement specific findings (or all of them). Now editing the target file is permitted — the report-only guardrail applied to the audit phase only.
-
-1. **Scope** — partial ("implement 1 and 3") vs. inclusive ("implement all" / "implement recommended", synonymous). Findings are section-prefixed (`Issue 1`, `Improvement 1`, `Feature 1`); "implement 1 and 3" defaults to the Issues counter — confirm the section if the count is ambiguous.
-2. **Re-evaluation** — covered files are the skill's own files **plus any session artifact a finding's evidence cites** (a spec, ticket, or source file the report points at). If any covered file changed since the report, or a re-read shows an audit premise was falsified (it claimed X absent but X is present, or vice versa), re-evaluate each finding against the current state first: discard moot findings, adapt shifted ones, announce the outcome per finding. When nothing changed and no premise was falsified, a single confirmation line suffices; when only a cited session artifact (not a skill file) changed, a one-line premise re-check — does the cited content still stand? — suffices when nothing is falsified. A change that arrives *during* Step 8 (mid-implementation), or that touches a session artifact **no finding's evidence cites** (a non-covered artifact — e.g. a linter rewriting unrelated files), needs no re-evaluation: acknowledge it, confirm it touches no covered file or finding premise, and continue without acting on it — acting on a non-covered change is scope creep. Re-evaluation fires only when the changed file is a covered file. A finding's cited section is the auditor's best-guess home, not binding — if implementation shows a better insertion point, place the edit there and record the relocation in the Step 8.7 status row (e.g. "implemented at §49; report cited §52").
-3. **Read before Edit** — every file you will Edit must have been Read in this session via the Read tool. In-context content from grep/Bash/skill-invocation output does *not* satisfy the Edit tool's validator. For large files, chunked Reads (`offset`/`limit`) covering each edit region satisfy it. Note the recurring case: the target `SKILL.md` text in the slash-command invocation is *not* a Read-tool read — it only satisfies the Step 1 analysis allowance — so Read it (or its edit regions) explicitly before any Edit, even though it already reads as "in context."
-4. **Apply edits in document order** (top → bottom) to avoid line-shift breakage; parallel Edit batching is fine when each `old_string` is unique and non-overlapping. Construct `old_string`s from a Read-tool output whose content is verbatim in this session's context, never from audit-phase memory — whitespace and list markers are easily misremembered. Re-read (targeted) only when that content was summarized/compacted away, or when the file may have changed since it was Read.
-5. **Intra-skill cascade scan** — after planning each primary edit, scan the rest of the skill's files for related text using the same terminology, concept, or count that would go stale if only the primary changed (search case-insensitively — `grep -i` — and include semantic variants: plurals, count phrases like "three categories", word-form numbers). Apply cascades alongside the primary. A post-application scan is an acceptable fallback — the scan's timing matters less than its coverage — provided any late cascades get the same Step 8.6 verification as the primaries. Key cascades `N.cascade` in the summary; when one finding needs co-equal parallel edits at several sites, key `N.a` / `N.b` instead. A single cascade edit serving multiple findings is keyed once with all parents (`cascade from findings N+M`), not attributed to one parent and narrated under the other.
-6. **Post-edit verification** — re-read each edited file (full file if short; edited regions with flanking context if long) and confirm: edits don't conflict; numbering/steps/sections stay sequential; cross-references and file paths still resolve; the skill reads coherently end-to-end; YAML frontmatter still parses if touched. Fix and re-run the full pass if any check fails. This covers **every** file touched this run — including single-line cascade edits keyed `N.cascade`. First enumerate every edited region as `file:line` for this run; a file with multiple non-contiguous edits needs **each** region re-read with flanking context, not just one (re-reading a single region does not discharge the file). A focused re-read of each edited region satisfies it — minimum window: the full containing paragraph or list item, or ±10 lines, whichever is larger. A confirmed Edit match is not a substitute for the coherence check, and neither is a bare string-extraction grep of the new text (`grep -o` and the like) — nor the Step 8.5 cascade grep — that confirms presence only, not that the surrounding prose still reads coherently. Exception: when the grep output itself contains the complete containing paragraph (common in single-line-paragraph markdown) and you read it for coherence — not just for presence — it satisfies the window; cite that explicitly in the verification. The prohibition targets truncated or match-only output.
-7. **Post-implementation summary** — a status row per finding (`implemented` / `cascade from finding(s) N[+M] — <reason>` / `co-edit with finding M` / `skipped — <reason>`), so the user gets a clear per-finding outcome.
-
-## Cross-skill note
-
-Before a cross-skill check, `ls .claude/skills/` to enumerate the current siblings (exclude the audit target) — do not rely on a hardcoded inventory, which drifts as skills are added. A cross-skill check matters only when a follow-up edit introduces or changes terminology, a convention, or an output path a sibling also relies on — in that case, grep each relevant sibling for the affected token and record the outcome (`Scanned <sibling> via grep for <token> — no inconsistencies`, or name what was adjusted). When no edit touches a shared surface, omit the per-sibling grep work; a single one-line note ("Cross-skill check: omitted — no shared surface touched") is acceptable, and preferred over silent omission for the audit trail. Newly-coined terms are exempt by construction — a sibling cannot rely on a term that didn't exist before this run; but when an edit *changes or removes* an existing token, convention, or path, ground the "no shared surface" call in the sibling `ls` (and a grep for that token), not in the high-overlap hint below.
-
-High-overlap siblings to weight first (they read `specs/` + `docs/FOUNDATIONS.md` and share terms like "deliverable", "FOUNDATIONS alignment", "ticket decomposition"): `reassess-spec` and `spec-to-tickets`. Treat this as a likely-relevant hint, not a closed set — the `ls` is authoritative.
-
-## Auxiliary investigation and announcements
-
-Beyond reading the target `SKILL.md`, you may list its directory, read or grep sibling skills, and diff files against named reference sources — but each auxiliary call must support a specific hypothesis about the target's behavior, not probe speculatively. **Announce any tool call beyond the target Read hypothesis-first**, as user-facing text immediately before the call: `Investigating <hypothesis>: <grep/read/list> <target> to verify.` This keeps the audit trail reproducible. A tool's `description` field does not satisfy this — it doesn't render where reproducibility needs it.
-
-## Guardrails
-
-- **Report only** during the audit phase — output to the conversation, never modify the target. Step 8 follow-up implementation is the sole exception, scoped to user-directed requests.
-- **No false positives** — a step not exercised this session is noted "not exercised", never speculated about as an issue.
-- **FOUNDATIONS alignment is mandatory** — any suggestion that would violate a `docs/FOUNDATIONS.md` principle (including a §29 hard-fail) must be flagged and rejected, even if it would otherwise improve the skill.
-- **Scope discipline** — evaluate the skill as written against its stated intent; don't propose expanding its scope.
-- **Session evidence required** — every Issue and Improvement cites specific session evidence (what happened, what was expected). Purely hypothetical gaps belong in Features.
-- **Repeated-audit shortcut** — if the same skill was audited 2+ times this session and the most recent audit found 0 findings with no intervening edits, note "Skill stable — no new session evidence since last audit" and skip the full checklist. If the skill was modified since the last audit, treat the next audit as fresh.
+Before auditing or implementing audit findings, read
+[`references/workflow.md`](references/workflow.md) completely and follow it as
+the sole procedural authority. This adapter owns only Claude-specific command
+metadata and invocation syntax. Use the host's available read, search, and patch
+tools wherever the workflow names a capability rather than a particular tool.

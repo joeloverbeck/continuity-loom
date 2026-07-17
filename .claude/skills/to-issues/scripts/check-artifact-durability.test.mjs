@@ -5,7 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { checkArtifactDurability } from "./check-artifact-durability.mjs";
+import {
+  checkArtifactDurability,
+  classifyGitExecutionFailure,
+} from "./check-artifact-durability.mjs";
 
 const script = fileURLToPath(new URL("./check-artifact-durability.mjs", import.meta.url));
 
@@ -99,4 +102,15 @@ test("reports clean local-only content as different from an older publication re
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("classifies sandbox-blocked Git execution with an actionable recovery", () => {
+  const error = Object.assign(new Error("spawnSync git EPERM"), { code: "EPERM" });
+
+  assert.deepEqual(classifyGitExecutionFailure(error), {
+    error: "spawnSync git EPERM",
+    kind: "sandbox-restricted",
+    recovery:
+      "Rerun with the host's approved execution escalation when available; otherwise use the documented per-path manual fallback.",
+  });
 });

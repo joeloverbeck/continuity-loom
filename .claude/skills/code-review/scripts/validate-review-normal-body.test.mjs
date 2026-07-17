@@ -71,7 +71,9 @@ ${identityBlock}
 Review: code-review against abc1234; outcome no findings; verification rerun pnpm test.
 `;
 
-const immediateFixBody = `## Standards
+const immediateFixBody = `Review frame: fixed point input abc1234; fixed point resolved SHA abc1234; reviewed HEAD SHA def5678901234567; diff command \`git diff abc1234...HEAD\`; commits def5678; worktree scope committed diff; excluded dirty files none; spec source issue #1.
+
+## Standards
 
 Initial finding was fixed.
 
@@ -84,7 +86,13 @@ Spec sequence coverage: sequence: N/A because the reviewed acceptance is not seq
 - **Initial Spec outcome**: 1/High before fixes
 - **Final Standards outcome**: 0/none after re-review
 - **Final Spec outcome**: 0/none after re-review
-- **Findings found**: two review findings
+- **Findings found**: 2 review findings
+
+| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| P1-standards-1 | P1 | Standards | standards-1 | Standards contract gap | conformance-only | red-first skipped because Standards-only fix did not change behavior | Contract wording corrected | Standards final review completed | fixed |
+| P1-spec-1 | P1 | Spec | spec-1 | Spec behavior gap | behavior | RF-1 | Behavior corrected | Spec final review and pnpm test passed | fixed |
+
 - **Fixes made**: packages/web/src/main.tsx corrected and proof added
 - **Review subagents**: Standards initial reviewer standards-1 completed, final reviewer standards-2 completed; Spec initial reviewer spec-1 completed, final reviewer spec-2 completed
 - **Review subagent cleanup**: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
@@ -513,6 +521,10 @@ test("rejects HTML-like angle tokens and documents shared identity safety", () =
     assert.match(contract, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
   }
   assert.match(skill, /--review normal --size-plan --require-headroom/);
+  assert.match(skill, /multi-pass review or more than one TDD review fix/);
+  assert.match(skill, /--evidence-input <evidence\.json> --immediate-fix --tdd-parent-rollup/);
+  assert.match(skill, /\.\.\/implement\/references\/closeout-templates\.md/);
+  assert.match(skill, /Do not hand-copy those derived fields/);
   assert.match(fallback, /--review fallback --size-plan --require-headroom/);
 });
 
@@ -543,6 +555,76 @@ test("accepts complete immediate-fix evidence and rejects a missing final outcom
     { flags: ["--immediate-fix"] }
   );
   assert.ok(errors.some((error) => error.includes("Final Spec outcome")));
+});
+
+test("requires every fixed-review evidence line to name the reviewed HEAD SHA", () => {
+  const missingSha = validateReviewNormalBody(
+    immediateFixBody.replaceAll("outcome findings fixed in SHA def5678", "outcome findings fixed"),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(
+    missingSha.some((error) => error.includes("must say 'findings fixed in SHA <sha>'"))
+  );
+
+  const staleSha = validateReviewNormalBody(
+    immediateFixBody.replaceAll("outcome findings fixed in SHA def5678", "outcome findings fixed in SHA 1234567"),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(
+    staleSha.some((error) =>
+      error.includes("outcome SHA 1234567 does not match reviewed HEAD SHA def5678901234567")
+    )
+  );
+});
+
+test("requires every immediate-fix finding to have one keyed ledger row and TDD disposition", () => {
+  const laterPassFinding = immediateFixBody
+    .replace("Findings found**: 2 review findings", "Findings found**: 3 review findings")
+    .replace(
+      "| P1-spec-1 | P1 | Spec | spec-1 | Spec behavior gap | behavior | RF-1 | Behavior corrected | Spec final review and pnpm test passed | fixed |",
+      `| P1-spec-1 | P1 | Spec | spec-1 | Spec behavior gap | behavior | RF-1 | Behavior corrected | Spec final review and pnpm test passed | fixed |
+| P2-standards-1 | P2 | Standards | standards-2 | Later-pass contract gap | docs-only | red-first skipped because Standards-only fix did not change behavior | Contract note corrected | Standards P2 rerun completed | fixed |`
+    );
+  assert.deepEqual(validateReviewNormalBody(laterPassFinding, { flags: ["--immediate-fix"] }), []);
+
+  const orphaned = validateReviewNormalBody(
+    immediateFixBody.replace("Findings found**: 2 review findings", "Findings found**: 3 review findings"),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(orphaned.some((error) => error.includes("3 findings but the review finding ledger has 2 rows")));
+
+  const missingDisposition = validateReviewNormalBody(
+    immediateFixBody.replace(
+      "| behavior | RF-1 | Behavior corrected |",
+      "| behavior | none | Behavior corrected |"
+    ),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(missingDisposition.some((error) => error.includes("TDD disposition")));
+
+  const badSeparator = validateReviewNormalBody(
+    immediateFixBody.replace("|---|---|---|---|---|---|---|---|---|---|", "|---|---|---|---|---|---|---|---|---|:---|"),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(badSeparator.some((error) => error.includes("exact 10-column separator")));
+});
+
+test("requires initial and final reviewer identities for immediate fixes", () => {
+  const finalOnly = validateReviewNormalBody(
+    immediateFixBody.replace(
+      "Standards initial reviewer standards-1 completed, final reviewer standards-2 completed; Spec initial reviewer spec-1 completed, final reviewer spec-2 completed",
+      "Standards final reviewer standards-2 completed; Spec final reviewer spec-2 completed"
+    ),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(finalOnly.some((error) => error.includes("initial and final Standards reviewer identities")));
+  assert.ok(finalOnly.some((error) => error.includes("initial and final Spec reviewer identities")));
+
+  const sameReviewer = immediateFixBody.replace(
+    "Standards initial reviewer standards-1 completed, final reviewer standards-2 completed; Spec initial reviewer spec-1 completed, final reviewer spec-2 completed",
+    "Standards initial and final reviewer standards-1 completed; Spec initial and final reviewer spec-1 completed"
+  );
+  assert.deepEqual(validateReviewNormalBody(sameReviewer, { flags: ["--immediate-fix"] }), []);
 });
 
 test("requires current freshness and console evidence when --browser is used", () => {
@@ -676,7 +758,7 @@ test("requires a structured accepted residual with a revisit trigger", () => {
     );
 
   assert.deepEqual(validateReviewNormalBody(accepted), []);
-  const errors = validateReviewNormalBody(accepted.replace(/\n  - \*\*Revisit trigger.*$/m, ""));
+  const errors = validateReviewNormalBody(accepted.replace(/\n {2}- \*\*Revisit trigger.*$/m, ""));
   assert.ok(errors.some((error) => error.includes("Revisit trigger")));
 });
 
@@ -734,7 +816,7 @@ Final SHA: def5678
 
 | Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |
 |---|---|---|---|---|---|---|---|
-| #355 | read | ADR 0008 read | typed public contract | red-first skipped because Standards-only/conformance-only fix did not change behavior | pnpm typecheck passed | AC1; atoms: atomic; proof surfaces: server type contract; sequence: N/A because criterion is not sequence-sensitive | review-fix evidence |
+| #355 | read | ADR 0008 read | typed public contract | red-first skipped because Standards-only/conformance-only fix did not change behavior | pnpm typecheck passed | AC1; atoms: atomic; proof surfaces: server type contract; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review-fix evidence |
 
 Verification command ledger:
 | Exact command | Observed result/counts | Run count | Represented SHA/tree |
@@ -743,21 +825,18 @@ Verification command ledger:
 
 Existing-test contract-change rows: none
 
-TDD review-fix addendum:
-- Finding: typed public contract ownership
-- Intended red command/failure: red-first skipped because Standards-only/conformance-only fix did not change behavior
-- Green command/evidence: pnpm typecheck passed
-- Updated TDD table row: #355 typed public contract
-- Regression durability: N/A because the intended red was not a transient browser/manual probe
-- Browser/manual evidence freshness: N/A because no UI/routes/browser-consumed API/fixtures/action path changed
-- Backend process currentness: N/A because no browser/manual proof was used
-- Evidence identity refresh: same-sink identity block inspected
+TDD review-fix map:
+
+| Finding ID | Finding/source | Intended red command/failure | Green command/evidence | Updated TDD table row | Regression durability | Browser/manual evidence freshness | Backend process currentness | Evidence identity refresh |
+|---|---|---|---|---|---|---|---|---|
+| RF-1 | typed public contract ownership | red-first skipped because Standards-only/conformance-only fix did not change behavior | \`pnpm typecheck\` passed: 1 check | #355 / typed public contract | N/A because the intended red was not a transient browser/manual probe | N/A because no UI/routes/browser-consumed API/fixtures/action path changed | N/A because no browser/manual proof was used | same-sink identity block inspected |
 
 TDD closeout preflight:
 - Durable sink/body inspected: issue #355 closeout comment
 - Compact table/header: present after structural check
 - Rows accounted for: all in-scope issues and seams listed
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
+- Pre-red evidence reference: issue #355 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
 - ADRs/principles/docs status: present
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces

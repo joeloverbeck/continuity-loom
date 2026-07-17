@@ -26,6 +26,12 @@ A run whose subject is a **durable artifact** and whose action is **operational*
 
 A class can shift mid-session as facts surface. When it does, the recap owed is the **union** of the contracts for every class the run actually occupied — a run that begins diagnostic and resolves into execution owes both the diagnostic verdict fields and the operational mutation fields. Do not let the later class silently retire the earlier class's provenance.
 
+### Simultaneous mixed requests
+
+When one user request contains multiple independent items at the same time, classify each item separately. Choose the recap contract for the dominant requested deliverable, then include the subordinate item's required evidence, finding, recommendation, or decision fields inside that recap without reproducing a second complete template.
+
+For example, a request containing one concrete diagnostic and one design determination should use the determination or diagnostic contract that matches the requested final deliverable, while still preserving the other item's verdict and evidence. Apply the class-shift union only when the same subject or action actually changes class, or when one action genuinely spans multiple classes; mere coexistence of independent items is not a class shift.
+
 ## PRD-ready / issue-ready recap checklist
 
 Keep this checklist visible during determination and report-cited grilling runs. The closing recap must include:

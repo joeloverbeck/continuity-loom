@@ -126,6 +126,22 @@ Axis summary: Standards 0/none, Spec 0/none
 Review fallback gate passed: frame yes; delegation policy source yes; Standards yes; Spec yes; child table N/A; smell baseline yes; evidence identities yes; found-vs-residual N/A; closeout line N/A; immediate-fix block N/A; tdd fielded closeout gate N/A; verification/browser freshness N/A.
 `;
 
+const immediateFixBody = baseBody
+  .replace("Residual findings: none.", `Findings found: 1 Standards finding
+
+| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| P1-standards-1 | P1 | Standards | local fallback | Standards contract gap | conformance-only | red-first skipped because Standards-only fix did not change behavior | Contract wording corrected | Local Standards rerun passed | fixed |
+
+Fixes made: contract wording corrected
+TDD/review-fix evidence: red-first skipped because Standards-only fix did not change behavior
+TDD closeout gate: N/A because no tdd skill was invoked
+Verification rerun: node --test passed
+Commit handling: follow-up commit def5678
+Residual findings: none.`)
+  .replace("found-vs-residual N/A", "found-vs-residual yes")
+  .replace("immediate-fix block N/A", "immediate-fix block yes");
+
 const browserBody = baseBody
   .replace("N/A because no browser/manual evidence was used", "browser smoke rerun passed on final tree with observed result loaded workflow")
   .replace("N/A because no browser/manual evidence was used", "0 errors and 0 warnings in the clean browser session")
@@ -152,11 +168,14 @@ Verification command ledger:
 
 Existing-test contract-change rows: none
 
+TDD review-fix map: N/A because review created no TDD row changes
+
 TDD closeout preflight:
 - Durable sink/body inspected: issue #355 closeout comment
 - Compact table/header: present after structural check
 - Rows accounted for: all in-scope issues and seams listed
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
+- Pre-red evidence reference: issue #355 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
 - ADRs/principles/docs status: present
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces
@@ -274,6 +293,28 @@ test("rejects no-browser and stale backend claims when --browser is used", () =>
     ["--browser"]
   );
   assert.equal(noStatefulCopy.status, 0, noStatefulCopy.stderr);
+});
+
+test("requires a keyed finding ledger for fallback immediate fixes", () => {
+  const complete = runValidator(immediateFixBody, ["--immediate-fix"]);
+  assert.equal(complete.status, 0, complete.stderr);
+
+  const orphaned = runValidator(
+    immediateFixBody.replace("Findings found: 1 Standards finding", "Findings found: 2 Standards findings"),
+    ["--immediate-fix"]
+  );
+  assert.notEqual(orphaned.status, 0);
+  assert.match(orphaned.stderr, /2 findings but the review finding ledger has 1 row/);
+
+  const missingDisposition = runValidator(
+    immediateFixBody.replace(
+      "| conformance-only | red-first skipped because Standards-only fix did not change behavior |",
+      "| conformance-only | none |"
+    ),
+    ["--immediate-fix"]
+  );
+  assert.notEqual(missingDisposition.status, 0);
+  assert.match(missingDisposition.stderr, /TDD disposition/);
 });
 
 test("requires exact sequence-aware child coverage when --child-family is used", () => {

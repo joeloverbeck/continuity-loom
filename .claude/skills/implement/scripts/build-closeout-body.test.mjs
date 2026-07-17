@@ -19,7 +19,9 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 const builder = resolve(here, "build-closeout-body.mjs");
+const implementValidator = resolve(here, "validate-closeout-body.mjs");
 const normalReviewValidator = resolve(here, "../../code-review/scripts/validate-review-normal-body.mjs");
+const tddValidator = resolve(here, "../../tdd/scripts/validate-tdd-closeout-body.mjs");
 
 const manifest = buildAcceptanceManifest([
   {
@@ -42,6 +44,219 @@ const manifest = buildAcceptanceManifest([
   }
 ]);
 
+const structuredEvidence = {
+  tddRows: [
+    {
+      issue: 364,
+      contextStatus: "absent",
+      authorityStatus: "Principles read",
+      seam: "parent integration",
+      red: "red-first skipped because the parent row is evidence-only",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
+      acceptance: "AC1, Principles; atoms: parent behavior; proof surfaces: .claude/skills/implement/scripts/build-closeout-body.test.mjs; sequence: N/A because the criterion is not sequence-sensitive",
+      reviewDisposition: "coverage-only parent proof"
+    },
+    {
+      issue: 368,
+      contextStatus: "absent",
+      authorityStatus: "active docs read",
+      seam: "replay route",
+      red: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the replay assertion did not match",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
+      acceptance: "AC1; atoms: production replay; proof surfaces: .claude/skills/implement/scripts/build-closeout-body.test.mjs; sequence: request -> replay -> assertion",
+      reviewDisposition: "review fixes mapped below"
+    }
+  ],
+  tddReviewFixes: [
+    {
+      id: "RF-1",
+      finding: "first behavior repair",
+      red: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the RF-1 assertion did not match",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-1",
+      issue: 368,
+      seam: "replay route",
+      durability: "durable regression test added at build-closeout-body.test.mjs",
+      browserFreshness: "N/A because no browser/manual evidence applies",
+      backendCurrentness: "N/A because no browser/manual evidence was used",
+      identityRefresh: "current revision refreshed"
+    },
+    {
+      id: "RF-2",
+      finding: "spec coverage repair",
+      red: "coverage-only review fix; red-first N/A because behavior already existed and no code changed",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-2",
+      issue: 364,
+      seam: "parent integration",
+      durability: "durable regression test added at build-closeout-body.test.mjs",
+      browserFreshness: "N/A because no browser/manual evidence applies",
+      backendCurrentness: "N/A because no browser/manual evidence was used",
+      identityRefresh: "current revision refreshed"
+    },
+    {
+      id: "RF-3",
+      finding: "second-pass behavior repair",
+      red: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the RF-3 assertion did not match",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-3",
+      issue: 368,
+      seam: "replay route",
+      durability: "durable regression test added at build-closeout-body.test.mjs",
+      browserFreshness: "N/A because no browser/manual evidence applies",
+      backendCurrentness: "N/A because no browser/manual evidence was used",
+      identityRefresh: "current revision refreshed"
+    }
+  ],
+  reviewFindings: [
+    {
+      id: "P1-standards-1",
+      severity: "high",
+      reviewer: "standards-initial",
+      originalFinding: "first behavior repair",
+      repairClass: "behavior",
+      tddDisposition: "RF-1",
+      repair: "first behavior repaired",
+      rerunEvidence: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-1",
+      finalStatus: "fixed"
+    },
+    {
+      id: "P1-spec-1",
+      severity: "medium",
+      reviewer: "spec-initial",
+      originalFinding: "spec coverage repair",
+      repairClass: "coverage-only",
+      tddDisposition: "RF-2",
+      repair: "spec coverage added",
+      rerunEvidence: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-2",
+      finalStatus: "fixed"
+    },
+    {
+      id: "P2-standards-1",
+      severity: "medium",
+      reviewer: "standards-final",
+      originalFinding: "second-pass behavior repair",
+      repairClass: "behavior",
+      tddDisposition: "RF-3",
+      repair: "second-pass behavior repaired",
+      rerunEvidence: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-3",
+      finalStatus: "fixed"
+    }
+  ]
+};
+
+const completeStructuredEvidenceBody = (generated) => generated
+  .replace(
+    /^Review frame:.*$/m,
+    "Review frame: fixed point input abcdef0; fixed point resolved SHA abcdef0; reviewed HEAD SHA fedcba9; diff command `git diff abcdef0...HEAD`; commits fedcba9; worktree scope implement skill; excluded dirty files none; spec source issues #364 and #368."
+  )
+  .replace(
+    /^Review:.*$/m,
+    "Review: code-review against abcdef0; outcome findings fixed in SHA fedcba9; verification rerun node --test passed."
+  )
+  .replace(
+    /^Review subagents:.*$/m,
+    "Review subagents: Standards initial reviewer standards-initial completed, final reviewer standards-final completed; Spec initial reviewer spec-initial completed, final reviewer spec-final completed"
+  )
+  .replace(/^Review subagent cleanup:.*$/m, "Review subagent cleanup: Standards closed; Spec closed")
+  .replace(/^Sources reviewed:.*$/gm, "Sources reviewed: AGENTS.md, active issue bodies, and the implementation diff")
+  .replace(/^Findings:.*$/gm, "Findings: none")
+  .replace(
+    /^\| #364 \| AC1, Principles; sequence:.*$/m,
+    "| #364 | AC1, Principles; sequence: N/A because the criteria are not sequence-sensitive | implementation diff and node --test | none |"
+  )
+  .replace(
+    /^\| #368 \| AC1; sequence:.*$/m,
+    "| #368 | AC1; sequence: request -> replay -> assertion | implementation diff and node --test | none |"
+  )
+  .replace(/^Axis summary:.*$/m, "Axis summary: Standards 0/none, Spec 0/none")
+  .replace(/^Residual findings:.*$/m, "Residual findings: none")
+  .replace(/^Parent PRD coverage:.*$/m, "Parent PRD coverage: N/A because this fixture is not a parent PRD")
+  .replace(
+    /^Spec sequence coverage:.*$/m,
+    "Spec sequence coverage: sequence: request -> replay -> assertion observed by the integration test"
+  )
+  .replace(
+    /^Browser\/manual evidence freshness:.*$/m,
+    "Browser/manual evidence freshness: N/A because no browser/manual evidence was used"
+  )
+  .replace(
+    /^Browser\/manual console state:.*$/m,
+    "Browser/manual console state: N/A because no browser/manual evidence was used"
+  )
+  .replace(
+    /^Backend process currentness:.*$/m,
+    "Backend process currentness: N/A because no browser/manual evidence was used"
+  )
+  .replace(/^Commit handling:.*$/m, "Commit handling: follow-up commit fedcba9")
+  .replace(
+    /^Existing-test contract-change rows:.*$/gm,
+    "Existing-test contract-change rows: none"
+  )
+  .replace(
+    /^Browser\/manual freshness:.*$/m,
+    "Browser/manual freshness: N/A because no browser/manual evidence applies"
+  )
+  .replace(
+    /^- Durable sink\/body inspected:.*$/m,
+    "- Durable sink/body inspected: structured evidence integration test fixture"
+  )
+  .replace(/^- Compact table\/header:.*$/m, "- Compact table/header: present after structural check")
+  .replace(
+    /^- Pre-red recovery status:.*$/m,
+    "- Pre-red recovery status: N/A because the pre-red preflight/table was visible before first red"
+  )
+  .replace(
+    /^- Pre-red evidence reference:.*$/m,
+    "- Pre-red evidence reference: durable sink issue #364; exact heading TDD closeout preflight; line order proves this section precedes the first red command"
+  )
+  .replace(/^- CONTEXT\.md status:.*$/m, "- CONTEXT.md status: absent")
+  .replace(/^- ADRs\/principles\/docs status:.*$/m, "- ADRs/principles/docs status: active docs read")
+  .replace(
+    /^- Acceptance atom map:.*$/m,
+    "- Acceptance atom map: all rows list authoritative atoms and proof surfaces"
+  )
+  .replace(
+    /^- Acceptance sequence map:.*$/m,
+    "- Acceptance sequence map: all rows list ordered proof or justified sequence N/A"
+  )
+  .replace(/^- Partial-red \/ red-first skip reasons:.*$/m, "- Partial-red / red-first skip reasons: parent row is evidence-only")
+  .replace(/^- Evidence-only rows freshness:.*$/m, "- Evidence-only rows freshness: none")
+  .replace(
+    /^- Evidence-only browser console state:.*$/m,
+    "- Evidence-only browser console state: N/A because no browser/manual evidence-only rows exist"
+  )
+  .replace(
+    /^- Evidence-only proof server preflight:.*$/m,
+    "- Evidence-only proof server preflight: N/A because no browser/manual evidence-only rows exist"
+  )
+  .replace(
+    /^- Evidence-only backend process currentness:.*$/m,
+    "- Evidence-only backend process currentness: N/A because no browser/manual evidence-only rows exist"
+  )
+  .replace(
+    /^- Evidence identity refresh:.*$/m,
+    "- Evidence identity refresh: same-sink current, historical-red, and superseded identity block inspected"
+  )
+  .replace(
+    /^TDD evidence gate passed:.*$/m,
+    "TDD evidence gate passed: durable sink structured evidence integration test fixture; compact table/header present after structural check; seams accounted for #364 / parent integration; #368 / replay route; RF-1, RF-2, RF-3; CONTEXT.md status absent; ADRs/principles/docs status present; sequence evidence present; evidence identities present; partial-red / red-first skip reasons listed; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none."
+  )
+  .replace(
+    /^- Current evidence identities:.*$/m,
+    "- Current evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions fixture-v1; artifacts none"
+  )
+  .replace(
+    /^- Historical red identities retained:.*$/m,
+    "- Historical red identities retained: fixture paths fixture-v0; browser sessions none; packet paths/hashes none; active revisions none; artifacts none"
+  )
+  .replace(
+    /^- Superseded evidence identities:.*$/m,
+    "- Superseded evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none"
+  )
+  .replace(/^- Superseded-token sweep:.*$/m, "- Superseded-token sweep: N/A because every superseded category is none")
+  .replaceAll(
+    "atoms: TODO; proof surfaces: TODO; sequence: TODO or N/A because criterion is not sequence-sensitive | not done",
+    "atoms: exact criterion; proof surfaces: .claude/skills/implement/scripts/build-closeout-body.test.mjs and node --test; sequence: N/A because the criterion is not sequence-sensitive | satisfied"
+  );
+
 test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", () => {
   const body = buildCloseoutBodyScaffold(manifest, {
     parentIssue: 364,
@@ -58,10 +273,14 @@ test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", (
   assert.match(body, /Scaffold status: incomplete/);
   assert.match(body, /Local-only SHA: <final SHA> is not remote-reachable/);
   assert.match(body, /TDD closeout preflight:/);
+  assert.match(body, /Pre-red evidence reference:/);
+  assert.match(body, /TDD review-fix map:/);
+  assert.match(body, /\| Finding ID \| Finding\/source \| Intended red command\/failure \|/);
   assert.match(body, /Evidence-only proof server preflight:/);
   assert.match(body, /proof server preflight <present or N\/A>/);
   assert.match(body, /Review: code-review against <resolved fixed point>/);
-  assert.match(body, /outcome findings fixed/);
+  assert.match(body, /outcome findings fixed in SHA <final SHA>/);
+  assert.match(body, /\| Finding ID \| Review pass \| Axis \| Reviewer \| Original finding \|/);
   for (const label of [
     "Initial Standards outcome:",
     "Initial Spec outcome:",
@@ -69,11 +288,11 @@ test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", (
     "Final Spec outcome:",
     "Findings found:",
     "Fixes made:",
-    "TDD\/review-fix evidence:",
+    "TDD/review-fix evidence:",
     "TDD closeout gate:",
     "Verification rerun:",
-    "Browser\/manual evidence freshness:",
-    "Browser\/manual console state:",
+    "Browser/manual evidence freshness:",
+    "Browser/manual console state:",
     "Commit handling:"
   ]) {
     assert.match(body, new RegExp(label));
@@ -90,6 +309,102 @@ test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", (
   assert.doesNotMatch(body, /Review fallback:/);
 });
 
+test("structured evidence single-sources multi-pass review and TDD summaries", () => {
+  const body = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    immediateFix: true,
+    tddParentRollup: true,
+    evidence: structuredEvidence
+  });
+
+  assert.match(body, /TDD review-fix map: RF-1, RF-2, RF-3 below\./);
+  assert.match(body, /Rows accounted for: #364 \/ parent integration; #368 \/ replay route; RF-1, RF-2, RF-3/);
+  assert.match(body, /seams accounted for #364 \/ parent integration; #368 \/ replay route; RF-1, RF-2, RF-3/);
+  assert.match(body, /\| RF-3 \| second-pass behavior repair \| `node --test [^`]+` failed because the RF-3 assertion did not match \|/);
+  assert.match(body, /\| #368 \| absent \| active docs read \| replay route \|[^\n]+RF-1, RF-3 mapped below \|/);
+  assert.match(body, /Initial Standards outcome: 1 finding, worst high: first behavior repair/);
+  assert.match(body, /Initial Spec outcome: 1 finding, worst medium: spec coverage repair/);
+  assert.match(body, /Findings found: 3: first behavior repair; spec coverage repair; second-pass behavior repair/);
+  assert.match(body, /\| P2-standards-1 \| P2 \| Standards \| standards-final \| second-pass behavior repair \|/);
+  assert.match(body, /TDD\/review-fix evidence: RF-1, RF-2, RF-3 mapped above; remaining dispositions are recorded per finding below\./);
+  assert.doesNotMatch(body, /\| RF-1 \| <one review finding\/source>/);
+  assert.doesNotMatch(body, /\| P1-standards-1 \| P1 \| Standards \| <initial reviewer ID or local fallback>/);
+});
+
+test("structured evidence rejects inconsistent switches and RF issue/seam mappings", () => {
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      immediateFix: true,
+      evidence: structuredEvidence
+    }),
+    /TDD evidence requires --tdd-parent-rollup/
+  );
+
+  const inconsistent = {
+    ...structuredEvidence,
+    tddReviewFixes: structuredEvidence.tddReviewFixes.map((fix) => ({ ...fix }))
+  };
+  inconsistent.tddReviewFixes[0].seam = "different seam";
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      immediateFix: true,
+      tddParentRollup: true,
+      evidence: inconsistent
+    }),
+    /RF-1 must map to an exact structured TDD issue\/seam row/
+  );
+});
+
+test("structured P1/P2 and RF-1 through RF-3 evidence passes all closeout validators", () => {
+  const generated = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    immediateFix: true,
+    tddParentRollup: true,
+    evidence: structuredEvidence
+  });
+  const body = completeStructuredEvidenceBody(generated);
+  const directory = mkdtempSync(join(tmpdir(), "implement-structured-evidence-test-"));
+  const bodyPath = join(directory, "body.md");
+  const auditPath = join(directory, "audit.md");
+  const manifestPath = join(directory, "manifest.json");
+  const auditStart = body.indexOf("| Issue | Acceptance criterion or conformance check | Evidence | Status |");
+  const auditEnd = body.indexOf("\n\nPrinciples/ADR conformance:", auditStart);
+  writeFileSync(bodyPath, body);
+  writeFileSync(auditPath, body.slice(auditStart, auditEnd));
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+
+  try {
+    const invocations = [
+      ["TDD", tddValidator, bodyPath, ["--parent-rollup", "--acceptance-manifest", manifestPath]],
+      [
+        "normal review",
+        normalReviewValidator,
+        bodyPath,
+        ["--immediate-fix", "--tdd-parent-rollup", "--acceptance-manifest", manifestPath]
+      ],
+      [
+        "implement",
+        implementValidator,
+        auditPath,
+        ["--audit-only", "--review-entry", "--acceptance-manifest", manifestPath]
+      ]
+    ];
+
+    for (const [name, validator, validationPath, flags] of invocations) {
+      const result = spawnSync(process.execPath, [validator, validationPath, ...flags], { encoding: "utf8" });
+      assert.equal(result.status, 0, `${name} validator failed:\n${result.stderr}${result.stdout}`);
+    }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("normal immediate-fix scaffold satisfies the normal-review validator after filling generated fields", () => {
   const generated = buildCloseoutBodyScaffold(manifest, {
     parentIssue: 364,
@@ -98,12 +413,16 @@ test("normal immediate-fix scaffold satisfies the normal-review validator after 
   });
   const body = generated
     .replace(
+      /^Review frame:.*$/m,
+      "Review frame: fixed point input abcdef0; fixed point resolved SHA abcdef0; reviewed HEAD SHA fedcba9; diff command `git diff abcdef0...HEAD`; commits fedcba9; worktree scope implement skill; excluded dirty files none; spec source issue #364."
+    )
+    .replace(
       /^Review:.*$/m,
-      "Review: code-review against abcdef0; outcome findings fixed; verification rerun node --test."
+      "Review: code-review against abcdef0; outcome findings fixed in SHA fedcba9; verification rerun node --test."
     )
     .replace(
       /^Review subagents:.*$/m,
-      "Review subagents: Standards final reviewer standards-final completed; Spec final reviewer spec-final completed"
+      "Review subagents: Standards initial reviewer standards-initial completed, final reviewer standards-final completed; Spec initial and final reviewer spec-final completed"
     )
     .replace(
       /^Review subagent cleanup:.*$/m,
@@ -121,6 +440,10 @@ test("normal immediate-fix scaffold satisfies the normal-review validator after 
     .replace(/^Final Standards outcome:.*$/m, "Final Standards outcome: 0/none after final re-review")
     .replace(/^Final Spec outcome:.*$/m, "Final Spec outcome: 0/none after final re-review")
     .replace(/^Findings found:.*$/m, "Findings found: 1 Standards finding")
+    .replace(
+      /^\| P1-standards-1 \|.*$/m,
+      "| P1-standards-1 | P1 | Standards | standards-initial | Scaffold field was incomplete | conformance-only | red-first skipped because Standards-only fix did not change behavior | Scaffold field corrected | Standards final review and node --test passed | fixed |"
+    )
     .replace(/^Fixes made:.*$/m, "Fixes made: scaffold field corrected")
     .replace(
       /^TDD\/review-fix evidence:.*$/m,
@@ -171,13 +494,14 @@ test("buildCloseoutBodyScaffold emits immediate-fix fallback fields", () => {
   });
 
   assert.match(body, /Review fallback:/);
+  assert.match(body, /\| Finding ID \| Review pass \| Axis \| Reviewer \| Original finding \|/);
   for (const label of [
     "Browser/manual evidence freshness:",
     "Browser/manual console state:",
     "Backend process currentness:",
     "Findings found:",
     "Fixes made:",
-    "TDD\/review-fix evidence:",
+    "TDD/review-fix evidence:",
     "Verification rerun:",
     "Commit handling:",
     "Residual findings:"
@@ -286,15 +610,19 @@ test("closeout scaffold CLI writes a deterministic body", () => {
   const directory = mkdtempSync(join(tmpdir(), "implement-closeout-scaffold-test-"));
   const manifestPath = join(directory, "manifest.json");
   const auditPath = join(directory, "audit.md");
+  const evidencePath = join(directory, "evidence.json");
   const outputPath = join(directory, "closeout.md");
   writeFileSync(manifestPath, JSON.stringify(manifest));
   writeFileSync(auditPath, buildAuditScaffold(manifest));
+  writeFileSync(evidencePath, JSON.stringify(structuredEvidence));
 
   const args = [
     builder,
     manifestPath,
     "--audit-input",
     auditPath,
+    "--evidence-input",
+    evidencePath,
     "--output",
     outputPath,
     "--parent",
@@ -318,6 +646,7 @@ test("closeout scaffold CLI writes a deterministic body", () => {
   assert.equal(first.status, 0, first.stderr);
   assert.equal(second.status, 0, second.stderr);
   assert.equal(secondBody, firstBody);
+  assert.match(secondBody, /TDD review-fix map: RF-1, RF-2, RF-3 below\./);
 });
 
 test("closeout scaffold CLI refuses an oversized output", () => {

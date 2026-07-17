@@ -17,7 +17,7 @@ For a single child or 2-3 child issues using a parent rollup plus fixed-template
 5. Close each child with `gh issue close <child> --reason completed --comment "<inspected exact inline string>"`; do not reword the inline comment between children.
 6. Verify every child state by exact issue number and record post-child closure verification in a parent rollup patch, follow-up parent comment, or inspected parent close comment.
 7. Close the parent only after that durable post-child verification names the exact child issue numbers and CLOSED states.
-8. Exact-read the parent and children again before the final response.
+8. Exact-read the parent and children again before the final response using the output-bounded state-only and latest-comment recipes in [tracker-closeout-gates.md](tracker-closeout-gates.md); do not fetch full comment histories for state-only verification.
 
 Closeout execution order for 4+ in-scope child issues defaults to: post the parent PRD rollup/audit comment first, capture its URL or exact comment reference, verify the exact stored body, cite that rollup from each child closeout comment, close child issues, verify child states by exact issue number, then close the parent. Use per-child full audit comments instead only when no parent rollup is used.
 

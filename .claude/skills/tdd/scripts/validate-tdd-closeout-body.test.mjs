@@ -78,11 +78,14 @@ Verification command ledger:
 
 Existing-test contract-change rows: none
 
+TDD review-fix map: N/A because review created no TDD row changes
+
 TDD closeout preflight:
 - Durable sink/body inspected: test fixture
 - Compact table/header: present after structural check
 - Rows accounted for: all in-scope issues and seams listed
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
+- Pre-red evidence reference: issue #1 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
 - ADRs/principles/docs status: present
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces
@@ -119,17 +122,17 @@ const browserEvidenceBodyWith = (backendCurrentness) =>
       "- Evidence-only proof server preflight: configured API/UI ports 4173 and 5173; owner-check result occupied; unrelated pre-existing owners PID 100 and PID 101; isolated proof-owned ports 4174 and 5174 with proxy aligned; cleanup ownership proof PIDs only"
     );
 
-const reviewFixBodyWith = (freshnessLabel) => `${bodyWith()}
-TDD review-fix addendum:
-- Finding: closeout citation wording
-- Intended red command/failure: red-first skipped because Standards-only/conformance-only fix did not change behavior
-- Green command/evidence: validator passed
-- Updated TDD table row: #1 red-first public workflow
-- Regression durability: N/A because the intended red was not a transient browser/manual probe
-- ${freshnessLabel}: N/A because no UI/routes/browser-consumed API/fixtures/action path changed
-- Backend process currentness: N/A because no browser/manual proof was used
-- Evidence identity refresh: same-sink current/historical-red/superseded identity block inspected
-`;
+const reviewFixBodyWith = () =>
+  bodyWith()
+    .replace(" | N/A |\n\nVerification command ledger:", " | RF-1 - review fix |\n\nVerification command ledger:")
+    .replace(
+      "TDD review-fix map: N/A because review created no TDD row changes",
+      `TDD review-fix map:
+
+| Finding ID | Finding/source | Intended red command/failure | Green command/evidence | Updated TDD table row | Regression durability | Browser/manual evidence freshness | Backend process currentness | Evidence identity refresh |
+|---|---|---|---|---|---|---|---|---|
+| RF-1 | closeout citation wording | red-first skipped because Standards-only/conformance-only fix did not change behavior | \`pnpm typecheck\` passed: 1 check | #1 / red-first public workflow | N/A because the intended red was not a transient browser/manual probe | N/A because no UI/routes/browser-consumed API/fixtures/action path changed | N/A because no browser/manual proof was used | same-sink current/historical-red/superseded identity block inspected |`
+    );
 
 const parentBodyWithStoryMap = () =>
   bodyWith({
@@ -229,6 +232,54 @@ test("closing permits local fixture paths outside publishable sink fields", () =
   });
 
   assert.deepEqual(validateTddCloseoutBody(body, closingOptions), []);
+});
+
+test("rejects a visible-before-red claim without a durable evidence reference", () => {
+  const body = bodyWith().replace(/- Pre-red evidence reference: .+\n/, "");
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) => error.includes("Pre-red evidence reference is empty"))
+  );
+});
+
+test("rejects a pre-red reference without an anchor and chronology proof", () => {
+  const body = bodyWith().replace(
+    /- Pre-red evidence reference: .+\n/,
+    "- Pre-red evidence reference: implementation ledger says the preflight existed\n"
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) =>
+      error.includes("exact heading/row/section/line anchor, and chronology proof")
+    )
+  );
+});
+
+test("accepts an anchored recovery addendum reference", () => {
+  const body = bodyWith()
+    .replace(
+      "Pre-red recovery status: N/A - pre-red preflight/table was visible before first red",
+      "Pre-red recovery status: listed with TDD recovery addendum"
+    )
+    .replace(
+      /- Pre-red evidence reference: .+\n/,
+      "- Pre-red evidence reference: TDD recovery addendum in issue #1 implementation ledger; section anchor Recovery RF-0\n"
+    );
+
+  assert.deepEqual(validateTddCloseoutBody(body), []);
+});
+
+test("closing rejects a local pre-red staging reference", () => {
+  const body = bodyWith().replace(
+    /- Pre-red evidence reference: .+\n/,
+    "- Pre-red evidence reference: /tmp/tdd-ledger.md; anchor TDD preflight heading; chronology same-sink line order before first red command\n"
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body, closingOptions).some((error) =>
+      error.includes("published TDD closeout field Pre-red evidence reference contains local staging path")
+    )
+  );
 });
 
 test("closing rejects a body above the configured UTF-8 byte ceiling", () => {
@@ -514,42 +565,60 @@ test("rejects an incomplete proof-server preflight", () => {
   );
 });
 
-test("accepts the shared browser/manual evidence freshness review-fix label", () => {
-  assert.deepEqual(validateTddCloseoutBody(reviewFixBodyWith("Browser/manual evidence freshness")), []);
+test("accepts a keyed one-finding review-fix map", () => {
+  assert.deepEqual(validateTddCloseoutBody(reviewFixBodyWith()), []);
 });
 
-test("continues to accept the legacy browser/manual freshness review-fix label", () => {
-  assert.deepEqual(validateTddCloseoutBody(reviewFixBodyWith("Browser/manual freshness")), []);
-});
+test("rejects the legacy bundled review-fix addendum", () => {
+  const body = reviewFixBodyWith()
+    .replace(/TDD review-fix map:\n\n\| Finding ID[\s\S]+?same-sink current\/historical-red\/superseded identity block inspected \|\n/, "")
+    .concat("\nTDD review-fix addendum: several findings and commands bundled together\n");
 
-test("rejects a prose-only review-fix addendum heading", () => {
-  const body = `${bodyWith()}\nTDD review-fix addendum: Review findings were fixed and focused tests passed.\n`;
   const errors = validateTddCloseoutBody(body);
-
-  for (const label of [
-    "Finding:",
-    "Intended red command/failure:",
-    "Green command/evidence:",
-    "Updated TDD table row:",
-    "Browser/manual evidence freshness:",
-    "Backend process currentness:",
-    "Evidence identity refresh:"
-  ]) {
-    assert.ok(errors.some((error) => error.includes(`review-fix addendum missing ${label}`)), label);
-  }
+  assert.ok(errors.some((error) => error.includes("TDD review-fix map disposition")));
+  assert.ok(errors.some((error) => error.includes("exact keyed TDD review-fix map header")));
 });
 
-test("review-fix addendum requires regression durability for transient browser red evidence", () => {
-  const body = reviewFixBodyWith("Browser/manual evidence freshness")
+test("rejects a duplicate review-fix finding identity", () => {
+  const body = reviewFixBodyWith().replace(
+    "| RF-1 | closeout citation wording",
+    "| RF-1 | duplicate finding | red-first skipped because Standards-only/conformance-only fix did not change behavior | `pnpm typecheck` passed: 1 check | #1 / red-first public workflow | N/A because the intended red was not a transient browser/manual probe | N/A because no UI/routes/browser-consumed API/fixtures/action path changed | N/A because no browser/manual proof was used | same-sink identity block inspected |\n| RF-1 | closeout citation wording"
+  );
+
+  assert.ok(validateTddCloseoutBody(body).some((error) => error.includes("duplicates Finding ID RF-1")));
+});
+
+test("rejects a review-fix map that does not target the exact compact seam", () => {
+  const body = reviewFixBodyWith().replace("#1 / red-first public workflow", "#1 / missing seam");
+
+  assert.ok(validateTddCloseoutBody(body).some((error) => error.includes("targets missing compact row")));
+});
+
+test("rejects one review-fix identity reused by a second compact TDD row", () => {
+  const body = reviewFixBodyWith().replace(
+    "| #1 | read | ADR 0001 read | red-first public workflow",
+    `| #2 | read | ADR 0001 read | second public workflow | red-first skipped because Standards-only/conformance-only fix did not change behavior | \`pnpm typecheck\` passed | AC2; atoms: atomic; proof surfaces: second workflow test; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review fix |
+| #1 | read | ADR 0001 read | red-first public workflow`
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) =>
+      error.includes("cites RF-1, but that map row targets a different compact TDD row")
+    )
+  );
+});
+
+test("review-fix map requires regression durability for transient browser red evidence", () => {
+  const body = reviewFixBodyWith()
     .replace(
       "red-first skipped because Standards-only/conformance-only fix did not change behavior",
       "`node browser-red.mjs` failed during Playwright page assertion"
     )
-    .replace(/- Regression durability: .+\n/, "");
+    .replace("N/A because the intended red was not a transient browser/manual probe", "");
 
   assert.ok(
     validateTddCloseoutBody(body).some((error) =>
-      error.includes("review-fix addendum Regression durability is empty")
+      error.includes("TDD review-fix map row 1 Regression durability is empty")
     )
   );
 });
@@ -610,6 +679,14 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(skill, /two independent snapshots or server renders are not equivalent/);
   assert.match(skill, /every named value unless the source explicitly permits/);
   assert.match(skill, /Dependency state is a precondition, not a behavior red/);
+  assert.match(skill, /Cross-workspace build freshness is a precondition, not a behavior red/);
+  assert.match(skill, /current source or built output/);
+  assert.match(skill, /partial red - wrong reason: stale upstream workspace build/);
+  assert.match(skill, /rerun the exact focused command/);
+  assert.match(skill, /Robustness harnesses are assurance after behavior green/);
+  assert.match(skill, /docs\/robustness-testing\.md/);
+  assert.match(skill, /canonical result gate/);
+  assert.match(skill, /equivalence cannot be demonstrated/);
   assert.match(skill, /Published current evidence survives cleanup truthfully/);
   assert.match(skill, /Authority-sensitive fixture identity stays explicit/);
   assert.match(skill, /Before starting or attaching to any proof server/);
@@ -618,8 +695,10 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /Nested-validator angle-token check/);
   assert.match(closeout, /no hits outside classified identity\/history lines and no active-proof hits/);
   assert.match(closeout, /published current artifact is not safe to remove until closeout is complete/);
-  assert.match(closeout, /Browser\/manual evidence freshness:/);
-  assert.match(closeout, /legacy `Browser\/manual freshness:` alias/);
+  assert.match(closeout, /Browser\/manual evidence freshness/);
+  assert.match(closeout, /Pre-red evidence reference:/);
+  assert.match(closeout, /TDD review-fix map:/);
+  assert.match(skill, /repeat that ID in the exact compact TDD row/);
   assert.match(closeout, /65,536-byte body maximum/);
   assert.match(closeout, /wc -c/);
   assert.match(closeout, /every exact named contract in the issue criteria/);
@@ -628,6 +707,11 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /--expected-final-sha "\$\(git rev-parse HEAD\)"/);
   assert.match(closeout, /--acceptance-manifest <path>/);
   assert.match(closeout, /--size-plan --require-headroom/);
+  assert.match(closeout, /multi-pass review or more than one TDD review fix/);
+  assert.match(closeout, /must use the structured evidence JSON/);
+  assert.match(closeout, /--evidence-input <evidence\.json>/);
+  assert.match(closeout, /\.\.\/implement\/references\/closeout-templates\.md/);
+  assert.match(closeout, /Do not hand-copy those derived fields/);
   assert.match(closeout, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
   assert.match(skill, /authoritative acceptance manifest/);
   assert.match(closeout, /\| Exact command \| Observed result\/counts \| Run count \| Represented SHA\/tree \|/);

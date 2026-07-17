@@ -746,7 +746,8 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(reviewGuide, /Two-sink boundary/);
   assert.match(reviewGuide, /Do not amend a tracked evidence report solely to append/);
   assert.match(template, /stable issue reference before tracker URL exists/);
-  assert.match(template, /Review subagents: Standards final reviewer <ID> completed; Spec final reviewer <ID> completed/);
+  assert.match(template, /Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed/);
+  assert.match(template, /keyed review finding ledger/);
   assert.match(template, /no hits outside classified identity\/history lines and no active-proof hits/);
   assert.match(template, /verify-github-comment-body\.mjs "\$comment_url" "\$body"/);
   assert.match(template, /Nested-validator angle-token rule/);

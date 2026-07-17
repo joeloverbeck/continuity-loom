@@ -69,7 +69,7 @@ Drop only the flags whose conditions do not apply. Never drop `--expected-final-
 - Placeholder sweep passed: the closeout body has no unresolved placeholder-like angle tokens such as `<context>`, `<sha>`, `<reason>`, `<issue>`, `<parent>`, `<child>`, or `<parent-rollup-url pending>` in evidence rows, URLs, final comments, or preflight fields. Use prose or a filled concrete value instead. URL autolinks and common Markdown/HTML tags are allowed only when intentional and accepted by every applicable validator. In compact TDD, review, or audit cells, avoid HTML-like angle tokens such as a backticked body tag even when intentional; spell the token in prose because a nested validator may classify the entire cell as unresolved.
 - Final SHA is known, matches `git rev-parse HEAD`, and matches every `reviewed HEAD SHA` in the body; the closing validator has passed with `--expected-final-sha "$(git rev-parse HEAD)"`.
 - Verification evidence is present as the exact command ledger with observed result/counts, run count, and represented SHA/tree; every published row represents the final SHA.
-- TDD evidence is present when the repo `tdd` skill was invoked, including `Pre-red recovery status:`, `Acceptance sequence map:`, `Evidence-only proof server preflight:`, the shared `Evidence identity refresh:` with historical red identities, the full fielded `TDD evidence gate passed: durable sink ...` line, or an explicit `N/A because no tdd skill was invoked`.
+- TDD evidence is present when the repo `tdd` skill was invoked, including `Pre-red recovery status:`, the durable anchored `Pre-red evidence reference:`, the keyed `TDD review-fix map:` or its exact no-row-changes N/A disposition, `Acceptance sequence map:`, `Evidence-only proof server preflight:`, the shared `Evidence identity refresh:` with historical red identities, the full fielded `TDD evidence gate passed: durable sink ...` line, or an explicit `N/A because no tdd skill was invoked`.
 - Review evidence is present as `Review:` or `Review fallback:`, and the corresponding normal or fallback validator has passed; local fallback includes or links the full fallback block from [review-evidence.md](review-evidence.md).
 - `Current evidence identities:`, `Historical red identities retained:`, `Superseded evidence identities:`, and `Superseded-token sweep:` are present after review and refer to the final body/evidence set; use `Historical red identities retained: none` when TDD or another red proof did not run.
 - `Principles/ADR conformance:` is present when any affected issue or parent PRD has a `## Principles` section; otherwise it is explicitly N/A.
@@ -149,6 +149,24 @@ whose result is ambiguous in the same way: verify with a read-only lookup before
 considering any replay. Replay a mutation only after readback proves that it did
 not take effect.
 
+Keep recovery reads output-bounded. When only issue state is needed, omit bodies
+and comments:
+
+```bash
+gh issue view <issue> --json number,state,stateReason,url --jq '{number,state,stateReason,url}'
+```
+
+When the exact final inline close comment must also be checked, emit only the
+latest comment instead of the full comment history:
+
+```bash
+gh issue view <issue> --json comments --jq '.comments[-1] | {body,url}'
+```
+
+Do not combine a state-only readback with full issue bodies or comment histories.
+Use `verify-github-comment-body.mjs` and the captured comment URL for a long body
+that needs exact stored-body verification.
+
 If exact readback remains unavailable, report the tracker state as unverified and
 do not claim closeout completion. Keep a parent closeout blocked while any child
 state is unverified, and hand off the preserved mutation outputs, returned URLs,
@@ -199,7 +217,7 @@ Do not run `gh issue close`, `glab issue close`, or equivalent until all of thes
 - The pre-close audit table has been posted or otherwise captured, and every row for the issue being closed is `satisfied`.
 - Any closeout body posted with `gh issue comment --body-file` has passed exact stored-body verification with `verify-github-comment-body.mjs` before the close command.
 - Review evidence from [review-evidence.md](review-evidence.md) is present, either as `code-review` output or an explicit fallback record.
-- TDD evidence is present when the repo `tdd` skill was invoked, including `Pre-red recovery status:`, `Acceptance sequence map:`, `Evidence-only proof server preflight:`, the shared `Evidence identity refresh:` with historical red identities, and the full fielded `TDD evidence gate passed: durable sink ...` line, or the closeout evidence explicitly says it is N/A because no `tdd` skill was invoked.
+- TDD evidence is present when the repo `tdd` skill was invoked, including `Pre-red recovery status:`, the durable anchored `Pre-red evidence reference:`, the keyed `TDD review-fix map:` or its exact no-row-changes N/A disposition, `Acceptance sequence map:`, `Evidence-only proof server preflight:`, the shared `Evidence identity refresh:` with historical red identities, and the full fielded `TDD evidence gate passed: durable sink ...` line, or the closeout evidence explicitly says it is N/A because no `tdd` skill was invoked.
 - The final commit SHA is known and matches the tree that passed required verification.
 - If any affected issue or parent PRD has a `## Principles` section, the closeout comment or linked durable audit sink includes `Principles/ADR conformance: no deliberate exceptions` or names the deliberate steward-approved exception.
 - For remote tracker closeout that cites a commit, the final SHA is reachable from the intended remote branch, or closeout evidence includes the full `Local-only SHA: <sha> is not remote-reachable because <reason>; local-only closeout is acceptable because <reason>.` sentence. Local-only closeout is acceptable only when the user requested implementation/tracker closeout without push/PR and no repo policy requires remote-linked commits; in that case, the closeout comments and final response must explicitly say the SHA is not remote-reachable. If the user requested push/PR/publish or repo policy requires remote-linked commits, push before closeout.

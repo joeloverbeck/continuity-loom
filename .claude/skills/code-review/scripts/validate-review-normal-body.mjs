@@ -10,6 +10,7 @@ import {
   unresolvedValue,
   validateReviewClosingBodySize,
   validateReviewEvidenceIdentities,
+  validateReviewFindingLedger,
   validateReviewFixtureSnapshotCurrentness,
   validateReviewSpecCoverage
 } from "./review-evidence-contract.mjs";
@@ -94,8 +95,21 @@ const validateSubagentStatuses = (value, errors, options = {}) => {
     if (!/\b(?:completed|complete|closed|done)\b/i.test(axisBlock)) {
       errors.push(`Review subagents must name the ${axis} reviewer and a terminal final status`);
     }
-    if (options.requireFinal && !/\bfinal\b.+\b(?:completed|complete|closed|done)\b/i.test(axisBlock)) {
-      errors.push(`Review subagents must name the final ${axis} reviewer and terminal status after fixes`);
+    if (options.requireFinal) {
+      const terminal = "(?:completed|complete|closed|done)";
+      const separateReviewers = new RegExp(
+        `\\binitial reviewer\\s+\\S+\\s+${terminal}\\b[\\s\\S]*?\\bfinal reviewer\\s+\\S+\\s+${terminal}\\b`,
+        "i"
+      );
+      const sameReviewer = new RegExp(
+        `\\binitial and final reviewer\\s+\\S+\\s+${terminal}\\b`,
+        "i"
+      );
+      if (!separateReviewers.test(axisBlock) && !sameReviewer.test(axisBlock)) {
+        errors.push(
+          `Review subagents must name initial and final ${axis} reviewer identities with terminal statuses after fixes`
+        );
+      }
     }
   }
 };
@@ -217,6 +231,7 @@ export const validateReviewNormalBody = (body, options = {}) => {
   }
 
   const immediateFix = flags.has("--immediate-fix") || Boolean(fieldValue(body, "Findings found"));
+  const reviewedHeadSha = body.match(/\breviewed HEAD SHA\s+`?([0-9a-f]{7,40})\b`?/i)?.[1] ?? "";
   validateSubagentStatuses(requireField("Review subagents"), errors, { requireFinal: immediateFix });
   validateSubagentCleanup(requireField("Review subagent cleanup"), errors);
   const axisSummary = requireField("Axis summary");
@@ -262,7 +277,39 @@ export const validateReviewNormalBody = (body, options = {}) => {
     ]) {
       requireField(label);
     }
-    requireMatch(/^\s*[-*]?\s*Review:\s+.+\boutcome\s+findings fixed\b/im, "immediate-fix Review: outcome");
+    validateReviewFindingLedger(body, errors, { validateAxisOutcomes: true });
+    const fixedReviewLines = body
+      .split(/\r?\n/)
+      .filter((line) => /\bReview:\s+.+\boutcome\s+findings fixed\b/i.test(line));
+    if (fixedReviewLines.length === 0) {
+      errors.push("missing immediate-fix Review: outcome");
+    }
+
+    const fixedReviewShas = [];
+    for (const line of fixedReviewLines) {
+      const fixedReviewMatch = line.match(
+        /\boutcome\s+findings fixed in SHA\s+`?([0-9a-f]{7,40})\b`?/i
+      );
+      if (!fixedReviewMatch) {
+        errors.push("immediate-fix Review: outcome must say 'findings fixed in SHA <sha>'");
+        continue;
+      }
+      fixedReviewShas.push(fixedReviewMatch[1]);
+    }
+
+    if (fixedReviewShas.length > 0 && !reviewedHeadSha) {
+      errors.push(
+        "immediate-fix Review: outcome cannot verify SHA because Review frame lacks a concrete reviewed HEAD SHA"
+      );
+    } else {
+      for (const fixedReviewSha of fixedReviewShas) {
+        if (!compatibleSha(reviewedHeadSha, fixedReviewSha)) {
+          errors.push(
+            `immediate-fix Review: outcome SHA ${fixedReviewSha} does not match reviewed HEAD SHA ${reviewedHeadSha}`
+          );
+        }
+      }
+    }
   }
 
   if (flags.has("--browser") || immediateFix) {
@@ -295,7 +342,6 @@ export const validateReviewNormalBody = (body, options = {}) => {
     }
   }
 
-  const reviewedHeadSha = body.match(/\breviewed HEAD SHA\s+`?([0-9a-f]{7,40})\b`?/i)?.[1] ?? "";
   const currentnessCommitClaims = backendCurrentnessValues.flatMap(currentnessCommitShas);
   if (currentnessCommitClaims.length && !reviewedHeadSha) {
     errors.push("Backend process currentness names a commit but Review frame lacks a concrete reviewed HEAD SHA");

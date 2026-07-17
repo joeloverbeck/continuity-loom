@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   checklistValidationArgs,
+  resolveFamilyPayloads,
   validateManifest,
+  validateWorkingPublicationState,
   verifyPublishedChild,
   verifyPublishedFamily,
 } from "./verify-published-family.mjs";
+
+const script = fileURLToPath(new URL("./verify-published-family.mjs", import.meta.url));
 
 const body = ({ blocker = null, externalBlocker = null } = {}) => `
 ## Parent
@@ -76,12 +85,14 @@ const ledgerBody = `
 
 const manifest = {
   approvedCount: 2,
+  forbidLiterals: ["LOCAL_ONLY"],
   forbidPatterns: ["RUN_TOKEN"],
   runSheet: "run-sheet.md",
   workingLedger: "working-publication.json",
   parent: {
     number: 353,
     token: "PRD #353",
+    labels: ["enhancement", "needs-triage"],
     ledger: {
       status: "posted",
       commentUrl: "https://example.test/issues/353#comment-1",
@@ -141,6 +152,7 @@ const childPayloads = new Map([
 
 const parentPayload = {
   number: 353,
+  labels: [{ name: "enhancement" }, { name: "needs-triage" }],
   state: "OPEN",
   url: "https://example.test/issues/353",
   comments: [{
@@ -151,6 +163,7 @@ const parentPayload = {
 
 const sourceManifest = {
   approvedCount: 1,
+  forbidLiterals: ["LOCAL_ONLY"],
   forbidPatterns: ["RUN_TOKEN"],
   runSheet: "run-sheet.md",
   workingLedger: "working-publication.json",
@@ -190,11 +203,13 @@ const sourcePayload = {
 
 const workingLedgerFor = (subject) => ({
   approvedCount: subject.approvedCount,
-  entries: subject.children.map((child) => ({
+  entries: subject.children.map((child, index) => ({
     slice: child.slice,
     title: child.title,
     number: child.number,
     url: child.url,
+    blockedBySlices: index === 0 ? [] : [subject.children[index - 1].slice],
+    prerequisiteIssues: [],
     blockers: child.blockers,
     externalBlockers: child.externalBlockers ?? [],
     verifierStatus: "verified",
@@ -240,6 +255,25 @@ test("fails the family when a published child has an unexpected label", () => {
   assert.deepEqual(report.failedChecks, ["childrenPass"]);
 });
 
+test("fails the family when the parent label transition does not match approval", () => {
+  const wrongParent = {
+    ...parentPayload,
+    labels: [{ name: "enhancement" }, { name: "ready-for-agent" }],
+  };
+  const report = verifyPublishedFamily({
+    manifest,
+    childPayloads,
+    stagedBodies,
+    parentPayload: wrongParent,
+    ledgerBody,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(manifest),
+  });
+
+  assert.equal(report.parent.checks.labelsMatch, false);
+  assert.equal(report.checks.parentPass, false);
+});
+
 test("single-child verification normalizes markdown and checks the exact contract", () => {
   const report = verifyPublishedChild({
     actual: childPayloads.get(354),
@@ -277,7 +311,7 @@ test("verifies a standalone issue with an exact source relationship and no paren
 });
 
 test("manifest validation rejects a parent ledger in standalone-source mode", () => {
-  const wrongManifest = structuredClone(sourceManifest);
+  const wrongManifest = globalThis.structuredClone(sourceManifest);
   wrongManifest.source.ledger = { status: "skipped", reason: "not applicable" };
 
   assert.equal(
@@ -287,21 +321,35 @@ test("manifest validation rejects a parent ledger in standalone-source mode", ()
   );
 });
 
-test("manifest validation requires valid custom forbidden patterns and a working ledger", () => {
-  const missing = structuredClone(manifest);
+test("manifest validation requires valid custom forbidden values and a working ledger", () => {
+  const missing = globalThis.structuredClone(manifest);
+  delete missing.forbidLiterals;
   delete missing.forbidPatterns;
   delete missing.workingLedger;
+  assert.equal(validateManifest(missing).includes("forbidLiterals must be an array"), true);
   assert.equal(validateManifest(missing).includes("forbidPatterns must be an array"), true);
   assert.equal(validateManifest(missing).includes("workingLedger is required"), true);
 
-  const invalid = structuredClone(manifest);
+  const invalidLiteral = globalThis.structuredClone(manifest);
+  invalidLiteral.forbidLiterals = ["   "];
+  assert.equal(
+    validateManifest(invalidLiteral).includes("forbidLiterals must contain non-empty strings"),
+    true,
+  );
+
+  const invalid = globalThis.structuredClone(manifest);
   invalid.forbidPatterns = ["("];
   assert.equal(validateManifest(invalid).some((error) => error.startsWith("forbidPatterns[0] is invalid:")), true);
 });
 
-test("family checklist validation receives every manifest forbidden pattern", () => {
+test("family checklist validation receives every manifest forbidden value", () => {
   const args = checklistValidationArgs(manifest);
-  assert.deepEqual(args.slice(-2), ["--forbid-pattern", "RUN_TOKEN"]);
+  assert.deepEqual(args.slice(-4), [
+    "--forbid-pattern",
+    "RUN_TOKEN",
+    "--forbid-literal",
+    "LOCAL_ONLY",
+  ]);
 });
 
 test("single-child verification rejects a mismatched standalone source relationship", () => {
@@ -351,9 +399,67 @@ test("single-child verification rejects every family forbidden pattern", () => {
   assert.deepEqual(report.forbiddenPatterns, ["RUN_TOKEN"]);
 });
 
+test("single-child verification rejects exact family forbidden text", () => {
+  const actual = {
+    ...childPayloads.get(354),
+    body: childPayloads.get(354).body.replace("Build the slice.", "Build LOCAL_ONLY."),
+  };
+  const report = verifyPublishedChild({
+    actual,
+    expected: manifest.children[0],
+    expectedBody: actual.body,
+    forbiddenLiterals: manifest.forbidLiterals,
+    parentToken: manifest.parent.token,
+  });
+
+  assert.equal(report.checks.noForbiddenLiterals, false);
+  assert.deepEqual(report.forbiddenLiterals, ["LOCAL_ONLY"]);
+});
+
+test("single-child CLI rejects exact forbidden text from a snapshot", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-child-snapshot-"));
+  try {
+    const bodyFile = join(directory, "354.md");
+    const snapshotFile = join(directory, "354.json");
+    const actual = {
+      ...childPayloads.get(354),
+      body: childPayloads.get(354).body.replace("Build the slice.", "Build LOCAL_ONLY."),
+    };
+    writeFileSync(bodyFile, actual.body);
+    writeFileSync(snapshotFile, JSON.stringify(actual));
+
+    const result = spawnSync(process.execPath, [
+      script,
+      "child",
+      "354",
+      bodyFile,
+      "--title",
+      "Contract",
+      "--parent",
+      "PRD #353",
+      "--label",
+      "enhancement",
+      "--label",
+      "needs-triage",
+      "--expect-no-blocker",
+      "--forbid-literal",
+      "LOCAL_ONLY",
+      "--snapshot",
+      snapshotFile,
+    ], { encoding: "utf8" });
+
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.checks.noForbiddenLiterals, false);
+    assert.deepEqual(report.forbiddenLiterals, ["LOCAL_ONLY"]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("family verification rejects a forbidden pattern in the exact posted ledger", () => {
   const forbiddenLedger = `${ledgerBody}\nRUN_TOKEN\n`;
-  const forbiddenParent = structuredClone(parentPayload);
+  const forbiddenParent = globalThis.structuredClone(parentPayload);
   forbiddenParent.comments[0].body = forbiddenLedger.trimEnd();
   const report = verifyPublishedFamily({
     manifest,
@@ -367,6 +473,25 @@ test("family verification rejects a forbidden pattern in the exact posted ledger
 
   assert.equal(report.parent.checks.ledgerPostureValid, true);
   assert.equal(report.parent.checks.ledgerNoForbiddenPatterns, false);
+  assert.equal(report.checks.parentPass, false);
+});
+
+test("family verification rejects exact forbidden text in the posted ledger", () => {
+  const forbiddenLedger = `${ledgerBody}\nLOCAL_ONLY\n`;
+  const forbiddenParent = globalThis.structuredClone(parentPayload);
+  forbiddenParent.comments[0].body = forbiddenLedger.trimEnd();
+  const report = verifyPublishedFamily({
+    manifest,
+    childPayloads,
+    stagedBodies,
+    parentPayload: forbiddenParent,
+    ledgerBody: forbiddenLedger,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(manifest),
+  });
+
+  assert.equal(report.parent.checks.ledgerPostureValid, true);
+  assert.equal(report.parent.checks.ledgerNoForbiddenLiterals, false);
   assert.equal(report.checks.parentPass, false);
 });
 
@@ -386,6 +511,159 @@ test("family verification requires every working-ledger entry to be verified", (
   assert.equal(report.workingPublicationLedger.entries[1].checks.verifierPassed, false);
   assert.equal(report.checks.workingPublicationLedgerPass, false);
   assert.equal(report.failedChecks.includes("workingPublicationLedgerPass"), true);
+});
+
+test("working-ledger validation preserves logical blockers before numbers exist", () => {
+  const workingLedger = {
+    approvedCount: 2,
+    entries: [
+      {
+        slice: "Contract",
+        title: "Contract",
+        number: null,
+        url: null,
+        blockedBySlices: [],
+        prerequisiteIssues: [],
+        blockers: [],
+        externalBlockers: [],
+        verifierStatus: null,
+      },
+      {
+        slice: "Server",
+        title: "Server",
+        number: null,
+        url: null,
+        blockedBySlices: ["Contract"],
+        prerequisiteIssues: [],
+        blockers: [],
+        externalBlockers: [],
+        verifierStatus: null,
+      },
+    ],
+  };
+
+  assert.deepEqual(validateWorkingPublicationState(workingLedger), []);
+
+  workingLedger.entries[0] = {
+    ...workingLedger.entries[0],
+    number: 354,
+    url: "https://example.test/issues/354",
+    verifierStatus: "verified",
+  };
+  assert.equal(
+    validateWorkingPublicationState(workingLedger).includes(
+      "entries[1].blockers must equal prerequisiteIssues plus verified blockedBySlices"),
+    true,
+  );
+
+  workingLedger.entries[1].blockers = ["#354"];
+  assert.deepEqual(validateWorkingPublicationState(workingLedger), []);
+});
+
+test("working-ledger validation rejects forward and unknown dependency edges", () => {
+  const workingLedger = {
+    approvedCount: 2,
+    entries: [
+      {
+        slice: "Contract",
+        title: "Contract",
+        number: null,
+        url: null,
+        blockedBySlices: ["Server", "Missing"],
+        prerequisiteIssues: [],
+        blockers: [],
+        externalBlockers: [],
+        verifierStatus: null,
+      },
+      {
+        slice: "Server",
+        title: "Server",
+        number: null,
+        url: null,
+        blockedBySlices: [],
+        prerequisiteIssues: [],
+        blockers: [],
+        externalBlockers: [],
+        verifierStatus: null,
+      },
+    ],
+  };
+
+  const errors = validateWorkingPublicationState(workingLedger);
+  assert.equal(errors.includes("entries[0].blockedBySlices must reference an earlier slice: Server"), true);
+  assert.equal(errors.includes("entries[0].blockedBySlices references unknown slice Missing"), true);
+});
+
+test("family payload resolution uses complete snapshots without calling gh", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-snapshots-"));
+  try {
+    const childPaths = new Map();
+    for (const [number, payload] of childPayloads) {
+      const path = join(directory, `${number}.json`);
+      writeFileSync(path, JSON.stringify(payload));
+      childPaths.set(number, path);
+    }
+    const parentPath = join(directory, "parent.json");
+    writeFileSync(parentPath, JSON.stringify(parentPayload));
+
+    const resolved = resolveFamilyPayloads({
+      manifest,
+      childSnapshots: childPaths,
+      parentSnapshot: parentPath,
+      fetcher: () => {
+        throw new Error("gh should not be called in snapshot mode");
+      },
+    });
+
+    assert.deepEqual(resolved.childPayloads.get(354), childPayloads.get(354));
+    assert.deepEqual(resolved.parentPayload, parentPayload);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("family CLI verifies a complete standalone-source snapshot set without gh", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-family-snapshots-"));
+  try {
+    const bodyFile = join(directory, "380.md");
+    const runSheet = join(directory, "run-sheet.md");
+    const workingLedger = join(directory, "working-ledger.json");
+    const childSnapshot = join(directory, "380.json");
+    const sourceSnapshot = join(directory, "379.json");
+    const manifestFile = join(directory, "manifest.json");
+    const cliManifest = globalThis.structuredClone(sourceManifest);
+    cliManifest.runSheet = runSheet;
+    cliManifest.workingLedger = workingLedger;
+    cliManifest.children[0].bodyFile = bodyFile;
+    cliManifest.children[0].checklistMapped = "N/A - server-only repair";
+
+    writeFileSync(bodyFile, sourceBody());
+    writeFileSync(runSheet, `
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+| Conformance repair | browser-visible guidance checklist | N/A | N/A - server-only repair |
+`);
+    writeFileSync(workingLedger, JSON.stringify(workingLedgerFor(cliManifest)));
+    writeFileSync(childSnapshot, JSON.stringify(sourceChildPayloads.get(380)));
+    writeFileSync(sourceSnapshot, JSON.stringify(sourcePayload));
+    writeFileSync(manifestFile, JSON.stringify(cliManifest));
+
+    const result = spawnSync(process.execPath, [
+      script,
+      manifestFile,
+      "--child-snapshot",
+      `380=${childSnapshot}`,
+      "--source-snapshot",
+      sourceSnapshot,
+    ], { encoding: "utf8" });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.checks.sourcePass, true);
+    assert.deepEqual(report.failedChecks, []);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test("fails the family when a published blocker differs from the manifest", () => {
@@ -414,7 +692,7 @@ test("fails the family when a published blocker differs from the manifest", () =
 
 test("verifies an exact external blocker for a checklist-mapped needs-triage child", () => {
   const externalBlocker = "P-03 conformance repair with a current active-route packet";
-  const externalManifest = structuredClone(manifest);
+  const externalManifest = globalThis.structuredClone(manifest);
   externalManifest.children[0].externalBlockers = [externalBlocker];
   delete externalManifest.children[0].noBlockerPhrase;
   const externalBodies = new Map(stagedBodies);
@@ -443,7 +721,7 @@ test("verifies an exact external blocker for a checklist-mapped needs-triage chi
 });
 
 test("manifest validation reserves noBlockerPhrase for a truly unblocked child", () => {
-  const externalManifest = structuredClone(manifest);
+  const externalManifest = globalThis.structuredClone(manifest);
   externalManifest.children[0].externalBlockers = ["P-03 conformance repair"];
   delete externalManifest.children[0].noBlockerPhrase;
   assert.deepEqual(validateManifest(externalManifest), []);
@@ -457,7 +735,7 @@ test("manifest validation reserves noBlockerPhrase for a truly unblocked child",
 });
 
 test("fails the family when an external blocker differs from the manifest", () => {
-  const externalManifest = structuredClone(manifest);
+  const externalManifest = globalThis.structuredClone(manifest);
   externalManifest.children[0].externalBlockers = ["P-03 conformance repair"];
   delete externalManifest.children[0].noBlockerPhrase;
   const wrongBodies = new Map(stagedBodies);

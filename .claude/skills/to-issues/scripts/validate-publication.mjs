@@ -2,50 +2,65 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
-export const CHECKLIST_ITEMS = [
-  "package source cited",
-  "decision-point contract named",
-  "required, optional, skippable, and severity-dependent fields visible where relevant",
-  "doctrine at the actual decision point",
-  "prompt packet preview, source manifest, and cold external LLM test",
-  "advisory/canon separation visible",
-  "skip path and reason storage",
-  "blockers/substance validation",
-  "current, next, and resume state",
-  "read-side audit or provenance link",
-  "cognitive walkthrough scenario",
-];
+const checklistAuthorityPath = fileURLToPath(
+  new URL("../../../../docs/agents/issue-tracker.md", import.meta.url),
+);
+const checklistAuthority = readFileSync(checklistAuthorityPath, "utf8");
+const checklistBlock = checklistAuthority.match(
+  /<!-- browser-visible-guidance-checklist:start -->([\s\S]*?)<!-- browser-visible-guidance-checklist:end -->/,
+)?.[1];
+
+export const CHECKLIST_ITEMS = [...(checklistBlock ?? "").matchAll(/^- `([^`]+)`: /gm)].map(
+  (match) => match[1],
+);
+
+if (CHECKLIST_ITEMS.length === 0 || new Set(CHECKLIST_ITEMS).size !== CHECKLIST_ITEMS.length) {
+  throw new Error(`Invalid browser checklist authority: ${checklistAuthorityPath}`);
+}
 
 const COMPOSITE_CHECKLIST_COMPONENTS = new Map([
-  ["required, optional, skippable, and severity-dependent fields visible where relevant", [
-    ["required", /\brequired\b/i],
-    ["optional", /\boptional\b/i],
-    ["skippable", /\bskippable\b/i],
-    ["severity-dependent", /\bseverity[- ]dependent\b/i],
+  ["entry point and availability", [
+    ["entry point", /\bentry points?\b|\b(?:reach|open|access)(?:es|ed|ible)?\b/i],
+    ["availability", /\bavailab\w*\b|\benabl\w*\b|\bdisabl\w*\b|\bhidden\b/i],
   ]],
-  ["prompt packet preview, source manifest, and cold external LLM test", [
-    ["prompt packet preview", /\bprompt packet preview\b/i],
-    ["source manifest", /\bsource manifest\b/i],
-    ["cold external LLM test", /\bcold external LLM test\b/i],
+  ["user-visible states, actions, and outcomes", [
+    ["states", /\bstates?\b/i],
+    ["actions", /\bactions?\b|\bcontrols?\b/i],
+    ["outcomes", /\boutcomes?\b|\bresults?\b/i],
   ]],
-  ["advisory/canon separation visible", [
-    ["advisory", /\badvisory\b/i],
-    ["canon", /\bcanon\b/i],
+  ["validation, warning, error, and recovery behavior", [
+    ["validation", /\bvalidation\b|\bblockers?\b/i],
+    ["warning", /\bwarnings?\b/i],
+    ["error", /\berrors?\b|\bfail(?:s|ure)?\b/i],
+    ["recovery", /\brecover\w*\b|\bremediation\b/i],
   ]],
-  ["skip path and reason storage", [
-    ["skip path", /\b(?:skip path|defer(?:ral|red|ring)?|governed decline)\b/i],
-    ["reason storage", /\breason storage\b|(?:\b(?:reason|rationale)\b[\s\S]{0,240}\b(?:persist\w*|record\w*|retain\w*|history|provenance)\b)|(?:\b(?:persist\w*|record\w*|retain\w*|history|provenance)\b[\s\S]{0,240}\b(?:reason|rationale)\b)/i],
+  ["prompt preview contents and freshness", [
+    ["prompt preview", /\bprompt (?:preview|inspection)\b/i],
+    ["contents", /\bcontents?\b|\bcomplete\b|\bfull\b/i],
+    ["freshness", /\bfresh(?:ness)?\b|\bstale\b|\bfingerprint\w*\b/i],
   ]],
-  ["blockers/substance validation", [
-    ["blockers", /\bblockers?\b/i],
-    ["substance validation", /\bsubstance validation\b|\bincomplete(?:\s+\w+){0,2}\s+(?:work|completion|step|material|evidence)\b/i],
+  ["user-initiated external LLM boundary", [
+    ["user-initiated", /\buser[- ]initiated\b|\buser\b[\s\S]{0,120}\b(?:action|click|send|generate)\b/i],
+    ["external LLM", /\bexternal (?:LLM|model)\b|\bOpenRouter\b|\bprovider\b/i],
+    ["boundary", /\bboundary\b|\bno provider call\b|\bsends?\b/i],
   ]],
-  ["current, next, and resume state", [
-    ["current", /\bcurrent\b/i],
-    ["next", /\bnext\b/i],
-    ["resume", /\bresume\b/i],
+  ["canon and prose boundary visibility", [
+    ["canon", /\bcanon\b|\bauthority\b/i],
+    ["prose", /\bprose\b|\bcandidate\b|\bsegment\b/i],
+    ["boundary visibility", /\bboundar\w*\b|\bvisib\w*\b|\bdistinct\b/i],
+  ]],
+  ["persistence, migration, export, and provenance", [
+    ["persistence", /\bpersist\w*\b|\bstor(?:e|ed|age)\b/i],
+    ["migration", /\bmigrat\w*\b/i],
+    ["export", /\bexport\w*\b/i],
+    ["provenance", /\bprovenance\b|\borigin\b/i],
+  ]],
+  ["browser and accessibility regression scenario", [
+    ["browser", /\bbrowser\b|\bcomponent\b/i],
+    ["accessibility", /\baccessib\w*\b|\bkeyboard\b|\baccessible name\b/i],
+    ["regression scenario", /\bregression\b|\bscenario\b|\bsmoke\b/i],
   ]],
 ]);
 
@@ -75,6 +90,7 @@ Run-sheet options:
 
 Shared options:
   --placeholder-re <pattern>   Placeholder regex; defaults to #SLICE|PLACEHOLDER.
+  --forbid-literal <text>      Reject exact run-specific text; repeat as needed.
   --forbid-pattern <pattern>   Reject a run-specific regex; repeat as needed.
   --help                       Show this help.`;
 
@@ -114,6 +130,7 @@ function parseArgs(argv) {
     expectChecklistNa: false,
     expectNoBlocker: false,
     expectStories: false,
+    forbidLiterals: [],
     forbidPatterns: [],
     onlySlices: [],
     parent: null,
@@ -129,7 +146,7 @@ function parseArgs(argv) {
     if (argument === "--expect-no-blocker") options.expectNoBlocker = true;
     else if (argument === "--expect-stories") options.expectStories = true;
     else if (argument === "--expect-checklist-na") options.expectChecklistNa = true;
-    else if (["--parent", "--source", "--source-relationship", "--blocker", "--external-blocker", "--child", "--expect-ac-count", "--placeholder-re", "--forbid-pattern", "--slice-body", "--unaffected-slice", "--only-slice"].includes(argument)) {
+    else if (["--parent", "--source", "--source-relationship", "--blocker", "--external-blocker", "--child", "--expect-ac-count", "--placeholder-re", "--forbid-literal", "--forbid-pattern", "--slice-body", "--unaffected-slice", "--only-slice"].includes(argument)) {
       const value = requireValue(args, index, argument);
       if (argument === "--parent") options.parent = value;
       else if (argument === "--source") options.source = value;
@@ -138,6 +155,7 @@ function parseArgs(argv) {
       else if (argument === "--external-blocker") options.externalBlockers.push(value);
       else if (argument === "--child") options.children.push(value);
       else if (argument === "--placeholder-re") options.placeholderRe = value;
+      else if (argument === "--forbid-literal") options.forbidLiterals.push(value);
       else if (argument === "--forbid-pattern") options.forbidPatterns.push(value);
       else if (argument === "--slice-body") options.sliceBodies.push(parseSliceBody(value));
       else if (argument === "--unaffected-slice") options.unaffectedSlices.push(value);
@@ -205,12 +223,14 @@ function compilePattern(pattern, option) {
 
 function commonArtifactChecks(body, options) {
   const placeholderPattern = compilePattern(options.placeholderRe, "--placeholder-re");
+  const forbiddenLiterals = options.forbidLiterals ?? [];
   const forbiddenPatterns = (options.forbidPatterns ?? [])
     .map((pattern) => compilePattern(pattern, "--forbid-pattern"));
   return {
     hasContent: body.trim().length > 0,
     noPatchMarkers: !/\*\*\* (Begin|End) Patch/.test(body),
     noPlaceholders: !placeholderPattern.test(body),
+    noForbiddenLiterals: forbiddenLiterals.every((literal) => !body.includes(literal)),
     noForbiddenPatterns: forbiddenPatterns.every((pattern) => !pattern.test(body)),
   };
 }
@@ -292,6 +312,7 @@ export function validateChild(body, options) {
     expectedBlockers,
     expectedExternalBlockers,
     expectations: { noBlocker: options.expectNoBlocker },
+    forbiddenLiterals: unique(options.forbidLiterals ?? []),
     forbiddenPatterns: unique(options.forbidPatterns ?? []),
     checks,
   };
@@ -307,6 +328,7 @@ function validateLedger(body, options) {
   };
   return {
     expectedChildren: unique(options.children),
+    forbiddenLiterals: unique(options.forbidLiterals ?? []),
     forbiddenPatterns: unique(options.forbidPatterns ?? []),
     checks,
   };
@@ -462,6 +484,7 @@ export function validateRunSheet(body, options) {
     affected,
     checklistItems: CHECKLIST_ITEMS,
     checks,
+    forbiddenLiterals: unique(options.forbidLiterals ?? []),
     forbiddenPatterns: unique(options.forbidPatterns ?? []),
     missingOnlySlices,
     onlySlices: unique(options.onlySlices),

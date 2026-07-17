@@ -9,7 +9,7 @@ import { buildAuditScaffold } from "./build-acceptance-manifest.mjs";
 export const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
 export const DEFAULT_CLOSEOUT_EVIDENCE_HEADROOM_BYTES = 16_384;
 
-const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> --parent <issue> --review <normal|fallback> [--audit-input <audit.md>] [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
+const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> --parent <issue> --review <normal|fallback> [--audit-input <audit.md>] [--evidence-input <evidence.json>] [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
 
 export const assertCloseoutBodySize = (body, maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES) => {
   if (!Number.isInteger(maxBytes) || maxBytes <= 0) {
@@ -100,11 +100,165 @@ export const validateAuditInput = (manifest, audit) => {
 
 const acceptanceIds = (issue) => issue.checks.map((check) => check.id).join(", ");
 
-const tddBlock = (manifest) => {
-  const rows = manifest.issues.map(
-    (issue) =>
-      `| #${issue.number} | <CONTEXT.md status> | <ADRs/principles/docs status> | <seam> | <red command/failure or skip reason> | <green command/evidence with passing result> | ${acceptanceIds(issue)}; atoms: <authoritative atoms>; proof surfaces: <surface for each atom>; sequence: <ordered proof or justified N/A> | <review fix / red-first skip reason> |`
-  );
+const requiredEvidenceText = (value, field) => {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new Error(`evidence ${field} must be a non-empty string`);
+  }
+  return value.trim();
+};
+
+const evidenceArrays = (evidence) => {
+  if (evidence === undefined) return undefined;
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
+    throw new Error("evidence must be an object");
+  }
+
+  const arrays = {};
+  for (const key of ["tddRows", "tddReviewFixes", "reviewFindings"]) {
+    const value = evidence[key] ?? [];
+    if (!Array.isArray(value)) throw new Error(`evidence ${key} must be an array`);
+    arrays[key] = value;
+  }
+  if (Object.values(arrays).every((value) => value.length === 0)) {
+    throw new Error("evidence must contain at least one TDD row, TDD review fix, or review finding");
+  }
+  return arrays;
+};
+
+const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParentRollup }) => {
+  const arrays = evidenceArrays(evidence);
+  if (!arrays) return undefined;
+  const { tddRows, tddReviewFixes, reviewFindings } = arrays;
+
+  if ((tddRows.length > 0 || tddReviewFixes.length > 0) && !tddParentRollup) {
+    throw new Error("TDD evidence requires --tdd-parent-rollup");
+  }
+  if (reviewFindings.length > 0 && !immediateFix) {
+    throw new Error("review finding evidence requires --immediate-fix");
+  }
+
+  const manifestNumbers = new Set(manifest.issues.map((issue) => issue.number));
+  const rowKeys = new Set();
+  for (const [index, row] of tddRows.entries()) {
+    if (!Number.isInteger(row?.issue) || !manifestNumbers.has(row.issue)) {
+      throw new Error(`evidence tddRows[${index}].issue must name one manifest issue`);
+    }
+    if (rowKeys.has(row.issue)) throw new Error(`evidence contains duplicate TDD row for #${row.issue}`);
+    rowKeys.add(row.issue);
+    for (const field of [
+      "contextStatus",
+      "authorityStatus",
+      "seam",
+      "red",
+      "green",
+      "acceptance",
+      "reviewDisposition"
+    ]) {
+      requiredEvidenceText(row[field], `tddRows[${index}].${field}`);
+    }
+    for (const marker of ["atoms:", "proof surfaces:", "sequence:"]) {
+      if (!row.acceptance.includes(marker)) {
+        throw new Error(`evidence tddRows[${index}].acceptance must contain ${marker}`);
+      }
+    }
+  }
+  if (tddRows.length > 0 && rowKeys.size !== manifestNumbers.size) {
+    throw new Error("structured TDD evidence must contain exactly one row for every manifest issue");
+  }
+
+  const fixIds = new Set();
+  for (const [index, fix] of tddReviewFixes.entries()) {
+    if (typeof fix?.id !== "string" || !/^RF-[1-9]\d*$/.test(fix.id)) {
+      throw new Error(`evidence tddReviewFixes[${index}].id must match RF-N`);
+    }
+    if (fixIds.has(fix.id)) throw new Error(`evidence contains duplicate review-fix ID ${fix.id}`);
+    fixIds.add(fix.id);
+    if (!Number.isInteger(fix.issue) || !manifestNumbers.has(fix.issue)) {
+      throw new Error(`evidence tddReviewFixes[${index}].issue must name one manifest issue`);
+    }
+    for (const field of [
+      "finding",
+      "red",
+      "green",
+      "seam",
+      "durability",
+      "browserFreshness",
+      "backendCurrentness",
+      "identityRefresh"
+    ]) {
+      requiredEvidenceText(fix[field], `tddReviewFixes[${index}].${field}`);
+    }
+    const row = tddRows.find((candidate) => candidate.issue === fix.issue);
+    if (!row || row.seam !== fix.seam) {
+      throw new Error(`evidence ${fix.id} must map to an exact structured TDD issue/seam row`);
+    }
+  }
+
+  const findingIds = new Set();
+  for (const [index, finding] of reviewFindings.entries()) {
+    const match = typeof finding?.id === "string"
+      ? finding.id.match(/^P([1-9]\d*)-(standards|spec)-([1-9]\d*)$/)
+      : null;
+    if (!match) throw new Error(`evidence reviewFindings[${index}].id must match P<pass>-<standards|spec>-N`);
+    if (findingIds.has(finding.id)) throw new Error(`evidence contains duplicate review finding ID ${finding.id}`);
+    findingIds.add(finding.id);
+    if (!["critical", "high", "medium", "low"].includes(finding.severity)) {
+      throw new Error(`evidence reviewFindings[${index}].severity is invalid`);
+    }
+    for (const field of [
+      "reviewer",
+      "originalFinding",
+      "repairClass",
+      "tddDisposition",
+      "repair",
+      "rerunEvidence",
+      "finalStatus"
+    ]) {
+      requiredEvidenceText(finding[field], `reviewFindings[${index}].${field}`);
+    }
+    if (!["fixed", "accepted residual"].includes(finding.finalStatus)) {
+      throw new Error(`evidence reviewFindings[${index}].finalStatus must be fixed or accepted residual`);
+    }
+    for (const fixId of finding.tddDisposition.match(/RF-[1-9]\d*/g) ?? []) {
+      if (!fixIds.has(fixId)) {
+        throw new Error(`evidence review finding ${finding.id} references unknown ${fixId}`);
+      }
+    }
+  }
+
+  return { tddRows, tddReviewFixes, reviewFindings };
+};
+
+const evidenceIds = (items) => items.map((item) => item.id).join(", ");
+
+const tddBlock = (manifest, evidence) => {
+  const structuredRows = evidence?.tddRows ?? [];
+  const reviewFixes = evidence?.tddReviewFixes ?? [];
+  const rows = structuredRows.length > 0
+    ? structuredRows.map((row) => {
+      const mappedFixes = reviewFixes.filter((fix) => fix.issue === row.issue && fix.seam === row.seam);
+      const disposition = mappedFixes.length > 0
+        ? `${evidenceIds(mappedFixes)} mapped below`
+        : row.reviewDisposition;
+      return `| #${row.issue} | ${tableText(row.contextStatus)} | ${tableText(row.authorityStatus)} | ${tableText(row.seam)} | ${tableText(row.red)} | ${tableText(row.green)} | ${tableText(row.acceptance)} | ${tableText(disposition)} |`;
+    })
+    : manifest.issues.map(
+      (issue) =>
+        `| #${issue.number} | <CONTEXT.md status> | <ADRs/principles/docs status> | <seam> | <red command/failure or skip reason> | <green command/evidence with passing result> | ${acceptanceIds(issue)}; atoms: <authoritative atoms>; proof surfaces: <surface for each atom>; sequence: <ordered proof or justified N/A> | <review fix / red-first skip reason> |`
+    );
+  const reviewFixIds = evidenceIds(reviewFixes);
+  const reviewFixMap = reviewFixes.length > 0
+    ? `${reviewFixIds} below.`
+    : "<N/A because review created no TDD row changes or replace with the keyed map below>";
+  const reviewFixRows = reviewFixes.length > 0
+    ? reviewFixes.map((fix) =>
+      `| ${fix.id} | ${tableText(fix.finding)} | ${tableText(fix.red)} | ${tableText(fix.green)} | #${fix.issue} / ${tableText(fix.seam)} | ${tableText(fix.durability)} | ${tableText(fix.browserFreshness)} | ${tableText(fix.backendCurrentness)} | ${tableText(fix.identityRefresh)} |`
+    )
+    : ["| RF-1 | <one review finding/source> | <one red command/failure or explicit skip> | <one green command/evidence> | #N / <exact Seam cell> | <durable regression or reasoned N/A> | <freshness disposition> | <currentness disposition> | <same-sink identity refresh disposition> |"];
+  const accountedRows = structuredRows.length > 0
+    ? `${structuredRows.map((row) => `#${row.issue} / ${row.seam}`).join("; ")}${reviewFixes.length > 0 ? `; ${reviewFixIds}` : ""}`
+    : "<all issues and seams>";
+  const accountedGate = structuredRows.length > 0 ? accountedRows : "<all listed>";
 
   return `TDD evidence
 
@@ -114,15 +268,20 @@ ${rows.join("\n")}
 
 Existing-test contract-change rows: <none or listed expectation-rewrite rows>
 
-TDD review-fix addendum: <review-fix evidence or N/A because review made no fixes>
+TDD review-fix map: ${reviewFixMap}
+
+| Finding ID | Finding/source | Intended red command/failure | Green command/evidence | Updated TDD table row | Regression durability | Browser/manual evidence freshness | Backend process currentness | Evidence identity refresh |
+|---|---|---|---|---|---|---|---|---|
+${reviewFixRows.join("\n")}
 
 Browser/manual freshness: <rerun, justified not affected, blocked, or N/A>
 
 TDD closeout preflight:
 - Durable sink/body inspected: <stable issue reference>
 - Compact table/header: <present after structural check>
-- Rows accounted for: <all issues and seams>
+- Rows accounted for: ${accountedRows}
 - Pre-red recovery status: <status>
+- Pre-red evidence reference: <durable sink plus heading/row anchor and chronology proof, anchored recovery addendum, or reasoned N/A>
 - CONTEXT.md status: <present, absent, or N/A>
 - ADRs/principles/docs status: <present or N/A>
 - Acceptance atom map: <all rows list exact criteria, atoms, and proof surfaces>
@@ -135,7 +294,7 @@ TDD closeout preflight:
 - Evidence identity refresh: <same-sink identity block inspected>
 - Existing-test contract-change rows: <none or listed>
 
-TDD evidence gate passed: durable sink <stable issue reference>; compact table/header <present after structural check>; seams accounted for <all listed>; CONTEXT.md status <present, absent, or N/A>; ADRs/principles/docs status <present or N/A>; sequence evidence <present or N/A>; evidence identities <present>; partial-red / red-first skip reasons <none or listed>; evidence-only rows <none or listed>; proof server preflight <present or N/A>; existing-test contract-change rows <none or listed>.`;
+TDD evidence gate passed: durable sink <stable issue reference>; compact table/header <present after structural check>; seams accounted for ${accountedGate}; CONTEXT.md status <present, absent, or N/A>; ADRs/principles/docs status <present or N/A>; sequence evidence <present or N/A>; evidence identities <present>; partial-red / red-first skip reasons <none or listed>; evidence-only rows <none or listed>; proof server preflight <present or N/A>; existing-test contract-change rows <none or listed>.`;
 };
 
 const reviewRows = (manifest) => manifest.issues.map(
@@ -149,43 +308,105 @@ Browser/manual console state: <0 errors and 0 warnings, classified output, block
 
 Backend process currentness: <server command, watch/reload mode, ownership, restart/reload proof, and API probe, or justified N/A/blocked reason>`;
 
-const normalImmediateFixBlock = `Initial Standards outcome: <count/worst plus findings before fixes>
+const reviewFindingParts = (finding) => {
+  const match = finding.id.match(/^(P[1-9]\d*)-(standards|spec)-[1-9]\d*$/);
+  return { pass: match[1], axis: match[2] === "standards" ? "Standards" : "Spec" };
+};
 
-Initial Spec outcome: <count/worst plus findings before fixes>
+const reviewFindingLedgerBlock = (evidence) => {
+  const findings = evidence?.reviewFindings ?? [];
+  const rows = findings.length > 0
+    ? findings.map((finding) => {
+      const { pass, axis } = reviewFindingParts(finding);
+      return `| ${finding.id} | ${pass} | ${axis} | ${tableText(finding.reviewer)} | ${tableText(finding.originalFinding)} | ${tableText(finding.repairClass)} | ${tableText(finding.tddDisposition)} | ${tableText(finding.repair)} | ${tableText(finding.rerunEvidence)} | ${tableText(finding.finalStatus)} |`;
+    })
+    : ["| P1-standards-1 | P1 | Standards | <initial reviewer ID or local fallback> | <original finding> | <repair class> | <RF-N or structured per-finding TDD disposition> | <repair> | <affected/full-axis rerun evidence> | <fixed or accepted residual> |"];
+  return `| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+${rows.join("\n")}`;
+};
 
-Final Standards outcome: <count/worst after final re-review>
+const severityOrder = ["critical", "high", "medium", "low"];
 
-Final Spec outcome: <count/worst after final re-review>
+const reviewOutcome = (findings, axis) => {
+  const matching = findings.filter((finding) => reviewFindingParts(finding).axis === axis);
+  if (matching.length === 0) return "0 findings, worst none: none";
+  const worst = severityOrder.find((severity) => matching.some((finding) => finding.severity === severity));
+  const noun = matching.length === 1 ? "finding" : "findings";
+  return `${matching.length} ${noun}, worst ${worst}: ${matching.map((finding) => finding.originalFinding).join("; ")}`;
+};
 
-Findings found: <count and short titles>
+const structuredImmediateFixFields = (evidence) => {
+  const findings = evidence?.reviewFindings ?? [];
+  if (findings.length === 0) return undefined;
+  const initialFindings = findings.filter((finding) => reviewFindingParts(finding).pass === "P1");
+  const residuals = findings.filter((finding) => finding.finalStatus === "accepted residual");
+  const fixes = evidence?.tddReviewFixes ?? [];
+  const reruns = [...new Set(findings.map((finding) => finding.rerunEvidence))];
+  return {
+    initialStandards: reviewOutcome(initialFindings, "Standards"),
+    initialSpec: reviewOutcome(initialFindings, "Spec"),
+    finalStandards: reviewOutcome(residuals, "Standards"),
+    finalSpec: reviewOutcome(residuals, "Spec"),
+    found: `${findings.length}: ${findings.map((finding) => finding.originalFinding).join("; ")}`,
+    fixed: findings.map((finding) => finding.repair).join("; "),
+    tdd: fixes.length > 0
+      ? `${evidenceIds(fixes)} mapped above; remaining dispositions are recorded per finding below.`
+      : findings.map((finding) => `${finding.id}: ${finding.tddDisposition}`).join("; "),
+    tddGate: evidence?.tddRows?.length > 0
+      ? `structured rows ${evidence.tddRows.map((row) => `#${row.issue} / ${row.seam}`).join("; ")}; review fixes ${evidenceIds(fixes) || "none"}`
+      : "N/A because no tdd skill was invoked",
+    rerun: reruns.join("; ")
+  };
+};
 
-Fixes made: <files/behavior/proof changed>
+const normalImmediateFixBlock = (evidence) => {
+  const fields = structuredImmediateFixFields(evidence);
+  return `Initial Standards outcome: ${fields?.initialStandards ?? "<count/worst plus findings before fixes>"}
 
-TDD/review-fix evidence: <red/green proof, coverage-only proof, or justified red-first skip>
+Initial Spec outcome: ${fields?.initialSpec ?? "<count/worst plus findings before fixes>"}
 
-TDD closeout gate: <fielded gate or N/A because no tdd skill was invoked>
+Final Standards outcome: ${fields?.finalStandards ?? "<count/worst after final re-review>"}
 
-Verification rerun: <exact final-tree commands and observed results>
+Final Spec outcome: ${fields?.finalSpec ?? "<count/worst after final re-review>"}
+
+Findings found: ${fields?.found ?? "<integer count and short titles>"}
+
+${reviewFindingLedgerBlock(evidence)}
+
+Fixes made: ${fields?.fixed ?? "<files/behavior/proof changed>"}
+
+TDD/review-fix evidence: ${fields?.tdd ?? "<red/green proof, coverage-only proof, or justified red-first skip>"}
+
+TDD closeout gate: ${fields?.tddGate ?? "<fielded gate or N/A because no tdd skill was invoked>"}
+
+Verification rerun: ${fields?.rerun ?? "<exact final-tree commands and observed results>"}
 
 Commit handling: <amended/follow-up/unchanged commit SHA or no commit yet>`;
+};
 
-const fallbackImmediateFixBlock = `Findings found: <count and short titles>
+const fallbackImmediateFixBlock = (evidence) => {
+  const fields = structuredImmediateFixFields(evidence);
+  return `Findings found: ${fields?.found ?? "<integer count and short titles>"}
 
-Fixes made: <files/behavior/proof changed>
+${reviewFindingLedgerBlock(evidence)}
 
-TDD/review-fix evidence: <red/green proof, coverage-only proof, or justified red-first skip>
+Fixes made: ${fields?.fixed ?? "<files/behavior/proof changed>"}
 
-Verification rerun: <exact final-tree commands and observed results>
+TDD/review-fix evidence: ${fields?.tdd ?? "<red/green proof, coverage-only proof, or justified red-first skip>"}
+
+Verification rerun: ${fields?.rerun ?? "<exact final-tree commands and observed results>"}
 
 Commit handling: <amended/follow-up/unchanged commit SHA or no commit yet>
 
 Residual findings: <remaining Standards and Spec findings or none>`;
+};
 
-const normalReviewBlock = (manifest, immediateFix) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
+const normalReviewBlock = (manifest, immediateFix, evidence) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
 
-Review: code-review against <resolved fixed point>; outcome ${immediateFix ? "findings fixed" : "<no findings or accepted residuals>"}; verification rerun <commands>.
+Review: code-review against <resolved fixed point>; outcome ${immediateFix ? "findings fixed in SHA <final SHA>" : "<no findings or accepted residuals>"}; verification rerun <commands>.
 
-Review subagents: Standards final reviewer <ID> completed; Spec final reviewer <ID> completed
+Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed
 
 Review subagent cleanup: Standards <disposition>; Spec <disposition>
 
@@ -213,9 +434,9 @@ Parent PRD coverage: <parent row present, exact audit rows cited, or N/A>
 
 Spec sequence coverage: sequence: <ordered events and observing proof or justified N/A>
 
-${reviewRuntimeEvidenceBlock}${immediateFix ? `\n\n${normalImmediateFixBlock}` : ""}`;
+${reviewRuntimeEvidenceBlock}${immediateFix ? `\n\n${normalImmediateFixBlock(evidence)}` : ""}`;
 
-const fallbackReviewBlock = (manifest, immediateFix) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
+const fallbackReviewBlock = (manifest, immediateFix, evidence) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
 
 ## Standards
 
@@ -243,7 +464,7 @@ TDD closeout gate: <fielded TDD closeout gate or N/A because no tdd skill was in
 
 ${reviewRuntimeEvidenceBlock}
 
-${immediateFix ? fallbackImmediateFixBlock : "Residual findings: <none or accepted residual records>"}
+${immediateFix ? fallbackImmediateFixBlock(evidence) : "Residual findings: <none or accepted residual records>"}
 
 Axis summary: Standards <count/worst>, Spec <count/worst>
 
@@ -284,6 +505,7 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
   const {
     parentIssue,
     audit,
+    evidence,
     reviewMode,
     immediateFix = false,
     tddParentRollup = false,
@@ -301,10 +523,16 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
   }
 
   const auditText = validateAuditInput(manifest, audit ?? buildAuditScaffold(manifest));
+  const structuredEvidence = validateStructuredEvidence(manifest, evidence, {
+    immediateFix,
+    tddParentRollup
+  });
   const review = reviewMode === "normal"
-    ? normalReviewBlock(manifest, immediateFix)
-    : fallbackReviewBlock(manifest, immediateFix);
-  const tdd = tddParentRollup ? tddBlock(manifest) : "TDD evidence: N/A because no tdd skill was invoked.";
+    ? normalReviewBlock(manifest, immediateFix, structuredEvidence)
+    : fallbackReviewBlock(manifest, immediateFix, structuredEvidence);
+  const tdd = tddParentRollup
+    ? tddBlock(manifest, structuredEvidence)
+    : "TDD evidence: N/A because no tdd skill was invoked.";
   const localSha = localOnly
     ? "Local-only SHA: <final SHA> is not remote-reachable because <reason>; local-only closeout is acceptable because <user request or repo policy>."
     : "Local-only SHA: N/A because <remote branch contains final SHA>.";
@@ -389,7 +617,15 @@ const isCli = process.argv[1] && import.meta.url === pathToFileURL(resolve(proce
 
 if (isCli) {
   const args = process.argv.slice(2);
-  const valueFlags = ["--output", "--audit-input", "--parent", "--review", "--fixed-child", "--max-bytes"];
+  const valueFlags = [
+    "--output",
+    "--audit-input",
+    "--evidence-input",
+    "--parent",
+    "--review",
+    "--fixed-child",
+    "--max-bytes"
+  ];
   const valueFor = (flag) => {
     const index = args.indexOf(flag);
     return index < 0 ? undefined : args[index + 1];
@@ -421,6 +657,10 @@ if (isCli) {
       const value = valueFor("--audit-input");
       if (!value || value.startsWith("--")) throw new Error("--audit-input requires a path");
     }
+    if (args.includes("--evidence-input")) {
+      const value = valueFor("--evidence-input");
+      if (!value || value.startsWith("--")) throw new Error("--evidence-input requires a path");
+    }
     if (args.includes("--fixed-child") && (!fixedChildMode || fixedChildMode.startsWith("--"))) {
       throw new Error("--fixed-child requires a value");
     }
@@ -431,9 +671,11 @@ if (isCli) {
 
     const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     const auditPath = valueFor("--audit-input");
+    const evidencePath = valueFor("--evidence-input");
     const { body, sizePlan } = buildCloseoutBodyPlan(manifest, {
       parentIssue: Number(parentText),
       audit: auditPath ? readFileSync(auditPath, "utf8") : undefined,
+      evidence: evidencePath ? JSON.parse(readFileSync(evidencePath, "utf8")) : undefined,
       reviewMode,
       immediateFix: args.includes("--immediate-fix"),
       tddParentRollup: args.includes("--tdd-parent-rollup"),

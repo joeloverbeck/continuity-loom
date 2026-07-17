@@ -6,6 +6,7 @@ import { validateAcceptedResiduals } from "./validate-review-normal-body.mjs";
 import {
   validateReviewClosingBodySize,
   validateReviewEvidenceIdentities,
+  validateReviewFindingLedger,
   validateReviewFixtureSnapshotCurrentness,
   validateReviewSpecCoverage
 } from "./review-evidence-contract.mjs";
@@ -397,6 +398,7 @@ if (shouldRequireImmediateFix) {
   ]) {
     requireText(token);
   }
+  validateReviewFindingLedger(body, errors);
 }
 
 if (shouldRunTddValidator) {
