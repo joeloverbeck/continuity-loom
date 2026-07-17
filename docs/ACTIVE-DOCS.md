@@ -32,6 +32,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | reference | domain authority for ideation prompt template |
 | `docs/story-record-hygiene-prompt-template.md` | Whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap/action rules, and output contract. | reference | domain authority for story-record hygiene prompt template |
 | `docs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | reference | domain authority for the segment-reconciliation assistance prompt template |
+| `specs/SPEC-033-bounded-segment-reconciliation-schema-catalog.md` | Active implementation contract for the single compact, complete, registry-derived Segment Reconciliation schema-catalog grammar and size regression. | specification | active implementation authority subordinate to FOUNDATIONS and the named domain authorities |
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | reference | domain authority for story record and generation-time brief schema |
 | `docs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | audit | domain authority for implemented validation-rule inventory |
@@ -124,6 +125,10 @@ The post-v1 cleanup ticket that removed the orphaned validation diagnostic code 
 Active specs live in:
 
 - `specs/`
+
+Current active implementation spec:
+
+- `specs/SPEC-033-bounded-segment-reconciliation-schema-catalog.md`
 
 Check `specs/` directly for active implementation specs. The directory contents are the current spec authority, not a point-in-time statement in this map. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
 
