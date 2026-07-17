@@ -3,7 +3,7 @@
 Status: active how-to — user-facing local install, run, verify, and app workflow guidance
 Authority: support (see docs/ACTIVE-DOCS.md)
 
-Continuity Loom is a local-first story-state app. You maintain story records, choose the records that matter for the next local prose segment, inspect the deterministic prompt, and decide whether to send it to OpenRouter.
+Continuity Loom is a local-first story-state app. You maintain story records, choose the records that matter for the next local prose segment, inspect the deterministic prompt, and decide whether to send it to OpenRouter or keep it local while you write or paste candidate prose yourself.
 
 The records are the continuity authority. Accepted prose is readable output, not canon for future prompts.
 
@@ -18,9 +18,9 @@ The records are the continuity authority. Accepted prose is readable output, not
 7. If readiness has blockers, fix the records or generation-time fields. Prompt preview and OpenRouter send stay blocked in v1, but the draft remains saved.
 8. If readiness has only warnings, decide whether to improve the brief or continue.
 9. Compile and inspect the prompt preview.
-10. Send the prompt to OpenRouter when you are ready.
-11. Review the returned candidate prose.
-12. Edit, regenerate, discard, or accept the candidate.
+10. Choose **Generate** to send the prompt to OpenRouter, or **Write or paste candidate** to keep the prompt local and open an empty editor.
+11. Review the OpenRouter-generated or user-supplied Draft Candidate and its displayed source and inspected-prompt context.
+12. Edit, replace or regenerate, discard, or accept the candidate.
 13. The accepted final segment is stored in the accepted segment archive.
 14. Update records manually for any durable continuity changes before generating again.
 
@@ -139,14 +139,21 @@ For local key setup, copy `.env.example` to `.env` at the repository root and se
 
 ## Candidate Lifecycle
 
-Sending a prompt returns a candidate prose segment.
+After readiness passes and the compiled prompt is visible, choose one of two ways to start a Draft Candidate:
+
+- **Generate** sends the current prompt to OpenRouter and returns an OpenRouter-sourced draft.
+- **Write or paste candidate** makes no provider call and opens an empty user-supplied draft tied to the prompt you are inspecting.
+
+Both paths use the same ephemeral editor. The draft remains not accepted and not canon. Its source, prompt fingerprint, and compiler versions stay visible while you work. A user-supplied draft remains available when OpenRouter is unconfigured, out of credits, rate limited, or unavailable, provided prompt readiness itself allows preview.
 
 You can:
 
 - edit the candidate before accepting it;
-- regenerate, which replaces or supersedes the current unsaved candidate;
+- regenerate an OpenRouter draft, or replace a user-supplied draft with a new OpenRouter generation when provider readiness allows it;
 - discard the current candidate;
 - accept the final text you want to keep.
+
+Refreshing the prompt or replacing any non-empty draft first shows an explicit discard confirmation. Cancelling keeps the exact prompt, draft text, source-specific replacement control, and makes no network request. An empty draft bypasses this confirmation. If an OpenRouter replacement fails, the existing draft and editor remain intact so you can retry, continue editing, accept, or discard it.
 
 Rejected and superseded candidates are not stored by default. Only the accepted or user-edited final segment is written to the accepted segment archive.
 
@@ -159,6 +166,8 @@ The accepted segment archive lands on the latest segment so you can review the m
 Use "Expand all" when you want whole-story reading or browser find across the full accepted prose text. "Collapse all" returns the archive to summary rows. On long archives, "Back to top" and "Jump to latest" move both the page and keyboard focus.
 
 The archive also lets you filter and export accepted output. Export always uses the complete archive in story order, independent of filters or expansion state. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
+
+Each accepted segment identifies its source as `OpenRouter` or `User-supplied`, and source is searchable from the archive filter. OpenRouter entries show their actual model, provider, generation settings, and compiler versions. User-supplied entries show the compiler versions associated with the inspected prompt and omit model, provider, and generation-setting fields instead of displaying blank or invented values. Markdown and text exports preserve the same truthful source distinction in story order.
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
 

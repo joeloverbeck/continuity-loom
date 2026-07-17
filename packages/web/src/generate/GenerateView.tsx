@@ -25,24 +25,41 @@ type GenerateSurfaceState =
   | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
+interface PromptSourceContext {
+  fingerprint: string;
+  versions: CompileResult["metadata"]["versions"];
+}
+
+type CandidateDraftSource =
+  | { source: "openrouter"; generationMetadata: GenerationMetadata }
+  | { source: "user_supplied" };
+
+interface CandidateCommon {
+  status: "candidate";
+  text: string;
+  sourceContext: PromptSourceContext;
+  acceptStatus: "idle" | "accepting";
+  acceptError?: string | undefined;
+  replacementStatus: "idle" | "sending";
+  replacementError?: string | undefined;
+}
+
+type Candidate = CandidateCommon & CandidateDraftSource;
+
 type CandidateState =
   | { status: "idle" }
   | { status: "sending" }
-  | {
-      status: "candidate";
-      text: string;
-      originalText: string;
-      generationMetadata: GenerationMetadata;
-      acceptStatus: "idle" | "accepting";
-      acceptError?: string;
-    }
+  | Candidate
   | { status: "error"; message: string };
+
+type PendingDiscardAction = "refresh" | "replace";
 
 export function GenerateView(): React.JSX.Element {
   const [state, setState] = useState<GenerateSurfaceState>({ status: "loading" });
   const [candidateState, setCandidateState] = useState<CandidateState>({ status: "idle" });
   const [searchTerm, setSearchTerm] = useState("");
   const [acceptNotice, setAcceptNotice] = useState<string | null>(null);
+  const [pendingDiscardAction, setPendingDiscardAction] = useState<PendingDiscardAction | null>(null);
   const { refreshReminder } = useReminderRefresh();
   const navigate = useNavigate();
 
@@ -53,6 +70,7 @@ export function GenerateView(): React.JSX.Element {
   async function refreshPrompt(): Promise<void> {
     setState({ status: "loading" });
     setCandidateState({ status: "idle" });
+    setPendingDiscardAction(null);
     setSearchTerm("");
     setAcceptNotice(null);
 
@@ -86,26 +104,29 @@ export function GenerateView(): React.JSX.Element {
   }
 
   async function generateCandidate(): Promise<void> {
-    if (candidateState.status === "candidate" && candidateState.text !== candidateState.originalText) {
-      const shouldReplace = window.confirm("Regenerate and replace your edited draft candidate?");
-      if (!shouldReplace) {
-        return;
-      }
+    if (state.status !== "ready" || !state.readiness.canGenerate) {
+      return;
     }
 
-    setCandidateState({ status: "sending" });
+    const replacedCandidate = candidateState.status === "candidate" ? candidateState : null;
+    const sourceContext = promptSourceContext(state.result);
+    setCandidateState(replacedCandidate
+      ? updateCandidate(replacedCandidate, { replacementStatus: "sending", replacementError: undefined })
+      : { status: "sending" });
     setAcceptNotice(null);
 
     try {
-      const result = await generate();
+      const result = await generate({ expectedPromptFingerprint: sourceContext.fingerprint });
 
       if (result.ok) {
         setCandidateState({
           status: "candidate",
           text: result.candidate.text,
-          originalText: result.candidate.text,
+          source: "openrouter",
+          sourceContext: { ...sourceContext, versions: result.metadata.versions },
           generationMetadata: result.metadata,
-          acceptStatus: "idle"
+          acceptStatus: "idle",
+          replacementStatus: "idle"
         });
         return;
       }
@@ -116,9 +137,55 @@ export function GenerateView(): React.JSX.Element {
         return;
       }
 
-      setCandidateState({ status: "error", message: generateErrorMessage(result) });
+      const message = generateErrorMessage(result);
+      setCandidateState(replacedCandidate
+        ? updateCandidate(replacedCandidate, { replacementStatus: "idle", replacementError: message })
+        : { status: "error", message });
     } catch {
-      setCandidateState({ status: "error", message: "Could not generate candidate prose." });
+      const message = "Could not generate candidate prose.";
+      setCandidateState(replacedCandidate
+        ? updateCandidate(replacedCandidate, { replacementStatus: "idle", replacementError: message })
+        : { status: "error", message });
+    }
+  }
+
+  function requestPromptRefresh(): void {
+    if (isCandidateTransitionUnavailable(candidateState, pendingDiscardAction)) {
+      return;
+    }
+
+    if (hasNonWhitespaceDraft(candidateState)) {
+      setPendingDiscardAction("refresh");
+      return;
+    }
+
+    void refreshPrompt();
+  }
+
+  function requestGeneration(): void {
+    if (isCandidateTransitionUnavailable(candidateState, pendingDiscardAction)) {
+      return;
+    }
+
+    if (hasNonWhitespaceDraft(candidateState)) {
+      setPendingDiscardAction("replace");
+      return;
+    }
+
+    void generateCandidate();
+  }
+
+  function confirmDiscardAndContinue(): void {
+    const action = pendingDiscardAction;
+    setPendingDiscardAction(null);
+
+    if (action === "refresh") {
+      void refreshPrompt();
+      return;
+    }
+
+    if (action === "replace") {
+      void generateCandidate();
     }
   }
 
@@ -143,47 +210,78 @@ export function GenerateView(): React.JSX.Element {
   };
 
   function updateCandidateText(text: string): void {
+    if (pendingDiscardAction !== null) {
+      return;
+    }
+
     setCandidateState((current) => {
       if (current.status !== "candidate") {
         return current;
       }
 
-      return {
-        ...withoutAcceptError(current),
-        text
-      };
+      return updateCandidate(current, { text, acceptError: undefined, replacementError: undefined });
     });
   }
 
   function discardCandidate(): void {
+    if (pendingDiscardAction !== null) {
+      return;
+    }
+
     setCandidateState({ status: "idle" });
+    setPendingDiscardAction(null);
+    setAcceptNotice(null);
+  }
+
+  function writeOrPasteCandidate(): void {
+    if (state.status !== "ready" || isCandidateOperationPending(candidateState)) {
+      return;
+    }
+
+    setCandidateState({
+      status: "candidate",
+      source: "user_supplied",
+      text: "",
+      sourceContext: promptSourceContext(state.result),
+      acceptStatus: "idle",
+      replacementStatus: "idle"
+    });
     setAcceptNotice(null);
   }
 
   async function acceptCurrentCandidate(): Promise<void> {
-    if (candidateState.status !== "candidate") {
+    if (candidateState.status !== "candidate" || pendingDiscardAction !== null) {
       return;
     }
 
     const candidate = candidateState;
-    setCandidateState({ ...withoutAcceptError(candidate), acceptStatus: "accepting" });
+    setCandidateState(updateCandidate(candidate, { acceptStatus: "accepting", acceptError: undefined }));
 
     try {
       const result = await acceptCandidate({
         text: candidate.text,
-        generationMetadata: candidate.generationMetadata
+        generationMetadata: candidate.source === "openrouter"
+          ? { source: "openrouter", ...candidate.generationMetadata }
+          : { source: "user_supplied", versions: candidate.sourceContext.versions }
       });
 
       if (result.ok) {
         setCandidateState({ status: "idle" });
+        setPendingDiscardAction(null);
         setAcceptNotice(`Accepted as segment ${result.segment.sequence}.`);
         refreshReminder();
         return;
       }
 
-      setCandidateState({ ...candidate, acceptStatus: "idle", acceptError: errorMessage(result.kind, result.message) });
+      setCandidateState(updateCandidate(candidate, {
+        acceptStatus: "idle",
+        acceptError: errorMessage(result.kind, result.message)
+      }));
     } catch {
-      setCandidateState({ ...candidate, acceptStatus: "idle", acceptError: "Could not accept candidate prose." });
+      setCandidateState(updateCandidate(candidate, {
+        acceptStatus: "idle",
+        acceptError: "Could not accept candidate prose."
+      }));
     }
   }
 
@@ -229,13 +327,17 @@ export function GenerateView(): React.JSX.Element {
           readiness={state.readiness}
           searchTerm={searchTerm}
           candidateState={candidateState}
+          pendingDiscardAction={pendingDiscardAction}
           acceptNotice={acceptNotice}
           onSearchTermChange={setSearchTerm}
-          onRefresh={() => void refreshPrompt()}
-          onGenerate={() => void generateCandidate()}
+          onRefresh={requestPromptRefresh}
+          onGenerate={requestGeneration}
+          onWriteOrPaste={writeOrPasteCandidate}
           onCandidateTextChange={updateCandidateText}
           onDiscardCandidate={discardCandidate}
           onAcceptCandidate={() => void acceptCurrentCandidate()}
+          onCancelDiscard={() => setPendingDiscardAction(null)}
+          onConfirmDiscard={confirmDiscardAndContinue}
           onChecklistAction={checklistActions}
         />
       ) : null}
@@ -243,16 +345,35 @@ export function GenerateView(): React.JSX.Element {
   );
 }
 
-function withoutAcceptError(candidate: Extract<CandidateState, { status: "candidate" }>): Omit<
-  Extract<CandidateState, { status: "candidate" }>,
-  "acceptError"
-> {
+function updateCandidate(candidate: Candidate, updates: Partial<CandidateCommon>): Candidate {
+  if (candidate.source === "openrouter") {
+    return { ...candidate, ...updates, source: "openrouter" };
+  }
+
+  return { ...candidate, ...updates, source: "user_supplied" };
+}
+
+function hasNonWhitespaceDraft(candidate: CandidateState): candidate is Extract<CandidateState, { status: "candidate" }> {
+  return candidate.status === "candidate" && candidate.text.trim().length > 0;
+}
+
+function isCandidateOperationPending(candidate: CandidateState): boolean {
+  return candidate.status === "sending"
+    || (candidate.status === "candidate"
+      && (candidate.acceptStatus === "accepting" || candidate.replacementStatus === "sending"));
+}
+
+function isCandidateTransitionUnavailable(
+  candidate: CandidateState,
+  pendingDiscardAction: PendingDiscardAction | null
+): boolean {
+  return pendingDiscardAction !== null || isCandidateOperationPending(candidate);
+}
+
+function promptSourceContext(result: CompileResult): PromptSourceContext {
   return {
-    status: candidate.status,
-    text: candidate.text,
-    originalText: candidate.originalText,
-    generationMetadata: candidate.generationMetadata,
-    acceptStatus: candidate.acceptStatus
+    fingerprint: result.metadata.fingerprint,
+    versions: result.metadata.versions
   };
 }
 
@@ -261,29 +382,38 @@ function ReadyGenerate({
   readiness,
   searchTerm,
   candidateState,
+  pendingDiscardAction,
   acceptNotice,
   onSearchTermChange,
   onRefresh,
   onGenerate,
+  onWriteOrPaste,
   onCandidateTextChange,
   onDiscardCandidate,
   onAcceptCandidate,
+  onCancelDiscard,
+  onConfirmDiscard,
   onChecklistAction
 }: {
   result: CompileResult;
   readiness: GenerationReadiness;
   searchTerm: string;
   candidateState: CandidateState;
+  pendingDiscardAction: PendingDiscardAction | null;
   acceptNotice: string | null;
   onSearchTermChange: (value: string) => void;
   onRefresh: () => void;
   onGenerate: () => void;
+  onWriteOrPaste: () => void;
   onCandidateTextChange: (value: string) => void;
   onDiscardCandidate: () => void;
   onAcceptCandidate: () => void;
+  onCancelDiscard: () => void;
+  onConfirmDiscard: () => void;
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
-  const canGenerate = readiness.canGenerate && candidateState.status !== "sending";
+  const candidateTransitionUnavailable = isCandidateTransitionUnavailable(candidateState, pendingDiscardAction);
+  const canGenerate = readiness.canGenerate && !candidateTransitionUnavailable;
   const showReadinessChecklist = readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
 
   return (
@@ -302,15 +432,27 @@ function ReadyGenerate({
 
       <div className="previewToolbar">
         {candidateState.status !== "candidate" ? (
-          <button type="button" onClick={onGenerate} disabled={!canGenerate}>Generate</button>
+          <>
+            <button type="button" onClick={onGenerate} disabled={!canGenerate}>Generate</button>
+            <button type="button" onClick={onWriteOrPaste} disabled={candidateTransitionUnavailable}>Write or paste candidate</button>
+          </>
         ) : null}
-        <button type="button" onClick={onRefresh}>Refresh prompt</button>
+        <button type="button" onClick={onRefresh} disabled={candidateTransitionUnavailable}>Refresh prompt</button>
       </div>
       {candidateState.status === "sending" ? <p className="muted" role="status">Generating...</p> : null}
       {candidateState.status === "error" ? (
         <p className="status statusError" role="alert">{candidateState.message}</p>
       ) : null}
       {acceptNotice ? <p className="status statusSuccess" role="status">{acceptNotice}</p> : null}
+
+      {pendingDiscardAction ? (
+        <DiscardConfirmation
+          action={pendingDiscardAction}
+          candidate={candidateState.status === "candidate" ? candidateState : null}
+          onCancel={onCancelDiscard}
+          onConfirm={onConfirmDiscard}
+        />
+      ) : null}
 
       <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
 
@@ -320,6 +462,11 @@ function ReadyGenerate({
             <div>
               <h3>Draft candidate</h3>
               <p className="muted">Draft candidate - not accepted, not canon.</p>
+              <p className="muted">Source: {candidateState.source === "openrouter" ? "OpenRouter" : "User-supplied"}</p>
+              <p className="muted">Inspected prompt: {candidateState.sourceContext.fingerprint}</p>
+              <p className="muted">
+                Template {candidateState.sourceContext.versions.template} · Compiler {candidateState.sourceContext.versions.compiler} · Contract {candidateState.sourceContext.versions.contract}
+              </p>
             </div>
           </div>
           <label className="candidateEditorLabel">
@@ -328,25 +475,90 @@ function ReadyGenerate({
               className="candidateEditor"
               value={candidateState.text}
               onChange={(event) => onCandidateTextChange(event.target.value)}
+              disabled={candidateTransitionUnavailable}
             />
           </label>
           {candidateState.acceptError ? (
             <p className="status statusError" role="alert">{candidateState.acceptError}</p>
           ) : null}
+          {candidateState.replacementError ? (
+            <p className="status statusError" role="alert">{candidateState.replacementError}</p>
+          ) : null}
           <div className="candidateActions">
-            <button type="button" onClick={onGenerate} disabled={candidateState.acceptStatus === "accepting"}>
-              Regenerate
-            </button>
-            <button type="button" onClick={onDiscardCandidate} disabled={candidateState.acceptStatus === "accepting"}>
+            {candidateState.source === "openrouter" ? (
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={!readiness.canGenerate || candidateTransitionUnavailable}
+              >
+                Regenerate
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onGenerate}
+                disabled={!readiness.canGenerate || candidateTransitionUnavailable}
+              >
+                Replace with OpenRouter generation
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onDiscardCandidate}
+              disabled={candidateTransitionUnavailable}
+            >
               Discard
             </button>
-            <button type="button" onClick={onAcceptCandidate} disabled={candidateState.acceptStatus === "accepting"}>
+            <button
+              type="button"
+              onClick={onAcceptCandidate}
+              disabled={candidateTransitionUnavailable || candidateState.text.trim().length === 0}
+            >
               Accept
             </button>
           </div>
           {candidateState.acceptStatus === "accepting" ? <p className="muted" role="status">Accepting...</p> : null}
+          {candidateState.replacementStatus === "sending" ? <p className="muted" role="status">Generating replacement...</p> : null}
         </section>
       ) : null}
+    </section>
+  );
+}
+
+function DiscardConfirmation({
+  action,
+  candidate,
+  onCancel,
+  onConfirm
+}: {
+  action: PendingDiscardAction;
+  candidate: Extract<CandidateState, { status: "candidate" }> | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}): React.JSX.Element {
+  const isRefresh = action === "refresh";
+  const title = isRefresh ? "Refresh prompt and discard draft?" : "Replace draft candidate?";
+  const confirmLabel = isRefresh
+    ? "Discard draft and refresh prompt"
+    : candidate?.source === "openrouter"
+      ? "Discard draft and regenerate"
+      : "Discard draft and replace with OpenRouter generation";
+
+  return (
+    <section
+      className="configPanel"
+      role="alertdialog"
+      aria-labelledby="candidate-discard-confirmation-title"
+      aria-describedby="candidate-discard-confirmation-description"
+    >
+      <h3 id="candidate-discard-confirmation-title">{title}</h3>
+      <p id="candidate-discard-confirmation-description">
+        This action discards the current non-empty Draft Candidate. No accepted segment or story record is changed.
+      </p>
+      <div className="candidateActions">
+        <button type="button" onClick={onConfirm}>{confirmLabel}</button>
+        <button type="button" onClick={onCancel}>Keep draft</button>
+      </div>
     </section>
   );
 }

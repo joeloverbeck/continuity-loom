@@ -294,6 +294,7 @@ async function addAcceptedSegment(fastify: FastifyApp, text: string): Promise<vo
     payload: {
       text,
       generationMetadata: {
+        source: "openrouter",
         model: "test/model",
         provider: "openrouter",
         temperature: 0.1,

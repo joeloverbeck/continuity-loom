@@ -14,6 +14,17 @@ export type {
   StoreCompatibility
 } from "./project-storage.js";
 export {
+  acceptedSegmentProvenanceSchema,
+  acceptedSegmentVersionsSchema,
+  openRouterAcceptedSegmentProvenanceSchema,
+  userSuppliedAcceptedSegmentProvenanceSchema
+} from "./accepted-segment.js";
+export type {
+  AcceptedSegmentProvenance,
+  OpenRouterAcceptedSegmentProvenance,
+  UserSuppliedAcceptedSegmentProvenance
+} from "./accepted-segment.js";
+export {
   LETTER_UNDER_FLOUR_BIN_TITLE,
   demoGenerationSession,
   demoRecordIds,

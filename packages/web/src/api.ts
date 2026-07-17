@@ -1,4 +1,5 @@
 import type {
+  AcceptedSegmentProvenance,
   CompileResult,
   GenerationReadiness,
   IdeationRequest,
@@ -235,7 +236,7 @@ export interface AcceptedSegmentRef {
 
 export interface AcceptedSegment extends AcceptedSegmentRef {
   text: string;
-  metadata: GenerationMetadata;
+  metadata: AcceptedSegmentProvenance;
 }
 
 export type AcceptResponse = { ok: true; segment: AcceptedSegmentRef } | ApiFailure;
@@ -610,8 +611,8 @@ export async function refreshModels(): Promise<RefreshModelsResponse> {
   return postJson<RefreshModelsResponse>("/api/settings/openrouter/models");
 }
 
-export async function generate(): Promise<GenerateResponse> {
-  return postJson<GenerateResponse>("/api/generate");
+export async function generate(request: { expectedPromptFingerprint: string }): Promise<GenerateResponse> {
+  return postJson<GenerateResponse>("/api/generate", request);
 }
 
 export async function ideate(request: Partial<IdeationRequest> = {}): Promise<IdeateResponse> {
@@ -644,7 +645,7 @@ export async function segmentReconciliationAnalyze(
 
 export async function acceptCandidate(input: {
   text: string;
-  generationMetadata: GenerationMetadata;
+  generationMetadata: AcceptedSegmentProvenance;
 }): Promise<AcceptResponse> {
   return requestJson<AcceptResponse>("/api/accepted-segments", "POST", input);
 }

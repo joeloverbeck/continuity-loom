@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -73,6 +73,8 @@ describe("GenerateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
     expect(await screen.findByText("Draft candidate - not accepted, not canon.")).toBeTruthy();
+    expect(screen.getByText("Source: OpenRouter")).toBeTruthy();
+    expect(screen.getByText("Inspected prompt: fingerprint-1")).toBeTruthy();
     const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
     expect(editor.value).toBe("Candidate prose.");
 
@@ -83,7 +85,7 @@ describe("GenerateView", () => {
     expect(screen.queryByText(/Durable changes likely need manual record updates/i)).toBeNull();
     expect(acceptCandidate).toHaveBeenCalledWith({
       text: "Edited accepted prose.",
-      generationMetadata: candidateMetadata()
+      generationMetadata: { source: "openrouter", ...candidateMetadata() }
     });
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
     expect(storageSetItem).not.toHaveBeenCalled();
@@ -121,8 +123,7 @@ describe("GenerateView", () => {
     expect(getDurableChangeReminder).toHaveBeenCalledTimes(2);
   });
 
-  it("regenerates with edit-loss warning and never accepts discarded or superseded drafts", async () => {
-    const confirm = vi.spyOn(window, "confirm");
+  it("regenerates only after an inline discard confirmation and never accepts superseded drafts", async () => {
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
     vi.mocked(generate)
       .mockResolvedValueOnce({ ok: true, candidate: { text: "First candidate." }, metadata: candidateMetadata() })
@@ -135,13 +136,18 @@ describe("GenerateView", () => {
     const editor = await screen.findByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
     fireEvent.change(editor, { target: { value: "Edited first candidate." } });
 
-    confirm.mockReturnValueOnce(false);
     fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+    expect(screen.getByRole("alertdialog", { name: "Replace draft candidate?" })).toBeTruthy();
     expect(generate).toHaveBeenCalledTimes(1);
     expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("Edited first candidate.");
 
-    confirm.mockReturnValueOnce(true);
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    expect(screen.queryByRole("alertdialog", { name: "Replace draft candidate?" })).toBeNull();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("Edited first candidate.");
+
     fireEvent.click(screen.getByRole("button", { name: "Regenerate" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft and regenerate" }));
     expect(await screen.findByDisplayValue("Second candidate.")).toBeTruthy();
     expect(generate).toHaveBeenCalledTimes(2);
     expect(acceptCandidate).not.toHaveBeenCalled();
@@ -186,11 +192,43 @@ describe("GenerateView", () => {
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
 
-  it("renders generic transport generate errors without a candidate", async () => {
+  it("prevents competing manual or refresh transitions while an initial generation is pending", async () => {
+    let resolveGeneration: ((value: Awaited<ReturnType<typeof generate>>) => void) | undefined;
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate).mockReturnValue(new Promise((resolve) => {
+      resolveGeneration = resolve;
+    }));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+
+    expect(await screen.findByText("Generating...")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Write or paste candidate" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Refresh prompt" }).disabled).toBe(true);
+    expect(compile).toHaveBeenCalledTimes(1);
+
+    resolveGeneration?.({
+      ok: true,
+      candidate: { text: "Only candidate." },
+      metadata: candidateMetadata()
+    });
+
+    expect(await screen.findByDisplayValue("Only candidate.")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Refresh prompt" }).disabled).toBe(false);
+  });
+
+  it.each([
+    ["insufficient-credits", "Insufficient OpenRouter credits."],
+    ["rate-limit", "Rate limited. Wait before retrying."],
+    ["provider-unavailable", "Provider or model unavailable."]
+  ])("keeps manual entry available after a %s transport failure", async (category, expectedMessage) => {
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
     vi.mocked(generate).mockResolvedValue({
       ok: false,
-      category: "provider-unavailable",
+      category,
       message: "The selected model or provider is unavailable."
     });
 
@@ -199,8 +237,10 @@ describe("GenerateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
-    expect(await screen.findByText("Provider or model unavailable.")).toBeTruthy();
+    expect(await screen.findByText(expectedMessage)).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("");
   });
 
   it("renders validation blockers from readiness and disables Generate", async () => {
@@ -224,6 +264,7 @@ describe("GenerateView", () => {
     expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Add the launch directive" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Generate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Write or paste candidate" })).toBeNull();
   });
 
   it("keeps Generate enabled for warning-only readiness when the provider is configured", async () => {
@@ -304,6 +345,218 @@ describe("GenerateView", () => {
     expect(generate).not.toHaveBeenCalled();
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
   });
+
+  it("opens an empty preview-grounded user-supplied draft when the provider is unavailable", async () => {
+    const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      providerConfigured: false,
+      providerBlockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "provider-configuration-missing",
+        legacyCode: "provider-configuration-missing",
+        title: "Configure OpenRouter before generating",
+        group: "required-before-prompt-generation"
+      })]
+    }));
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(true);
+    const manualEntry = screen.getByRole<HTMLButtonElement>("button", { name: "Write or paste candidate" });
+    expect(manualEntry.disabled).toBe(false);
+
+    fireEvent.click(manualEntry);
+
+    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    expect(editor.value).toBe("");
+    expect(screen.getByText("Source: User-supplied")).toBeTruthy();
+    expect(screen.getByText("Draft candidate - not accepted, not canon.")).toBeTruthy();
+    expect(screen.getByText("Inspected prompt: fingerprint-1")).toBeTruthy();
+    expect(screen.getByText("Template template-1 · Compiler compiler-1 · Contract contract-1")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accept" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Replace with OpenRouter generation" }).disabled).toBe(true);
+    expect(screen.queryByRole("button", { name: "Regenerate" })).toBeNull();
+    expect(screen.getByTestId("prompt-body")).toBeTruthy();
+    expect(generate).not.toHaveBeenCalled();
+    expect(acceptCandidate).not.toHaveBeenCalled();
+    expect(storageSetItem).not.toHaveBeenCalled();
+  });
+
+  it("discards and accepts user-supplied drafts only through the shared acceptance transition", async () => {
+    const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(acceptCandidate).mockResolvedValue({
+      ok: true,
+      segment: { id: 10, sequence: 5, createdAt: "2026-06-06T08:15:00.000Z" }
+    });
+    vi.mocked(getDurableChangeReminder)
+      .mockResolvedValueOnce(inactiveReminder())
+      .mockResolvedValueOnce(activeReminder(5));
+
+    renderGenerateWithReminder();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    const firstEditor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    fireEvent.change(firstEditor, { target: { value: " \n\t " } });
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accept" }).disabled).toBe(true);
+
+    fireEvent.change(firstEditor, { target: { value: "Discard this pasted draft." } });
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(acceptCandidate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    const secondEditor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    expect(secondEditor.value).toBe("");
+    fireEvent.change(secondEditor, { target: { value: "  Exact externally supplied sentinel.  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByText("Accepted as segment 5.")).toBeTruthy();
+    expect(acceptCandidate).toHaveBeenCalledTimes(1);
+    expect(acceptCandidate).toHaveBeenCalledWith({
+      text: "  Exact externally supplied sentinel.  ",
+      generationMetadata: {
+        source: "user_supplied",
+        versions: {
+          template: "template-1",
+          compiler: "compiler-1",
+          contract: "contract-1"
+        }
+      }
+    });
+    expect(await screen.findByRole("heading", { name: "Segment 5 was accepted" })).toBeTruthy();
+    expect(generate).not.toHaveBeenCalled();
+    expect(storageSetItem).not.toHaveBeenCalled();
+  });
+
+  it("preserves an exact non-empty draft when prompt refresh is cancelled and discards it only after confirmation", async () => {
+    vi.mocked(compile)
+      .mockResolvedValueOnce(compileResult("<role>\nFirst prompt", "fingerprint-1"))
+      .mockResolvedValueOnce(compileResult("<role>\nSecond prompt", "fingerprint-2"));
+
+    renderGenerate();
+
+    expect((await screen.findByTestId("prompt-body")).textContent).toBe("<role>\nFirst prompt");
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" });
+    fireEvent.change(editor, { target: { value: "  Preserve this exact draft.  " } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh prompt" }));
+
+    expect(screen.getByRole("alertdialog", { name: "Refresh prompt and discard draft?" })).toBeTruthy();
+    expect(compile).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("  Preserve this exact draft.  ");
+    expect(screen.getByText("Inspected prompt: fingerprint-1")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Replace with OpenRouter generation" })).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Accept" }).disabled).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    expect(acceptCandidate).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+
+    expect(screen.queryByRole("alertdialog", { name: "Refresh prompt and discard draft?" })).toBeNull();
+    expect(compile).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("prompt-body").textContent).toBe("<role>\nFirst prompt");
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("  Preserve this exact draft.  ");
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh prompt" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft and refresh prompt" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("prompt-body").textContent).toBe("<role>\nSecond prompt");
+    });
+    expect(compile).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(screen.getByText("fingerprint-2")).toBeTruthy();
+  });
+
+  it("lets empty drafts refresh or request a replacement without a discard confirmation", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate).mockResolvedValue({
+      ok: true,
+      candidate: { text: "Replacement candidate." },
+      metadata: candidateMetadata()
+    });
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    fireEvent.click(screen.getByRole("button", { name: "Replace with OpenRouter generation" }));
+
+    expect(await screen.findByDisplayValue("Replacement candidate.")).toBeTruthy();
+    expect(generate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    fireEvent.click(screen.getByRole("button", { name: "Refresh prompt" }));
+
+    expect(await screen.findByRole("button", { name: "Write or paste candidate" })).toBeTruthy();
+    expect(compile).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+  });
+
+  it("preserves a user-supplied draft on replacement failure and records actual OpenRouter provenance after success", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate)
+      .mockResolvedValueOnce({
+        ok: false,
+        category: "provider-unavailable",
+        message: "The selected provider is unavailable."
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        candidate: { text: "Provider replacement." },
+        metadata: candidateMetadata({ model: "anthropic/claude-sonnet-4", temperature: 0.7 })
+      });
+    vi.mocked(acceptCandidate).mockResolvedValue({
+      ok: true,
+      segment: { id: 11, sequence: 6, createdAt: "2026-06-06T08:20:00.000Z" }
+    });
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Candidate text" }), {
+      target: { value: "Original user draft." }
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Replace with OpenRouter generation" }));
+    expect(screen.getByRole("alertdialog", { name: "Replace draft candidate?" })).toBeTruthy();
+    expect(generate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft and replace with OpenRouter generation" }));
+
+    expect(await screen.findByText("Provider or model unavailable.")).toBeTruthy();
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("Original user draft.");
+    expect(screen.getByText("Source: User-supplied")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Replace with OpenRouter generation" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Regenerate" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Replace with OpenRouter generation" }));
+    fireEvent.click(screen.getByRole("button", { name: "Discard draft and replace with OpenRouter generation" }));
+
+    expect(await screen.findByDisplayValue("Provider replacement.")).toBeTruthy();
+    expect(screen.getByText("Source: OpenRouter")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Regenerate" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Replace with OpenRouter generation" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByText("Accepted as segment 6.")).toBeTruthy();
+    expect(acceptCandidate).toHaveBeenCalledWith({
+      text: "Provider replacement.",
+      generationMetadata: {
+        source: "openrouter",
+        ...candidateMetadata({ model: "anthropic/claude-sonnet-4", temperature: 0.7 })
+      }
+    });
+  });
 });
 
 function renderGenerate() {
@@ -325,7 +578,7 @@ function renderGenerateWithReminder() {
   );
 }
 
-function compileResult(prompt: string): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
   return {
     prompt,
     metadata: {
@@ -334,18 +587,21 @@ function compileResult(prompt: string): CompileResult {
         compiler: "compiler-1",
         contract: "contract-1"
       },
-      fingerprint: "fingerprint-1",
+      fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
     }
   };
 }
 
-function candidateMetadata() {
+function candidateMetadata(overrides: Partial<{
+  model: string;
+  temperature: number;
+}> = {}) {
   return {
-    model: "openai/gpt-4.1",
+    model: overrides.model ?? "openai/gpt-4.1",
     provider: "openrouter" as const,
-    temperature: 0.4,
+    temperature: overrides.temperature ?? 0.4,
     maxOutputTokens: 2200,
     versions: {
       template: "template-1",

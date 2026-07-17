@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createProjectStoreManager, type ProjectStoreManager } from "./project-store.js";
 
 const APPLICATION_ID = 0x4c4f4f4d;
-const CURRENT_SCHEMA_VERSION = 3;
+const CURRENT_SCHEMA_VERSION = 4;
 
 const managers: ProjectStoreManager[] = [];
 

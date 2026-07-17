@@ -29,7 +29,7 @@ import {
   updateRecord,
   validate
 } from "./api.js";
-import type { GenerationMetadata } from "./api.js";
+import type { AcceptedSegment, GenerationMetadata } from "./api.js";
 
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
@@ -389,23 +389,24 @@ describe("api client", () => {
       })
     );
 
-    await expect(generate()).resolves.toEqual(success);
+    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(success);
 
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
       ["/api/generate", "POST"]
     ]);
-    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json" });
-    expect(calls[0]?.init?.body).toBeUndefined();
+    expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json", "Content-Type": "application/json" });
+    expect(calls[0]?.init?.body).toBe(JSON.stringify({ expectedPromptFingerprint: "7b9d" }));
   });
 
   it("accepts a candidate with the generation metadata snapshot", async () => {
     const generationMetadata = {
+      source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
-    } satisfies GenerationMetadata;
+    } satisfies AcceptedSegment["metadata"];
     const success = {
       ok: true,
       segment: { id: 7, sequence: 3, createdAt: "2026-06-06T07:56:00.000Z" }
@@ -434,12 +435,13 @@ describe("api client", () => {
 
   it("returns accepted-segment failures unchanged", async () => {
     const generationMetadata = {
+      source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
-    } satisfies GenerationMetadata;
+    } satisfies AcceptedSegment["metadata"];
     const failure = {
       ok: false,
       kind: "no-open-project",
@@ -452,13 +454,14 @@ describe("api client", () => {
 
   it("lists accepted segments with text and metadata", async () => {
     const metadata = {
+      source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
       temperature: 0.4,
       maxOutputTokens: 2200,
       topP: 0.9,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
-    } satisfies GenerationMetadata;
+    } satisfies AcceptedSegment["metadata"];
     const success = {
       ok: true,
       segments: [
@@ -623,7 +626,7 @@ describe("api client", () => {
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(blockedBody, 200))));
 
-    await expect(generate()).resolves.toEqual(blockedBody);
+    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(blockedBody);
   });
 
   it("returns generate failures including missing-key unchanged", async () => {
@@ -634,7 +637,7 @@ describe("api client", () => {
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 200))));
 
-    await expect(generate()).resolves.toEqual(failure);
+    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(failure);
   });
 
   it("returns structured error envelopes from failed route responses", async () => {

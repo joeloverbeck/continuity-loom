@@ -48,7 +48,7 @@ It is not a dramatic-rail manager.
 It is not a prose archive treated as canon.  
 It is not an agent that decides what the story “really” means.
 
-The user maintains a single current story continuity as structured story records. The app compiles the user-selected active working set of records into a deterministic universal prose prompt. The app sends that prompt through OpenRouter to an external LLM prose writer. The user may edit, regenerate, discard, or accept the returned candidate prose. Accepted prose becomes readable story output. It does not become the canonical source of truth for later prompt generation.
+The user maintains a single current story continuity as structured story records. The app compiles the user-selected active working set of records into a deterministic universal prose prompt. The user may send that prompt through OpenRouter to an external LLM prose writer, or may keep the prompt local for inspection and explicitly supply candidate prose through the Generate / Candidate surface. Candidate prose may originate from the app-managed OpenRouter call or from explicit user supply. Both sources enter the same ephemeral Draft Candidate lifecycle: the user may edit, replace or regenerate, discard, or accept the prose. Supplying a candidate makes no provider call, does not make the candidate canon, and does not bypass deterministic prompt-readiness validation. Accepted prose becomes readable story output. It does not become the canonical source of truth for later prompt generation.
 
 The constitutionally correct mental model is:
 
@@ -75,10 +75,10 @@ The canonical workflow is:
 7. Warnings remain visible and actionable, but they do not block Preview, Generate, compilation, or draft saving.
 8. If validation passes, the deterministic compiler generates the universal prose prompt.
 9. The user can inspect the generated prompt.
-10. The app sends the prompt to OpenRouter using the configured global model setting.
-11. The app receives candidate prose from the external prose writer.
-12. The user may edit the candidate prose before acceptance.
-13. The user may regenerate, discard, or go back to modify records and generation-time fields.
+10. The user chooses Generate or Write or paste candidate. Generate sends the current prompt to OpenRouter; Write or paste candidate makes no provider call.
+11. Generate returns an OpenRouter candidate. Write or paste candidate creates an empty user-supplied Draft Candidate tied to the current inspected prompt.
+12. Both paths use the same ephemeral Draft Candidate editor; the user may edit, replace or regenerate, discard, or accept the prose.
+13. The user may go back to modify records and generation-time fields.
 14. The user accepts a final prose segment.
 15. The app stores the accepted segment text plus useful metadata.
 16. The app reminds the user that durable changes in the accepted segment likely require manual record updates.
@@ -777,6 +777,8 @@ Accepted segments are readable story output.
 
 They are not canon authority for future generation.
 
+Accepted segment metadata must identify its candidate source as OpenRouter or user-supplied. OpenRouter-source metadata records the actual model, provider, generation settings, and compiler versions. User-supplied metadata must not invent model, provider, or generation-setting values; it records the compiler versions associated with the inspected prompt where available.
+
 The app should allow the user to see accepted segments individually and in order. Segment browsing is a reading and review affordance, not a prose-prompt source. The sole assistance-source exception is the `segment-reconciliation` profile in §9.1, which reads exactly one explicitly requested accepted segment — latest only in v1 — for quarantined advisory review. That exception does not authorize archive ranges, prose generation, stored summaries, or automatic continuity writes.
 
 Accepted segment metadata should include:
@@ -784,10 +786,11 @@ Accepted segment metadata should include:
 - story identifier;
 - segment order or index;
 - timestamp;
-- model used;
-- provider/model identifier;
-- prompt template version where available;
-- compiler version where available.
+- candidate source;
+- prompt template, compiler, and compiler-contract versions where available;
+- for OpenRouter-source segments only, the actual provider/model identifier and generation settings.
+
+User-supplied metadata must omit provider, model, temperature, maximum-output-token, and top-p fields rather than storing blank or fabricated placeholders.
 
 The app does not need to mark whether the user edited the candidate before acceptance. The accepted text is the accepted text.
 
@@ -933,7 +936,7 @@ It should support:
   are inert scratch, not continuity authority and not prompt context;
 - clear validation errors;
 - prompt inspection;
-- editable generated prose before acceptance;
+- editable Draft Candidate prose before acceptance, whether OpenRouter-generated or user-supplied;
 - regenerate and discard paths;
 - accepted segment browsing;
 - post-acceptance reminders to update records;

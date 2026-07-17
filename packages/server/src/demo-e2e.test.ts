@@ -90,6 +90,7 @@ describe("demo project end-to-end capstone", () => {
       payload: {
         text: editedText,
         generationMetadata: {
+          source: "openrouter",
           model: "demo/mock-writer",
           provider: "openrouter",
           temperature: 0.2,
@@ -123,4 +124,3 @@ describe("demo project end-to-end capstone", () => {
     });
   });
 });
-

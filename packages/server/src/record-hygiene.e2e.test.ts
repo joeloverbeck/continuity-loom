@@ -199,6 +199,7 @@ async function addAcceptedSegment(fastify: FastifyApp): Promise<void> {
     payload: {
       text: `Accepted story text ${acceptedSentinel}`,
       generationMetadata: {
+        source: "openrouter",
         model: "test/model",
         provider: "openrouter",
         temperature: 0.1,

@@ -42,7 +42,7 @@ describe("generate routes", () => {
 
   it("returns a structured no-open-project error with no candidate", async () => {
     const fastify = app();
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify, "inspected-fingerprint");
     const body = response.json() as { kind: string; candidate?: unknown };
 
     expect(response.statusCode).toBe(409);
@@ -62,7 +62,7 @@ describe("generate routes", () => {
       }
     });
 
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify, "inspected-fingerprint");
     const body = response.json() as { kind: string; candidate?: unknown };
 
     expect(response.statusCode).toBe(422);
@@ -82,7 +82,7 @@ describe("generate routes", () => {
       }
     });
 
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify, "inspected-fingerprint");
     const body = response.json() as { kind: string; candidate?: unknown; validation: { isBlocked: boolean } };
 
     expect(response.statusCode).toBe(200);
@@ -100,7 +100,7 @@ describe("generate routes", () => {
     await putSettings(fastify);
 
     const before = await generationBrief(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify);
     const after = await generationBrief(fastify);
 
     expect(response.statusCode).toBe(200);
@@ -111,6 +111,30 @@ describe("generate routes", () => {
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
     expect(after).toEqual(before);
+  });
+
+  it("rejects generation before transport when the inspected prompt fingerprint is stale", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/generate",
+      payload: { expectedPromptFingerprint: "stale-inspected-fingerprint" }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "stale-prompt",
+      message: "The prompt changed after it was inspected. Refresh the prompt before generating."
+    });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
   it("returns candidate text and full generation metadata on success without mutating project data", async () => {
@@ -128,7 +152,7 @@ describe("generate routes", () => {
     });
 
     const before = await generationBrief(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify);
     const after = await generationBrief(fastify);
     const body = response.json() as {
       metadata: Record<string, unknown>;
@@ -171,7 +195,7 @@ describe("generate routes", () => {
     await putBrief(fastify);
     await putSettings(fastify, { model: "openai/gpt-4.1" });
 
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify);
     const body = response.json() as { metadata: Record<string, unknown> };
 
     expect(response.statusCode).toBe(200);
@@ -199,7 +223,7 @@ describe("generate routes", () => {
     await putSettings(fastify);
 
     const before = await generationBrief(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await injectGenerate(fastify);
     const after = await generationBrief(fastify);
 
     expect(response.statusCode).toBe(200);
@@ -229,7 +253,7 @@ describe("generate routes", () => {
       });
       await putSettings(fastify);
 
-      await fastify.inject({ method: "POST", url: "/api/generate" });
+      await injectGenerate(fastify);
     } finally {
       const output = capture.restore();
       expect(output).not.toContain(keySecretText);
@@ -348,6 +372,25 @@ async function generationBrief(fastify: ReturnType<typeof createServer>): Promis
   const response = await fastify.inject({ method: "GET", url: "/api/generation-brief" });
   expect(response.statusCode).toBe(200);
   return response.json();
+}
+
+async function injectGenerate(
+  fastify: ReturnType<typeof createServer>,
+  expectedPromptFingerprint?: string
+) {
+  const fingerprint = expectedPromptFingerprint ?? await currentPromptFingerprint(fastify);
+  return fastify.inject({
+    method: "POST",
+    url: "/api/generate",
+    payload: { expectedPromptFingerprint: fingerprint }
+  });
+}
+
+async function currentPromptFingerprint(fastify: ReturnType<typeof createServer>): Promise<string> {
+  const response = await fastify.inject({ method: "POST", url: "/api/compile" });
+  expect(response.statusCode).toBe(200);
+  const body = response.json() as { metadata: { fingerprint: string } };
+  return body.metadata.fingerprint;
 }
 
 function captureProcessWrites(): { restore: () => string } {

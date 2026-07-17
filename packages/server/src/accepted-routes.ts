@@ -1,24 +1,12 @@
+import { acceptedSegmentProvenanceSchema } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import type { ProjectStoreManager } from "./project-store.js";
 
-const generationMetadataSchema = z.strictObject({
-  model: z.string().min(1),
-  provider: z.literal("openrouter"),
-  temperature: z.number(),
-  maxOutputTokens: z.number().int(),
-  topP: z.number().optional(),
-  versions: z.strictObject({
-    template: z.string().min(1),
-    compiler: z.string().min(1),
-    contract: z.string().min(1)
-  })
-});
-
 const acceptBodySchema = z.strictObject({
-  text: z.string().min(1),
-  generationMetadata: generationMetadataSchema
+  text: z.string().refine((value) => value.trim().length > 0),
+  generationMetadata: acceptedSegmentProvenanceSchema
 });
 
 const acceptedSegmentParamsSchema = z.strictObject({
@@ -48,7 +36,19 @@ export function registerAcceptedRoutes(app: FastifyInstance, manager: ProjectSto
       return reply.code(409).send(noOpenProject());
     }
 
-    return reply.send({ ok: true, segments: repository.listAcceptedSegments() });
+    try {
+      return reply.send({ ok: true, segments: repository.listAcceptedSegments() });
+    } catch (error) {
+      if (error instanceof SyntaxError || error instanceof ZodError) {
+        return reply.code(500).send({
+          ok: false,
+          kind: "malformed-accepted-metadata",
+          message: "Accepted segment metadata is malformed."
+        });
+      }
+
+      throw error;
+    }
   });
 
   app.post("/api/accepted-segments", (request, reply) => {

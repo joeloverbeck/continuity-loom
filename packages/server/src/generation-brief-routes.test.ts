@@ -71,7 +71,7 @@ function writeAcceptedSegment(databasePath: string): void {
     database
       .prepare(
         `INSERT INTO accepted_segments (sequence, text, metadata_json, created_at)
-         VALUES (1, 'Accepted prose.', '{}', ?)`
+         VALUES (1, 'Accepted prose.', '{"source":"user_supplied","versions":{"template":"test","compiler":"test","contract":"test"}}', ?)`
       )
       .run(new Date().toISOString());
   } finally {

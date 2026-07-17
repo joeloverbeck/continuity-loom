@@ -12,6 +12,7 @@ const acceptedProseSecret = "REMINDER_ROUTE_ACCEPTED_PROSE_SECRET_DO_NOT_LOG";
 const apiKeySecret = "sk-or-reminder-route-secret";
 
 const generationMetadata = {
+  source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
   temperature: 0.4,

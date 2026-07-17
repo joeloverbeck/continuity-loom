@@ -44,10 +44,14 @@ describe("generate route secret leakage regression", () => {
 
     const preview = await fastify.inject({ method: "POST", url: "/api/compile" });
     expect(preview.statusCode).toBe(200);
-    const previewBody = preview.json() as { prompt: string };
+    const previewBody = preview.json() as { prompt: string; metadata: { fingerprint: string } };
     expect(previewBody.prompt).not.toContain(fakeApiKey);
 
-    const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/generate",
+      payload: { expectedPromptFingerprint: previewBody.metadata.fingerprint }
+    });
     const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt;
 
     expect(response.statusCode).toBe(200);
@@ -67,7 +71,13 @@ describe("generate route secret leakage regression", () => {
 
     try {
       await prepareGenerationProject(fastify);
-      const response = await fastify.inject({ method: "POST", url: "/api/generate" });
+      const preview = await fastify.inject({ method: "POST", url: "/api/compile" });
+      const previewBody = preview.json() as { metadata: { fingerprint: string } };
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/generate",
+        payload: { expectedPromptFingerprint: previewBody.metadata.fingerprint }
+      });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).not.toContain(fakeApiKey);

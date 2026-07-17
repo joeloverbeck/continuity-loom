@@ -12,12 +12,22 @@ const acceptedProseSecret = "ACCEPTED_ROUTE_PROSE_SECRET_DO_NOT_LOG";
 const apiKeySecret = "sk-or-accepted-route-secret";
 
 const generationMetadata = {
+  source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
   temperature: 0.4,
   maxOutputTokens: 2200,
   topP: 0.9,
   versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+} as const;
+
+const openRouterProvenance = {
+  ...generationMetadata
+} as const;
+
+const userSuppliedProvenance = {
+  source: "user_supplied",
+  versions: generationMetadata.versions
 } as const;
 
 interface AcceptedSegmentRow {
@@ -41,6 +51,67 @@ afterEach(async () => {
 });
 
 describe("accepted routes", () => {
+  it("accepts both strict provenance variants and activates the existing reminder", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+
+    const openRouterResponse = await postAccept(fastify, {
+      text: "OpenRouter accepted prose.",
+      generationMetadata: openRouterProvenance
+    });
+    const userSuppliedResponse = await postAccept(fastify, {
+      text: "  User-supplied accepted prose.  ",
+      generationMetadata: userSuppliedProvenance
+    });
+
+    expect(openRouterResponse.statusCode).toBe(201);
+    expect(userSuppliedResponse.statusCode).toBe(201);
+    expect(acceptedSegmentRows(join(folderPath, "loom.sqlite"))).toHaveLength(2);
+
+    const listed = await getAcceptedSegments(fastify);
+    expect(listed.json()).toMatchObject({
+      ok: true,
+      segments: [
+        { text: "OpenRouter accepted prose.", metadata: openRouterProvenance },
+        { text: "  User-supplied accepted prose.  ", metadata: userSuppliedProvenance }
+      ]
+    });
+
+    const reminder = await fastify.inject({ method: "GET", url: "/api/durable-change-reminder" });
+    expect(reminder.json()).toMatchObject({
+      ok: true,
+      reminder: { active: true, latestSegment: { sequence: 2 } }
+    });
+  });
+
+  it("rejects whitespace-only prose and mixed user-supplied provenance without a write", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const before = tableCounts(join(folderPath, "loom.sqlite"));
+
+    const whitespace = await postAccept(fastify, {
+      text: " \n\t ",
+      generationMetadata: userSuppliedProvenance
+    });
+    const mixed = await postAccept(fastify, {
+      text: "Must not persist.",
+      generationMetadata: {
+        ...userSuppliedProvenance,
+        model: "fabricated/model",
+        provider: "openrouter",
+        temperature: 0.4,
+        maxOutputTokens: 2200,
+        topP: 0.9
+      }
+    });
+
+    for (const response of [whitespace, mixed]) {
+      expect(response.statusCode).toBe(422);
+      expect(response.json()).toMatchObject({ ok: false, kind: "invalid-body" });
+    }
+    expect(tableCounts(join(folderPath, "loom.sqlite"))).toEqual(before);
+  });
+
   it("lists accepted segments in sequence order with text and metadata", async () => {
     const fastify = app();
     await openProject(fastify);
@@ -75,6 +146,7 @@ describe("accepted routes", () => {
           sequence: 2,
           text: "Second accepted prose.",
           metadata: {
+            source: "openrouter",
             model: "openai/gpt-4.1",
             provider: "openrouter",
             temperature: 0.4,
@@ -95,6 +167,31 @@ describe("accepted routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({ ok: true, segments: [] });
+  });
+
+  it("fails closed when stored accepted provenance is malformed", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    await postAccept(fastify, {
+      text: "Accepted prose that remains stored.",
+      generationMetadata: userSuppliedProvenance
+    });
+
+    rewriteAcceptedMetadata(join(folderPath, "loom.sqlite"), {
+      ...userSuppliedProvenance,
+      model: "fabricated/model"
+    });
+
+    const response = await getAcceptedSegments(fastify);
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "malformed-accepted-metadata",
+      message: "Accepted segment metadata is malformed."
+    });
+    expect(JSON.stringify(response.json())).not.toContain("fabricated/model");
+    expect(acceptedSegmentRows(join(folderPath, "loom.sqlite"))).toHaveLength(1);
   });
 
   it("appends accepted segments with full metadata and no record-table writes", async () => {
@@ -125,6 +222,7 @@ describe("accepted routes", () => {
     expect(rows[0]).toMatchObject({ sequence: 1, text: "Edited accepted prose." });
     expect(JSON.parse(rows[0]?.metadata_json ?? "")).toEqual(generationMetadata);
     expect(JSON.parse(rows[1]?.metadata_json ?? "")).toEqual({
+      source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
       temperature: 0.4,
@@ -372,6 +470,15 @@ function acceptedSegmentRows(databasePath: string): AcceptedSegmentRow[] {
     return database
       .prepare("SELECT id, sequence, text, metadata_json, created_at FROM accepted_segments ORDER BY sequence")
       .all() as AcceptedSegmentRow[];
+  } finally {
+    database.close();
+  }
+}
+
+function rewriteAcceptedMetadata(databasePath: string, metadata: unknown): void {
+  const database = new DatabaseSync(databasePath);
+  try {
+    database.prepare("UPDATE accepted_segments SET metadata_json = ? WHERE sequence = 1").run(JSON.stringify(metadata));
   } finally {
     database.close();
   }

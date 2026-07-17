@@ -365,6 +365,45 @@ Rules:
 - Blocks generation only when supplied guidance is structurally non-local or contradictory with the manual directive.
 - The stop rule outranks desired length, drama, escalation, or completion.
 
+### 3.9 ACCEPTED SEGMENT PROVENANCE
+
+Accepted prose is readable output rather than continuity authority. Every accepted row uses one strict, source-discriminated metadata contract:
+
+```ts
+type AcceptedSegmentProvenance =
+  | {
+      source: "openrouter";
+      model: string;
+      provider: "openrouter";
+      temperature: number;
+      maxOutputTokens: number;
+      topP?: number;
+      versions: {
+        template: string;
+        compiler: string;
+        contract: string;
+      };
+    }
+  | {
+      source: "user_supplied";
+      versions: {
+        template: string;
+        compiler: string;
+        contract: string;
+      };
+    };
+```
+
+Rules:
+
+- Both variants use the existing accepted-segment table, route, archive, sequence ordering, and durable-change reminder.
+- The union is strict on writes and reads. Mixed variants and extra prompt, candidate, provider-secret, or edited-state fields are invalid.
+- OpenRouter provenance records the actual returned generation context. User-supplied provenance records the versions associated with the inspected prompt and has no model, provider, temperature, maximum-output-token, or top-p fields.
+- Candidate text and full prompt text are row content and ephemeral inspection state respectively; neither belongs in provenance metadata or logs.
+- Project schema migration v3 to v4 rewrites valid legacy metadata to the `openrouter` variant transactionally and idempotently, preserving accepted prose and every legacy metadata value in the same row and table. Malformed metadata or a failed rewrite rolls back the migration and leaves the project unopened with `migration-failed`.
+- The Accepted Segments view, source filter, and Markdown/text exports consume this same union. They label source truthfully and omit inapplicable user-supplied provider/settings lines rather than rendering placeholders.
+- Neither source variant enters prose prompts or becomes story-record, active-working-set, or generation-time authority.
+
 ## 4. Core entity records
 
 ### 4.1 ENTITY

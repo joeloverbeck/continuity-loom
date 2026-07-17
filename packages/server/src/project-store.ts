@@ -10,12 +10,13 @@ import {
   type ProjectStatus
 } from "@loom/core";
 import { randomUUID } from "node:crypto";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
 import { backfillDisplayLabels } from "./display-label-backfill.js";
+import { rewriteAcceptedSegmentProvenance } from "./accepted-segment-provenance-migration.js";
 import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { migrateRecordPayloads } from "./record-payload-cleanup-migration.js";
@@ -124,6 +125,26 @@ interface ActiveProject {
 
 function metadataPath(folderPath: string): string {
   return join(folderPath, METADATA_FILENAME);
+}
+
+async function writeProjectMetadataAtomically(folderPath: string, metadata: ProjectMetadata): Promise<void> {
+  const targetPath = metadataPath(folderPath);
+  const temporaryPath = join(folderPath, `.${METADATA_FILENAME}.${randomUUID()}.tmp`);
+
+  try {
+    await writeFile(temporaryPath, `${JSON.stringify(metadata, null, 2)}\n`, "utf8");
+    await rename(temporaryPath, targetPath);
+  } catch (error) {
+    try {
+      await unlink(temporaryPath);
+    } catch (cleanupError) {
+      if (!isFileNotFound(cleanupError)) {
+        throw new AggregateError([error, cleanupError], "Project metadata replacement and cleanup both failed.");
+      }
+    }
+
+    throw error;
+  }
 }
 
 function databasePath(folderPath: string, metadata: ProjectMetadata): string {
@@ -275,6 +296,44 @@ async function migrateStoreFromV2ToV3(
   return migratedMetadata;
 }
 
+async function migrateStoreFromV3ToV4(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata
+): Promise<ProjectMetadata> {
+  const migratedMetadata = projectMetadataSchema.parse({
+    ...metadata,
+    schemaMinVersion: 4,
+    updatedAt: new Date().toISOString()
+  });
+  let metadataWasUpdated = false;
+
+  try {
+    database.exec("BEGIN IMMEDIATE");
+    rewriteAcceptedSegmentProvenance(database);
+    database.exec("PRAGMA user_version = 4");
+    await writeProjectMetadataAtomically(folderPath, migratedMetadata);
+    metadataWasUpdated = true;
+    database.exec("COMMIT");
+  } catch (error) {
+    if (database.isOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+    }
+
+    if (metadataWasUpdated) {
+      await writeProjectMetadataAtomically(folderPath, metadata);
+    }
+
+    throw error;
+  }
+
+  return migratedMetadata;
+}
+
 async function migrateStoreToCurrentSchema(
   database: DatabaseSync,
   folderPath: string,
@@ -286,7 +345,8 @@ async function migrateStoreToCurrentSchema(
 
   const migrations: Record<number, (db: DatabaseSync, path: string, data: ProjectMetadata) => Promise<ProjectMetadata>> = {
     1: migrateStoreFromV1ToV2,
-    2: migrateStoreFromV2ToV3
+    2: migrateStoreFromV2ToV3,
+    3: migrateStoreFromV3ToV4
   };
 
   while (currentVersion < LOOM_SCHEMA_VERSION) {

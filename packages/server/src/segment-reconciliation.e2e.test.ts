@@ -148,6 +148,7 @@ async function addAcceptedSegment(fastify: FastifyApp): Promise<void> {
     payload: {
       text: `Mara found the brass key ${acceptedSentinel} and hid it in her coat.`,
       generationMetadata: {
+        source: "openrouter",
         model: "test/model",
         provider: "openrouter",
         temperature: 0.1,

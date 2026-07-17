@@ -4,8 +4,7 @@ import {
   deleteAcceptedSegment,
   listAcceptedSegments,
   type AcceptedSegment,
-  type ApiFailure,
-  type GenerationMetadata
+  type ApiFailure
 } from "../api.js";
 
 type ArchiveState =
@@ -370,14 +369,17 @@ function AcceptedSegmentItem({
   );
 }
 
-function MetadataGrid({ metadata, sequence }: { metadata: GenerationMetadata; sequence: number }): React.JSX.Element {
-  const rows = [
+function MetadataGrid({ metadata, sequence }: { metadata: AcceptedSegment["metadata"]; sequence: number }): React.JSX.Element {
+  const rows: Array<[string, string]> = [
     ["Stored sequence", String(sequence)],
-    ["Model", metadata.model],
-    ["Provider", metadata.provider],
-    ["Temperature", String(metadata.temperature)],
-    ["Max output tokens", String(metadata.maxOutputTokens)],
-    ["Top P", metadata.topP === undefined ? "Not set" : String(metadata.topP)],
+    ["Source", sourceLabel(metadata)],
+    ...(metadata.source === "openrouter" ? [
+      ["Model", metadata.model],
+      ["Provider", metadata.provider],
+      ["Temperature", String(metadata.temperature)],
+      ["Max output tokens", String(metadata.maxOutputTokens)],
+      ["Top P", metadata.topP === undefined ? "Not set" : String(metadata.topP)]
+    ] satisfies Array<[string, string]> : []),
     ["Template version", metadata.versions.template],
     ["Compiler version", metadata.versions.compiler],
     ["Contract version", metadata.versions.contract]
@@ -405,17 +407,24 @@ function searchableText(segment: AcceptedSegment): string {
     segment.text,
     segment.createdAt,
     String(segment.sequence),
-    metadata.model,
-    metadata.provider,
-    String(metadata.temperature),
-    String(metadata.maxOutputTokens),
-    metadata.topP === undefined ? "" : String(metadata.topP),
+    sourceLabel(metadata),
+    ...(metadata.source === "openrouter" ? [
+      metadata.model,
+      metadata.provider,
+      String(metadata.temperature),
+      String(metadata.maxOutputTokens),
+      metadata.topP === undefined ? "" : String(metadata.topP)
+    ] : []),
     metadata.versions.template,
     metadata.versions.compiler,
     metadata.versions.contract
   ]
     .join(" ")
     .toLocaleLowerCase();
+}
+
+function sourceLabel(metadata: AcceptedSegment["metadata"]): "OpenRouter" | "User-supplied" {
+  return metadata.source === "openrouter" ? "OpenRouter" : "User-supplied";
 }
 
 function segmentExcerpt(text: string): string {
@@ -482,7 +491,7 @@ function markdownArchive(segments: AcceptedSegment[]): string {
       "",
       `- Stored sequence: ${segment.sequence}`,
       `- Accepted: ${segment.createdAt}`,
-      `- Model: ${segment.metadata.model}`,
+      ...exportMetadataLines(segment.metadata, "- "),
       "",
       segment.text,
       ""
@@ -499,12 +508,28 @@ function textArchive(segments: AcceptedSegment[]): string {
       `Segment ${index + 1}`,
       `Stored sequence: ${segment.sequence}`,
       `Accepted: ${segment.createdAt}`,
-      `Model: ${segment.metadata.model}`,
+      ...exportMetadataLines(segment.metadata),
       "",
       segment.text,
       ""
     ])
   ].join("\n");
+}
+
+function exportMetadataLines(metadata: AcceptedSegment["metadata"], prefix = ""): string[] {
+  return [
+    `${prefix}Source: ${sourceLabel(metadata)}`,
+    ...(metadata.source === "openrouter" ? [
+      `${prefix}Model: ${metadata.model}`,
+      `${prefix}Provider: ${metadata.provider}`,
+      `${prefix}Temperature: ${metadata.temperature}`,
+      `${prefix}Max output tokens: ${metadata.maxOutputTokens}`,
+      `${prefix}Top P: ${metadata.topP === undefined ? "Not set" : metadata.topP}`
+    ] : []),
+    `${prefix}Template version: ${metadata.versions.template}`,
+    `${prefix}Compiler version: ${metadata.versions.compiler}`,
+    `${prefix}Contract version: ${metadata.versions.contract}`
+  ];
 }
 
 function errorMessage(error: Pick<ApiFailure, "kind" | "message">): string {

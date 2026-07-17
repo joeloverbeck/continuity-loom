@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteAcceptedSegment, listAcceptedSegments, type AcceptedSegment, type GenerationMetadata } from "../api.js";
+import { deleteAcceptedSegment, listAcceptedSegments, type AcceptedSegment } from "../api.js";
 import { AcceptedSegmentsView } from "./AcceptedSegmentsView.js";
 
 vi.mock("../api.js", () => ({
@@ -95,6 +95,49 @@ describe("AcceptedSegmentsView", () => {
     expect(screen.getByRole("button", { name: /Segment 1/ })).toBeTruthy();
     expect(getRenderedProse(containerFromDocument())).toEqual(["The blue key turns."]);
     expect(listAcceptedSegments).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows and searches truthful source-specific metadata without user-supplied placeholders", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        {
+          ...segment({ id: 1, sequence: 1, text: "OpenRouter cloth." }),
+          metadata
+        },
+        {
+          ...segment({ id: 2, sequence: 2, text: "User-supplied cloth." }),
+          metadata: {
+            source: "user_supplied",
+            versions: metadata.versions
+          }
+        }
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    expect(await screen.findByRole("button", { name: /Segment 2/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+
+    expect(screen.getAllByText("Source")).toHaveLength(2);
+    expect(screen.getByText("OpenRouter")).toBeTruthy();
+    expect(screen.getByText("User-supplied")).toBeTruthy();
+    expect(screen.getAllByText("Model")).toHaveLength(1);
+    expect(screen.getAllByText("Provider")).toHaveLength(1);
+    expect(screen.getAllByText("Temperature")).toHaveLength(1);
+    expect(screen.getAllByText("Max output tokens")).toHaveLength(1);
+    expect(screen.getAllByText("Top P")).toHaveLength(1);
+    expect(screen.queryByText("Not set")).toBeNull();
+
+    const filter = screen.getByRole("searchbox", { name: "Filter archive" });
+    fireEvent.change(filter, { target: { value: "user-supplied" } });
+    expect(screen.queryByRole("button", { name: /Segment 1/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Segment 2/ })).toBeTruthy();
+
+    fireEvent.change(filter, { target: { value: "openrouter" } });
+    expect(screen.getByRole("button", { name: /Segment 1/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Segment 2/ })).toBeNull();
   });
 
   it("toggles collapsed prose with mouse and keyboard while keeping collapsed prose out of the DOM", async () => {
@@ -379,7 +422,10 @@ describe("AcceptedSegmentsView", () => {
     vi.mocked(listAcceptedSegments).mockResolvedValue({
       ok: true,
       segments: [
-        segment({ id: 2, sequence: 2, text: "Filtered-visible prose." }),
+        {
+          ...segment({ id: 2, sequence: 2, text: "Filtered-visible prose." }),
+          metadata: { source: "user_supplied", versions: metadata.versions }
+        },
         segment({ id: 1, sequence: 1, text: "Hidden by active filter." })
       ]
     });
@@ -406,6 +452,20 @@ describe("AcceptedSegmentsView", () => {
       );
       expect(plainText).toContain("Hidden by active filter.");
       expect(plainText).toContain("Filtered-visible prose.");
+      expect(markdown).toContain("- Source: OpenRouter");
+      expect(markdown).toContain("- Source: User-supplied");
+      expect(plainText).toContain("Source: OpenRouter");
+      expect(plainText).toContain("Source: User-supplied");
+      expect(markdown?.match(/^- Model:/gm)).toHaveLength(1);
+      expect(markdown?.match(/^- Provider:/gm)).toHaveLength(1);
+      expect(markdown?.match(/^- Temperature:/gm)).toHaveLength(1);
+      expect(markdown?.match(/^- Max output tokens:/gm)).toHaveLength(1);
+      expect(markdown?.match(/^- Top P:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Model:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Provider:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Temperature:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Max output tokens:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Top P:/gm)).toHaveLength(1);
     } finally {
       restoreUrlProperty("createObjectURL", originalCreateObjectUrl);
       restoreUrlProperty("revokeObjectURL", originalRevokeObjectUrl);
@@ -439,6 +499,7 @@ function segment(input: { id: number; sequence: number; text: string }): Accepte
 }
 
 const metadata = {
+  source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
   temperature: 0.4,
@@ -449,7 +510,7 @@ const metadata = {
     compiler: "compiler-1",
     contract: "contract-1"
   }
-} satisfies GenerationMetadata;
+} satisfies AcceptedSegment["metadata"];
 
 function getRenderedProse(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll(".acceptedSegmentText")).map((node) => node.textContent ?? "");

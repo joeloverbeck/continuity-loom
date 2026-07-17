@@ -224,6 +224,7 @@ async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): 
     payload: {
       text: acceptedProseSentinel,
       generationMetadata: {
+        source: "openrouter",
         model: "test/mock-writer",
         provider: "openrouter",
         temperature: 0.2,

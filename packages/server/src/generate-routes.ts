@@ -1,13 +1,34 @@
 import { compilePrompt, runValidation } from "@loom/core";
 import type { FastifyInstance } from "fastify";
+import { z, ZodError } from "zod";
 
 import { sendChatCompletion } from "./openrouter/client.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
+const generateRequestSchema = z
+  .object({ expectedPromptFingerprint: z.string().min(1) })
+  .strict();
+
 export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
-  app.post("/api/generate", async (_request, reply) => {
+  app.post("/api/generate", async (request, reply) => {
+    let expectedPromptFingerprint: string;
+
+    try {
+      expectedPromptFingerprint = generateRequestSchema.parse(request.body).expectedPromptFingerprint;
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return reply.code(400).send({
+          ok: false,
+          kind: "malformed-generate-request",
+          message: "Generation requires the fingerprint of the inspected prompt."
+        });
+      }
+
+      throw error;
+    }
+
     const snapshotResult = buildSnapshotFromOpenProject(manager);
 
     if (!snapshotResult.ok) {
@@ -25,6 +46,15 @@ export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectSto
     }
 
     const compileResult = compilePrompt(snapshotResult.snapshot);
+
+    if (compileResult.metadata.fingerprint !== expectedPromptFingerprint) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "stale-prompt",
+        message: "The prompt changed after it was inspected. Refresh the prompt before generating."
+      });
+    }
+
     const settings = readOpenRouterSettings();
 
     if (!settings.hasOpenRouterCredential) {

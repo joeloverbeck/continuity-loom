@@ -1,4 +1,5 @@
 import {
+  acceptedSegmentProvenanceSchema,
   generateRecordId,
   generationSessionDraftSchema,
   getRecordTypeDefinition,
@@ -10,6 +11,7 @@ import {
   storyContractSchema,
   universalContentPolicySchema,
   proseModeSchema,
+  type AcceptedSegmentProvenance,
   type RecordReference
 } from "@loom/core";
 import type { DatabaseSync } from "node:sqlite";
@@ -43,7 +45,7 @@ export interface AcceptedSegment {
   id: number;
   sequence: number;
   text: string;
-  metadata: unknown;
+  metadata: AcceptedSegmentProvenance;
   createdAt: string;
 }
 
@@ -411,13 +413,13 @@ export class RecordRepository {
       .run(canonicalJson(result.session), nowIso());
   }
 
-  appendAcceptedSegment(input: { text: string; metadata?: unknown }): AcceptedSegment {
+  appendAcceptedSegment(input: { text: string; metadata: AcceptedSegmentProvenance }): AcceptedSegment {
     const sequenceRow = this.database
       .prepare("SELECT COALESCE(MAX(sequence), 0) + 1 AS next_sequence FROM accepted_segments")
       .get() as { next_sequence: number };
     const sequence = sequenceRow.next_sequence;
     const createdAt = nowIso();
-    const metadata = input.metadata ?? {};
+    const metadata = acceptedSegmentProvenanceSchema.parse(input.metadata);
     const result = this.database
       .prepare(
         "INSERT INTO accepted_segments (sequence, text, metadata_json, created_at) VALUES (?, ?, ?, ?)"
@@ -436,7 +438,7 @@ export class RecordRepository {
       id: Number(row.id),
       sequence: Number(row.sequence),
       text: String(row.text),
-      metadata: parsePayloadJson(String(row.metadata_json)),
+      metadata: acceptedSegmentProvenanceSchema.parse(parsePayloadJson(String(row.metadata_json))),
       createdAt: String(row.created_at)
     }));
   }

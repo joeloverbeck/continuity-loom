@@ -13,6 +13,10 @@ const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
 const idD = "019b0298-5c00-7000-8000-000000000004";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const userSuppliedAcceptedMetadata = {
+  source: "user_supplied" as const,
+  versions: { template: "test", compiler: "test", contract: "test" }
+};
 const managers: ProjectStoreManager[] = [];
 
 interface TableCounts {
@@ -96,7 +100,7 @@ describe("SPEC-003 record tables and repository", () => {
         DROP TABLE record_references;
         DROP TABLE records;
       `);
-      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 3 });
+      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 4 });
     } finally {
       database.close();
     }
@@ -551,7 +555,7 @@ describe("SPEC-003 record tables and repository", () => {
     expect(repository.getGenerationSession()).toMatchObject({ ok: true });
     expect(() => repository.setGenerationSession({ manual_moment_directive: { must_render: [] } })).not.toThrow();
 
-    repository.appendAcceptedSegment({ text: "Accepted prose.", metadata: { source: "test" } });
+    repository.appendAcceptedSegment({ text: "Accepted prose.", metadata: userSuppliedAcceptedMetadata });
     expect(repository.listAcceptedSegments()).toHaveLength(1);
     expect(repository.listRecords({ includeArchived: true })).toEqual([]);
   });
@@ -735,9 +739,9 @@ describe("SPEC-003 record tables and repository", () => {
         salience: "medium"
       }
     });
-    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: { source: "test" } });
-    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: { source: "test" } });
-    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: { source: "test" } });
+    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: userSuppliedAcceptedMetadata });
+    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: userSuppliedAcceptedMetadata });
+    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: userSuppliedAcceptedMetadata });
     const databasePath = join(status.folderPath, "loom.sqlite");
     const before = tableCounts(databasePath);
 
@@ -808,9 +812,9 @@ describe("SPEC-003 record tables and repository", () => {
     expect(repository.getReminderAcknowledgedSequence()).toBe(0);
     expect(repository.getLatestAcceptedSegment()).toBeNull();
 
-    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: { source: "test" } });
-    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: { source: "test" } });
-    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: { source: "test" } });
+    const first = repository.appendAcceptedSegment({ text: "First accepted prose.", metadata: userSuppliedAcceptedMetadata });
+    const second = repository.appendAcceptedSegment({ text: "Second accepted prose.", metadata: userSuppliedAcceptedMetadata });
+    const third = repository.appendAcceptedSegment({ text: "Third accepted prose.", metadata: userSuppliedAcceptedMetadata });
     expect(repository.deleteAcceptedSegment(second.id)).toBe(true);
 
     const latest = repository.getLatestAcceptedSegment();
