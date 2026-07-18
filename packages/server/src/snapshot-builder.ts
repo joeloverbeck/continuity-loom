@@ -1,8 +1,9 @@
 import {
   buildValidationSnapshot,
-  deriveGenerationContextDefault,
+  deriveGenerationContextCoherence,
   versionInfo,
   type GenerationSession,
+  type GenerationContext,
   type ProseMode,
   type SelectedCastBand,
   type StoryContract,
@@ -51,9 +52,11 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
     return { ok: false, status: 422, body: sessionResult };
   }
   const acceptedSegmentCount = repository.listAcceptedSegments().length;
+  const savedGenerationContext = savedContext(sessionResult.ok ? sessionResult.payload : {});
+  const generationContext = deriveGenerationContextCoherence(savedGenerationContext, acceptedSegmentCount);
   const generationSession = withSnapshotSessionDefaults(
     sessionResult.ok ? sessionResult.payload : {},
-    acceptedSegmentCount
+    generationContext.requiredValue
   );
 
   const storyConfig = loadStoryConfig(repository);
@@ -71,6 +74,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
       generationSession,
       storyConfig,
       projectRecordIndex,
+      generationContext,
       versions: {
         template: versionInfo.templates.version,
         compiler: versionInfo.compiler.version,
@@ -88,21 +92,23 @@ function buildProjectRecordIndex(repository: { listRecords(options: { includeArc
   );
 }
 
-function withSnapshotSessionDefaults(payload: unknown, acceptedSegmentCount: number): GenerationSession {
+function savedContext(payload: unknown): GenerationContext | undefined {
+  const session = (payload && typeof payload === "object" ? payload : {}) as Partial<GenerationSession>;
+  return session.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
+}
+
+function withSnapshotSessionDefaults(payload: unknown, requiredContext: GenerationContext): GenerationSession {
   const session = (payload && typeof payload === "object" ? payload : {}) as Partial<GenerationSession>;
   const focusTags = session.generation_validation_focus?.validation_focus_tags;
-  const context = focusTags?.generation_context;
-  const generationValidationFocus = context?.length
-    ? session.generation_validation_focus
-    : {
-        ...session.generation_validation_focus,
-        validation_focus_tags: {
-          ...focusTags,
-          generation_context: [deriveGenerationContextDefault(acceptedSegmentCount)],
-          expected_local_modes: focusTags?.expected_local_modes ?? [],
-          possible_durable_changes: focusTags?.possible_durable_changes ?? []
-        }
-      };
+  const generationValidationFocus = {
+    ...session.generation_validation_focus,
+    validation_focus_tags: {
+      ...focusTags,
+      generation_context: [requiredContext],
+      expected_local_modes: focusTags?.expected_local_modes ?? [],
+      possible_durable_changes: focusTags?.possible_durable_changes ?? []
+    }
+  };
 
   return {
     ...session,

@@ -1,6 +1,6 @@
 # SPEC-034 — Accepted-Segment Generation Context Coherence
 
-**Status**: ACTIVE
+**Status**: ✅ COMPLETED
 Parent: GitHub PRD #94
 Implementation issues: GitHub #95 and #96
 Governing authorities: `docs/FOUNDATIONS.md`, `docs/ACTIVE-DOCS.md`,
@@ -131,7 +131,7 @@ A contradictory saved value adds exactly one blocker:
   `generationSession.generation_validation_focus.validation_focus_tags.generation_context`;
 - title: `Generation context does not match accepted segments`;
 - summary template:
-  `Generation context is saved as {saved author label}, but {count phrase} requires {required author label}.`;
+  `Generation context is saved as {saved author label}, but the accepted-segment archive contains {count phrase} and requires {required author label}.`;
 - why it matters: readiness and prompt compilation must use the lifecycle proved
   by the accepted-segment archive;
 - fastest fix:
@@ -320,6 +320,32 @@ Before issue #96 closes:
 - **Duplicate lifecycle authority:** one core derivation supplies snapshots and
   the route; the legacy defaults response is removed without an alias.
 - **Stale prompt survives a transition:** mismatch blocks compilation entirely
-  and recovery proves a new fingerprint only after explicit save.
+  and recovery computes a fresh inspected prompt and fingerprint only after explicit save; identical source bytes may truthfully produce the same deterministic fingerprint.
 - **Accepted prose leaks into lifecycle logic:** sentinel coverage spans
   diagnostics, metadata, prompt, logs, and provider requests.
+
+## Outcome
+
+Completed on 2026-07-18.
+
+- Added one core generation-context coherence derivation, snapshot metadata, the
+  prose-only `generation-context-accepted-segment-mismatch` blocker, and
+  required-context evaluation for all other readiness checks.
+- Replaced the legacy Generation Brief defaults response with the canonical
+  saved/required/count/coherent response and rendered that state beside the
+  existing accessible selector.
+- Made successful candidate acceptance refresh readiness and compilation so a
+  first-acceptance mismatch immediately withholds stale prompt and candidate
+  actions while retaining the acceptance notice.
+- Added matrix, route, lifecycle/repository, provider-spy, accepted-prose
+  firewall, shared-page, accessibility, and prompt-freshness regression proof.
+- Synchronized the compiler, schema, validation, stress, demo, and user-guide
+  authorities named by this spec.
+
+Deviations: none. The risk wording now clarifies that a fresh deterministic
+compile may reproduce the same fingerprint when its prompt source bytes are
+unchanged; freshness means recomputation after repair, not forced byte churn.
+
+Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (171 files,
+1812 tests), and `npm run build`, plus the focused two-direction lifecycle
+capstone and three-page browser-component coverage.

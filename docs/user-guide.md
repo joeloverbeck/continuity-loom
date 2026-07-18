@@ -22,7 +22,8 @@ The records are the continuity authority. Accepted prose is readable output, not
 11. Review the OpenRouter-generated or user-supplied Draft Candidate and its displayed source and inspected-prompt context.
 12. Edit, replace or regenerate, discard, or accept the candidate.
 13. The accepted final segment is stored in the accepted segment archive.
-14. Update records manually for any durable continuity changes before generating again.
+14. After acceptance, return to Generation Brief. If the saved context says First segment, the app shows that Continuation after accepted segment is now required; choose it and save explicitly.
+15. Update records manually for any durable continuity changes before generating again.
 
 ## Generation Readiness
 
@@ -34,7 +35,9 @@ The readiness checklist should explain the issue in author language first. Techn
 
 Important fields:
 
-- Generation context defaults from project state: no accepted prose means first segment; one or more accepted segments means continuation. You can still see and edit the resolved value.
+- Generation context follows accepted-segment count: no accepted segments requires First segment; one or more requires Continuation after accepted segment. Generation Brief shows the saved value, required value, count, and Coherent or Mismatch status beside the selector.
+- A missing context defaults safely. A contradictory saved value is not changed automatically when you accept or delete prose, open the project, validate, preview, or try to generate. Draft Save remains available, but Preview, Write or paste candidate, Generate, and provider transport stay blocked until you choose the required value and save the Generation Brief explicitly.
+- The same mismatch explanation and **Edit generation context** action appear on Generation Brief, Prompt Preview, and Generate. The action returns keyboard focus to the existing selector. After saving, reload or refresh the prompt; only a fresh readiness check and compile can reopen candidate actions.
 - Current state needs a minimum of time, place or scene-space, onstage/material entities, and what is happening now.
 - Manual moment directive is required for readiness. It should be an immediate launch action or pressure, such as "Have Mara open the cellar door" or "Render the next immediate beat from Ken's intention to lie."
 - Stop guidance is optional. Blank stop guidance uses the universal local stop rule.
@@ -83,7 +86,7 @@ Use permanent deletion carefully. Private Notes have no archive, undo, recycle b
 
 Prompt preview shows the deterministic prompt that will be sent for generation. It is gated by validation.
 
-If validation has blockers, preview and send are disabled. There is no override in v1. Fix the underlying records or generation-time fields, then compile again.
+If validation has blockers, preview, user-supplied candidate intake, and send are disabled. There is no override in v1. Fix the underlying records or generation-time fields, then compile again. When accepted-segment count changes, any previously inspected prompt is withheld until generation-context coherence and the rest of readiness pass again.
 
 The prompt preview is operational context for the current generation session. It is not canon and is not kept as a permanent prompt archive by default.
 
@@ -154,6 +157,8 @@ You can:
 - accept the final text you want to keep.
 
 Refreshing the prompt or replacing any non-empty draft first shows an explicit discard confirmation. Cancelling keeps the exact prompt, draft text, source-specific replacement control, and makes no network request. An empty draft bypasses this confirmation. If an OpenRouter replacement fails, the existing draft and editor remain intact so you can retry, continue editing, accept, or discard it.
+
+Successful acceptance immediately refreshes readiness and prompt state. If first acceptance makes the saved generation context stale, the accepted notice remains visible but the old prompt and both candidate-start actions disappear. Repair Generation context in the Generation Brief and refresh before starting the next candidate.
 
 Rejected and superseded candidates are not stored by default. Only the accepted or user-edited final segment is written to the accepted segment archive.
 

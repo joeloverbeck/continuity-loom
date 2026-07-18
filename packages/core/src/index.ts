@@ -238,11 +238,16 @@ export {
 } from "./records/generation-brief.js";
 export type { GenerationSession } from "./records/generation-brief.js";
 export {
+  deriveGenerationContextCoherence,
   deriveGenerationContextDefault,
   generationSessionDraftSchema,
   normalizeGenerationSessionDraft
 } from "./records/generation-brief-draft.js";
-export type { GenerationSessionDraft } from "./records/generation-brief-draft.js";
+export type {
+  GenerationContext,
+  GenerationContextCoherence,
+  GenerationSessionDraft
+} from "./records/generation-brief-draft.js";
 export {
   generationSessionReadySchema,
   normalizeGenerationSessionForReadiness

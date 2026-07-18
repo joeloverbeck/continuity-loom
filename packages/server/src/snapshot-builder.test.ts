@@ -126,7 +126,7 @@ describe("buildSnapshotFromOpenProject generation context defaults", () => {
     ]);
   });
 
-  it("preserves an explicit valid generation context", () => {
+  it("preserves an explicit generation context that matches the archive requirement", () => {
     expect(
       contextFor({
         generationSession: {
@@ -136,9 +136,63 @@ describe("buildSnapshotFromOpenProject generation context defaults", () => {
             }
           }
         },
-        acceptedSegmentCount: 3
+        acceptedSegmentCount: 0
       })
     ).toEqual(["first_segment"]);
+  });
+
+  it("reports contradictory saved context while evaluating the archive-required context", () => {
+    const result = buildSnapshotFromOpenProject(
+      managerFor({
+        generationSession: {
+          generation_validation_focus: {
+            validation_focus_tags: {
+              generation_context: ["first_segment"]
+            }
+          }
+        },
+        acceptedSegmentCount: 3
+      })
+    );
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+
+    const snapshot = result.snapshot as typeof result.snapshot & {
+      generationContext: {
+        savedValue: "first_segment" | "continuation_after_accepted_segment" | null;
+        requiredValue: "first_segment" | "continuation_after_accepted_segment";
+        acceptedSegmentCount: number;
+        coherent: boolean;
+      };
+    };
+    const validation = runValidation(snapshot);
+
+    expect(snapshot.generationContext).toEqual({
+      savedValue: "first_segment",
+      requiredValue: "continuation_after_accepted_segment",
+      acceptedSegmentCount: 3,
+      coherent: false
+    });
+    expect(snapshot.generationSession.generation_validation_focus?.validation_focus_tags.generation_context).toEqual([
+      "continuation_after_accepted_segment"
+    ]);
+    expect(validation.blockers.map((diagnostic) => diagnostic.code)).toContain(
+      DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch
+    );
+    expect(validation.blockers.find(
+      (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch
+    )?.message).toBe(
+      "Generation context is saved as First segment, but the accepted-segment archive contains 3 accepted segments and requires Continuation after accepted segment. Choose Continuation after accepted segment in Generation Brief and save the draft."
+    );
+    expect(validation.blockers.map((diagnostic) => diagnostic.code)).toContain(
+      DIAGNOSTIC_CODES.missingImmediateHandoff
+    );
+    expect([...validation.blockers, ...validation.warnings].map((diagnostic) => diagnostic.code)).not.toContain(
+      DIAGNOSTIC_CODES.focusTagCountInvalid
+    );
   });
 
   it("does not raise focus-tag-count-invalid after defaulting context", () => {

@@ -40,6 +40,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   directiveStopGuidanceDisagreement: "directive-stop-guidance-disagreement",
   entityCurrentLocationContradiction: "entity-current-location-contradiction",
   focusTagCountInvalid: "focus-tag-count-invalid",
+  generationContextAcceptedSegmentMismatch: "generation-context-accepted-segment-mismatch",
   hiddenTruthInPovKnowledge: "hidden-truth-in-pov-knowledge",
   handoffCurrentStateContradiction: "handoff-current-state-contradiction",
   impossibleActionPhysicalContext: "impossible-action-physical-context",

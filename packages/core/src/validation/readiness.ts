@@ -91,6 +91,15 @@ interface DiagnosticCopy {
 const PROVIDER_MISSING_CODE = "provider-configuration-missing";
 
 const COPY_TABLE: Readonly<Record<string, DiagnosticCopy>> = Object.freeze({
+  [DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch]: {
+    code: DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
+    title: "Generation context does not match accepted segments",
+    group: "required-before-prompt-generation",
+    summary: "The saved generation context does not match the accepted-segment archive.",
+    whyItMatters: "Readiness and prompt compilation must use the lifecycle proved by the accepted-segment archive.",
+    fastestFix: "Choose the required Generation context value shown in the blocker and save the draft.",
+    whenItBecomesBlocking: "Blocks Preview and Generate whenever the saved context contradicts accepted-segment count."
+  },
   [DIAGNOSTIC_CODES.missingManualDirective]: {
     code: "missing-launch-directive",
     title: "Add the launch directive",
@@ -251,7 +260,10 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
     code: copy.code,
     title: copy.title,
     group: copy.group,
-    summary: diagnostic.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState ? diagnostic.message : copy.summary,
+    summary: diagnostic.code === DIAGNOSTIC_CODES.missingCurrentAuthoritativeState
+      || diagnostic.code === DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch
+      ? diagnostic.message
+      : copy.summary,
     whyItMatters: copy.whyItMatters,
     fastestFix: copy.fastestFix,
     ...(copy.whenItBecomesBlocking ? { whenItBecomesBlocking: copy.whenItBecomesBlocking } : {}),
@@ -511,6 +523,9 @@ function displayLabelForField(field: string): string {
 }
 
 function actionLabelForField(field: string): string {
+  if (field.includes("generation_context")) {
+    return "Edit generation context";
+  }
   if (field.includes("manual_moment_directive")) {
     return "Edit launch directive";
   }

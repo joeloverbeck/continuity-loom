@@ -23,8 +23,11 @@ After applying a true-blocker recipe, run validation or open the prompt preview/
 | 8 | Paste accepted/candidate-style prose into the handoff's recent causal context. | Draft saved; Preview/Generate blocked. | Replace prose text with a user-authored continuity handoff. | `prompt-facing-prose-contamination` | Generation Brief -> Immediate handoff |
 | 9 | Edit SECRET `The letter names a ledger substitution` so Niko is both protected from the secret and modeled as POV-held hidden knowledge. | Draft saved; Preview/Generate blocked. | Resolve the POV knowledge and secret-holder contradiction. | `hidden-truth-in-pov-knowledge` | Records -> secret / POV knowledge |
 | 10 | Remove the OpenRouter provider configuration before opening Generate. | Preview can remain available if story readiness passes; Generate is blocked. | Configure the local provider settings before sending. | `provider-configuration-missing` | Settings -> OpenRouter |
+| 11 | With Generation context saved as First segment, accept the first segment; or with Continuation saved, delete the final accepted segment. | Draft remains saved; Generation Brief shows saved/required/count mismatch; Preview, user-supplied candidate intake, and Generate are blocked with no provider call. | Choose the required Generation context shown by the blocker and save the Generation Brief. | `generation-context-accepted-segment-mismatch` | Generation Brief -> Generation context |
 
 Recipe 8 targets the deterministic validation-engine blocker `prompt-facing-prose-contamination`. This is separate from the brief editor's paste warning, which is advisory UI feedback and does not replace the fail-closed validation gate.
+
+Recipe 11 must not auto-repair the saved value. Use the existing Generation Brief selector, save explicitly, reload, and confirm that the status becomes coherent before compiling a fresh prompt.
 
 ## Non-Blocking Warning Recipes
 

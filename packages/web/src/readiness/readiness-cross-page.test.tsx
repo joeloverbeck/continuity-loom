@@ -53,12 +53,11 @@ beforeEach(() => {
   vi.mocked(getGenerationBrief).mockResolvedValue({
     ok: true,
     session: {},
-    defaults: {
-      generation_context: {
-        value: "first_segment",
-        source: "accepted-segment-count",
-        acceptedSegmentCount: 0
-      }
+    generationContext: {
+      savedValue: null,
+      requiredValue: "first_segment",
+      acceptedSegmentCount: 0,
+      coherent: true
     }
   });
   vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
@@ -145,6 +144,50 @@ describe("cross-page readiness behavior", () => {
     renderGenerate();
     expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Generate" })).toBeNull();
+  });
+
+  it("shows one generation-context mismatch on every surface and focuses the canonical repair control", async () => {
+    const mismatch = generationContextMismatch();
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({ blockers: [mismatch] }));
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        generation_validation_focus: {
+          validation_focus_tags: { generation_context: ["first_segment"] }
+        }
+      },
+      generationContext: {
+        savedValue: "first_segment",
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 1,
+        coherent: false
+      }
+    });
+
+    const surfaceTexts: string[] = [];
+    for (const renderSurface of [renderPanel, renderPreview, renderGenerate]) {
+      renderSurface();
+      await screen.findByRole("heading", { name: "Generation context does not match accepted segments" });
+      surfaceTexts.push(document.body.textContent ?? "");
+      cleanup();
+    }
+
+    for (const text of surfaceTexts) {
+      expect(text).toContain("Generation context is saved as First segment, but the accepted-segment archive contains 1 accepted segment and requires Continuation after accepted segment.");
+      expect(text).toContain("Choose the required Generation context value shown in the blocker and save the draft.");
+      expect(text).toContain("Edit generation context");
+    }
+
+    renderGenerateToBriefRoute();
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Edit generation context" }));
+
+    expect(await screen.findByRole("heading", { name: "Generation Brief" })).toBeTruthy();
+    expect(screen.getByTestId("route-location").textContent).toBe(
+      "/generation-brief?field=generationSession.generation_validation_focus.validation_focus_tags.generation_context"
+    );
+    expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Generation context" }));
+    expect(scrollIntoView).toHaveBeenCalledWith({ block: "center" });
   });
 
   it("keeps raw codes and raw record IDs out of primary labels", async () => {
@@ -395,6 +438,39 @@ function currentStateBlocker(): ReadinessDiagnostic {
       target: "generationSession.current_authoritative_state"
     }]
   });
+}
+
+function generationContextMismatch(): ReadinessDiagnostic {
+  return {
+    severity: "blocker",
+    code: "generation-context-accepted-segment-mismatch",
+    title: "Generation context does not match accepted segments",
+    group: "required-before-prompt-generation",
+    summary: "Generation context is saved as First segment, but the accepted-segment archive contains 1 accepted segment and requires Continuation after accepted segment. Choose Continuation after accepted segment in Generation Brief and save the draft.",
+    whyItMatters: "Readiness and prompt compilation must use the lifecycle proved by the accepted-segment archive.",
+    fastestFix: "Choose the required Generation context value shown in the blocker and save the draft.",
+    whenItBecomesBlocking: "Blocks Preview and Generate whenever the saved context contradicts accepted-segment count.",
+    affected: [{
+      kind: "generation-field",
+      fieldPath: "generationSession.generation_validation_focus.validation_focus_tags.generation_context",
+      displayLabel: "Generation Validation Focus"
+    }],
+    actions: [
+      {
+        kind: "focus-field",
+        label: "Edit generation context",
+        target: "generationSession.generation_validation_focus.validation_focus_tags.generation_context"
+      },
+      { kind: "copy-technical-json", label: "Copy technical JSON" }
+    ],
+    dedupeKey: "blocker:generation-context-accepted-segment-mismatch:generationSession.generation_validation_focus.validation_focus_tags.generation_context:",
+    sortKey: "blocker:generation-context-accepted-segment-mismatch",
+    technical: {
+      legacyCode: "generation-context-accepted-segment-mismatch",
+      ruleId: "generation-context-accepted-segment-mismatch",
+      rawPaths: ["generationSession.generation_validation_focus.validation_focus_tags.generation_context"]
+    }
+  };
 }
 
 function providerBlocker(): ReadinessDiagnostic {

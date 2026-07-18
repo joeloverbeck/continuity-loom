@@ -93,7 +93,7 @@ Generation-time fields have a draft shape and a ready shape.
 
 `GenerationSessionDraft` is the persistence shape. It may contain partial nested objects, blank optional strings, empty arrays, and missing readiness fields. It must preserve the author's work even when Preview and Generate are blocked.
 
-`GenerationSessionReadyInput` is the normalized validation and compiler input. It is produced from the saved draft, selected records, story configuration, accepted-segment count, provider configuration where relevant, and deterministic empty-state/default rules. It may default non-story values such as `generation_context`; it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
+`GenerationSessionReadyInput` is the normalized validation and compiler input. It is produced from the saved draft, selected records, story configuration, accepted-segment count, provider configuration where relevant, and deterministic empty-state/default rules. It may default a missing non-story value such as `generation_context`. If a saved context contradicts accepted-segment count, the saved draft remains byte-for-byte unchanged while the ready input uses the required context and validation reports the mismatch. It must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
 Schema-level principle:
 
@@ -342,7 +342,10 @@ validation_focus_tags:
 Requirements:
 
 - Exactly one `generation_context` value is required in `GenerationSessionReadyInput`. A draft may omit it.
-- Normalization defaults `generation_context` from accepted-segment count: no accepted segments means `first_segment`; one or more accepted segments means `continuation_after_accepted_segment`.
+- Accepted-segment count is the sole lifecycle authority: no accepted segments requires `first_segment`; one or more accepted segments requires `continuation_after_accepted_segment`.
+- A missing saved value defaults to the required value. A matching saved value remains unchanged. A contradictory saved value remains valid draft data and is never rewritten by acceptance, deletion, project open, read, validation, compile, or blocked generation.
+- A contradictory saved value produces `generation-context-accepted-segment-mismatch`; readiness and compiler validation use the required value so continuation-only requirements remain truthful. The only automatic data crossing the accepted-prose boundary is the segment count, never prose text or a prose-derived summary.
+- The ordinary Generation Brief selector and explicit Save are the only coherence repair path. No persisted derived context, migration, export field, provenance field, compatibility alias, or automatic record update is introduced.
 - Other tags may be empty only if the manual directive and current state are genuinely minimal.
 - Tags are selected by the user or deterministic UI controls, or are deterministically derived from explicit controls/records. They are never derived from LLM interpretation of prose.
 - Tags are validation-facing by default and should not compile into the prose prompt.

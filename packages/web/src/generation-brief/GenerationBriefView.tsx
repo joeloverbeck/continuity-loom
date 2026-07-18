@@ -1,13 +1,14 @@
 import {
   activeWorkingSetSchema,
-  generationSessionDraftSchema
+  generationSessionDraftSchema,
+  type GenerationContext,
+  type GenerationContextCoherence
 } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import type { z } from "zod";
 
 import {
-  type GenerationBriefDefaults,
   type RecordSummary,
   getGenerationBrief,
   listRecords,
@@ -97,6 +98,10 @@ function unknownEntityLabel(value: string): string {
   return `Unknown entity (${value.slice(0, 8)})`;
 }
 
+function generationContextLabel(value: GenerationContext): string {
+  return value === "first_segment" ? "First segment" : "Continuation after accepted segment";
+}
+
 function povOptionsForFixedProsePov(
   fixedProsePov: string,
   selectedPov: string | undefined,
@@ -160,7 +165,7 @@ function BriefSection({
 export function GenerationBriefView(): React.JSX.Element {
   const [searchParams] = useSearchParams();
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
-  const [briefDefaults, setBriefDefaults] = useState<GenerationBriefDefaults | null>(null);
+  const [briefGenerationContext, setBriefGenerationContext] = useState<GenerationContextCoherence | null>(null);
   const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
   const [povEntities, setPovEntities] = useState<RecordSummary[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
@@ -180,7 +185,7 @@ export function GenerationBriefView(): React.JSX.Element {
 
         if (briefResponse.ok) {
           setSession(parseSession(briefResponse.session));
-          setBriefDefaults(briefResponse.defaults);
+          setBriefGenerationContext(briefResponse.generationContext);
           setHasUnsavedChanges(false);
           setValidationKey((current) => current + 1);
         } else {
@@ -210,13 +215,13 @@ export function GenerationBriefView(): React.JSX.Element {
   const fieldParam = searchParams.get("field");
 
   useEffect(() => {
-    if (!fieldParam || !briefDefaults || focusedFieldParamRef.current === fieldParam) {
+    if (!fieldParam || !briefGenerationContext || focusedFieldParamRef.current === fieldParam) {
       return;
     }
 
     focusedFieldParamRef.current = fieldParam;
     focusBriefField(fieldParam);
-  }, [briefDefaults, fieldParam]);
+  }, [briefGenerationContext, fieldParam]);
 
   const activeWorkingSet = {
     selected_records: [],
@@ -288,7 +293,9 @@ export function GenerationBriefView(): React.JSX.Element {
     applies_to: ["dialogue"],
     override_text: ""
   };
-  const defaultGenerationContext = briefDefaults?.generation_context.value ?? "first_segment";
+  const defaultGenerationContext = briefGenerationContext?.savedValue
+    ?? briefGenerationContext?.requiredValue
+    ?? "first_segment";
   const validationFocus = session.generation_validation_focus ?? {
     validation_focus_tags: {
       generation_context: [defaultGenerationContext],
@@ -357,7 +364,16 @@ export function GenerationBriefView(): React.JSX.Element {
     const response = await setGenerationBrief(payload);
 
     if (response.ok) {
-      setSession(parseSession(response.session));
+      const savedSession = parseSession(response.session);
+      const savedGenerationContext = savedSession.generation_validation_focus?.validation_focus_tags?.generation_context?.[0] ?? null;
+      setSession(savedSession);
+      setBriefGenerationContext((current) => current
+        ? {
+            ...current,
+            savedValue: savedGenerationContext,
+            coherent: savedGenerationContext === null || savedGenerationContext === current.requiredValue
+          }
+        : current);
       setNotice("Draft saved.");
       setHasUnsavedChanges(false);
       setValidationKey((current) => current + 1);
@@ -762,6 +778,7 @@ export function GenerationBriefView(): React.JSX.Element {
             generationContext={generationContext}
           >
             <select
+              aria-label="Generation context"
               name="generationSession.generation_validation_focus.validation_focus_tags.generation_context"
               value={generationContext}
               onChange={(event) =>
@@ -773,19 +790,24 @@ export function GenerationBriefView(): React.JSX.Element {
                 })
               }
             >
-              <option value="first_segment">first_segment</option>
-              <option value="continuation_after_accepted_segment">continuation_after_accepted_segment</option>
+              <option value="first_segment">First segment</option>
+              <option value="continuation_after_accepted_segment">Continuation after accepted segment</option>
             </select>
           </BriefFieldRow>
-          {briefDefaults ? (
-            <p className="muted">
-              Default: {briefDefaults.generation_context.value === "first_segment" ? "first segment" : "continuation after accepted segment"}
-              {briefDefaults.generation_context.source === "accepted-segment-count"
-                ? briefDefaults.generation_context.acceptedSegmentCount === 0
-                  ? " because no accepted prose exists yet."
-                  : ` because ${briefDefaults.generation_context.acceptedSegmentCount} accepted segment(s) exist.`
-                : " from the saved draft."}
-            </p>
+          {briefGenerationContext ? (
+            <div className="generationContextStatus" aria-label="Generation context status">
+              <p>Saved context: {briefGenerationContext.savedValue === null ? "Not saved" : generationContextLabel(briefGenerationContext.savedValue)}</p>
+              <p>Required context: {generationContextLabel(briefGenerationContext.requiredValue)}</p>
+              <p>Accepted segments: {briefGenerationContext.acceptedSegmentCount}</p>
+              <p className={briefGenerationContext.coherent ? "status statusSuccess" : "status statusError"}>
+                Status: {briefGenerationContext.coherent ? "Coherent" : "Mismatch"}
+              </p>
+              {!briefGenerationContext.coherent ? (
+                <p>
+                  Choose {generationContextLabel(briefGenerationContext.requiredValue)} and save the Generation Brief to match the accepted-segment archive.
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </BriefSection>
 

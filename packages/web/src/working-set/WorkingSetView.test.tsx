@@ -65,12 +65,11 @@ const records: RecordSummary[] = [
   }
 ];
 
-const briefDefaults = {
-  generation_context: {
-    value: "first_segment" as const,
-    source: "accepted-segment-count" as const,
-    acceptedSegmentCount: 0
-  }
+const briefGenerationContext = {
+  savedValue: null,
+  requiredValue: "first_segment" as const,
+  acceptedSegmentCount: 0,
+  coherent: true
 };
 
 afterEach(() => {
@@ -85,7 +84,7 @@ describe("WorkingSetView", () => {
       ok: true,
       selectedRecordIds: ["019b0298-5c00-7000-8000-000000000012", "019b0298-5c00-7000-8000-000000000011"]
     });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(setWorkingSet).mockImplementation((selectedRecordIds: string[]) =>
       Promise.resolve({ ok: true, selectedRecordIds })
     );
@@ -110,7 +109,7 @@ describe("WorkingSetView", () => {
   it("renders an empty state and does not write on load", async () => {
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
 
     render(<WorkingSetView />);
 
@@ -126,7 +125,7 @@ describe("WorkingSetView", () => {
       message: "Records list is unavailable."
     });
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
 
     render(<WorkingSetView />);
 
@@ -141,7 +140,7 @@ describe("WorkingSetView", () => {
       kind: "working-set-unavailable",
       message: "Working-set membership is unavailable."
     });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
 
     render(<WorkingSetView />);
 
@@ -171,7 +170,7 @@ describe("WorkingSetView", () => {
   it("surfaces a distinct fallback for thrown load failures", async () => {
     vi.mocked(listRecords).mockRejectedValue(new Error("Network unavailable"));
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
 
     render(<WorkingSetView />);
 
@@ -183,7 +182,7 @@ describe("WorkingSetView", () => {
     const castId = "019b0298-5c00-7000-8000-000000000014";
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records });
     vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [castId] });
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
 
     render(<WorkingSetView />);
@@ -237,7 +236,7 @@ describe("WorkingSetView", () => {
           offstage_relevant_cast: []
         }
       },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
 
     render(<WorkingSetView />);
@@ -265,7 +264,7 @@ describe("WorkingSetView", () => {
           ]
         }
       },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
 
     render(<WorkingSetView />);

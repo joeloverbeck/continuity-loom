@@ -125,10 +125,10 @@ Active specs live in:
 
 - `specs/`
 
-The current accepted-segment generation-context coherence implementation
-contract is active at:
+The accepted-segment generation-context coherence implementation contract is
+complete and archived as historical evidence at:
 
-- `specs/SPEC-034-accepted-segment-generation-context-coherence.md`
+- `archive/specs/SPEC-034-accepted-segment-generation-context-coherence.md`
 
 Check `specs/` directly for active implementation specs. The directory contents are the current spec authority, not a point-in-time statement in this map. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
 

@@ -200,8 +200,7 @@ function normalizeGenerationValidationFocus(
     | Partial<GenerationSessionReadyCandidate["generation_validation_focus"]>
     | undefined;
   const normalizedTags = normalizedFocus?.validation_focus_tags;
-  const explicitContext = normalizedTags?.generation_context?.[0];
-  const generation_context = [explicitContext ?? deriveGenerationContextDefault(acceptedSegmentCount)] as [
+  const generation_context = [deriveGenerationContextDefault(acceptedSegmentCount)] as [
     "first_segment" | "continuation_after_accepted_segment"
   ];
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  deriveGenerationContextCoherence,
   generationSessionReadySchema,
   normalizeGenerationSessionForReadiness,
   type GenerationSessionDraft
@@ -10,6 +11,28 @@ const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 
 describe("generation brief readiness normalization", () => {
+  it.each([
+    { savedValue: undefined, acceptedSegmentCount: 0, requiredValue: "first_segment", coherent: true },
+    { savedValue: "first_segment" as const, acceptedSegmentCount: 0, requiredValue: "first_segment", coherent: true },
+    { savedValue: "continuation_after_accepted_segment" as const, acceptedSegmentCount: 0, requiredValue: "first_segment", coherent: false },
+    { savedValue: undefined, acceptedSegmentCount: 1, requiredValue: "continuation_after_accepted_segment", coherent: true },
+    { savedValue: "continuation_after_accepted_segment" as const, acceptedSegmentCount: 1, requiredValue: "continuation_after_accepted_segment", coherent: true },
+    { savedValue: "first_segment" as const, acceptedSegmentCount: 1, requiredValue: "continuation_after_accepted_segment", coherent: false },
+    { savedValue: undefined, acceptedSegmentCount: 3, requiredValue: "continuation_after_accepted_segment", coherent: true },
+    { savedValue: "continuation_after_accepted_segment" as const, acceptedSegmentCount: 3, requiredValue: "continuation_after_accepted_segment", coherent: true },
+    { savedValue: "first_segment" as const, acceptedSegmentCount: 3, requiredValue: "continuation_after_accepted_segment", coherent: false }
+  ])(
+    "derives $requiredValue with coherent=$coherent for saved=$savedValue at accepted count $acceptedSegmentCount",
+    ({ savedValue, acceptedSegmentCount, requiredValue, coherent }) => {
+      expect(deriveGenerationContextCoherence(savedValue, acceptedSegmentCount)).toEqual({
+        savedValue: savedValue ?? null,
+        requiredValue,
+        acceptedSegmentCount,
+        coherent
+      });
+    }
+  );
+
   it("trims blanks, removes blank list entries and semantic-less array objects, and preserves nonblank fields", () => {
     const draft: GenerationSessionDraft = {
       current_authoritative_state: {
@@ -164,7 +187,7 @@ describe("generation brief readiness normalization", () => {
     expect(generationSessionReadySchema.parse(ready)).toEqual(ready);
   });
 
-  it("preserves explicit generation context and parses through the ready schema", () => {
+  it("preserves an explicit generation context that matches the archive requirement", () => {
     const ready = normalizeGenerationSessionForReadiness(
       {
         generation_validation_focus: {
@@ -174,11 +197,28 @@ describe("generation brief readiness normalization", () => {
           }
         }
       },
-      { acceptedSegmentCount: 4 }
+      { acceptedSegmentCount: 0 }
     );
 
     expect(ready.generation_validation_focus.validation_focus_tags.generation_context).toEqual(["first_segment"]);
     expect(generationSessionReadySchema.parse(ready)).toEqual(ready);
+  });
+
+  it("uses the archive-required context for readiness when the saved context contradicts it", () => {
+    const ready = normalizeGenerationSessionForReadiness(
+      {
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["first_segment"]
+          }
+        }
+      },
+      { acceptedSegmentCount: 1 }
+    );
+
+    expect(ready.generation_validation_focus.validation_focus_tags.generation_context).toEqual([
+      "continuation_after_accepted_segment"
+    ]);
   });
 
   it("is deterministic and never invents handoff continuity or launch directives", () => {

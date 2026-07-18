@@ -1,5 +1,5 @@
 import {
-  deriveGenerationContextDefault,
+  deriveGenerationContextCoherence,
   generationSessionDraftSchema,
   normalizeGenerationSessionDraft,
   type GenerationSessionDraft
@@ -17,13 +17,9 @@ function objectPayload(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null ? { ...(value as Record<string, unknown>) } : {};
 }
 
-function generationContextDefault(session: GenerationSessionDraft, acceptedSegmentCount: number) {
-  const persistedContext = session.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
-  return {
-    value: persistedContext ?? deriveGenerationContextDefault(acceptedSegmentCount),
-    source: persistedContext ? "persisted" : "accepted-segment-count",
-    acceptedSegmentCount
-  };
+function generationContextFor(session: GenerationSessionDraft, acceptedSegmentCount: number) {
+  const savedValue = session.generation_validation_focus?.validation_focus_tags?.generation_context?.[0];
+  return deriveGenerationContextCoherence(savedValue, acceptedSegmentCount);
 }
 
 function malformedDraft(error: ZodError) {
@@ -108,9 +104,7 @@ export function registerGenerationBriefRoutes(app: FastifyInstance, manager: Pro
         return {
           ok: true,
           session,
-          defaults: {
-            generation_context: generationContextDefault(session, acceptedSegmentCount)
-          }
+          generationContext: generationContextFor(session, acceptedSegmentCount)
         };
       }
 
@@ -121,9 +115,7 @@ export function registerGenerationBriefRoutes(app: FastifyInstance, manager: Pro
     return {
       ok: true,
       session,
-      defaults: {
-        generation_context: generationContextDefault(session, acceptedSegmentCount)
-      }
+      generationContext: generationContextFor(session, acceptedSegmentCount)
     };
   });
 

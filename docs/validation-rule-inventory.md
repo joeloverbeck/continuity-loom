@@ -32,6 +32,7 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `active-physical-context-incomplete` | blocker | applies | Active physical interaction lacks required current physical continuity context. | §11.5 | Cases 7, 15 |
 | `active-cast-incomplete` | blocker | prose-only | Active onstage cast lacks local function or core dossier authority. | §11.5 | Cases 8, 13 |
 | `focus-tag-count-invalid` | blocker | prose-only | Generation validation focus does not identify exactly one generation context. | §11.1 | Cases 28, 29 |
+| `generation-context-accepted-segment-mismatch` | blocker | prose-only | Saved generation context contradicts the context required by accepted-segment count; draft persistence remains available, but Preview and Generate require explicit repair. | §11.3 | Cases 28, 29 |
 | `cast-missing-core-dossier` | blocker | applies | Reserved diagnostic code for missing cast core dossier; current validation uses `active-cast-incomplete` for this blocker. | §11.5 | — |
 
 ## Universal Blockers

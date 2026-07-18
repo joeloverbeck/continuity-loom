@@ -24,12 +24,11 @@ class ResizeObserverStub {
 }
 
 const originalResizeObserver = globalThis.ResizeObserver;
-const briefDefaults = {
-  generation_context: {
-    value: "first_segment" as const,
-    source: "accepted-segment-count" as const,
-    acceptedSegmentCount: 0
-  }
+const briefGenerationContext = {
+  savedValue: null,
+  requiredValue: "first_segment" as const,
+  acceptedSegmentCount: 0,
+  coherent: true
 };
 
 beforeAll(() => {
@@ -58,9 +57,51 @@ function renderView(): void {
 }
 
 describe("GenerationBriefView", () => {
+  it("shows saved and required generation context and keeps explicit repair saveable", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["first_segment"]
+          }
+        }
+      },
+      generationContext: {
+        savedValue: "first_segment",
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 1,
+        coherent: false
+      }
+    });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+
+    renderView();
+
+    expect(await screen.findByText("Saved context: First segment")).toBeTruthy();
+    expect(screen.getByText("Required context: Continuation after accepted segment")).toBeTruthy();
+    expect(screen.getByText("Accepted segments: 1")).toBeTruthy();
+    expect(screen.getByText("Status: Mismatch")).toBeTruthy();
+
+    const selector = screen.getByRole("combobox", { name: "Generation context" });
+    fireEvent.change(selector, { target: { value: "continuation_after_accepted_segment" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    expect(vi.mocked(setGenerationBrief).mock.calls[0]?.[0]).toMatchObject({
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["continuation_after_accepted_segment"]
+        }
+      }
+    });
+  });
+
   it("renders editable widgets for every current authoritative state field", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(listRecords).mockResolvedValue({
       ok: true,
@@ -94,7 +135,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("links to Ideate from the brief shell", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -105,7 +146,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("shows an always-required marker on required generation-brief fields", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -118,7 +159,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("renders a section rail whose links resolve to the brief headings", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -139,7 +180,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("does not render the contextual save bar before edits", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -152,7 +193,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("flips continuation-field markers from first-segment optional to continuation required locally", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -173,7 +214,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("shows conditional and optional markers without treating conditional fields as required", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -188,7 +229,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("persists a new current-state array field and displays it after reload", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -216,7 +257,7 @@ describe("GenerationBriefView", () => {
           routes_and_exits: ["cellar stairs", "blocked delivery hatch"]
         }
       },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
 
     renderView();
@@ -226,7 +267,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("edits and reloads all handoff and directive detail fields", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -277,7 +318,7 @@ describe("GenerationBriefView", () => {
           do_not_force: ["Do not reveal the caller.", "Do not leave the room."]
         }
       },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
 
     renderView();
@@ -294,7 +335,7 @@ describe("GenerationBriefView", () => {
 
   it("edits all eight surfaces and persists them through the brief client", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
@@ -395,7 +436,7 @@ describe("GenerationBriefView", () => {
   it("shows entity POV options, saves canonical selected_pov values, and supports the prose-mode default", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     const aneId = "019ea213-8f7e-73dc-8e5b-67ba95ca9500";
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
@@ -443,7 +484,7 @@ describe("GenerationBriefView", () => {
   it("renders fixed PROSE MODE pov_character UUIDs by display label and limits selected_pov choices", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     const aneId = "019ea213-8f7e-73dc-8e5b-67ba95ca9500";
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
       configs: {
@@ -476,7 +517,7 @@ describe("GenerationBriefView", () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({
       ok: true,
       session: { active_working_set: { selected_pov: jonId } },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
@@ -502,7 +543,7 @@ describe("GenerationBriefView", () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({
       ok: true,
       session: { active_working_set: { selected_pov: missingId } },
-      defaults: briefDefaults
+      generationContext: briefGenerationContext
     });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -515,7 +556,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("uses canonical generation-brief guidance keys and reconciles static doctrine hints", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -538,7 +579,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("renders helper text inline and wires controls with aria-describedby", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -563,7 +604,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("preserves in-progress trailing spaces while editing must_render", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -576,7 +617,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("normalizes must_render lines only when saving the draft", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
@@ -601,7 +642,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("shows deterministic warnings and readiness blockers while still saving", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({
@@ -633,7 +674,7 @@ describe("GenerationBriefView", () => {
 
   it("saves a blank directive draft without fabricating a launch directive", async () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({
       ok: true,
@@ -650,7 +691,10 @@ describe("GenerationBriefView", () => {
     await screen.findByRole("heading", { name: "Generation Brief" });
     await waitFor(() => expect(readiness).toHaveBeenCalled());
     const initialValidationCalls = vi.mocked(readiness).mock.calls.length;
-    expect(screen.getByText("Default: first segment because no accepted prose exists yet.")).toBeTruthy();
+    expect(screen.getByText("Saved context: Not saved")).toBeTruthy();
+    expect(screen.getByText("Required context: First segment")).toBeTruthy();
+    expect(screen.getByText("Accepted segments: 0")).toBeTruthy();
+    expect(screen.getByText("Status: Coherent")).toBeTruthy();
     fireEvent.change(screen.getByLabelText(/soft_unit_guidance/), { target: { value: "Stop after one local beat." } });
     fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
 
@@ -667,7 +711,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("shows malformed-draft failures with technical issue paths", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({
       ok: false,
@@ -689,7 +733,7 @@ describe("GenerationBriefView", () => {
   });
 
   it("marks readiness stale on unsaved edits and refreshes after save", async () => {
-    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, defaults: briefDefaults });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));

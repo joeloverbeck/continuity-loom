@@ -1,4 +1,5 @@
 import type { GenerationSession } from "../records/generation-brief.js";
+import type { GenerationContextCoherence } from "../records/generation-brief-draft.js";
 import type {
   ProseMode,
   StoryContract,
@@ -38,6 +39,7 @@ export interface BuildValidationSnapshotInput {
   storyConfig: ValidationStoryConfig;
   versions: ValidationVersions;
   projectRecordIndex?: Readonly<Record<string, string>>;
+  generationContext?: GenerationContextCoherence;
 }
 
 export interface ValidationSnapshot {
@@ -46,6 +48,7 @@ export interface ValidationSnapshot {
   storyConfig: Readonly<ValidationStoryConfig>;
   versions: Readonly<ValidationVersions>;
   projectRecordIndex: Readonly<Record<string, string>>;
+  generationContext?: Readonly<GenerationContextCoherence>;
 }
 
 export function buildValidationSnapshot(input: BuildValidationSnapshotInput): ValidationSnapshot {
@@ -56,7 +59,8 @@ export function buildValidationSnapshot(input: BuildValidationSnapshotInput): Va
     generationSession: deepClone(input.generationSession),
     storyConfig: deepClone(input.storyConfig),
     versions: deepClone(input.versions),
-    projectRecordIndex: normalizeProjectRecordIndex(input.projectRecordIndex ?? {})
+    projectRecordIndex: normalizeProjectRecordIndex(input.projectRecordIndex ?? {}),
+    ...(input.generationContext ? { generationContext: deepClone(input.generationContext) } : {})
   });
 }
 

@@ -1,6 +1,7 @@
 import type {
   AcceptedSegmentProvenance,
   CompileResult,
+  GenerationContextCoherence,
   GenerationReadiness,
   IdeationRequest,
   OpenProjectResult,
@@ -308,14 +309,11 @@ export type OkResponse = { ok: true } | ApiFailure;
 export type StoryConfigListResponse = { ok: true; configs: Partial<Record<StoryConfigKind, unknown>> } | ApiFailure;
 export type StoryConfigResponse = { ok: true; payload: unknown } | ApiFailure;
 export type WorkingSetResponse = { ok: true; selectedRecordIds: string[] } | ApiFailure;
-export interface GenerationBriefDefaults {
-  generation_context: {
-    value: "first_segment" | "continuation_after_accepted_segment";
-    source: "persisted" | "accepted-segment-count";
-    acceptedSegmentCount: number;
-  };
-}
-export type GenerationBriefResponse = { ok: true; session: unknown; defaults: GenerationBriefDefaults } | ApiFailure;
+export type GenerationBriefResponse = {
+  ok: true;
+  session: unknown;
+  generationContext: GenerationContextCoherence;
+} | ApiFailure;
 export type SetGenerationBriefResponse = { ok: true; session: unknown } | ApiFailure;
 
 export type NoteSort = "updated-desc" | "updated-asc" | "created-desc" | "created-asc" | "title-asc" | "relevance";

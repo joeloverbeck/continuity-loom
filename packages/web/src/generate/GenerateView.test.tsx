@@ -36,6 +36,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   vi.mocked(acceptCandidate).mockReset();
+  vi.mocked(compile).mockReset();
   vi.mocked(generate).mockReset();
   vi.mocked(getDurableChangeReminder).mockReset();
   vi.mocked(readiness).mockReset();
@@ -96,6 +97,59 @@ describe("GenerateView", () => {
     expect(screen.queryByText("Accepted Segments")).toBeNull();
     expect(screen.queryByRole("button", { name: /acknowledge/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /snooze/i })).toBeNull();
+  });
+
+  it("refreshes readiness after acceptance and withholds stale prompt and candidate actions on a context mismatch", async () => {
+    const mismatch = readinessDiagnostic({
+      severity: "blocker",
+      code: "generation-context-accepted-segment-mismatch",
+      legacyCode: "generation-context-accepted-segment-mismatch",
+      title: "Generation context does not match accepted segments",
+      group: "required-before-prompt-generation",
+      affected: [{
+        kind: "generation-field",
+        fieldPath: "generationSession.generation_validation_focus.validation_focus_tags.generation_context",
+        displayLabel: "Generation Validation Focus"
+      }],
+      actions: [{
+        kind: "focus-field",
+        label: "Edit generation context",
+        target: "generationSession.generation_validation_focus.validation_focus_tags.generation_context"
+      }]
+    });
+    vi.mocked(compile)
+      .mockResolvedValueOnce(compileResult("<role>\nStale first-segment prompt"))
+      .mockResolvedValueOnce({
+        ok: false,
+        kind: "validation-blocked",
+        validation: { blockers: [], warnings: [], isBlocked: true }
+      });
+    vi.mocked(readiness)
+      .mockResolvedValueOnce(readinessFixture({}))
+      .mockResolvedValueOnce(readinessFixture({ blockers: [mismatch] }));
+    vi.mocked(acceptCandidate).mockResolvedValue({
+      ok: true,
+      segment: { id: 1, sequence: 1, createdAt: "2026-07-18T10:00:00.000Z" }
+    });
+
+    renderGenerate();
+
+    expect((await screen.findByTestId("prompt-body")).textContent).toContain("Stale first-segment prompt");
+    fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "Candidate text" }), {
+      target: { value: "Accepted boundary prose." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Generation context does not match accepted segments" })).toBeTruthy();
+    expect(screen.getByText("Accepted as segment 1.")).toBeTruthy();
+    expect(screen.queryByTestId("prompt-body")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Write or paste candidate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Generate" })).toBeNull();
+    expect(compile).toHaveBeenCalledTimes(2);
+    expect(readiness).toHaveBeenCalledTimes(2);
+    expect(generate).not.toHaveBeenCalled();
   });
 
   it("refreshes the shell durable-change reminder after a successful accept without navigation", async () => {

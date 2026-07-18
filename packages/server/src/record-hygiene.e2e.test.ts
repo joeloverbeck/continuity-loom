@@ -55,6 +55,7 @@ describe("record hygiene end-to-end conformance", () => {
     const databasePath = join(folderPath, "loom.sqlite");
     await putSettings(fastify);
     await addAcceptedSegment(fastify);
+    await putGenerationContext(fastify, "continuation_after_accepted_segment");
     await addPrivateNote(fastify);
     await addUnselectedFact(fastify);
 
@@ -214,6 +215,23 @@ async function addAcceptedSegment(fastify: FastifyApp): Promise<void> {
   });
 
   expect(response.statusCode).toBe(201);
+}
+
+async function putGenerationContext(
+  fastify: FastifyApp,
+  generationContext: "first_segment" | "continuation_after_accepted_segment"
+): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/generation-brief",
+    payload: {
+      generation_validation_focus: {
+        validation_focus_tags: { generation_context: [generationContext] }
+      }
+    }
+  });
+
+  expect(response.statusCode).toBe(200);
 }
 
 async function addPrivateNote(fastify: FastifyApp): Promise<void> {

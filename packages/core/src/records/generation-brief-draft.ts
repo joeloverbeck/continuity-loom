@@ -5,6 +5,15 @@ import { recordId } from "./common.js";
 const draftString = z.string();
 const generationContext = z.enum(["first_segment", "continuation_after_accepted_segment"]);
 
+export type GenerationContext = z.infer<typeof generationContext>;
+
+export interface GenerationContextCoherence {
+  savedValue: GenerationContext | null;
+  requiredValue: GenerationContext;
+  acceptedSegmentCount: number;
+  coherent: boolean;
+}
+
 const activeWorkingSetDraftSchema = z
   .object({
     selected_records: z.array(recordId).optional(),
@@ -170,8 +179,22 @@ export type GenerationSessionDraft = z.infer<typeof generationSessionDraftSchema
 
 export function deriveGenerationContextDefault(
   acceptedSegmentCount: number
-): "first_segment" | "continuation_after_accepted_segment" {
+): GenerationContext {
   return acceptedSegmentCount === 0 ? "first_segment" : "continuation_after_accepted_segment";
+}
+
+export function deriveGenerationContextCoherence(
+  savedValue: GenerationContext | undefined,
+  acceptedSegmentCount: number
+): GenerationContextCoherence {
+  const requiredValue = deriveGenerationContextDefault(acceptedSegmentCount);
+
+  return {
+    savedValue: savedValue ?? null,
+    requiredValue,
+    acceptedSegmentCount,
+    coherent: savedValue === undefined || savedValue === requiredValue
+  };
 }
 
 export function normalizeGenerationSessionDraft(

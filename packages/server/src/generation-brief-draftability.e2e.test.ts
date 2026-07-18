@@ -1,13 +1,21 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { DatabaseSync } from "node:sqlite";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("./openrouter/client.js", () => ({
+  sendChatCompletion: vi.fn()
+}));
+
+import { sendChatCompletion } from "./openrouter/client.js";
 import { createServer } from "./server.js";
 
 const apps: ReturnType<typeof createServer>[] = [];
+const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const acceptedProseSentinel = "DRAFTABILITY_ACCEPTED_PROSE_SENTINEL_DO_NOT_PROMPT";
 const draftSaveSentinel = "DRAFTABILITY_DRAFT_SAVE_SENTINEL_DO_NOT_LOG";
+let originalApiKey: string | undefined;
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-generation-brief-draftability-"));
@@ -45,8 +53,15 @@ function captureProcessWrites(): { restore: () => string } {
   };
 }
 
+beforeEach(() => {
+  originalApiKey = process.env.OPENROUTER_API_KEY;
+  delete process.env.OPENROUTER_API_KEY;
+  sendChatCompletionMock.mockReset();
+});
+
 afterEach(async () => {
   await Promise.all(apps.splice(0).map((fastify) => fastify.close()));
+  restoreEnv("OPENROUTER_API_KEY", originalApiKey);
 });
 
 describe("generation brief draftability capstone", () => {
@@ -108,12 +123,11 @@ describe("generation brief draftability capstone", () => {
       const savedDraft = await fastify.inject({ method: "GET", url: "/api/generation-brief" });
       expect(savedDraft.json()).toMatchObject({
         ok: true,
-        defaults: {
-          generation_context: {
-            value: expectedGenerationContext,
-            source: "persisted",
-            acceptedSegmentCount: acceptedBody.segments.length
-          }
+        generationContext: {
+          savedValue: expectedGenerationContext,
+          requiredValue: expectedGenerationContext,
+          acceptedSegmentCount: acceptedBody.segments.length,
+          coherent: true
         }
       });
 
@@ -162,6 +176,174 @@ describe("generation brief draftability capstone", () => {
       expect(output).not.toContain(acceptedProseSentinel);
     }
   });
+
+  it("preserves the saved draft through every accepted-segment boundary and fails closed until explicit repair", async () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-coherence-capstone";
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Fresh candidate prose." } });
+    const capture = captureProcessWrites();
+    const fastify = app({ logger: true });
+
+    try {
+      const folderPath = await openProject(fastify);
+      const databasePath = join(folderPath, "loom.sqlite");
+      await putStoryConfig(fastify);
+      const entityId = await createCleanEntity(fastify);
+      await putCompleteBrief(fastify, entityId, "first_segment");
+
+      const initialSession = readSessionRow(databasePath);
+      const initialCompile = await compile(fastify);
+      expect(initialCompile.prompt).not.toContain(acceptedProseSentinel);
+
+      const firstId = await appendAcceptedSegment(fastify, acceptedProseSentinel);
+      expect(readSessionRow(databasePath)).toEqual(initialSession);
+
+      const firstMismatchBrief = await generationBrief(fastify);
+      expect(firstMismatchBrief).toMatchObject({
+        generationContext: {
+          savedValue: "first_segment",
+          requiredValue: "continuation_after_accepted_segment",
+          acceptedSegmentCount: 1,
+          coherent: false
+        }
+      });
+      const firstMismatchValidation = await validate(fastify);
+      expect(firstMismatchValidation.blockers.map((blocker) => blocker.code)).toContain(
+        "generation-context-accepted-segment-mismatch"
+      );
+      expect(firstMismatchValidation.blockers.map((blocker) => blocker.code)).not.toContain("focus-tag-count-invalid");
+      const firstMismatchReadiness = await readiness(fastify);
+      expect(firstMismatchReadiness).toMatchObject({
+        canPreview: false,
+        canGenerate: false,
+        blockers: [{
+          code: "generation-context-accepted-segment-mismatch",
+          title: "Generation context does not match accepted segments"
+        }]
+      });
+      expect(JSON.stringify(firstMismatchReadiness)).toContain("saved as First segment");
+      expect(JSON.stringify(firstMismatchReadiness)).toContain(
+        "accepted-segment archive contains 1 accepted segment and requires Continuation after accepted segment"
+      );
+
+      const firstBlockedCompile = await fastify.inject({ method: "POST", url: "/api/compile" });
+      expect(firstBlockedCompile.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
+      expect(firstBlockedCompile.json()).not.toHaveProperty("prompt");
+      const firstBlockedGenerate = await fastify.inject({
+        method: "POST",
+        url: "/api/generate",
+        payload: { expectedPromptFingerprint: initialCompile.metadata.fingerprint }
+      });
+      expect(firstBlockedGenerate.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
+      expect(firstBlockedGenerate.json()).not.toHaveProperty("candidate");
+      expect(sendChatCompletionMock).not.toHaveBeenCalled();
+      expect(readSessionRow(databasePath)).toEqual(initialSession);
+
+      const closeResponse = await fastify.inject({ method: "POST", url: "/api/project/close" });
+      expect(closeResponse.statusCode).toBe(200);
+      const reopenResponse = await fastify.inject({
+        method: "POST",
+        url: "/api/project/open",
+        payload: { folderPath }
+      });
+      expect(reopenResponse.statusCode).toBe(200);
+      expect(readSessionRow(databasePath)).toEqual(initialSession);
+      expect((await generationBrief(fastify)).generationContext.coherent).toBe(false);
+
+      await putGenerationContext(fastify, "continuation_after_accepted_segment");
+      const continuationSession = readSessionRow(databasePath);
+      expect(continuationSession.payloadJson).not.toBe(initialSession.payloadJson);
+      expect((await generationBrief(fastify)).generationContext).toEqual({
+        savedValue: "continuation_after_accepted_segment",
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 1,
+        coherent: true
+      });
+
+      const continuationCompile = await compile(fastify);
+      expect(continuationCompile.prompt).not.toContain(acceptedProseSentinel);
+      expect(continuationCompile.metadata.fingerprint).toMatch(/^fnv1a32:/);
+      const recoveredGenerate = await fastify.inject({
+        method: "POST",
+        url: "/api/generate",
+        payload: { expectedPromptFingerprint: continuationCompile.metadata.fingerprint }
+      });
+      expect(recoveredGenerate.json()).toMatchObject({ ok: true, candidate: { text: "Fresh candidate prose." } });
+      expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+      expect(JSON.stringify(sendChatCompletionMock.mock.calls)).not.toContain(acceptedProseSentinel);
+
+      const secondId = await appendAcceptedSegment(fastify, `${acceptedProseSentinel}_SECOND`);
+      expect(readSessionRow(databasePath)).toEqual(continuationSession);
+      expect((await generationBrief(fastify)).generationContext).toMatchObject({
+        savedValue: "continuation_after_accepted_segment",
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 2,
+        coherent: true
+      });
+
+      await deleteAcceptedSegment(fastify, firstId);
+      expect(readSessionRow(databasePath)).toEqual(continuationSession);
+      expect((await generationBrief(fastify)).generationContext).toMatchObject({
+        acceptedSegmentCount: 1,
+        coherent: true
+      });
+
+      await deleteAcceptedSegment(fastify, secondId);
+      expect(readSessionRow(databasePath)).toEqual(continuationSession);
+      const finalMismatchBrief = await generationBrief(fastify);
+      expect(finalMismatchBrief.generationContext).toEqual({
+        savedValue: "continuation_after_accepted_segment",
+        requiredValue: "first_segment",
+        acceptedSegmentCount: 0,
+        coherent: false
+      });
+      const finalMismatchValidation = await validate(fastify);
+      expect(finalMismatchValidation.blockers.map((blocker) => blocker.code)).toContain(
+        "generation-context-accepted-segment-mismatch"
+      );
+      const providerCallsBeforeFinalBlock = sendChatCompletionMock.mock.calls.length;
+      const finalBlockedCompile = await fastify.inject({ method: "POST", url: "/api/compile" });
+      expect(finalBlockedCompile.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
+      expect(finalBlockedCompile.json()).not.toHaveProperty("prompt");
+      const finalBlockedGenerate = await fastify.inject({
+        method: "POST",
+        url: "/api/generate",
+        payload: { expectedPromptFingerprint: continuationCompile.metadata.fingerprint }
+      });
+      expect(finalBlockedGenerate.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
+      expect(sendChatCompletionMock).toHaveBeenCalledTimes(providerCallsBeforeFinalBlock);
+      expect(readSessionRow(databasePath)).toEqual(continuationSession);
+
+      await putGenerationContext(fastify, "first_segment");
+      const repairedFirstSession = readSessionRow(databasePath);
+      expect(repairedFirstSession.payloadJson).not.toBe(continuationSession.payloadJson);
+      expect((await generationBrief(fastify)).generationContext).toEqual({
+        savedValue: "first_segment",
+        requiredValue: "first_segment",
+        acceptedSegmentCount: 0,
+        coherent: true
+      });
+      const repairedFirstCompile = await compile(fastify);
+      expect(repairedFirstCompile.prompt).not.toContain(acceptedProseSentinel);
+
+      for (const value of [
+        firstMismatchBrief,
+        firstMismatchValidation,
+        firstMismatchReadiness,
+        firstBlockedCompile.json(),
+        firstBlockedGenerate.json(),
+        finalMismatchBrief,
+        finalMismatchValidation,
+        finalBlockedCompile.json(),
+        finalBlockedGenerate.json(),
+        repairedFirstCompile
+      ]) {
+        expect(JSON.stringify(value)).not.toContain(acceptedProseSentinel);
+      }
+    } finally {
+      const output = capture.restore();
+      expect(output).not.toContain(acceptedProseSentinel);
+    }
+  });
 });
 
 interface ValidationBody {
@@ -170,7 +352,21 @@ interface ValidationBody {
   isBlocked: boolean;
 }
 
-async function openProject(fastify: ReturnType<typeof createServer>): Promise<void> {
+interface GenerationBriefBody {
+  generationContext: {
+    savedValue: "first_segment" | "continuation_after_accepted_segment" | null;
+    requiredValue: "first_segment" | "continuation_after_accepted_segment";
+    acceptedSegmentCount: number;
+    coherent: boolean;
+  };
+}
+
+interface CompileBody {
+  prompt: string;
+  metadata: { fingerprint: string };
+}
+
+async function openProject(fastify: ReturnType<typeof createServer>): Promise<string> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/project/create",
@@ -180,8 +376,10 @@ async function openProject(fastify: ReturnType<typeof createServer>): Promise<vo
       title: "Draftability"
     }
   });
+  const body = response.json() as { folderPath: string };
 
   expect(response.statusCode).toBe(201);
+  return body.folderPath;
 }
 
 async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise<void> {
@@ -217,12 +415,15 @@ async function createCleanEntity(fastify: ReturnType<typeof createServer>): Prom
   return body.record.id;
 }
 
-async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): Promise<void> {
+async function appendAcceptedSegment(
+  fastify: ReturnType<typeof createServer>,
+  text = acceptedProseSentinel
+): Promise<number> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/accepted-segments",
     payload: {
-      text: acceptedProseSentinel,
+      text,
       generationMetadata: {
         source: "openrouter",
         model: "test/mock-writer",
@@ -235,6 +436,109 @@ async function appendAcceptedSegment(fastify: ReturnType<typeof createServer>): 
   });
 
   expect(response.statusCode).toBe(201);
+  return (response.json() as { segment: { id: number } }).segment.id;
+}
+
+async function deleteAcceptedSegment(fastify: ReturnType<typeof createServer>, id: number): Promise<void> {
+  const response = await fastify.inject({ method: "DELETE", url: `/api/accepted-segments/${id}` });
+  expect(response.statusCode).toBe(200);
+}
+
+async function putCompleteBrief(
+  fastify: ReturnType<typeof createServer>,
+  entityId: string,
+  generationContext: "first_segment" | "continuation_after_accepted_segment"
+): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/generation-brief",
+    payload: {
+      active_working_set: {
+        selected_records: [entityId],
+        active_onstage_cast_full: [],
+        present_minor_cast_compressed: [],
+        offstage_relevant_cast: []
+      },
+      current_authoritative_state: {
+        ...cleanCurrentState,
+        onstage_entities: [entityId]
+      },
+      immediate_handoff: cleanImmediateHandoff,
+      manual_moment_directive: {
+        must_render: ["B asks for the key."],
+        may_render_if_naturally_caused: [],
+        do_not_force: []
+      },
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: [generationContext],
+          expected_local_modes: [],
+          possible_durable_changes: []
+        }
+      },
+      stop_guidance: cleanStopGuidance
+    }
+  });
+  expect(response.statusCode).toBe(200);
+}
+
+async function putGenerationContext(
+  fastify: ReturnType<typeof createServer>,
+  generationContext: "first_segment" | "continuation_after_accepted_segment"
+): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/generation-brief",
+    payload: {
+      generation_validation_focus: {
+        validation_focus_tags: { generation_context: [generationContext] }
+      }
+    }
+  });
+  expect(response.statusCode).toBe(200);
+}
+
+async function generationBrief(fastify: ReturnType<typeof createServer>): Promise<GenerationBriefBody> {
+  const response = await fastify.inject({ method: "GET", url: "/api/generation-brief" });
+  expect(response.statusCode).toBe(200);
+  return response.json() as GenerationBriefBody;
+}
+
+async function readiness(fastify: ReturnType<typeof createServer>): Promise<Record<string, unknown> & {
+  blockers: Array<{ code: string }>;
+}> {
+  const response = await fastify.inject({ method: "POST", url: "/api/readiness", payload: { promptKind: "prose" } });
+  expect(response.statusCode).toBe(200);
+  return response.json() as Record<string, unknown> & { blockers: Array<{ code: string }> };
+}
+
+async function compile(fastify: ReturnType<typeof createServer>): Promise<CompileBody> {
+  const response = await fastify.inject({ method: "POST", url: "/api/compile" });
+  const body = response.json() as CompileBody;
+  expect(response.statusCode).toBe(200);
+  expect(body).toHaveProperty("prompt");
+  return body;
+}
+
+function readSessionRow(databasePath: string): { payloadJson: string; updatedAt: string } {
+  const database = new DatabaseSync(databasePath);
+  try {
+    const row = database.prepare("SELECT payload_json, updated_at FROM generation_session WHERE id = 1").get() as {
+      payload_json: string;
+      updated_at: string;
+    };
+    return { payloadJson: row.payload_json, updatedAt: row.updated_at };
+  } finally {
+    database.close();
+  }
+}
+
+function restoreEnv(name: string, value: string | undefined): void {
+  if (value === undefined) {
+    delete process.env[name];
+  } else {
+    process.env[name] = value;
+  }
 }
 
 async function validate(fastify: ReturnType<typeof createServer>): Promise<ValidationBody> {

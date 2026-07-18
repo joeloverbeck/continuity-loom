@@ -885,42 +885,45 @@ Prompt-quality risk:
 
 ---
 
-## Case 28 — Generation-context default mismatch prevention
+## Case 28 — Generation-context coherence at the first-segment boundary
 
-Stress target: no false `focus-tag-count-invalid` when project state can normalize context.
+Stress target: missing, matching, and contradictory saved context when accepted-segment count is zero, including the inverse mismatch after final accepted-segment deletion.
 
 Required records:
 
-- Generation Brief draft with omitted or stale `generation_context`.
-- Accepted segment count available from project state.
+- Generation Brief drafts with omitted, matching `first_segment`, and contradictory `continuation_after_accepted_segment` values.
+- Zero accepted segments, including a project that has just deleted its final accepted segment.
 
 Validation focus tags:
 
-- Normalization resolves exactly one context from accepted-segment count.
+- Ready-input normalization resolves `first_segment` from count while storage preserves any contradictory saved value.
 
 Expected blockers:
 
 - None solely because the draft omitted `generation_context`.
+- `generation-context-accepted-segment-mismatch` when a saved continuation context remains after final deletion.
 
 Expected readiness outcome:
 
 - No false `focus-tag-count-invalid` after normalization.
-- The resolved context remains visible and editable.
+- Generation Brief shows saved value, required value, count, and status; draft Save remains available.
+- Preview, user-supplied candidate intake, Generate, and provider transport remain blocked on contradiction.
+- Choosing `first_segment` and explicitly saving clears the blocker on reload and permits a fresh compile.
 
 Prompt-quality risk:
 
-- UI-only defaults drift from server readiness and block valid prompt preview.
+- Automatic deletion repair mutates the author-owned draft, or stale prompt/candidate controls remain available after the boundary change.
 
 ---
 
-## Case 29 — Continuation default from accepted-segment count
+## Case 29 — Generation-context coherence at the continuation boundary
 
-Stress target: continuation readiness when accepted prose exists but prose text remains excluded.
+Stress target: first acceptance creates an actionable mismatch, while additional acceptance and non-final deletion preserve coherent continuation state and accepted prose remains excluded.
 
 Required records:
 
-- At least one accepted segment in the archive.
-- Generation context normalized to `continuation_after_accepted_segment`.
+- A saved `first_segment` context followed by first acceptance.
+- A saved `continuation_after_accepted_segment` context with one or many accepted segments.
 - User-authored immediate handoff.
 - Current state updated for the continuation start.
 
@@ -930,16 +933,20 @@ Validation focus tags:
 
 Expected blockers:
 
-- Missing user-authored handoff.
+- `generation-context-accepted-segment-mismatch` after first acceptance until explicit selector Save.
+- Missing user-authored handoff is evaluated against the required continuation context even while the mismatch exists.
 - Accepted prose, rejected candidate text, superseded regeneration text, or automatic prose-derived summary in prompt-facing fields.
 
 Expected readiness outcome:
 
-- Continuation requires handoff but never includes accepted prose text.
+- The saved draft is byte-for-byte unchanged by first/additional acceptance and non-final deletion.
+- First acceptance blocks Preview, user-supplied candidate intake, Generate, and provider transport; choosing continuation and explicitly saving clears the mismatch on reload.
+- Additional acceptance and non-final deletion remain coherent without another repair.
+- Continuation requires handoff but never includes accepted prose text; only accepted-segment count crosses the boundary.
 
 Prompt-quality risk:
 
-- Prose archive treated as canon or style context.
+- Prose archive treated as canon or style context, automatic context mutation, or reuse of a prompt inspected before acceptance.
 
 ---
 

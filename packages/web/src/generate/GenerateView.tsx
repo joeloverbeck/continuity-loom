@@ -67,12 +67,14 @@ export function GenerateView(): React.JSX.Element {
     void refreshPrompt();
   }, []);
 
-  async function refreshPrompt(): Promise<void> {
+  async function refreshPrompt(options: { preserveAcceptNotice?: boolean } = {}): Promise<void> {
     setState({ status: "loading" });
     setCandidateState({ status: "idle" });
     setPendingDiscardAction(null);
     setSearchTerm("");
-    setAcceptNotice(null);
+    if (!options.preserveAcceptNotice) {
+      setAcceptNotice(null);
+    }
 
     try {
       const [compileResult, readinessResult] = await Promise.all([compile(), readiness()]);
@@ -270,6 +272,7 @@ export function GenerateView(): React.JSX.Element {
         setPendingDiscardAction(null);
         setAcceptNotice(`Accepted as segment ${result.segment.sequence}.`);
         refreshReminder();
+        await refreshPrompt({ preserveAcceptNotice: true });
         return;
       }
 
@@ -291,6 +294,10 @@ export function GenerateView(): React.JSX.Element {
         <p className="eyebrow">Candidate workflow</p>
         <h2 id="generate-title">Generate / Candidate</h2>
       </div>
+
+      {acceptNotice && state.status !== "ready" ? (
+        <p className="status statusSuccess" role="status">{acceptNotice}</p>
+      ) : null}
 
       {state.status === "loading" ? <p className="muted" role="status">Compiling prompt...</p> : null}
 

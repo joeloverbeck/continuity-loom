@@ -117,12 +117,11 @@ describe("generation-brief routes", () => {
     expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
       ok: true,
       session: {},
-      defaults: {
-        generation_context: {
-          value: "first_segment",
-          source: "accepted-segment-count",
-          acceptedSegmentCount: 0
-        }
+      generationContext: {
+        savedValue: null,
+        requiredValue: "first_segment",
+        acceptedSegmentCount: 0,
+        coherent: true
       }
     });
 
@@ -207,12 +206,11 @@ describe("generation-brief routes", () => {
         },
         stop_guidance: session.stop_guidance
       },
-      defaults: {
-        generation_context: {
-          value: "first_segment",
-          source: "persisted",
-          acceptedSegmentCount: 0
-        }
+      generationContext: {
+        savedValue: "first_segment",
+        requiredValue: "first_segment",
+        acceptedSegmentCount: 0,
+        coherent: true
       }
     });
   });
@@ -308,7 +306,7 @@ describe("generation-brief routes", () => {
     });
   });
 
-  it("returns accepted-segment-count generation context defaults on GET", async () => {
+  it("returns archive-derived generation context when the draft has no saved value", async () => {
     const fastify = app();
     const folderPath = await openProject(fastify);
     const databasePath = join(folderPath, "loom.sqlite");
@@ -318,14 +316,48 @@ describe("generation-brief routes", () => {
     expect((await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json()).toEqual({
       ok: true,
       session: {},
-      defaults: {
-        generation_context: {
-          value: "continuation_after_accepted_segment",
-          source: "accepted-segment-count",
-          acceptedSegmentCount: 1
+      generationContext: {
+        savedValue: null,
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 1,
+        coherent: true
+      }
+    });
+  });
+
+  it("returns one canonical generation-context coherence shape for a saved mismatch", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    const databasePath = join(folderPath, "loom.sqlite");
+
+    writeSession(databasePath, {
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["first_segment"]
         }
       }
     });
+    writeAcceptedSegment(databasePath);
+
+    const body = (await fastify.inject({ method: "GET", url: "/api/generation-brief" })).json();
+
+    expect(body).toEqual({
+      ok: true,
+      session: {
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["first_segment"]
+          }
+        }
+      },
+      generationContext: {
+        savedValue: "first_segment",
+        requiredValue: "continuation_after_accepted_segment",
+        acceptedSegmentCount: 1,
+        coherent: false
+      }
+    });
+    expect(body).not.toHaveProperty("defaults");
   });
 
   it("persists the full active working set surface while preserving membership routes", async () => {

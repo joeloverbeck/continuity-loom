@@ -7,6 +7,7 @@ const proseOnlyBlockerCodes = new Set<string>([
   DIAGNOSTIC_CODES.localProseScopeViolation,
   DIAGNOSTIC_CODES.directiveStopGuidanceDisagreement,
   DIAGNOSTIC_CODES.focusTagCountInvalid,
+  DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
   DIAGNOSTIC_CODES.povKnowledgeMissing,
   DIAGNOSTIC_CODES.activeCastIncomplete,
   DIAGNOSTIC_CODES.matrixDialogueIncomplete,

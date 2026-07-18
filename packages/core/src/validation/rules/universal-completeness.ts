@@ -15,6 +15,7 @@ const PHYSICAL_FOCUS_TAGS = new Set([
 ]);
 
 export const universalCompletenessRules: readonly ValidationRule[] = Object.freeze([
+  validateGenerationContextCoherence,
   validateStoryConfig,
   validateGenerationBriefSurfaces,
   validatePovKnowledgeProfile,
@@ -23,6 +24,35 @@ export const universalCompletenessRules: readonly ValidationRule[] = Object.free
   validateActiveCast,
   validateGenerationContextFocus
 ]);
+
+function validateGenerationContextCoherence(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  const coherence = snapshot.generationContext;
+  if (!coherence || coherence.coherent || coherence.savedValue === null) {
+    return [];
+  }
+
+  const savedLabel = generationContextLabel(coherence.savedValue);
+  const requiredLabel = generationContextLabel(coherence.requiredValue);
+  const countPhrase = coherence.acceptedSegmentCount === 0
+    ? "no accepted segments"
+    : coherence.acceptedSegmentCount === 1
+      ? "1 accepted segment"
+      : `${coherence.acceptedSegmentCount} accepted segments`;
+
+  return [
+    blocker({
+      code: DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
+      field: "generationSession.generation_validation_focus.validation_focus_tags.generation_context",
+      message: `Generation context is saved as ${savedLabel}, but the accepted-segment archive contains ${countPhrase} and requires ${requiredLabel}. Choose ${requiredLabel} in Generation Brief and save the draft.`,
+      whyItMatters: "Readiness and prompt compilation must use the lifecycle proved by the accepted-segment archive.",
+      suggestedActions: ["revise"]
+    })
+  ];
+}
+
+function generationContextLabel(context: "first_segment" | "continuation_after_accepted_segment"): string {
+  return context === "first_segment" ? "First segment" : "Continuation after accepted segment";
+}
 
 function validateStoryConfig(snapshot: ValidationSnapshot): readonly Diagnostic[] {
   const diagnostics: Diagnostic[] = [];

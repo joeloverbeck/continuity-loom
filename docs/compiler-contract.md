@@ -34,7 +34,7 @@ The prose and ideation compilers render from these sources only:
 6. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
 7. Deterministic empty-state constants defined in this contract.
 
-These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization may default non-story values such as generation context from accepted-segment count, but it must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
+These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization derives the required generation context from accepted-segment count: zero requires `first_segment`; one or more requires `continuation_after_accepted_segment`. A missing saved value may use that deterministic default. A contradictory saved value is preserved in storage, surfaced as `generation-context-accepted-segment-mismatch`, and replaced by the required value only in the validation snapshot; Preview, user-supplied candidate intake, Generate, and provider transport remain blocked until the author explicitly saves the required value. Normalization must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
 Every prompt-facing record label in these profiles is the complete label derived from the record payload. The stored repository `displayLabel` is browse-only and does not enter prompt text, record ordering, citation assignment, or prompt fingerprints. Records retain the existing family-specific semantic, authored-order, and priority dimensions; once those dimensions are tied, this complete payload-derived label precedes id.
 
@@ -389,6 +389,8 @@ Generation blocks unless these are satisfied:
 
 ## 6. Generation validation matrix
 
+Before applying the focus-tag rows below, the snapshot builder compares the saved generation context with the value required by accepted-segment count. A contradiction produces `generation-context-accepted-segment-mismatch` on `generationSession.generation_validation_focus.validation_focus_tags.generation_context`. The diagnostic reports the saved value, required value, accepted count, and explicit Generation Brief repair. Other validation checks evaluate the required value, so a contradiction cannot suppress continuation requirements or create a false `focus-tag-count-invalid` diagnostic.
+
 | Validation focus tag | Context-dependent blockers |
 |---|---|
 | `first_segment` | No continuation handoff is required. Launch state must be self-sufficient; handoff fields must not use continuation phrases such as "as above." |
@@ -438,6 +440,7 @@ Implemented reference warning codes:
 
 Universal blockers not tied to a single validation focus tag:
 
+- a saved generation context that contradicts accepted-segment count; the saved draft remains unchanged and draft Save remains available, while Preview, candidate intake, Generate, and provider transport fail closed until explicit repair;
 - manual directive or stop guidance requesting a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
 - manual directive and stop guidance contradicting each other about the local unit or stop boundary;
 - dangling, mistyped, duplicated, or required-but-unselected references in readiness-required brief, cast-band, voice attachment, or record-internal lanes;
@@ -505,6 +508,7 @@ Repeated warnings should deduplicate by affected field/record group and present 
 Validation-only by default:
 
 - `validation_focus_tags`;
+- generation-context coherence metadata: saved value, required value, accepted-segment count, and coherent/mismatch status;
 - validation diagnostics;
 - blocker/warning severity;
 - record IDs unless deliberately exposed for debugging outside the generated prompt;
