@@ -163,14 +163,19 @@ Review evidence:
 - Review: code-review against <fixed point>; outcome <no findings / findings fixed / accepted residuals recorded count/source/rationale with unhandled findings none beyond accepted residuals>; verification rerun <commands>.
 - Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed
 - Review subagent cleanup: Standards <closed / close operation unavailable after terminal completion / auto-disposed after terminal completion>; Spec <same>
+- Review subagent cleanup proof: Standards <every reviewer ID; successful close result / terminal status plus no close capability / post-terminal inventory absence or unaddressable follow-up>; Spec <same>
+- Pre-dispatch Standards source inventory: <concrete path | concrete path | smell baseline>
+- Pre-dispatch Spec source inventory: <issue #N | concrete spec path / no spec available>
 
 ## Standards
 
+Handoff Standards source inventory: <exact same entry set as Pre-dispatch Standards source inventory>
 Sources reviewed: <exact standards sources>
 Findings: <none / exact findings>
 
 ## Spec
 
+Handoff Spec source inventory: <exact same entry set as Pre-dispatch Spec source inventory>
 Sources reviewed: <exact issue/PRD/acceptance sources>
 Findings: <none / exact findings>
 

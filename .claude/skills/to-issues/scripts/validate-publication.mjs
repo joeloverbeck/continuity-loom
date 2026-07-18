@@ -31,25 +31,25 @@ const COMPOSITE_CHECKLIST_COMPONENTS = new Map([
     ["outcomes", /\boutcomes?\b|\bresults?\b/i],
   ]],
   ["validation, warning, error, and recovery behavior", [
-    ["validation", /\bvalidation\b|\bblockers?\b/i],
+    ["validation", /\bvalidation\b|\bblockers?\b|\breject\w*\b|\binvalid\w*\b/i],
     ["warning", /\bwarnings?\b/i],
     ["error", /\berrors?\b|\bfail(?:s|ure)?\b/i],
     ["recovery", /\brecover\w*\b|\bremediation\b/i],
   ]],
   ["prompt preview contents and freshness", [
-    ["prompt preview", /\bprompt (?:preview|inspection)\b/i],
-    ["contents", /\bcontents?\b|\bcomplete\b|\bfull\b/i],
+    ["prompt preview", /\bprompt (?:preview|inspection|inspector)\b/i],
+    ["contents", /\bcontents?\b|\bcomplete\b|\bfull\b|\b(?:shows?|renders?|displays?)\b[\s\S]{0,80}\b(?:exact|normalized|escaped|current)\b/i],
     ["freshness", /\bfresh(?:ness)?\b|\bstale\b|\bfingerprint\w*\b/i],
   ]],
   ["user-initiated external LLM boundary", [
-    ["user-initiated", /\buser[- ]initiated\b|\buser\b[\s\S]{0,120}\b(?:action|click|send|generate)\b/i],
+    ["user-initiated", /\buser[- ]initiated\b|\buser\b[\s\S]{0,120}\b(?:action|click|send|generate)\b|\b(?:Get ideas|Get new slate|Regenerate all|per-slot Regenerate)\b/i],
     ["external LLM", /\bexternal (?:LLM|model)\b|\bOpenRouter\b|\bprovider\b/i],
     ["boundary", /\bboundary\b|\bno provider call\b|\bsends?\b/i],
   ]],
   ["canon and prose boundary visibility", [
-    ["canon", /\bcanon\b|\bauthority\b/i],
+    ["canon", /\bcanon(?:ical)?\b|\bauthority\b/i],
     ["prose", /\bprose\b|\bcandidate\b|\bsegment\b/i],
-    ["boundary visibility", /\bboundar\w*\b|\bvisib\w*\b|\bdistinct\b/i],
+    ["boundary visibility", /\bboundar\w*\b|\bvisib\w*\b|\bdistinct\b|\blabel\w*\b[\s\S]{0,120}\bnon[- ]canonical\b/i],
   ]],
   ["persistence, migration, export, and provenance", [
     ["persistence", /\bpersist\w*\b|\bstor(?:e|ed|age)\b/i],
@@ -60,7 +60,7 @@ const COMPOSITE_CHECKLIST_COMPONENTS = new Map([
   ["browser and accessibility regression scenario", [
     ["browser", /\bbrowser\b|\bcomponent\b/i],
     ["accessibility", /\baccessib\w*\b|\bkeyboard\b|\baccessible name\b/i],
-    ["regression scenario", /\bregression\b|\bscenario\b|\bsmoke\b/i],
+    ["regression scenario", /\bregression\b|\bscenario\b|\bsmoke\b|\btests?\b[\s\S]{0,80}\bcover\w*\b/i],
   ]],
 ]);
 
@@ -82,6 +82,7 @@ Child options:
 
 Ledger options:
   --child <issue-ref>          Require a child reference; repeat as needed.
+  --expect-story-coverage      Require an explicit ledger story-coverage section.
 
 Run-sheet options:
   --slice-body <slice>=<path>  Require all canonical checklist rows for an affected slice.
@@ -129,6 +130,7 @@ function parseArgs(argv) {
     expectAcCount: null,
     expectChecklistNa: false,
     expectNoBlocker: false,
+    expectStoryCoverage: false,
     expectStories: false,
     forbidLiterals: [],
     forbidPatterns: [],
@@ -146,6 +148,7 @@ function parseArgs(argv) {
     if (argument === "--expect-no-blocker") options.expectNoBlocker = true;
     else if (argument === "--expect-stories") options.expectStories = true;
     else if (argument === "--expect-checklist-na") options.expectChecklistNa = true;
+    else if (argument === "--expect-story-coverage") options.expectStoryCoverage = true;
     else if (["--parent", "--source", "--source-relationship", "--blocker", "--external-blocker", "--child", "--expect-ac-count", "--placeholder-re", "--forbid-literal", "--forbid-pattern", "--slice-body", "--unaffected-slice", "--only-slice"].includes(argument)) {
       const value = requireValue(args, index, argument);
       if (argument === "--parent") options.parent = value;
@@ -186,6 +189,9 @@ function parseArgs(argv) {
   }
   if (mode !== "run-sheet" && options.onlySlices.length > 0) {
     failUsage("--only-slice is available only in run-sheet mode.");
+  }
+  if (mode !== "ledger" && options.expectStoryCoverage) {
+    failUsage("--expect-story-coverage is available only in ledger mode.");
   }
   return { inputFile, mode, options };
 }
@@ -329,12 +335,14 @@ export function validateChild(body, options) {
   };
 }
 
-function validateLedger(body, options) {
+export function validateLedger(body, options) {
   const checks = {
     ...commonBodyChecks(body, options),
     hasChildMap: body.includes("Child Issue Map"),
     hasBreakdownDecisions: body.includes("Breakdown decisions"),
-    hasStoryCoverage: body.includes("Story coverage"),
+    ...(options.expectStoryCoverage
+      ? { hasStoryCoverage: body.includes("## Story coverage") }
+      : {}),
     hasChildren: options.children.every((reference) => body.includes(reference)),
   };
   return {

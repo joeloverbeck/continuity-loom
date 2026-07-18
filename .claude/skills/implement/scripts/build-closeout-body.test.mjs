@@ -170,7 +170,22 @@ const completeStructuredEvidenceBody = (generated) => generated
     /^Review subagents:.*$/m,
     "Review subagents: Standards initial reviewer standards-initial completed, final reviewer standards-final completed; Spec initial reviewer spec-initial completed, final reviewer spec-final completed"
   )
-  .replace(/^Review subagent cleanup:.*$/m, "Review subagent cleanup: Standards closed; Spec closed")
+  .replace(
+    /^Review subagent cleanup:.*$/m,
+    "Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion"
+  )
+  .replace(
+    /^Review subagent cleanup proof:.*$/m,
+    "Review subagent cleanup proof: Standards reviewers standards-initial and standards-final terminal status completed; no close primitive surfaced; Spec reviewers spec-initial and spec-final terminal status completed; no close primitive surfaced"
+  )
+  .replace(
+    /^(?:Pre-dispatch|Handoff) Standards source inventory:.*$/gm,
+    (line) => `${line.split(":")[0]}: AGENTS.md | CLAUDE.md | smell baseline`
+  )
+  .replace(
+    /^(?:Pre-dispatch|Handoff) Spec source inventory:.*$/gm,
+    (line) => `${line.split(":")[0]}: issue #364 | issue #368`
+  )
   .replace(/^Sources reviewed:.*$/gm, "Sources reviewed: AGENTS.md, active issue bodies, and the implementation diff")
   .replace(/^Findings:.*$/gm, "Findings: none")
   .replace(
@@ -345,6 +360,48 @@ test("structured evidence single-sources multi-pass review and TDD summaries", (
   assert.match(body, /TDD\/review-fix evidence: RF-1, RF-2, RF-3 mapped above; remaining dispositions are recorded per finding below\./);
   assert.doesNotMatch(body, /\| RF-1 \| <one review finding\/source>/);
   assert.doesNotMatch(body, /\| P1-standards-1 \| P1 \| Standards \| <initial reviewer ID or local fallback>/);
+});
+
+test("parent-rollup scaffold quotes generated non-AC/US acceptance IDs", () => {
+  const parentPrdManifest = buildAcceptanceManifest([
+    {
+      number: 397,
+      title: "Parent PRD",
+      body: `## Problem Statement
+
+The workflow is incomplete.
+
+## Solution
+
+Complete the workflow.
+
+## User Stories
+
+1. As a steward, I want exact closeout evidence, so that the parent can close
+
+## Implementation Decisions
+
+- Keep one manifest authority.
+
+## Testing Decisions
+
+- Validate the generated rollup.
+
+## Principles
+`
+    }
+  ]);
+  const body = buildCloseoutBodyScaffold(parentPrdManifest, {
+    parentIssue: 397,
+    reviewMode: "normal",
+    tddParentRollup: true
+  });
+  const row = body.split("\n").find((line) => line.startsWith("| #397 |"));
+
+  assert.match(
+    row ?? "",
+    /`Parent-Solution`, US1, `Parent-Implementation-Decisions`, `Parent-Testing-Decisions`, `Principles`;/
+  );
 });
 
 test("structured evidence rejects inconsistent switches and RF issue/seam mappings", () => {
@@ -659,7 +716,19 @@ test("normal immediate-fix scaffold satisfies the normal-review validator after 
     )
     .replace(
       /^Review subagent cleanup:.*$/m,
-      "Review subagent cleanup: Standards closed; Spec closed"
+      "Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion"
+    )
+    .replace(
+      /^Review subagent cleanup proof:.*$/m,
+      "Review subagent cleanup proof: Standards reviewers standards-initial and standards-final terminal status completed; no close primitive surfaced; Spec reviewer spec-final terminal status completed; no close primitive surfaced"
+    )
+    .replace(
+      /^(?:Pre-dispatch|Handoff) Standards source inventory:.*$/gm,
+      (line) => `${line.split(":")[0]}: AGENTS.md | CLAUDE.md | smell baseline`
+    )
+    .replace(
+      /^(?:Pre-dispatch|Handoff) Spec source inventory:.*$/gm,
+      (line) => `${line.split(":")[0]}: issue #364`
     )
     .replace(/^Findings:.*$/gm, "Findings: none")
     .replace(/^Axis summary:.*$/m, "Axis summary: Standards 0/none, Spec 0/none")

@@ -59,6 +59,11 @@ Spec sequence coverage: sequence: N/A because the reviewed acceptance is not seq
 
 - **Review subagents**: Standards reviewer standards-1 completed; Spec reviewer spec-1 completed
 - **Review subagent cleanup**: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
+- **Review subagent cleanup proof**: Standards reviewer standards-1 terminal status completed; no close primitive surfaced; Spec reviewer spec-1 terminal status completed; no close primitive surfaced
+- **Pre-dispatch Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
+- **Pre-dispatch Spec source inventory**: issue #1
+- **Handoff Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
+- **Handoff Spec source inventory**: issue #1
 - **Axis summary**: Standards 0/none, Spec 0/none
 - **Residual findings**: none
 - **Parent PRD coverage**: parent PRD row present
@@ -96,6 +101,11 @@ Spec sequence coverage: sequence: N/A because the reviewed acceptance is not seq
 - **Fixes made**: packages/web/src/main.tsx corrected and proof added
 - **Review subagents**: Standards initial reviewer standards-1 completed, final reviewer standards-2 completed; Spec initial reviewer spec-1 completed, final reviewer spec-2 completed
 - **Review subagent cleanup**: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
+- **Review subagent cleanup proof**: Standards reviewers standards-1 and standards-2 terminal status completed; no close primitive surfaced; Spec reviewers spec-1 and spec-2 terminal status completed; no close primitive surfaced
+- **Pre-dispatch Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
+- **Pre-dispatch Spec source inventory**: issue #1
+- **Handoff Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
+- **Handoff Spec source inventory**: issue #1
 - **TDD/review-fix evidence**: red-first skipped because Standards-only fix did not change behavior
 - **TDD closeout gate**: N/A because the tdd skill was not invoked
 - **Verification rerun**: pnpm test passed
@@ -512,6 +522,11 @@ test("rejects HTML-like angle tokens and documents shared identity safety", () =
   assert.match(identities, /Never use `fixture paths none published because/);
   assert.match(identities, /canonical delimiter/);
   assert.match(implementTemplate, /normalized value independently/);
+  for (const contract of [skill, implementTemplate]) {
+    assert.match(contract, /Review subagent cleanup proof:/);
+    assert.match(contract, /Pre-dispatch Standards source inventory:/);
+    assert.match(contract, /Handoff Spec source inventory:/);
+  }
   for (const contract of [skill, fallback]) {
     assert.match(contract, /Evidence-only proof server preflight:/);
     assert.match(contract, /proof server preflight/);
@@ -546,6 +561,111 @@ test("requires a terminal cleanup disposition for both review axes", () => {
   );
   assert.ok(ambiguous.some((error) => error.includes("Standards reviewer cleanup disposition")));
   assert.ok(ambiguous.some((error) => error.includes("Spec reviewer cleanup disposition")));
+});
+
+test("requires per-axis cleanup proof and rejects unsupported auto-disposal claims", () => {
+  const missing = validateReviewNormalBody(
+    noFixBody.replace(/^- \*\*Review subagent cleanup proof.*\n/m, "")
+  );
+  assert.ok(missing.some((error) => error.includes("Review subagent cleanup proof")));
+
+  const unsupported = validateReviewNormalBody(
+    noFixBody
+      .replace(
+        "Standards close operation unavailable after terminal completion",
+        "Standards auto-disposed after terminal completion"
+      )
+      .replace(
+        "Standards reviewer standards-1 terminal status completed; no close primitive surfaced",
+        "Standards reviewer standards-1 terminal status completed; live inventory still lists reviewer standards-1"
+      )
+  );
+  assert.ok(
+    unsupported.some((error) =>
+      error.includes("Standards auto-disposed cleanup requires verified absence or unaddressability")
+    )
+  );
+
+  const omittedReviewer = validateReviewNormalBody(
+    noFixBody.replace(
+      "Standards reviewer standards-1 terminal status completed; no close primitive surfaced",
+      "Standards reviewer another-agent terminal status completed; no close primitive surfaced"
+    )
+  );
+  assert.ok(
+    omittedReviewer.some((error) =>
+      error.includes("Review subagent cleanup proof must name Standards reviewer standards-1")
+    )
+  );
+
+  const unsupportedClosed = validateReviewNormalBody(
+    noFixBody.replace(
+      "Standards close operation unavailable after terminal completion",
+      "Standards closed"
+    )
+  );
+  assert.ok(
+    unsupportedClosed.some((error) =>
+      error.includes("Standards closed cleanup requires the successful close operation result")
+    )
+  );
+
+  const verified = noFixBody
+    .replace(
+      "Standards close operation unavailable after terminal completion",
+      "Standards auto-disposed after terminal completion"
+    )
+    .replace(
+      "Standards reviewer standards-1 terminal status completed; no close primitive surfaced",
+      "Standards reviewer standards-1 terminal status completed; live inventory no longer lists reviewer standards-1"
+    );
+  assert.deepEqual(validateReviewNormalBody(verified), []);
+});
+
+test("requires concrete pre-dispatch source inventories and reconciles handoff copies", () => {
+  const missing = validateReviewNormalBody(
+    noFixBody.replace(/^- \*\*Pre-dispatch Standards source inventory.*\n/m, "")
+  );
+  assert.ok(missing.some((error) => error.includes("Pre-dispatch Standards source inventory")));
+
+  const mismatch = validateReviewNormalBody(
+    noFixBody.replace(
+      "Handoff Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline",
+      "Handoff Standards source inventory**: AGENTS.md | smell baseline"
+    )
+  );
+  assert.ok(
+    mismatch.some((error) =>
+      error.includes("Handoff Standards source inventory does not match pre-dispatch inventory")
+    )
+  );
+
+  const generic = validateReviewNormalBody(
+    noFixBody
+      .replaceAll("AGENTS.md | CLAUDE.md | smell baseline", "repository conventions | smell baseline")
+  );
+  assert.ok(
+    generic.some((error) =>
+      error.includes("Standards source inventory entry is not a concrete path")
+    )
+  );
+
+  const caseMismatch = validateReviewNormalBody(
+    noFixBody.replace(
+      "Handoff Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline",
+      "Handoff Standards source inventory**: AGENTS.md | claude.md | smell baseline"
+    )
+  );
+  assert.ok(
+    caseMismatch.some((error) =>
+      error.includes("Handoff Standards source inventory does not match pre-dispatch inventory")
+    )
+  );
+
+  assert.deepEqual(
+    validateReviewNormalBody(noFixBody.replaceAll("issue #1", "no spec available")),
+    []
+  );
 });
 
 test("accepts complete immediate-fix evidence and rejects a missing final outcome", () => {

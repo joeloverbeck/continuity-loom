@@ -115,9 +115,25 @@ const validateSubagentStatuses = (value, errors, options = {}) => {
   }
 };
 
-const validateSubagentCleanup = (value, errors) => {
+const axisBlock = (value, axis, otherAxis) => {
+  const start = value.search(new RegExp(`\\b${axis}\\b`, "i"));
+  const otherStart = start < 0
+    ? -1
+    : value.slice(start + axis.length).search(new RegExp(`\\b${otherAxis}\\b`, "i"));
+  const end = otherStart < 0 ? value.length : start + axis.length + otherStart;
+  return start < 0 ? "" : value.slice(start, end);
+};
+
+const reviewerIdentities = (value) =>
+  [...value.matchAll(/\breviewer\s+`?([A-Za-z0-9._:/-]+)`?/gi)].map((match) => match[1]);
+
+const validateSubagentCleanup = (value, proof, subagents, errors) => {
   if (unresolvedValue(value)) {
     errors.push("Review subagent cleanup is empty or unresolved");
+    return;
+  }
+  if (unresolvedValue(proof)) {
+    errors.push("Review subagent cleanup proof is empty or unresolved");
     return;
   }
   if (/\b(?:still-running|still running|cleanup failed|failed cleanup)\b/i.test(value)) {
@@ -125,12 +141,109 @@ const validateSubagentCleanup = (value, errors) => {
   }
 
   for (const [axis, otherAxis] of [["Standards", "Spec"], ["Spec", "Standards"]]) {
-    const start = value.search(new RegExp(`\\b${axis}\\b`, "i"));
-    const otherStart = start < 0 ? -1 : value.slice(start + axis.length).search(new RegExp(`\\b${otherAxis}\\b`, "i"));
-    const end = otherStart < 0 ? value.length : start + axis.length + otherStart;
-    const axisBlock = start < 0 ? "" : value.slice(start, end);
-    if (!/\b(?:closed|close operation unavailable after terminal completion|auto-disposed after terminal completion)\b/i.test(axisBlock)) {
+    const cleanupBlock = axisBlock(value, axis, otherAxis);
+    const proofBlock = axisBlock(proof, axis, otherAxis);
+    const subagentBlock = axisBlock(subagents, axis, otherAxis);
+    if (!/\b(?:closed|close operation unavailable after terminal completion|auto-disposed after terminal completion)\b/i.test(cleanupBlock)) {
       errors.push(`Review subagent cleanup must name the ${axis} reviewer cleanup disposition`);
+      continue;
+    }
+
+    for (const identity of reviewerIdentities(subagentBlock)) {
+      if (!proofBlock.toLowerCase().includes(identity.toLowerCase())) {
+        errors.push(`Review subagent cleanup proof must name ${axis} reviewer ${identity}`);
+      }
+    }
+
+    const hasTerminalProof = /\b(?:terminal (?:status )?)?(?:completed|complete|done)\b/i.test(proofBlock);
+    if (/\bauto-disposed after terminal completion\b/i.test(cleanupBlock)) {
+      const inventoryAbsence =
+        /\b(?:live (?:agent )?inventory|agent list)\b[\s\S]*?\b(?:no longer lists?|does not list|omits?|omitted|absent)\b/i.test(proofBlock) ||
+        /\b(?:absent|omitted|not listed)\b[\s\S]*?\b(?:live (?:agent )?inventory|agent list)\b/i.test(proofBlock);
+      const unaddressable =
+        /\b(?:follow-up|followup|message|send)\b[\s\S]*?\b(?:unavailable|unaddressable|unknown (?:agent|target)|not found)\b/i.test(proofBlock);
+      if (/\bstill lists?\b/i.test(proofBlock) || !hasTerminalProof || (!inventoryAbsence && !unaddressable)) {
+        errors.push(`${axis} auto-disposed cleanup requires verified absence or unaddressability after terminal completion`);
+      }
+    } else if (/\bclose operation unavailable after terminal completion\b/i.test(cleanupBlock)) {
+      const unavailableCapability =
+        /\bno close (?:operation|primitive|capability)(?: was)? (?:available|surfaced|exposed|present)\b/i.test(proofBlock) ||
+        /\bclose (?:operation|primitive|capability) (?:was )?(?:unavailable|absent|not exposed)\b/i.test(proofBlock);
+      if (!hasTerminalProof || !unavailableCapability) {
+        errors.push(`${axis} unavailable-close cleanup requires terminal status and proof that no close capability surfaced`);
+      }
+    } else if (/\bclosed\b/i.test(cleanupBlock)) {
+      const successfulClose =
+        /\bclose (?:operation|call|request|primitive)\b[\s\S]*?\b(?:succeeded|returned (?:success|closed|completed)|confirmed (?:closure|closed)|completed successfully)\b/i.test(proofBlock);
+      if (!successfulClose) {
+        errors.push(`${axis} closed cleanup requires the successful close operation result`);
+      }
+    }
+  }
+};
+
+const stripInventoryWrapper = (value) => {
+  const trimmed = value.trim();
+  const markdownWrapped = trimmed.match(/^`([^`]+)`$/);
+  return (markdownWrapped?.[1] ?? trimmed).replace(/\s+/g, " ").trim();
+};
+
+const inventoryEntries = (value) => value.split(/\s+\|\s+/).map(stripInventoryWrapper).filter(Boolean);
+
+const concretePath = (value) =>
+  /^https?:\/\/\S+$/i.test(value) ||
+  (!/[,;]/.test(value) && /^(?:\.{0,2}\/)?(?:[^/\s]+\/)*[^/\s]+\.[A-Za-z0-9]+(?:#[^\s]+)?$/.test(value));
+
+const concreteSpecSource = (value) =>
+  concretePath(value) ||
+  /^(?:(?:issue|PRD|PR|GitHub issue)\s+)?#\d+$/i.test(value) ||
+  /^!\d+$/.test(value);
+
+const normalizedInventory = (entries) =>
+  [...new Set(entries)].sort();
+
+const validateSourceInventory = (value, axis, phase, errors) => {
+  if (unresolvedValue(value)) return [];
+  if (/,\s+/.test(value)) {
+    errors.push(`${phase} ${axis} source inventory must separate entries with ' | '`);
+  }
+
+  const entries = inventoryEntries(value);
+  if (axis === "Standards") {
+    if (!entries.some((entry) => /^smell baseline(?: \(code-review step 3\))?$/i.test(entry))) {
+      errors.push(`${phase} Standards source inventory must include the smell baseline`);
+    }
+    if (!entries.some(concretePath)) {
+      errors.push("Standards source inventory entry is not a concrete path");
+    }
+    for (const entry of entries) {
+      if (!concretePath(entry) && !/^smell baseline(?: \(code-review step 3\))?$/i.test(entry)) {
+        errors.push(`Standards source inventory entry is not a concrete path: ${entry}`);
+      }
+    }
+  } else {
+    const noSpec = entries.length === 1 && /^no spec available$/i.test(entries[0]);
+    if (!noSpec) {
+      for (const entry of entries) {
+        if (!concreteSpecSource(entry)) {
+          errors.push(`Spec source inventory entry is not a concrete path or issue/PR identifier: ${entry}`);
+        }
+      }
+    }
+  }
+  return entries;
+};
+
+const validateSourceInventories = (inventories, errors) => {
+  for (const axis of ["Standards", "Spec"]) {
+    const preDispatch = validateSourceInventory(inventories[`preDispatch${axis}`], axis, "Pre-dispatch", errors);
+    const handoff = validateSourceInventory(inventories[`handoff${axis}`], axis, "Handoff", errors);
+    if (
+      preDispatch.length &&
+      handoff.length &&
+      JSON.stringify(normalizedInventory(preDispatch)) !== JSON.stringify(normalizedInventory(handoff))
+    ) {
+      errors.push(`Handoff ${axis} source inventory does not match pre-dispatch inventory`);
     }
   }
 };
@@ -216,8 +329,20 @@ export const validateReviewNormalBody = (body, options = {}) => {
 
   const immediateFix = flags.has("--immediate-fix") || Boolean(fieldValue(body, "Findings found"));
   const reviewedHeadSha = body.match(/\breviewed HEAD SHA\s+`?([0-9a-f]{7,40})\b`?/i)?.[1] ?? "";
-  validateSubagentStatuses(requireField("Review subagents"), errors, { requireFinal: immediateFix });
-  validateSubagentCleanup(requireField("Review subagent cleanup"), errors);
+  const reviewSubagents = requireField("Review subagents");
+  validateSubagentStatuses(reviewSubagents, errors, { requireFinal: immediateFix });
+  validateSubagentCleanup(
+    requireField("Review subagent cleanup"),
+    requireField("Review subagent cleanup proof"),
+    reviewSubagents,
+    errors
+  );
+  validateSourceInventories({
+    preDispatchStandards: requireField("Pre-dispatch Standards source inventory"),
+    preDispatchSpec: requireField("Pre-dispatch Spec source inventory"),
+    handoffStandards: requireField("Handoff Standards source inventory"),
+    handoffSpec: requireField("Handoff Spec source inventory")
+  }, errors);
   const axisSummary = requireField("Axis summary");
   if (!/^Standards\s+.+?,\s*Spec\s+.+/i.test(axisSummary)) {
     errors.push("Axis summary must report Standards and Spec separately");

@@ -56,11 +56,37 @@ After creation, verify tracker metadata with `gh issue view`: the exact title, c
 Fetch the published body exactly once and reuse that stored snapshot for both identity comparison and validation. Do not fan out body reads or pipe raw `gh issue view ... --jq '.body'` output directly to `cmp`; normalize the expected final newline exactly as the recipe does so retries cannot compare different snapshots and CLI display newlines do not create false mismatches.
 
 ```sh
-gh issue view <number> --json number,title,labels,state,url \
-  --jq '{number,title,state,url,labels:[.labels[].name]}'
+EXPECTED_NUMBER=<number>
+EXPECTED_TITLE='PRD: <name> — <key mechanisms>'
+EXPECTED_STATE=OPEN
+EXPECTED_URL='https://github.com/<owner>/<repo>/issues/<number>'
+EXPECTED_LABELS_JSON='["<type-label>","<triage-label>"]'
+
+published_metadata="$(gh issue view "$EXPECTED_NUMBER" --json number,title,labels,state,url \
+  --jq '{number,title,state,url,labels:[.labels[].name]}')" || {
+  printf 'published-metadata tracker read failed\n' >&2
+  exit 1
+}
+test -n "$published_metadata" || {
+  printf 'published-metadata tracker read returned empty output\n' >&2
+  exit 1
+}
+printf '%s\n' "$published_metadata" \
+  | jq -e \
+      --argjson number "$EXPECTED_NUMBER" \
+      --arg title "$EXPECTED_TITLE" \
+      --arg state "$EXPECTED_STATE" \
+      --arg url "$EXPECTED_URL" \
+      --argjson labels "$EXPECTED_LABELS_JSON" \
+      '.number == $number and .title == $title and .state == $state and .url == $url and ((.labels | sort) == ($labels | sort))' \
+      >/dev/null || {
+  printf 'published metadata is invalid or does not match expected values\n' >&2
+  exit 1
+}
+printf '%s\n' "$published_metadata"
 
 test -f "$POLICY_FILE" || { printf 'validator policy manifest is missing\n' >&2; exit 1; }
-published_body="$(gh issue view <number> --json body --jq '.body')" || {
+published_body="$(gh issue view "$EXPECTED_NUMBER" --json body --jq '.body')" || {
   printf 'published-body tracker read failed\n' >&2
   exit 1
 }
@@ -77,7 +103,7 @@ printf '%s\n' "$published_body" \
   | node .claude/skills/to-prd/scripts/validate-prd-body.mjs --stdin --policy-file "$POLICY_FILE"
 ```
 
-If the body fetch exits nonzero or returns an empty body, classify the attempt as a tracker-readback failure rather than a body-validation failure. Retry the same readback under the active environment's network and approval rules; do not edit the issue unless a successfully retrieved body then fails validation.
+If the metadata or body fetch exits nonzero or returns empty output, classify the attempt as a tracker-readback failure rather than a metadata or body-validation failure. Retry the same readback under the active environment's network and approval rules. A valid metadata payload with unexpected fields is a metadata-verification failure; repair only the mismatched issue metadata, then rerun the full readback. Do not edit the issue body unless a successfully retrieved body then fails identity or validation.
 
 An identity mismatch is a published-body verification failure even when the published validator would still pass. If the body needs repair, edit the staged body file first, rerun staged validation and status-language checks, then update the issue from that file so it remains the latest approved comparison authority.
 

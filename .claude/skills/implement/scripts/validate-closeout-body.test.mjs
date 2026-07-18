@@ -582,6 +582,21 @@ test("closeout validator rejects a superseded inventory without a no-hit sweep",
   assert.match(result.stderr, /no hits outside classified identity\/history lines and no active-proof hits/);
 });
 
+test("closeout validator accepts terminal punctuation on an all-none superseded inventory", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]).replace(
+    "Superseded evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none",
+    "Superseded evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none."
+  );
+  const result = runValidator(body, manifest);
+
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test("closeout validator requires the cross-validator-safe superseded sweep", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const body = closeoutBody([
@@ -741,6 +756,10 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(skill, /Implementation pre-stage gate passed:/);
   assert.match(skill, /Implementation commit gate passed: staged files scoped yes/);
   assert.match(skill, /Tracked implementation evidence and publishable closeout evidence are separate sinks/);
+  assert.match(
+    skill,
+    /review produced findings or more than one TDD review fix[\s\S]+--evidence-input[\s\S]+--immediate-fix --tdd-parent-rollup[\s\S]+Do not hand-copy/
+  );
   assert.match(evidenceGuide, /two independent snapshots or server renders are not equivalent/);
   assert.match(evidenceGuide, /SQLite `.backup`/);
   assert.match(evidenceGuide, /package manifest or lockfile changes/);
@@ -802,15 +821,20 @@ test("documented normal-review fields satisfy the normal-review validator", () =
     bodyPath,
     `Review: code-review against abcdef0; outcome no findings; verification rerun node --test.
 Review subagents: Standards final reviewer reviewer-1 completed; Spec final reviewer reviewer-2 completed
-Review subagent cleanup: Standards closed; Spec closed
+Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
+Review subagent cleanup proof: Standards reviewer reviewer-1 terminal status completed; no close primitive surfaced; Spec reviewer reviewer-2 terminal status completed; no close primitive surfaced
+Pre-dispatch Standards source inventory: AGENTS.md | CLAUDE.md | smell baseline
+Pre-dispatch Spec source inventory: issue #359
 
 ## Standards
 
+Handoff Standards source inventory: AGENTS.md | CLAUDE.md | smell baseline
 Sources reviewed: AGENTS.md
 Findings: none
 
 ## Spec
 
+Handoff Spec source inventory: issue #359
 Sources reviewed: issue #359
 Findings: none
 

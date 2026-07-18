@@ -63,6 +63,17 @@ unavailable, request permission to run `npx playwright install chromium`, retry 
 a blocked report if no browser launches. Do not switch to a different automation framework
 mid-run.
 
+## Recover host loopback permission failures
+
+If a run-owned helper or `browser-act.mjs` command fails because the host sandbox denies binding
+or connecting to its assigned `127.0.0.1` app or CDP port (for example, `EPERM`), retry that exact
+command once through the host's narrow permission or approval mechanism. Do not change the
+loopback host, ephemeral-port policy, blank-credential setup, isolated config, browser framework,
+or intended browser action.
+
+Record the denied attempt and authorized retry as harness recovery rather than product behavior.
+If the exact retry still fails at the same host permission boundary, follow the blocker policy.
+
 ## Act through visible UI
 
 One visible action per command:
@@ -109,6 +120,12 @@ After every consequential action, wait for the UI to settle and inspect a fresh 
 visible-text/snapshot result before acting again. Routine shots stay under `/tmp`; do not turn the
 report evidence directory into a click-by-click screen recording.
 
+The sole perception-order exception is an `active` new-story Cold First-View Witness. Navigate with
+`goto <base-url> --shot <temporary-path>` and give the sealed screenshot packet to the witness
+without opening the image or requesting page text/tree/HTML in the parent context. After the witness
+answer is saved, the main operator inspects that same initial state independently before reading the
+answer. Resume the normal inspect-after-action rule immediately afterward.
+
 Promote only evidence that supports a report finding or important strength. Prefer
 `elementshot` or a tightly scoped viewport state that avoids exposing full record payloads,
 prompts, candidate prose, or accepted prose. Never retain a browser trace: it may contain the
@@ -120,10 +137,16 @@ must not reveal hidden state or compensate for poor discoverability.
 
 ## Shutdown
 
-Create `<evidence-dir>/shutdown.request` and wait for the browser holder to exit. Create
-`<app-session-dir>/shutdown.request` and wait for the app holder to exit. Stop only these
-run-owned processes. Remove `session.json`, empty diagnostic streams, and other session plumbing
-after the report is validated; retain only cited evidence.
+Before creating either shutdown request, copy the needed safety counts and browser/app metadata
+into the scratchpad or draft report. Then create `<evidence-dir>/shutdown.request` and wait for the
+browser holder to exit. Create `<app-session-dir>/shutdown.request` and wait for the app holder to
+exit. Stop only these run-owned processes.
+
+Remove `session.json`, empty diagnostic streams, other session plumbing, routine screenshots, and
+every uncited or forbidden evidence artifact before invoking the report validator. Follow
+[Report format: Challenge, validate, register, and close](report-format.md#challenge-validate-register-and-close) as the canonical closeout
+order: keep the scratchpad and exchange files through the first passing validation, delete them,
+then validate again.
 
 **Completion criterion:** a fresh guarded browser visibly renders the isolated app at 1440x900;
 the app session proves blank credential and isolated config; diagnostic streams began before

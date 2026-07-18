@@ -8,6 +8,7 @@ import {
   fixtureSnapshotCurrentnessErrors,
   hasConcreteGreenEvidence,
   hasConcreteRedEvidence,
+  hasExistingContractChangeExpectationEvidence,
   isExecutableCommand,
   validateBackendCurrentnessValue,
   validateFreshnessValue,
@@ -515,8 +516,16 @@ export const validateTddCloseoutBody = (body, options = {}) => {
   const circularAcceptanceReference = /\b(?:(?:every|all)\s+exact(?:\s+named)?\b[^;]*\b(?:in|from|of)\s+(?:the\s+)?(?:issue\s+)?(?:criteria|criterion|checkbox|requirement)|exact named (?:items?|atoms?|contracts?|clauses?|surfaces?) in (?:this|the) (?:criterion|criteria|checkbox|requirement)|(?:criterion|checkbox|requirement) (?:above|as written|itself)|(?:all|every) (?:named|listed) (?:items?|atoms?|surfaces?))\b/i;
   const concreteProofAnchor = /(?:https?:\/\/\S+|#\d+\b|\b(?:pnpm|npm|npx|node|cargo|git|gh|curl|bash)\s+[^;]+|(?:^|[\s`(])\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+|\b(?:[A-Za-z0-9_.-]+\/)+[A-Za-z0-9_.-]+\b|\b[A-Za-z0-9_.-]+\.(?:test|spec)\.[cm]?[jt]sx?\b|\b[A-Za-z0-9_.-]+\.(?:md|json|html|sql|sqlite|wasm|png)\b)/i;
 
-  const hasExactAcceptanceReference = (cell, refs) =>
+  const sourceNamesExactManifestCheck = (source, checkId) => {
+    const sourceForExactMatch = /^US\d+$/i.test(checkId)
+      ? source.replace(/\bUS\s*\d+\s*(?:-|–|—|to|through)\s*(?:US\s*)?\d+\b/gi, " ")
+      : source;
+    const escapedId = checkId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(?:^|[^A-Za-z0-9])${escapedId}(?=$|[^A-Za-z0-9])`, "i").test(sourceForExactMatch);
+  };
+  const hasExactAcceptanceReference = (cell, refs, manifestCheckIds = []) =>
     refs.size > 0 ||
+    manifestCheckIds.some((checkId) => sourceNamesExactManifestCheck(cell, checkId)) ||
     /["'`][^"'`]{3,}["'`]/.test(cell) ||
     /\b(?:criterion|checkbox)\s*(?:#?\d+|["'`:][^|]+|named\b)/i.test(cell);
 
@@ -549,13 +558,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     return refs;
   };
   const sourceNamesManifestCheck = (source, checkId) => {
-    const sourceForExactMatch = /^US\d+$/i.test(checkId)
-      ? source.replace(/\bUS\s*\d+\s*(?:-|–|—|to|through)\s*(?:US\s*)?\d+\b/gi, " ")
-      : source;
-    const escapedId = checkId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    if (new RegExp(`(?:^|[^A-Za-z0-9])${escapedId}(?=$|[^A-Za-z0-9])`, "i").test(sourceForExactMatch)) {
-      return true;
-    }
+    if (sourceNamesExactManifestCheck(source, checkId)) return true;
 
     const acNumber = checkId.match(/^AC(\d+)$/i)?.[1];
     if (acNumber) {
@@ -653,6 +656,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
   const currentIdentities = extractFieldValue("Current evidence identities");
   const historicalRedIdentities = extractFieldValue("Historical red identities retained");
   const supersededIdentities = extractFieldValue("Superseded evidence identities");
+  const normalizedSupersededIdentities = supersededIdentities.replace(/[.,;:!?]+$/u, "");
   const supersededSweep = extractFieldValue("Superseded-token sweep");
   const identityCategories = [
     /fixture paths\s+[^;\s][^;]*(?:;|$)/i,
@@ -694,7 +698,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     /packet paths\/hashes\s+none(?:;|$)/i,
     /active revisions\s+none(?:;|$)/i,
     /artifacts\s+none(?:;|$)/i
-  ].every((pattern) => pattern.test(supersededIdentities));
+  ].every((pattern) => pattern.test(normalizedSupersededIdentities));
   const hasClassifiedHistoryResult = /\bno hits outside classified identity\/history lines\b/i.test(supersededSweep);
   const hasActiveProofResult = /\bno active-proof hits\b/i.test(supersededSweep);
   if (!allSupersededCategoriesNone && (!hasClassifiedHistoryResult || !hasActiveProofResult)) {
@@ -836,21 +840,34 @@ export const validateTddCloseoutBody = (body, options = {}) => {
       continue;
     }
 
+    const seamCell = cells[3] ?? "";
+    const isExistingContractChangeExpectation =
+      seamCell.trim() === "existing contract-change expectation";
     const redCell = cells[4];
     const greenCell = cells[5] ?? "";
     const acceptanceCell = cells[6] ?? "";
     const rowText = cells.join(" ");
-    if (!hasConcreteRedEvidence(redCell)) {
+    if (
+      isExistingContractChangeExpectation &&
+      !hasExistingContractChangeExpectationEvidence(redCell)
+    ) {
+      errors.push(
+        `compact TDD row ${lineNumber} existing contract-change expectation evidence must start with \`existing contract-change expectation in <test file> because ...\` and name the failing command or assertion`
+      );
+    } else if (!hasConcreteRedEvidence(redCell)) {
       errors.push(
         `compact TDD row ${lineNumber} red command/failure is not concrete: ${redCell}; for expectation rewrites use \`existing contract-change expectation in <test file> because ...\`, not \`existing-test contract-change expectation\``
       );
     }
 
     const issueId = (cells[0]?.match(/^#\d+/) ?? [])[0];
+    const issueNumber = Number(issueId?.slice(1));
+    const manifestCheckIds =
+      manifestIssues.find((issue) => issue.number === issueNumber)?.checks.map(({ id }) => id) ?? [];
     const acceptanceRefs = collectCriterionRefs(acceptanceCell);
-    if (!hasExactAcceptanceReference(acceptanceCell, acceptanceRefs)) {
+    if (!hasExactAcceptanceReference(acceptanceCell, acceptanceRefs, manifestCheckIds)) {
       errors.push(
-        `compact TDD row ${lineNumber} does not cite an exact AC/US, quoted criterion, or named checkbox in Acceptance covered`
+        `compact TDD row ${lineNumber} does not cite an exact AC/US, exact supplied manifest check ID, quoted criterion, or named checkbox in Acceptance covered`
       );
     }
     if (
@@ -908,12 +925,11 @@ export const validateTddCloseoutBody = (body, options = {}) => {
       );
     }
 
-    const seamCell = cells[3] ?? "";
     if (reviewCellNeedsMap(cells[7])) {
       reviewFixRows.push({ lineNumber, issueId, seam: seamCell.trim(), cells });
     }
 
-    if ((cells[3] ?? "").trim() === "existing contract-change expectation") {
+    if (isExistingContractChangeExpectation) {
       existingTestRows.push(lineNumber);
     }
 

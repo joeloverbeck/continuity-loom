@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import {
@@ -18,6 +18,8 @@ const PRIORITIZED_HEADERS = [
   "Confidence",
   "Status"
 ];
+
+const V2_PRIORITIZED_HEADERS = [...PRIORITIZED_HEADERS, "Evidence basis"];
 
 const CUMULATIVE_HEADERS = [
   "ID",
@@ -54,11 +56,14 @@ const AUTHORITY_HEADERS = [
 const FOLLOW_UP_HEADERS = ["Item", "Destination", "Trigger or next action", "Evidence required"];
 
 const CONSUMPTION_HEADERS = [
+  "Source prep",
   "Prior recommendation",
   "Current classification",
   "Evidence",
   "Resulting action"
 ];
+
+const FINAL_WORKTREE_HEADERS = ["Path", "Classification"];
 
 const PREP_HEADINGS = [
   "## Header And Freshness",
@@ -83,6 +88,8 @@ const REQUIRED_FIELDS = [
   "Live checkout",
   "Tracker freshness",
   "Existing same-stem prep classification",
+  "Prior-report prep path",
+  "Prior-report prep classification",
   "Prior-report traversal",
   "Deliverable status",
   "External research",
@@ -100,7 +107,9 @@ const REQUIRED_FIELDS = [
   "Browser-visible guidance checklist",
   "Prep validator",
   "Manual semantic review",
-  "Privacy and stale-language scan"
+  "Privacy and stale-language scan",
+  "Final branch",
+  "Final worktree rows"
 ];
 
 const VERDICT_FIELDS = [
@@ -137,6 +146,23 @@ const DISPOSITIONS = new Set([
 ]);
 
 const CONSUMPTION_CLASSIFICATIONS = new Set(["consumed", "still live", "rejected", "superseded"]);
+
+const PREP_CLASSIFICATIONS = new Set([
+  "missing at intake",
+  "current",
+  "partially consumed",
+  "stale",
+  "superseded",
+  "not relevant"
+]);
+
+const PRIOR_PREP_CLASSIFICATIONS = new Set(["not applicable", ...PREP_CLASSIFICATIONS]);
+
+const FINAL_WORKTREE_CLASSIFICATIONS = new Set([
+  "intentional prep artifact",
+  "pre-existing",
+  "concurrent/unowned"
+]);
 
 const PACKAGE_VALUES = new Set([
   "single intended PRD",
@@ -333,11 +359,36 @@ function setDifference(left, right) {
   return [...left].filter((value) => !right.has(value)).sort();
 }
 
+function derivePriorPrep(reportPath, priorReport) {
+  if (typeof priorReport !== "string" || priorReport === "null" || !priorReport.trim()) {
+    return { path: null, absolutePath: null, exists: false };
+  }
+
+  const prepName = `${basename(priorReport, ".md")}-prd-prep.md`;
+  const absolutePath = resolve(dirname(resolve(reportPath)), prepName);
+  return {
+    path: `reports/${prepName}`,
+    absolutePath,
+    exists: existsSync(absolutePath)
+  };
+}
+
 export function inspectSourceReport(reportPath) {
   const reportValidation = validateReport(reportPath);
-  const nonBlockingReportErrors = reportValidation.errors.filter((error) =>
-    NON_BLOCKING_REPORT_ERROR_PATTERNS.some((pattern) => pattern.test(error))
-  );
+  let sourceSchemaVersion = null;
+  try {
+    sourceSchemaVersion = parseFrontmatter(
+      readFileSync(resolve(reportPath), "utf8")
+    )?.schema_version;
+  } catch {
+    // The report validator owns unreadable-source diagnostics below.
+  }
+  const nonBlockingReportErrors =
+    sourceSchemaVersion === "1"
+      ? reportValidation.errors.filter((error) =>
+          NON_BLOCKING_REPORT_ERROR_PATTERNS.some((pattern) => pattern.test(error))
+        )
+      : [];
   const errors = reportValidation.errors.filter(
     (error) => !nonBlockingReportErrors.includes(error)
   );
@@ -362,7 +413,11 @@ export function inspectSourceReport(reportPath) {
 
   const markdown = readFileSync(resolve(reportPath), "utf8");
   const frontmatter = parseFrontmatter(markdown);
-  const prioritized = parseTable(markdown, "## Prioritized Findings", PRIORITIZED_HEADERS, {
+  const priorReport = frontmatter?.prior_report ?? "null";
+  const priorPrep = derivePriorPrep(reportPath, priorReport);
+  const prioritizedHeaders =
+    frontmatter?.schema_version === "2" ? V2_PRIORITIZED_HEADERS : PRIORITIZED_HEADERS;
+  const prioritized = parseTable(markdown, "## Prioritized Findings", prioritizedHeaders, {
     allowEmpty: true
   });
   const cumulative = parseTable(markdown, "## Cumulative Finding Ledger", CUMULATIVE_HEADERS, {
@@ -394,7 +449,10 @@ export function inspectSourceReport(reportPath) {
     reportStem: frontmatter?.report_stem ?? basename(reportPath, ".md"),
     storyTitle: frontmatter?.story_title ?? "",
     runMode: frontmatter?.run_mode ?? "",
-    priorReport: frontmatter?.prior_report ?? "null",
+    priorReport,
+    priorPrepPath: priorPrep.path,
+    priorPrepAbsolutePath: priorPrep.absolutePath,
+    priorPrepExists: priorPrep.exists,
     sourceValidation: nonBlockingReportErrors.length > 0 ? "nonblocking-defects" : "passed",
     nonBlockingReportErrors,
     counts: {
@@ -424,6 +482,46 @@ function candidateSections(markdown) {
       body: lines.slice(start + 1, end).join("\n")
     };
   });
+}
+
+function inventoryPrepRecommendations(prepPath) {
+  const errors = [];
+  let markdown;
+  try {
+    markdown = readFileSync(prepPath, "utf8");
+  } catch {
+    return { errors: [`Cannot read prior-report prep artifact: ${prepPath}`], recommendations: [] };
+  }
+
+  const firstActions = fieldValues(markdown, "First operational action");
+  if (firstActions.length !== 1 || !firstActions[0]) {
+    errors.push(
+      "Prior-report prep requires exactly one non-empty First operational action for consumption."
+    );
+  }
+
+  if (section(markdown, "## Recommended PRD Package") === null) {
+    errors.push("Prior-report prep is missing section: ## Recommended PRD Package");
+  }
+  const candidates = candidateSections(markdown);
+  const followUps = parseTable(markdown, "## Non-PRD Follow-Up", FOLLOW_UP_HEADERS);
+  errors.push(...followUps.errors);
+
+  const recommendations = [];
+  if (firstActions.length === 1 && firstActions[0]) {
+    recommendations.push(`First operational action: ${firstActions[0]}`);
+  }
+  for (const candidate of candidates) {
+    if (candidate.title) recommendations.push(`PRD Candidate: ${candidate.title}`);
+  }
+  for (const row of followUps.rows) {
+    const item = literal(row.Item ?? "");
+    if (item && !/^none\b/i.test(item)) {
+      recommendations.push(`Non-PRD Follow-Up: ${item}`);
+    }
+  }
+
+  return { errors, recommendations };
 }
 
 function validateCandidates(markdown, packageValue, source, errors) {
@@ -737,19 +835,152 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
     : 0;
 
   const existingPrep = fields["Existing same-stem prep classification"];
-  if (existingPrep && existingPrep !== "missing at intake") {
+  if (existingPrep && !PREP_CLASSIFICATIONS.has(existingPrep)) {
+    errors.push(`Unsupported existing same-stem prep classification: ${existingPrep}`);
+  }
+
+  const priorPrepPath = fields["Prior-report prep path"];
+  const priorPrepClassification = fields["Prior-report prep classification"];
+  if (priorPrepClassification && !PRIOR_PREP_CLASSIFICATIONS.has(priorPrepClassification)) {
+    errors.push(`Unsupported prior-report prep classification: ${priorPrepClassification}`);
+  }
+  if (source.priorPrepPath === null) {
+    if (priorPrepPath !== "not applicable") {
+      errors.push("Prior-report prep path must be: not applicable");
+    }
+    if (priorPrepClassification !== "not applicable") {
+      errors.push("Prior-report prep classification must be: not applicable");
+    }
+  } else {
+    if (priorPrepPath !== source.priorPrepPath) {
+      errors.push(`Prior-report prep path must be: ${source.priorPrepPath}`);
+    }
+    if (
+      source.priorPrepExists &&
+      ["not applicable", "missing at intake"].includes(priorPrepClassification)
+    ) {
+      errors.push("An existing prior-report prep must receive a current classification.");
+    }
+    if (!source.priorPrepExists && priorPrepClassification !== "missing at intake") {
+      errors.push("A missing prior-report prep must be classified: missing at intake");
+    }
+  }
+
+  const currentPrepRequiresConsumption = existingPrep && existingPrep !== "missing at intake";
+  const priorPrepRequiresConsumption =
+    source.priorPrepExists &&
+    priorPrepClassification &&
+    !["not applicable", "missing at intake"].includes(priorPrepClassification);
+  if (currentPrepRequiresConsumption || priorPrepRequiresConsumption) {
     const consumption = parseTable(
       markdown,
       "### Prior Recommendation Consumption Ledger",
       CONSUMPTION_HEADERS
     );
     errors.push(...consumption.errors);
+    const rowKeys = new Set();
     for (const row of consumption.rows) {
+      const sourcePrep = literal(row["Source prep"] ?? "");
+      const recommendation = literal(row["Prior recommendation"] ?? "");
       const classification = literal(row["Current classification"]);
+      const rowKey = `${sourcePrep}\u0000${recommendation}`;
+      if (!sourcePrep)
+        errors.push("Prior Recommendation Consumption Ledger has a blank Source prep.");
+      if (!recommendation) {
+        errors.push("Prior Recommendation Consumption Ledger has a blank Prior recommendation.");
+      }
+      if (rowKeys.has(rowKey)) {
+        errors.push(
+          `Prior Recommendation Consumption Ledger contains duplicate recommendation: ${sourcePrep} / ${recommendation}`
+        );
+      }
+      rowKeys.add(rowKey);
       if (!CONSUMPTION_CLASSIFICATIONS.has(classification)) {
         errors.push(`Unsupported prior recommendation classification: ${classification}`);
       }
+      for (const key of ["Evidence", "Resulting action"]) {
+        if (!row[key]?.trim()) {
+          errors.push(
+            `Prior Recommendation Consumption Ledger has blank ${key}: ${recommendation}`
+          );
+        }
+      }
     }
+
+    const currentPrepPath = `reports/${expectedPrepName}`;
+    const allowedSourcePreps = new Set([
+      ...(currentPrepRequiresConsumption ? [currentPrepPath] : []),
+      ...(priorPrepRequiresConsumption ? [source.priorPrepPath] : [])
+    ]);
+    for (const row of consumption.rows) {
+      const sourcePrep = literal(row["Source prep"] ?? "");
+      if (sourcePrep && !allowedSourcePreps.has(sourcePrep)) {
+        errors.push(
+          `Prior Recommendation Consumption Ledger names unexpected source prep: ${sourcePrep}`
+        );
+      }
+    }
+    if (
+      currentPrepRequiresConsumption &&
+      !consumption.rows.some((row) => literal(row["Source prep"] ?? "") === currentPrepPath)
+    ) {
+      errors.push(`Prior Recommendation Consumption Ledger has no row for: ${currentPrepPath}`);
+    }
+
+    if (priorPrepRequiresConsumption) {
+      const priorInventory = inventoryPrepRecommendations(source.priorPrepAbsolutePath);
+      errors.push(...priorInventory.errors);
+      const actualPriorRecommendations = new Set(
+        consumption.rows
+          .filter((row) => literal(row["Source prep"] ?? "") === source.priorPrepPath)
+          .map((row) => literal(row["Prior recommendation"] ?? ""))
+      );
+      const expectedPriorRecommendations = new Set(priorInventory.recommendations);
+      for (const recommendation of setDifference(
+        expectedPriorRecommendations,
+        actualPriorRecommendations
+      )) {
+        errors.push(`Prior Recommendation Consumption Ledger is missing: ${recommendation}`);
+      }
+      for (const recommendation of setDifference(
+        actualPriorRecommendations,
+        expectedPriorRecommendations
+      )) {
+        errors.push(
+          `Prior Recommendation Consumption Ledger has unknown prior recommendation: ${recommendation}`
+        );
+      }
+    }
+  }
+
+  const finalWorktree = parseTable(markdown, "### Final Worktree Ledger", FINAL_WORKTREE_HEADERS, {
+    allowEmpty: true
+  });
+  errors.push(...finalWorktree.errors);
+  integerField(markdown, "Final worktree rows", finalWorktree.rows.length, errors);
+  const worktreePaths = new Set();
+  let intentionalPrepRows = 0;
+  for (const row of finalWorktree.rows) {
+    const path = literal(row.Path ?? "");
+    const classification = literal(row.Classification ?? "");
+    if (!path) errors.push("Final Worktree Ledger has a blank Path.");
+    if (worktreePaths.has(path))
+      errors.push(`Final Worktree Ledger contains duplicate path: ${path}`);
+    worktreePaths.add(path);
+    if (!FINAL_WORKTREE_CLASSIFICATIONS.has(classification)) {
+      errors.push(
+        `Unsupported final worktree classification for ${path || "<blank>"}: ${classification}`
+      );
+    }
+    if (classification === "intentional prep artifact") {
+      intentionalPrepRows += 1;
+      if (path !== `reports/${expectedPrepName}`) {
+        errors.push(`Intentional prep artifact path must be: reports/${expectedPrepName}`);
+      }
+    }
+  }
+  if (intentionalPrepRows > 1) {
+    errors.push("Final Worktree Ledger may contain at most one intentional prep artifact.");
   }
 
   return {
@@ -777,6 +1008,8 @@ function printResult(result, mode) {
       reportStem: source?.reportStem ?? null,
       runMode: source?.runMode ?? null,
       priorReport: source?.priorReport ?? null,
+      priorPrepPath: source?.priorPrepPath ?? null,
+      priorPrepExists: source?.priorPrepExists ?? false,
       sourceValidation: source?.sourceValidation ?? null,
       nonBlockingReportErrors: source?.nonBlockingReportErrors ?? [],
       counts: source?.counts ?? null,

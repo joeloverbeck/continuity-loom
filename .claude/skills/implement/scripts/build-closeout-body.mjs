@@ -105,7 +105,9 @@ export const validateAuditInput = (manifest, audit) => {
   return audit.trim();
 };
 
-const acceptanceIds = (issue) => issue.checks.map((check) => check.id).join(", ");
+const acceptanceId = (check) => /^(?:AC|US)\d+$/i.test(check.id) ? check.id : `\`${check.id}\``;
+
+const acceptanceIds = (issue) => issue.checks.map(acceptanceId).join(", ");
 
 const requiredEvidenceText = (value, field) => {
   if (typeof value !== "string" || !value.trim()) {
@@ -515,13 +517,23 @@ Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID>
 
 Review subagent cleanup: Standards <disposition>; Spec <disposition>
 
+Review subagent cleanup proof: Standards <reviewer IDs and observed cleanup proof>; Spec <reviewer IDs and observed cleanup proof>
+
+Pre-dispatch Standards source inventory: <concrete path | concrete path | smell baseline>
+
+Pre-dispatch Spec source inventory: <issue #N | concrete spec path | no spec available>
+
 ## Standards
+
+Handoff Standards source inventory: <exact same entry set as Pre-dispatch Standards source inventory>
 
 Sources reviewed: <standards sources and smell baseline>
 
 Findings: <none or findings>
 
 ## Spec
+
+Handoff Spec source inventory: <exact same entry set as Pre-dispatch Spec source inventory>
 
 Sources reviewed: <issues, PRD, principles, ADRs, and specs>
 

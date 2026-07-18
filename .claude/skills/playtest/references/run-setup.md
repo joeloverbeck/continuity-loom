@@ -44,9 +44,11 @@ capture `git status --short`. Append the exact baseline to the scratchpad. Exist
 user-owned; do not inspect them merely because they are dirty, adopt them, clean them, or restore
 them.
 
-At close, compare `git status --short` with the baseline. The only permitted additions are this
-run's report and evidence directory. Build output ignored by git is acceptable. Any other delta
-caused by the run is an observational-contract defect and must be reported.
+At close, compare `git status --short` with the baseline. The only permitted repository changes
+are this run's report and evidence directory plus the post-validation method-register update when
+its pilot is active and exact counter/state-cell changes in `SKILL.md`'s Authoritative pilot state.
+Build output ignored by git is acceptable. Any other delta caused by the run is an
+observational-contract defect and must be reported.
 
 ## Record pre-use intent
 
@@ -59,11 +61,16 @@ Before launching, complete these scratchpad fields:
 - expected useful records and private notes;
 - expected Generation Brief work;
 - expected help from Ideate, Record Hygiene, or Segment Reconciliation;
-- the blind mental model of how a first-time author expects the app to support the work;
+- the sealed mental model of how a first-time author expects the app to support the work;
 - explicit non-goals and material that must not be forced.
 
 Do not pre-judge that a named field or surface is useful. State the author need first; later record
 whether the product made the right representation discoverable and worthwhile.
+
+Do not read `reports/playtest-method-register.md` during setup or the author journey. Its pilot is
+post-validation bookkeeping, not priming material. Do not search unrelated reports to decide
+whether another pilot instrument should trigger; use only the Authoritative pilot state in
+`SKILL.md` and record a natural non-trigger as pending. Never guess or reconstruct a count.
 
 ## Run boundary
 
@@ -72,5 +79,5 @@ to the same run. Do not continue into a second prose generation. A blocked run s
 report and preserves the project if one exists.
 
 **Completion criterion:** all paths are unique and known; continuation project existence is
-verified; baseline, intent, expectations, blind mental model, and run boundary are present in the
+verified; baseline, intent, expectations, sealed mental model, and run boundary are present in the
 scratchpad before app launch.

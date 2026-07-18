@@ -1,5 +1,16 @@
 # Cold Prompt Evaluation
 
+## Contents
+
+- [Exchange protocol](#exchange-protocol)
+- [Universal usefulness verdict](#universal-usefulness-verdict)
+- [Paired-draw pilot](#paired-draw-pilot)
+- [Prose prompt](#prose-prompt)
+- [Generation Brief field-influence ledger](#generation-brief-field-influence-ledger)
+- [Targeted counterfactual](#targeted-counterfactual)
+- [Assistance prompts](#ideate)
+- [Temporary artifact cleanup](#temporary-artifact-cleanup)
+
 ## Exchange protocol
 
 For every prompt kind, establish the author need and expected result in the scratchpad before
@@ -10,8 +21,15 @@ With the exact prompt visibly open, use `browser-act.mjs text-file` to write its
 text under the run's `/tmp/.../exchange/` directory. Do not print the prompt to terminal output,
 copy it into the report, or read it from an API or project file.
 
-Dispatch a fresh Claude `general-purpose` subagent with only this instruction, substituting the
-absolute path:
+Dispatch one genuinely fresh cold-context subagent through the current host's context-isolation
+mechanism:
+
+- **Claude:** use a fresh `general-purpose` subagent.
+- **Codex:** spawn a subagent with `fork_turns: "none"`, or the host's current equivalent that
+  passes no parent-conversation turns.
+
+The mechanism must not copy or fork the parent conversation. Give the subagent only this
+instruction, substituting the absolute path:
 
 ```text
 Read exactly the complete prompt in <absolute-prompt-file> and perform it as the sole task.
@@ -19,10 +37,18 @@ Do not inspect the repository, any other file, the parent conversation, or prior
 Return only the output requested by that prompt.
 ```
 
+When raw-response custody or visible UI entry requires a file, append only this delivery
+instruction, substituting a new absolute path under the same run's exchange directory:
+
+```text
+Write the requested output verbatim to <absolute-response-file> instead of returning its contents.
+Return only: Response saved.
+```
+
 Do not add the story premise, desired answer, suspected weakness, prior report, or evaluator's
-expectations. One fresh subagent serves one attempt. Receive the raw response, inspect it before
-editing, and save it only to the run's temporary exchange directory when a file is needed for
-visible UI entry. If the host cannot launch a genuinely fresh subagent, the prompt-evaluation
+expectations. One fresh subagent serves one attempt. Receive the raw response through the selected
+delivery mode, inspect it before editing, and keep any saved copy only in the run's temporary
+exchange directory. If the host cannot launch a genuinely fresh subagent, the prompt-evaluation
 contract is unavailable; follow the blocker policy rather than simulating a cold response in the
 parent context.
 
@@ -51,6 +77,45 @@ For each raw response, record:
 Separate **prompt-contract mismatch** from **model-output failure**. If the prompt explicitly asks
 for a low-value class of output and the model supplies it, the prompt—not model compliance—is the
 primary issue.
+
+## Paired-draw pilot
+
+Use this instrument only while its Authoritative pilot state is `active`, and for at most one
+naturally qualifying assistance prompt in a run. During the initial pilot, only Segment
+Reconciliation is eligible, and only when a legally valid no-change answer versus a substantive
+proposal would materially alter the author's durable-continuity work. Do not force acceptance,
+create extra records, or invoke reconciliation solely to obtain a pair.
+
+Before either draw:
+
+1. Save one exact visible prompt and its lowercase SHA-256 fingerprint.
+2. State why the prompt qualifies and predeclare informative structural classes. For Segment
+   Reconciliation, begin with `substantive-change`, `reasoned-no-change`, `empty-no-change`,
+   `malformed`, and `blocked`; refine only before dispatch.
+3. Prepare two identical cold-context tasks using the same prompt bytes and delivery instruction.
+
+Launch Draws A and B in separate fresh contexts before inspecting either response. If the host
+cannot launch them concurrently, seal both tasks first, launch B regardless of Draw A's outcome,
+and never tell B about A. Do not take a third draw. Both draws increment
+`cold_assistance_attempts`; the pair is neither a retry nor a counterfactual.
+
+Assess each untouched response separately against the universal usefulness verdict before choosing
+whether to re-author anything. Then classify the pair as one of:
+
+- `concordant-substantive`
+- `concordant-no-change`
+- `discordant`
+- `both-poor-or-malformed`
+- `blocked`
+
+For each draw record timestamp, executor host family, exact model identifier only when exposed by
+the host (otherwise `unknown`), model-identity exposure boolean, and the shared prompt fingerprint.
+Record what this exact pair supports, what it cannot establish, and how it changes likely-layer
+attribution. Two draws can reveal local concordance or discordance; they cannot establish a rate,
+stability, model independence, or the cause of variation.
+
+The pilot stops after two naturally qualifying pairs for an explicit `keep`, `revise`, or `retire`
+decision. A run with no qualifying prompt records the pilot as pending and makes no pair.
 
 ## Prose prompt
 

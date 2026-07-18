@@ -54,6 +54,23 @@ const parentManifest = {
     }
   ]
 };
+const parentSectionManifest = {
+  version: 1,
+  issues: [
+    {
+      number: 1,
+      title: "Parent PRD sections",
+      checks: parentManifest.issues[0].checks.filter(({ id }) =>
+        [
+          "Parent-Solution",
+          "Parent-Implementation-Decisions",
+          "Parent-Testing-Decisions",
+          "Principles"
+        ].includes(id)
+      )
+    }
+  ]
+};
 
 const bodyWith = ({
   acceptance =
@@ -174,8 +191,29 @@ const parentBodyWithStoryMap = () =>
 Verification command ledger:`
   );
 
+const existingContractChangeBodyWith = (red) =>
+  bodyWith()
+    .replace(
+      "| #1 | read | ADR 0001 read | red-first public workflow | `pnpm test -- workflow-order` failed because Pressure appeared before staging |",
+      `| #1 | read | ADR 0001 read | existing contract-change expectation | ${red} |`
+    )
+    .replaceAll("Existing-test contract-change rows: none", "Existing-test contract-change rows: compact row #1")
+    .replace(
+      "existing-test contract-change rows none.",
+      "existing-test contract-change rows compact row #1."
+    );
+
 test("accepts sequence evidence and reconciled evidence identities", () => {
   assert.deepEqual(validateTddCloseoutBody(bodyWith()), []);
+});
+
+test("accepts terminal punctuation on an all-none superseded inventory", () => {
+  const body = bodyWith({
+    superseded:
+      "fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none."
+  });
+
+  assert.deepEqual(validateTddCloseoutBody(body), []);
 });
 
 test("parent-rollup manifest validation requires every individual story mapping", () => {
@@ -209,6 +247,69 @@ test("parent-rollup manifest validation requires every individual story mapping"
       error.includes("requires an acceptance manifest")
     )
   );
+});
+
+test("accepts bare exact parent manifest IDs in the matching compact row", () => {
+  const body = bodyWith({
+    acceptance:
+      "Parent-Solution/Parent-Implementation-Decisions/Parent-Testing-Decisions/Principles; atoms: parent requirements; proof surfaces: focused tests; sequence: N/A because these criteria are not sequence-sensitive"
+  });
+
+  assert.deepEqual(
+    validateTddCloseoutBody(body, {
+      flags: ["--parent-rollup"],
+      acceptanceManifest: parentSectionManifest
+    }),
+    []
+  );
+});
+
+test("does not borrow a bare manifest ID from another issue", () => {
+  const body = bodyWith({
+    acceptance:
+      "Parent-Solution; atoms: parent requirements; proof surfaces: focused tests; sequence: N/A because this criterion is not sequence-sensitive"
+  });
+  const otherIssueManifest = {
+    ...parentSectionManifest,
+    issues: parentSectionManifest.issues.map((issue) => ({ ...issue, number: 2 }))
+  };
+
+  assert.ok(
+    validateTddCloseoutBody(body, {
+      flags: ["--parent-rollup"],
+      acceptanceManifest: otherIssueManifest
+    }).some((error) => error.includes("exact supplied manifest check ID"))
+  );
+});
+
+test("rejects malformed existing contract-change expectation evidence", () => {
+  const body = existingContractChangeBodyWith(
+    "existing contract-change expectation: focused ideation e2e and Story Notes isolation"
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) =>
+      error.includes("must start with `existing contract-change expectation in <test file> because ...`")
+    )
+  );
+});
+
+test("rejects an expectation-rewrite prefix without a failing command or assertion", () => {
+  const body = existingContractChangeBodyWith(
+    "existing contract-change expectation in `packages/web/example.test.ts` because the expected behavior changed"
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) => error.includes("name the failing command or assertion"))
+  );
+});
+
+test("accepts exact existing contract-change expectation evidence", () => {
+  const body = existingContractChangeBodyWith(
+    "existing contract-change expectation in `.claude/skills/tdd/scripts/validate-tdd-closeout-body.test.mjs` because `node --test .claude/skills/tdd/scripts/validate-tdd-closeout-body.test.mjs` failed with an assertion mismatch"
+  );
+
+  assert.deepEqual(validateTddCloseoutBody(body), []);
 });
 
 test("parent-rollup CLI requires and reads an acceptance manifest", () => {

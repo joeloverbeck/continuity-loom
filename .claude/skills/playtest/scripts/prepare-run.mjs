@@ -190,7 +190,7 @@ export function prepareRun({
 - Expected working-set behavior:
 - Expected Generation Brief work:
 - Expected assistance:
-- Blind mental model:
+- Sealed mental model:
 
 ## Prompt ledger
 

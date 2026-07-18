@@ -18,6 +18,10 @@ const DEFAULT_CUMULATIVE = [
   ["F002", "current run", "strength", "A fixture strength", "preserve-strength", "fixture evidence"]
 ];
 
+const PRIOR_FIRST_ACTION = "Publish the prior fixture PRD";
+const PRIOR_CANDIDATE = "Prior Fixture Rule";
+const PRIOR_FOLLOW_UP = "Prior fixture coverage";
+
 function markdownRows(rows) {
   return rows.map((row) => `| ${row.join(" | ")} |`).join("\n");
 }
@@ -34,12 +38,15 @@ function createSourceFixture(t, options = {}) {
   const priorReport = options.continuation
     ? "reports/playtest-fixture-2026-07-16T120000Z.md"
     : "null";
-  const prioritizedRows = options.prioritizedRows ?? DEFAULT_PRIORITIZED;
+  const schemaVersion = options.schemaVersion ?? "1";
+  const prioritizedRows = (options.prioritizedRows ?? DEFAULT_PRIORITIZED).map((row) =>
+    schemaVersion === "2" && row.length === 7 ? [...row, "direct-visible"] : row
+  );
   const cumulativeRows = options.cumulativeRows ?? DEFAULT_CUMULATIVE;
 
   const markdown = `---
 report_type: continuity-loom-author-playtest
-schema_version: 1
+schema_version: ${schemaVersion}
 run_id: ${stem}
 report_stem: ${stem}
 story_title: Fixture Story
@@ -62,7 +69,14 @@ provider_requests_blocked: 0
 cold_prose_attempts: 1
 cold_assistance_attempts: 0
 counterfactual_probes: 0
-candidate_intervention: light
+${
+  schemaVersion === "2"
+    ? `cold_first_view_witnesses: 0
+independent_claim_challenges: 0
+paired_draw_checks: 0
+`
+    : ""
+}candidate_intervention: light
 ---
 
 # Continuity Loom Author Playtest Report: Fixture Story
@@ -93,8 +107,8 @@ Fixture journey.
 
 ## Prioritized Findings
 
-| ID | Severity | Classification | Category | Summary | Confidence | Status |
-| --- | --- | --- | --- | --- | --- | --- |
+| ID | Severity | Classification | Category | Summary | Confidence | Status${schemaVersion === "2" ? " | Evidence basis" : ""} |
+| --- | --- | --- | --- | --- | --- | ---${schemaVersion === "2" ? " | ---" : ""} |
 ${markdownRows(prioritizedRows)}
 
 ## Surface-by-Surface Experience
@@ -151,7 +165,30 @@ Fixture-only coverage.
     : markdown;
 
   writeFileSync(reportPath, finalizedMarkdown);
-  return { reportPath, reportsDir, stem };
+  let priorPrepPath = null;
+  if (options.priorPrep) {
+    priorPrepPath = join(reportsDir, "playtest-fixture-2026-07-16T120000Z-prd-prep.md");
+    writeFileSync(
+      priorPrepPath,
+      `# Playtest PRD Prep: Fixture Story
+
+First operational action: ${PRIOR_FIRST_ACTION}
+
+## Recommended PRD Package
+
+### PRD Candidate: ${PRIOR_CANDIDATE}
+
+Prior fixture candidate detail.
+
+## Non-PRD Follow-Up
+
+| Item | Destination | Trigger or next action | Evidence required |
+| --- | --- | --- | --- |
+| ${PRIOR_FOLLOW_UP} | coverage | Replay the fixture. | Fixture proof. |
+`
+    );
+  }
+  return { reportPath, reportsDir, stem, priorPrepPath };
 }
 
 function candidateBlock(title, role, sources = "F001", strengths = "F002") {
@@ -228,6 +265,13 @@ function createPrepFixture(t, sourceFixture, options = {}) {
   }
 
   const existingClassification = options.existingClassification ?? "missing at intake";
+  const priorPrepClassification =
+    options.priorPrepClassification ??
+    (source.priorPrepPath
+      ? source.priorPrepExists
+        ? "stale"
+        : "missing at intake"
+      : "not applicable");
   const completionMode = options.completionMode ?? "final";
   const completionFields =
     completionMode === "draft"
@@ -241,15 +285,44 @@ function createPrepFixture(t, sourceFixture, options = {}) {
           semanticReview: "completed",
           privacyScan: "clear"
         };
+  const consumptionRows = [];
+  const currentPrepPath = `reports/${sourceFixture.stem}-prd-prep.md`;
+  if (existingClassification !== "missing at intake") {
+    consumptionRows.push(
+      `| ${currentPrepPath} | First operational action: Old fixture recommendation | consumed | Current fixture evidence. | Remove from live scope. |`
+    );
+  }
+  if (source.priorPrepExists) {
+    const priorRows = [
+      `| ${source.priorPrepPath} | First operational action: ${PRIOR_FIRST_ACTION} | consumed | Current fixture evidence. | Remove from live scope. |`,
+      `| ${source.priorPrepPath} | PRD Candidate: ${PRIOR_CANDIDATE} | still live | Current fixture evidence. | Retain the candidate. |`,
+      `| ${source.priorPrepPath} | Non-PRD Follow-Up: ${PRIOR_FOLLOW_UP} | superseded | Current fixture evidence. | Replace the follow-up. |`
+    ].filter((row) => !row.includes(options.omitPriorRecommendation ?? "\u0000"));
+    consumptionRows.push(...priorRows);
+  }
   const consumption =
-    existingClassification === "missing at intake" || options.omitConsumption
+    consumptionRows.length === 0 || options.omitConsumption
       ? ""
       : `
 ### Prior Recommendation Consumption Ledger
 
-| Prior recommendation | Current classification | Evidence | Resulting action |
-| --- | --- | --- | --- |
-| Old fixture recommendation | consumed | Current fixture evidence. | Remove from live scope. |
+| Source prep | Prior recommendation | Current classification | Evidence | Resulting action |
+| --- | --- | --- | --- | --- |
+${consumptionRows.join("\n")}
+`;
+
+  const finalWorktreeRows = options.finalWorktreeRows ?? [
+    [`reports/${sourceFixture.stem}-prd-prep.md`, "intentional prep artifact"]
+  ];
+  const finalWorktreeCount = options.finalWorktreeCount ?? finalWorktreeRows.length;
+  const finalWorktreeLedger = options.omitFinalWorktreeLedger
+    ? ""
+    : `
+### Final Worktree Ledger
+
+| Path | Classification |
+| --- | --- |
+${markdownRows(finalWorktreeRows)}
 `;
 
   const prepPath = join(sourceFixture.reportsDir, `${sourceFixture.stem}-prd-prep.md`);
@@ -268,6 +341,8 @@ Authored artifact durability: new/untracked
 Live checkout: fixture branch and tree
 Tracker freshness: unavailable - deterministic fixture
 Existing same-stem prep classification: ${existingClassification}
+Prior-report prep path: ${source.priorPrepPath ?? "not applicable"}
+Prior-report prep classification: ${priorPrepClassification}
 Prior-report traversal: not applicable - fixture source is self-contained
 Deliverable status: PRD-ready determination only; prep artifact write only
 External research: skipped - repo-local prep
@@ -333,6 +408,9 @@ Privacy and stale-language scan: ${completionFields.privacyScan}
 
 ## Freshness And Boundaries
 
+Final branch: fixture
+Final worktree rows: ${finalWorktreeCount}
+${finalWorktreeLedger}
 The fixture prep changed only this synthetic artifact and did not publish or implement anything.
 `;
 
@@ -362,15 +440,35 @@ test("accepts a continuation report as the inventory frontier", (t) => {
   assert.deepEqual(result.errors, []);
   assert.equal(result.runMode, "continuation");
   assert.equal(result.priorReport, "reports/playtest-fixture-2026-07-16T120000Z.md");
+  assert.equal(result.priorPrepPath, "reports/playtest-fixture-2026-07-16T120000Z-prd-prep.md");
+  assert.equal(result.priorPrepExists, false);
 });
 
-test("continues inventory across a non-blocking prompt-evaluation metadata defect", (t) => {
+test("accepts a schema v2 report as the inventory frontier", (t) => {
+  const fixture = createSourceFixture(t, { schemaVersion: "2" });
+  const result = inspectSourceReport(fixture.reportPath);
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.counts.prioritizedFindings, 1);
+});
+
+test("inspects the derived prior-report prep when it exists", (t) => {
+  const fixture = createSourceFixture(t, { continuation: true, priorPrep: true });
+  const result = inspectSourceReport(fixture.reportPath);
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.priorPrepPath, "reports/playtest-fixture-2026-07-16T120000Z-prd-prep.md");
+  assert.equal(result.priorPrepExists, true);
+});
+
+test("continues inventory across a historical schema v1 compatibility warning", (t) => {
   const fixture = createSourceFixture(t, { nonBlockingCounterfactualDefect: true });
   const source = inspectSourceReport(fixture.reportPath);
 
   assert.deepEqual(source.errors, []);
-  assert.equal(source.sourceValidation, "nonblocking-defects");
-  assert.equal(source.nonBlockingReportErrors.length, 1);
+  assert.equal(source.sourceValidation, "passed");
+  assert(source.warnings.some((warning) => warning.includes("Historical schema v1")));
+  assert.deepEqual(source.nonBlockingReportErrors, []);
   assert.deepEqual(source.counts, {
     prioritizedFindings: 1,
     cumulativeLedgerRows: 2,
@@ -380,6 +478,18 @@ test("continues inventory across a non-blocking prompt-evaluation metadata defec
   const prepPath = createPrepFixture(t, fixture);
   const prep = validatePrepArtifact(fixture.reportPath, prepPath);
   assert.deepEqual(prep.errors, []);
+});
+
+test("keeps schema v2 counterfactual disclosure failures blocking", (t) => {
+  const fixture = createSourceFixture(t, {
+    schemaVersion: "2",
+    nonBlockingCounterfactualDefect: true
+  });
+  const source = inspectSourceReport(fixture.reportPath);
+
+  assert.equal(source.sourceValidation, "blocking-errors");
+  assert(source.errors.some((error) => error.includes("requires a ### Targeted Counterfactual")));
+  assert.deepEqual(source.nonBlockingReportErrors, []);
 });
 
 test("rejects a prioritized finding absent from the cumulative ledger", (t) => {
@@ -540,6 +650,56 @@ test("requires an existing-prep consumption ledger on rerun", (t) => {
   const presentPath = createPrepFixture(t, fixture, { existingClassification: "stale" });
   const present = validatePrepArtifact(fixture.reportPath, presentPath);
   assert.deepEqual(present.errors, []);
+});
+
+test("requires every recommendation from an existing prior-report prep", (t) => {
+  const fixture = createSourceFixture(t, { continuation: true, priorPrep: true });
+  const missingLedgerPath = createPrepFixture(t, fixture, { omitConsumption: true });
+  const missingLedger = validatePrepArtifact(fixture.reportPath, missingLedgerPath);
+  assert(
+    missingLedger.errors.includes(
+      "Missing section for table: ### Prior Recommendation Consumption Ledger"
+    )
+  );
+
+  const missingCandidatePath = createPrepFixture(t, fixture, {
+    omitPriorRecommendation: `PRD Candidate: ${PRIOR_CANDIDATE}`
+  });
+  const missingCandidate = validatePrepArtifact(fixture.reportPath, missingCandidatePath);
+  assert(
+    missingCandidate.errors.includes(
+      `Prior Recommendation Consumption Ledger is missing: PRD Candidate: ${PRIOR_CANDIDATE}`
+    )
+  );
+
+  const completePath = createPrepFixture(t, fixture);
+  const complete = validatePrepArtifact(fixture.reportPath, completePath);
+  assert.deepEqual(complete.errors, []);
+});
+
+test("requires a counted and classified final worktree ledger", (t) => {
+  const fixture = createSourceFixture(t);
+  const missingPath = createPrepFixture(t, fixture, { omitFinalWorktreeLedger: true });
+  const missing = validatePrepArtifact(fixture.reportPath, missingPath);
+  assert(missing.errors.includes("Missing section for table: ### Final Worktree Ledger"));
+
+  const wrongCountPath = createPrepFixture(t, fixture, { finalWorktreeCount: 0 });
+  const wrongCount = validatePrepArtifact(fixture.reportPath, wrongCountPath);
+  assert(wrongCount.errors.includes("Final worktree rows is 0; expected 1."));
+
+  const wrongClassificationPath = createPrepFixture(t, fixture, {
+    finalWorktreeRows: [["reports/unowned.md", "owned"]]
+  });
+  const wrongClassification = validatePrepArtifact(fixture.reportPath, wrongClassificationPath);
+  assert(
+    wrongClassification.errors.includes(
+      "Unsupported final worktree classification for reports/unowned.md: owned"
+    )
+  );
+
+  const cleanPath = createPrepFixture(t, fixture, { finalWorktreeRows: [] });
+  const clean = validatePrepArtifact(fixture.reportPath, cleanPath);
+  assert.deepEqual(clean.errors, []);
 });
 
 test("rejects machine-local path leakage", (t) => {

@@ -1,17 +1,58 @@
 # Author Journey
 
+## Contents
+
+- [New-story entry](#new-story-entry)
+- [Continuation entry](#continuation-entry)
+- [Sincere authoring loop](#sincere-authoring-loop)
+- [Assistance surfaces](#assistance-surfaces)
+- [Candidate and acceptance](#candidate-and-acceptance)
+- [Light accessibility and layout pass](#light-accessibility-and-layout-pass)
+
 ## New-story entry
 
-Navigate to the isolated app and inspect the initial screen before typing. Record what the page
-appears to be for, the next action it suggests, terminology that is or is not understandable,
-and what a first-time author expects will happen.
+When the Cold First-View Witness state is `active`, capture it before the main operator sees the
+initial screen:
+
+1. Navigate with the guarded browser and save a screenshot under the run's `/tmp` scratch
+   directory in the same `browser-act.mjs goto <base-url> --shot <temporary-path>` command. The
+   command may return URL, title, and screenshot path, but do not run `text`, `tree`, `html`, or an
+   image-viewing tool and do not otherwise display or inspect the screenshot in the parent context.
+2. Create a sealed packet containing only a neutral one-sentence role premise such as “You are an
+   author opening a local fiction-authoring application for the first time,” that screenshot, and
+   the fixed questions below. Fingerprint the packet manifest with lowercase SHA-256. Do not include
+   the user's story premise, this skill, product docs, expected findings, operator expectations,
+   repository context, or story prose.
+3. Send the packet to one genuinely fresh context. Ask only: what this screen appears to be for,
+   the first action it suggests, what the witness expects that action to do, which visible terms
+   are unclear, and an overall `clear`, `partly-clear`, or `unclear` rating. Have it save the answer
+   under `/tmp` and return only confirmation.
+4. Record the executor host family, exact model identifier only when the host exposes it (otherwise
+   `unknown`), exposure boolean, timestamp, packet fingerprint, and privacy check.
+5. The main operator now opens the same screenshot, then the still-unmodified live screen, and
+   records the same first-view observations before reading the witness answer. Only then compare the
+   two accounts.
+
+The packet manifest is a temporary UTF-8 file that names the packet version, screenshot path and
+SHA-256, neutral premise, and exact questions. Its fingerprint is the SHA-256 of those exact manifest
+bytes; never fingerprint a paraphrase or the later witness response.
+
+If a genuinely fresh witness or sealed delivery is unavailable, record the pilot as pending with a
+coverage limitation and continue the core playtest. Do not improvise a witness in the parent
+context. This instrument tests first-screen comprehension only; it is not evidence of human
+transfer or of a fully uninstructed journey.
+
+Whether or not the pilot triggers, navigate to the isolated app and inspect the initial screen
+before typing. Record what the page appears to be for, the next action it suggests, terminology
+that is or is not understandable, and what a first-time author expects will happen.
 
 Create the project through the visible **Create** form using the exact parent path, folder name,
 title, and optional description from the prepared run. Do not use the demo project. Confirm the
 visible project status and path before proceeding.
 
-Capture the blind-first assessment before systematically visiting the navigation or opening field
-help. The skill's coverage obligations must not erase what the first screen communicated unaided.
+Capture the source-and-doc-blind assessment before systematically visiting the navigation or
+opening field help. The skill's coverage obligations must not erase what the first screen
+communicated before exploration.
 
 ## Continuation entry
 

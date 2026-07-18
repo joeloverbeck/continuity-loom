@@ -4,6 +4,16 @@ Write `reports/<report-stem>.md`. The report is both a current-run usability rec
 for a later continuation. A downstream coding agent must be able to act on it without seeing the
 scratchpad, raw prompt, raw response, candidate, or project database.
 
+## Contents
+
+- [Frontmatter](#frontmatter)
+- [Required section order](#required-section-order)
+- [Required tables](#required-tables)
+- [Method evidence subsections](#method-evidence-subsections)
+- [Continuation handoff](#continuation-handoff)
+- [Evidence and privacy](#evidence-and-privacy)
+- [Challenge, validate, register, and close](#challenge-validate-register-and-close)
+
 ## Frontmatter
 
 Use scalar YAML values:
@@ -11,7 +21,7 @@ Use scalar YAML values:
 ```yaml
 ---
 report_type: continuity-loom-author-playtest
-schema_version: 1
+schema_version: 2
 run_id: playtest-example-2026-07-17T120000Z
 report_stem: playtest-example-2026-07-17T120000Z
 story_title: Example Story
@@ -34,6 +44,9 @@ provider_requests_blocked: 0
 cold_prose_attempts: 1
 cold_assistance_attempts: 2
 counterfactual_probes: 0
+cold_first_view_witnesses: 0
+independent_claim_challenges: 0
+paired_draw_checks: 0
 candidate_intervention: light
 ---
 ```
@@ -51,6 +64,10 @@ Allowed alternatives:
 - unreachable scalar values: `null`;
 - `candidate_intervention`: `none`, `light`, `substantial`, `rewrite`, or `not-reached`.
 
+All newly authored reports use schema `2`. Existing schema-v1 reports remain historical artifacts;
+do not rewrite them. The validator accepts them through a compatibility path and warns, rather than
+fails, when a v1 report declares one counterfactual but predates the disclosure block.
+
 Count unchanged-prompt cold attempts separately from diagnostic counterfactuals:
 
 - `cold_prose_attempts` counts initial and retry prose responses produced from the unchanged exact
@@ -63,6 +80,16 @@ Count unchanged-prompt cold attempts separately from diagnostic counterfactuals:
 An unchanged-prompt retry increments only its `cold_*_attempts` count. A diagnostic
 counterfactual increments only `counterfactual_probes`; its response is never eligible for use in
 the app.
+
+Method-evidence counters describe only structurally disclosed instruments:
+
+- `cold_first_view_witnesses`: `0` or `1`;
+- `independent_claim_challenges`: `0` through `3`; and
+- `paired_draw_checks`: `0` or `1`.
+
+Both paired draws also count as unchanged-prompt `cold_assistance_attempts`. A missing, unavailable,
+or naturally ineligible pilot remains `0` and is explained under Coverage Limitations; never create
+eligibility merely to increment a counter.
 
 If a provider request was attempted, the browser guard should have blocked it. Record the real
 nonzero counts, set `status: blocked`, and use `provider-request-attempt`. Never falsify a zero to
@@ -97,9 +124,9 @@ phase.
 ### Prioritized findings
 
 ```markdown
-| ID   | Severity | Classification | Category         | Summary                                   | Confidence | Status |
-| ---- | -------- | -------------- | ---------------- | ----------------------------------------- | ---------- | ------ |
-| F001 | moderate | friction       | generation-brief | Optional field cost exceeds visible value | medium     | new    |
+| ID   | Severity | Classification | Category         | Summary                                   | Confidence | Status | Evidence basis                            |
+| ---- | -------- | -------------- | ---------------- | ----------------------------------------- | ---------- | ------ | ----------------------------------------- |
+| F001 | moderate | friction       | generation-brief | Optional field cost exceeds visible value | medium     | new    | direct-visible, single-observer-inference |
 ```
 
 Use stable IDs. On continuation, preserve inherited IDs; allocate new IDs after the highest prior
@@ -119,6 +146,17 @@ Each detailed current-run finding contains:
 
 Do not prescribe component names, state libraries, schema changes, or implementation details unless
 the visible evidence makes one constraint unavoidable.
+
+Every prioritized finding is decision-driving and must use one or more comma-separated evidence
+tags from this fixed vocabulary:
+
+- `direct-visible`, `reproduced`, `source-confirmed`;
+- `independent-supported`, `independent-narrowed`, `independent-contradicted`,
+  `independent-insufficient`;
+- `paired-concordant`, `paired-discordant`;
+- `cross-run-recurrent`, `counterfactual-suggestive`, `single-observer-inference`.
+
+Tags state the basis actually obtained. They are not scores, rates, or substitutes for uncertainty.
 
 ### Prompt usefulness
 
@@ -179,6 +217,90 @@ as a concise row. Status is `new`, `open`, `repeated`, `resolved`, `not-retested
 `preserve-strength`. Mark `resolved` only after explicit current-run retest. Do not duplicate prior
 detailed finding bodies; the ledger plus `prior_report` preserves the chain.
 
+## Method evidence subsections
+
+Use a subsection only when its frontmatter counter is nonzero. When a pilot is unavailable or does
+not naturally trigger, omit the subsection, leave the counter at `0`, and explain the limitation.
+For every independent execution, record the executor host family, exact model identifier only when
+the host exposes it (otherwise `unknown`), exposure boolean, UTC timestamp, and lowercase SHA-256
+prompt or packet fingerprint. Never infer hidden model details or claim executor independence that
+the host does not expose.
+
+### Cold First-View Witness
+
+When `cold_first_view_witnesses` is `1`, place this table inside
+`## Story Intent and Expectations` after the main operator's sealed expectations:
+
+```markdown
+### Cold First-View Witness
+
+| Packet fingerprint | Timestamp | Executor host | Executor model                   | Model identity exposed | First-action summary | Expectation mismatch | Unclear terms count | Clarity                    | Main-operator comparison | Privacy check |
+| ------------------ | --------- | ------------- | -------------------------------- | ---------------------- | -------------------- | -------------------- | ------------------: | -------------------------- | ------------------------ | ------------- |
+| <sha256>           | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | ...                  | ...                  |                   0 | clear/partly-clear/unclear | ...                      | passed        |
+```
+
+Report only first-screen comprehension. Do not generalize the witness to human transfer,
+uninstructed discoverability, or the later author journey.
+
+### Independent Claim Challenges
+
+After drafting the report but before final validation, select at most three claims that are blockers
+or major findings, drive the executive assessment, make a likely-layer/causal inference intended to
+drive product work, or preserve a strength that constrains change. Put all eligible claims into one
+privacy-safe packet and send it either to the Phase-A witness after its first-view response is frozen
+or to one new fresh context. For each claim include the ID and exact proposed wording, observed
+visible fact, expected versus actual, reproduction, cited artifact identity or sanitized crop, and
+the operator interpretation and confidence. Exclude remedies and all raw story, prompt, response,
+candidate, and accepted-prose material. Require one rival explanation and one observable
+discriminator per claim. The main operator retains report authority and records the final
+resolution; there is no vote, automatic deletion, or semantic-validation claim.
+
+When `independent_claim_challenges` is nonzero, place this table inside
+`## Prioritized Findings` after the detailed finding bodies:
+
+```markdown
+### Independent Claim Challenges
+
+| Claim ID | Eligibility reason | Timestamp | Executor host | Executor model                   | Model identity exposed | Packet fingerprint | Status   | Rival explanation | Observable discriminator | Operator resolution | Evidence basis                       |
+| -------- | ------------------ | --------- | ------------- | -------------------------------- | ---------------------- | ------------------ | -------- | ----------------- | ------------------------ | ------------------- | ------------------------------------ |
+| F001     | ...                | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | <sha256>           | narrowed | ...               | ...                      | ...                 | direct-visible, independent-narrowed |
+```
+
+Status is exactly `supported`, `narrowed`, `contradicted`, or `insufficient`, and the row must carry
+the matching `independent-*` evidence tag. All rows share the one challenge packet's fingerprint,
+timestamp, host, model, and exposure value. Reconcile the challenged claim and its Prioritized
+Finding evidence basis before validation. The pilot stops after its first two qualifying reports for
+an explicit `keep`, `revise`, or `retire` decision.
+
+### Paired-Draw Check
+
+When `paired_draw_checks` is `1`, place this disclosure in `## Prompt Usefulness` after the main
+prompt table. The two rows must share the exact prompt fingerprint:
+
+```markdown
+### Paired-Draw Check
+
+- Prompt kind: segment-reconciliation
+- Prompt fingerprint: <64-character SHA-256>
+- Eligibility reason: <why a naturally legal result difference matters>
+- Informative output classes: <predeclared classes>
+- Pair class: concordant-substantive | concordant-no-change | discordant | both-poor-or-malformed | blocked
+- What the pair supports: <bounded instance-level inference>
+- What the pair cannot establish: <no rate, stability, independence, or causal claim>
+- Effect on likely-layer attribution: <prompt contract, model execution, source data, or not assessable>
+- Counterfactual used: yes | no
+
+| Draw | Timestamp | Executor host | Executor model                   | Model identity exposed | Prompt fingerprint | Structural class | Usefulness verdict | Author adoption | Burden |
+| ---- | --------- | ------------- | -------------------------------- | ---------------------- | ------------------ | ---------------- | ------------------ | --------------- | ------ |
+| A    | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | <same sha256>      | ...              | ...                | ...             | ...    |
+| B    | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | <same sha256>      | ...              | ...                | ...             | ...    |
+```
+
+Assess the draws separately before adoption. Use `paired-concordant` or `paired-discordant` on any
+decision-driving finding the pair actually informs. Do not turn two samples into a frequency or
+reliability claim. The pilot stops after two naturally qualifying pairs for an explicit `keep`,
+`revise`, or `retire` decision.
+
 ## Continuation handoff
 
 Record without reproducing accepted prose or full payloads:
@@ -207,12 +329,14 @@ payloads, raw assistance responses, candidate prose, accepted prose, SQLite/proj
 screenshots that expose those bodies without a finding-specific need. A necessary excerpt must be
 the minimum that demonstrates the issue.
 
-## Validate and close
+## Challenge, validate, register, and close
 
-Draft the complete report while the scratchpad and temporary exchange files still exist. Copy the
-needed safety counts and browser metadata, then close the browser and app holders. Remove session
-files, run plumbing, routine screenshots, empty diagnostic streams, and every uncited or forbidden
-artifact from the report evidence directory.
+Draft the complete report while the scratchpad and temporary exchange files still exist. While its
+Authoritative pilot state is `active`, apply the Independent Claim Challenge to eligible
+decision-driving claims and reconcile the result into the draft. Copy the needed safety counts and
+browser metadata, then close the browser and app holders. Remove session files, run plumbing,
+routine screenshots, empty diagnostic streams, and every uncited or forbidden artifact from the
+report evidence directory.
 
 Run:
 
@@ -224,7 +348,36 @@ Fix errors until it passes, using the scratchpad and temporary exchange only as 
 the exchange directory and scratchpad, rerun validation, and compare worktree status with the
 baseline.
 
+Only after that final report pass, open `reports/playtest-method-register.md`. If its pilot remains
+active, append one privacy-safe Natural-Run Coverage row, update or add Method Signal rows only for
+method-level evidence that actually arose, and update the three-row decision checkpoint. Do not
+record story substance, prompts, responses, product findings, or generated prose; do not use the
+register to auto-adopt an instrument or claim saturation. The register exists only to test whether a
+compact cross-run inventory changes a later method decision. When the third row is present, mark the
+register disposition as awaiting the owner, stop extending the pilot, finish cleanup, and request an
+explicit `keep`, `revise`, or `retire` decision. Record that disposition only after the owner gives
+it; do not infer it from the run.
+
+Finally, use the validated schema-v2 counters to advance only the Completed and State cells in
+`SKILL.md`'s Authoritative pilot state. Increment the claim-challenge pilot once per qualifying
+report, not once per challenged claim, and increment the method-register counter only when its row
+was successfully appended. When a Completed value reaches its Sunset, set State to
+`awaiting-disposition`; do not infer an owner decision. This exact table update is the sole permitted
+playtest-time edit under `.claude/skills/`.
+
+Re-run `git status --short` after the register and state updates. Compare it with the baseline and
+allow only this run's report/evidence, the register update, and exact Authoritative pilot-state cell
+changes. Any other run-caused delta is a custody defect.
+
+After those durable updates, remove the remaining exact run root printed by `prepare-run.mjs`,
+including isolated settings and browser/app scratch. First verify that the resolved target is a
+specific child of `/tmp/continuity-loom-playtest/` and is not the separate `project_path`; preserve
+the project for continuation. If report writing or validation never passes, retain the run root and
+return its path so evidence is not destroyed during diagnosis.
+
 **Completion criterion:** all frontmatter and sections are present; current findings are
 actionable; every prior observation remains represented in the cumulative ledger; prompt and field
 verdicts are complete; continuation can locate the still-existing `/tmp` project; privacy rules
-hold; evidence links resolve; and the validator passes after cleanup.
+hold; evidence links resolve; the validator passes after cleanup; and any permitted method-register
+and pilot-state updates happened only afterward; the successful run root is gone; and the separate
+story project remains available for continuation.

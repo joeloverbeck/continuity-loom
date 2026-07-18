@@ -1,6 +1,6 @@
 ---
 name: playtest
-description: Playtest Continuity Loom as a blind-first author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates prose, Ideate, Record Hygiene, and Segment Reconciliation prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
+description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates prose, Ideate, Record Hygiene, and Segment Reconciliation prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
 ---
 
 # Continuity Loom Author Playtest
@@ -11,9 +11,11 @@ exhausted. Always produce a report. Observe and report; never fix the app during
 
 ## Non-negotiables
 
-- **Blind-first.** For a new story, record the intended story, expectations, and initial mental
-  model before opening the app. Learn the product through visible UI and field help, not source,
-  tests, app docs, APIs, SQLite, or hidden state. Record confusion before resolving it.
+- **Instructed, source-and-doc-blind.** Follow this workflow, but learn the product itself through
+  visible UI and field help—not source, tests, app docs, APIs, SQLite, or hidden state. For a new
+  story, seal the intended story, expectations, and initial mental model before opening the app.
+  This method does not establish uninstructed human discoverability. A Cold First-View Witness
+  measures only first-screen comprehension and never human transfer or a full unaided journey.
 - **Returning author on continuation.** Read only the report the user supplied, reopen its
   `/tmp` project through the UI, and verify the latest accepted segment in Accepted Segments.
   Do not search for or read unrelated earlier reports.
@@ -42,9 +44,59 @@ exhausted. Always produce a report. Observe and report; never fix the app during
 - **Privacy-safe reports.** Never put full prompts, full record payloads, candidate prose,
   accepted prose, API keys, or raw assistance responses in `reports/`. Retain fingerprints,
   counts, short necessary excerpts, assessments, and carefully selected screenshots only.
-- **Custody.** The run may add its report and evidence directory and may create `/tmp` data. It
-  must not edit source, tests, docs, dependencies, configuration, existing reports, or unrelated
-  worktree changes. Never overwrite an earlier report or evidence directory.
+- **Custody.** The run may add its report and evidence directory, update the method register's
+  privacy-safe coverage and method-signal rows after final report validation, advance only the
+  bounded-pilot state table below at that same post-validation point, and create `/tmp` data. It
+  must not edit any other source, tests, docs, dependencies, configuration, existing reports, or
+  unrelated worktree changes. Never overwrite an earlier report or evidence directory.
+
+## Bounded method pilots
+
+These instruments are temporary pilots, not permanent coverage claims:
+
+- On the next naturally occurring new-story run, capture at most one sealed Cold First-View
+  Witness before the main operator inspects the first screen, then stop for an explicit `keep`,
+  `revise`, or `retire` decision.
+- On at most one naturally qualifying assistance prompt per run, collect two byte-identical fresh
+  draws. The initial eligible kind is Segment Reconciliation. The pilot stops for an explicit
+  `keep`, `revise`, or `retire` decision after two qualifying pairs.
+- Before finalizing each of the first two reports that contain decision-driving claims, challenge
+  at most three such claims independently and resolve them as `supported`, `narrowed`,
+  `contradicted`, or `insufficient`.
+- The privacy-safe method register stops after its third natural-run row for an explicit `keep`,
+  `revise`, or `retire` decision. Never read it before or during the author journey.
+
+If a pilot does not trigger naturally, record it as pending rather than manufacturing eligibility.
+At a pilot's sunset, do not claim saturation, reliability, or method validity; route the explicit
+disposition through skill maintenance.
+
+### Authoritative pilot state
+
+This table is the sole pre-journey state source. Do not inspect the method register or unrelated
+reports to reconstruct counts.
+
+| Instrument                         | State  | Completed | Sunset |
+| ---------------------------------- | ------ | --------: | -----: |
+| Cold First-View Witness            | active |         0 |      1 |
+| Paired-Draw Check                  | active |         0 |      2 |
+| Independent Claim Challenge report | active |         0 |      2 |
+| Method-register natural-run row    | active |         2 |      3 |
+
+Only after the final report validation passes:
+
+1. increment Cold First-View when `cold_first_view_witnesses` is `1`;
+2. increment Paired-Draw when `paired_draw_checks` is `1`;
+3. increment Independent Claim Challenge report once when
+   `independent_claim_challenges` is greater than `0`;
+4. increment the method-register row only after that row is appended; and
+5. change any instrument reaching its sunset from `active` to `awaiting-disposition`.
+
+No historical run increments the three prospective witness pilots. An `awaiting-disposition`,
+`kept`, `revised`, or `retired` instrument does not run again unless its explicit owner disposition
+changes this table and, when needed, its sunset. Apart from those cells, a playtest invocation must
+not edit this skill. Reaching a sunset does not interrupt report validation or cleanup: mark the
+state `awaiting-disposition`, finish custody, and request the owner's `keep`, `revise`, or `retire`
+decision in the final response.
 
 ## Process
 
@@ -52,7 +104,7 @@ exhausted. Always produce a report. Observe and report; never fix the app during
 
 Read [Run setup](references/run-setup.md) and [Observation scratchpad](references/observation-log.md).
 Run `scripts/prepare-run.mjs`, capture the worktree baseline, and fill the scratchpad's story
-intent, author expectations, blind mental model, and run plan before launching the app. For a
+intent, author expectations, sealed mental model, and run plan before launching the app. For a
 continuation, confirm the supplied report resolves to an existing `/tmp` project. Done when all
 run paths exist, the baseline is recorded, and the pre-use expectations are complete.
 
@@ -60,13 +112,15 @@ run paths exist, the baseline is recorded, and the pre-use expectations are comp
 
 Read [Browser driver](references/browser-driver.md). Build the app, start `safe-app-session.mjs`,
 then start `browser-session.mjs` before the first navigation. Do not reuse an existing server or
-browser. Done when Continuity Loom visibly renders at 1440x900, both sessions report their safety
-state, and provider-request capture began before navigation.
+browser. Done when the app holder reports its loopback URL, the 1440x900 browser session reports
+its safety state, and provider-request capture began before navigation. For a pending new-story
+first-view witness, defer all parent-context screen inspection until Step 3.
 
 ### 3. Enter as a new or returning author
 
-Read [Author journey](references/author-journey.md). On a new run, assess the unopened project
-screen before creating the planned `/tmp` project. On a continuation, open the supplied project,
+Read [Author journey](references/author-journey.md). On a new run, capture the sealed first-view
+witness when its authoritative state is `active`, then independently assess the unopened project screen before
+creating the planned `/tmp` project. On a continuation, open the supplied project,
 visit Accepted Segments, and establish the latest accepted sequence without copying accepted
 prose into prompt-facing fields. Done when the scratchpad records what the UI confirmed,
 corrected, or left unclear about the initial mental model and continuation state.
@@ -84,11 +138,13 @@ run.
 
 Read [Cold prompt evaluation](references/prompt-evaluation.md). Extract the visible prose prompt
 to `/tmp`, dispatch one fresh cold subagent, assess its untouched response, and allow at most one
-fresh retry. Use one targeted counterfactual probe only when it can clarify a high-impact ignored
-field; never use that diagnostic response in the app. Evaluate Ideate, Record Hygiene, and
-Segment Reconciliation the same way when naturally invoked. Done when every invoked prompt has a
-structured usefulness verdict and every populated Generation Brief field has an influence
-verdict or `not assessable`.
+fresh retry. When a naturally qualifying assistance prompt reaches the active paired-draw pilot,
+predeclare the useful output classes and collect exactly two fresh byte-identical draws regardless
+of Draw A's result; assess them separately and do not take a third draw. Use one targeted
+counterfactual probe only when it can clarify a high-impact ignored field; never use that
+diagnostic response in the app. Evaluate Ideate, Record Hygiene, and Segment Reconciliation the
+same way when naturally invoked. Done when every invoked prompt has a structured usefulness
+verdict and every populated Generation Brief field has an influence verdict or `not assessable`.
 
 ### 6. Accept one segment and reconcile continuity
 
@@ -103,9 +159,17 @@ represent the author's chosen continuity for a later run, or a post-acceptance b
 
 Read [Blockers and diagnostics](references/blockers-and-diagnostics.md) when any probable blocker
 or visible defect appears, then read [Report format](references/report-format.md). Consolidate the
-scratchpad into a new cumulative report, close browser and app sessions, remove session plumbing
-and uncited evidence, then validate with `scripts/validate-report.mjs`. Keep the scratchpad and
-temporary exchange files until the report passes; then delete them, rerun the validator, and
-compare final worktree status with the baseline. Done only when the report validator passes, no
-OpenRouter request was attempted, run-owned processes are stopped, and the final response names
-the report and custody result.
+scratchpad into a new schema-v2 cumulative report. Before publication, independently challenge up
+to three eligible decision-driving claims when that pilot state is `active`, and let the main
+operator retain resolution authority.
+Close browser and app sessions, remove session plumbing and uncited evidence, then validate with
+`scripts/validate-report.mjs`. Keep the scratchpad and temporary exchange files until the report
+passes; then delete them, rerun the validator, and compare final worktree status with the baseline.
+Only after that final pass, open and update `reports/playtest-method-register.md` when its pilot is
+still active, then advance the report-derived authoritative pilot-state cells above. Advance the
+method-register counter only when its row was successfully appended. Compare final worktree status
+with the baseline again, allowing only the declared custody deltas. On successful close, remove the
+exact run root created under
+`/tmp/continuity-loom-playtest/` but preserve the separate `/tmp` story project. Done only when the
+report validator passes, no OpenRouter request was attempted, run-owned processes are stopped, and
+the final response names the report and custody result.

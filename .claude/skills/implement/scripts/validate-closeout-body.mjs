@@ -273,6 +273,7 @@ if (!auditOnly) {
   const supersededIdentities = body.match(
     /^\s*[-*]?\s*Superseded evidence identities:\s+(.+)$/im
   )?.[1] ?? "";
+  const normalizedSupersededIdentities = supersededIdentities.replace(/[.,;:!?]+$/u, "");
   const supersededSweep = body.match(/^\s*[-*]?\s*Superseded-token sweep:\s+(.+)$/im)?.[1] ?? "";
   const withheldFixtureIdentity = /fixture paths\s+withheld\b/i.test(currentIdentities);
   const completeWithheldFixtureIdentity = /fixture paths\s+withheld because\s+[^;]+;\s*logical fixture\s+[^;]+;\s*content SHA-256\s+[0-9a-f]{64};\s*provenance\s+[^;]+(?=;|$)/i;
@@ -282,7 +283,7 @@ if (!auditOnly) {
     /packet paths\/hashes\s+none(?:;|$)/i,
     /active revisions\s+none(?:;|$)/i,
     /artifacts\s+none(?:;|$)/i
-  ].every((pattern) => pattern.test(supersededIdentities));
+  ].every((pattern) => pattern.test(normalizedSupersededIdentities));
   if (/\b(?:TODO|TBD|pending|unknown)\b/i.test(`${currentIdentities} ${supersededIdentities} ${supersededSweep}`)) {
     errors.push("evidence identity refresh contains an unresolved value");
   }

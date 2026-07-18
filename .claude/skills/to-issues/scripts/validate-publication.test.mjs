@@ -1,9 +1,18 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { CHECKLIST_ITEMS, validateChild, validateRunSheet } from "./validate-publication.mjs";
+import {
+  CHECKLIST_ITEMS,
+  validateChild,
+  validateLedger,
+  validateRunSheet,
+} from "./validate-publication.mjs";
+
+const script = fileURLToPath(new URL("./validate-publication.mjs", import.meta.url));
 
 const expectedChecklistItems = [
   "entry point and availability",
@@ -52,6 +61,20 @@ const checklistRows = (slice) => checklistItems
   .map((item, index) => `| ${slice} | ${item} | AC ${index + 1} - "${item}." | - |`)
   .join("\n");
 
+const ledgerBody = (storyCoverage = "") => `
+# Child Issue Map
+
+| Slice | Issue | Blocked by | Checklist mapped |
+|---|---|---|---|
+| Contract | #10 | None | yes |
+| Consumer | #11 | #10 | yes |
+
+## Breakdown decisions
+
+- Story mappings are durable in the child bodies.
+${storyCoverage}
+`;
+
 const options = (overrides = {}) => ({
   blockers: [],
   children: [],
@@ -59,6 +82,7 @@ const options = (overrides = {}) => ({
   expectAcCount: null,
   expectChecklistNa: false,
   expectNoBlocker: false,
+  expectStoryCoverage: false,
   expectStories: false,
   forbidLiterals: [],
   forbidPatterns: [],
@@ -333,6 +357,73 @@ ${rows}
   }
 });
 
+test("run-sheet mode accepts Author Focus repository-native semantics", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const bodyA = join(directory, "a.md");
+    const replacements = [
+      [2, "The route rejects malformed focus before transport, keeps existing readiness warnings visible, returns an accessible error, and recovers after correction."],
+      [3, "Prompt Inspector shows the exact normalized current focus and fingerprint returned for the latest request."],
+      [4, "Get ideas, Get new slate, Regenerate all, and per-slot Regenerate send one request; typing and preview remain local with no additional provider call."],
+      [5, "The UI labels focus as non-canonical request context and keeps prose candidates quarantined scratch."],
+      [7, "Ideate component tests cover the accessible Author focus control, keyboard recovery, and out-of-order results."],
+    ];
+    let body = checklistIssueBody();
+    let rows = checklistRows("Slice A");
+    for (const [index, replacement] of replacements) {
+      const original = `${checklistItems[index]}.`;
+      body = body.replace(original, replacement);
+      rows = rows.replace(
+        `AC ${index + 1} - "${original}"`,
+        `AC ${index + 1} - "${replacement}"`,
+      );
+    }
+    writeFileSync(bodyA, body);
+
+    const report = validateRunSheet(`
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+${rows}
+`, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
+
+    assert.deepEqual(report.affected[0].missingCompositeComponents, []);
+    assert.equal(report.affected[0].checks.hasCompleteCompositeCoverage, true);
+    assert.equal(report.checks.affectedSlicesPass, true);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("run-sheet mode still requires warning coverage", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const bodyA = join(directory, "a.md");
+    const criterion = "The route rejects malformed input, returns an error, and recovers after correction.";
+    writeFileSync(bodyA, checklistIssueBody().replace(
+      "validation, warning, error, and recovery behavior.",
+      criterion,
+    ));
+    const rows = checklistRows("Slice A").replace(
+      'AC 3 - "validation, warning, error, and recovery behavior."',
+      `AC 3 - "${criterion}"`,
+    );
+
+    const report = validateRunSheet(`
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+${rows}
+`, options({ sliceBodies: [{ slice: "Slice A", path: bodyA }] }));
+
+    assert.deepEqual(report.affected[0].missingCompositeComponents, [{
+      item: "validation, warning, error, and recovery behavior",
+      missing: ["warning"],
+    }]);
+    assert.equal(report.checks.affectedSlicesPass, false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("run-sheet mode still requires prompt freshness coverage", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
   try {
@@ -386,6 +477,52 @@ ${rows}
       missing: ["accessibility"],
     }]);
     assert.equal(report.checks.affectedSlicesPass, false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("ledger mode does not require duplicate story coverage by default", () => {
+  const report = validateLedger(ledgerBody(), options({ children: ["#10", "#11"] }));
+
+  assert.equal("hasStoryCoverage" in report.checks, false);
+  assert.equal(Object.values(report.checks).every(Boolean), true);
+});
+
+test("ledger mode requires explicit story coverage only when configured", () => {
+  const expectedOptions = options({
+    children: ["#10", "#11"],
+    expectStoryCoverage: true,
+  });
+  const missing = validateLedger(ledgerBody(), expectedOptions);
+  const present = validateLedger(ledgerBody(`
+## Story coverage
+
+- #10 establishes US1; #11 completes US1.
+`), expectedOptions);
+
+  assert.equal(missing.checks.hasStoryCoverage, false);
+  assert.equal(present.checks.hasStoryCoverage, true);
+  assert.equal(Object.values(present.checks).every(Boolean), true);
+});
+
+test("ledger CLI applies the conditional story-coverage option", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const ledger = join(directory, "ledger.md");
+    writeFileSync(ledger, ledgerBody());
+    const args = [script, "ledger", ledger, "--child", "#10", "--child", "#11"];
+
+    const defaultResult = spawnSync(process.execPath, args, { encoding: "utf8" });
+    const requiredResult = spawnSync(
+      process.execPath,
+      [...args, "--expect-story-coverage"],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(defaultResult.status, 0, defaultResult.stderr);
+    assert.equal(requiredResult.status, 1, requiredResult.stderr);
+    assert.deepEqual(JSON.parse(requiredResult.stdout).failedChecks, ["hasStoryCoverage"]);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

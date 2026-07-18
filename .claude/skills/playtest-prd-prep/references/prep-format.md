@@ -14,6 +14,7 @@ owns the exact artifact shape.
 - [PRD candidates](#prd-candidates)
 - [Non-PRD follow-up](#non-prd-follow-up)
 - [Prior recommendation consumption](#prior-recommendation-consumption)
+- [Final worktree ledger](#final-worktree-ledger)
 - [Privacy and durability](#privacy-and-durability)
 - [Completion language](#completion-language)
 
@@ -54,6 +55,8 @@ Authored artifact durability: <new/untracked / dirty / tracked-clean / publicati
 Live checkout: <branch, HEAD, and relevant baseline dirt>
 Tracker freshness: <reads and issue IDs, or unavailable with reason>
 Existing same-stem prep classification: <missing at intake / current / partially consumed / stale / superseded / not relevant>
+Prior-report prep path: <reports/<prior-report-stem>-prd-prep.md / not applicable>
+Prior-report prep classification: <not applicable / missing at intake / current / partially consumed / stale / superseded / not relevant>
 Prior-report traversal: <not applicable, not needed with reason, or exact followed paths>
 Deliverable status: PRD-ready determination only; prep artifact write only
 External research: skipped - repo-local prep
@@ -244,19 +247,58 @@ run their mutation checkpoints during prep.
 
 ## Prior recommendation consumption
 
-When `Existing same-stem prep classification` is anything other than `missing at intake`, include
-this subsection under `## Source Inventory`:
+Include this subsection under `## Source Inventory` when either:
+
+- `Existing same-stem prep classification` is anything other than `missing at intake`; or
+- `Prior-report prep classification` is anything other than `not applicable` or
+  `missing at intake`.
 
 ```markdown
 ### Prior Recommendation Consumption Ledger
 
-| Prior recommendation   | Current classification | Evidence              | Resulting action                      |
-| ---------------------- | ---------------------- | --------------------- | ------------------------------------- |
-| <old candidate/action> | consumed               | <issue/code evidence> | <drop, retain, reject, or resequence> |
+| Source prep                       | Prior recommendation                  | Current classification | Evidence              | Resulting action                      |
+| --------------------------------- | ------------------------------------- | ---------------------- | --------------------- | ------------------------------------- |
+| reports/<source-stem>-prd-prep.md | First operational action: <old value> | consumed               | <issue/code evidence> | <drop, retain, reject, or resequence> |
+| reports/<source-stem>-prd-prep.md | PRD Candidate: <exact name>           | still live             | <issue/code evidence> | <drop, retain, reject, or resequence> |
+| reports/<source-stem>-prd-prep.md | Non-PRD Follow-Up: <exact item>       | superseded             | <issue/code evidence> | <drop, retain, reject, or resequence> |
 ```
 
 Allowed current classifications are `consumed`, `still live`, `rejected`, and `superseded`.
-Account for the former first action, every former PRD candidate, and every former non-PRD follow-up.
+For each applicable source prep, account for the former first action, every former PRD candidate,
+and every former Non-PRD Follow-Up row other than a `None` sentinel. Use the exact repo-relative
+source prep path and the exact recommendation forms shown above; escape table separators when
+needed. A prior-report prep is historical recommendation input, not product authority, and every
+classification still requires current evidence.
+
+## Final worktree ledger
+
+Under `## Freshness And Boundaries`, write:
+
+```markdown
+Final branch: <exact git branch --show-current output>
+Final worktree rows: <integer>
+
+### Final Worktree Ledger
+
+| Path                                    | Classification            |
+| --------------------------------------- | ------------------------- |
+| reports/<source-stem>-prd-prep.md       | intentional prep artifact |
+| <repo-relative remaining worktree path> | pre-existing              |
+| <repo-relative remaining worktree path> | concurrent/unowned        |
+```
+
+Include every path from the final `git status --short` snapshot exactly once. Allowed
+classifications are `intentional prep artifact`, `pre-existing`, and `concurrent/unowned`. Use an
+empty table after the header and divider when the final worktree is clean, and record
+`Final worktree rows: 0`. At most one row may be `intentional prep artifact`, and that row must name
+the authored same-stem prep path. The validator proves table shape, count, uniqueness, allowed
+classifications, and authored-path identity; the manual freshness scan proves equality with live
+Git output.
+
+Take the snapshot immediately before final validation. Immediately after a validation pass, run
+the same branch and status commands again. If either output changed, update this ledger, repeat the
+affected freshness and privacy review, rerun final validation, and compare again until the live
+outputs match the validated snapshot exactly.
 
 ## Privacy and durability
 
@@ -284,4 +326,5 @@ must contain no `pending` self-check value.
 
 The artifact is complete when every source ID and strength passes the structural validator, every
 semantic disposition has been manually reviewed, the publication verdict and package agree, and a
-later `/to-prd` pass need not reconstruct provenance or scope from the source report.
+later `/to-prd` pass need not reconstruct provenance or scope from the source report. Its final
+branch and worktree ledger must also match the post-validation Git comparison.

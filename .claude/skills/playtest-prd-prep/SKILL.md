@@ -34,8 +34,8 @@ failed reproduction do not invalidate the source: continue with explicit limitat
 affected items as verification work.
 
 Complete intake only when the canonical source path, source validation, report inventory, run
-mode, prior-report pointer, same-stem prep state, branch, HEAD, and baseline worktree dirt are
-known.
+mode, prior-report pointer, prior-report prep state, current same-stem prep state, branch, HEAD,
+and baseline worktree dirt are known.
 
 ## Reconcile
 
@@ -56,15 +56,21 @@ known.
 5. Classify the source report's durability using tracked, clean, publication-ref-visible, and
    publication-ref-content-identical evidence. Summarize machine-local evidence; never cite its
    path as durable.
-6. Check the default same-stem prep path. If it exists, classify it as current, partially consumed,
-   stale, superseded, or not relevant. Reconcile every prior recommendation as `consumed`,
-   `still live`, `rejected`, or `superseded` before reusing it.
-7. Search current open work and relevant closed tracker work from exact report terms and IDs.
+6. For a continuation with a named `prior_report`, derive that report's same-stem `*-prd-prep.md`
+   path. If it exists, read it as historical recommendation input, never as product authority.
+   Reconcile its former first action, every PRD candidate, and every Non-PRD Follow-Up item as
+   `consumed`, `still live`, `rejected`, or `superseded` against the frontier report, current
+   authorities, implementation, and tracker state. If it is absent, record `missing at intake`.
+7. Check the current report's default same-stem prep path. If it exists, classify it as current,
+   partially consumed, stale, superseded, or not relevant. Reconcile every prior recommendation as
+   `consumed`, `still live`, `rejected`, or `superseded` before reusing it.
+8. Search current open work and relevant closed tracker work from exact report terms and IDs.
    Start with projected metadata; fetch full bodies or comments only for likely owners. If tracker
    access is unavailable, record the limitation and do not claim AFK-ready label certainty.
 
 This step is complete only when every authority and freshness source needed to judge the report is
-checked or explicitly unavailable, and any existing prep recommendation has a current disposition.
+checked or explicitly unavailable, and every recommendation from an existing current same-stem or
+prior-report prep has a current disposition.
 
 ### 2. Disposition every report row
 
@@ -139,7 +145,8 @@ constraints.
 
 Read [Prep artifact contract](references/prep-format.md) in full immediately before writing. Write
 or update the default same-stem artifact; never fork numbered or timestamped copies. On rerun, carry
-the prior-recommendation consumption ledger into the updated artifact.
+the prior-recommendation consumption ledger into the updated artifact. For a continuation, include
+the prior report's prep recommendations in that same ledger when its derived prep exists.
 
 Consult `/to-prd` for house style only: publication-package vocabulary, source durability, label
 posture, browser-visible checklist mapping, and recommended testing seams. Do not draft or stage a
@@ -166,7 +173,10 @@ node .claude/skills/playtest-prd-prep/scripts/validate-prd-prep.mjs --draft <rep
 Fix every structural or privacy error. Compare the emitted source and output counts with the report
 tables; the helper proves shape and coverage, never semantic correctness. Manually review each
 disposition, candidate grouping, authority impact, preservation constraint, and evidence claim,
-then complete the privacy and freshness scans. Only after those checks actually complete, replace
+then complete the privacy scan. Immediately before completing the freshness scan, re-run
+`git status --short` and `git branch --show-current`; replace the artifact's final branch and
+worktree ledger with that exact snapshot and classify every remaining path as the intentional prep
+artifact, pre-existing, or concurrent/unowned. Only after those checks actually complete, replace
 the three draft self-check values with the final values from the artifact contract and run:
 
 ```bash
@@ -174,11 +184,12 @@ node .claude/skills/playtest-prd-prep/scripts/validate-prd-prep.mjs <report> <pr
 ```
 
 Fix every final-validation error and rerun until it passes. Never leave final completion claims in
-an artifact that has not passed the final command.
-
-Re-run `git status --short` and `git branch --show-current`. Classify every remaining path as the
-intentional prep artifact, pre-existing, or concurrent/unowned. Do not run root gates merely for a
-report-only prep; report focused tests, probes, browser checks, and broader gates skipped.
+an artifact that has not passed the final command. Immediately after a pass, re-run
+`git status --short` and `git branch --show-current` and compare both outputs with the validated
+snapshot. If either differs, update the snapshot and classifications, repeat the affected freshness
+and privacy review, rerun final validation, and compare again. Stop only when the post-validation
+comparison matches the validated snapshot exactly. Do not run root gates merely for a report-only
+prep; report focused tests, probes, browser checks, and broader gates skipped.
 
 Before sending the final response, complete this closeout checklist from the validated artifact:
 

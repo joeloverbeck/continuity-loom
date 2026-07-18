@@ -5,6 +5,28 @@ export const isExecutableCommand = (value) => executableCommandPattern.test(valu
 const hasBacktickedExecutableCommand = (value) =>
   [...value.matchAll(/`([^`\n]+)`/g)].some((match) => isExecutableCommand(match[1]));
 
+export const hasExistingContractChangeExpectationEvidence = (value) => {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const match = normalized.match(
+    /^existing contract-change expectation in (`[^`\n]+`|\S+) because (.+)$/i
+  );
+  if (!match) return false;
+
+  const testFile = match[1].replace(/^`|`$/g, "");
+  if (/<[^>]+>/.test(testFile) || !/[./\\]/.test(testFile)) return false;
+
+  const failureEvidence = match[2];
+  const hasFailureSignal =
+    /\b(fail(?:ed|ing|ure)?|expected failure|assertion|error|exit code|mismatch)\b/i.test(failureEvidence) ||
+    /\bexpected\b.+\b(?:actual|received|got)\b/i.test(failureEvidence);
+  const hasAssertionFailure =
+    /\b(?:assertion|expectation|snapshot|fixture|route|schema)\b.+\b(?:fail(?:ed|ing|ure)?|error|mismatch|expected|actual|received|got)\b/i.test(
+      failureEvidence
+    );
+
+  return hasFailureSignal && (hasBacktickedExecutableCommand(failureEvidence) || hasAssertionFailure);
+};
+
 export const hasConcreteRedEvidence = (value) => {
   const normalized = value.replace(/\s+/g, " ").trim();
   if (/^(N\/A|not applicable)\b.+\bbecause\b/i.test(normalized)) return true;
@@ -14,7 +36,9 @@ export const hasConcreteRedEvidence = (value) => {
   if (/\bcoverage-only existing behavior\b.+\bred-first N\/A because behavior already existed\b/i.test(normalized)) {
     return true;
   }
-  if (/\bexisting contract-change expectation\b/i.test(normalized)) return true;
+  if (/\bexisting contract-change expectation\b/i.test(normalized)) {
+    return hasExistingContractChangeExpectationEvidence(normalized);
+  }
   if (/\b(shared[- ]red[- ]command|same red command as|linked shared red command)\b/i.test(normalized)) return true;
 
   return hasBacktickedExecutableCommand(normalized) &&

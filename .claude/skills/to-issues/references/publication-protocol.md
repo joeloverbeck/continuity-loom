@@ -196,6 +196,8 @@ node .claude/skills/to-issues/scripts/validate-publication.mjs ledger "$LEDGER_F
   --child "#<child-2>"
 ```
 
+Add `--expect-story-coverage` only when compact story coverage is not already durable in the child bodies. In that case, put the mapping under an explicit `## Story coverage` heading. When every child body already preserves its approved story mapping, omit both the heading and the option rather than duplicating coverage solely for validation.
+
 The validator does not replace relationship/tense review, live tracker readback, or cleanup proof.
 
 ## 4. Run a status-preserving negative sweep
@@ -276,6 +278,8 @@ Include:
 - checklist mapped `yes` or specific N/A;
 - ratified structural, durability, coordination, dependency, placement, and story-coverage decisions; and
 - compact story coverage when it is not durable in child bodies.
+
+The compact `## Story coverage` section and matching validator option are conditional together. Do not add the section when the child bodies already provide the durable mapping.
 
 Validate and sweep the staged comment before `gh issue comment`. Relationship wording must describe newly created children truthfully.
 
