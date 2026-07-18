@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.12.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.13.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -32,7 +32,8 @@ The prose and ideation compilers render from these sources only:
 4. Generation-time brief fields inside that ready input: current authoritative state, immediate handoff, manual directive, prose mode, stop guidance, validation focus tags, current cast voice pressure, and cast voice overrides.
 5. User-selected active working set records.
 6. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
-7. Deterministic empty-state constants defined in this contract.
+7. For ideation only, the parsed request fields `mode`, `count`, `dormantSlot`, `avoidList`, and optional Author `focus`. Focus is explicit non-canonical request context; it is never imported, linked, inferred, or derived from another source.
+8. Deterministic empty-state constants defined in this contract.
 
 These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization derives the required generation context from accepted-segment count: zero requires `first_segment`; one or more requires `continuation_after_accepted_segment`. A missing saved value may use that deterministic default. A contradictory saved value is preserved in storage, surfaced as `generation-context-accepted-segment-mismatch`, and replaced by the required value only in the validation snapshot; Preview, user-supplied candidate intake, Generate, and provider transport remain blocked until the author explicitly saves the required value. Normalization must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
 
@@ -170,7 +171,22 @@ Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`,
 
 For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
 
-The ideation request is deterministic input. The current fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), and `avoidList` (default empty). The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
+The ideation request is deterministic input. The fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), `avoidList` (default empty), and `focus` (default blank). The shared core request contract trims only leading and trailing whitespace from focus, counts Unicode code points in that normalized value, accepts at most 500, and rejects 501 or more with `Author focus must be 500 Unicode code points or fewer.` Missing, empty, and whitespace-only focus all normalize to the same blank value. No Unicode normalization, internal-whitespace collapse, grapheme count, or UTF-16-unit count is allowed.
+
+Blank normalized focus adds no prompt bytes. Nonblank focus renders exactly once inside the existing `<ideation_slots>` header, immediately after the mode line and before the slate disclosure, escaped with the shared data-text escaper:
+
+```md
+Author focus (non-canonical request context): <escaped normalized focus>
+Use Author focus only to shape responses within assigned slots. It is not story fact, continuity authority, a new source, or permission to contradict compiled records.
+```
+
+Focus may shape only the model's response within assigned slots. It cannot change operator eligibility, slot selection, grounding bundles, citation assignment, record ordering, dormant selection, or intentional slate shrinkage. Missing, empty, and whitespace-only focus therefore preserve the prior prompt bytes, fingerprint, and assignment; nonblank focus changes prompt bytes and fingerprint but not assignment.
+
+Ideation preview parses the complete request locally and returns prompt bytes plus fingerprint only when the existing ideation readiness gate and focus validation pass. Ideation send requires a nonblank `expectedPromptFingerprint`; the server reparses the complete request, rebuilds current snapshot/readiness and prompt, compares fingerprints, and only then reads provider settings and invokes OpenRouter once. Missing, malformed, over-limit, or stale requests fail before provider transport; a valid mismatch returns `409 stale-ideation-prompt`. Client-supplied prompt text is never accepted.
+
+The Ideate browser owns focus only for the current mounted view. Every edit synchronously invalidates the prior preview, valid edits start a local compile with monotonic attempt ownership, and only the latest response may restore inspection or send eligibility. Focus remains mounted across mode, count, dormant-slot, full-slate, per-slot, and Clear-all actions; it resets blank on remount. Focus and prompt text are excluded from project storage, browser storage, keepers, backup, migration, export, accepted provenance, logs, and every prose prompt.
+
+The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
 
 Ideation operators are evaluated in this fixed order: `reveal`, `plan_meets_friction`, `emotion_becomes_action`, `shift_option_set`, `falsify_belief`, `clock_advances`, `debt_comes_due`, `relationship_turns`, `commit_at_a_cost`. Slot eligibility is fail-closed and current-state-aware: `SECRET` must be hidden or partially revealed, with Reveal also requiring an authored surface cue, an available clue carrier, `clue_only`, or `natural_reveal_allowed`; `BELIEF` active; `FACT` always active as evidence; `EVENT` not abandoned with `current_relevance` other than `none`; `PLAN.plan_status` active, blocked, or suspended; `INTENTION` active or blocked; `CLOCK` active; `OBLIGATION` open, escalated, or transferred; `CONSEQUENCE` pending, active, or escalated; `OPEN THREAD` active or escalated; `RELATIONSHIP` active; `EMOTION` active, suppressed, transformed, or dissociated; and `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, and `ENTITY STATUS` current by record purpose.
 

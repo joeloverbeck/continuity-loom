@@ -18,6 +18,7 @@ import {
   getRecordReferences,
   getStoryConfig,
   getWorkingSet,
+  ideate,
   listAcceptedSegments,
   listStoryConfig,
   listRecords,
@@ -396,6 +397,45 @@ describe("api client", () => {
     ]);
     expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json", "Content-Type": "application/json" });
     expect(calls[0]?.init?.body).toBe(JSON.stringify({ expectedPromptFingerprint: "7b9d" }));
+  });
+
+  it("sends the complete ideation request with its inspected fingerprint", async () => {
+    const metadata = {
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    } satisfies GenerationMetadata;
+    const success = { ok: true, malformed: true, raw: "scratch", metadata } as const;
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        calls.push({ url, ...(init !== undefined ? { init } : {}) });
+        return Promise.resolve(jsonResponse(success));
+      })
+    );
+
+    await expect(ideate({
+      mode: "questions",
+      count: 4,
+      dormantSlot: false,
+      focus: "door pressure",
+      avoidList: ["repeat"]
+    }, "focused-fingerprint")).resolves.toEqual(success);
+
+    expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
+      ["/api/ideate", "POST"]
+    ]);
+    expect(calls[0]?.init?.body).toBe(JSON.stringify({
+      mode: "questions",
+      count: 4,
+      dormantSlot: false,
+      focus: "door pressure",
+      avoidList: ["repeat"],
+      expectedPromptFingerprint: "focused-fingerprint"
+    }));
   });
 
   it("accepts a candidate with the generation metadata snapshot", async () => {

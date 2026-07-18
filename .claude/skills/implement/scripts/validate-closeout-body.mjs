@@ -205,6 +205,7 @@ const allowedHtmlTags = new Set([
 const isAllowedAngleToken = (token) => {
   if (/^<https?:\/\/[^>\s]+>$/i.test(token)) return true;
   if (/^<mailto:[^>\s]+>$/i.test(token)) return true;
+  if (token === "<ideation_slots>") return true;
 
   const htmlTag = token.match(/^<\/?([a-z][a-z0-9-]*)(?:\s[^<>]*)?\/?>$/i);
   return htmlTag ? allowedHtmlTags.has(htmlTag[1].toLowerCase()) : false;

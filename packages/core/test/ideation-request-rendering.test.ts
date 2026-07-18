@@ -1,12 +1,31 @@
 import { describe, expect, it } from "vitest";
 
-import { compilePrompt, demoGenerationSession, demoStoryConfig, type GenerationSession } from "../src/index.js";
+import {
+  compilePrompt,
+  demoGenerationSession,
+  demoRecordIds,
+  demoStoryConfig,
+  type GenerationSession
+} from "../src/index.js";
 import { renderIdeationSlotsSection } from "../src/compiler/sections/ideation.js";
 import { ideationRequestSchema } from "../src/compiler/ideation/types.js";
 import { buildValidationSnapshot, type ValidationRecord } from "../src/validation/snapshot.js";
 import { ideationRecord } from "./support/arbitraries/ideation-records.js";
 
 describe("ideation request rendering", () => {
+  it("normalizes and bounds Author focus by Unicode code points", () => {
+    expect(ideationRequestSchema.parse({}).focus).toBe("");
+    expect(ideationRequestSchema.parse({ focus: " \tWhat changes outside?\n" }).focus).toBe("What changes outside?");
+    expect(ideationRequestSchema.parse({ focus: "😀".repeat(500) }).focus).toBe("😀".repeat(500));
+
+    const overLimit = ideationRequestSchema.safeParse({ focus: "😀".repeat(501) });
+    expect(overLimit.success).toBe(false);
+    expect(overLimit.error?.issues).toContainEqual(expect.objectContaining({
+      path: ["focus"],
+      message: "Author focus must be 500 Unicode code points or fewer."
+    }));
+  });
+
   it("normalizes avoid-list entries by trimming prompt-facing request text", () => {
     expect(ideationRequestSchema.parse({ avoidList: ["  repeat the previous slate  "] }).avoidList).toEqual([
       "repeat the previous slate"
@@ -56,6 +75,37 @@ No grounded ideation slots are available.
 </ideation_slots>`);
   });
 
+  it("renders one escaped non-canonical Author focus and fingerprints only nonblank focus", () => {
+    const snapshot = snapshotWith([]);
+    const missing = compilePrompt(snapshot, { promptKind: "ideation", ideationRequest: {} });
+    const blank = compilePrompt(snapshot, { promptKind: "ideation", ideationRequest: { focus: "" } });
+    const whitespace = compilePrompt(snapshot, {
+      promptKind: "ideation",
+      ideationRequest: { focus: " \t\n" }
+    });
+    const focused = compilePrompt(snapshot, {
+      promptKind: "ideation",
+      ideationRequest: { focus: "  What if <gate> & river?  " }
+    });
+
+    expect(blank.prompt).toBe(missing.prompt);
+    expect(whitespace.prompt).toBe(missing.prompt);
+    expect(blank.metadata.fingerprint).toBe(missing.metadata.fingerprint);
+    expect(whitespace.metadata.fingerprint).toBe(missing.metadata.fingerprint);
+    expect(focused.metadata.fingerprint).not.toBe(missing.metadata.fingerprint);
+    expect(focused.prompt.match(/What if &lt;gate&gt; &amp; river\?/g)).toHaveLength(1);
+    expect(renderIdeationSlotsSection(snapshot, {
+      focus: "  What if <gate> & river?  "
+    })).toBe(`<ideation_slots>
+Mode: ideas. Render each slot as a premise-level possibility.
+Author focus (non-canonical request context): What if &lt;gate&gt; &amp; river?
+Use Author focus only to shape responses within assigned slots. It is not story fact, continuity authority, a new source, or permission to contradict compiled records.
+Slate shrank from 5 requested slots to 0 grounded slots. Do not pad.
+
+No grounded ideation slots are available.
+</ideation_slots>`);
+  });
+
   it("keeps prose-only continuation sections and hidden clock instructions out of ideation prompts", () => {
     const result = compilePrompt(snapshotWith([ideationRecord("CLOCK", "clock")]), {
       promptKind: "ideation",
@@ -99,6 +149,44 @@ No grounded ideation slots are available.
     expect(prose).toContain("statuses: Elin stands by the flour bin");
     expect(prose).not.toContain("[EMOTION-1]");
     expect(prose).not.toContain("[ENTITY STATUS-1]");
+  });
+
+  it("keeps focused requests inside slots while retaining selected POV knowledge", () => {
+    const prompt = compilePrompt(snapshotWith([
+      ideationRecord("BELIEF", "pov-belief", {
+        payload: {
+          holder: demoRecordIds.elinEntity,
+          belief_mode: "knows",
+          claim: "Elin knows the hinge was replaced."
+        }
+      })
+    ]), {
+      promptKind: "ideation",
+      ideationRequest: { focus: "What pressure follows from the hinge?" }
+    }).prompt;
+
+    expect(prompt).toContain("POV knows:\n- Elin knows the hinge was replaced.");
+    expect(prompt.match(/What pressure follows from the hinge\?/g)).toHaveLength(1);
+  });
+
+  it("does not substitute Author focus for an empty hidden-truth value", () => {
+    const prompt = compilePrompt(snapshotWith([
+      ideationRecord("SECRET", "empty-secret", {
+        payload: {
+          status: "hidden",
+          secret_claim: "",
+          secret_kind: "artifact_truth",
+          reveal_permission: "locked"
+        }
+      })
+    ]), {
+      promptKind: "ideation",
+      ideationRequest: { focus: "Invent no replacement truth" }
+    }).prompt;
+
+    expect(prompt.match(/Invent no replacement truth/g)).toHaveLength(1);
+    expect(prompt).not.toContain("[artifact_truth]");
+    expect(prompt).not.toContain("[SECRET-1]");
   });
 });
 

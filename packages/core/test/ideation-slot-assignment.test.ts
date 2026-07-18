@@ -11,6 +11,7 @@ describe("ideation slot assignment", () => {
       mode: "ideas",
       count: 5,
       dormantSlot: true,
+      focus: "",
       avoidList: []
     });
 
@@ -113,6 +114,29 @@ describe("ideation slot assignment", () => {
     expect(assignSlots(records, { mode: "ideas", count: 3, dormantSlot: false }).slots).toEqual(
       assignSlots(records, { mode: "questions", count: 3, dormantSlot: false }).slots
     );
+  });
+
+  it("uses an available nonblank clue carrier after ignoring malformed carrier entries", () => {
+    const assignment = assignSlots([
+      record("secret-carrier", "SECRET", "Carrier-backed secret", {
+        reveal_permission: "locked",
+        allowed_surface_cues: [],
+        clue_carriers: [
+          null,
+          { status: "spent", clue_text: "An exhausted clue." },
+          { status: "available", clue_text: "  A fresh hinge scrape.  " }
+        ]
+      })
+    ], {
+      count: 3,
+      dormantSlot: false,
+      focus: "How can pressure surface without inventing evidence?"
+    });
+
+    expect(assignment.slots[0]).toMatchObject({
+      operator: "reveal",
+      recordKeys: ["[SECRET-1]"]
+    });
   });
 
   it("is deterministic for identical inputs and assigns per-type citation-key ordinals predictably", () => {

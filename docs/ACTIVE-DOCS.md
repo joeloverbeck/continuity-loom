@@ -125,9 +125,10 @@ Active specs live in:
 
 - `specs/`
 
-The bounded Author focus contract for grounded Ideation is active at:
+The bounded Author focus contract for grounded Ideation is complete and
+archived as historical evidence at:
 
-- `specs/SPEC-035-author-focused-ideation.md`
+- `archive/specs/SPEC-035-author-focused-ideation.md`
 
 The accepted-segment generation-context coherence implementation contract is
 complete and archived as historical evidence at:
@@ -175,6 +176,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after adopting the single compact Segment Reconciliation schema catalog, template is `1.9.0`, compiler is `1.11.0`, and compiler contract is `1.12.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after adding bounded Author focus to grounded Ideation, template is `1.10.0`, compiler is `1.12.0`, and compiler contract is `1.13.0`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, write a focused release/versioning spec.

@@ -8,7 +8,7 @@ import {
 } from "@loom/core";
 import type { ValidationRecord } from "@loom/core";
 import type { FastifyInstance } from "fastify";
-import { ZodError } from "zod";
+import { z, ZodError } from "zod";
 
 import { parseIdeationResponse } from "./ideation-parse.js";
 import { sendChatCompletion } from "./openrouter/client.js";
@@ -16,12 +16,18 @@ import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
+const ideationSendRequestSchema = ideationRequestSchema.extend({
+  expectedPromptFingerprint: z.string().min(1)
+});
+
 export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
   app.post("/api/ideate", async (request, reply) => {
-    const ideationRequest = parseIdeationBody(request.body);
-    if (!ideationRequest.ok) {
-      return reply.code(400).send(ideationRequest.body);
+    const parsedRequest = parseIdeationBody(request.body);
+    if (!parsedRequest.ok) {
+      return reply.code(400).send(parsedRequest.body);
     }
+
+    const { expectedPromptFingerprint, ...ideationRequest } = parsedRequest.value;
 
     const snapshotResult = buildSnapshotFromOpenProject(manager);
 
@@ -43,8 +49,17 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
 
     const compileResult = compilePrompt(snapshotResult.snapshot, {
       promptKind: "ideation",
-      ideationRequest: ideationRequest.value
+      ideationRequest
     });
+
+    if (compileResult.metadata.fingerprint !== expectedPromptFingerprint) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "stale-ideation-prompt",
+        message: "The ideation request changed. Inspect the current prompt before sending."
+      });
+    }
+
     const settings = readOpenRouterSettings();
 
     if (!settings.hasOpenRouterCredential) {
@@ -100,10 +115,10 @@ function citationLabels(
 }
 
 function parseIdeationBody(body: unknown):
-  | { ok: true; value: ReturnType<typeof ideationRequestSchema.parse> }
+  | { ok: true; value: z.infer<typeof ideationSendRequestSchema> }
   | { ok: false; body: { ok: false; kind: "invalid-ideation-request"; issues: unknown } } {
   try {
-    return { ok: true, value: ideationRequestSchema.parse(body ?? {}) };
+    return { ok: true, value: ideationSendRequestSchema.parse(body ?? {}) };
   } catch (error) {
     return {
       ok: false,

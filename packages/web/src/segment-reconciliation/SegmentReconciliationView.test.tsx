@@ -57,9 +57,9 @@ describe("SegmentReconciliationView", () => {
       'catalog "segment_reconciliation.schema_catalog.v1"'
     );
     const metadata = within(screen.getByLabelText("Prompt metadata"));
-    expect(metadata.getByText("1.9.0")).toBeTruthy();
-    expect(metadata.getByText("1.11.0")).toBeTruthy();
+    expect(metadata.getByText("1.10.0")).toBeTruthy();
     expect(metadata.getByText("1.12.0")).toBeTruthy();
+    expect(metadata.getByText("1.13.0")).toBeTruthy();
 
     const send = screen.getByRole("button", { name: "Analyze with OpenRouter" });
     expect(send).toHaveProperty("disabled", true);
@@ -168,12 +168,12 @@ function renderView() {
 }
 
 function compileResponse(fingerprint: string): SegmentReconciliationCompileResponse {
-  const prompt = `PROMPT_BODY ${fingerprint}\ncatalog "segment_reconciliation.schema_catalog.v1" contract="1.12.0"`;
+  const prompt = `PROMPT_BODY ${fingerprint}\ncatalog "segment_reconciliation.schema_catalog.v1" contract="1.13.0"`;
   return {
     ok: true,
     prompt,
     metadata: {
-      versions: { template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" },
+      versions: { template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" },
       fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: Math.ceil(prompt.length / 4),
@@ -267,7 +267,7 @@ function analyzeMetadata(fingerprint: string): SegmentReconciliationAnalyzeRespo
     provider: "openrouter",
     temperature: 0.4,
     maxOutputTokens: 1800,
-    versions: { template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" },
+    versions: { template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" },
     fingerprint,
     lengthEstimate: 1200,
     tokenEstimate: 300,

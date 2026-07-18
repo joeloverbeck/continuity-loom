@@ -157,7 +157,7 @@ describe("compile routes", () => {
 
     expect(first.statusCode).toBe(200);
     expect(firstBody.prompt).toContain("<final_output_instruction>");
-    expect(firstBody.metadata.versions).toEqual({ template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" });
+    expect(firstBody.metadata.versions).toEqual({ template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" });
     expect(secondBody.prompt).toBe(firstBody.prompt);
     expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
   });
@@ -177,7 +177,15 @@ describe("compile routes", () => {
     const response = await fastify.inject({
       method: "POST",
       url: "/api/compile",
-      payload: { promptKind: "ideation", ideationRequest: { mode: "questions", count: 3, dormantSlot: false } }
+      payload: {
+        promptKind: "ideation",
+        ideationRequest: {
+          mode: "questions",
+          count: 3,
+          dormantSlot: false,
+          focus: "  What if <the door> resists?  "
+        }
+      }
     });
     const body = response.json() as { prompt: string; metadata: { versions: { template: string; compiler: string; contract: string } } };
 
@@ -185,8 +193,29 @@ describe("compile routes", () => {
     expect(body.prompt).toContain("# Grounded Ideation Prompt");
     expect(body.prompt).toContain("<ideation_slots>");
     expect(body.prompt).toContain("Mode: questions.");
+    expect(body.prompt.match(/What if &lt;the door&gt; resists\?/g)).toHaveLength(1);
     expect(body.prompt).not.toContain("<final_output_instruction>");
-    expect(body.metadata.versions).toEqual({ template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" });
+  });
+
+  it("rejects over-limit Author focus without returning prompt bytes", async () => {
+    const fastify = app();
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/compile",
+      payload: {
+        promptKind: "ideation",
+        ideationRequest: { focus: "😀".repeat(501) }
+      }
+    });
+    const body = response.json() as { kind: string; prompt?: string; issues: { message: string }[] };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.kind).toBe("invalid-compile-request");
+    expect(body.issues.map((issue) => issue.message)).toContain(
+      "Author focus must be 500 Unicode code points or fewer."
+    );
+    expect(body).not.toHaveProperty("prompt");
   });
 
   it("fails closed when validation is blocked and emits no prompt", async () => {

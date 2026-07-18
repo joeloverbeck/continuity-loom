@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -50,8 +50,144 @@ describe("IdeateView", () => {
       mode: "ideas",
       count: 5,
       dormantSlot: true,
+      focus: "",
       avoidList: []
     });
+  });
+
+  it("associates Author focus help, normalized code-point count, and recoverable limit error", async () => {
+    renderIdeate();
+
+    const focus = await screen.findByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    expect(focus.value).toBe("");
+    expect(screen.getByText("0 / 500")).toBeTruthy();
+    const describedIds = focus.getAttribute("aria-describedby")?.split(" ") ?? [];
+    expect(describedIds.length).toBeGreaterThanOrEqual(2);
+    expect(describedIds.every((id) => document.getElementById(id))).toBe(true);
+    expect(screen.getByText(/temporary, non-canonical request context/i)).toBeTruthy();
+
+    const callsBeforeInvalidEdit = vi.mocked(compileIdeation).mock.calls.length;
+    fireEvent.change(focus, { target: { value: "😀".repeat(501) } });
+
+    expect(screen.getByText("501 / 500")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toContain(
+      "Author focus must be 500 Unicode code points or fewer."
+    );
+    expect(focus.getAttribute("aria-invalid")).toBe("true");
+    expect(focus.getAttribute("aria-errormessage")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get ideas" }).disabled).toBe(true);
+    await act(async () => Promise.resolve());
+    expect(compileIdeation).toHaveBeenCalledTimes(callsBeforeInvalidEdit);
+    expect(ideate).not.toHaveBeenCalled();
+
+    fireEvent.change(focus, { target: { value: "😀".repeat(500) } });
+
+    expect(screen.getByText("500 / 500")).toBeTruthy();
+    await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "😀".repeat(500),
+      avoidList: []
+    }));
+    await waitFor(() => {
+      expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get ideas" }).disabled).toBe(false);
+    });
+    expect(screen.queryByText("Author focus must be 500 Unicode code points or fewer.")).toBeNull();
+    expect(ideate).not.toHaveBeenCalled();
+  });
+
+  it("invalidates send immediately and ignores an older compile response after rapid focus edits", async () => {
+    const first = deferred<CompileResult>();
+    const second = deferred<CompileResult>();
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => {
+      if (request.focus === "first question") {
+        return first.promise;
+      }
+      if (request.focus === "second question") {
+        return second.promise;
+      }
+      return Promise.resolve(compileResult("# Grounded Ideation Prompt\nblank", "fingerprint-blank"));
+    });
+    renderIdeate();
+
+    const focus = await screen.findByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "first question" } });
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get ideas" }).disabled).toBe(true);
+    fireEvent.change(screen.getByRole("textbox", {
+      name: "What do you need ideas or questions about?"
+    }), { target: { value: "second question" } });
+
+    await act(async () => {
+      second.resolve(compileResult("# Grounded Ideation Prompt\nsecond question", "fingerprint-second"));
+      await second.promise;
+    });
+    expect((await screen.findByTestId("prompt-body")).textContent).toContain("second question");
+    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+
+    await act(async () => {
+      first.resolve(compileResult("# Grounded Ideation Prompt\nfirst question", "fingerprint-first"));
+      await first.promise;
+    });
+    expect(screen.getByTestId("prompt-body").textContent).toContain("second question");
+    expect(screen.getByTestId("prompt-body").textContent).not.toContain("first question");
+    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+    expect(screen.queryByText("fingerprint-first")).toBeNull();
+  });
+
+  it("sends the normalized current focus with only the inspected fingerprint", async () => {
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => Promise.resolve(compileResult(
+      `# Grounded Ideation Prompt\nAuthor focus: ${request.focus ?? ""}`,
+      `fingerprint:${request.focus ?? ""}`
+    )));
+    vi.mocked(ideate).mockResolvedValue({
+      ok: true,
+      ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      citations: {},
+      metadata: generationMetadata()
+    });
+    renderIdeate();
+
+    const focus = await screen.findByRole("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "  door pressure  " } });
+    await waitFor(() => expect(screen.getByTestId("prompt-body").textContent).toContain("door pressure"));
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+
+    await waitFor(() => expect(ideate).toHaveBeenCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "door pressure",
+      avoidList: []
+    }, "fingerprint:door pressure"));
+    expect(ideate).toHaveBeenCalledTimes(1);
+  });
+
+  it("retains focus through existing controls without provider calls", async () => {
+    renderIdeate();
+    const focus = await screen.findByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "  pressure at the door  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Questions" }));
+    fireEvent.change(screen.getByLabelText("Count"), { target: { value: "4" } });
+    fireEvent.click(screen.getByLabelText("Dormant slot"));
+
+    expect(focus.value).toBe("  pressure at the door  ");
+    await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
+      mode: "questions",
+      count: 4,
+      dormantSlot: false,
+      focus: "pressure at the door",
+      avoidList: []
+    }));
+    expect(ideate).not.toHaveBeenCalled();
   });
 
   it("renders relaxed readiness warnings without disabling ideation", async () => {
@@ -98,40 +234,82 @@ describe("IdeateView", () => {
       mode: "ideas",
       count: 5,
       dormantSlot: true,
+      focus: "",
       avoidList: []
-    });
+    }, "fingerprint-1");
   });
 
-  it("sends current slate headlines as an avoid-list for per-slot regenerate", async () => {
+  it("preserves current focus, avoid-list, and fingerprint through every slate action", async () => {
+    const response = (headline: string) => ({
+      ok: true as const,
+      ideas: [ideaFixture({ slotNumber: 1, headline })],
+      citations: { "[SECRET-1]": "The letter names a ledger substitution" },
+      metadata: generationMetadata()
+    });
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => Promise.resolve(compileResult(
+      `# Grounded Ideation Prompt\nAuthor focus: ${request.focus ?? ""}`,
+      `fingerprint:${request.focus ?? ""}:${request.avoidList?.join("|") ?? ""}`
+    )));
     vi.mocked(ideate)
-      .mockResolvedValueOnce({
-        ok: true,
-        ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
-        citations: { "[SECRET-1]": "The letter names a ledger substitution" },
-        metadata: generationMetadata()
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        ideas: [ideaFixture({ slotNumber: 1, headline: "The latch interrupts the argument." })],
-        citations: { "[SECRET-1]": "The letter names a ledger substitution" },
-        metadata: generationMetadata()
-      });
+      .mockResolvedValueOnce(response("The sealed letter changes hands."))
+      .mockResolvedValueOnce(response("The latch interrupts the argument."))
+      .mockResolvedValueOnce(response("The lantern forces a choice."))
+      .mockResolvedValueOnce(response("The stair bell exposes the delay."));
 
     renderIdeate();
 
-    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    const focus = await screen.findByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "  pressure at the door  " } });
+    await waitFor(() => expect(screen.getByTestId("prompt-body").textContent).toContain("pressure at the door"));
+
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
     expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Regenerate slot" }));
-
-    expect(await screen.findByRole("heading", { name: "The latch interrupts the argument." })).toBeTruthy();
-    expect(ideate).toHaveBeenLastCalledWith({
+    expect(ideate).toHaveBeenNthCalledWith(1, {
       mode: "ideas",
       count: 5,
       dormantSlot: true,
+      focus: "pressure at the door",
+      avoidList: []
+    }, "fingerprint:pressure at the door:");
+
+    const getNewSlate = screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" });
+    await waitFor(() => expect(getNewSlate.disabled).toBe(false));
+    fireEvent.click(getNewSlate);
+    expect(await screen.findByRole("heading", { name: "The latch interrupts the argument." })).toBeTruthy();
+    expect(ideate).toHaveBeenNthCalledWith(2, {
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "pressure at the door",
       avoidList: ["The sealed letter changes hands."]
-    });
+    }, "fingerprint:pressure at the door:The sealed letter changes hands.");
+
+    const regenerateAll = screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate all" });
+    await waitFor(() => expect(regenerateAll.disabled).toBe(false));
+    fireEvent.click(regenerateAll);
+    expect(await screen.findByRole("heading", { name: "The lantern forces a choice." })).toBeTruthy();
+    expect(ideate).toHaveBeenNthCalledWith(3, {
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "pressure at the door",
+      avoidList: ["The latch interrupts the argument."]
+    }, "fingerprint:pressure at the door:The latch interrupts the argument.");
+
+    const regenerateSlot = screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate slot" });
+    await waitFor(() => expect(regenerateSlot.disabled).toBe(false));
+    fireEvent.click(regenerateSlot);
+    expect(await screen.findByRole("heading", { name: "The stair bell exposes the delay." })).toBeTruthy();
+    expect(ideate).toHaveBeenNthCalledWith(4, {
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "pressure at the door",
+      avoidList: ["The lantern forces a choice."]
+    }, "fingerprint:pressure at the door:The lantern forces a choice.");
+    expect(focus.value).toBe("  pressure at the door  ");
   });
 
   it("keeps ideas in session scratch and clear-all removes slate and keepers", async () => {
@@ -142,9 +320,14 @@ describe("IdeateView", () => {
       metadata: generationMetadata()
     });
 
-    renderIdeate();
+    const rendered = renderIdeate();
 
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    const focus = screen.getByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "clear-remount focus canary" } });
+    await waitFor(() => expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get ideas" }).disabled).toBe(false));
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
     expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
 
@@ -159,8 +342,17 @@ describe("IdeateView", () => {
     expect(screen.queryByRole("heading", { name: "The sealed letter changes hands." })).toBeNull();
     expect(screen.getByText("No ideas yet.")).toBeTruthy();
     expect(screen.getByText("No keepers yet.")).toBeTruthy();
+    expect(focus.value).toBe("clear-remount focus canary");
     expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toBeNull();
     expect(localStorage.length).toBe(0);
+    expect(JSON.stringify({ ...sessionStorage, ...localStorage })).not.toContain("clear-remount focus canary");
+
+    rendered.unmount();
+    renderIdeate();
+    expect((await screen.findByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    })).value).toBe("");
+    expect(screen.getByText("0 / 500")).toBeTruthy();
   });
 
   it("renders malformed raw scratch instead of treating it as story state", async () => {
@@ -190,7 +382,7 @@ function renderIdeate() {
   );
 }
 
-function compileResult(prompt: string): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
   return {
     prompt,
     metadata: {
@@ -199,11 +391,19 @@ function compileResult(prompt: string): CompileResult {
         compiler: "compiler-1",
         contract: "contract-1"
       },
-      fingerprint: "fingerprint-1",
+      fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
     }
   };
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((complete) => {
+    resolve = complete;
+  });
+  return { promise, resolve };
 }
 
 function generationMetadata() {

@@ -1,5 +1,11 @@
-import type { CompileResult, GenerationReadiness, IdeationRequest, ReadinessDiagnostic } from "@loom/core";
-import { useEffect, useState } from "react";
+import {
+  ideationFocusState,
+  type CompileResult,
+  type GenerationReadiness,
+  type IdeationRequest,
+  type ReadinessDiagnostic
+} from "@loom/core";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -22,9 +28,11 @@ import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type Ide
 type IdeateSurfaceState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness }
+  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness; requestRevision: number }
   | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
+
+type PreviewStatus = "compiling" | "ready" | "stale";
 
 type ScratchState =
   | { status: "empty" }
@@ -37,6 +45,7 @@ const defaultIdeationRequest: IdeationRequest = {
   mode: "ideas",
   count: 5,
   dormantSlot: true,
+  focus: "",
   avoidList: []
 };
 
@@ -44,30 +53,53 @@ export function IdeateView(): React.JSX.Element {
   const [state, setState] = useState<IdeateSurfaceState>({ status: "loading" });
   const [scratchState, setScratchState] = useState<ScratchState>({ status: "empty" });
   const [ideationRequest, setIdeationRequest] = useState<IdeationRequest>(defaultIdeationRequest);
+  const [requestRevision, setRequestRevision] = useState(0);
+  const [previewStatus, setPreviewStatus] = useState<PreviewStatus>("compiling");
   const [keepers, setKeepers] = useState<readonly IdeationKeeper[]>(() => listKeepers());
   const [searchTerm, setSearchTerm] = useState("");
+  const requestRevisionRef = useRef(0);
+  const compileAttemptRef = useRef(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    void refreshPrompt(ideationRequest);
-  }, [ideationRequest]);
+    void refreshPrompt(ideationRequest, requestRevision);
+  }, [ideationRequest, requestRevision]);
 
-  async function refreshPrompt(requestInput: IdeationRequest): Promise<void> {
-    setState({ status: "loading" });
+  useEffect(() => () => {
+    compileAttemptRef.current += 1;
+  }, []);
+
+  async function refreshPrompt(requestInput: IdeationRequest, revision: number): Promise<void> {
+    const focusedRequest = normalizedIdeationRequest(requestInput);
+    const focusState = ideationFocusState(requestInput.focus);
+    if (focusState.error) {
+      compileAttemptRef.current += 1;
+      setPreviewStatus("stale");
+      return;
+    }
+
+    const attempt = ++compileAttemptRef.current;
+    setPreviewStatus("compiling");
     setSearchTerm("");
 
     try {
       const [compileResult, readinessResult] = await Promise.all([
-        compileIdeation(requestInput),
+        compileIdeation(focusedRequest),
         readiness({ promptKind: "ideation" })
       ]);
 
+      if (attempt !== compileAttemptRef.current || revision !== requestRevisionRef.current) {
+        return;
+      }
+
       if (isReadinessFailure(readinessResult)) {
+        setPreviewStatus("stale");
         setState({ status: "error", kind: readinessResult.kind, message: readinessResult.message });
         return;
       }
 
       if (!readinessResult.canPreview) {
+        setPreviewStatus("stale");
         setState({ status: "blocked", readiness: readinessResult });
         return;
       }
@@ -75,25 +107,53 @@ export function IdeateView(): React.JSX.Element {
       if (isFailure(compileResult)) {
         if (isValidationBlocked(compileResult)) {
           const blockedReadiness = compileResult.readiness ?? readinessResult;
+          setPreviewStatus("stale");
           setState({ status: "blocked", readiness: blockedReadiness });
           return;
         }
 
+        setPreviewStatus("stale");
         setState({ status: "error", kind: compileResult.kind, message: compileResult.message });
         return;
       }
 
-      setState({ status: "ready", result: compileResult, readiness: readinessResult });
+      setState({ status: "ready", result: compileResult, readiness: readinessResult, requestRevision: revision });
+      setPreviewStatus("ready");
     } catch {
+      if (attempt !== compileAttemptRef.current || revision !== requestRevisionRef.current) {
+        return;
+      }
+      setPreviewStatus("stale");
       setState({ status: "error", kind: "compile-request-failed", message: "Could not compile the ideation prompt." });
     }
   }
 
-  async function requestIdeas(requestInput: IdeationRequest = ideationRequest, replacementSlotNumber?: number): Promise<void> {
+  function changeIdeationRequest(requestInput: IdeationRequest): void {
+    compileAttemptRef.current += 1;
+    const nextRevision = requestRevisionRef.current + 1;
+    requestRevisionRef.current = nextRevision;
+    setRequestRevision(nextRevision);
+    setIdeationRequest(requestInput);
+    setPreviewStatus(ideationFocusState(requestInput.focus).error ? "stale" : "compiling");
+    setSearchTerm("");
+  }
+
+  async function requestIdeas(
+    requestInput: IdeationRequest,
+    expectedPromptFingerprint: string,
+    replacementSlotNumber?: number
+  ): Promise<void> {
+    const sendRevision = requestRevisionRef.current;
+    const previousIdeas = scratchState.status === "ideas" ? scratchState.ideas : [];
     setScratchState({ status: "sending" });
 
     try {
-      const result = await ideate(requestInput);
+      const result = await ideate(requestInput, expectedPromptFingerprint);
+
+      if (sendRevision !== requestRevisionRef.current) {
+        setScratchState({ status: "empty" });
+        return;
+      }
 
       if (result.ok) {
         if ("malformed" in result) {
@@ -101,28 +161,33 @@ export function IdeateView(): React.JSX.Element {
           return;
         }
 
-        setScratchState((current) => {
-          if (replacementSlotNumber === undefined || current.status !== "ideas") {
-            return { status: "ideas", ideas: result.ideas, citations: result.citations };
-          }
+        const replacement = replacementSlotNumber === undefined
+          ? undefined
+          : result.ideas.find((idea) => idea.slotNumber === replacementSlotNumber) ?? result.ideas[0];
+        const nextIdeas = replacementSlotNumber === undefined
+          ? result.ideas
+          : replacement
+            ? previousIdeas.map((idea) => idea.slotNumber === replacementSlotNumber ? replacement : idea)
+            : previousIdeas;
 
-          const replacement = result.ideas.find((idea) => idea.slotNumber === replacementSlotNumber) ?? result.ideas[0];
-          if (!replacement) {
-            return current;
-          }
-
-          return {
-            status: "ideas",
-            citations: result.citations,
-            ideas: current.ideas.map((idea) => idea.slotNumber === replacementSlotNumber ? replacement : idea)
-          };
+        setScratchState({ status: "ideas", ideas: nextIdeas, citations: result.citations });
+        changeIdeationRequest({
+          ...ideationRequest,
+          avoidList: nextIdeas.map(ideaTitle)
         });
         return;
       }
 
       if (isIdeateBlocked(result)) {
         setScratchState({ status: "empty" });
-        await refreshPrompt(ideationRequest);
+        await refreshPrompt(ideationRequest, requestRevisionRef.current);
+        return;
+      }
+
+      if ("kind" in result && result.kind === "stale-ideation-prompt") {
+        setScratchState({ status: "empty" });
+        setPreviewStatus("stale");
+        await refreshPrompt(ideationRequest, requestRevisionRef.current);
         return;
       }
 
@@ -132,22 +197,13 @@ export function IdeateView(): React.JSX.Element {
     }
   }
 
-  function currentAvoidList(): string[] {
-    return scratchState.status === "ideas" ? scratchState.ideas.map(ideaTitle) : [];
-  }
-
-  function requestWithCurrentAvoidList(): IdeationRequest {
-    return { ...ideationRequest, avoidList: currentAvoidList() };
-  }
-
-  function regenerateSlot(idea: ParsedIdeationIdea): void {
-    void requestIdeas(requestWithCurrentAvoidList(), idea.slotNumber);
-  }
-
   function clearAll(): void {
     setScratchState({ status: "empty" });
     clearKeepers();
     setKeepers([]);
+    if (ideationRequest.avoidList.length > 0) {
+      changeIdeationRequest({ ...ideationRequest, avoidList: [] });
+    }
   }
 
   function keepIdea(idea: ParsedIdeationIdea): void {
@@ -177,6 +233,12 @@ export function IdeateView(): React.JSX.Element {
     },
     onCopyTechnicalJson: copyTechnicalJson
   };
+  const focusState = ideationFocusState(ideationRequest.focus);
+  const previewIsCurrent = state.status === "ready"
+    && state.requestRevision === requestRevision
+    && previewStatus === "ready"
+    && !focusState.error;
+  const currentFocusedRequest = normalizedIdeationRequest(ideationRequest);
 
   return (
     <section className="surface previewSurface ideateSurface" aria-labelledby="ideate-title">
@@ -192,7 +254,9 @@ export function IdeateView(): React.JSX.Element {
       {state.status === "idle" ? (
         <section className="configPanel">
           <p className="muted">No ideation prompt is currently compiled.</p>
-          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest, requestRevisionRef.current)}>
+            Refresh prompt
+          </button>
         </section>
       ) : null}
 
@@ -205,14 +269,18 @@ export function IdeateView(): React.JSX.Element {
             <h3 id="ideate-validation-title">READINESS</h3>
             <ReadinessChecklist readiness={state.readiness} actions={checklistActions} />
           </section>
-          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest, requestRevisionRef.current)}>
+            Refresh prompt
+          </button>
         </section>
       ) : null}
 
       {state.status === "error" ? (
         <section className="previewStack">
           <p className="status statusError" role="alert">{errorMessage(state.kind, state.message)}</p>
-          <button type="button" onClick={() => void refreshPrompt(ideationRequest)}>Refresh prompt</button>
+          <button type="button" onClick={() => void refreshPrompt(ideationRequest, requestRevisionRef.current)}>
+            Refresh prompt
+          </button>
         </section>
       ) : null}
 
@@ -223,13 +291,19 @@ export function IdeateView(): React.JSX.Element {
           searchTerm={searchTerm}
           scratchState={scratchState}
           ideationRequest={ideationRequest}
+          previewStatus={previewStatus}
+          previewIsCurrent={previewIsCurrent}
           keepers={keepers}
-          onRequestChange={setIdeationRequest}
+          onRequestChange={changeIdeationRequest}
           onSearchTermChange={setSearchTerm}
-          onRefresh={() => void refreshPrompt(ideationRequest)}
-          onIdeate={() => void requestIdeas(ideationRequest)}
-          onRegenerateAll={() => void requestIdeas(requestWithCurrentAvoidList())}
-          onRegenerateSlot={regenerateSlot}
+          onRefresh={() => void refreshPrompt(ideationRequest, requestRevisionRef.current)}
+          onIdeate={() => void requestIdeas(currentFocusedRequest, state.result.metadata.fingerprint)}
+          onRegenerateAll={() => void requestIdeas(currentFocusedRequest, state.result.metadata.fingerprint)}
+          onRegenerateSlot={(idea) => void requestIdeas(
+            currentFocusedRequest,
+            state.result.metadata.fingerprint,
+            idea.slotNumber
+          )}
           onClearAll={clearAll}
           onKeepIdea={keepIdea}
           onRemoveKeeper={unkeepIdea}
@@ -254,6 +328,8 @@ function ReadyIdeate({
   searchTerm,
   scratchState,
   ideationRequest,
+  previewStatus,
+  previewIsCurrent,
   keepers,
   onRequestChange,
   onSearchTermChange,
@@ -271,6 +347,8 @@ function ReadyIdeate({
   searchTerm: string;
   scratchState: ScratchState;
   ideationRequest: IdeationRequest;
+  previewStatus: PreviewStatus;
+  previewIsCurrent: boolean;
   keepers: readonly IdeationKeeper[];
   onRequestChange: (request: IdeationRequest) => void;
   onSearchTermChange: (value: string) => void;
@@ -283,20 +361,28 @@ function ReadyIdeate({
   onRemoveKeeper: (idea: IdeationKeeper) => void;
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
-  const canIdeate = readiness.canGenerate && scratchState.status !== "sending";
+  const canIdeate = readiness.canGenerate && previewIsCurrent && scratchState.status !== "sending";
   const showReadinessChecklist = readiness.blockers.length > 0 || readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
   const hasSlate = scratchState.status === "ideas" || scratchState.status === "malformed";
 
   return (
     <section className="previewStack">
-      {showReadinessChecklist ? (
+      {previewStatus === "compiling" ? (
+        <p className="muted" role="status">Compiling ideation prompt...</p>
+      ) : null}
+      {previewStatus === "stale" ? (
+        <p className="status statusWarning" role="status">
+          The prompt preview is stale. Finish editing Author focus to compile the current request.
+        </p>
+      ) : null}
+      {previewStatus === "ready" && showReadinessChecklist ? (
         <section className="configPanel validationPanel" aria-labelledby="ideate-readiness-title">
           <h3 id="ideate-readiness-title">READINESS</h3>
           <ReadinessChecklist readiness={readiness} actions={onChecklistAction} />
         </section>
-      ) : (
+      ) : previewStatus === "ready" ? (
         <p className="status statusSuccess" role="status">Ready to ideate.</p>
-      )}
+      ) : null}
 
       <IdeateControls
         request={ideationRequest}
@@ -317,10 +403,15 @@ function ReadyIdeate({
         <p className="status statusError" role="alert">{scratchState.message}</p>
       ) : null}
 
-      <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+      {previewIsCurrent ? (
+        <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+      ) : (
+        <p className="muted" role="status">The current prompt is not ready for inspection or sending.</p>
+      )}
       <ScratchPanel
         state={scratchState}
         keepers={keepers}
+        canRegenerate={canIdeate}
         onRegenerateSlot={onRegenerateSlot}
         onKeepIdea={onKeepIdea}
         onRemoveKeeper={onRemoveKeeper}
@@ -332,12 +423,14 @@ function ReadyIdeate({
 function ScratchPanel({
   state,
   keepers,
+  canRegenerate,
   onRegenerateSlot,
   onKeepIdea,
   onRemoveKeeper
 }: {
   state: ScratchState;
   keepers: readonly IdeationKeeper[];
+  canRegenerate: boolean;
   onRegenerateSlot: (idea: ParsedIdeationIdea) => void;
   onKeepIdea: (idea: ParsedIdeationIdea) => void;
   onRemoveKeeper: (idea: IdeationKeeper) => void;
@@ -370,6 +463,7 @@ function ScratchPanel({
                 idea={idea}
                 citations={state.citations}
                 isKept={keeperKeys.has(keeperKey(idea))}
+                canRegenerate={canRegenerate}
                 onKeep={onKeepIdea}
                 onRegenerate={onRegenerateSlot}
               />
@@ -422,6 +516,13 @@ function KeepersPanel({
 
 function ideaTitle(idea: Pick<ParsedIdeationIdea, "headline" | "question" | "slotNumber">): string {
   return idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
+}
+
+function normalizedIdeationRequest(request: IdeationRequest): IdeationRequest {
+  return {
+    ...request,
+    focus: ideationFocusState(request.focus).normalizedValue
+  };
 }
 
 function isFailure(result: CompileResponse): result is Extract<CompileResponse, { ok: false }> {

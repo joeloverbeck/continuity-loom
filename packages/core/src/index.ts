@@ -127,9 +127,17 @@ export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.
 export { displayLabel } from "./compiler/labels.js";
 export { IDEATION_OPERATORS } from "./compiler/ideation/operators.js";
 export { assignSlots } from "./compiler/ideation/slot-assignment.js";
-export { ideationModeSchema, ideationRequestSchema, promptKindSchema } from "./compiler/ideation/types.js";
+export {
+  IDEATION_FOCUS_LIMIT_MESSAGE,
+  IDEATION_FOCUS_MAX_CODE_POINTS,
+  ideationFocusState,
+  ideationModeSchema,
+  ideationRequestSchema,
+  promptKindSchema
+} from "./compiler/ideation/types.js";
 export type {
   IdeationAssignment,
+  IdeationFocusState,
   IdeationMode,
   IdeationOperatorId,
   IdeationRequest,

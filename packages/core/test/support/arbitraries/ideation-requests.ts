@@ -6,6 +6,7 @@ export const ideationRequestArbitrary: fc.Arbitrary<IdeationRequest> = fc.record
   mode: fc.constantFrom("ideas", "questions"),
   count: fc.integer({ min: 3, max: 6 }),
   dormantSlot: fc.boolean(),
+  focus: fc.constantFrom("", "What pressure should change next?", "Which cost matters now?"),
   avoidList: fc.array(fc.constantFrom("repeat the last beat", "resolve cleanly", "add a new POV"), {
     maxLength: 3
   })

@@ -14,6 +14,7 @@ import { createServer } from "./server.js";
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const apps: ReturnType<typeof createServer>[] = [];
 const fakeApiKey = "sk-or-IDEATE-LEAK-CANARY-0000";
+const focusLogCanary = "IDEATE_FOCUS_LOG_CANARY_0000";
 
 describe("ideate route secret leakage regression", () => {
   let configDir: string;
@@ -48,14 +49,41 @@ describe("ideate route secret leakage regression", () => {
     apps.push(fastify);
 
     try {
-      await fastify.inject({ method: "POST", url: "/api/project/create", payload: { parentPath: tmpdir(), folderName: "ideate-secret", title: "Ideate" } });
-      const response = await fastify.inject({ method: "POST", url: "/api/ideate" });
+      const created = await fastify.inject({
+        method: "POST",
+        url: "/api/project/create-demo",
+        payload: { parentPath: configDir, folderName: "ideate-secret" }
+      });
+      expect(created.statusCode).toBe(201);
+      const compile = await fastify.inject({
+        method: "POST",
+        url: "/api/compile",
+        payload: {
+          promptKind: "ideation",
+          ideationRequest: { focus: focusLogCanary }
+        }
+      });
+      const compileBody = compile.json() as { metadata: { fingerprint: string } };
+      expect(compile.statusCode).toBe(200);
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/ideate",
+        payload: {
+          focus: focusLogCanary,
+          expectedPromptFingerprint: compileBody.metadata.fingerprint
+        }
+      });
+      const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
 
+      expect(response.statusCode).toBe(200);
       expect(response.body).not.toContain(fakeApiKey);
-      expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "").not.toContain(fakeApiKey);
+      expect(sentPrompt).not.toContain(fakeApiKey);
+      expect(sentPrompt).toContain(focusLogCanary);
+      expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
     } finally {
       const output = capture.restore();
       expect(output).not.toContain(fakeApiKey);
+      expect(output).not.toContain(focusLogCanary);
     }
   });
 });

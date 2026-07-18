@@ -21,6 +21,7 @@ describe("ideation slot assignment properties", () => {
       mode: "ideas",
       count: 5,
       dormantSlot: true,
+      focus: "",
       avoidList: []
     });
 
@@ -149,6 +150,22 @@ describe("ideation slot assignment properties", () => {
         expect(assignSlots(permutedRecords, request)).toEqual(assignSlots(records, request));
       }),
       0x26014
+    );
+  });
+
+  it("keeps assignment and intentional shrinkage invariant across Author focus values", () => {
+    runProperty(
+      fc.property(ideationPresenceVectorArbitrary, ideationRequestArbitrary, (vector, request) => {
+        const records = recordsForPresence(vector);
+        const blank = assignSlots(records, { ...request, focus: "" });
+        const focused = assignSlots(records, {
+          ...request,
+          focus: "  What should change within these grounds?  "
+        });
+
+        expect(focused).toEqual(blank);
+      }),
+      0x26016
     );
   });
 

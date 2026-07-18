@@ -87,12 +87,20 @@ describe("story notes isolation capstone", () => {
         payload: { promptKind: "ideation", ideationRequest: { count: 3 } }
       });
       const proseCompileBody = proseCompile.json() as { metadata: { fingerprint: string } };
+      const ideationCompileBody = ideationCompile.json() as { metadata: { fingerprint: string } };
       const generate = await fastify.inject({
         method: "POST",
         url: "/api/generate",
         payload: { expectedPromptFingerprint: proseCompileBody.metadata.fingerprint }
       });
-      const ideate = await fastify.inject({ method: "POST", url: "/api/ideate", payload: { count: 3 } });
+      const ideate = await fastify.inject({
+        method: "POST",
+        url: "/api/ideate",
+        payload: {
+          count: 3,
+          expectedPromptFingerprint: ideationCompileBody.metadata.fingerprint
+        }
+      });
 
       expect(validation.statusCode).toBe(200);
       expect(readiness.statusCode).toBe(200);

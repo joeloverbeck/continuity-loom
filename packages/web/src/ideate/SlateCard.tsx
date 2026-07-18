@@ -4,11 +4,19 @@ export interface SlateCardProps {
   idea: ParsedIdeationIdea;
   citations?: Readonly<Record<string, string>>;
   isKept: boolean;
+  canRegenerate?: boolean;
   onKeep: (idea: ParsedIdeationIdea) => void;
   onRegenerate: (idea: ParsedIdeationIdea) => void;
 }
 
-export function SlateCard({ idea, citations = {}, isKept, onKeep, onRegenerate }: SlateCardProps): React.JSX.Element {
+export function SlateCard({
+  idea,
+  citations = {},
+  isKept,
+  canRegenerate = true,
+  onKeep,
+  onRegenerate
+}: SlateCardProps): React.JSX.Element {
   const title = idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
 
   return (
@@ -29,7 +37,14 @@ export function SlateCard({ idea, citations = {}, isKept, onKeep, onRegenerate }
         <p className="status statusWarning">Unknown citations: {idea.unknownCitations.join(", ")}</p>
       ) : null}
       <div className="slateCardActions">
-        <button type="button" className="secondaryButton" onClick={() => onRegenerate(idea)}>Regenerate slot</button>
+        <button
+          type="button"
+          className="secondaryButton"
+          onClick={() => onRegenerate(idea)}
+          disabled={!canRegenerate}
+        >
+          Regenerate slot
+        </button>
         <button type="button" onClick={() => onKeep(idea)} disabled={isKept}>
           {isKept ? "Kept" : "Keep"}
         </button>

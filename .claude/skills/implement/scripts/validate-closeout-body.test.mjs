@@ -393,6 +393,20 @@ test("audit-only validator accepts a review-ready audit without closeout fields"
   assert.match(result.stdout, /Acceptance audit validation passed/);
 });
 
+test("audit-only validator accepts the exact ideation prompt tag from a manifest criterion", () => {
+  const manifest = buildAcceptanceManifest({
+    number: 397,
+    body: "## Acceptance criteria\n\n- [ ] Render focus once in the existing `<ideation_slots>` request header.\n"
+  });
+  const body = auditBody([
+    `| #397 | AC1 - Render focus once in the existing \`<ideation_slots>\` request header. | ${evidence} | satisfied |`
+  ]);
+
+  const result = runValidator(body, manifest, ["--audit-only", "--review-entry"]);
+
+  assert.equal(result.status, 0, result.stderr);
+});
+
 test("audit-only validator permits truthful blocked rows until review entry", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const body = auditBody([

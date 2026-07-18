@@ -613,8 +613,14 @@ export async function generate(request: { expectedPromptFingerprint: string }): 
   return postJson<GenerateResponse>("/api/generate", request);
 }
 
-export async function ideate(request: Partial<IdeationRequest> = {}): Promise<IdeateResponse> {
-  return postJson<IdeateResponse>("/api/ideate", request);
+export async function ideate(
+  request: Partial<IdeationRequest>,
+  expectedPromptFingerprint: string
+): Promise<IdeateResponse> {
+  return postJson<IdeateResponse>("/api/ideate", {
+    ...request,
+    expectedPromptFingerprint
+  });
 }
 
 export async function recordHygieneCompile(mode: RecordHygieneRequest["mode"] = "full_active_atomic_review"): Promise<RecordHygieneCompileResponse> {

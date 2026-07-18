@@ -96,11 +96,17 @@ Use Ideate when you are stuck before generation and want grounded, non-canonical
 
 The Ideate view is pull-based. Open it intentionally from the primary navigation or the "Stuck? Get ideas" link on the Generation Brief page. Inspect the compiled ideation prompt before sending. The prompt uses the same selected records and generation-time fields as the prose workflow, but it asks for premise-level ideas or author-facing questions, not prose.
 
-You can choose ideas or questions, set the slate size from 3 to 6, keep or remove the dormant-record slot, generate a full slate, regenerate the whole slate, or regenerate an individual slot. Per-slot and full regeneration send the current slate titles as an avoid-list for the next ideation request.
+You can optionally use **What do you need ideas or questions about?** to tell Ideate what local uncertainty you want the grounded slate to address. Author focus is temporary, non-canonical request context: it can shape ideas or questions only within the slots already grounded by your selected records. It does not change story records, continuity authority, slot grounding, or the active working set, and it is never copied from Private Notes or other story and assistance surfaces.
+
+The live counter measures the trimmed focus in Unicode code points. Up to `500 / 500` is valid. At 501 or more, Ideate shows an associated error and makes the old preview and all send actions unavailable. Shorten the text to recover; the app recompiles locally without reloading or contacting OpenRouter. Inspect the exact escaped focus and the current fingerprint in Prompt Inspector before sending.
+
+You can choose ideas or questions, set the slate size from 3 to 6, keep or remove the dormant-record slot, generate a full slate, regenerate the whole slate, or regenerate an individual slot. Focus stays in the mounted Ideate view through those controls and actions. Per-slot and full regeneration send the current slate titles as an avoid-list for the next inspected ideation request. Clear all removes the slate and keepers but preserves the current focus; leaving and later remounting Ideate starts with blank focus.
+
+Typing, counting, validation, prompt compilation, and inspection stay local. Only Get ideas, Get new slate, Regenerate all, and an individual Regenerate action can make one explicit OpenRouter request, and only after the server rebuilds the complete request and confirms it matches the inspected fingerprint. If the request or project changed, Ideate requires a fresh preview instead of sending a stale prompt.
 
 Ideas are AI-suggested scratch. They are not story state, not records, not Generation Brief fields, not accepted prose, and not prompt context for prose generation. There is no insert-into-records, insert-into-brief, or use-as-prompt action. If an idea is useful, copy it by hand and decide what durable record or brief field you want to author yourself.
 
-Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.
+Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Author focus is not stored with keepers or anywhere else in browser or project storage. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.
 
 ## Record Hygiene - Review Overlapping Active Records
 

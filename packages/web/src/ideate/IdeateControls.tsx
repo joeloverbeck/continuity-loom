@@ -1,4 +1,5 @@
-import type { IdeationRequest } from "@loom/core";
+import { ideationFocusState, type IdeationRequest } from "@loom/core";
+import { useId } from "react";
 
 export interface IdeateControlsProps {
   request: IdeationRequest;
@@ -22,9 +23,39 @@ export function IdeateControls({
   onClearAll
 }: IdeateControlsProps): React.JSX.Element {
   const disabled = !canIdeate || isSending;
+  const focusState = ideationFocusState(request.focus);
+  const focusId = useId();
+  const helpId = `${focusId}-help`;
+  const countId = `${focusId}-count`;
+  const errorId = `${focusId}-error`;
+  const describedBy = [helpId, countId, ...(focusState.error ? [errorId] : [])].join(" ");
 
   return (
     <section className="ideateControls" aria-label="Ideation controls">
+      <div className="ideateFocusField">
+        <label htmlFor={focusId}>What do you need ideas or questions about?</label>
+        <p className="muted" id={helpId}>
+          Author focus is temporary, non-canonical request context. It shapes grounded ideas or questions without
+          changing story records or slot grounding.
+        </p>
+        <textarea
+          id={focusId}
+          rows={3}
+          value={request.focus}
+          aria-describedby={describedBy}
+          aria-invalid={Boolean(focusState.error)}
+          aria-errormessage={focusState.error ? errorId : undefined}
+          onChange={(event) => onRequestChange({ ...request, focus: event.target.value })}
+        />
+        <span className="ideateFocusCount" id={countId} aria-live="polite">
+          {focusState.codePointCount} / 500
+        </span>
+        {focusState.error ? (
+          <p className="status statusError ideateFocusError" id={errorId} role="alert">
+            {focusState.error}
+          </p>
+        ) : null}
+      </div>
       <div className="segmentedControl" aria-label="Ideation mode">
         <button
           type="button"

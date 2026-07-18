@@ -1,6 +1,6 @@
 # SPEC-035 — Author-Focused Ideation
 
-**Status**: ACTIVE
+**Status**: ✅ COMPLETED
 Parent: GitHub PRD #97
 Implementation issues: GitHub #98 and #99
 Governing authorities: `docs/FOUNDATIONS.md`, `docs/ACTIVE-DOCS.md`,
@@ -303,6 +303,45 @@ Before issue #99 closes:
    evidence.
 5. The spec must move to that archive path before the final implementation
    commit is staged.
+
+## Outcome
+
+Completed on 2026-07-18.
+
+The implementation added one core-owned, trim-normalized Author focus field to
+the existing ideation request; bounded it to 500 Unicode code points; rendered
+escaped nonblank focus once inside `<ideation_slots>` without changing slot
+assignment; and made the inspected focused fingerprint mandatory at send time.
+The browser now provides the associated multiline control, count, accessible
+limit recovery, immediate stale gating, latest-compile ownership, and mounted-
+session retention without persistence. Compiler, ideation-template, user-guide,
+active-doc, and synchronized version authorities now describe template
+`1.10.0`, compiler `1.12.0`, and contract `1.13.0`.
+
+There were no product or constitutional deviations. The existing compile route
+already consumed the shared core schema, so its focused behavior required
+route-level regression proof but no production edit. The scoped mutation helper
+classified the test-support generator change as robustness infrastructure and,
+under repository policy, deferred the full prose, ideation,
+segment-reconciliation, and validation mutation campaigns to the scheduled or
+manual full-mutation path; no threshold or result gate was weakened.
+
+Verification passed as follows:
+
+- Focused core, server, API, component, property, golden, secret-leakage, and
+  end-to-end regressions passed, including blank, 500/501, astral code-point,
+  escaping, assignment invariance, stale-fingerprint, transport-count,
+  persistence, race-ownership, and retention cases.
+- `npm run test:coverage:core` passed 78 files and 1,190 tests with 95.07%
+  statements, 92.52% branches, 99.08% functions, and 95.10% lines.
+- A production build served on an isolated localhost port passed the real
+  Project Library to Ideate flow, focused preview and fingerprint changes,
+  exact escaping, 501-to-500 recovery, control-change recompilation,
+  non-persistence, and a clean browser console; the proof-owned browser and
+  server were stopped afterward.
+- The final pre-archive root gates passed: `npm run lint`, `npm run typecheck`,
+  `npm test` (171 files and 1,829 tests), and `npm run build`. Vite emitted only
+  its existing advisory chunk-size warning.
 
 ## FOUNDATIONS Alignment
 

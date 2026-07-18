@@ -1167,6 +1167,33 @@ button:disabled:hover {
   padding: 14px;
 }
 
+.ideateFocusField {
+  display: grid;
+  flex-basis: 100%;
+  gap: 6px;
+}
+
+.ideateFocusField label {
+  font-weight: 700;
+}
+
+.ideateFocusField textarea {
+  box-sizing: border-box;
+  min-height: 84px;
+  resize: vertical;
+  width: 100%;
+}
+
+.ideateFocusCount {
+  color: #4d5b6d;
+  font-size: 0.9rem;
+  justify-self: end;
+}
+
+.ideateFocusError {
+  margin: 0;
+}
+
 .segmentedControl,
 .ideateControlActions,
 .slateCardActions {

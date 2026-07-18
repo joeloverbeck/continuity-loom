@@ -69,11 +69,19 @@ describe("ideation end-to-end capstone", () => {
     const records = await listRecords(fastify);
     expect(records.records).toHaveLength(demoRecords.length);
     const before = await persistedProjectSurfaces(fastify);
+    const ideationRequest = { count: 3, focus: "  What pressure does <the letter> create?  " };
 
-    const firstCompile = await compileIdeation(fastify);
-    const secondCompile = await compileIdeation(fastify);
+    const firstCompile = await compileIdeation(fastify, ideationRequest);
+    const secondCompile = await compileIdeation(fastify, ideationRequest);
     const proseBefore = await compileProse(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/ideate", payload: { count: 3 } });
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: {
+        ...ideationRequest,
+        expectedPromptFingerprint: firstCompile.metadata.fingerprint
+      }
+    });
     const proseAfter = await compileProse(fastify);
     const after = await persistedProjectSurfaces(fastify);
     const body = response.json() as {
@@ -84,6 +92,7 @@ describe("ideation end-to-end capstone", () => {
     const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
 
     expect(firstCompile.prompt).toContain("# Grounded Ideation Prompt");
+    expect(firstCompile.prompt.match(/What pressure does &lt;the letter&gt; create\?/g)).toHaveLength(1);
     expect(firstCompile.prompt).toBe(secondCompile.prompt);
     expect(firstCompile.metadata.fingerprint).toBe(secondCompile.metadata.fingerprint);
     expect(response.statusCode).toBe(200);
@@ -94,7 +103,7 @@ describe("ideation end-to-end capstone", () => {
       unknownCitations: ["[UNKNOWN-99]"]
     });
     expect(body.ideas[0]?.grounds).toContain("[SECRET-1]");
-    expect(body.metadata.versions).toEqual({ template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);
     expect(response.body).not.toContain(keySecretText);
@@ -175,11 +184,14 @@ async function listRecords(fastify: FastifyApp): Promise<{ records: unknown[] }>
   return response.json() as { records: unknown[] };
 }
 
-async function compileIdeation(fastify: FastifyApp): Promise<{ prompt: string; metadata: { fingerprint: string } }> {
+async function compileIdeation(
+  fastify: FastifyApp,
+  request: Record<string, unknown> = { count: 3 }
+): Promise<{ prompt: string; metadata: { fingerprint: string } }> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/compile",
-    payload: { promptKind: "ideation", ideationRequest: { count: 3 } }
+    payload: { promptKind: "ideation", ideationRequest: request }
   });
   expect(response.statusCode).toBe(200);
   return response.json() as { prompt: string; metadata: { fingerprint: string } };

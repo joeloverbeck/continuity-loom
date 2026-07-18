@@ -55,7 +55,11 @@ describe("ideate routes", () => {
     await prepareIdeationProject(fastify);
 
     const before = await generationBrief(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/ideate", payload: { count: 3 } });
+    const payload = await inspectedIdeationPayload(fastify, {
+      count: 3,
+      focus: "  What pressure <opens> the door?  "
+    });
+    const response = await fastify.inject({ method: "POST", url: "/api/ideate", payload });
     const after = await generationBrief(fastify);
     const body = response.json() as {
       ideas: { unknownCitations: string[] }[];
@@ -68,9 +72,12 @@ describe("ideate routes", () => {
     expect(body.citations["[SECRET-1]"]).toBe("The loading-door key has been copied.");
     expect(body.metadata).toMatchObject({
       provider: "openrouter",
-      versions: { template: "1.9.0", compiler: "1.11.0", contract: "1.12.0" }
+      versions: { template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" }
     });
-    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).toContain("# Grounded Ideation Prompt");
+    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
+    expect(sentPrompt).toContain("# Grounded Ideation Prompt");
+    expect(sentPrompt.match(/What pressure &lt;opens&gt; the door\?/g)).toHaveLength(1);
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
     expect(after).toEqual(before);
   });
 
@@ -80,7 +87,11 @@ describe("ideate routes", () => {
     const fastify = app();
     await prepareIdeationProject(fastify);
 
-    const response = await fastify.inject({ method: "POST", url: "/api/ideate" });
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: await inspectedIdeationPayload(fastify)
+    });
 
     expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform answer" });
   });
@@ -89,12 +100,71 @@ describe("ideate routes", () => {
     const fastify = app();
     await prepareIdeationProject(fastify);
 
-    const response = await fastify.inject({ method: "POST", url: "/api/ideate" });
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: await inspectedIdeationPayload(fastify)
+    });
 
     expect(response.json()).toEqual({
       ok: false,
       category: "missing-key",
       message: "OpenRouter API key is missing."
+    });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing inspected fingerprint before transport", async () => {
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: { focus: "What changes?" }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ ok: false, kind: "invalid-ideation-request" });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects over-limit Author focus before snapshot or transport", async () => {
+    const fastify = app();
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: {
+        focus: "😀".repeat(501),
+        expectedPromptFingerprint: "not-used"
+      }
+    });
+    const body = response.json() as { kind: string; issues: { message: string }[] };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.kind).toBe("invalid-ideation-request");
+    expect(body.issues.map((issue) => issue.message)).toContain(
+      "Author focus must be 500 Unicode code points or fewer."
+    );
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a stale inspected fingerprint before credentials or transport", async () => {
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+    const inspected = await inspectedIdeationPayload(fastify, { focus: "What opens?" });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: { ...inspected, focus: "What closes?" }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "stale-ideation-prompt",
+      message: "The ideation request changed. Inspect the current prompt before sending."
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
@@ -236,6 +306,22 @@ async function generationBrief(fastify: ReturnType<typeof createServer>): Promis
   const response = await fastify.inject({ method: "GET", url: "/api/generation-brief" });
   expect(response.statusCode).toBe(200);
   return response.json();
+}
+
+async function inspectedIdeationPayload(
+  fastify: ReturnType<typeof createServer>,
+  request: Record<string, unknown> = {}
+): Promise<Record<string, unknown>> {
+  const response = await fastify.inject({
+    method: "POST",
+    url: "/api/compile",
+    payload: { promptKind: "ideation", ideationRequest: request }
+  });
+  const body = response.json() as { metadata?: { fingerprint?: string } };
+
+  expect(response.statusCode).toBe(200);
+  expect(body.metadata?.fingerprint).toEqual(expect.any(String));
+  return { ...request, expectedPromptFingerprint: body.metadata!.fingerprint! };
 }
 
 function restoreEnv(name: string, value: string | undefined): void {

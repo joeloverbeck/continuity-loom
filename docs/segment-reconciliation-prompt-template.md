@@ -3,9 +3,9 @@
 Status: active reference — domain authority for the segment-reconciliation assistance prompt template
 Authority: domain authority for the segment-reconciliation assistance prompt template (see `docs/ACTIVE-DOCS.md`)
 Profile id: `segment-reconciliation`
-Template version: `1.9.0`
-Compiler version: `1.11.0`
-Compiler-contract version: `1.12.0`
+Template version: `1.10.0`
+Compiler version: `1.12.0`
+Compiler-contract version: `1.13.0`
 
 ## Purpose
 
