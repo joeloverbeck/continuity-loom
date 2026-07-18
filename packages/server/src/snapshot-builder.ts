@@ -51,7 +51,7 @@ export function buildSnapshotFromOpenProject(manager: ProjectStoreManager): Snap
   if (!sessionResult.ok && sessionResult.kind !== "not-found") {
     return { ok: false, status: 422, body: sessionResult };
   }
-  const acceptedSegmentCount = repository.listAcceptedSegments().length;
+  const acceptedSegmentCount = repository.countAcceptedSegments();
   const savedGenerationContext = savedContext(sessionResult.ok ? sessionResult.payload : {});
   const generationContext = deriveGenerationContextCoherence(savedGenerationContext, acceptedSegmentCount);
   const generationSession = withSnapshotSessionDefaults(

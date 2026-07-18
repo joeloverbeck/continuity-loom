@@ -6,7 +6,7 @@ import {
 import { describe, expect, it } from "vitest";
 
 import type { ProjectStoreManager } from "./project-store.js";
-import type { AcceptedSegment, RecordRepositoryRecord } from "./record-repository.js";
+import type { RecordRepositoryRecord } from "./record-repository.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 function managerFor(input: {
@@ -14,21 +14,16 @@ function managerFor(input: {
   acceptedSegmentCount?: number;
   records?: readonly RecordRepositoryRecord[];
 }): ProjectStoreManager {
-  const acceptedSegments = Array.from({ length: input.acceptedSegmentCount ?? 0 }, (_, index) => ({
-    id: index + 1,
-    sequence: index + 1,
-    text: `Accepted prose ${index + 1}`,
-    metadata: {},
-    createdAt: "2026-06-07T00:00:00.000Z"
-  })) satisfies AcceptedSegment[];
-
   return {
     getRecordRepository: () => ({
       getGenerationSession: () =>
         input.generationSession
           ? { ok: true as const, payload: input.generationSession }
           : { ok: false as const, kind: "not-found" as const, message: "Generation session not found." },
-      listAcceptedSegments: () => acceptedSegments,
+      countAcceptedSegments: () => input.acceptedSegmentCount ?? 0,
+      listAcceptedSegments: () => {
+        throw new Error("Snapshot lifecycle derivation must not materialize accepted prose.");
+      },
       getStoryConfig: () => ({ ok: false as const }),
       getRecord: (id: string) => {
         const record = (input.records ?? []).find((item) => item.id === id && !item.archived);

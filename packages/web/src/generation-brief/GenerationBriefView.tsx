@@ -365,15 +365,18 @@ export function GenerationBriefView(): React.JSX.Element {
 
     if (response.ok) {
       const savedSession = parseSession(response.session);
-      const savedGenerationContext = savedSession.generation_validation_focus?.validation_focus_tags?.generation_context?.[0] ?? null;
-      setSession(savedSession);
-      setBriefGenerationContext((current) => current
-        ? {
-            ...current,
-            savedValue: savedGenerationContext,
-            coherent: savedGenerationContext === null || savedGenerationContext === current.requiredValue
-          }
-        : current);
+      const refreshed = await getGenerationBrief();
+      if (refreshed.ok) {
+        setSession(parseSession(refreshed.session));
+        setBriefGenerationContext(refreshed.generationContext);
+      } else {
+        setSession(savedSession);
+        setBriefGenerationContext(null);
+        setNotice(`Draft saved, but generation context could not be refreshed: ${refreshed.message}`);
+        setHasUnsavedChanges(false);
+        setValidationKey((current) => current + 1);
+        return;
+      }
       setNotice("Draft saved.");
       setHasUnsavedChanges(false);
       setValidationKey((current) => current + 1);

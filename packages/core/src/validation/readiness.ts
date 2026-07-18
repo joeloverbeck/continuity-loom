@@ -249,6 +249,7 @@ export function deriveReadiness(
 
 function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, string>): ReadinessDiagnostic {
   const copy = COPY_TABLE[diagnostic.code] ?? fallbackCopy(diagnostic);
+  const fastestFix = fastestFixFor(diagnostic, copy);
   const affected = diagnostic.affected.map((reference) => mapAffected(reference, labels));
   const rawPaths = diagnostic.affected.flatMap((reference) => reference.field ? [reference.field] : []);
   const dedupeKey = diagnostic.severity === "warning"
@@ -265,7 +266,7 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
       ? diagnostic.message
       : copy.summary,
     whyItMatters: copy.whyItMatters,
-    fastestFix: copy.fastestFix,
+    fastestFix,
     ...(copy.whenItBecomesBlocking ? { whenItBecomesBlocking: copy.whenItBecomesBlocking } : {}),
     ...(copy.whyThisIsNotBlocking ? { whyThisIsNotBlocking: copy.whyThisIsNotBlocking } : {}),
     ...(copy.ignoringIsReasonableWhen ? { ignoringIsReasonableWhen: copy.ignoringIsReasonableWhen } : {}),
@@ -280,6 +281,16 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
       evidence: Object.freeze([diagnostic.message])
     })
   });
+}
+
+function fastestFixFor(diagnostic: Diagnostic, copy: DiagnosticCopy): string {
+  if (diagnostic.code !== DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch) {
+    return copy.fastestFix;
+  }
+
+  return diagnostic.message.match(
+    /Choose (?:First segment|Continuation after accepted segment) in Generation Brief and save the draft\.$/
+  )?.[0] ?? copy.fastestFix;
 }
 
 function groupDiagnostics(diagnostics: readonly ReadinessDiagnostic[]): readonly ReadinessDiagnostic[] {

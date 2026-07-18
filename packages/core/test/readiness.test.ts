@@ -88,6 +88,25 @@ describe("deriveReadiness", () => {
     });
   });
 
+  it("uses the mismatch diagnostic's required author label in the fastest fix", () => {
+    const validation = validationResult({
+      blockers: [{
+        ...diagnostic(
+          "blocker",
+          DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
+          "generationSession.generation_validation_focus.validation_focus_tags.generation_context"
+        ),
+        message: "Generation context is saved as First segment, but the accepted-segment archive contains 1 accepted segment and requires Continuation after accepted segment. Choose Continuation after accepted segment in Generation Brief and save the draft."
+      }]
+    });
+
+    const readiness = deriveReadiness(validation, { configured: true }, { hasUnsavedChanges: false }, new Map());
+
+    expect(readiness.blockers[0]?.fastestFix).toBe(
+      "Choose Continuation after accepted segment in Generation Brief and save the draft."
+    );
+  });
+
   it("uses provider configuration only for generate gating", () => {
     const readiness = deriveReadiness(validationResult({}), { configured: false }, { hasUnsavedChanges: false }, new Map());
 

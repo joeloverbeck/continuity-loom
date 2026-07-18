@@ -99,6 +99,66 @@ describe("GenerationBriefView", () => {
     });
   });
 
+  it("refreshes canonical generation-context coherence after save", async () => {
+    vi.mocked(getGenerationBrief)
+      .mockResolvedValueOnce({
+        ok: true,
+        session: {
+          generation_validation_focus: {
+            validation_focus_tags: {
+              generation_context: ["first_segment"]
+            }
+          }
+        },
+        generationContext: {
+          savedValue: "first_segment",
+          requiredValue: "continuation_after_accepted_segment",
+          acceptedSegmentCount: 1,
+          coherent: false
+        }
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        session: {
+          generation_validation_focus: {
+            validation_focus_tags: {
+              generation_context: ["continuation_after_accepted_segment"]
+            }
+          }
+        },
+        generationContext: {
+          savedValue: "continuation_after_accepted_segment",
+          requiredValue: "first_segment",
+          acceptedSegmentCount: 0,
+          coherent: false
+        }
+      });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+    vi.mocked(setGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        generation_validation_focus: {
+          validation_focus_tags: {
+            generation_context: ["continuation_after_accepted_segment"]
+          }
+        }
+      }
+    });
+
+    renderView();
+
+    const selector = await screen.findByRole("combobox", { name: "Generation context" });
+    fireEvent.change(selector, { target: { value: "continuation_after_accepted_segment" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    expect(await screen.findByText("Saved context: Continuation after accepted segment")).toBeTruthy();
+    expect(screen.getByText("Required context: First segment")).toBeTruthy();
+    expect(screen.getByText("Accepted segments: 0")).toBeTruthy();
+    expect(screen.getByText("Status: Mismatch")).toBeTruthy();
+    expect(getGenerationBrief).toHaveBeenCalledTimes(2);
+  });
+
   it("renders editable widgets for every current authoritative state field", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });

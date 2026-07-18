@@ -443,6 +443,14 @@ export class RecordRepository {
     }));
   }
 
+  countAcceptedSegments(): number {
+    const row = this.database
+      .prepare("SELECT COUNT(*) AS count FROM accepted_segments")
+      .get() as { count: number };
+
+    return Number(row.count);
+  }
+
   getLatestAcceptedSegment(): AcceptedSegmentReminderRef | null {
     const row = this.database
       .prepare("SELECT sequence, created_at FROM accepted_segments ORDER BY sequence DESC LIMIT 1")
