@@ -53,6 +53,8 @@ fi
 
 After creation, verify tracker metadata with `gh issue view`: the exact title, chosen labels, state, URL, and issue number. Compare the published body with the latest approved staged body, then run the same skill-local validator against the published body with `--stdin` and the exact staged-body checklist, approved-source, and disallowed-source options. This readback proves exact staged-to-published body identity after normalizing the expected final newline, then verifies the required PRD sections, seam note, browser-visible checklist when applicable, machine-local path exclusion, local and root authority citation allowlist, disallowed-source exclusion, and ADR resolution.
 
+Fetch the published body exactly once and reuse that stored snapshot for both identity comparison and validation. Do not fan out body reads or pipe raw `gh issue view ... --jq '.body'` output directly to `cmp`; normalize the expected final newline exactly as the recipe does so retries cannot compare different snapshots and CLI display newlines do not create false mismatches.
+
 ```sh
 gh issue view <number> --json number,title,labels,state,url \
   --jq '{number,title,state,url,labels:[.labels[].name]}'
@@ -85,15 +87,15 @@ An unresolved or ambiguous ADR shorthand, unexpected local source, leaked disall
 
 ## Interruption, recovery, and cleanup
 
-If interrupted, resumed, or compacted before issue creation begins, do not rely on remembered pre-create state. Re-run `git status --short`, the exact-title duplicate search, cited-source durability checks, ADR shorthand resolution, label proof, staged-body template/checklist/local-path validation, and the final status-language pass before publishing.
+If interrupted, resumed, or compacted before issue creation begins, do not rely on remembered pre-create state. Re-run `git status --short --untracked-files=all`, the exact-title duplicate search, cited-source durability checks, ADR shorthand resolution, label proof, staged-body template/checklist/local-path validation, and the final status-language pass before publishing.
 
-If interrupted, resumed, or compacted after issue creation begins, first recover the issue number without creating a duplicate. When the number is unknown, do not retry `gh issue create` until you have rerun the failure-safe exact-title duplicate guard from [publication.md](publication.md#title-and-exact-title-duplicate-guard); use the single exact-title match, stop and report if multiple matches exist, and retry creation only after a successful tracker read proves no matching issue was created. Then re-run the compact `gh issue view` verification, re-check exact staged-to-published body identity, re-check the published body's local-source paths against the approved durable citation list, resolve any published ADR shorthands and re-check the resolved ADR paths, check whether any temporary body file still exists and remove it if needed, then re-run `git status --short` before final reporting.
+If interrupted, resumed, or compacted after issue creation begins, first recover the issue number without creating a duplicate. When the number is unknown, do not retry `gh issue create` until you have rerun the failure-safe exact-title duplicate guard from [publication.md](publication.md#title-and-exact-title-duplicate-guard); use the single exact-title match, stop and report if multiple matches exist, and retry creation only after a successful tracker read proves no matching issue was created. Then re-run the compact `gh issue view` verification, re-check exact staged-to-published body identity, re-check the published body's local-source paths against the approved durable citation list, resolve any published ADR shorthands and re-check the resolved ADR paths, check whether any temporary body file still exists and remove it if needed, then re-run `git status --short --untracked-files=all` before final reporting.
 
-Remove every temporary body and validator-policy file you created using the environment-approved edit/removal mechanism, run `git status --short`, and classify every remaining dirty path against the preserved intake baseline as pre-existing, concurrent, or intentional. For temporary files outside the repository, verify cleanup with direct existence checks such as `test ! -e <path>`; repo-local Git status cannot prove cleanup of files outside the worktree.
+Remove every temporary body and validator-policy file you created using the environment-approved edit/removal mechanism, run `git status --short --untracked-files=all`, and classify every remaining dirty path against the preserved intake baseline as pre-existing, concurrent, or intentional. For temporary files outside the repository, verify cleanup with direct existence checks such as `test ! -e <path>`; repo-local Git status cannot prove cleanup of files outside the worktree.
 
 ## Final closeout ledger
 
-Before the final response, reconcile tracker proof, exact staged-to-published body identity, validator results, staged and published durability ledgers, seam/checklist outcome, deferred or sequenced work, and temporary-file cleanup. Compare the final `git status --short` with the preserved intake baseline, then reproduce one row per remaining path:
+Before the final response, reconcile tracker proof, exact staged-to-published body identity, validator results, staged and published durability ledgers, seam/checklist outcome, deferred or sequenced work, and temporary-file cleanup. Compare the final `git status --short --untracked-files=all` with the preserved intake baseline, then reproduce one row per remaining path:
 
 | Path | Final status | Class | Ownership |
 |---|---|---|---|

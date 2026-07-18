@@ -6,7 +6,11 @@ import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
 
-import { buildAcceptanceManifest, buildAuditScaffold } from "./build-acceptance-manifest.mjs";
+import {
+  buildAcceptanceManifest,
+  buildAuditScaffold,
+  selectAcceptanceManifest
+} from "./build-acceptance-manifest.mjs";
 import {
   DEFAULT_CLOSEOUT_BODY_MAX_BYTES,
   DEFAULT_CLOSEOUT_EVIDENCE_HEADROOM_BYTES,
@@ -141,6 +145,17 @@ const structuredEvidence = {
     }
   ]
 };
+
+const structuredAuditRows = manifest.issues.flatMap((issue) =>
+  issue.checks.map((check) => ({
+    issue: issue.number,
+    checkId: check.id,
+    atoms: `exact ${check.id} behavior`,
+    proofSurfaces: ".claude/skills/implement/scripts/build-closeout-body.test.mjs and `node --test`",
+    sequence: "N/A because the criterion is not sequence-sensitive",
+    status: "satisfied"
+  }))
+);
 
 const completeStructuredEvidenceBody = (generated) => generated
   .replace(
@@ -357,6 +372,224 @@ test("structured evidence rejects inconsistent switches and RF issue/seam mappin
       evidence: inconsistent
     }),
     /RF-1 must map to an exact structured TDD issue\/seam row/
+  );
+});
+
+test("structured evidence rejects values that downstream review and TDD validators reject", () => {
+  const build = (evidence) => buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    immediateFix: true,
+    tddParentRollup: true,
+    evidence
+  });
+  const invalidCases = [
+    [
+      (evidence) => { evidence.reviewFindings[0].repairClass = "design"; },
+      /repairClass is not recognized/
+    ],
+    [
+      (evidence) => { evidence.reviewFindings[0].tddDisposition = "fixed in review"; },
+      /tddDisposition must link RF-N/
+    ],
+    [
+      (evidence) => { evidence.tddReviewFixes[0].red = "the assertion failed"; },
+      /red is not concrete/
+    ],
+    [
+      (evidence) => { evidence.tddReviewFixes[0].green = "the fix works"; },
+      /green is not concrete/
+    ],
+    [
+      (evidence) => { evidence.tddReviewFixes[0].durability = "covered later"; },
+      /durability must state durable test added at a path/
+    ],
+    [
+      (evidence) => { evidence.tddReviewFixes[0].browserFreshness = "still fresh"; },
+      /browserFreshness must state rerun proof/
+    ],
+    [
+      (evidence) => { evidence.tddReviewFixes[0].backendCurrentness = "server is current"; },
+      /backendCurrentness must state server command/
+    ]
+  ];
+
+  for (const [mutate, expected] of invalidCases) {
+    const evidence = JSON.parse(JSON.stringify(structuredEvidence));
+    mutate(evidence);
+    assert.throws(() => build(evidence), expected);
+  }
+});
+
+test("structured audit rows render exact manifest coverage and reject inconsistent input", () => {
+  const evidence = { auditRows: structuredAuditRows };
+  const body = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    evidence
+  });
+
+  for (const row of structuredAuditRows) {
+    assert.match(body, new RegExp(`\\| #${row.issue} \\| ${row.checkId} - `));
+  }
+  assert.equal(body.match(/\| satisfied \|/g)?.length, structuredAuditRows.length);
+  assert.doesNotMatch(body, /atoms: TODO|proof surfaces: TODO|sequence: TODO/);
+
+  const build = (auditRows, audit) => buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    audit,
+    evidence: { auditRows }
+  });
+  assert.throws(() => build(structuredAuditRows.slice(1)), /auditRows is missing #364:AC1/);
+  assert.throws(
+    () => build([...structuredAuditRows, { ...structuredAuditRows[0] }]),
+    /duplicate audit row for #364:AC1/
+  );
+  assert.throws(
+    () => build([{ ...structuredAuditRows[0], checkId: "missing" }, ...structuredAuditRows.slice(1)]),
+    /must name one exact manifest check/
+  );
+  assert.throws(
+    () => build([{ ...structuredAuditRows[0], status: "done" }, ...structuredAuditRows.slice(1)]),
+    /status must be satisfied, blocked, or not done/
+  );
+  assert.throws(
+    () => build(structuredAuditRows, buildAuditScaffold(manifest)),
+    /use either audit input or evidence auditRows, not both/
+  );
+});
+
+test("split manifests can reuse complete TDD evidence while partitioning structured audit rows", () => {
+  const source = buildAcceptanceManifest([
+    {
+      number: 500,
+      title: "Split parent",
+      body: "## Acceptance criteria\n\n- [ ] Parent first\n- [ ] Parent second\n"
+    },
+    {
+      number: 501,
+      title: "Split child",
+      body: "## Acceptance criteria\n\n- [ ] Child first\n- [ ] Child second\n"
+    }
+  ]);
+  const parts = [
+    selectAcceptanceManifest(source, ["500:AC1", "501:AC1"]),
+    selectAcceptanceManifest(source, ["500:AC2", "501:AC2"])
+  ];
+  const tddRows = [
+    {
+      issue: 500,
+      contextStatus: "absent",
+      authorityStatus: "active docs read",
+      seam: "parent split",
+      red: "red-first skipped because the split row is evidence-only",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
+      acceptance: "AC1, AC2; atoms: parent checks; proof surfaces: build-closeout-body.test.mjs; sequence: N/A because the criteria are not sequence-sensitive",
+      reviewDisposition: "N/A because review created no TDD row changes"
+    },
+    {
+      issue: 501,
+      contextStatus: "absent",
+      authorityStatus: "active docs read",
+      seam: "child split",
+      red: "red-first skipped because the split row is evidence-only",
+      green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
+      acceptance: "AC1, AC2; atoms: child checks; proof surfaces: build-closeout-body.test.mjs; sequence: N/A because the criteria are not sequence-sensitive",
+      reviewDisposition: "N/A because review created no TDD row changes"
+    }
+  ];
+  const allAuditRows = source.issues.flatMap((issue) =>
+    issue.checks.map((check) => ({
+      issue: issue.number,
+      checkId: check.id,
+      atoms: check.text,
+      proofSurfaces: ".claude/skills/implement/scripts/build-closeout-body.test.mjs",
+      sequence: "N/A because the criterion is not sequence-sensitive",
+      status: "satisfied"
+    }))
+  );
+  const rendered = parts.map((part) => {
+    const selected = new Set(part.issues.flatMap((issue) =>
+      issue.checks.map((check) => `${issue.number}:${check.id}`)
+    ));
+    return buildCloseoutBodyScaffold(part, {
+      parentIssue: 500,
+      reviewMode: "normal",
+      tddParentRollup: true,
+      evidence: {
+        auditRows: allAuditRows.filter((row) => selected.has(`${row.issue}:${row.checkId}`)),
+        tddRows,
+        tddReviewFixes: [],
+        reviewFindings: []
+      }
+    });
+  });
+
+  assert.match(rendered[0], /\| #500 \| AC1 - Parent first \|/);
+  assert.match(rendered[0], /\| #501 \| AC1 - Child first \|/);
+  assert.doesNotMatch(rendered[0], /AC2 -/);
+  assert.match(rendered[1], /\| #500 \| AC2 - Parent second \|/);
+  assert.match(rendered[1], /\| #501 \| AC2 - Child second \|/);
+  assert.doesNotMatch(rendered[1], /AC1 -/);
+});
+
+test("structured evidence accepts multiple unique seams per manifest issue", () => {
+  const evidence = {
+    tddRows: structuredEvidence.tddRows.map((row) => ({ ...row })),
+    tddReviewFixes: structuredEvidence.tddReviewFixes.map((fix) => ({ ...fix })),
+    reviewFindings: structuredEvidence.reviewFindings.map((finding) => ({ ...finding }))
+  };
+  evidence.tddRows.push({
+    ...evidence.tddRows[1],
+    seam: "replay persistence",
+    red: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because replay persistence was not covered",
+    green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed replay persistence",
+    acceptance: "AC1; atoms: persisted production replay; proof surfaces: .claude/skills/implement/scripts/build-closeout-body.test.mjs; sequence: request -> persist -> replay -> assertion"
+  });
+  evidence.tddReviewFixes.push({
+    ...evidence.tddReviewFixes[0],
+    id: "RF-4",
+    finding: "replay persistence repair",
+    issue: 368,
+    seam: "replay persistence"
+  });
+
+  const body = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    immediateFix: true,
+    tddParentRollup: true,
+    evidence
+  });
+
+  assert.match(body, /#368 \/ replay route; #368 \/ replay persistence/);
+  assert.match(body, /\| RF-4 \| replay persistence repair \|/);
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      immediateFix: true,
+      tddParentRollup: true,
+      evidence: {
+        ...evidence,
+        tddRows: [...evidence.tddRows, { ...evidence.tddRows[1] }]
+      }
+    }),
+    /duplicate TDD row for #368 \/ replay route/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      immediateFix: true,
+      tddParentRollup: true,
+      evidence: {
+        ...evidence,
+        tddRows: evidence.tddRows.filter((row) => row.issue !== 364)
+      }
+    }),
+    /at least one row for every manifest issue/
   );
 });
 
@@ -713,4 +946,39 @@ test("closeout scaffold CLI emits a size plan and can require fill headroom", ()
   assert.match(result.stderr, /recommended minimum headroom/);
   assert.equal(existsSync(outputPath), false);
   rmSync(directory, { recursive: true, force: true });
+});
+
+test("closeout guidance documents structured splits, audit rows, and withheld-fixture currentness", () => {
+  const templates = readFileSync(resolve(here, "../references/closeout-templates.md"), "utf8");
+  const implementationEvidence = readFileSync(
+    resolve(here, "../references/implementation-evidence.md"),
+    "utf8"
+  );
+
+  assert.match(templates, /Structured-evidence split rule:/);
+  assert.match(templates, /filter `auditRows` to exactly the checks selected into that chunk/);
+  assert.match(templates, /Use either `auditRows` or `--audit-input`, never both/);
+  assert.match(templates, /Repair classes are `behavior`, `coverage-only`, `Standards-only`/);
+  assert.match(templates, /form is non-`none` for review validation/);
+  assert.match(templates, /`N\/A because no stateful fixture was copied`/);
+  assert.match(implementationEvidence, /treats this withheld form as a non-`none` fixture identity/);
+  assert.match(implementationEvidence, /`N\/A because no stateful fixture was copied`/);
+
+  const documentedEvidence = JSON.parse(
+    templates.match(/The JSON shape is:\n\n```json\n([\s\S]*?)\n```/)?.[1] ?? ""
+  );
+  const documentedManifest = buildAcceptanceManifest([
+    {
+      number: 368,
+      title: "Documented evidence example",
+      body: "## Acceptance criteria\n\n- [ ] Replay the production route\n"
+    }
+  ]);
+  assert.doesNotThrow(() => buildCloseoutBodyScaffold(documentedManifest, {
+    parentIssue: 368,
+    reviewMode: "normal",
+    immediateFix: true,
+    tddParentRollup: true,
+    evidence: documentedEvidence
+  }));
 });

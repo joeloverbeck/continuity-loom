@@ -21,7 +21,7 @@ Read each selected reference independently through EOF before acting on it. If a
 
 ## 1. Resolve the Real Scope
 
-Before editing code, identify the authoritative work items and build a progress ledger. The ledger must cover issue number, title, dependencies/blockers, acceptance criteria, principles/ADR obligations or exceptions, planned evidence, test seams, and closeout state. It must also record ownership/placement for any new helper, store/query function, persistence call, or cross-module entrypoint, and expand composite acceptance terms into their authoritative atoms and required proof surfaces.
+Before editing code, identify the authoritative work items and build a progress ledger. The ledger must cover issue number, title, dependencies/blockers, acceptance criteria, principles/ADR obligations or exceptions, planned evidence, test seams, closeout state, and the intended final disposition of every in-scope active spec, ticket, requirements set, report, or other completion artifact. It must also record ownership/placement for any new helper, store/query function, persistence call, or cross-module entrypoint, and expand composite acceptance terms into their authoritative atoms and required proof surfaces.
 
 Hard stops:
 
@@ -34,7 +34,7 @@ Hard stops:
 
 Post the ledger to the conversation before the first edit and update it when dependencies, blockers, evidence, or closeout state changes materially. Use the compact table and related-tracker classification rules in [references/scope-ledger.md](references/scope-ledger.md).
 
-First-edit gate: do not edit until the visible ledger or progress note includes `Scope ledger posted: yes; no edits started; unrelated dirty files <listed/N/A>; in-scope issues <#...>; related tracker classification <done/N/A>; ownership/placement decisions <listed/N/A>.`
+First-edit gate: do not edit until the visible ledger or progress note includes `Scope ledger posted: yes; no edits started; unrelated dirty files <listed/N/A>; in-scope issues <#...>; related tracker classification <done/N/A>; artifact disposition <listed/N/A>; ownership/placement decisions <listed/N/A>.`
 
 ## 2. Work Issue-by-Issue
 
@@ -48,7 +48,7 @@ Required implementation evidence:
 - On resume, compaction, or interruption before closeout, rerun `git status --short`, revalidate any active dev server/browser/session/proof artifact that the next step depends on, prove that any server used for browser evidence loaded the current backend code, and restate the next exact issue/evidence action.
 - Run focused tests/typechecks regularly. Before closeout, read root verification guidance and run the canonical gates required for the work's blast radius.
 
-Before committing, draft the working pre-close audit row-by-row against each in-scope acceptance criterion and Principles/ADR check. Run the pre-review acceptance exactness challenge from [references/implementation-evidence.md](references/implementation-evidence.md) before treating any row as `satisfied`; planned, intended, nearby, or substituted behavior is not proof of the exact criterion. When a parent, child, decision, or glossary defines a composite term, prove every named atom on every required surface rather than citing the umbrella term. Quantified ranges owe every named value unless the source explicitly permits sampling, and lifecycle terms such as rerender, resume, or transition owe proof from the same active instance rather than independent snapshots. Do not enter review with unresolved `blocked` or `not done` rows unless the right outcome is to leave that issue open.
+Before committing, draft the working pre-close audit row-by-row against each in-scope acceptance criterion and Principles/ADR check. Reconcile the ledger's artifact disposition under the repository archival workflow before staging; a completed active artifact needs its required outcome/status, archive move, and authority-reference updates, or an explicit reason to remain active. Run the pre-review acceptance exactness challenge from [references/implementation-evidence.md](references/implementation-evidence.md) before treating any row as `satisfied`; planned, intended, nearby, or substituted behavior is not proof of the exact criterion. When a parent, child, decision, or glossary defines a composite term, prove every named atom on every required surface rather than citing the umbrella term. Quantified ranges owe every named value unless the source explicitly permits sampling, and lifecycle terms such as rerender, resume, or transition owe proof from the same active instance rather than independent snapshots. Do not enter review with unresolved `blocked` or `not done` rows unless the right outcome is to leave that issue open.
 
 Tracked implementation evidence and publishable closeout evidence are separate sinks. A report included in the implementation commit may preserve the fixed-point input, subject, working audit, and pre-review evidence, but it must not embed that same commit's final SHA, reviewed HEAD SHA, or terminal `Review:` result: amending the report to add those values changes the identity it claims to describe. Keep the tracked report SHA-independent, and finalize the self-referential final SHA, terminal review frame, verification freshness, and tracker gates in an uncommitted `/tmp` body, tracker comment, or another external durable sink. Do not amend a tracked report solely to append its own terminal review/SHA metadata. If a substantive review fix changes tracked evidence, re-review the final tree and record the terminal result in the external closeout sink.
 
@@ -56,11 +56,11 @@ Finalize or refresh that publishable closeout sink after review fixes, final SHA
 
 Before staging, make this implementation pre-stage gate visible in the conversation or ledger:
 
-`Implementation pre-stage gate passed: working pre-close audit drafted <sink/reference>; blocked/not done rows <none/listed>; ownership/placement decisions <recorded/N/A>; unrelated dirty files <listed/N/A>.`
+`Implementation pre-stage gate passed: working pre-close audit drafted <sink/reference>; blocked/not done rows <none/listed>; artifact disposition <reconciled/N/A>; ownership/placement decisions <recorded/N/A>; unrelated dirty files <listed/N/A>.`
 
 After staging and before committing, inspect the staged file list and make this second gate visible:
 
-`Implementation commit gate passed: staged files scoped yes; staged file list <paths>; working pre-close audit <sink/reference>; blocked/not done rows <none/listed>.`
+`Implementation commit gate passed: staged files scoped yes; staged file list <paths>; working pre-close audit <sink/reference>; blocked/not done rows <none/listed>; artifact disposition <reconciled/N/A>.`
 
 ## 3. Review Before Closeout
 
@@ -98,6 +98,8 @@ Tracker mutation is blocked until all of these are true:
 - For parent PRD closure, related child states have been verified by exact issue number.
 
 Immediately before the first tracker mutation, make the exact `Closeout preflight:` block and literal `Closeout gate passed: audit sink ...` line visible in the conversation or durable audit sink. Do not run `gh issue close`, `glab issue close`, or equivalent until the closeout command gate in [references/tracker-closeout-gates.md](references/tracker-closeout-gates.md) passes.
+
+If review ended with accepted residuals, preserve their count and affected axes in the final response, cite their durable record, and state `unhandled findings none beyond accepted residuals`; never replace that outcome with `no findings` or `no remaining findings`.
 
 If browser/manual proof started a dev server, browser session, or long-running proof process, stop it before the final response or explicitly report why it remains running.
 

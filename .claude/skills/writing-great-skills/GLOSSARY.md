@@ -4,7 +4,15 @@ The domain model for what makes a skill great. A skill exists to wrangle determi
 
 The terms are grouped by axis: **Invocation** (how a skill is reached), **Information Hierarchy** (how its content is arranged), **Steering** (how the agent's runtime behaviour is shaped), and **Pruning** (how it is kept lean). Each **failure mode** lives beside the lever that cures it, tagged _failure mode_.
 
-**Bold terms** in any definition are themselves defined in this glossary; find them by their heading.
+**Bold terms** in any definition are themselves defined in this glossary. Use the index to open only terms that bear on the current decision; do not load the file end to end by default.
+
+## Term index
+
+- Core: [Predictability](#predictability)
+- Invocation: [Invocation](#invocation), [Model-Invoked](#model-invoked), [User-Invoked](#user-invoked), [Description](#description), [Context Pointer](#context-pointer), [Context Load](#context-load), [Cognitive Load](#cognitive-load), [Router Skill](#router-skill), [Granularity](#granularity)
+- Information hierarchy: [Information Hierarchy](#information-hierarchy-1), [Steps](#steps), [Reference](#reference), [External Reference](#external-reference), [Progressive Disclosure](#progressive-disclosure), [Co-location](#co-location), [Sprawl](#sprawl)
+- Steering: [Branch](#branch), [Leading Word](#leading-word), [Completion Criterion](#completion-criterion), [Legwork](#legwork), [Post-Completion Steps](#post-completion-steps), [Premature Completion](#premature-completion)
+- Pruning: [Single Source of Truth](#single-source-of-truth), [Duplication](#duplication), [Relevance](#relevance), [Sediment](#sediment), [No-Op](#no-op)
 
 ## Predictability
 

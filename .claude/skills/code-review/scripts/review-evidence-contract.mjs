@@ -1,3 +1,5 @@
+import { fixtureSnapshotCurrentnessErrors } from "../../tdd/scripts/tdd-evidence-contract.mjs";
+
 const childTableHeader = "| Issue | Acceptance source | Evidence reviewed | Findings/residuals |";
 const reviewFindingLedgerHeader =
   "| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |";
@@ -438,23 +440,8 @@ export const validateReviewFixtureSnapshotCurrentness = (body, errors, options =
   if (!options.requireBrowser) return;
 
   const fixturePaths = identityInventory(fieldValue(body, "Current evidence identities")).get("fixture paths") ?? "";
-  if (!fixturePaths || /^none$/i.test(fixturePaths)) return;
-
   const backendCurrentnessValues = fieldValues(body, "Backend process currentness");
-  const candidates = backendCurrentnessValues.length ? backendCurrentnessValues : [""];
-  for (const [index, backendCurrentness] of candidates.entries()) {
-    if (/\bN\/A because no stateful fixture was copied\b/i.test(backendCurrentness)) continue;
-
-    const hasSnapshotMethod = /\bstateful fixture snapshot method\b/i.test(backendCurrentness);
-    const hasSnapshotSource = /\bsnapshot source\b/i.test(backendCurrentness);
-    const hasExpectedStateProbe = /\bexpected-state probe\b/i.test(backendCurrentness);
-    if (hasSnapshotMethod && hasSnapshotSource && hasExpectedStateProbe) continue;
-
-    const occurrence = backendCurrentnessValues.length > 1 ? ` occurrence ${index + 1}` : "";
-    errors.push(
-      `Backend process currentness${occurrence} with non-none fixture paths must state stateful fixture snapshot method, snapshot source, and expected-state probe, or 'N/A because no stateful fixture was copied'`
-    );
-  }
+  errors.push(...fixtureSnapshotCurrentnessErrors(fixturePaths, backendCurrentnessValues));
 };
 
 const validateIdentityInventory = (value, label, errors) => {

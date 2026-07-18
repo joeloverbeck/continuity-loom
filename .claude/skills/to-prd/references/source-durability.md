@@ -14,6 +14,8 @@ When the PRD cites a local ADR, spec, principle, methodology document, report, r
 
 For staged bodies, run a repo-local artifact sweep before the template check. Extract local-looking source paths, decide which are actual source citations rather than examples, and verify each cited artifact is tracked or otherwise durable. The extractor recognizes sources under `docs/`, `reports/`, and `archive/`, plus cited root authority files `CONTEXT.md`, `CONTEXT-MAP.md`, `CLAUDE.md`, and `AGENTS.md`:
 
+In ordinary prose, a local source path must end in a filename extension to be extracted. Wrap an intentional extensionless artifact path in backticks; this keeps an unformatted slash compound such as `archive/draft` from being misclassified as a citation.
+
 ```sh
 BODY_FILE=path/to/prd-body.md
 node .claude/skills/to-prd/scripts/validate-prd-body.mjs "$BODY_FILE" --extract-sources

@@ -270,22 +270,32 @@ export function validateChild(body, options) {
   const trackerEntries = entries.filter((entry) => !actualExternalBlockers.includes(entry));
   const actualBlockers = unique(trackerEntries.flatMap((entry) => entry.match(/#\d+/g) ?? []));
   const count = acceptanceCount(body);
+  const relationshipMode = options.parent == null ? "standalone-source" : "parent";
   const sourceSection = sectionBody(body, "## Source and coordination");
   const checks = {
     ...commonBodyChecks(body, options),
-    hasParent: options.parent == null || body.includes(options.parent),
-    hasSourceHeading: options.source == null || body.includes("## Source and coordination"),
-    hasSource: options.source == null || sourceSection.includes(options.source),
-    hasSourceRelationship:
-      options.sourceRelationship == null || sourceSection.includes(options.sourceRelationship),
+    ...(relationshipMode === "parent"
+      ? {
+          hasParentHeading: body.includes("## Parent"),
+          hasParent: body.includes(options.parent),
+        }
+      : {
+          hasSourceHeading: body.includes("## Source and coordination"),
+          hasSource: sourceSection.includes(options.source),
+          hasSourceRelationship: sourceSection.includes(options.sourceRelationship),
+        }),
     hasWhat: body.includes("## What to build"),
     hasAcceptance: body.includes("## Acceptance criteria"),
     hasAcceptanceItems: count > 0,
     hasBlockedBy: body.includes("## Blocked by"),
     hasPrinciples: body.includes("## Principles"),
     hasStoryCoverage: !options.expectStories || body.includes("## User stories covered"),
-    hasChecklistNa:
-      !options.expectChecklistNa || /(?:Browser-visible guidance checklist mapped|checklist mapped): N\/A/i.test(body),
+    ...(options.expectChecklistNa
+      ? {
+          hasChecklistNa:
+            /(?:Browser-visible guidance checklist mapped|checklist mapped): N\/A/i.test(body),
+        }
+      : {}),
     noBlockerExpectationPassed:
       !options.expectNoBlocker ||
       (body.includes("None - can start immediately") &&
@@ -315,6 +325,7 @@ export function validateChild(body, options) {
     forbiddenLiterals: unique(options.forbidLiterals ?? []),
     forbiddenPatterns: unique(options.forbidPatterns ?? []),
     checks,
+    relationshipMode,
   };
 }
 

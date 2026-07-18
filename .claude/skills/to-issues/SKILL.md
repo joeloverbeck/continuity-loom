@@ -28,7 +28,27 @@ Keep related-item fetches compact when exact issue or PRD numbers are already kn
 
 Scan the source body and fresh comments for decisions marked provisional, unratified, timed out, open to veto, or otherwise awaiting steward confirmation. Treat those as unresolved decisions, even if the source issue already carries `ready-for-agent`. Carry the unresolved-decision list into the Step 4 approval checkpoint; do not publish `ready-for-agent` child issues from those assumptions until the checkpoint explicitly ratifies or revises them. If they remain unresolved after the checkpoint, either stop before publication or publish only `needs-triage` child issues and state that they are not AFK-ready.
 
-Use a compact unresolved-decision scan before classifying the source as AFK-ready. For tracker issues, prefer a body-plus-comments read such as `gh issue view <n> --json body,comments --jq '[.body, (.comments[].body?)] | join("\n---COMMENT---\n")' | rg -n "provisional|unratified|timed out|open to veto|TBD|open design|grooming decision|leading candidate|may |should "`; for local files, run the same `rg -n` pattern against the source file. If this compact tracker scan fails from transient tracker/API connectivity but a fresh exact body/comments read for the source is already in current context, retry once; if it still fails, inspect the already-fetched body/comments against the same phrase list, state that fallback in the Step 4 proposal, and proceed only after classifying any relevant modal or open-decision wording. If no fresh body/comments read is available, stop instead of guessing. Inspect every hit and classify it before Step 4 as one of: blocking open decision, ratifiable implementation latitude, or irrelevant prose. Modal words such as `may` or `should` are not automatic blockers; when they describe acceptable implementation latitude, encode the chosen interpretation in the proposal and ask the steward to ratify it.
+Use a compact unresolved-decision scan before classifying the source as AFK-ready. For tracker issues, preserve the tracker-read status separately from the search status:
+
+```sh
+if decision_source="$(gh issue view <n> --json body,comments \
+  --jq '[.body, (.comments[].body?)] | join("\n---COMMENT---\n")')"; then
+  tracker_status=0
+else
+  tracker_status=$?
+fi
+
+if [ "$tracker_status" -eq 0 ]; then
+  if decision_hits="$(printf '%s\n' "$decision_source" | \
+    rg -n 'provisional|unratified|timed out|open to veto|TBD|open design|grooming decision|leading candidate|may |should ')"; then
+    scan_status=0
+  else
+    scan_status=$?
+  fi
+fi
+```
+
+Do not run or classify the search when `tracker_status` is nonzero. For a successful tracker read, treat `scan_status` 0 as hits to inspect, 1 as a clean no-hit result, and greater than 1 as a search failure that blocks classification. For local files, run the same `rg -n` pattern against the source file and preserve the same three-way search status. If the tracker read fails from transient tracker/API connectivity but a fresh exact body/comments read for the source is already in current context, retry once; if it still fails, inspect the already-fetched body/comments against the same phrase list, state that fallback in the Step 4 proposal, and proceed only after classifying any relevant modal or open-decision wording. If no fresh body/comments read is available, stop instead of guessing. Inspect every hit and classify it before Step 4 as one of: blocking open decision, ratifiable implementation latitude, or irrelevant prose. Modal words such as `may` or `should` are not automatic blockers; when they describe acceptable implementation latitude, encode the chosen interpretation in the proposal and ask the steward to ratify it.
 
 Also scan for decisions the source explicitly delegates to grooming, issue breakdown, or later implementer judgment — phrases such as "grooming decision", "leading candidate", "record shape", "TBD", or "open design question". Treat these as structural decisions owed by the breakdown unless the source or fresh comments already ratified them. Carry them into the Step 4 approval checkpoint; either ask the steward to ratify the decision as encoded in the slices, route the decision into a first spec/document blocker before code-bearing slices depend on it, or leave affected children `needs-triage`.
 
@@ -71,6 +91,8 @@ Break the plan into **tracer bullet** issues. Each code-bearing issue is a thin 
 Before finalizing the breakdown, check whether the source plan cites local ADRs, specs, context/glossary files, reports, research briefs, field-trial reports, other source artifacts, or other doctrine documents that were created or modified in this session — or that were ratified or decided this session but not yet authored (a planned ADR, spec, report, or source artifact that does not yet exist as a file). If a cited local document or source artifact is untracked, unwritten, or otherwise not yet durable in the repo, make a first document blocker issue for publishing/reviewing that doctrine or artifact before code-bearing slices depend on it. Make this document blocker even when the source plan lists that doctrine or artifact's own authoring as out of scope: the plan's out-of-scope governs its code layers, not the durability blocker the breakdown owes. The same duty extends to doctrine the breakdown itself introduces: when the slices will cite a named artifact the source plan never mentions (a governing spec for a new layer, a coverage list), that artifact is owed a first document blocker too — check prior breakdowns for the house precedent and surface the decision in the Step 4 quiz.
 
 Treat a source-plan note such as "temporary source summarized, not cited," "summarized rather than cited," "pending local repo publication," "pending authoring/publication," or equivalent wording as the same durability trigger even when the source omits an exact local path. If code-bearing slices depend on that summarized finding, create the document blocker first so the durable source or issue-linked summary exists before implementation depends on it. Before creating that blocker, verify the note's currency against the repo: such notes can go stale between the source's authoring and the breakdown. If the cited doctrine or artifact is now tracked and committed (for example, confirmed via git earlier in the session), record that verification in the Step 4 proposal and skip the blocker — a stale note does not owe a no-op issue.
+
+Before invoking the durability checker, build a compact artifact inventory from the source body, fresh comments, and artifacts introduced by the breakdown. Use one row per artifact with `Artifact | Exact path or stable identifier | Role | Publication-ref result | Disposition`. Classify each role as `implementation prerequisite`, `summarized provenance`, `implementation target`, or `planned artifact`; the first two terms align with triage's source-role vocabulary. Resolve every file-backed row to an exact path and run the checker for every existing local path in the inventory, including active registries that a planned document must update. Record unwritten planned artifacts as not yet authored. A non-durable implementation target or summarized-provenance artifact does not automatically become a blocker, but its row must state why the parent summary, document blocker, or target-only posture is sufficient.
 
 Durability requires content identity with the resolved publication ref, not merely a clean tracked path or a same-named file on that ref. After resolving every stable identifier to an exact tracked path as described below, use the canonical checker:
 
@@ -146,7 +168,7 @@ After the numbered list, include these eight global posture lines and self-check
 - `Source/target posture: <authoritative source and the exact issue set this breakdown will create>`
 - `Prerequisite posture: <hard blockers, coordination-only items, and unresolved prerequisites, or none>`
 - `Publication posture: <dependency order, label set, and child-ledger or standalone-source posture>`
-- `Artifact posture: <publication ref and durability result for every relied-on local artifact, or no local artifacts>`
+- `Artifact posture: <publication ref; inventory row count; durability result and disposition for every inventoried local artifact, or no local artifacts>`
 - `Coverage gate: <story coverage and browser-visible guidance mapping status, including specific N/A posture>`
 
 Before asking for approval, verify that the numbered slices and all eight posture lines agree: every blocker appears in the prerequisite and publication order, every target matches the tracker relationship, the parent disposition prevents duplicate AFK-ready ownership, every non-durable artifact has a document blocker or durable issue-linked summary, and every story/checklist obligation is assigned to a slice. A posture line that says only `see above` is missing.

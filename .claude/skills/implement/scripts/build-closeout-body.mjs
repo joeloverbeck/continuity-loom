@@ -5,6 +5,13 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { buildAuditScaffold } from "./build-acceptance-manifest.mjs";
+import {
+  hasConcreteGreenEvidence,
+  hasConcreteRedEvidence,
+  validateBackendCurrentnessValue as backendCurrentnessError,
+  validateFreshnessValue as freshnessError,
+  validateRegressionDurabilityValue as regressionDurabilityError
+} from "../../tdd/scripts/tdd-evidence-contract.mjs";
 
 export const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
 export const DEFAULT_CLOSEOUT_EVIDENCE_HEADROOM_BYTES = 16_384;
@@ -107,6 +114,78 @@ const requiredEvidenceText = (value, field) => {
   return value.trim();
 };
 
+const allowedRepairClasses = new Set([
+  "behavior",
+  "coverage-only",
+  "standards-only",
+  "adr-only",
+  "conformance-only",
+  "docs-only",
+  "evidence-only"
+]);
+
+const validTddDisposition = (value) =>
+  /\bRF-\d+\b/i.test(value) ||
+  /^red-first skipped because\s+\S/i.test(value) ||
+  /^coverage-only review fix;\s*red-first N\/A because\s+\S/i.test(value) ||
+  /^partial red - wrong reason:\s*\S/i.test(value) ||
+  /\bred\b.+\bfailed\b.+\bgreen\b.+\bpassed\b/i.test(value) ||
+  /^N\/A because accepted residual\b.+/i.test(value);
+
+const structuredAuditKey = (issueNumber, checkId) => JSON.stringify([issueNumber, checkId]);
+
+const validateStructuredAuditRows = (manifest, auditRows) => {
+  if (auditRows.length === 0) return [];
+  const expected = new Map();
+  for (const issue of manifest.issues) {
+    for (const check of issue.checks) {
+      expected.set(structuredAuditKey(issue.number, check.id), { issue, check });
+    }
+  }
+
+  const seen = new Set();
+  const normalizedRows = [];
+  for (const [index, row] of auditRows.entries()) {
+    if (!Number.isInteger(row?.issue)) {
+      throw new Error(`evidence auditRows[${index}].issue must name one manifest issue`);
+    }
+    const checkId = requiredEvidenceText(row.checkId, `auditRows[${index}].checkId`);
+    const key = structuredAuditKey(row.issue, checkId);
+    if (!expected.has(key)) {
+      throw new Error(`evidence auditRows[${index}] must name one exact manifest check; received #${row.issue}:${checkId}`);
+    }
+    if (seen.has(key)) throw new Error(`evidence contains duplicate audit row for #${row.issue}:${checkId}`);
+    seen.add(key);
+    const atoms = requiredEvidenceText(row.atoms, `auditRows[${index}].atoms`);
+    const proofSurfaces = requiredEvidenceText(row.proofSurfaces, `auditRows[${index}].proofSurfaces`);
+    const sequence = requiredEvidenceText(row.sequence, `auditRows[${index}].sequence`);
+    if (!["satisfied", "blocked", "not done"].includes(row.status)) {
+      throw new Error(`evidence auditRows[${index}].status must be satisfied, blocked, or not done`);
+    }
+    normalizedRows.push({ issue: row.issue, checkId, atoms, proofSurfaces, sequence, status: row.status });
+  }
+
+  for (const [key, { issue, check }] of expected) {
+    if (!seen.has(key)) throw new Error(`evidence auditRows is missing #${issue.number}:${check.id}`);
+  }
+  return normalizedRows;
+};
+
+const buildStructuredAudit = (manifest, auditRows) => {
+  const byKey = new Map(auditRows.map((row) => [structuredAuditKey(row.issue, row.checkId), row]));
+  const lines = [
+    "| Issue | Acceptance criterion or conformance check | Evidence | Status |",
+    "|---|---|---|---|"
+  ];
+  for (const issue of manifest.issues) {
+    for (const check of issue.checks) {
+      const row = byKey.get(structuredAuditKey(issue.number, check.id));
+      lines.push(`| #${issue.number} | ${check.id} - ${tableText(check.text)} | atoms: ${tableText(row.atoms)}; proof surfaces: ${tableText(row.proofSurfaces)}; sequence: ${tableText(row.sequence)} | ${row.status} |`);
+    }
+  }
+  return lines.join("\n");
+};
+
 const evidenceArrays = (evidence) => {
   if (evidence === undefined) return undefined;
   if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) {
@@ -114,13 +193,13 @@ const evidenceArrays = (evidence) => {
   }
 
   const arrays = {};
-  for (const key of ["tddRows", "tddReviewFixes", "reviewFindings"]) {
+  for (const key of ["auditRows", "tddRows", "tddReviewFixes", "reviewFindings"]) {
     const value = evidence[key] ?? [];
     if (!Array.isArray(value)) throw new Error(`evidence ${key} must be an array`);
     arrays[key] = value;
   }
   if (Object.values(arrays).every((value) => value.length === 0)) {
-    throw new Error("evidence must contain at least one TDD row, TDD review fix, or review finding");
+    throw new Error("evidence must contain at least one audit row, TDD row, TDD review fix, or review finding");
   }
   return arrays;
 };
@@ -128,7 +207,8 @@ const evidenceArrays = (evidence) => {
 const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParentRollup }) => {
   const arrays = evidenceArrays(evidence);
   if (!arrays) return undefined;
-  const { tddRows, tddReviewFixes, reviewFindings } = arrays;
+  const { auditRows, tddRows, tddReviewFixes, reviewFindings } = arrays;
+  const normalizedAuditRows = validateStructuredAuditRows(manifest, auditRows);
 
   if ((tddRows.length > 0 || tddReviewFixes.length > 0) && !tddParentRollup) {
     throw new Error("TDD evidence requires --tdd-parent-rollup");
@@ -139,12 +219,11 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
 
   const manifestNumbers = new Set(manifest.issues.map((issue) => issue.number));
   const rowKeys = new Set();
+  const representedIssues = new Set();
   for (const [index, row] of tddRows.entries()) {
     if (!Number.isInteger(row?.issue) || !manifestNumbers.has(row.issue)) {
-      throw new Error(`evidence tddRows[${index}].issue must name one manifest issue`);
+      throw new Error(`evidence tddRows[${index}].issue must name one manifest issue; for split manifests keep every evidence-referenced issue in the subset or filter the evidence file`);
     }
-    if (rowKeys.has(row.issue)) throw new Error(`evidence contains duplicate TDD row for #${row.issue}`);
-    rowKeys.add(row.issue);
     for (const field of [
       "contextStatus",
       "authorityStatus",
@@ -156,14 +235,20 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
     ]) {
       requiredEvidenceText(row[field], `tddRows[${index}].${field}`);
     }
+    const rowKey = JSON.stringify([row.issue, row.seam]);
+    if (rowKeys.has(rowKey)) {
+      throw new Error(`evidence contains duplicate TDD row for #${row.issue} / ${row.seam}`);
+    }
+    rowKeys.add(rowKey);
+    representedIssues.add(row.issue);
     for (const marker of ["atoms:", "proof surfaces:", "sequence:"]) {
       if (!row.acceptance.includes(marker)) {
         throw new Error(`evidence tddRows[${index}].acceptance must contain ${marker}`);
       }
     }
   }
-  if (tddRows.length > 0 && rowKeys.size !== manifestNumbers.size) {
-    throw new Error("structured TDD evidence must contain exactly one row for every manifest issue");
+  if (tddRows.length > 0 && representedIssues.size !== manifestNumbers.size) {
+    throw new Error("structured TDD evidence must contain at least one row for every manifest issue; for split manifests keep every evidence-referenced issue in the subset or filter the evidence file");
   }
 
   const fixIds = new Set();
@@ -174,7 +259,7 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
     if (fixIds.has(fix.id)) throw new Error(`evidence contains duplicate review-fix ID ${fix.id}`);
     fixIds.add(fix.id);
     if (!Number.isInteger(fix.issue) || !manifestNumbers.has(fix.issue)) {
-      throw new Error(`evidence tddReviewFixes[${index}].issue must name one manifest issue`);
+      throw new Error(`evidence tddReviewFixes[${index}].issue must name one manifest issue; for split manifests keep every evidence-referenced issue in the subset or filter the evidence file`);
     }
     for (const field of [
       "finding",
@@ -188,8 +273,22 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
     ]) {
       requiredEvidenceText(fix[field], `tddReviewFixes[${index}].${field}`);
     }
-    const row = tddRows.find((candidate) => candidate.issue === fix.issue);
-    if (!row || row.seam !== fix.seam) {
+    if (!hasConcreteRedEvidence(fix.red)) {
+      throw new Error(`evidence tddReviewFixes[${index}].red is not concrete`);
+    }
+    if (!hasConcreteGreenEvidence(fix.green)) {
+      throw new Error(`evidence tddReviewFixes[${index}].green is not concrete`);
+    }
+    const durabilityError = regressionDurabilityError(fix.durability);
+    if (durabilityError) throw new Error(`evidence tddReviewFixes[${index}].durability ${durabilityError}`);
+    const browserError = freshnessError(fix.browserFreshness);
+    if (browserError) throw new Error(`evidence tddReviewFixes[${index}].browserFreshness ${browserError}`);
+    const backendError = backendCurrentnessError(fix.backendCurrentness);
+    if (backendError) throw new Error(`evidence tddReviewFixes[${index}].backendCurrentness ${backendError}`);
+    const row = tddRows.find(
+      (candidate) => candidate.issue === fix.issue && candidate.seam === fix.seam
+    );
+    if (!row) {
       throw new Error(`evidence ${fix.id} must map to an exact structured TDD issue/seam row`);
     }
   }
@@ -216,6 +315,12 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
     ]) {
       requiredEvidenceText(finding[field], `reviewFindings[${index}].${field}`);
     }
+    if (!allowedRepairClasses.has(finding.repairClass.trim().toLowerCase())) {
+      throw new Error(`evidence reviewFindings[${index}].repairClass is not recognized`);
+    }
+    if (!validTddDisposition(finding.tddDisposition.trim())) {
+      throw new Error(`evidence reviewFindings[${index}].tddDisposition must link RF-N or state structured red/green, coverage-only, red-first-skip, partial-red, or accepted-residual evidence`);
+    }
     if (!["fixed", "accepted residual"].includes(finding.finalStatus)) {
       throw new Error(`evidence reviewFindings[${index}].finalStatus must be fixed or accepted residual`);
     }
@@ -226,7 +331,7 @@ const validateStructuredEvidence = (manifest, evidence, { immediateFix, tddParen
     }
   }
 
-  return { tddRows, tddReviewFixes, reviewFindings };
+  return { auditRows: normalizedAuditRows, tddRows, tddReviewFixes, reviewFindings };
 };
 
 const evidenceIds = (items) => items.map((item) => item.id).join(", ");
@@ -306,7 +411,7 @@ const reviewRuntimeEvidenceBlock = `Browser/manual evidence freshness: <final-tr
 
 Browser/manual console state: <0 errors and 0 warnings, classified output, blocked reason, or N/A because no browser/manual evidence was used>
 
-Backend process currentness: <server command, watch/reload mode, ownership, restart/reload proof, and API probe, or justified N/A/blocked reason>`;
+Backend process currentness: <server command, watch/reload mode, ownership, restart/reload proof, and API probe; when current identities name a local or withheld fixture, stateful fixture snapshot method, snapshot source, and expected-state probe, or N/A because no stateful fixture was copied; otherwise justified N/A/blocked reason>`;
 
 const reviewFindingParts = (finding) => {
   const match = finding.id.match(/^(P[1-9]\d*)-(standards|spec)-[1-9]\d*$/);
@@ -522,11 +627,17 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
     throw new Error("fixed child mode must be none, pending, or final");
   }
 
-  const auditText = validateAuditInput(manifest, audit ?? buildAuditScaffold(manifest));
   const structuredEvidence = validateStructuredEvidence(manifest, evidence, {
     immediateFix,
     tddParentRollup
   });
+  if (audit !== undefined && structuredEvidence?.auditRows.length > 0) {
+    throw new Error("use either audit input or evidence auditRows, not both");
+  }
+  const auditSource = structuredEvidence?.auditRows.length > 0
+    ? buildStructuredAudit(manifest, structuredEvidence.auditRows)
+    : audit ?? buildAuditScaffold(manifest);
+  const auditText = validateAuditInput(manifest, auditSource);
   const review = reviewMode === "normal"
     ? normalReviewBlock(manifest, immediateFix, structuredEvidence)
     : fallbackReviewBlock(manifest, immediateFix, structuredEvidence);

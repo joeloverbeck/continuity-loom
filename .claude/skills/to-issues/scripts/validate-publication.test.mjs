@@ -405,11 +405,42 @@ test("child output distinguishes an inactive no-blocker expectation", () => {
     }));
     assert.deepEqual(report.actualBlockers, ["#10"]);
     assert.deepEqual(report.expectations, { noBlocker: false });
+    assert.equal(report.relationshipMode, "parent");
+    assert.equal(report.checks.hasParentHeading, true);
+    assert.equal(report.checks.hasParent, true);
+    assert.equal("hasSourceHeading" in report.checks, false);
+    assert.equal("hasSource" in report.checks, false);
+    assert.equal("hasSourceRelationship" in report.checks, false);
+    assert.equal("hasChecklistNa" in report.checks, false);
     assert.equal(report.checks.noBlockerExpectationPassed, true);
     assert.equal("hasNoBlocker" in report.checks, false);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("child validation requires the active parent heading even when the token is present", () => {
+  const report = validateChild(issueBody().replace("## Parent", "## Context"), options({
+    expectNoBlocker: true,
+    parent: "PRD #1",
+  }));
+
+  assert.equal(report.relationshipMode, "parent");
+  assert.equal(report.checks.hasParentHeading, false);
+  assert.equal(report.checks.hasParent, true);
+});
+
+test("child output reports the checklist N/A check only when expected", () => {
+  const report = validateChild(
+    `${issueBody()}\nBrowser-visible guidance checklist mapped: N/A - server-only repair\n`,
+    options({
+      expectChecklistNa: true,
+      expectNoBlocker: true,
+      parent: "PRD #1",
+    }),
+  );
+
+  assert.equal(report.checks.hasChecklistNa, true);
 });
 
 test("child validation treats an exact non-tracker prerequisite as an external blocker", () => {
@@ -465,9 +496,13 @@ test("child validation accepts an exact standalone source relationship", () => {
     sourceRelationship: "Blocks PRD #379",
   }));
 
+  assert.equal(report.relationshipMode, "standalone-source");
   assert.equal(report.checks.hasSourceHeading, true);
   assert.equal(report.checks.hasSource, true);
   assert.equal(report.checks.hasSourceRelationship, true);
+  assert.equal("hasParentHeading" in report.checks, false);
+  assert.equal("hasParent" in report.checks, false);
+  assert.equal("hasChecklistNa" in report.checks, false);
   assert.equal(Object.values(report.checks).every(Boolean), true);
 });
 

@@ -4,7 +4,20 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import {
+  fixtureSnapshotCurrentnessErrors,
+  hasConcreteGreenEvidence,
+  hasConcreteRedEvidence,
+  isExecutableCommand,
+  validateBackendCurrentnessValue,
+  validateFreshnessValue,
+  validateRegressionDurabilityValue
+} from "./tdd-evidence-contract.mjs";
+
 export const DEFAULT_TDD_CLOSEOUT_BODY_MAX_BYTES = 65_536;
+
+const postCommentVerificationReminder =
+  'Post-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.';
 
 const usage = `Usage: node .claude/skills/tdd/scripts/validate-tdd-closeout-body.mjs <body.md> [--closing --expected-final-sha <sha>] [--parent-rollup] [--parent-prd] [--child-family] [--issue-set] [--acceptance-manifest <manifest.json>] [--max-bytes <positive integer>]`;
 
@@ -195,11 +208,6 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     return rows;
   };
 
-  const executableCommandPattern = /^(?:(?:[A-Za-z_][A-Za-z0-9_]*=\S+)\s+)*(?:(?:pnpm|npm|npx|node|cargo|git|gh|curl|bash|sh|pytest|python3?|go|make|deno|bun|dotnet|mvn|gradle|java|ruby|bundle|composer|php|swift|xcodebuild|cmake|ctest|zig|vitest|jest|playwright|mocha|ava|tap)\b|(?:\.{0,2}\/|\/)[^\s`]+)/i;
-  const isExecutableCommand = (value) => executableCommandPattern.test(value.trim());
-  const hasBacktickedExecutableCommand = (value) =>
-    [...value.matchAll(/`([^`\n]+)`/g)].some((match) => isExecutableCommand(match[1]));
-
   const concreteSha = (value) => value.match(/`?\b([0-9a-f]{7,40})\b`?/i)?.[1];
   const compatibleSha = (left, right) => {
     const normalizedLeft = left.toLowerCase();
@@ -209,80 +217,6 @@ export const validateTddCloseoutBody = (body, options = {}) => {
   const currentnessCommitShas = (value) =>
     [...value.matchAll(/\b(?:final\s+)?commit(?:ted)?(?:\s+SHA)?\s+`?([0-9a-f]{7,40})\b`?/gi)]
       .map((match) => match[1]);
-
-  const validateFreshnessValue = (value) => {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    if (!normalized) return "is empty";
-    if (/^<.*>$/.test(normalized)) return "is unresolved placeholder";
-    if (/^none\b/i.test(normalized)) return "";
-    if (/^N\/A\b.+\bbecause\b/i.test(normalized)) return "";
-    if (/\b(blocked|stale)\b.+\b(because|reason|unable|cannot)\b/i.test(normalized)) return "";
-    if (
-      /\b(passed on final tree|passed after|smoke rerun .*passed|browser smoke .*passed)\b/i.test(normalized) ||
-      /\b(re-?ran|rerun|re-run)\b.+\b(passed|result|artifact|screenshot|observed|command)\b/i.test(normalized)
-    ) {
-      return "";
-    }
-
-    const namesChangedPath =
-      /\bchanged (path|file|surface)s?\b/i.test(normalized) ||
-      /`[^`]+`/.test(normalized) ||
-      /(?:^|[\s(])(?:\.{0,2}\/)?[\w@.-]+(?:\/[\w@.-]+)+(?:[:),;.]|$)/.test(normalized) ||
-      /\b[\w@.-]+\.(?:ts|tsx|js|mjs|md|json|sqlite|png)\b/.test(normalized);
-    const namesUnaffectedEvidence = /\b(route|action|API|fixture|browser-consumed|UI)\b/i.test(normalized);
-    const hasTargetedProof = /\btargeted proof\b|\btargeted .*passed\b|\bfocused .*passed\b|\breran targeted\b/i.test(normalized);
-    const isCommitMetadataOnly = /\b(?:git )?commit metadata only\b/i.test(normalized);
-    const hasNoTrackedContentChange =
-      /\bno tracked (?:file )?content changed\b/i.test(normalized) ||
-      /\bno tracked files? changed\b/i.test(normalized) ||
-      /\bno file content changed\b/i.test(normalized) ||
-      /\bno content changes?\b/i.test(normalized) ||
-      /\bsame\b.+\bcontent\b/i.test(normalized);
-    const hasCommitMetadataProof = hasTargetedProof || /\bgit diff HEAD\b/i.test(normalized);
-    const isNonSemantic =
-      /\b(non-semantic|formatting|formatting-only|indentation|indentation-only|comment wording|docs?-only|documentation-only|closeout-text-only)\b/i.test(
-        normalized
-      );
-    const hasNonSemanticProof =
-      /\bdiff inspected\b|\btargeted proof\b|\btargeted .*passed\b|\bgit diff --check\b|\broot gates? (?:re)?ran\b|\bpnpm (test|typecheck|build)\b/i.test(
-        normalized
-      );
-
-    if (isCommitMetadataOnly) {
-      if (hasNoTrackedContentChange && namesUnaffectedEvidence && hasCommitMetadataProof) return "";
-      return "uses commit-metadata-only freshness without no-tracked-content-change statement, unaffected evidence route/action/API/fixture, and git diff proof";
-    }
-
-    if (/\bnot affected\b/i.test(normalized)) {
-      if (namesChangedPath && namesUnaffectedEvidence && hasTargetedProof) return "";
-      if (isNonSemantic && namesChangedPath && namesUnaffectedEvidence && hasNonSemanticProof) return "";
-      return "uses not affected without changed path, unaffected evidence route/action/API/fixture, and targeted proof";
-    }
-
-    if (isNonSemantic) {
-      if (namesChangedPath && namesUnaffectedEvidence && hasNonSemanticProof) return "";
-      return "uses non-semantic freshness without changed path, unaffected evidence route/action/API/fixture, and proof";
-    }
-
-    return "must state rerun proof, justified not affected, blocked/stale reason, non-semantic proof, N/A because, or none";
-  };
-
-  const validateRegressionDurabilityValue = (value) => {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    if (!normalized) return "is empty";
-    if (/^<.*>$/.test(normalized)) return "is unresolved placeholder";
-    if (/^durable (?:automated )?(?:regression )?test added at\b.+/i.test(normalized)) return "";
-    if (
-      /^evidence-only\b.+\bbecause\b.+\b(no supported committed harness|no committed (?:browser|e2e|test) harness|supported committed harness (?:does not|doesn't) exist)\b/i.test(
-        normalized
-      )
-    ) {
-      return "";
-    }
-    if (/^blocked\b.+\bbecause\b.+/i.test(normalized)) return "";
-    if (/^N\/A\b.+\bbecause\b.+\bnot (?:a )?transient browser\/manual probe\b/i.test(normalized)) return "";
-    return "must state durable test added at a path, evidence-only because no supported committed harness exists, blocked because, or N/A because the intended red was not a transient browser/manual probe";
-  };
 
   const validateConsoleStateValue = (value) => {
     const normalized = value.replace(/\s+/g, " ").trim();
@@ -319,27 +253,6 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     if (/\ball rows?\b.+\b(sequence|ordered proof|sequence N\/A)\b/i.test(normalized)) return "";
     if (/\ball criteria\b.+\bnot sequence-sensitive\b/i.test(normalized)) return "";
     return "must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because";
-  };
-
-  const validateBackendCurrentnessValue = (value) => {
-    const normalized = value.replace(/\s+/g, " ").trim();
-    if (!normalized) return "is empty";
-    if (/^<.*>$/.test(normalized)) return "is unresolved placeholder";
-    if (/^N\/A\b.+\bbecause\b.+\b(no browser\/manual|no backend\/API dependency)\b/i.test(normalized)) return "";
-    if (/^none\b.+\bno browser\/manual\b/i.test(normalized)) return "";
-    if (/\bblocked\b.+\b(because|reason|unable|cannot)\b/i.test(normalized)) return "";
-
-    const hasServerCommand = /\bserver command\b/i.test(normalized);
-    const hasWatchMode = /\bwatch(?:\/reload)? mode\b/i.test(normalized);
-    const hasOwnership = /\b(?:process|port)(?:(?:\s+or\s+|\s*\/\s*)(?:process|port))? ownership\b/i.test(
-      normalized
-    );
-    const hasRestartOrReloadProof = /\b(?:restart|reload)(?:\/(?:restart|reload))? proof\b/i.test(normalized);
-    const hasExpectedApiProbe =
-      /\bexpected(?: [\w-]+){0,3} API (?:field|behavior)(?: probe)?\b|\bAPI probe\b/i.test(normalized);
-    if (hasServerCommand && hasWatchMode && hasOwnership && hasRestartOrReloadProof && hasExpectedApiProbe) return "";
-
-    return "must state server command, watch/reload mode, process or port ownership, restart/reload proof, and expected API field/behavior probe, or a justified N/A/blocked reason";
   };
 
   const validateBackendCurrentnessValues = (label, values) => {
@@ -513,6 +426,76 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     return "must name a durable sink, an exact heading/row/section/line anchor, and chronology proof that it precedes the first red command";
   };
 
+  const validateRecoveryAddendum = () => {
+    const headingIndex = lines.findIndex((line) => line.trim() === "TDD recovery addendum:");
+    if (headingIndex < 0) {
+      errors.push("Pre-red recovery status claims recovery but the body is missing literal TDD recovery addendum block");
+      return;
+    }
+
+    const closeoutPreflightIndex = lines.findIndex(
+      (line, index) => index > headingIndex && line.trim() === "TDD closeout preflight:"
+    );
+    const addendum = lines
+      .slice(headingIndex + 1, closeoutPreflightIndex < 0 ? lines.length : closeoutPreflightIndex)
+      .join("\n");
+    const requiredFields = [
+      "Missed pre-red gate inventory",
+      "Authoritative acceptance manifest recovery",
+      "Issue/seam red-green reconstruction",
+      "Final preservation sink"
+    ];
+    const values = new Map();
+
+    for (const label of requiredFields) {
+      const matches = extractFieldValuesFrom(addendum, label);
+      if (matches.length !== 1) {
+        errors.push(`TDD recovery addendum ${label} must appear exactly once`);
+        continue;
+      }
+      const value = matches[0];
+      values.set(label, value);
+      if (/^<.*>$/.test(value) || /\b(?:TODO|TBD|pending|unknown)\b/i.test(value)) {
+        errors.push(`TDD recovery addendum ${label} is unresolved`);
+      }
+    }
+
+    const missedGates = values.get("Missed pre-red gate inventory") ?? "";
+    if (missedGates && !/\b(?:preflight|compact table|manifest)\b/i.test(missedGates)) {
+      errors.push("TDD recovery addendum Missed pre-red gate inventory must name the missed preflight, compact table, or manifest coverage");
+    }
+
+    const manifestRecovery = values.get("Authoritative acceptance manifest recovery") ?? "";
+    if (
+      manifestRecovery &&
+      !(/^N\/A\b.+\bbecause\b/i.test(manifestRecovery) ||
+        (/\b(?:manifest|AC\s*\d+|US\s*\d+|issue\s*#?\d+)\b/i.test(manifestRecovery) &&
+          /\b(?:coverage|row|map|reconstruct)\b/i.test(manifestRecovery)))
+    ) {
+      errors.push("TDD recovery addendum Authoritative acceptance manifest recovery must identify recovered manifest/check coverage or a reasoned N/A");
+    }
+
+    const redGreenRecovery = values.get("Issue/seam red-green reconstruction") ?? "";
+    if (
+      redGreenRecovery &&
+      !(/\b(?:issue\s*)?#?\d+\b/i.test(redGreenRecovery) &&
+        /\bseam\b|\s\/\s/i.test(redGreenRecovery) &&
+        /\bred\b/i.test(redGreenRecovery) &&
+        /\bgreen\b/i.test(redGreenRecovery))
+    ) {
+      errors.push("TDD recovery addendum Issue/seam red-green reconstruction must identify an issue/seam and both red and green evidence");
+    }
+
+    const preservationSink = values.get("Final preservation sink") ?? "";
+    const namesDurableSink =
+      /https?:\/\/|#\d+\b|(?:^|[\s`(])\/?(?:[A-Za-z0-9._-]+\/)+[A-Za-z0-9._-]+\b|\b(?:conversation|comment|ledger|body|sink|artifact)\s+(?:URL|reference|message|entry|path|file|#?\d+)\b/i.test(
+        preservationSink
+      );
+    if (preservationSink && !(namesDurableSink && /\b(?:anchor|heading|row|section|line)\b/i.test(preservationSink))) {
+      errors.push("TDD recovery addendum Final preservation sink must name a durable sink and exact heading/row/section/line anchor");
+    }
+  };
+
   for (let index = 0; index < lines.length; index += 1) {
     if (lines[index].trim() !== compactHeader) continue;
     for (let rowIndex = index + 2; rowIndex < lines.length; rowIndex += 1) {
@@ -524,38 +507,6 @@ export const validateTddCloseoutBody = (body, options = {}) => {
       }
     }
   }
-
-  const hasConcreteRedEvidence = (cell) => {
-    const normalized = cell.replace(/\s+/g, " ").trim();
-
-    if (/^(N\/A|not applicable)\b.+\bbecause\b/i.test(normalized)) return true;
-    if (/\bred-first skipped\b.+\bbecause\b/i.test(normalized)) return true;
-    if (/\bpartial red - wrong reason:/i.test(normalized)) return true;
-    if (/\bcoverage-only review fix\b/i.test(normalized)) return true;
-    if (/\bcoverage-only existing behavior\b.+\bred-first N\/A because behavior already existed\b/i.test(normalized)) {
-      return true;
-    }
-    if (/\bexisting contract-change expectation\b/i.test(normalized)) return true;
-    if (/\b(shared[- ]red[- ]command|same red command as|linked shared red command)\b/i.test(normalized)) return true;
-
-    return hasBacktickedExecutableCommand(normalized) && /\b(fail(?:ed|ing|ure)?|expected failure|assertion|error|exit code|no test files|red)\b/i.test(normalized);
-  };
-
-  const hasConcreteGreenEvidence = (cell) => {
-    const normalized = cell.replace(/\s+/g, " ").trim();
-    if (!normalized || /^<.*>$/.test(normalized) || /^N\/A\b/i.test(normalized)) return false;
-
-    const namesProofSurface =
-      /`[^`]+`/.test(normalized) ||
-      /\b(?:pnpm|npm|npx|node|cargo|git|gh|curl|bash)\s+\S+/i.test(normalized) ||
-      /\b(?:same|shared|linked|focused)\b.+\bcommand\b/i.test(normalized) ||
-      /\b(?:browser|Playwright|route|action|request|response|HTTP|DOM|page|artifact|screenshot)\b/i.test(normalized);
-    const namesObservedResult = /\b(pass(?:ed|ing)?|observed|received|rendered|returned|verified|confirmed|assert(?:ed|ion)?|HTTP\s+\d{3})\b/i.test(
-      normalized
-    );
-
-    return namesProofSurface && namesObservedResult;
-  };
 
   const evidenceField = (evidence, label, nextLabels) => {
     const next = nextLabels.map((nextLabel) => nextLabel.replace(" ", "\\s+")).join("|");
@@ -658,6 +609,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     const publishableSinkValues = [
       { label: "Durable sink/body inspected", value: extractFieldValue("Durable sink/body inspected") },
       { label: "Pre-red evidence reference", value: extractFieldValue("Pre-red evidence reference") },
+      { label: "Final preservation sink", value: extractFieldValue("Final preservation sink") },
       { label: "TDD evidence gate", value: gateLine }
     ];
 
@@ -767,6 +719,9 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     );
     if (preRedEvidenceReferenceError) {
       errors.push(`Pre-red evidence reference ${preRedEvidenceReferenceError}`);
+    }
+    if (/\blisted with TDD recovery addendum\b/i.test(preRedRecoveryStatusValue)) {
+      validateRecoveryAddendum();
     }
   }
 
@@ -1002,6 +957,22 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     );
   }
   validateBackendCurrentnessValues("Evidence-only backend process currentness", backendCurrentnessValues);
+  const hasBrowserManualProof =
+    browserManualEvidenceRows.length > 0 ||
+    Boolean(consoleStateValue && !consoleStateClaimsNoBrowserRows) ||
+    backendCurrentnessValues.some(
+      (value) =>
+        !/^none\b.+\bno browser\/manual\b/i.test(value) &&
+        !/^N\/A\b.+\b(no browser\/manual|no backend\/API dependency)\b/i.test(value)
+    );
+  if (hasBrowserManualProof) {
+    const fixturePaths = currentIdentities.match(/(?:^|;)\s*fixture paths\s+([^;]+)/i)?.[1]?.trim() ?? "";
+    errors.push(
+      ...fixtureSnapshotCurrentnessErrors(fixturePaths, backendCurrentnessValues, {
+        label: "Evidence-only backend process currentness"
+      })
+    );
+  }
 
   const proofServerPreflightValue = extractFieldValue("Evidence-only proof server preflight");
   const proofServerPreflightClaimsNoBrowserRows =
@@ -1132,8 +1103,11 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     const ids = [...(cells[7] ?? "").matchAll(/\bRF-[1-9]\d*\b/g)].map((match) => match[0]);
     if (!ids.length) {
       errors.push(`compact TDD row ${lineNumber} review-fix evidence must cite at least one keyed RF-N map row`);
-      continue;
     }
+  }
+
+  for (const { lineNumber, cells } of compactRows) {
+    const ids = new Set([...(cells[7] ?? "").matchAll(/\bRF-[1-9]\d*\b/g)].map((match) => match[0]));
     for (const id of ids) {
       if (!seenReviewFixIds.has(id)) {
         errors.push(`compact TDD row ${lineNumber} cites missing TDD review-fix map row ${id}`);
@@ -1246,4 +1220,5 @@ if (isCli) {
   }
 
   console.log(`TDD closeout body validation passed: ${file}`);
+  if (flags.has("--closing")) console.log(postCommentVerificationReminder);
 }

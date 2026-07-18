@@ -106,9 +106,13 @@ Evidence identity refresh:
 TDD evidence gate passed: durable sink test fixture; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status present; sequence evidence present; evidence identities present; partial-red / red-first skip reasons none; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
 `;
 
-const browserEvidenceBodyWith = (backendCurrentness) =>
-  bodyWith()
-    .replace("red-first public workflow", "evidence-only browser route")
+const browserEvidenceBodyWith = (
+  backendCurrentness,
+  current,
+  { seam = "evidence-only browser route" } = {}
+) =>
+  bodyWith({ current })
+    .replace("red-first public workflow", seam)
     .replace(
       "- Evidence-only rows freshness: none",
       "- Evidence-only rows freshness: browser smoke rerun passed on final tree for route/action/API/fixture Propagation with observed outcome ready\n- Evidence-only browser console state: 0 errors and 0 warnings"
@@ -120,6 +124,27 @@ const browserEvidenceBodyWith = (backendCurrentness) =>
     .replace(
       "- Evidence-only proof server preflight: N/A because no browser/manual evidence-only rows",
       "- Evidence-only proof server preflight: configured API/UI ports 4173 and 5173; owner-check result occupied; unrelated pre-existing owners PID 100 and PID 101; isolated proof-owned ports 4174 and 5174 with proxy aligned; cleanup ownership proof PIDs only"
+    );
+
+const recoveryBodyWith = () =>
+  bodyWith()
+    .replace(
+      "Pre-red recovery status: N/A - pre-red preflight/table was visible before first red",
+      "Pre-red recovery status: listed with TDD recovery addendum"
+    )
+    .replace(
+      /- Pre-red evidence reference: .+\n/,
+      "- Pre-red evidence reference: TDD recovery addendum in issue #1 implementation ledger; heading TDD recovery addendum\n"
+    )
+    .replace(
+      "TDD closeout preflight:",
+      `TDD recovery addendum:
+- Missed pre-red gate inventory: TDD preflight and compact table were absent before first red
+- Authoritative acceptance manifest recovery: issue #1 AC1 coverage reconstructed in the compact row above
+- Issue/seam red-green reconstruction: issue #1 / red-first public workflow uses the red and green commands in the compact row above
+- Final preservation sink: issue #1 implementation ledger; heading TDD recovery addendum
+
+TDD closeout preflight:`
     );
 
 const reviewFixBodyWith = () =>
@@ -255,7 +280,7 @@ test("rejects a pre-red reference without an anchor and chronology proof", () =>
   );
 });
 
-test("accepts an anchored recovery addendum reference", () => {
+test("rejects a recovery claim without a real recovery addendum block", () => {
   const body = bodyWith()
     .replace(
       "Pre-red recovery status: N/A - pre-red preflight/table was visible before first red",
@@ -266,7 +291,39 @@ test("accepts an anchored recovery addendum reference", () => {
       "- Pre-red evidence reference: TDD recovery addendum in issue #1 implementation ledger; section anchor Recovery RF-0\n"
     );
 
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) =>
+      error.includes("missing literal TDD recovery addendum block")
+    )
+  );
+});
+
+test("accepts a complete anchored recovery addendum block", () => {
+  assert.deepEqual(validateTddCloseoutBody(recoveryBodyWith()), []);
+});
+
+test("accepts a reasoned manifest N/A in a single-issue recovery addendum", () => {
+  const body = recoveryBodyWith().replace(
+    "Authoritative acceptance manifest recovery: issue #1 AC1 coverage reconstructed in the compact row above",
+    "Authoritative acceptance manifest recovery: N/A because one non-PRD issue has no shared or parent boundary"
+  );
+
   assert.deepEqual(validateTddCloseoutBody(body), []);
+});
+
+test("rejects a recovery addendum missing any required inventory field", () => {
+  for (const label of [
+    "Missed pre-red gate inventory",
+    "Authoritative acceptance manifest recovery",
+    "Issue/seam red-green reconstruction",
+    "Final preservation sink"
+  ]) {
+    const body = recoveryBodyWith().replace(new RegExp(`^- ${label}: .+\\n`, "m"), "");
+    assert.ok(
+      validateTddCloseoutBody(body).some((error) => error.includes(label)),
+      `expected missing ${label} to fail recovery validation`
+    );
+  }
 });
 
 test("closing rejects a local pre-red staging reference", () => {
@@ -278,6 +335,19 @@ test("closing rejects a local pre-red staging reference", () => {
   assert.ok(
     validateTddCloseoutBody(body, closingOptions).some((error) =>
       error.includes("published TDD closeout field Pre-red evidence reference contains local staging path")
+    )
+  );
+});
+
+test("closing rejects a local recovery preservation sink", () => {
+  const body = recoveryBodyWith().replace(
+    "Final preservation sink: issue #1 implementation ledger; heading TDD recovery addendum",
+    "Final preservation sink: /tmp/tdd-recovery.md; heading TDD recovery addendum"
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body, closingOptions).some((error) =>
+      error.includes("published TDD closeout field Final preservation sink contains local staging path")
     )
   );
 });
@@ -359,6 +429,25 @@ test("CLI closing mode requires the expected final SHA", () => {
 
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--closing requires --expected-final-sha/);
+});
+
+test("CLI closing success prints the exact post-comment verification reminder", () => {
+  const directory = mkdtempSync(join(tmpdir(), "tdd-closeout-verification-reminder-test-"));
+  const bodyPath = join(directory, "body.md");
+  writeFileSync(bodyPath, bodyWith());
+
+  const result = spawnSync(
+    process.execPath,
+    [validator, bodyPath, "--closing", "--expected-final-sha", expectedFinalSha],
+    { encoding: "utf8" }
+  );
+  rmSync(directory, { recursive: true, force: true });
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Post-comment verification next: after gh issue comment --body-file returns a URL, run node \.claude\/skills\/implement\/scripts\/verify-github-comment-body\.mjs "\$comment_url" "\$body" before any close command\./
+  );
 });
 
 test("closing requires a durable final-tree verification command ledger", () => {
@@ -504,6 +593,54 @@ test("still rejects backend currentness without an expected API probe", () => {
   );
 });
 
+test("browser evidence reconciles non-none fixture identities with backend snapshot currentness", () => {
+  const hash = "a".repeat(64);
+  const current =
+    `fixture paths withheld because issue #378 forbids local path publication; logical fixture world-alpha; content SHA-256 ${hash}; provenance generated from issue #378 seed; browser sessions issue-1; packet paths/hashes proposal.txt abc123; active revisions run-2; artifacts proof.png`;
+  const backendCurrentness =
+    "server command pnpm dev; watch/reload mode active; process/port ownership PID 23056 on ports 5173 and 4173; restart/reload proof server restarted; expected Propagation API field probe returned blockers";
+
+  const missingDisposition = validateTddCloseoutBody(
+    browserEvidenceBodyWith(backendCurrentness, current)
+  );
+  assert.ok(
+    missingDisposition.some((error) =>
+      error.includes("with non-none fixture paths must state stateful fixture snapshot")
+    )
+  );
+
+  const reviewFixShape = validateTddCloseoutBody(
+    browserEvidenceBodyWith(backendCurrentness, current, {
+      seam: "review-fix public workflow"
+    })
+  );
+  assert.ok(
+    reviewFixShape.some((error) =>
+      error.includes("with non-none fixture paths must state stateful fixture snapshot")
+    )
+  );
+
+  assert.deepEqual(
+    validateTddCloseoutBody(
+      browserEvidenceBodyWith(
+        `${backendCurrentness}; N/A because no stateful fixture was copied`,
+        current
+      )
+    ),
+    []
+  );
+
+  assert.deepEqual(
+    validateTddCloseoutBody(
+      browserEvidenceBodyWith(
+        `${backendCurrentness}; stateful fixture snapshot method sqlite .backup; snapshot source /srv/source.sqlite; expected-state probe GET /api/records returned record 42`,
+        current
+      )
+    ),
+    []
+  );
+});
+
 test("rejects stale currentness commits in every repeated field", () => {
   const currentness =
     "server command pnpm dev; watch/reload mode active; process/port ownership PID 23056 on ports 5173 and 4173; restart/reload proof clean start from final committed SHA abcdef0; expected Propagation API field probe returned blockers";
@@ -608,6 +745,20 @@ test("rejects one review-fix identity reused by a second compact TDD row", () =>
   );
 });
 
+test("rejects a review-fix identity reused in an N/A-prefixed parent mapping row", () => {
+  const body = reviewFixBodyWith().replace(
+    "| #1 | read | ADR 0001 read | red-first public workflow",
+    `| #2 | read | ADR 0001 read | parent closeout evidence | N/A because parent PRD maps already-tested child seams rather than adding a new behavior seam | child row #1 plus root gates passed | AC2; atoms: inherited from child row #1; proof surfaces: inherited from child row #1; sequence: N/A because criterion is not sequence-sensitive | N/A because parent mapping; RF-1 maps to child row #1 below |
+| #1 | read | ADR 0001 read | red-first public workflow`
+  );
+
+  assert.ok(
+    validateTddCloseoutBody(body).some((error) =>
+      error.includes("cites RF-1, but that map row targets a different compact TDD row")
+    )
+  );
+});
+
 test("review-fix map requires regression durability for transient browser red evidence", () => {
   const body = reviewFixBodyWith()
     .replace(
@@ -697,12 +848,18 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /published current artifact is not safe to remove until closeout is complete/);
   assert.match(closeout, /Browser\/manual evidence freshness/);
   assert.match(closeout, /Pre-red evidence reference:/);
+  assert.match(skill, /file-backed or tracker-backed ledger/);
+  assert.match(skill, /Conversation-only evidence is durable only while the exact preflight block/);
+  assert.match(closeout, /TDD recovery addendum:\n- Missed pre-red gate inventory:/);
   assert.match(closeout, /TDD review-fix map:/);
+  assert.match(closeout, /verify-github-comment-body\.mjs "\$comment_url" "\$body"/);
+  assert.match(closeout, /Post-comment verification next:/);
   assert.match(skill, /repeat that ID in the exact compact TDD row/);
   assert.match(closeout, /65,536-byte body maximum/);
   assert.match(closeout, /wc -c/);
   assert.match(closeout, /every exact named contract in the issue criteria/);
   assert.match(closeout, /fixture paths withheld because/);
+  assert.match(closeout, /identity counts as non-`none`/);
   assert.match(closeout, /Evidence-only proof server preflight:/);
   assert.match(closeout, /--expected-final-sha "\$\(git rev-parse HEAD\)"/);
   assert.match(closeout, /--acceptance-manifest <path>/);

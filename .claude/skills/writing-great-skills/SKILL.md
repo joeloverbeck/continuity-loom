@@ -6,11 +6,11 @@ disable-model-invocation: true
 
 A skill exists to wrangle determinism out of a stochastic system. **Predictability** — the agent taking the same _process_ every run, not producing the same output — is the root virtue; every lever below serves it.
 
-**Bold terms** are defined in [`GLOSSARY.md`](GLOSSARY.md); look them up there for the full meaning.
+[`GLOSSARY.md`](GLOSSARY.md) is the canonical source for **bold terms**. Look up only terms whose full definitions bear on the current decision, using its linked term index; do not load the whole glossary by default.
 
 **Writing one from zero?** These are levers, not a sequence — but a serviceable order is: settle **invocation** first (it sets what every other choice costs), mine the **leading words** you already say when you want the skill, draft, then prune and self-check the draft against the **failure modes** below. If the skill names anything in the codebase — files, symbols, flows, selectors, IDs — verify every reference against the live repo before shipping; a pointer to a target that doesn't exist is a silent variance bug that misfires the same way every run. Editing an existing skill, jump straight to the lever at issue.
 
-When creating a skill in a live repo, use this skill for design judgment and the repo's skill-creation/scaffolding workflow for file creation, metadata, validation, and mirrors.
+When creating a skill in a live repo, use this skill for design judgment and the repo's skill-creation/scaffolding workflow for file creation, metadata, validation, and mirrors. If no repo-local owner exists, use the host's creator for compatible mechanics, then apply the sibling-derived metadata, validator-conflict, and mirror rules under **Invocation** before shipping.
 
 ## Invocation
 
@@ -27,13 +27,20 @@ After choosing invocation, inspect sibling skills and sync every host metadata s
 
 When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each.
 
-Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata and policy match sibling skills, optional display metadata is coherent, repo mirrors resolve where the repo uses them, and the final text has passed the failure-mode scan.
+Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata and policy match sibling skills, optional display metadata is coherent, repo mirrors resolve where the repo uses them, the final text has passed the failure-mode scan, and the branch-proof receipt below is complete.
 
 ## Proving predictability
 
 Before shipping, enumerate every material **branch** and, for each, walk one representative raw invocation through the model-facing **description** or explicit entrypoint, every **context pointer** it should fire, the **steps** and **completion criteria** it reaches, and the artifact or terminal state it should produce. The proof is about process, not identical output.
 
-Mark an unexercised branch as unexercised; do not infer it from a neighboring branch. Use the repo's skill-creation or refactoring workflow for fixtures, forward tests, validator commands, custody, and mirror proof rather than duplicating those mechanics here.
+Record the walk in the repo workflow's validation artifact, or in the final response when no such artifact exists. Use one row per material branch:
+
+| Branch | Raw invocation | Entrypoint | Context pointers | Steps and criteria | Artifact or terminal state | Evidence |
+| ------ | -------------- | ---------- | ---------------- | ------------------ | -------------------------- | -------- |
+
+Write Evidence as `exercised - <fixture, command, or trace>` or `unexercised - <reason>`. Tests and validators may supply evidence, but do not substitute their coverage for the raw-invocation walk or infer one branch from a neighboring branch. The receipt is complete only when every enumerated branch has exactly one row and every unexercised row is reported at closeout.
+
+Use the repo's skill-creation or refactoring workflow for fixtures, forward tests, validator commands, custody, and mirror proof rather than duplicating those mechanics here. Do not create a standalone skill document solely for the receipt.
 
 ## Writing the description
 

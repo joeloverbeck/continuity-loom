@@ -9,9 +9,9 @@ Before creating the issue, run a template-conformance pass over the body, not ju
 - The body starts with an untitled provenance preamble and does not repeat the title as an H1.
 - `## User Stories` is a numbered list, and each story follows `As an <actor>, I want <feature>, so that <benefit>` rather than a looser bullet or `I can` format.
 - `## Implementation Decisions` records every `resolved default` from the intake decision-closure ledger with its evidence-based rationale; any `still open` row remains explicit in `## Further Notes` and the label decision.
-- `## Testing Decisions` states the external-behavior testing rule, names the tested modules or surfaces, names prior-art tests descriptively rather than by file path, and records the seam-confirmation outcome.
+- `## Testing Decisions` states the external-behavior testing rule, names the tested modules or surfaces, names prior-art tests descriptively rather than by file path, and records the seam-confirmation outcome after the literal marker `Seam confirmation:`.
 - `## Principles` names the touched principle documents and ADRs, affirms non-contradiction with them, and flags any deliberate exception before implementation.
-- `## Further Notes` records the seam-confirmation outcome: answered with the ratified seams, or timed out with the seams open to veto.
+- `## Further Notes` records the seam-confirmation outcome after the literal marker `Seam confirmation:`: answered with the ratified seams, or timed out with the seams open to veto.
 
 ## Template
 
@@ -66,6 +66,7 @@ A list of testing decisions that were made. Include:
 - A description of what makes a good test (only test external behavior, not implementation details)
 - Which modules will be tested
 - Prior art for the tests (i.e. similar types of tests in the codebase), named descriptively (package + kind of test) rather than by file path, consistent with the Implementation Decisions rule
+- The literal marker `Seam confirmation:` followed by the ratified seams, or the unchanged-existing-seam timeout outcome when that exception applies
 
 ## Principles
 
@@ -77,6 +78,6 @@ A description of the things that are out of scope for this PRD.
 
 ## Further Notes
 
-Any further notes about the feature. When the synthesized requirements rest on provisional or unratified decisions (e.g., an interview the user never answered), say so here and mark them open to veto before grooming — and record the seam-confirmation outcome either way (answered: name the seams ratified; timed out: open to veto), so a groomer can tell which parts of the PRD stand ratified and which do not.
+Any further notes about the feature. When the synthesized requirements rest on provisional or unratified decisions (e.g., an interview the user never answered), say so here and mark them open to veto before grooming. Include the literal marker `Seam confirmation:` and record the outcome either way (answered: name the seams ratified; timed out: open to veto), so a groomer can tell which parts of the PRD stand ratified and which do not.
 
 </prd-template>

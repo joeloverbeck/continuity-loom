@@ -562,7 +562,7 @@ if (errors.length) {
 }
 
 if (emitPreflight) {
-  console.log(preflight);
+  console.log(`${preflight}\n\nPost-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.`);
 } else {
   console.log(`${auditOnly ? "Acceptance audit" : "Closeout body"} validation passed: ${file}`);
 }

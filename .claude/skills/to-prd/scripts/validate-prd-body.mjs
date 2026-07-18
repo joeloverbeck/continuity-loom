@@ -151,10 +151,25 @@ function unique(values) {
   return [...new Set(values)].sort();
 }
 
+function sectionBody(lines, heading) {
+  const startIndex = lines.findIndex((line) => line === `## ${heading}`);
+  if (startIndex < 0) return "";
+
+  const followingLines = lines.slice(startIndex + 1);
+  const nextSectionIndex = followingLines.findIndex((line) => line.startsWith("## "));
+  return (nextSectionIndex < 0 ? followingLines : followingLines.slice(0, nextSectionIndex)).join("\n");
+}
+
 function inspectBody(body) {
   const sourcePattern = /(?:^|[\s([`])((?:(?:docs|reports|archive)\/[A-Za-z0-9._/-]+|(?:CONTEXT(?:-MAP)?|CLAUDE|AGENTS)\.md))/g;
   const localSourcePaths = unique(
-    [...body.matchAll(sourcePattern)].map((match) => match[1].replace(/[).,;:`]+$/, "")),
+    [...body.matchAll(sourcePattern)]
+      .map((match) => ({
+        explicitlyFormatted: match[0].startsWith("`"),
+        path: match[1].replace(/[).,;:`]+$/, ""),
+      }))
+      .filter(({ explicitlyFormatted, path }) => explicitlyFormatted || /\.[A-Za-z0-9]+$/.test(path))
+      .map(({ path }) => path),
   );
   const adrShorthands = unique([...body.matchAll(/\bADR [0-9]{4}\b/g)].map((match) => match[0]));
   const adrDirectory = "docs/adr";
@@ -196,6 +211,8 @@ const lines = body.split(/\r?\n/);
 const storyPattern = /^[0-9]+\. As an? .+, I want .+, so that .+$/;
 const storyLines = [...body.matchAll(/^[0-9]+\. As .+$/gm)].map((match) => match[0]);
 const badStories = storyLines.filter((story) => !storyPattern.test(story));
+const testingDecisionsBody = sectionBody(lines, "Testing Decisions");
+const furtherNotesBody = sectionBody(lines, "Further Notes");
 const hasChecklist = body.includes("Browser-visible guidance checklist mapping");
 const checklistMissing = options.expectChecklist
   ? checklistItems.filter(
@@ -223,10 +240,11 @@ const checks = {
   hasStories: body.includes("## User Stories"),
   hasImplementation: body.includes("## Implementation Decisions"),
   hasTesting: body.includes("## Testing Decisions"),
+  hasTestingSeamConfirmationMarker: testingDecisionsBody.includes("Seam confirmation:"),
   hasPrinciples: body.includes("## Principles"),
   hasOutOfScope: body.includes("## Out of Scope"),
   hasFurtherNotes: body.includes("## Further Notes"),
-  hasSeam: body.includes("Seam confirmation"),
+  hasFurtherNotesSeamConfirmationMarker: furtherNotesBody.includes("Seam confirmation:"),
   checklistModeMatches: options.expectChecklist || !hasChecklist,
   hasChecklist: !options.expectChecklist || hasChecklist,
   hasChecklistItems: !options.expectChecklist || checklistMissing.length === 0,

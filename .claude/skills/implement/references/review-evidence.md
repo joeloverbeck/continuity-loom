@@ -45,7 +45,7 @@ Review evidence is a closeout hard stop. Before running any issue-close command,
 - `Review: code-review against <fixed point>; outcome accepted residuals recorded <count/source/rationale>; unhandled findings none beyond accepted residuals; verification rerun <commands>.`
 - `Review fallback: <why code-review could not run>; standards/spec result <...>; fixes <none / SHA ...>; verification rerun <commands>.`
 
-If normal `code-review` reports findings that are intentionally accepted rather than fixed, the durable closeout sink must name each accepted residual's axis, source, and rationale, and must state that no unhandled findings remain beyond the accepted residuals. Do not summarize that outcome as `no findings`.
+If normal `code-review` reports findings that are intentionally accepted rather than fixed, the durable closeout sink must name each accepted residual's axis, source, and rationale, and must state that no unhandled findings remain beyond the accepted residuals. The final response must preserve the accepted-residual count and affected axes, cite the durable record, and use `unhandled findings none beyond accepted residuals`; do not summarize either the closeout sink or final response as `no findings` or `no remaining findings`.
 
 ## Commit/SHA Decision Before Tracker Closeout
 

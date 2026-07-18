@@ -285,8 +285,31 @@ test("single-child verification normalizes markdown and checks the exact contrac
   assert.equal(report.checks.stagedBodyMatches, true);
   assert.equal(report.checks.labelsMatch, true);
   assert.equal(report.checks.noBlockerPhraseMatches, true);
+  assert.equal(report.relationshipMode, "parent");
+  assert.equal(report.checks.parentHeadingPresent, true);
+  assert.equal(report.checks.parentPresent, true);
+  assert.equal("sourceHeadingPresent" in report.checks, false);
+  assert.equal("sourcePresent" in report.checks, false);
+  assert.equal("sourceRelationshipPresent" in report.checks, false);
   assert.equal("checklistMapped" in report.checks, false);
   assert.equal(Object.values(report.checks).every(Boolean), true);
+});
+
+test("single-child verification requires the active parent heading even when the token is present", () => {
+  const actual = {
+    ...childPayloads.get(354),
+    body: childPayloads.get(354).body.replace("## Parent", "## Context"),
+  };
+  const report = verifyPublishedChild({
+    actual,
+    expected: manifest.children[0],
+    expectedBody: actual.body,
+    parentToken: manifest.parent.token,
+  });
+
+  assert.equal(report.relationshipMode, "parent");
+  assert.equal(report.checks.parentHeadingPresent, false);
+  assert.equal(report.checks.parentPresent, true);
 });
 
 test("verifies a standalone issue with an exact source relationship and no parent ledger", () => {
@@ -303,9 +326,12 @@ test("verifies a standalone issue with an exact source relationship and no paren
 
   assert.deepEqual(report.failedChecks, []);
   assert.equal(report.checks.sourcePass, true);
+  assert.equal(report.children[0].relationshipMode, "standalone-source");
   assert.equal(report.children[0].checks.sourceHeadingPresent, true);
   assert.equal(report.children[0].checks.sourcePresent, true);
   assert.equal(report.children[0].checks.sourceRelationshipPresent, true);
+  assert.equal("parentHeadingPresent" in report.children[0].checks, false);
+  assert.equal("parentPresent" in report.children[0].checks, false);
   assert.equal(report.source.relationship, "Blocks PRD #379");
   assert.equal("parent" in report, false);
 });

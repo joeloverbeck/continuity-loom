@@ -10,6 +10,8 @@ Single-child or small child-family parent rollup: a parent PRD rollup is allowed
 
 For a single child or 2-3 child issues using a parent rollup plus fixed-template child comments, use this compact sequence:
 
+Low-headroom split exception: when the mandatory size plan reports `low-headroom` or `exceeds-limit`, the split-evidence order overrides the parent-first order in steps 1-2 below. Build, inspect, and validate every disjoint evidence chunk, then post and read back every disjoint evidence chunk before composing the compact parent body, because that body must cite the chunks' real stable URLs. Immediately before the first chunk post, run the applicable closing validator against that exact completed chunk with `--emit-preflight`; after each post, use `verify-github-comment-body.mjs` against the returned URL. Once every chunk URL is verified, compose and validate the compact parent body against only its own rows, cite every chunk URL as a durable audit sink, post and read back the parent, then resume the fixed-child sequence at step 3. Never put pending chunk URLs in a posted parent body or claim that the later compact-parent validation covered rows held in the chunks.
+
 1. Draft the parent rollup/audit body under `/tmp` or another allowed durable sink, inspect the exact body, and run the applicable validators with `--fixed-child-pending` before the parent rollup URL exists.
 2. Post the parent rollup, capture the returned URL or exact comment reference, and keep that URL as the only evidence pointer for the fixed child comments.
 3. If the posted parent rollup must contain the real child inline close comment URL, patch the local body and posted comment, verify no placeholder remains, and rerun the implement validator with `--fixed-child`.

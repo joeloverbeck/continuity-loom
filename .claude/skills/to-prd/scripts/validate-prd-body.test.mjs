@@ -55,7 +55,7 @@ ${items.map((item) => `| ${item} | Implementation Decisions home |`).join("\n")}
 
 ## Testing Decisions
 
-Seam confirmation was answered with the existing seam.
+Seam confirmation: answered with the existing seam.
 
 ## Principles
 
@@ -67,7 +67,7 @@ Runtime implementation.
 
 ## Further Notes
 
-Seam confirmation was answered.
+Seam confirmation: answered.
 `;
 
 const runValidator = (body, args = ["--stdin", "--expect-checklist"]) => {
@@ -82,6 +82,7 @@ const runValidator = (body, args = ["--stdin", "--expect-checklist"]) => {
 };
 
 const validate = (body) => runValidator(body);
+const extractSources = (body) => runValidator(body, ["--stdin", "--extract-sources"]);
 
 test("loads the Continuity Loom checklist from the issue-tracker authority", () => {
   assert.deepEqual(checklistItems, expectedChecklistItems);
@@ -106,6 +107,53 @@ test("still rejects a genuinely missing browser checklist item", () => {
 
   assert.equal(result.status, 1);
   assert.deepEqual(result.report.checklistMissing, ["browser and accessibility regression scenario"]);
+});
+
+test("ignores an unformatted slash compound that is not a source citation", () => {
+  const result = extractSources("The archive/draft mismatch is author-visible.");
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.report.localSourcePaths, []);
+});
+
+test("extracts extension-bearing and explicitly formatted source paths", () => {
+  const result = extractSources(
+    "Use docs/FOUNDATIONS.md, reports/playtest.md, archive/specs/SPEC.md, and `archive/draft`.",
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(result.report.localSourcePaths, [
+    "archive/draft",
+    "archive/specs/SPEC.md",
+    "docs/FOUNDATIONS.md",
+    "reports/playtest.md",
+  ]);
+});
+
+test("requires the seam confirmation marker in Testing Decisions", () => {
+  const body = bodyWithChecklist(checklistItems).replace(
+    "Seam confirmation: answered with the existing seam.",
+    "The user ratified the existing seam.",
+  );
+  const result = validate(body);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.report.checks.hasTestingSeamConfirmationMarker, false);
+  assert.equal(result.report.checks.hasFurtherNotesSeamConfirmationMarker, true);
+  assert.deepEqual(result.report.failures, ["hasTestingSeamConfirmationMarker"]);
+});
+
+test("requires the seam confirmation marker in Further Notes", () => {
+  const body = bodyWithChecklist(checklistItems).replace(
+    "Seam confirmation: answered.",
+    "The Step 2 answer ratified the test package.",
+  );
+  const result = validate(body);
+
+  assert.equal(result.status, 1);
+  assert.equal(result.report.checks.hasTestingSeamConfirmationMarker, true);
+  assert.equal(result.report.checks.hasFurtherNotesSeamConfirmationMarker, false);
+  assert.deepEqual(result.report.failures, ["hasFurtherNotesSeamConfirmationMarker"]);
 });
 
 test("loads checklist and source policy from a reusable policy file", () => {

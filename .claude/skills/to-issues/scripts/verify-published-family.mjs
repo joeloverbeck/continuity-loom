@@ -215,17 +215,23 @@ export const verifyPublishedChild = ({
   const placeholderPattern = compilePattern(placeholderRe, "--placeholder-re");
   const compiledForbiddenPatterns = forbiddenPatterns
     .map((pattern) => compilePattern(pattern, "--forbid-pattern"));
+  const relationshipMode = parentToken == null ? "standalone-source" : "parent";
   const sourceSection = sectionBody(body, "## Source and coordination");
   const checks = {
     fetched: actual != null,
     titleMatches: actual?.title === expected.title,
     stateMatches: actual?.state === (expected.state ?? "OPEN"),
     labelsMatch: exactValues(actualLabels, expectedLabels),
-    parentPresent: parentToken == null || body.includes(parentToken),
-    sourceHeadingPresent: sourceToken == null || body.includes("## Source and coordination"),
-    sourcePresent: sourceToken == null || sourceSection.includes(sourceToken),
-    sourceRelationshipPresent:
-      sourceRelationship == null || sourceSection.includes(sourceRelationship),
+    ...(relationshipMode === "parent"
+      ? {
+          parentHeadingPresent: body.includes("## Parent"),
+          parentPresent: body.includes(parentToken),
+        }
+      : {
+          sourceHeadingPresent: body.includes("## Source and coordination"),
+          sourcePresent: sourceSection.includes(sourceToken),
+          sourceRelationshipPresent: sourceSection.includes(sourceRelationship),
+        }),
     stagedBodyMatches: normalizeMarkdown(body) === normalizeMarkdown(expectedBody),
     hasWhat: body.includes("## What to build"),
     hasAcceptance: body.includes("## Acceptance criteria"),
@@ -257,6 +263,7 @@ export const verifyPublishedChild = ({
     forbiddenPatterns: unique(forbiddenPatterns),
     labels: actualLabels,
     number: expected.number,
+    relationshipMode,
     state: actual?.state ?? null,
     title: actual?.title ?? expected.title,
     url: actual?.url ?? null,

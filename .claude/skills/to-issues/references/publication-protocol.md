@@ -219,6 +219,8 @@ esac
 
 Exit 1 with no output is the clean no-hit case. Exit 0 means actionable content was found. Exit greater than 1 is a command failure. Rerun validation with every `--forbid-literal` and `--forbid-pattern` after each substitution or body edit; rerun the shell fallback too when it was needed. Do not batch these gates with the corresponding tracker creation call.
 
+For a dependency-ordered multi-slice run, the pre-transition validation frontier is the working ledger plus every currently resolvable slice, starting with the first slice: validate each body whose backward references are already real, its current-slice run-sheet rows, and its negative sweep. Do not require a dependent body with an unresolved backward placeholder to pass before the parent transition or before its blocker exists. Keep that body staged and deferred; after the blocker is created and verified, substitute the real issue number and apply the Step 5 validation sequence before creating the dependent issue. In the next paragraph, `staged-body validation` means this currently resolvable frontier, not a full-family pass. Run the full all-slice run sheet only after every backward substitution is complete, as required in Step 3.
+
 In child mode, after the working ledger, label proof, exact-title guards, staged-body validation, and negative sweep all pass, apply only the explicitly approved parent-label transition. Exact-read the parent immediately afterward and require the approved resulting label set and unchanged open/closed state before the first child create. If the edit result is ambiguous, re-fetch the parent before retrying. Never infer approval for a different transition.
 
 ## 5. Publish serially in dependency order

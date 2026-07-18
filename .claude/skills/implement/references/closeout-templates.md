@@ -14,7 +14,11 @@ Published-body sink identity: a private conversation preflight or local scratchp
 
 For large bodies in constrained editors or Codex sessions, build the `/tmp` file in bounded sections. After construction, verify the file exists and has the expected rough shape with `test -f "$body"`, `wc -l "$body"`, `wc -c "$body"`, targeted `sed -n` ranges, a placeholder sweep for unresolved angle-token placeholders such as `<context>` or `<parent-rollup-url pending>`, and the applicable validators before any tracker mutation. The scaffold builder and closing validator default to a 65,536-byte maximum. `--max-bytes <positive integer>` may lower that ceiling or match a different tracker's documented contract; it must not be used to bypass GitHub's limit. Add `--size-plan` while generating the scaffold to print its total bytes, audit bytes, non-audit bytes, remaining fill budget, recommended evidence headroom, and `ok` / `low-headroom` / `exceeds-limit` status. Add `--require-headroom` to stop before writing a scaffold whose remaining fill budget is below the recommendation; this is the preferred precomposition gate when TDD, review, browser, or large parent-PRD evidence will still replace placeholders. Run the bounded excerpts, token sweeps, and each validator as separate output-bounded calls; do not aggregate them into one parallel or combined result whose total output can truncate. If creation output, inspection output, or context compaction makes completeness uncertain, treat the body as untrusted: first rerun `test -f`, `wc -l`, `wc -c`, targeted excerpts for the header, TDD/review/browser sections, audit table, and closeout gate lines, then rerun the placeholder sweep and every applicable validator before posting or closing. Passing validators do not restore trust in truncated inspection output.
 
-If the size plan reports `low-headroom` or `exceeds-limit`, stop before filling or tracker mutation. Do not recover space with circular evidence such as `exact named items in this criterion` or by removing required atoms and proof surfaces. Split the detailed audit into disjoint issue/check groups with repeatable `--select <issue[:check-id[,check-id...]]>` arguments on `build-acceptance-manifest.mjs`; each invocation emits a mechanically matching subset manifest and audit scaffold through its normal `--output` and `--audit-output` flags. A selector containing only an issue number includes every check for that issue; a selector with check IDs includes only those IDs, in source order. Ensure the selector groups are disjoint and collectively cover every full-manifest check. Run `--audit-only --review-entry --acceptance-manifest <subset>` against every completed chunk, post and read back each chunk, and cite the resulting stable URLs from the compact closing body and every affected child comment. Validate the compact closing body separately against only the rows it contains, and record all chunk URLs as its durable audit sinks; do not claim that one validator invocation covered rows held in other comments.
+If the size plan reports `low-headroom` or `exceeds-limit`, stop before filling or tracker mutation. Do not recover space with circular evidence such as `exact named items in this criterion` or by removing required atoms and proof surfaces. Split the detailed audit into disjoint issue/check groups with repeatable `--select <issue[:check-id[,check-id...]]>` arguments on `build-acceptance-manifest.mjs`; each invocation emits a mechanically matching subset manifest and audit scaffold through its normal `--output` and `--audit-output` flags. A selector containing only an issue number includes every check for that issue; a selector with check IDs includes only those IDs, in source order. Ensure the selector groups are disjoint and collectively cover every full-manifest check. Build, inspect, and validate every completed chunk; immediately before the first chunk mutation, run its applicable closing validator with `--emit-preflight`. Post and exact-read every chunk before composing the compact closing body, then cite the resulting stable URLs from that compact body and every affected child comment. Validate the compact closing body separately against only the rows it contains, and record all chunk URLs as its durable audit sinks; do not claim that one validator invocation covered rows held in other comments. This split-evidence order overrides the normal small-family parent-first order because real chunk URLs do not exist until their stored bodies have been verified.
+
+Structured-evidence split rule: when a chunk uses `--evidence-input`, its subset manifest and evidence JSON must agree before the body is built. If the complete TDD/review arrays are reused in every chunk, every subset manifest must retain at least one selected check for every issue named by `tddRows` or `tddReviewFixes`; partition acceptance checks within those issues rather than splitting the issues apart. Keep the TDD/review arrays complete, but filter `auditRows` to exactly the checks selected into that chunk. The chunk manifests and `auditRows` sets must be pairwise disjoint and collectively cover the full manifest. A compact closing body uses its own subset manifest and matching `auditRows`, cites every verified chunk URL for the rows it does not contain, and never claims its validator covered those external rows. Alternatively, use a self-contained evidence file whose TDD rows, review fixes, review findings, and RF references are all internally complete for that chunk; do not leave a review finding pointing to an RF row filtered out of the file.
+
+The selector-only example below assumes no reused structured evidence. If `--evidence-input` names issue #392, select disjoint #392 check IDs into both chunk manifests instead of omitting that issue from the second chunk.
 
 ```bash
 node .claude/skills/implement/scripts/build-acceptance-manifest.mjs /tmp/worldloom-issues.json --select 391:Parent-Solution,US1,US2 --select 392 --output /tmp/worldloom-acceptance-part-01.json --audit-output /tmp/worldloom-acceptance-part-01.md
@@ -39,18 +43,28 @@ node .claude/skills/implement/scripts/validate-closeout-body.mjs "$body" --closi
 
 The capture helper calls exact structured `gh issue view` lookups without shell redirection and preserves issue order. For ordinary issues, the manifest scaffold assigns `AC1`, `AC2`, and so on in source order. For PRDs with `## Problem Statement` and `## Solution`, it also generates `Parent-Solution`, one exact `USN` check per numbered `## User Stories` entry, `Parent-Implementation-Decisions`, and `Parent-Testing-Decisions` when those sections exist. It adds one `Principles` check whenever the issue has a `## Principles` section. The closeout scaffold preserves those exact audit rows and emits the selected TDD/review/browser/identity/preflight field skeleton; it deliberately leaves angle-bracket placeholders, never changes `not done` to `satisfied`, and refuses output larger than 65,536 bytes by default, so it is not publishable until every field and row is completed and all applicable validators pass. `--review` accepts `normal` or `fallback`; add `--immediate-fix` only with `--review normal` when review findings were fixed so the scaffold emits the full normal-review immediate-fix block and final-reviewer statuses. `--fixed-child` accepts `none`, `pending`, or `final`. Preserve each generated ID and exact criterion text in the criterion cell. The audit-only validator checks the review-entry body without requiring final SHA/review/closeout fields; omit `--review-entry` for a truthful audit that still contains `blocked` or `not done` rows. The final manifest validator requires exactly one audit row for each generated check; it supplements, rather than replaces, exact body inspection. A closing validation requires `--expected-final-sha "$(git rev-parse HEAD)"`; on the last run before mutation, `--emit-preflight` prints the exact visible gate block to copy verbatim into the conversation.
 
-For multi-pass review or more than one TDD review fix, pass `--evidence-input <evidence.json>` together with `--immediate-fix --tdd-parent-rollup`. The builder validates the structured identities and derives the compact TDD rows, RF rows, review-finding ledger, finding counts and worst severities, issue/seam accounting, and repeated TDD/review summaries from this single input. Do not hand-copy those derived fields afterward. The JSON shape is:
+Pass `--evidence-input <evidence.json>` to render structured `auditRows`. For multi-pass review or more than one TDD review fix, use the same input together with `--immediate-fix --tdd-parent-rollup`; the builder validates the structured identities and derives the compact TDD rows, RF rows, review-finding ledger, finding counts and worst severities, issue/seam accounting, and repeated TDD/review summaries from this single input. Do not hand-copy those derived fields afterward. The JSON shape is:
 
 ```json
 {
+  "auditRows": [
+    {
+      "issue": 368,
+      "checkId": "AC1",
+      "atoms": "production replay",
+      "proofSurfaces": ".claude/skills/implement/scripts/build-closeout-body.test.mjs and `node --test`",
+      "sequence": "request -> replay -> assertion",
+      "status": "satisfied"
+    }
+  ],
   "tddRows": [
     {
       "issue": 368,
       "contextStatus": "absent",
       "authorityStatus": "active docs read",
       "seam": "replay route",
-      "red": "exact red command and intended failure",
-      "green": "exact passing command and result",
+      "red": "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the replay assertion did not match",
+      "green": "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
       "acceptance": "AC1; atoms: ...; proof surfaces: ...; sequence: ...",
       "reviewDisposition": "review fixes mapped below"
     }
@@ -59,14 +73,14 @@ For multi-pass review or more than one TDD review fix, pass `--evidence-input <e
     {
       "id": "RF-1",
       "finding": "short finding title",
-      "red": "exact red command and intended failure",
-      "green": "exact passing command and result",
+      "red": "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the RF-1 assertion did not match",
+      "green": "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed RF-1",
       "issue": 368,
       "seam": "replay route",
-      "durability": "durable regression or reasoned N/A",
-      "browserFreshness": "freshness disposition",
-      "backendCurrentness": "currentness disposition",
-      "identityRefresh": "same-sink identity refresh disposition"
+      "durability": "durable regression test added at build-closeout-body.test.mjs",
+      "browserFreshness": "N/A because no browser/manual evidence applies",
+      "backendCurrentness": "N/A because no browser/manual evidence was used",
+      "identityRefresh": "same-sink identity refresh completed"
     }
   ],
   "reviewFindings": [
@@ -78,14 +92,16 @@ For multi-pass review or more than one TDD review fix, pass `--evidence-input <e
       "repairClass": "behavior",
       "tddDisposition": "RF-1",
       "repair": "repair made",
-      "rerunEvidence": "exact rerun and result",
+      "rerunEvidence": "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
       "finalStatus": "fixed"
     }
   ]
 }
 ```
 
-Structured TDD input must contain exactly one row per manifest issue. Every `RF-N` must map to an exact structured issue/seam row, every RF reference in a review finding must exist, review IDs must use `P<pass>-<standards|spec>-N`, severities are `critical`, `high`, `medium`, or `low`, and final statuses are `fixed` or `accepted residual`. The `acceptance` value must contain the literal `atoms:`, `proof surfaces:`, and `sequence:` labels. Omitting `--evidence-input` preserves the placeholder scaffold workflow.
+`auditRows` is optional, but when present it must contain exactly one row for every check in the supplied manifest, keyed by exact `(issue, checkId)`. Its statuses are `satisfied`, `blocked`, or `not done`; the builder renders the exact criterion text from the manifest and escapes the four evidence fields. Use either `auditRows` or `--audit-input`, never both. This structured route removes the need for one-off Markdown replacement scripts while preserving manifest-exact row coverage.
+
+Structured TDD input must contain one or more rows per manifest issue, with every row identified by a unique `(issue, seam)` tuple. Every `RF-N` must map to an exact structured issue/seam row, every RF reference in a review finding must exist, review IDs must use `P<pass>-<standards|spec>-N`, severities are `critical`, `high`, `medium`, or `low`, and final statuses are `fixed` or `accepted residual`. Repair classes are `behavior`, `coverage-only`, `Standards-only`, `ADR-only`, `conformance-only`, `docs-only`, or `evidence-only`. TDD dispositions must link an `RF-N` or use the canonical red-green, coverage-only, red-first-skip, partial-red, or accepted-residual form. Review-fix red and green values must name concrete commands/results or a canonical skip form; durability, browser freshness, and backend currentness must use the validator-safe forms shown in the closeout template below. The `acceptance` value must contain the literal `atoms:`, `proof surfaces:`, and `sequence:` labels. Omitting `--evidence-input` preserves the placeholder scaffold workflow.
 
 Long parent rollup, sibling-issue rollup, or child-family audit bodies must include this table shape, either inline or by linking an already-posted durable audit sink:
 
@@ -169,11 +185,12 @@ Principles/ADR conformance: <no deliberate exceptions / approved exception / N/A
 Browser evidence:
 - Route/action/outcome: <route and observed result / N/A because exact issue/PRD says browser/manual proof is N/A and browser contract/routes/rendered behavior/validation response/fixtures/action path are unchanged / N/A because ... / blocked because ...>
 - Console state: <0 errors and 0 warnings / classified unrelated output with evidence / rerun clean session because HMR, reused session, or agent-induced setup/request error tainted proof / N/A because browser evidence is N/A or blocked>
-- Backend process currentness: <server command and watch/reload mode; process or port ownership; restart/reload proof; expected API field/behavior probe / N/A because browser proof has no backend/API dependency / N/A because no browser/manual evidence was used / blocked because ...>
+- Backend process currentness: <server command and watch/reload mode; process or port ownership; restart/reload proof; expected API field/behavior probe; when current identities name a local or withheld fixture, stateful fixture snapshot method, snapshot source, and expected-state probe, or `N/A because no stateful fixture was copied` / N/A because browser proof has no backend/API dependency / N/A because no browser/manual evidence was used / blocked because ...>
 - Final freshness delta: files touched since the last browser/manual smoke after final commit and verification edits <paths or none>; affects UI/routes/browser-consumed API/fixtures/action path <yes/no per path/group and why>; smoke freshness <rerun / not affected because changed path <path or group> leaves the evidence route/action/API/fixture <route/action/API/fixture> untouched and targeted proof <command> passed / blocked because ...>
 Evidence identity refresh:
 - Current evidence identities: fixture paths <path 1 | path 2 | none>; browser sessions <name 1 | name 2 | none>; packet paths/hashes <path/hash 1 | path/hash 2 | none>; active revisions <ID 1 | ID 2 | none>; artifacts <path/ID 1 | path/ID 2 | none>
 - Authority-sensitive alternative when local fixture paths must not be published: Current evidence identities: fixture paths withheld because <authority and reason>; logical fixture <stable ID>; content SHA-256 <64 hexadecimal characters>; provenance <generated, derived, or copied-source statement>; browser sessions <names/none>; packet paths/hashes <paths and hashes/none>; active revisions <IDs/none>; artifacts <paths/IDs/none>
+- Withheld-fixture currentness: the structured `fixture paths withheld because ...` form is non-`none` for review validation. Within the otherwise applicable `Backend process currentness` proof, append the exact disposition `N/A because no stateful fixture was copied` when no database, world file, or other stateful fixture was copied; otherwise include `stateful fixture snapshot method`, `snapshot source`, and `expected-state probe`.
 - Historical red identities retained: <fixture paths ...; browser sessions ...; packet paths/hashes ...; active revisions ...; artifacts ... / none>
 - Superseded evidence identities: fixture paths <path 1 | path 2 | none>; browser sessions <name 1 | name 2 | none>; packet paths/hashes <path/hash 1 | path/hash 2 | none>; active revisions <ID 1 | ID 2 | none>; artifacts <path/ID 1 | path/ID 2 | none>
 - Superseded-token sweep: <`rg`/`grep` command naming every normalized exact superseded value individually; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified or none / N/A because every superseded category is none>
@@ -314,7 +331,7 @@ Do not use this template as a substitute for successful closeout. Any row with s
 
 ## Closeout Preflight Scratchpad
 
-Before any `gh issue comment`, `gh issue close`, `glab issue close`, or equivalent closeout command, fill this in the inspected body. Run the implement closing validator with `--expected-final-sha "$(git rev-parse HEAD)" --emit-preflight`, then copy its emitted block verbatim into the conversation or durable audit sink. Do not hand-transcribe the visible gate:
+Before any `gh issue comment`, `gh issue close`, `glab issue close`, or equivalent closeout command, fill this in the inspected body. Run the implement closing validator with `--expected-final-sha "$(git rev-parse HEAD)" --emit-preflight`, then copy its emitted block and `Post-comment verification next:` reminder verbatim into the conversation or durable audit sink. Do not hand-transcribe the visible gate:
 
 ```markdown
 Closeout preflight:

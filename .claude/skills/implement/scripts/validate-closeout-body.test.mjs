@@ -371,7 +371,7 @@ test("emit-preflight prints the exact validated preflight block and gate line", 
     `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
   ]);
   const result = runValidator(body, manifest, ["--closing", "--emit-preflight"]);
-  const expected = `Closeout preflight:\n- Audit sink: local test body\n- Final SHA: ${expectedFinalSha}\n\nCloseout gate passed: audit sink local test body.\n`;
+  const expected = `Closeout preflight:\n- Audit sink: local test body\n- Final SHA: ${expectedFinalSha}\n\nCloseout gate passed: audit sink local test body.\n\nPost-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.\n`;
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, expected);
@@ -730,6 +730,7 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(evidenceGuide, /two independent snapshots or server renders are not equivalent/);
   assert.match(evidenceGuide, /SQLite `.backup`/);
   assert.match(evidenceGuide, /package manifest or lockfile changes/);
+  assert.match(evidenceGuide, /artifact disposition/);
   assert.match(evidenceGuide, /## Verification Command Ledger/);
   assert.match(evidenceGuide, /\| Exact command \| Observed result\/counts \| Run count \| Represented SHA\/tree \|/);
   assert.match(evidenceGuide, /publish only rows whose represented\s+SHA\/tree is the final SHA/);
@@ -738,6 +739,7 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(evidenceGuide, /fixture paths withheld because <authority and reason>/);
   assert.match(scopeGuide, /save one canonical ordered JSON snapshot/);
   assert.match(scopeGuide, /capture-github-issues\.mjs <issue\.\.\.> --output \/tmp\/worldloom-issues\.json/);
+  assert.match(scopeGuide, /Artifact disposition:/);
   assert.match(template, /## Sibling-Issue Rollup/);
   assert.match(template, /capture-github-issues\.mjs 369 370 371/);
   assert.match(template, /build-closeout-body\.mjs/);
@@ -754,8 +756,11 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(template, /65,536-byte maximum/);
   assert.match(template, /wc -c "\$body"/);
   assert.match(template, /Do not recover space with circular evidence/);
+  assert.match(template, /one or more rows per manifest issue/);
+  assert.match(template, /unique `\(issue, seam\)` tuple/);
   assert.match(template, /Authority-sensitive alternative when local fixture paths must not be published/);
   assert.match(reviewGuide, /no hits outside classified identity\/history lines and no active-proof hits/);
+  assert.match(reviewGuide, /final response must preserve the accepted-residual count/);
   assert.doesNotMatch(template, /Durable sink\/body inspected: <inspected body file path/);
   assert.match(gates, /Working pre-review audit/);
   assert.match(gates, /--audit-only --acceptance-manifest/);
@@ -766,6 +771,9 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(gates, /default hard stop is 65,536 bytes/);
   assert.match(gates, /atoms or surfaces point circularly/);
   assert.match(gates, /exact stored-body verification with `verify-github-comment-body\.mjs`/);
+  assert.match(gates, /Post-comment verification next:/);
+  assert.match(childGuide, /Low-headroom split exception/);
+  assert.match(childGuide, /post and read back every disjoint evidence chunk before composing the compact parent body/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <parent-comment-url> <parent-body>/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <child-comment-url> <child-body>/);
   assert.match(skill, /published `Current evidence identities:` inventory is not safe to remove/);

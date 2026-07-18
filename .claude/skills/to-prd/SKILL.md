@@ -17,7 +17,7 @@ In that branch, load only the needed sections of the [PRD body contract](referen
 
 ### 1. Establish intake and publication scope
 
-Run `git status --short`, then read and complete the [intake and scope checklist](references/intake.md) in full. It covers entrypoint authority, domain vocabulary, ADR and principle intake, issue-tracker conventions, same-kind exemplar selection, and PRD-ready determination artifacts.
+Run `git status --short --untracked-files=all`, then read and complete the [intake and scope checklist](references/intake.md) in full. It covers entrypoint authority, domain vocabulary, ADR and principle intake, issue-tracker conventions, same-kind exemplar selection, and PRD-ready determination artifacts.
 
 Done when the working notes explicitly account for every required intake item, the current source artifact is trusted, and the intended publication scope is known.
 
@@ -62,6 +62,6 @@ Apply all four references separately to every issue in a ratified program. Do no
 
 This blocker governs the completion response after Step 3 publication work begins. It does not forbid the interim Step 2 turn that asks the seam-confirmation question and waits, nor the Step 2 stop that leaves an unratified new-seam sketch as the turn's deliverable. In either interim response, state that publication has not begun and do not claim closeout.
 
-Do not send the final answer until the [final closeout ledger](references/validation-and-closeout.md#final-closeout-ledger) reconciles the verified tracker readbacks and local cleanup evidence. Include the issue number, URL, exact title, state, and labels; staged- and published-body identity and validator results; cited-source and ADR durability results with the publication ref; seam and browser-checklist outcome; deferred follow-ons or program sequencing; temporary-body and policy-file cleanup proof; and final branch plus `git status --short`. List and classify every remaining dirty path individually; grouped counts or unnamed path families do not satisfy the blocker. Do not claim any gate that lacks current evidence. If interrupted, resumed, or compacted after publication begins, rerun every blocker check whose output is no longer in context before reporting completion.
+Do not send the final answer until the [final closeout ledger](references/validation-and-closeout.md#final-closeout-ledger) reconciles the verified tracker readbacks and local cleanup evidence. Include the issue number, URL, exact title, state, and labels; staged- and published-body identity and validator results; cited-source and ADR durability results with the publication ref; seam and browser-checklist outcome; deferred follow-ons or program sequencing; temporary-body and policy-file cleanup proof; and final branch plus `git status --short --untracked-files=all`. List and classify every remaining dirty path individually; grouped counts or unnamed path families do not satisfy the blocker. Do not claim any gate that lacks current evidence. If interrupted, resumed, or compacted after publication begins, rerun every blocker check whose output is no longer in context before reporting completion.
 
 Done only when every intended issue satisfies this blocker and every temporary body is absent.

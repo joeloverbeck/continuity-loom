@@ -16,6 +16,7 @@ Before editing code, identify the authoritative work items.
 - For GitHub PRD child discovery, search all issue states for explicit parent references, for example `gh issue list --state all --search "#<parent>" --json number,title,state,labels,url`, then exact-view each candidate body/comments to confirm whether it is a child, blocker, linked implementation ticket, or merely mentions the parent. Do not infer parent closeout readiness from search output alone.
 - If any fetched PRD or issue has a `## Principles` section, treat that inline section as binding and read the domain-authority guidance selected by `docs/ACTIVE-DOCS.md` (in this repository, `docs/agents/domain.md`). Follow that guidance by reading `CONTEXT.md` and relevant `docs/adr/` entries when present, plus any principle or ADR documents named by the work item. Do not require `docs/principles/README.md` unless the active guidance points to it or the file exists.
 - Build a progress ledger with one row per issue: issue number, title, dependencies/blockers, acceptance criteria, principles/ADR obligations or exceptions, planned evidence, test seams, and closeout state.
+- Inventory every in-scope active spec, ticket file, requirements set, report, or other completion artifact named by the work items or repository authorities. Before editing, record its intended final disposition under the repository's archival workflow; do not leave a completed active artifact in place merely because its implementation checks passed.
 - Before adding or moving any helper, store/query function, persistence call, or cross-module entrypoint, record the seam, its owning module, the applicable principle/ADR or N/A, and why that placement is correct. Keep this decision visible until the implementation commit gate.
 - When a parent PRD, child issue, implementation decision, glossary, or named contract defines a composite acceptance term, expand the ledger's acceptance entry into its required atoms and proof surfaces. For example, `provenance` may require `actor + timestamp + flow step` across `API + report + browser`; do not preserve only the umbrella noun.
 - When the requested scope is a child issue, child issue range, or single implementation issue and related tracker items are discovered, classify every related item outside the requested scope before editing. For parent PRD closeout, list all related children, including any children beyond the requested scope; mark those children as already closed, enabling prerequisites, blocking, contextual/non-blocking backlog, intentionally excluded, or not actually related.
@@ -33,6 +34,10 @@ If related tracker items exist outside the requested scope, include this line im
 
 `Related tracker items outside requested scope: #N closed / #N enabling prerequisite / #N blocking / #N contextual non-blocking backlog / #N intentionally excluded / #N not actually related because ...`
 
+Always include this line for issue- or PRD-based work, using `N/A` only when no in-scope active implementation artifact exists:
+
+`Artifact disposition: <path or tracker artifact -> remain active with reason / mark complete and archive under repo authority / N/A because ...>`
+
 | Issue | Blockers | Acceptance | Principles | Evidence | Test seam | Status | Closeout comment |
 |---|---|---|---|---|---|---|---|
 | #N | ... | ... | touched docs/ADRs or N/A | ... | ... | planned / in progress / satisfied / blocked / not done | ... |
@@ -43,6 +48,6 @@ Post the ledger to the conversation before the first edit. Update it when depend
 
 Do not edit until a visible ledger or progress note includes this line:
 
-`Scope ledger posted: yes; no edits started; unrelated dirty files <listed/N/A>; in-scope issues <#...>; related tracker classification <done/N/A>; ownership/placement decisions <listed/N/A>.`
+`Scope ledger posted: yes; no edits started; unrelated dirty files <listed/N/A>; in-scope issues <#...>; related tracker classification <done/N/A>; artifact disposition <listed/N/A>; ownership/placement decisions <listed/N/A>.`
 
-If the first useful user update is shorter than the full table, it must still name the in-scope issues, unrelated dirty files, whether related tracker classification is complete or N/A, and any ownership/placement decisions that are already known. Post or expand the full ledger before making the first code or docs edit.
+If the first useful user update is shorter than the full table, it must still name the in-scope issues, unrelated dirty files, whether related tracker classification is complete or N/A, artifact disposition, and any ownership/placement decisions that are already known. Post or expand the full ledger before making the first code or docs edit.

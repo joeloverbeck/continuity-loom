@@ -4,13 +4,13 @@ Read this file in full during Step 1 of [`to-prd`](../SKILL.md).
 
 ## Repo and authority intake
 
-Explore the repo to understand the current state of the codebase, if you haven't already. Run `git status --short` during intake and preserve its exact path/status output as the intake worktree baseline, including an explicit `clean` baseline when it emits no rows. If dirty files are unrelated to the PRD and are not cited by it, continue and mention them in final reporting; if a dirty or untracked file is cited by the PRD, apply the source-durability gate before publishing.
+Explore the repo to understand the current state of the codebase, if you haven't already. Run `git status --short --untracked-files=all` during intake and preserve its exact path/status output as the intake worktree baseline, including an explicit `clean` baseline when it emits no rows. If dirty files are unrelated to the PRD and are not cited by it, continue and mention them in final reporting; if a dirty or untracked file is cited by the PRD, apply the source-durability gate before publishing.
 
 If repo entrypoint guidance (`CLAUDE.md` or `AGENTS.md`) is not already loaded this session, read it and follow it to the domain vocabulary source, relevant ADRs, principles authority, issue tracker docs, and triage-label docs before drafting. When a source artifact, exemplar, or entrypoint names an ADR by number, resolve the exact `docs/adr/<number>-*.md` path with the uniqueness rule in the source-durability reference before opening it; do not guess ADR filenames.
 
 Before drafting, make the intake state explicit in your working notes:
 
-- `git status` checked and its exact path/status baseline preserved;
+- `git status --short --untracked-files=all` checked and its exact path/status baseline preserved;
 - entrypoint guidance read or still in context;
 - domain vocabulary source read or intentionally N/A;
 - domain workflow doc named by the entrypoint read or N/A;
@@ -41,6 +41,8 @@ If the bounded search yields no published PRD title of the same kind, record `Sa
 ## PRD-ready determination artifacts
 
 If the conversation or user references a PRD-ready determination artifact such as `reports/*-prd-prep.md`, read it before drafting. Refresh its source durability, tracker freshness, and any cited authority that could have drifted. Treat its selected first PRD as the intended publication scope unless the user revises it, asks only for a draft, or keeps decisions open. Preserve its deferred follow-on candidates in Out of Scope or Further Notes unless the user explicitly asks to publish a multi-PRD program or bundle them into the current PRD.
+
+When a PRD-ready artifact declares a completed repo-local validator result, identify its producing skill or documented validation command and rerun the current final-mode validator against the exact artifact and every required source input before the seam checkpoint. Record the command and result in working notes. A passing structural check refreshes only the claims that validator covers; it does not replace durability, freshness, semantic, privacy, or decision-closure checks. If the artifact and its producer expose no stable validator, record `Artifact validator: not available` and use the bounded trust rebuild below rather than inventing a command.
 
 Before the seam checkpoint, extract every named provisional decision, label-downgrade condition, open mechanism, and open-to-veto note into a decision-closure ledger:
 
