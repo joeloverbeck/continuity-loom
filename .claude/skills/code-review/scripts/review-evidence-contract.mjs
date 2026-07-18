@@ -1,4 +1,7 @@
-import { fixtureSnapshotCurrentnessErrors } from "../../tdd/scripts/tdd-evidence-contract.mjs";
+import {
+  fixtureSnapshotCurrentnessErrors,
+  validateFreshnessValue as validateTddFreshnessValue
+} from "../../tdd/scripts/tdd-evidence-contract.mjs";
 
 const childTableHeader = "| Issue | Acceptance source | Evidence reviewed | Findings/residuals |";
 const reviewFindingLedgerHeader =
@@ -30,6 +33,22 @@ export const unresolvedValue = (value) =>
   /^<.*>$/.test(value) ||
   /\b(?:TBD|TODO|pending|unknown)\b/i.test(value) ||
   /<[^>]+>/.test(value);
+
+export const validateReviewFreshnessValue = (value, options = {}) => {
+  if (unresolvedValue(value)) return "is empty or unresolved";
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (/^none\b/i.test(normalized)) return "cannot be none";
+  if (
+    /^N\/A\b/i.test(normalized) &&
+    !options.allowAnyReasonedNA &&
+    !/^N\/A\b.+\bbecause\b.+\bno browser\/manual evidence was used\b/i.test(normalized)
+  ) {
+    return "must use N/A because no browser/manual evidence was used";
+  }
+
+  return validateTddFreshnessValue(normalized);
+};
 
 const splitMarkdownTableRow = (row) =>
   row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());

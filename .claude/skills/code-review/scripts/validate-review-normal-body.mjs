@@ -12,6 +12,7 @@ import {
   validateReviewEvidenceIdentities,
   validateReviewFindingLedger,
   validateReviewFixtureSnapshotCurrentness,
+  validateReviewFreshnessValue,
   validateReviewSpecCoverage
 } from "./review-evidence-contract.mjs";
 
@@ -132,23 +133,6 @@ const validateSubagentCleanup = (value, errors) => {
       errors.push(`Review subagent cleanup must name the ${axis} reviewer cleanup disposition`);
     }
   }
-};
-
-const validateFreshnessValue = (value) => {
-  if (unresolvedValue(value)) return "is empty or unresolved";
-  if (/^N\/A\b.+\bbecause\b.+\bno browser\/manual evidence was used\b/i.test(value)) return "";
-  if (/\b(?:reran|re-ran|rerun|smoke)\b.+\b(?:passed|observed|result|artifact|screenshot)\b/i.test(value)) {
-    return "";
-  }
-  if (/\b(?:blocked|stale)\b.+\b(?:because|reason|unable|cannot)\b/i.test(value)) return "";
-  if (
-    /\bnot affected because\b/i.test(value) &&
-    /(?:`[^`]+`|[\w@.-]+\.(?:ts|tsx|js|mjs|md|json))/.test(value) &&
-    /\b(?:targeted proof|diff inspected|git diff HEAD)\b/i.test(value)
-  ) {
-    return "";
-  }
-  return "must state final-tree rerun proof, a justified not-affected path with proof, a blocked/stale reason, or N/A because no browser/manual evidence was used";
 };
 
 const validateConsoleStateValue = (value) => {
@@ -314,7 +298,7 @@ export const validateReviewNormalBody = (body, options = {}) => {
 
   if (flags.has("--browser") || immediateFix) {
     const freshnessValue = fieldValue(body, "Browser/manual evidence freshness");
-    const freshnessError = validateFreshnessValue(freshnessValue);
+    const freshnessError = validateReviewFreshnessValue(freshnessValue);
     if (freshnessError) errors.push(`Browser/manual evidence freshness ${freshnessError}`);
     const consoleValue = fieldValue(body, "Browser/manual console state");
     const consoleError = validateConsoleStateValue(consoleValue);

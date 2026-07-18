@@ -646,6 +646,16 @@ test("requires current freshness and console evidence when --browser is used", (
     );
   assert.deepEqual(validateReviewNormalBody(browserBody, { flags: ["--browser"] }), []);
 
+  const incompleteNotAffected = browserBody.replace(
+    "browser smoke rerun passed on final tree with observed result loaded workflow",
+    "not affected because changed path packages/core/src/example.ts; targeted proof npm test passed"
+  );
+  assert.ok(
+    validateReviewNormalBody(incompleteNotAffected, { flags: ["--browser"] }).some((error) =>
+      error.includes("unaffected evidence route/action/API/fixture")
+    )
+  );
+
   const semanticVariants = browserBody.replace(
     "process or port ownership PID 123 on port 4173; restart/reload proof server restarted; expected API field probe returned created",
     "process/port ownership PID 123 on port 4173; restart/reload proof server restarted; expected Propagation API field probe returned created"
