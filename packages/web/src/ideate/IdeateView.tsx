@@ -158,6 +158,7 @@ export function IdeateView(): React.JSX.Element {
       if (result.ok) {
         if ("malformed" in result) {
           setScratchState({ status: "malformed", raw: result.raw });
+          clearCurrentAvoidList();
           return;
         }
 
@@ -180,21 +181,36 @@ export function IdeateView(): React.JSX.Element {
 
       if (isIdeateBlocked(result)) {
         setScratchState({ status: "empty" });
-        await refreshPrompt(ideationRequest, requestRevisionRef.current);
+        if (!clearCurrentAvoidList()) {
+          await refreshPrompt(ideationRequest, requestRevisionRef.current);
+        }
         return;
       }
 
       if ("kind" in result && result.kind === "stale-ideation-prompt") {
         setScratchState({ status: "empty" });
         setPreviewStatus("stale");
-        await refreshPrompt(ideationRequest, requestRevisionRef.current);
+        if (!clearCurrentAvoidList()) {
+          await refreshPrompt(ideationRequest, requestRevisionRef.current);
+        }
         return;
       }
 
       setScratchState({ status: "error", message: ideateErrorMessage(result) });
+      clearCurrentAvoidList();
     } catch {
       setScratchState({ status: "error", message: "Could not request ideation scratch." });
+      clearCurrentAvoidList();
     }
+  }
+
+  function clearCurrentAvoidList(): boolean {
+    if (ideationRequest.avoidList.length === 0) {
+      return false;
+    }
+
+    changeIdeationRequest({ ...ideationRequest, avoidList: [] });
+    return true;
   }
 
   function clearAll(): void {
@@ -361,6 +377,7 @@ function ReadyIdeate({
   onRemoveKeeper: (idea: IdeationKeeper) => void;
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
+  const focusIsValid = !ideationFocusState(ideationRequest.focus).error;
   const canIdeate = readiness.canGenerate && previewIsCurrent && scratchState.status !== "sending";
   const showReadinessChecklist = readiness.blockers.length > 0 || readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
   const hasSlate = scratchState.status === "ideas" || scratchState.status === "malformed";
@@ -395,7 +412,9 @@ function ReadyIdeate({
         onClearAll={onClearAll}
       />
       <div className="previewToolbar">
-        <button type="button" className="secondaryButton" onClick={onRefresh}>Refresh prompt</button>
+        <button type="button" className="secondaryButton" onClick={onRefresh} disabled={!focusIsValid}>
+          Refresh prompt
+        </button>
       </div>
 
       {scratchState.status === "sending" ? <p className="muted" role="status">Requesting ideas...</p> : null}

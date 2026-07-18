@@ -129,6 +129,44 @@ describe("ideate routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a whitespace-only inspected fingerprint as malformed before transport", async () => {
+    const fastify = app();
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: {
+        focus: "What changes?",
+        expectedPromptFingerprint: " \t\n "
+      }
+    });
+    const body = response.json() as { kind: string; issues: { path: (string | number)[] }[] };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.kind).toBe("invalid-ideation-request");
+    expect(body.issues.map((issue) => issue.path)).toContainEqual(["expectedPromptFingerprint"]);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects malformed non-string Author focus before snapshot or transport", async () => {
+    const fastify = app();
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: {
+        focus: 42,
+        expectedPromptFingerprint: "not-used"
+      }
+    });
+    const body = response.json() as { kind: string; issues: { path: (string | number)[] }[] };
+
+    expect(response.statusCode).toBe(400);
+    expect(body.kind).toBe("invalid-ideation-request");
+    expect(body.issues.map((issue) => issue.path)).toContainEqual(["focus"]);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
   it("rejects over-limit Author focus before snapshot or transport", async () => {
     const fastify = app();
     const response = await fastify.inject({

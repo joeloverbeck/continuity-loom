@@ -1,6 +1,11 @@
 // @vitest-environment jsdom
 
-import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import {
+  IDEATION_FOCUS_MAX_CODE_POINTS,
+  type CompileResult,
+  type GenerationReadiness,
+  type ReadinessDiagnostic
+} from "@loom/core";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -62,7 +67,7 @@ describe("IdeateView", () => {
       name: "What do you need ideas or questions about?"
     });
     expect(focus.value).toBe("");
-    expect(screen.getByText("0 / 500")).toBeTruthy();
+    expect(screen.getByText(`0 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
     const describedIds = focus.getAttribute("aria-describedby")?.split(" ") ?? [];
     expect(describedIds.length).toBeGreaterThanOrEqual(2);
     expect(describedIds.every((id) => document.getElementById(id))).toBe(true);
@@ -71,7 +76,7 @@ describe("IdeateView", () => {
     const callsBeforeInvalidEdit = vi.mocked(compileIdeation).mock.calls.length;
     fireEvent.change(focus, { target: { value: "😀".repeat(501) } });
 
-    expect(screen.getByText("501 / 500")).toBeTruthy();
+    expect(screen.getByText(`501 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
     expect(screen.getByRole("alert").textContent).toContain(
       "Author focus must be 500 Unicode code points or fewer."
     );
@@ -84,7 +89,7 @@ describe("IdeateView", () => {
 
     fireEvent.change(focus, { target: { value: "😀".repeat(500) } });
 
-    expect(screen.getByText("500 / 500")).toBeTruthy();
+    expect(screen.getByText(`${IDEATION_FOCUS_MAX_CODE_POINTS} / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
     await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
       mode: "ideas",
       count: 5,
@@ -97,6 +102,35 @@ describe("IdeateView", () => {
     });
     expect(screen.queryByText("Author focus must be 500 Unicode code points or fewer.")).toBeNull();
     expect(ideate).not.toHaveBeenCalled();
+  });
+
+  it("makes focus editing the only available control while Author focus is over limit", async () => {
+    vi.mocked(ideate).mockResolvedValue({
+      ok: true,
+      ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      citations: {},
+      metadata: generationMetadata()
+    });
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+
+    const focus = screen.getByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "x".repeat(IDEATION_FOCUS_MAX_CODE_POINTS + 1) } });
+
+    expect(focus.disabled).toBe(false);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Ideas" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Questions" }).disabled).toBe(true);
+    expect(screen.getByLabelText<HTMLSelectElement>("Count").disabled).toBe(true);
+    expect(screen.getByLabelText<HTMLInputElement>("Dormant slot").disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate all" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Clear all" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Refresh prompt" }).disabled).toBe(true);
   });
 
   it("invalidates send immediately and ignores an older compile response after rapid focus edits", async () => {
@@ -312,6 +346,79 @@ describe("IdeateView", () => {
     expect(focus.value).toBe("  pressure at the door  ");
   });
 
+  it.each([
+    {
+      outcome: "malformed output",
+      response: {
+        ok: true as const,
+        malformed: true as const,
+        raw: "freeform answer",
+        metadata: generationMetadata()
+      }
+    },
+    {
+      outcome: "validation-blocked output",
+      response: {
+        ok: false as const,
+        kind: "validation-blocked" as const,
+        validation: { blockers: [], warnings: [], isBlocked: true },
+        readiness: readinessFixture({})
+      }
+    },
+    {
+      outcome: "stale output",
+      response: {
+        ok: false as const,
+        kind: "stale-ideation-prompt",
+        message: "The ideation request changed."
+      }
+    },
+    {
+      outcome: "transport failure",
+      response: {
+        ok: false as const,
+        category: "provider-unavailable",
+        message: "Provider unavailable."
+      }
+    },
+    {
+      outcome: "thrown request failure",
+      response: new Error("network failed")
+    }
+  ])("clears the prior slate avoid-list after $outcome", async ({ response }) => {
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => Promise.resolve(compileResult(
+      "# Grounded Ideation Prompt",
+      `fingerprint:${request.avoidList?.join("|") ?? ""}`
+    )));
+    vi.mocked(ideate).mockResolvedValueOnce({
+      ok: true,
+      ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      citations: {},
+      metadata: generationMetadata()
+    });
+    if (response instanceof Error) {
+      vi.mocked(ideate).mockRejectedValueOnce(response);
+    } else {
+      vi.mocked(ideate).mockResolvedValueOnce(response);
+    }
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+    const getNewSlate = screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" });
+    await waitFor(() => expect(getNewSlate.disabled).toBe(false));
+    fireEvent.click(getNewSlate);
+
+    await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "",
+      avoidList: []
+    }));
+  });
+
   it("keeps ideas in session scratch and clear-all removes slate and keepers", async () => {
     vi.mocked(ideate).mockResolvedValue({
       ok: true,
@@ -352,7 +459,7 @@ describe("IdeateView", () => {
     expect((await screen.findByRole<HTMLTextAreaElement>("textbox", {
       name: "What do you need ideas or questions about?"
     })).value).toBe("");
-    expect(screen.getByText("0 / 500")).toBeTruthy();
+    expect(screen.getByText(`0 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
   });
 
   it("renders malformed raw scratch instead of treating it as story state", async () => {
