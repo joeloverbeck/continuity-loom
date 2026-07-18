@@ -125,6 +125,10 @@ Active specs live in:
 
 - `specs/`
 
+The bounded Author focus contract for grounded Ideation is active at:
+
+- `specs/SPEC-035-author-focused-ideation.md`
+
 The accepted-segment generation-context coherence implementation contract is
 complete and archived as historical evidence at:
 
