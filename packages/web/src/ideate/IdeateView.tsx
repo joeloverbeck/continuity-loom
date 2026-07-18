@@ -152,13 +152,14 @@ export function IdeateView(): React.JSX.Element {
 
       if (sendRevision !== requestRevisionRef.current) {
         setScratchState({ status: "empty" });
+        clearAvoidListAndRefresh();
         return;
       }
 
       if (result.ok) {
         if ("malformed" in result) {
           setScratchState({ status: "malformed", raw: result.raw });
-          clearCurrentAvoidList();
+          clearAvoidListAndRefresh();
           return;
         }
 
@@ -181,36 +182,33 @@ export function IdeateView(): React.JSX.Element {
 
       if (isIdeateBlocked(result)) {
         setScratchState({ status: "empty" });
-        if (!clearCurrentAvoidList()) {
-          await refreshPrompt(ideationRequest, requestRevisionRef.current);
-        }
+        clearAvoidListAndRefresh();
         return;
       }
 
       if ("kind" in result && result.kind === "stale-ideation-prompt") {
         setScratchState({ status: "empty" });
         setPreviewStatus("stale");
-        if (!clearCurrentAvoidList()) {
-          await refreshPrompt(ideationRequest, requestRevisionRef.current);
-        }
+        clearAvoidListAndRefresh();
         return;
       }
 
       setScratchState({ status: "error", message: ideateErrorMessage(result) });
-      clearCurrentAvoidList();
+      clearAvoidListAndRefresh();
     } catch {
       setScratchState({ status: "error", message: "Could not request ideation scratch." });
-      clearCurrentAvoidList();
+      clearAvoidListAndRefresh();
     }
   }
 
-  function clearCurrentAvoidList(): boolean {
-    if (ideationRequest.avoidList.length === 0) {
-      return false;
-    }
-
-    changeIdeationRequest({ ...ideationRequest, avoidList: [] });
-    return true;
+  function clearAvoidListAndRefresh(): void {
+    compileAttemptRef.current += 1;
+    const nextRevision = requestRevisionRef.current + 1;
+    requestRevisionRef.current = nextRevision;
+    setRequestRevision(nextRevision);
+    setIdeationRequest((currentRequest) => ({ ...currentRequest, avoidList: [] }));
+    setPreviewStatus("compiling");
+    setSearchTerm("");
   }
 
   function clearAll(): void {
@@ -431,6 +429,7 @@ function ReadyIdeate({
         state={scratchState}
         keepers={keepers}
         canRegenerate={canIdeate}
+        canUseScratchActions={focusIsValid}
         onRegenerateSlot={onRegenerateSlot}
         onKeepIdea={onKeepIdea}
         onRemoveKeeper={onRemoveKeeper}
@@ -443,6 +442,7 @@ function ScratchPanel({
   state,
   keepers,
   canRegenerate,
+  canUseScratchActions,
   onRegenerateSlot,
   onKeepIdea,
   onRemoveKeeper
@@ -450,6 +450,7 @@ function ScratchPanel({
   state: ScratchState;
   keepers: readonly IdeationKeeper[];
   canRegenerate: boolean;
+  canUseScratchActions: boolean;
   onRegenerateSlot: (idea: ParsedIdeationIdea) => void;
   onKeepIdea: (idea: ParsedIdeationIdea) => void;
   onRemoveKeeper: (idea: IdeationKeeper) => void;
@@ -482,6 +483,7 @@ function ScratchPanel({
                 idea={idea}
                 citations={state.citations}
                 isKept={keeperKeys.has(keeperKey(idea))}
+                canKeep={canUseScratchActions}
                 canRegenerate={canRegenerate}
                 onKeep={onKeepIdea}
                 onRegenerate={onRegenerateSlot}
@@ -490,16 +492,18 @@ function ScratchPanel({
           </div>
         ) : null}
       </section>
-      <KeepersPanel keepers={keepers} onRemoveKeeper={onRemoveKeeper} />
+      <KeepersPanel keepers={keepers} canRemove={canUseScratchActions} onRemoveKeeper={onRemoveKeeper} />
     </section>
   );
 }
 
 function KeepersPanel({
   keepers,
+  canRemove,
   onRemoveKeeper
 }: {
   keepers: readonly IdeationKeeper[];
+  canRemove: boolean;
   onRemoveKeeper: (idea: IdeationKeeper) => void;
 }): React.JSX.Element {
   return (
@@ -524,7 +528,14 @@ function KeepersPanel({
                   ))}
                 </div>
               ) : null}
-              <button type="button" className="secondaryButton" onClick={() => onRemoveKeeper(keeper)}>Remove</button>
+              <button
+                type="button"
+                className="secondaryButton"
+                onClick={() => onRemoveKeeper(keeper)}
+                disabled={!canRemove}
+              >
+                Remove
+              </button>
             </li>
           ))}
         </ul>

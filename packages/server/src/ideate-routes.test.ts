@@ -148,6 +148,29 @@ describe("ideate routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("compares a padded inspected fingerprint exactly instead of normalizing it", async () => {
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+    const inspected = await inspectedIdeationPayload(fastify, { focus: "What changes?" });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: {
+        ...inspected,
+        expectedPromptFingerprint: ` ${String(inspected.expectedPromptFingerprint)} `
+      }
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "stale-ideation-prompt",
+      message: "The ideation request changed. Inspect the current prompt before sending."
+    });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
   it("rejects malformed non-string Author focus before snapshot or transport", async () => {
     const fastify = app();
 

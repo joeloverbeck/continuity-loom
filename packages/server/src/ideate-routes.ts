@@ -17,7 +17,7 @@ import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 const ideationSendRequestSchema = ideationRequestSchema.extend({
-  expectedPromptFingerprint: z.string().trim().min(1)
+  expectedPromptFingerprint: z.string().refine((value) => value.trim().length > 0)
 });
 
 export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {

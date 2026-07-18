@@ -4,6 +4,7 @@ export interface SlateCardProps {
   idea: ParsedIdeationIdea;
   citations?: Readonly<Record<string, string>>;
   isKept: boolean;
+  canKeep?: boolean;
   canRegenerate?: boolean;
   onKeep: (idea: ParsedIdeationIdea) => void;
   onRegenerate: (idea: ParsedIdeationIdea) => void;
@@ -13,6 +14,7 @@ export function SlateCard({
   idea,
   citations = {},
   isKept,
+  canKeep = true,
   canRegenerate = true,
   onKeep,
   onRegenerate
@@ -45,7 +47,7 @@ export function SlateCard({
         >
           Regenerate slot
         </button>
-        <button type="button" onClick={() => onKeep(idea)} disabled={isKept}>
+        <button type="button" onClick={() => onKeep(idea)} disabled={isKept || !canKeep}>
           {isKept ? "Kept" : "Keep"}
         </button>
       </div>

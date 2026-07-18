@@ -13,7 +13,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   compileIdeation,
   ideate,
-  readiness
+  readiness,
+  type IdeateResponse
 } from "../api.js";
 import { IdeateView } from "./IdeateView.js";
 
@@ -107,7 +108,10 @@ describe("IdeateView", () => {
   it("makes focus editing the only available control while Author focus is over limit", async () => {
     vi.mocked(ideate).mockResolvedValue({
       ok: true,
-      ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+      ideas: [
+        ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." }),
+        ideaFixture({ slotNumber: 2, headline: "The latch interrupts the argument." })
+      ],
       citations: {},
       metadata: generationMetadata()
     });
@@ -116,6 +120,9 @@ describe("IdeateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
     expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "The latch interrupts the argument." })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Keep" })[0]!);
+    expect(screen.getByRole("button", { name: "Remove" })).toBeTruthy();
 
     const focus = screen.getByRole<HTMLTextAreaElement>("textbox", {
       name: "What do you need ideas or questions about?"
@@ -131,6 +138,9 @@ describe("IdeateView", () => {
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate all" }).disabled).toBe(true);
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Clear all" }).disabled).toBe(true);
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Refresh prompt" }).disabled).toBe(true);
+    expect(screen.getAllByRole<HTMLButtonElement>("button", { name: /^(?:Keep|Kept)$/ })
+      .every((button) => button.disabled)).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Remove" }).disabled).toBe(true);
   });
 
   it("invalidates send immediately and ignores an older compile response after rapid focus edits", async () => {
@@ -344,6 +354,62 @@ describe("IdeateView", () => {
       avoidList: ["The lantern forces a choice."]
     }, "fingerprint:pressure at the door:The lantern forces a choice.");
     expect(focus.value).toBe("  pressure at the door  ");
+  });
+
+  it("clears the prior avoid-list without reverting focus when an in-flight response becomes stale", async () => {
+    const staleResponse = deferred<IdeateResponse>();
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => Promise.resolve(compileResult(
+      "# Grounded Ideation Prompt",
+      `fingerprint:${request.focus ?? ""}:${request.avoidList?.join("|") ?? ""}`
+    )));
+    vi.mocked(ideate)
+      .mockResolvedValueOnce({
+        ok: true,
+        ideas: [ideaFixture({ slotNumber: 1, headline: "The sealed letter changes hands." })],
+        citations: {},
+        metadata: generationMetadata()
+      })
+      .mockReturnValueOnce(staleResponse.promise);
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+    const getNewSlate = screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" });
+    await waitFor(() => expect(getNewSlate.disabled).toBe(false));
+    fireEvent.click(getNewSlate);
+
+    const focus = screen.getByRole<HTMLTextAreaElement>("textbox", {
+      name: "What do you need ideas or questions about?"
+    });
+    fireEvent.change(focus, { target: { value: "new focus while sending" } });
+    await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "new focus while sending",
+      avoidList: ["The sealed letter changes hands."]
+    }));
+
+    await act(async () => {
+      staleResponse.resolve({
+        ok: true,
+        ideas: [ideaFixture({ slotNumber: 1, headline: "Obsolete response" })],
+        citations: {},
+        metadata: generationMetadata()
+      });
+      await staleResponse.promise;
+    });
+
+    await waitFor(() => expect(compileIdeation).toHaveBeenLastCalledWith({
+      mode: "ideas",
+      count: 5,
+      dormantSlot: true,
+      focus: "new focus while sending",
+      avoidList: []
+    }));
+    expect(focus.value).toBe("new focus while sending");
+    expect(screen.queryByRole("heading", { name: "Obsolete response" })).toBeNull();
   });
 
   it.each([
