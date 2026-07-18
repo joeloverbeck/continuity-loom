@@ -5,7 +5,7 @@ import {
   type IdeationRequest,
   type ReadinessDiagnostic
 } from "@loom/core";
-import { useEffect, useRef, useState } from "react";
+import { type SetStateAction, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -129,12 +129,22 @@ export function IdeateView(): React.JSX.Element {
   }
 
   function changeIdeationRequest(requestInput: IdeationRequest): void {
+    transitionIdeationRequest(
+      requestInput,
+      ideationFocusState(requestInput.focus).error ? "stale" : "compiling"
+    );
+  }
+
+  function transitionIdeationRequest(
+    requestUpdate: SetStateAction<IdeationRequest>,
+    nextPreviewStatus: PreviewStatus
+  ): void {
     compileAttemptRef.current += 1;
     const nextRevision = requestRevisionRef.current + 1;
     requestRevisionRef.current = nextRevision;
     setRequestRevision(nextRevision);
-    setIdeationRequest(requestInput);
-    setPreviewStatus(ideationFocusState(requestInput.focus).error ? "stale" : "compiling");
+    setIdeationRequest(requestUpdate);
+    setPreviewStatus(nextPreviewStatus);
     setSearchTerm("");
   }
 
@@ -202,13 +212,10 @@ export function IdeateView(): React.JSX.Element {
   }
 
   function clearAvoidListAndRefresh(): void {
-    compileAttemptRef.current += 1;
-    const nextRevision = requestRevisionRef.current + 1;
-    requestRevisionRef.current = nextRevision;
-    setRequestRevision(nextRevision);
-    setIdeationRequest((currentRequest) => ({ ...currentRequest, avoidList: [] }));
-    setPreviewStatus("compiling");
-    setSearchTerm("");
+    transitionIdeationRequest(
+      (currentRequest) => ({ ...currentRequest, avoidList: [] }),
+      "compiling"
+    );
   }
 
   function clearAll(): void {
