@@ -20,8 +20,10 @@ function managerFor(input: {
         input.generationSession
           ? { ok: true as const, payload: input.generationSession }
           : { ok: false as const, kind: "not-found" as const, message: "Generation session not found." },
-      countAcceptedSegments: () => input.acceptedSegmentCount ?? 0,
-      listAcceptedSegments: () => {
+      listAcceptedSegments: (options?: { projection?: "full" | "count" }) => {
+        if (options?.projection === "count") {
+          return input.acceptedSegmentCount ?? 0;
+        }
         throw new Error("Snapshot lifecycle derivation must not materialize accepted prose.");
       },
       getStoryConfig: () => ({ ok: false as const }),
@@ -181,6 +183,11 @@ describe("buildSnapshotFromOpenProject generation context defaults", () => {
       (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch
     )?.message).toBe(
       "Generation context is saved as First segment, but the accepted-segment archive contains 3 accepted segments and requires Continuation after accepted segment. Choose Continuation after accepted segment in Generation Brief and save the draft."
+    );
+    expect(validation.blockers.find(
+      (diagnostic) => diagnostic.code === DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch
+    )?.repairInstruction).toBe(
+      "Choose Continuation after accepted segment in Generation Brief and save the draft."
     );
     expect(validation.blockers.map((diagnostic) => diagnostic.code)).toContain(
       DIAGNOSTIC_CODES.missingImmediateHandoff

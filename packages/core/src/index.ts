@@ -240,6 +240,8 @@ export type { GenerationSession } from "./records/generation-brief.js";
 export {
   deriveGenerationContextCoherence,
   deriveGenerationContextDefault,
+  generationContextLabel,
+  generationContextRepairInstruction,
   generationSessionDraftSchema,
   normalizeGenerationSessionDraft
 } from "./records/generation-brief-draft.js";

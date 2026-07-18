@@ -1,7 +1,7 @@
 import {
   activeWorkingSetSchema,
+  generationContextLabel,
   generationSessionDraftSchema,
-  type GenerationContext,
   type GenerationContextCoherence
 } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -96,10 +96,6 @@ function formatPovLabel(
 
 function unknownEntityLabel(value: string): string {
   return `Unknown entity (${value.slice(0, 8)})`;
-}
-
-function generationContextLabel(value: GenerationContext): string {
-  return value === "first_segment" ? "First segment" : "Continuation after accepted segment";
 }
 
 function povOptionsForFixedProsePov(

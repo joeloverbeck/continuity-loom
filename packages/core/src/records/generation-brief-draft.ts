@@ -183,6 +183,14 @@ export function deriveGenerationContextDefault(
   return acceptedSegmentCount === 0 ? "first_segment" : "continuation_after_accepted_segment";
 }
 
+export function generationContextLabel(context: GenerationContext): string {
+  return context === "first_segment" ? "First segment" : "Continuation after accepted segment";
+}
+
+export function generationContextRepairInstruction(context: GenerationContext): string {
+  return `Choose ${generationContextLabel(context)} in Generation Brief and save the draft.`;
+}
+
 export function deriveGenerationContextCoherence(
   savedValue: GenerationContext | undefined,
   acceptedSegmentCount: number

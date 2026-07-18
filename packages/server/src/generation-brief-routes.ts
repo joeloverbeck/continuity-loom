@@ -97,7 +97,7 @@ export function registerGenerationBriefRoutes(app: FastifyInstance, manager: Pro
     }
 
     const result = repository.getGenerationSession();
-    const acceptedSegmentCount = repository.countAcceptedSegments();
+    const acceptedSegmentCount = repository.listAcceptedSegments({ projection: "count" });
     if (!result.ok) {
       if (result.kind === "not-found") {
         const session = {};
@@ -131,7 +131,7 @@ export function registerGenerationBriefRoutes(app: FastifyInstance, manager: Pro
         return reply.code(422).send(existing);
       }
 
-      const acceptedSegmentCount = repository.countAcceptedSegments();
+      const acceptedSegmentCount = repository.listAcceptedSegments({ projection: "count" });
       const session = existing.ok ? generationSessionDraftSchema.parse(existing.payload) : {};
       const body = generationSessionDraftSchema.parse(request.body);
       const merged = mergeGenerationSessionDraft(session, body);

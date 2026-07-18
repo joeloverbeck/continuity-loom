@@ -96,7 +96,8 @@ describe("deriveReadiness", () => {
           DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
           "generationSession.generation_validation_focus.validation_focus_tags.generation_context"
         ),
-        message: "Generation context is saved as First segment, but the accepted-segment archive contains 1 accepted segment and requires Continuation after accepted segment. Choose Continuation after accepted segment in Generation Brief and save the draft."
+        message: "The saved generation context contradicts the accepted-segment archive.",
+        repairInstruction: "Choose Continuation after accepted segment in Generation Brief and save the draft."
       }]
     });
 

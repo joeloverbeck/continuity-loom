@@ -24,6 +24,7 @@ export interface Diagnostic {
   message: string;
   affected: readonly AffectedReference[];
   whyItMatters: string;
+  repairInstruction?: string;
   suggestedActions: readonly SuggestedAction[];
 }
 

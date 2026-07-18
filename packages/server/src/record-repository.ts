@@ -429,7 +429,17 @@ export class RecordRepository {
     return { id: Number(result.lastInsertRowid), sequence, text: input.text, metadata, createdAt };
   }
 
-  listAcceptedSegments(): AcceptedSegment[] {
+  listAcceptedSegments(): AcceptedSegment[];
+  listAcceptedSegments(options: { projection: "count" }): number;
+  listAcceptedSegments(options: { projection?: "full" | "count" } = {}): AcceptedSegment[] | number {
+    if (options.projection === "count") {
+      const row = this.database
+        .prepare("SELECT COUNT(*) AS count FROM accepted_segments")
+        .get() as { count: number };
+
+      return Number(row.count);
+    }
+
     return (
       this.database
         .prepare("SELECT id, sequence, text, metadata_json, created_at FROM accepted_segments ORDER BY sequence")
@@ -441,14 +451,6 @@ export class RecordRepository {
       metadata: acceptedSegmentProvenanceSchema.parse(parsePayloadJson(String(row.metadata_json))),
       createdAt: String(row.created_at)
     }));
-  }
-
-  countAcceptedSegments(): number {
-    const row = this.database
-      .prepare("SELECT COUNT(*) AS count FROM accepted_segments")
-      .get() as { count: number };
-
-    return Number(row.count);
   }
 
   getLatestAcceptedSegment(): AcceptedSegmentReminderRef | null {

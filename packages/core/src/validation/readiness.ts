@@ -284,13 +284,7 @@ function mapDiagnostic(diagnostic: Diagnostic, labels: ReadonlyMap<string, strin
 }
 
 function fastestFixFor(diagnostic: Diagnostic, copy: DiagnosticCopy): string {
-  if (diagnostic.code !== DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch) {
-    return copy.fastestFix;
-  }
-
-  return diagnostic.message.match(
-    /Choose (?:First segment|Continuation after accepted segment) in Generation Brief and save the draft\.$/
-  )?.[0] ?? copy.fastestFix;
+  return diagnostic.repairInstruction ?? copy.fastestFix;
 }
 
 function groupDiagnostics(diagnostics: readonly ReadinessDiagnostic[]): readonly ReadinessDiagnostic[] {

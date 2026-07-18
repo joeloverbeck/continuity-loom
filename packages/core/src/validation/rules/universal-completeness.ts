@@ -1,4 +1,8 @@
 import { resolveEffectivePov } from "../../records/effective-pov.js";
+import {
+  generationContextLabel,
+  generationContextRepairInstruction
+} from "../../records/generation-brief-draft.js";
 import { DIAGNOSTIC_CODES, type Diagnostic, type SuggestedAction } from "../types.js";
 import type { ValidationRecord, ValidationSnapshot } from "../snapshot.js";
 import type { ValidationRule } from "./types.js";
@@ -33,6 +37,7 @@ function validateGenerationContextCoherence(snapshot: ValidationSnapshot): reado
 
   const savedLabel = generationContextLabel(coherence.savedValue);
   const requiredLabel = generationContextLabel(coherence.requiredValue);
+  const repairInstruction = generationContextRepairInstruction(coherence.requiredValue);
   const countPhrase = coherence.acceptedSegmentCount === 0
     ? "no accepted segments"
     : coherence.acceptedSegmentCount === 1
@@ -43,15 +48,12 @@ function validateGenerationContextCoherence(snapshot: ValidationSnapshot): reado
     blocker({
       code: DIAGNOSTIC_CODES.generationContextAcceptedSegmentMismatch,
       field: "generationSession.generation_validation_focus.validation_focus_tags.generation_context",
-      message: `Generation context is saved as ${savedLabel}, but the accepted-segment archive contains ${countPhrase} and requires ${requiredLabel}. Choose ${requiredLabel} in Generation Brief and save the draft.`,
+      message: `Generation context is saved as ${savedLabel}, but the accepted-segment archive contains ${countPhrase} and requires ${requiredLabel}. ${repairInstruction}`,
       whyItMatters: "Readiness and prompt compilation must use the lifecycle proved by the accepted-segment archive.",
+      repairInstruction,
       suggestedActions: ["revise"]
     })
   ];
-}
-
-function generationContextLabel(context: "first_segment" | "continuation_after_accepted_segment"): string {
-  return context === "first_segment" ? "First segment" : "Continuation after accepted segment";
 }
 
 function validateStoryConfig(snapshot: ValidationSnapshot): readonly Diagnostic[] {
@@ -320,6 +322,7 @@ function blocker(input: {
   field: string;
   recordId?: string;
   whyItMatters: string;
+  repairInstruction?: string;
   suggestedActions: readonly SuggestedAction[];
 }): Diagnostic {
   return {
@@ -328,6 +331,7 @@ function blocker(input: {
     message: input.message,
     affected: [input.recordId ? { recordId: input.recordId, field: input.field } : { field: input.field }],
     whyItMatters: input.whyItMatters,
+    ...(input.repairInstruction ? { repairInstruction: input.repairInstruction } : {}),
     suggestedActions: input.suggestedActions
   };
 }
