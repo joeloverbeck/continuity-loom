@@ -98,7 +98,7 @@ Normal review no-fix handoff stop for `implement`: when sub-agent review ran nor
 - **Handoff Standards source inventory**: `<the exact same entry set as Pre-dispatch Standards source inventory>`
 - **Handoff Spec source inventory**: `<the exact same entry set as Pre-dispatch Spec source inventory>`
 - **Axis summary**: `Standards <count/worst>, Spec <count/worst>`
-- **Residual findings**: `<none / accepted residual records below; no unhandled findings beyond accepted residuals>`
+- **Residual findings**: `<none / accepted residual records below; unhandled findings none beyond accepted residuals>`
 - **Accepted residual**: `<title>` when a finding is intentionally accepted
   - **Axis**: `<Standards / Spec>`
   - **Source**: `<reviewer finding plus file/hunk or acceptance source>`

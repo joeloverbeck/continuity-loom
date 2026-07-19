@@ -21,6 +21,7 @@ Keep framing before a question to a few sentences. Save supporting detail for th
 - A clear acceptance such as `proceed with your recommendation` ratifies the current recommended answer and advances to the next unresolved branch. It does not skip a required final recap checkpoint.
 - Acceptance plus a correction, constraint, or refinement ratifies the branch and creates a separate ledger line for the amendment. Restate the amendment in the next question's framing so the user can veto the interpretation.
 - A clarification request, challenge, or `why` question is not an answer. Respond directly, revise the recommendation if needed, and do not ledger or advance the branch until the decision is confirmed.
+- A question-tool call rejected with a note that the user wants to clarify is a clarification request, not an answer or a veto. Ask in prose what needs clarifying, do not ledger or advance the branch, and re-present or amend the question once the clarification resolves.
 - If the user delegates all remaining branches, resolve them with recommended answers marked PROVISIONAL, present them as open to veto, and retain any required final recap checkpoint.
 
 An explicit grilling invocation is consent to blocking questions. Generic autonomy framing does not suppress live questions. Only an explicit statement that the user is away, or a scheduled or unattended run, justifies going provisional before a timeout.

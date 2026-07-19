@@ -238,14 +238,15 @@ const closeoutPreflightBlock = () => {
 };
 
 const acceptedResidualRecords = () => {
-  const records = [];
+  const ledgerRecords = [];
   const findingHeader = "| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |";
   for (const cells of tableRowsAfter(findingHeader)) {
     if (cells[9]?.toLowerCase() === "accepted residual") {
-      records.push({ title: cells[4], axis: cells[2] });
+      ledgerRecords.push({ title: cells[4], axis: cells[2] });
     }
   }
 
+  const structuredRecords = [];
   for (let index = 0; index < lines.length; index += 1) {
     const title = lines[index].match(
       /^\s*[-*]?\s*(?:\*\*)?Accepted residual(?:\*\*)?:\s*(\S.*)$/i
@@ -260,8 +261,15 @@ const acceptedResidualRecords = () => {
       )?.[1] ?? axis;
       if (axis) break;
     }
-    records.push({ title, axis });
+    structuredRecords.push({ title, axis });
   }
+
+  // The immediate-fix finding ledger is the single source of truth for accepted
+  // residuals; the structured `Accepted residual:` records restate the same
+  // findings with independently authored titles, so counting both double-counts.
+  // Prefer the ledger when it lists any accepted residual; otherwise (the no-fix
+  // path has no ledger) fall back to the structured records.
+  const records = ledgerRecords.length > 0 ? ledgerRecords : structuredRecords;
 
   const unique = new Map();
   for (const record of records) {

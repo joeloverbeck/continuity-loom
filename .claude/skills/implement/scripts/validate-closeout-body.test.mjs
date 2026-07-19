@@ -465,6 +465,39 @@ test("final-summary emission reads accepted residuals from the structured review
   );
 });
 
+test("final-summary emission does not double-count residuals shared by the finding ledger and structured records", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const findingLedger = `| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| P1-standards-1 | P1 | Standards | reviewer-1 | Duplicated helper repeats the optimistic rollback shape | standards-only | N/A because accepted residual is intentional | accepted with rationale | node --test passed | accepted residual |
+| P1-spec-1 | P1 | Spec | reviewer-2 | Recovery branch is subsumed into the retry path | conformance-only | N/A because accepted residual is intentional | accepted with rationale | node --test passed | accepted residual |`;
+  const structuredResiduals = `- **Accepted residual**: Duplicated optimistic rollback helper
+  - **Axis**: Standards
+  - **Source**: P1-standards-1
+  - **Rationale**: the two helpers differ in error surfacing
+  - **Revisit trigger**: a third call site appears
+- **Accepted residual**: Subsumed recovery branch
+  - **Axis**: Spec
+  - **Source**: P1-spec-1
+  - **Rationale**: no dangling link can arise from the detail
+  - **Revisit trigger**: a back-pointer data model is introduced`;
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]).replace(
+    "Browser evidence: N/A because process-only work changed no browser-consumed surface",
+    `${findingLedger}\n\n${structuredResiduals}\n\nBrowser evidence: N/A because process-only work changed no browser-consumed surface`
+  );
+  const result = runValidator(body, manifest, ["--closing", "--emit-final-summary"]);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Accepted residuals: 2; affected axes Standards, Spec; durable record local test body; unhandled findings none beyond accepted residuals\./
+  );
+});
+
 test("linked audit chunks validate exact rows without repeating the shared evidence core", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const sharedEvidenceCoreUrl = "https://github.com/example/repo/issues/359#issuecomment-123";

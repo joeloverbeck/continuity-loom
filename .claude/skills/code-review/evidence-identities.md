@@ -33,3 +33,12 @@ The review-evidence fields below are enforced by exact-token regexes in `scripts
   > sequence: provider-blocked render -> recovery visible -> click -> focus lands on existing button, asserted on one active instance by the recovery test
 - **Superseded-token sweep** must name `rg`/`grep`, include every superseded value verbatim (with extensions, e.g. `index-<hash>.js`), and the literals `no hits outside classified identity/history lines`, `no active-proof hits`, and — unless `Historical red identities retained:` is `none` — `historical-red hits classified`:
   > `rg -n '<value1>|<value2>'` over the review body returns hits only inside the classified identity/history lines; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified in the Historical red identities line
+- **Accepted residual records** need one structured record per finding with each field on its own line, plus the exact body literal `unhandled findings none beyond accepted residuals` (not `no unhandled findings beyond ...`); a single-line `Axis: X. Source: Y.` record is rejected:
+  > Residual findings: 1 accepted residual; unhandled findings none beyond accepted residuals.
+  > - Accepted residual: <title>
+  >   - Axis: <Standards or Spec>
+  >   - Source: <P-id plus file/hunk or acceptance source>
+  >   - Rationale: <why closeout is allowed without a fix>
+  >   - Revisit trigger: <concrete reopening condition, or N/A because permanently accepted judgement>
+- **Evidence and residual prose** must avoid the literal words `TBD`, `TODO`, `pending`, and `unknown`: `unresolvedValue` (`review-evidence-contract.mjs`) flags them as unresolved placeholders even inside legitimate sentences and field values. Reword instead:
+  > RecordDetail.payload is `untyped` (not `unknown`) across the web layer; verification will be `confirmed` (not `pending`) after the close commands

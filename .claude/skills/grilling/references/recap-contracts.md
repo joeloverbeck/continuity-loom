@@ -65,7 +65,7 @@ Keep this checklist visible during determination and report-cited grilling runs.
 - relevant tracker IDs or backlog items;
 - explicit out-of-scope boundaries;
 - a supporting-skill result line (for example the domain-model outcome) when a supporting skill was in play;
-- `External research: used/skipped and why` if the user explicitly allowed online or deep research.
+- `External research: used/skipped and why` if the user explicitly allowed online or deep research, naming the search tool actually used and any substitution forced by tool unavailability.
 
 If the run will create a written PRD-ready or issue-ready determination artifact, also classify cited local source artifacts as durable, dirty, untracked, or temp-only. When a source is not durable, record "pending local publication" or "summarized, not cited" wording so the later publication skill does not treat it as stable. Classify the authored determination artifact itself as new/untracked, dirty, tracked-clean, or publication-ref-visible as applicable, so the next publication pass does not cite it as stable before it is.
 
@@ -75,7 +75,7 @@ If a later `/to-prd` or `/to-issues` pass would have to reconstruct provenance f
 
 ## Diagnostic / audit recap checklist
 
-When the request asks for an assessment, comparison, divergence check, or recommendation about an existing artifact rather than choosing among candidate plans, the closing recap must include the source artifact path or identifier, selected section/title when applicable, the verdict, key evidence, inspected authorities, tracker or backlog overlap, rejected or no-op alternatives, the recommendation, explicit out-of-scope boundaries, `External research: used/skipped and why` when the prompt allowed it, a supporting-skill result line when a supporting skill was in play, and a freshness note when the verdict depends on drift-prone live state such as tracker/issue state, `HEAD`, or CI.
+When the request asks for an assessment, comparison, divergence check, or recommendation about an existing artifact rather than choosing among candidate plans, the closing recap must include the source artifact path or identifier, selected section/title when applicable, the verdict, key evidence, inspected authorities, tracker or backlog overlap, rejected or no-op alternatives, the recommendation, explicit out-of-scope boundaries, `External research: used/skipped and why` when the prompt allowed it (naming the tool actually used and any substitution forced by unavailability), a supporting-skill result line when a supporting skill was in play, and a freshness note when the verdict depends on drift-prone live state such as tracker/issue state, `HEAD`, or CI.
 
 Candidate set and winning candidate may be `N/A` in this sub-case.
 
@@ -92,6 +92,12 @@ it. Also reconcile every active constraint from
 [Supporting-skill closeout composition](#supporting-skill-closeout-composition); implicit narrative
 coverage does not satisfy a required label or exact block.
 
+- **Determination / recommendation (and any run closing PRD-ready or issue-ready):** require
+  these labels or their explicit `N/A`: `Source`, `Selected section`, `Inspected authorities`,
+  `Candidate set`, `Winning candidate`, `Rejected alternatives`, `Tracker overlap`, `Existing
+  prep artifact status` when any was found, `Out of scope`, `Supporting skill result`, and
+  `External research`. When a written determination artifact was produced, also require `Source
+  durability` and `Authored artifact status`.
 - **Diagnostic / audit:** require these labels or their explicit `N/A`: `Source`, `Selected
   section`, `Verdict`, `Evidence`, `Inspected authorities`, `Tracker overlap`, `Existing prep
   artifact status` when any was found, `Rejected/no-op alternatives`, `Recommendation`, `Out of
