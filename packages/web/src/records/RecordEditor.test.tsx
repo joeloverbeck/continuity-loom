@@ -3,7 +3,9 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { RecordEditor } from "./RecordEditor.js";
+import type { FieldDescriptor } from "@loom/core";
+
+import { RecordEditor, listRequirednessNote } from "./RecordEditor.js";
 import { createRecord, updateRecord, type RecordDetail, type RecordSummary } from "../api.js";
 
 vi.mock("../api.js", () => ({
@@ -172,6 +174,19 @@ describe("RecordEditor", () => {
       })
     );
     expect(onSaved).toHaveBeenCalledWith(saved);
+  });
+
+  it("marks a required list that lawfully accepts an empty array as may-be-empty", () => {
+    render(<RecordEditor recordType="ENTITY" />);
+
+    const rolesGroup = screen.getByRole("group", { name: "roles_in_story" });
+    const note = within(rolesGroup).getByText(
+      "This list is required as a property, but it may be left empty."
+    );
+    // The requiredness note is associated with the collection control as its accessible description.
+    const describedBy = rolesGroup.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(describedBy?.split(" ")).toContain(note.getAttribute("id"));
   });
 
   it("round-trips edits through the update route", async () => {
@@ -764,5 +779,32 @@ describe("RecordEditor", () => {
     fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
 
     expect(await screen.findByText("Display name is already used.")).toBeTruthy();
+  });
+});
+
+describe("listRequirednessNote", () => {
+  const listField = (overrides: Partial<FieldDescriptor>): FieldDescriptor => ({
+    name: "example",
+    kind: "list",
+    required: true,
+    promptFacing: false,
+    minItems: 0,
+    ...overrides
+  });
+
+  it("marks a required list with no registered minimum as may-be-empty", () => {
+    expect(listRequirednessNote(listField({ required: true, minItems: 0 }))).toBe(
+      "This list is required as a property, but it may be left empty."
+    );
+  });
+
+  it("states the actual minimum when a nonzero minimum is registered", () => {
+    expect(listRequirednessNote(listField({ minItems: 1 }))).toBe("This list requires at least one item.");
+    expect(listRequirednessNote(listField({ minItems: 2 }))).toBe("This list requires at least 2 items.");
+  });
+
+  it("adds no note for an optional list or a non-list field", () => {
+    expect(listRequirednessNote(listField({ required: false, minItems: 0 }))).toBeNull();
+    expect(listRequirednessNote({ name: "statement", kind: "prose", required: true, promptFacing: true })).toBeNull();
   });
 });

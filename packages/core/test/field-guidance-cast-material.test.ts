@@ -90,6 +90,22 @@ describe("field guidance for cast, entity, and material records", () => {
     }
   });
 
+  it("distinguishes person from non-person entity material-pressure eligibility in ENTITY help", () => {
+    // F004: help must state that a person entity's short_description does not enter material pressure
+    // merely because the entity is selected or named offstage, while a non-person entity stays eligible,
+    // and must route current offstage-person pressure to the Generation Brief with the CAST dossier optional.
+    expect(getFieldGuidance("ENTITY.entity_kind")?.short).toBe(
+      "The kind of entity. A selected non-person entity compiles into material pressure using its kind and short_description; a person entity does not, because person identity and voice belong to a CAST MEMBER dossier."
+    );
+
+    const shortDescription = getFieldGuidance("ENTITY.short_description");
+    expect(shortDescription?.short).toBe(
+      "Prompt-facing material-pressure description for a selected non-person entity. A person entity's short_description is not compiled into material pressure, even when the entity is selected or named as offstage pressure."
+    );
+    expect(shortDescription?.authoringAdvice).toContain("Generation Brief");
+    expect(shortDescription?.authoringAdvice).toContain("optional durable deepening");
+  });
+
   it("marks retained validation/classification fields as non-prompt-facing", () => {
     expect(getFieldGuidance("CAST MEMBER.entity_id")).toMatchObject({
       promptFacing: "never",

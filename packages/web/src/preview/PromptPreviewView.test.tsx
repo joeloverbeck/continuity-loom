@@ -1,6 +1,13 @@
 // @vitest-environment jsdom
 
-import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import {
+  buildValidationSnapshot,
+  compilePrompt,
+  type CompileResult,
+  type GenerationReadiness,
+  type ReadinessDiagnostic,
+  type ValidationRecord
+} from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -157,6 +164,24 @@ describe("PromptPreviewView", () => {
     expect(readiness).toHaveBeenCalledTimes(2);
   });
 
+  it("shows a selected non-person entity's material-pressure description while excluding a person entity", async () => {
+    // #113 (F004): Prompt Preview coverage. The preview renders the real compiled non-person entity
+    // description but never the person entity's short_description, which the compiler excludes.
+    const prompt = compiledEntityPrompt();
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+    vi.mocked(compile).mockResolvedValue(compileResult(prompt));
+
+    renderPreview();
+
+    const promptBody = await screen.findByTestId("prompt-body");
+    expect(promptBody.textContent).toContain(
+      "Harbor Board - institution; A licensing board that can revoke the dock permit tonight."
+    );
+    expect(promptBody.textContent).not.toContain(
+      "An offstage supervisor whose certification deadline drives the refusal."
+    );
+  });
+
   it.each([
     [{ ok: false as const, kind: "no-open-project", message: "No open project." }, "Open a project first."],
     [
@@ -180,6 +205,57 @@ function renderPreview() {
       <PromptPreviewView />
     </MemoryRouter>
   );
+}
+
+function entityMeta(id: string, displayLabel: string): NonNullable<ValidationRecord["metadata"]> {
+  return {
+    id,
+    type: "test",
+    displayLabel,
+    createdAt: "2026-06-05T00:00:00.000Z",
+    updatedAt: "2026-06-05T00:00:00.000Z",
+    archived: false
+  };
+}
+
+function compiledEntityPrompt(): string {
+  const nonPersonId = "019b0298-5c00-7000-8000-0000000003a0";
+  const personId = "019b0298-5c00-7000-8000-0000000003a1";
+  const records: ValidationRecord[] = [
+    {
+      id: nonPersonId,
+      type: "ENTITY",
+      metadata: entityMeta(nonPersonId, "Harbor Board"),
+      payload: {
+        id: nonPersonId,
+        display_name: "Harbor Board",
+        entity_kind: "institution",
+        roles_in_story: ["authority"],
+        short_description: "A licensing board that can revoke the dock permit tonight."
+      }
+    },
+    {
+      id: personId,
+      type: "ENTITY",
+      metadata: entityMeta(personId, "Iven"),
+      payload: {
+        id: personId,
+        display_name: "Iven",
+        entity_kind: "person",
+        roles_in_story: [],
+        short_description: "An offstage supervisor whose certification deadline drives the refusal."
+      }
+    }
+  ];
+
+  return compilePrompt(
+    buildValidationSnapshot({
+      records,
+      generationSession: { current_cast_voice_pressure: [], cast_voice_overrides: [] },
+      storyConfig: {},
+      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    })
+  ).prompt;
 }
 
 function compileResult(prompt: string): CompileResult {

@@ -341,6 +341,32 @@ function SentinelReferencePicker({
   );
 }
 
+/**
+ * Truthful accessible note that distinguishes a list's structural requiredness from its item-count
+ * requirement (#114 / F003). A required list whose schema declares no array-level minimum lawfully
+ * accepts an empty array, so its `*` marker means the property is structurally present, not that an
+ * item must be added. A list with a registered nonzero minimum states that actual minimum instead.
+ * Returns `null` when no note is warranted (an optional list carries no `*` to disambiguate).
+ */
+export function listRequirednessNote(field: FieldDescriptor): string | null {
+  if (field.kind !== "list") {
+    return null;
+  }
+
+  const minItems = field.minItems ?? 0;
+  if (minItems >= 1) {
+    return minItems === 1
+      ? "This list requires at least one item."
+      : `This list requires at least ${minItems} items.`;
+  }
+
+  if (field.required) {
+    return "This list is required as a property, but it may be left empty.";
+  }
+
+  return null;
+}
+
 function ListField({
   field,
   path,
@@ -364,9 +390,14 @@ function ListField({
   const value = form.watch(path) as unknown;
   const items: unknown[] = Array.isArray(value) ? value as unknown[] : [];
   const displayName = label ?? field.name;
-  const groupProps = label
-    ? { role: "group" as const, "aria-label": label, ...(describedById ? { "aria-describedby": describedById } : {}) }
-    : {};
+  const requirednessNote = listRequirednessNote(field);
+  const noteId = useId();
+  const describedByIds = [describedById, requirednessNote ? noteId : undefined].filter(Boolean).join(" ");
+  const groupProps = {
+    role: "group" as const,
+    "aria-label": displayName,
+    ...(describedByIds ? { "aria-describedby": describedByIds } : {})
+  };
 
   function appendItem(): void {
     form.setValue(path, [...items, fieldDefault(item ?? field)], { shouldDirty: true });
@@ -378,6 +409,9 @@ function ListField({
 
   return (
     <div className="listField" {...groupProps}>
+      {requirednessNote ? (
+        <p className="listRequiredness" id={noteId}>{requirednessNote}</p>
+      ) : null}
       {items.map((_, index) => (
         <div className="listRow" key={`${path}.${index}`}>
           {item ? (

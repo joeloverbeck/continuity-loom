@@ -105,15 +105,15 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
     enumValues: visibilityToPovGuidance
   }],
   ["ENTITY.entity_kind", {
-    short: "The kind of non-cast entity; selected non-person entities can compile into material pressure.",
+    short: "The kind of entity. A selected non-person entity compiles into material pressure using its kind and short_description; a person entity does not, because person identity and voice belong to a CAST MEMBER dossier.",
     promptDestinations: ["locations_objects_affordances"],
     authoringAdvice: "Use the closest concrete kind; do not use roles_in_story to describe pressure."
   }],
   ["ENTITY.short_description", {
-    short: "Prompt-facing description for a selected entity when it carries material pressure.",
+    short: "Prompt-facing material-pressure description for a selected non-person entity. A person entity's short_description is not compiled into material pressure, even when the entity is selected or named as offstage pressure.",
     promptDestinations: ["locations_objects_affordances"],
     examples: ["A union office with enough authority to close the pier gates."],
-    authoringAdvice: "Describe what the entity is and why its presence can matter physically or institutionally now."
+    authoringAdvice: "For a non-person entity, describe what it is and why its presence can matter physically or institutionally now. For a person who is only offstage pressure, keep the entity ENTITY-first and author the current pressure in the Generation Brief; a CAST MEMBER dossier is optional durable deepening, not a prerequisite, and is where a person's identity and voice compile."
   }],
   ["ENTITY.roles_in_story[]", {
     promptFacing: "never",

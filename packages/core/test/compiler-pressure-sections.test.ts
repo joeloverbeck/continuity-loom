@@ -617,6 +617,54 @@ describe("compiler pressure-section resolvers", () => {
     expect(materialPressure).not.toContain(personEntityId);
   });
 
+  it("excludes a selected person entity with no cast dossier from material pressure while a non-person entity renders", () => {
+    // Regression for the F004 finding (Ash at Low Water playtest): a pressure-only *person* ENTITY that
+    // has no CAST MEMBER dossier must not leak its short_description into material pressure merely because
+    // it is selected/referenced, while a selected non-person ENTITY keeps its existing material-pressure
+    // eligibility. This pins the current deterministic compiler behavior; it must not change.
+    const nonPersonEntityId = "019b0298-5c00-7000-8000-0000000002a0";
+    const lonePersonEntityId = "019b0298-5c00-7000-8000-0000000002a1";
+    const records: ValidationRecord[] = [
+      ...pressureRecords(),
+      {
+        id: nonPersonEntityId,
+        type: "ENTITY",
+        metadata: metadata(nonPersonEntityId, "Harbor Board"),
+        payload: {
+          id: nonPersonEntityId,
+          display_name: "Harbor Board",
+          entity_kind: "institution",
+          roles_in_story: ["authority"],
+          short_description: "A licensing board that can revoke the dock permit tonight."
+        }
+      },
+      {
+        id: lonePersonEntityId,
+        type: "ENTITY",
+        metadata: metadata(lonePersonEntityId, "Iven"),
+        payload: {
+          id: lonePersonEntityId,
+          display_name: "Iven",
+          entity_kind: "person",
+          roles_in_story: [],
+          short_description: "An offstage supervisor whose certification deadline drives the refusal."
+        }
+      }
+    ];
+
+    const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput(records)));
+    const materialPressure = sectionBody(prompt, "active_working_set");
+
+    // Non-person entity compiles into material pressure with kind + description.
+    expect(materialPressure).toContain(
+      "Harbor Board - institution; A licensing board that can revoke the dock permit tonight."
+    );
+    // Person entity with no dossier is excluded from material pressure across the whole prompt (F004).
+    expect(prompt).not.toContain("An offstage supervisor whose certification deadline drives the refusal.");
+    expect(prompt).not.toContain(lonePersonEntityId);
+    expect(prompt).not.toContain(nonPersonEntityId);
+  });
+
   it("resolves causal-pressure reference fields to selected record display labels", () => {
     const { prompt } = compilePrompt(buildValidationSnapshot(populatedInput(referenceResolutionRecords())));
     const plans = sectionBody(prompt, "active_plans_and_intentions");

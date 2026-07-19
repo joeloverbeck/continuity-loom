@@ -14,7 +14,7 @@ import {
   type ColumnDef
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   getRecord,
@@ -140,6 +140,36 @@ function detailPrimaryLabel(record: RecordDetail | RecordSummary): string {
   return record.type === "CAST MEMBER" ? browsePrimaryLabel(record) : fullDisplayLabel(record);
 }
 
+/**
+ * Two-step handoff for creating and activating a CAST MEMBER dossier linked to a person ENTITY (#116).
+ * `editor` preselects the ENTITY relationship in the CAST MEMBER editor; `handoff` confirms the created
+ * dossier and offers explicit, author-controlled working-set actions. No membership is written implicitly.
+ */
+type LinkedCastFlow =
+  | { step: "editor"; entityId: string; entityLabel: string }
+  | { step: "handoff"; entityLabel: string; savedId: string; added: boolean; addError: string | null };
+
+type LinkedCastLookup = {
+  status: "idle" | "loading" | "none" | "linked" | "archived" | "error";
+  record: RecordSummary | null;
+};
+
+/**
+ * Returns the durable identity of an active, unarchived person ENTITY that is eligible for the linked
+ * CAST MEMBER action, or `null` for any other record (non-person entity, archived entity, missing payload).
+ * The relationship is derived only from the selected durable ENTITY record, never from prose or assistance.
+ */
+function personEntityDetail(record: RecordDetail | RecordSummary | null): { id: string; label: string } | null {
+  if (!record || record.type !== "ENTITY" || record.archived || !("payload" in record)) {
+    return null;
+  }
+
+  const payload = record.payload;
+  const entityKind = payload && typeof payload === "object" ? (payload as Record<string, unknown>).entity_kind : undefined;
+
+  return entityKind === "person" ? { id: record.id, label: detailPrimaryLabel(record) } : null;
+}
+
 function displayCell(value: unknown): string {
   if (value === null || value === undefined || value === "") {
     return "—";
@@ -205,6 +235,7 @@ function classNameForColumn(typeFilter: string, columnId: string): string | unde
 
 export function RecordBrowser(): React.JSX.Element {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const initialType = searchParams.get("type");
   const defaultTypeResolvedRef = useRef(isRecordType(initialType));
   const [records, setRecords] = useState<RecordSummary[]>([]);
@@ -217,6 +248,9 @@ export function RecordBrowser(): React.JSX.Element {
   const [castPrerequisiteStep, setCastPrerequisiteStep] = useState<
     "checking" | "explanation" | "create-entity" | null
   >(null);
+  const [linkedCastFlow, setLinkedCastFlow] = useState<LinkedCastFlow | null>(null);
+  const [linkedCastLookup, setLinkedCastLookup] = useState<LinkedCastLookup>({ status: "idle", record: null });
+  const [linkedCastLookupNonce, setLinkedCastLookupNonce] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: isRecordType(initialType) ? initialType : "",
@@ -422,6 +456,48 @@ export function RecordBrowser(): React.JSX.Element {
     setWorkingSetIds(response.selectedRecordIds);
   }
 
+  async function addRecordToWorkingSet(recordId: string): Promise<boolean> {
+    if (workingSetIdSet.has(recordId)) {
+      return true;
+    }
+
+    const nextIds = [...workingSetIds, recordId];
+    setWorkingSetIds(nextIds);
+    const response = await setWorkingSet(nextIds);
+
+    if (!response.ok) {
+      setWorkingSetIds(workingSetIds);
+      return false;
+    }
+
+    setWorkingSetIds(response.selectedRecordIds);
+    return true;
+  }
+
+  async function openLinkedCast(recordId: string): Promise<void> {
+    const response = await getRecord(recordId);
+
+    if (response.ok) {
+      setCastEditorRecord(response.record);
+    } else {
+      setNotice(response.message);
+    }
+  }
+
+  async function handleAddLinkedCastToWorkingSet(savedId: string): Promise<void> {
+    const added = await addRecordToWorkingSet(savedId);
+
+    setLinkedCastFlow((current) =>
+      current && current.step === "handoff"
+        ? {
+            ...current,
+            added,
+            addError: added ? null : "Could not add the dossier to the active working set. Try again."
+          }
+        : current
+    );
+  }
+
   function openCreateForm(recordType: string): void {
     if (recordType === "CAST MEMBER") {
       if (!referenceTargetsLoaded) {
@@ -488,6 +564,47 @@ export function RecordBrowser(): React.JSX.Element {
 
     openCreateForm(createType);
   }, [createType]);
+
+  useEffect(() => {
+    const person = personEntityDetail(selectedRecord);
+    if (!person) {
+      setLinkedCastLookup({ status: "idle", record: null });
+      return;
+    }
+
+    let active = true;
+    setLinkedCastLookup({ status: "loading", record: null });
+
+    void listRecords({ type: "CAST MEMBER", refRole: "entity_id", targetId: person.id, includeArchived: true })
+      .then((response) => {
+        if (!active) {
+          return;
+        }
+
+        if (!response.ok) {
+          setLinkedCastLookup({ status: "error", record: null });
+          return;
+        }
+
+        const activeLinkedCast = response.records.find((record) => !record.archived);
+        if (activeLinkedCast) {
+          setLinkedCastLookup({ status: "linked", record: activeLinkedCast });
+        } else if (response.records.length > 0) {
+          setLinkedCastLookup({ status: "archived", record: response.records[0] ?? null });
+        } else {
+          setLinkedCastLookup({ status: "none", record: null });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setLinkedCastLookup({ status: "error", record: null });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedRecord, linkedCastLookupNonce]);
 
   if (castPrerequisiteStep === "checking") {
     return (
@@ -573,6 +690,68 @@ export function RecordBrowser(): React.JSX.Element {
       </section>
     );
   }
+
+  if (linkedCastFlow?.step === "editor") {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="records-title">
+        <button type="button" className="linkButton" onClick={() => setLinkedCastFlow(null)}>
+          Back to records
+        </button>
+        <CastMemberEditor
+          payload={{ entity_id: linkedCastFlow.entityId }}
+          referenceRecords={referenceTargets}
+          headingEyebrow="Create linked CAST MEMBER"
+          onSaved={(savedRecord) => {
+            handleSavedRecord(savedRecord);
+            setLinkedCastFlow({
+              step: "handoff",
+              entityLabel: linkedCastFlow.entityLabel,
+              savedId: savedRecord.id,
+              added: false,
+              addError: null
+            });
+          }}
+        />
+      </section>
+    );
+  }
+
+  if (linkedCastFlow?.step === "handoff") {
+    const handoff = linkedCastFlow;
+    return (
+      <section className="surface recordBrowser" aria-labelledby="linked-cast-handoff-title">
+        <p className="eyebrow">Linked CAST MEMBER created</p>
+        <h2 id="linked-cast-handoff-title">Linked dossier ready for {handoff.entityLabel}</h2>
+        <p role="status" className="status statusSuccess">
+          A CAST MEMBER dossier is now linked to {handoff.entityLabel}. Creating the record did not add it to the
+          active working set or assign a cast band.
+        </p>
+        {handoff.added ? (
+          <p role="status" className="status statusSuccess">Added to the active working set.</p>
+        ) : null}
+        {handoff.addError ? (
+          <p role="alert" className="status statusError">{handoff.addError}</p>
+        ) : null}
+        <div className="buttonRow">
+          <button
+            type="button"
+            disabled={handoff.added}
+            onClick={() => void handleAddLinkedCastToWorkingSet(handoff.savedId)}
+          >
+            Add to Active Working Set
+          </button>
+          <button type="button" onClick={() => void navigate("/working-set")}>
+            Open Active Working Set
+          </button>
+          <button type="button" className="secondaryButton" onClick={() => setLinkedCastFlow(null)}>
+            Back to records
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  const selectedPersonEntity = personEntityDetail(selectedRecord);
 
   return (
     <section className="surface recordBrowser" aria-labelledby="records-title">
@@ -785,6 +964,62 @@ export function RecordBrowser(): React.JSX.Element {
                 >
                   Edit Record
                 </button>
+              ) : null}
+              {selectedPersonEntity ? (
+                <div className="linkedCastActions" aria-label="Linked CAST MEMBER">
+                  {linkedCastLookup.status === "loading" ? (
+                    <p role="status" className="muted">Checking for a linked CAST MEMBER…</p>
+                  ) : null}
+                  {linkedCastLookup.status === "none" ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLinkedCastFlow({
+                          step: "editor",
+                          entityId: selectedPersonEntity.id,
+                          entityLabel: selectedPersonEntity.label
+                        })
+                      }
+                    >
+                      Create linked CAST MEMBER
+                    </button>
+                  ) : null}
+                  {linkedCastLookup.status === "linked" && linkedCastLookup.record ? (
+                    <button type="button" onClick={() => void openLinkedCast(linkedCastLookup.record!.id)}>
+                      Open linked CAST MEMBER
+                    </button>
+                  ) : null}
+                  {linkedCastLookup.status === "archived" ? (
+                    <>
+                      <p role="status" className="status statusWarning">
+                        This person&apos;s linked CAST MEMBER dossier is archived. Restore it from Records, or create a
+                        new linked dossier.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLinkedCastFlow({
+                            step: "editor",
+                            entityId: selectedPersonEntity.id,
+                            entityLabel: selectedPersonEntity.label
+                          })
+                        }
+                      >
+                        Create linked CAST MEMBER
+                      </button>
+                    </>
+                  ) : null}
+                  {linkedCastLookup.status === "error" ? (
+                    <>
+                      <p role="alert" className="status statusError">
+                        Could not check for a linked CAST MEMBER.
+                      </p>
+                      <button type="button" onClick={() => setLinkedCastLookupNonce((nonce) => nonce + 1)}>
+                        Retry linked CAST MEMBER check
+                      </button>
+                    </>
+                  ) : null}
+                </div>
               ) : null}
             </>
           ) : (

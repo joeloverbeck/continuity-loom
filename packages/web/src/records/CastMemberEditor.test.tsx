@@ -272,6 +272,17 @@ describe("CastMemberEditor", () => {
     expect(screen.queryByRole("group", { name: "sample_utterances 2" })).toBeNull();
   });
 
+  it("marks required CAST MEMBER core guardrail lists as may-be-empty", () => {
+    render(<CastMemberEditor referenceRecords={referenceRecords} />);
+
+    // must_avoid is a required voice-anchor guardrail list that lawfully accepts an empty array (#114 / F003).
+    const mustAvoidGroup = screen.getByRole("group", { name: "must_avoid" });
+    const note = within(mustAvoidGroup).getByText(
+      "This list is required as a property, but it may be left empty."
+    );
+    expect(mustAvoidGroup.getAttribute("aria-describedby")?.split(" ")).toContain(note.getAttribute("id"));
+  });
+
   it("keeps copy_policy radio names unique per sample utterance", () => {
     render(<CastMemberEditor record={castRecord} referenceRecords={referenceRecords} />);
 

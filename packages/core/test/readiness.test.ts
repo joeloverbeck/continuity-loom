@@ -462,6 +462,30 @@ describe("deriveReadiness", () => {
     });
   });
 
+  it("frames the no-active-clock-pressure warning as neutral optional strengthening", () => {
+    const readiness = deriveReadiness(
+      validationResult({ warnings: [diagnostic("warning", DIAGNOSTIC_CODES.noActiveClockPressure, "records")] }),
+      { configured: true },
+      { hasUnsavedChanges: false },
+      new Map()
+    );
+
+    expect(readiness.warnings[0]).toMatchObject({
+      code: "no-active-clock-pressure",
+      group: "recommended-for-stronger-output",
+      title: "No CLOCK, OBLIGATION, or OPEN THREAD is selected",
+      summary:
+        "No selected CLOCK, OBLIGATION, or OPEN THREAD is supplying structured pressure. Generation can proceed when your launch directive and current state already carry enough pressure for this local unit.",
+      fastestFix:
+        "Optional: select a CLOCK, OBLIGATION, or OPEN THREAD to add structured pressure. Leaving them unselected is fine when your directive is already sufficient."
+    });
+
+    // The copy correction must not change the warning's non-blocking behavior on any readiness surface.
+    expect(readiness.status).toBe("ready-with-warnings");
+    expect(readiness.canPreview).toBe(true);
+    expect(readiness.canGenerate).toBe(true);
+  });
+
   it("adds working-set review actions for deselect suggestions and shortens long fallback IDs", () => {
     const validation = validationResult({
       warnings: [

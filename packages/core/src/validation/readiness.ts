@@ -182,10 +182,10 @@ const COPY_TABLE: Readonly<Record<string, DiagnosticCopy>> = Object.freeze({
   ),
   [DIAGNOSTIC_CODES.noActiveClockPressure]: warningCopy(
     "no-active-clock-pressure",
-    "Local pressure may be under-specified",
+    "No CLOCK, OBLIGATION, or OPEN THREAD is selected",
     "recommended-for-stronger-output",
-    "The launch directive has pressure, but no active clock, obligation, or open thread is selected.",
-    "Select the pressure record that should shape the immediate response."
+    "No selected CLOCK, OBLIGATION, or OPEN THREAD is supplying structured pressure. Generation can proceed when your launch directive and current state already carry enough pressure for this local unit.",
+    "Optional: select a CLOCK, OBLIGATION, or OPEN THREAD to add structured pressure. Leaving them unselected is fine when your directive is already sufficient."
   ),
   [DIAGNOSTIC_CODES.noSampleUtterances]: warningCopy(
     "no-sample-utterances",

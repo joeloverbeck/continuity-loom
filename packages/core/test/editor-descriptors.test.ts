@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { z } from "zod";
+import { z } from "zod";
 
 import {
   deriveDisplayLabel,
@@ -10,6 +10,7 @@ import {
   recordTypes,
   referenceTargetTypes
 } from "../src/index.js";
+import { arrayMinItems } from "../src/records/editor-descriptors.js";
 import { recordTypeRegistry } from "../src/records/registry.js";
 
 const knownKinds = new Set([
@@ -255,6 +256,28 @@ describe("record editor descriptors", () => {
     expect(fieldsByName.get("sample_utterances")?.itemDescriptor?.fields?.map((field) => field.name)).toContain(
       "speech_function"
     );
+  });
+
+  it("exposes list item minimums distinct from structural requiredness", () => {
+    // #114 (F003): a required list can lawfully accept an empty array. minItems captures the true
+    // array-level minimum so editors can distinguish structural presence from a nonzero item minimum.
+    const roles = getEditorDescriptor("ENTITY")?.fields.find((field) => field.name === "roles_in_story");
+    expect(roles).toMatchObject({ kind: "list", required: true, minItems: 0 });
+
+    const voiceAnchor = getEditorDescriptor("CAST MEMBER")?.fields.find((field) => field.name === "voice_anchor");
+    const antiRepetition = voiceAnchor?.fields?.find((field) => field.name === "anti_repetition_warnings");
+    expect(antiRepetition).toMatchObject({ kind: "list", required: true, minItems: 0 });
+
+    const mustAvoid = voiceAnchor?.fields?.find((field) => field.name === "must_avoid");
+    expect(mustAvoid).toMatchObject({ kind: "list", required: true, minItems: 0 });
+  });
+
+  it("extracts array-level minimums while ignoring element-level constraints", () => {
+    expect(arrayMinItems(z.array(z.string()))).toBe(0);
+    expect(arrayMinItems(z.array(z.string()).min(2))).toBe(2);
+    expect(arrayMinItems(z.array(z.string()).min(1))).toBe(1);
+    // Element-level `.min(1)` (non-empty string) is not an array item-count minimum.
+    expect(arrayMinItems(z.array(z.string().min(1)))).toBe(0);
   });
 
   it("classifies every descriptor field with total kind and boolean metadata", () => {

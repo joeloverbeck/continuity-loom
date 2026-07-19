@@ -1025,6 +1025,204 @@ describe("RecordBrowser", () => {
     fireEvent.click(addButtons[0]!);
     await waitFor(() => expect(setWorkingSet).toHaveBeenLastCalledWith(["entity-1"]));
   });
+
+  it("offers Create linked CAST MEMBER on a person ENTITY detail with no linked dossier but hides it on non-person entities", async () => {
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: "entity-person", displayLabel: "Iven" };
+    const institutionSummary: RecordSummary = { ...fixtures[0]!, id: "entity-institution", displayLabel: "Harbor Board" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: "entity-person", display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "An offstage supervisor." }
+    };
+    const institutionDetail: RecordDetail = {
+      ...institutionSummary,
+      payload: { id: "entity-institution", display_name: "Harbor Board", entity_kind: "institution", roles_in_story: ["authority"], short_description: "A licensing board." }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [] })
+        : Promise.resolve({ ok: true, records: [personSummary, institutionSummary] })
+    );
+    vi.mocked(getRecord).mockImplementation((id: string) =>
+      Promise.resolve({ ok: true, record: id === "entity-institution" ? institutionDetail : personDetail })
+    );
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    expect(await screen.findByRole("button", { name: "Create linked CAST MEMBER" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Harbor Board" }));
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Create linked CAST MEMBER" })).toBeNull());
+    expect(screen.getByRole("button", { name: "Edit Record" })).toBeTruthy();
+  });
+
+  it("does not expose the linked CAST MEMBER action on an archived person ENTITY", async () => {
+    const archivedPerson: RecordSummary = { ...fixtures[0]!, id: "entity-archived", displayLabel: "Archived Iven", archived: true };
+    const archivedDetail: RecordDetail = {
+      ...archivedPerson,
+      payload: { id: "entity-archived", display_name: "Archived Iven", entity_kind: "person", roles_in_story: [], short_description: "Retired supervisor." }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [] })
+        : Promise.resolve({ ok: true, records: [archivedPerson] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: archivedDetail });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Archived Iven" }));
+    // Archived state is shown, but the linked-CAST action is not falsely exposed (#116 AC1).
+    expect(await screen.findByRole("button", { name: "Edit Record" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Create linked CAST MEMBER" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Open linked CAST MEMBER" })).toBeNull();
+  });
+
+  it("opens the CAST MEMBER editor with the ENTITY relationship preselected and writes nothing before Create Record", async () => {
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: "entity-iven", displayLabel: "Iven" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: "entity-iven", display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "Offstage supervisor." }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [] })
+        : Promise.resolve({ ok: true, records: [personSummary] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: personDetail });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Create linked CAST MEMBER" }));
+
+    expect(await screen.findByRole("heading", { name: "CAST MEMBER" })).toBeTruthy();
+    expect(screen.getByText("Create linked CAST MEMBER")).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>(/^entity_id/).value).toBe("entity-iven");
+    expect(createRecord).not.toHaveBeenCalled();
+  });
+
+  it("offers Open linked CAST MEMBER when an active linked dossier already exists", async () => {
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: "entity-iven", displayLabel: "Iven" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: "entity-iven", display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "Offstage." }
+    };
+    const linkedCast: RecordSummary = {
+      ...fixtures[0]!,
+      id: "cast-iven",
+      type: "CAST MEMBER",
+      displayLabel: "Iven dossier",
+      browseIdentity: { primaryLabel: "Iven", secondaryLabel: "Supervisor.", availability: "available" }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [linkedCast] })
+        : Promise.resolve({ ok: true, records: [personSummary] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: personDetail });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    expect(await screen.findByRole("button", { name: "Open linked CAST MEMBER" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Create linked CAST MEMBER" })).toBeNull();
+  });
+
+  it("shows archived-link recovery guidance when the only linked CAST MEMBER is archived", async () => {
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: "entity-iven", displayLabel: "Iven" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: "entity-iven", display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "Offstage." }
+    };
+    const archivedCast: RecordSummary = {
+      ...fixtures[0]!,
+      id: "cast-archived",
+      type: "CAST MEMBER",
+      displayLabel: "Archived dossier",
+      archived: true
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [archivedCast] })
+        : Promise.resolve({ ok: true, records: [personSummary] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: personDetail });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    expect(await screen.findByText(/linked CAST MEMBER dossier is archived/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Create linked CAST MEMBER" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Open linked CAST MEMBER" })).toBeNull();
+  });
+
+  it("retains the preselected ENTITY relationship and authored values when the linked CAST MEMBER save fails", async () => {
+    const ivenId = "019b0298-5c00-7000-8000-0000000004a1";
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: ivenId, displayLabel: "Iven" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: ivenId, display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "Offstage." }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [] })
+        : Promise.resolve({ ok: true, records: [personSummary] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: personDetail });
+    vi.mocked(createRecord).mockResolvedValue({ ok: false, kind: "save-failed", message: "CAST MEMBER save failed." });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Create linked CAST MEMBER" }));
+    fireEvent.change(await screen.findByLabelText<HTMLSelectElement>(/^entity_id/), { target: { value: ivenId } });
+    fillCastRequiredCore();
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("CAST MEMBER save failed.");
+    expect(screen.getByLabelText<HTMLSelectElement>(/^entity_id/).value).toBe(ivenId);
+    expect(screen.getByLabelText<HTMLInputElement>(/^one_line/).value).toBe("A careful operator.");
+    expect(screen.getByRole("button", { name: "Create Record" })).toBeTruthy();
+  });
+
+  it("confirms the linked identity and adds only the saved CAST MEMBER to the working set on explicit Add", async () => {
+    const ivenId = "019b0298-5c00-7000-8000-0000000004a1";
+    const castNewId = "019b0298-5c00-7000-8000-0000000004a2";
+    const personSummary: RecordSummary = { ...fixtures[0]!, id: ivenId, displayLabel: "Iven" };
+    const personDetail: RecordDetail = {
+      ...personSummary,
+      payload: { id: ivenId, display_name: "Iven", entity_kind: "person", roles_in_story: [], short_description: "Offstage." }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) =>
+      filters.type === "CAST MEMBER" && filters.refRole === "entity_id"
+        ? Promise.resolve({ ok: true, records: [] })
+        : Promise.resolve({ ok: true, records: [personSummary] })
+    );
+    vi.mocked(getRecord).mockResolvedValue({ ok: true, record: personDetail });
+    vi.mocked(createRecord).mockResolvedValue({
+      ok: true,
+      record: { ...fixtures[0]!, id: castNewId, type: "CAST MEMBER", displayLabel: "Iven dossier", payload: { entity_id: ivenId } }
+    });
+
+    renderBrowser();
+    fireEvent.click(await screen.findByRole("button", { name: "Iven" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Create linked CAST MEMBER" }));
+    fireEvent.change(await screen.findByLabelText<HTMLSelectElement>(/^entity_id/), { target: { value: ivenId } });
+    fillCastRequiredCore();
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    expect(await screen.findByRole("heading", { name: /Linked dossier ready for Iven/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add to Active Working Set" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Open Active Working Set" })).toBeTruthy();
+    // Creating the record wrote no working-set membership.
+    expect(setWorkingSet).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to Active Working Set" }));
+    await waitFor(() => expect(setWorkingSet).toHaveBeenCalledWith([castNewId]));
+    expect(await screen.findByText("Added to the active working set.")).toBeTruthy();
+  });
 });
 
 function fillCastRequiredCore(): void {

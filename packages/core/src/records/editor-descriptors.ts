@@ -34,6 +34,14 @@ export interface FieldDescriptor {
   referenceRole?: string;
   itemDescriptor?: FieldDescriptor;
   fields?: readonly FieldDescriptor[];
+  /**
+   * For list (`kind: "list"`) fields, the array-level minimum item count declared by the schema
+   * (a `z.array(...).min(n)` check). Defaults to `0` when the array declares no minimum, so a
+   * structurally required list that lawfully accepts an empty array is `required: true` with
+   * `minItems: 0`. Editors use this to distinguish structural presence from a nonzero item minimum;
+   * it is presentation-only metadata and never changes payload keys, validation, or compilation.
+   */
+  minItems?: number;
 }
 
 export interface RecordEditorDescriptor {
@@ -267,6 +275,7 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     return {
       ...base,
       kind: "list",
+      minItems: arrayMinItems(unwrapped),
       itemDescriptor: {
         ...base,
         name,
@@ -282,6 +291,7 @@ function describeField(name: string, schema: z.ZodType, recordType?: string): Fi
     return {
       ...base,
       kind: "list",
+      minItems: arrayMinItems(unwrapped),
       itemDescriptor: describeListItem(name, element, recordType)
     };
   }
@@ -368,6 +378,29 @@ function arrayElement(schema: z.ZodType): z.ZodType {
   const definition = schemaDefinition(schema);
 
   return (definition.element ?? definition.type) as z.ZodType;
+}
+
+/**
+ * Reads the array-level minimum item count from a Zod array schema (`z.array(...).min(n)`).
+ * Returns `0` when the array declares no minimum. An element-level constraint such as
+ * `z.array(z.string().min(1))` lives on the element schema, not the array, so it is correctly
+ * ignored here — only an array-level `min_length` check counts as an item-count minimum.
+ */
+export function arrayMinItems(schema: z.ZodType): number {
+  const checks = schemaDefinition(schema).checks as readonly unknown[] | undefined;
+
+  for (const check of checks ?? []) {
+    const checkDefinition =
+      (check as { _zod?: { def?: Record<string, unknown> }; def?: Record<string, unknown> })._zod?.def
+      ?? (check as { def?: Record<string, unknown> }).def
+      ?? {};
+
+    if (checkDefinition.check === "min_length" && typeof checkDefinition.minimum === "number") {
+      return checkDefinition.minimum;
+    }
+  }
+
+  return 0;
 }
 
 function enumValuesForSchema(schema: z.ZodType): readonly string[] {

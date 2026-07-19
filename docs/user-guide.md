@@ -58,6 +58,12 @@ The active working set is the set of records selected for the next prompt. Recor
 
 The app may warn or block unsafe selections, but it does not silently add records because it thinks they matter.
 
+## Linking A Person ENTITY To A CAST MEMBER
+
+An ENTITY owns a durable identity; a CAST MEMBER is a separate rich dossier that links to it for voice and behavior. When you open a person ENTITY that has no current linked dossier, its detail offers **Create linked CAST MEMBER**, which opens the CAST MEMBER editor with that ENTITY relationship already selected. Nothing is written until you use Create Record, and if that save fails your authored values and the linked relationship are kept for retry. If a current linked dossier already exists, the detail offers **Open linked CAST MEMBER** instead of inviting a duplicate; an archived link explains itself so you can restore it or create a new dossier deliberately.
+
+Creating the dossier does not add it to the active working set or assign a cast band. After a successful save, the app confirms the linked person and offers explicit **Add to Active Working Set** and **Open Active Working Set** actions. Adding selects only that new CAST MEMBER; choosing its cast band and local function stays a separate step in the working set, so record creation, membership, and band assignment remain distinct author decisions.
+
 ## Private Notes
 
 Private Notes are a per-story local scratchpad for your own author memory: loose questions, research fragments, reminders, discarded possibilities, or anything else you want beside the project without making it continuity authority.

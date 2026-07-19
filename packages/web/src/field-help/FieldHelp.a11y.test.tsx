@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
 import { FieldHelp } from "./FieldHelp.js";
@@ -61,6 +61,37 @@ describe("FieldHelp accessibility", () => {
     expect(await screen.findByRole("dialog")).toBeTruthy();
     expect(screen.queryByText("Stop at the next local response point; do not ask for downstream consequences."))
       .toBeTruthy();
+  });
+
+  it("states the person exclusion in ENTITY short_description help via keyboard and accessible description", async () => {
+    // #113 (F004): help must make clear a person entity's short_description is not compiled into
+    // material pressure, and route offstage-person pressure to the Generation Brief.
+    render(<FieldHelp fieldPath="ENTITY.short_description" fieldLabel="short_description" />);
+
+    const trigger = screen.getByRole("button", { name: "Help for short_description" });
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+
+    const content = await screen.findByRole("dialog");
+    expect(trigger.getAttribute("aria-describedby")).toBe(`${content.id}-summary`);
+    const summary = document.getElementById(`${content.id}-summary`);
+    expect(summary?.textContent).toContain(
+      "A person entity's short_description is not compiled into material pressure"
+    );
+    expect(within(content).getByText(/author the current pressure in the Generation Brief/)).toBeTruthy();
+    expect(within(content).getByText(/optional durable deepening, not a prerequisite/)).toBeTruthy();
+  });
+
+  it("states non-person material-pressure eligibility in ENTITY entity_kind help", async () => {
+    render(<FieldHelp fieldPath="ENTITY.entity_kind" fieldLabel="entity_kind" />);
+
+    const trigger = screen.getByRole("button", { name: "Help for entity_kind" });
+    fireEvent.click(trigger);
+
+    const content = await screen.findByRole("dialog");
+    const summary = document.getElementById(`${content.id}-summary`);
+    expect(summary?.textContent).toContain("A selected non-person entity compiles into material pressure");
+    expect(summary?.textContent).toContain("a person entity does not");
   });
 
   it("places the brief help trigger in the label row without nesting it inside the field label", () => {
