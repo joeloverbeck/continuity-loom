@@ -25,6 +25,23 @@ export type {
   UserSuppliedAcceptedSegmentProvenance
 } from "./accepted-segment.js";
 export {
+  CAST_MEMBER_DRAFT_PROMPT,
+  CAST_MEMBER_DRAFT_PROMPT_VERSION
+} from "./cast-member-draft/template.js";
+export {
+  buildCastMemberDraftImportReport,
+  mapCastMemberDraftFields,
+  parseCastMemberDraftResponse
+} from "./cast-member-draft/import.js";
+export type {
+  CastMemberDraftImportReport,
+  CastMemberDraftMapping,
+  CastMemberDraftParseResult,
+  CastMemberDraftSkippedField,
+  CastMemberDraftSkipReason,
+  CastMemberDraftValues
+} from "./cast-member-draft/import.js";
+export {
   LETTER_UNDER_FLOUR_BIN_TITLE,
   demoGenerationSession,
   demoRecordIds,

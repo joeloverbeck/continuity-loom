@@ -64,6 +64,16 @@ An ENTITY owns a durable identity; a CAST MEMBER is a separate rich dossier that
 
 Creating the dossier does not add it to the active working set or assign a cast band. After a successful save, the app confirms the linked person and offers explicit **Add to Active Working Set** and **Open Active Working Set** actions. Adding selects only that new CAST MEMBER; choosing its cast band and local function stays a separate step in the working set, so record creation, membership, and band assignment remain distinct author decisions.
 
+## Drafting A CAST MEMBER With An External LLM
+
+The CAST MEMBER editor has an optional, local copy-and-paste drafting loop. **Copy Cast Member draft prompt** copies a static, versioned template that contains no story records or project data. Take that template and the dossier material you choose to share to an external LLM yourself; Continuity Loom does not contact a provider for this workflow.
+
+Paste the external response through **Import Cast Member draft**. The app parses it locally, imports each valid field independently, and shows an ephemeral report of filled fields, skipped fields with reasons, and items that still need your attention. An imported `entity_id` is always rejected, and the editor keeps the ENTITY relationship you selected. If an import would replace a non-empty field, the app lists the exact paths and waits for confirmation before changing the form.
+
+Imported values are an unsaved draft, not a record, not canon, and not story prose. Review uncertainties and fields the external model says it invented, revise the form, then choose **Create Record** or **Save Record** only if you want the dossier to become durable. Cancelling, discarding, or leaving the editor keeps the paste and report out of project storage, browser storage, prompts, migration, backup, export, and provenance surfaces.
+
+One imported draft stays active at a time so its report and original discard baseline cannot be separated from its values. While the report is visible, either create or save the record, or choose **Discard imported draft** before importing another response. A successful Create or Save clears the ephemeral report; Discard restores the form exactly to its pre-import state.
+
 ## Private Notes
 
 Private Notes are a per-story local scratchpad for your own author memory: loose questions, research fragments, reminders, discarded possibilities, or anything else you want beside the project without making it continuity authority.

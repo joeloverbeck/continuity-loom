@@ -29,6 +29,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/ACTIVE-DOCS.md` | Authority registry, active-vs-archive boundaries, and change-intake rules for coding agents. | reference | support |
 | `docs/compiler-contract.md` | Deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy. | reference | domain authority for prompt compiler and validation bridge |
 | `docs/prompt-template.md` | Universal prose prompt template text and placeholder structure. | reference | domain authority for universal prompt template |
+| `docs/cast-member-draft-prompt-template.md` | Static record-free Cast Member dossier drafting prompt, per-field semantics, invention rules, and external-output contract. | reference | domain authority for Cast Member draft prompt template |
 | `docs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | reference | domain authority for ideation prompt template |
 | `docs/story-record-hygiene-prompt-template.md` | Whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap/action rules, and output contract. | reference | domain authority for story-record hygiene prompt template |
 | `docs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | reference | domain authority for the segment-reconciliation assistance prompt template |
@@ -64,6 +65,7 @@ These explain how the implemented local app is installed, run, verified, and use
 
 - `docs/compiler-contract.md`
 - `docs/prompt-template.md`
+- `docs/cast-member-draft-prompt-template.md`
 - `docs/ideation-prompt-template.md`
 - `docs/story-record-hygiene-prompt-template.md`
 - `docs/segment-reconciliation-prompt-template.md`

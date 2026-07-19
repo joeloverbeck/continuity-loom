@@ -2,6 +2,7 @@
 
 Status: constitutional baseline  
 Date: 2026-06-04  
+Last amended: 2026-07-20 — §§26.1, 26.2, and 29.2 for PRD #117’s Cast Member dossier draft import.
 Scope: product identity, continuity authority, prompt-compilation doctrine, validation doctrine, workflow doctrine, and future-feature alignment standard
 
 ---
@@ -903,11 +904,8 @@ All LLM-assistance surfaces, present and future, obey these shared rules:
 
 - assistance is invoked opt-in, per invocation, pull-based — never
   background-automatic and never push-based;
-- assistance output is quarantined: it is rendered in a clearly labeled
-  non-canonical surface, is not a story record, not a generation-time field,
-  and not prompt context for prose generation;
-- provenance is mandatory: assistance output must show what records or fields
-  it derives from;
+- assistance output is quarantined in a clearly labeled non-canonical surface; the sole exception is the unsaved CAST MEMBER editor prefill defined by §26.2;
+- provenance is mandatory: assistance output must show what records or fields it derives from; for §26.2’s record-free external-dossier workflow, provenance consists of the pasted response plus its filled, skipped, uncertain, and substantially invented field classifications;
 - rejected or cleared assistance output leaves no residue in the project
   store, the active working set, or any prompt;
 - assistance output is ephemeral by default and is never logged or archived
@@ -917,6 +915,20 @@ All LLM-assistance surfaces, present and future, obey these shared rules:
   parameterize a follow-up assistance request (e.g. an avoid-duplicates list
   for regenerating one idea) as explicit, inspectable request input; it must
   never parameterize prose generation.
+
+### 26.2 User-owned dossier draft import
+
+The Cast Member dossier draft-import workflow is the sole assistance-output prefill exception. It may place fields parsed from an external LLM response into the unsaved CAST MEMBER editor only when all of the following are true:
+
+- the user invokes copy and import separately and supplies the source dossier to the external LLM outside Continuity Loom;
+- the copied prompt is static and record-free, and the app makes no provider or network call;
+- parsing and per-field validation happen locally, `entity_id` and unknown, empty, malformed, or invalid fields are rejected and reported, and fields absent from the response remain untouched;
+- before any non-empty editor value is replaced, the app lists the exact affected fields and requires explicit confirmation;
+- the editor shows field-level provenance, including filled, skipped, uncertain, and substantially invented fields, until the imported draft is discarded or the record is explicitly saved;
+- the paste, import report, and unsaved draft remain ephemeral and leave no project-store, active-working-set, prompt, log, or persisted-browser residue when rejected or abandoned;
+- no record is created or updated until the user reviews the prefilled draft and explicitly activates the canonical Save or Create action.
+
+For this exception, prefilling an unsaved editor is clerical assistance, not an authoritative record mutation. The user’s explicit Save or Create action is the continuity-authority gate. This exception does not apply to accepted prose, generation-time fields, active-working-set membership, story configuration, other record types, or any automatic or background assistance path.
 
 ---
 
@@ -1022,10 +1034,10 @@ If any hard-fail question is answered “yes,” the proposal violates the found
 - Does it let an LLM make authoritative record or generation-brief changes?
 - Does it infer canon automatically from accepted prose or assistance output?
 - Does it treat an accepted segment as continuity authority rather than bounded reconciliation evidence?
-- Does it mutate records or generation-time fields without explicit user review and independent authorship in the canonical editor?
+- Does it mutate a stored record or generation-time field without explicit user review and an explicit canonical save, or bypass independent authorship outside the exact unsaved CAST MEMBER draft-prefill exception in §26.2?
 - Does it allow the external prose writer to update records?
 - Does it hide continuity changes inside generation, regeneration, acceptance, reconciliation, or reminder acknowledgement?
-- Does it let assistance output enter a prose prompt, a story record, a generation-time field, or the active working set automatically or through an assistance-surface prefill/staging control?
+- Does it let assistance output enter a prose prompt, stored story record, generation-time field, or active working set automatically or through an assistance-surface prefill or staging control outside the exact unsaved CAST MEMBER draft-prefill exception in §26.2?
 - Does it copy accepted prose verbatim into a proposed canonical field or record value?
 
 ### 29.3 Active working set and assistance-scope hard fails
