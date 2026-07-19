@@ -79,7 +79,7 @@ const options = (overrides = {}) => ({
   blockers: [],
   children: [],
   externalBlockers: [],
-  expectAcCount: null,
+  expectAcCount: 1,
   expectChecklistNa: false,
   expectNoBlocker: false,
   expectStoryCoverage: false,
@@ -554,6 +554,55 @@ test("child output distinguishes an inactive no-blocker expectation", () => {
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("child CLI requires an explicit acceptance-count expectation", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-validator-"));
+  try {
+    const body = join(directory, "child.md");
+    writeFileSync(body, issueBody());
+    const args = [script, "child", body, "--parent", "PRD #1"];
+
+    const missing = spawnSync(process.execPath, args, { encoding: "utf8" });
+    const present = spawnSync(
+      process.execPath,
+      [...args, "--expect-ac-count", "1"],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(missing.status, 2);
+    assert.match(missing.stderr, /child mode requires --expect-ac-count\./);
+    assert.equal(present.status, 0, present.stderr);
+    assert.equal(JSON.parse(present.stdout).expectedAcceptanceCount, 1);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("child function reports a missing acceptance-count expectation as unverified", () => {
+  const report = validateChild(issueBody(), options({
+    expectAcCount: null,
+    expectNoBlocker: true,
+    parent: "PRD #1",
+  }));
+
+  assert.equal(report.expectedAcceptanceCount, null);
+  assert.equal(report.checks.hasExpectedAcceptanceCount, false);
+});
+
+test("child acceptance count ignores checklist rows outside the acceptance section", () => {
+  const bodyWithPlanningTask = issueBody().replace(
+    "Build the slice.",
+    "- [ ] Prepare the implementation plan.\n\nBuild the slice.",
+  );
+  const report = validateChild(bodyWithPlanningTask, options({
+    expectAcCount: 1,
+    expectNoBlocker: true,
+    parent: "PRD #1",
+  }));
+
+  assert.equal(report.acceptanceCount, 1);
+  assert.equal(report.checks.hasExpectedAcceptanceCount, true);
 });
 
 test("child validation requires the active parent heading even when the token is present", () => {

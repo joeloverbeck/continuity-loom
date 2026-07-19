@@ -27,7 +27,8 @@ const LEGACY_COMPATIBILITY_PATTERNS = [
 const usage = `Usage:
   node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs intake <prep-artifact>
   node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs inspect <prep-artifact>
-  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs validate <prep-artifact> <custody-ledger.json>`;
+  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs validate <prep-artifact> <custody-ledger.json>
+  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-receipt <prep-artifact> <custody-ledger.json> --final-branch <branch> (--final-worktree-clean | --final-worktree-row <row>...)`;
 
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
@@ -380,13 +381,144 @@ export const validateCustodyLedger = ({ inventory, ledger }) => {
   };
 };
 
+const markdownTableCell = (value) => String(value)
+  .replace(/\r?\n/g, " ")
+  .replaceAll("|", "\\|");
+
+const codeSpan = (value) => {
+  const text = String(value);
+  return text.includes("`") ? `\`\`${text}\`\`` : `\`${text}\``;
+};
+
+const issueLink = (entry) => `[Issue #${entry.issueNumber}](${entry.issueUrl})`;
+
+const nonPrdOwner = (entry) => {
+  if (entry.disposition === "published" || entry.disposition === "existing-owner") {
+    return issueLink(entry);
+  }
+  if (entry.disposition === "routed") return codeSpan(entry.route);
+  return `${entry.reason} Evidence: ${entry.evidence}`;
+};
+
+const prdProof = (entry) => {
+  if (entry.disposition === "remaining") return codeSpan(entry.toPrdInvocation);
+  if (entry.disposition === "consumed") return issueLink(entry);
+  return `${entry.reason} Evidence: ${entry.evidence}`;
+};
+
+export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWorktreeRows }) => {
+  const validation = validateCustodyLedger({ inventory, ledger });
+  if (!validation.custodyComplete) {
+    throw new Error("Cannot render a passing custody receipt from an incomplete custody ledger.");
+  }
+  if (!nonEmpty(finalBranch)) throw new Error("finalBranch is required to render a custody receipt.");
+  if (!Array.isArray(finalWorktreeRows)) {
+    throw new Error("finalWorktreeRows must be an array.");
+  }
+  if (finalWorktreeRows.some((row) => !nonEmpty(row))) {
+    throw new Error("finalWorktreeRows must contain only non-empty status rows.");
+  }
+
+  const nonPrdByItem = new Map(ledger.nonPrd.map((entry) => [entry.item, entry]));
+  const prdsByTitle = new Map(ledger.prds.map((entry) => [entry.title, entry]));
+  const lines = [
+    "## Playtest Follow-Up Custody Receipt",
+    "",
+    `Prep artifact: ${inventory.prepArtifact}`,
+    `Prep SHA-256: ${inventory.prepSha256}`,
+    "Custody validator: passed",
+    `Non-PRD custody: ${validation.resolvedNonPrdCount}/${validation.sourceNonPrdCount}`,
+    `First operational action: ${ledger.firstOperationalAction.status} - ${ledger.firstOperationalAction.evidence}`,
+    "",
+    "| Non-PRD item | Disposition | Owner or proof |",
+    "| --- | --- | --- |",
+  ];
+
+  if (inventory.nonPrdFollowUps.length === 0) {
+    lines.push("| None | N/A | No non-PRD follow-ups in source inventory. |");
+  } else {
+    for (const source of inventory.nonPrdFollowUps) {
+      const entry = nonPrdByItem.get(source.item);
+      lines.push(
+        `| ${markdownTableCell(source.item)} | ${entry.disposition} | ${markdownTableCell(nonPrdOwner(entry))} |`,
+      );
+    }
+  }
+
+  lines.push(
+    "",
+    `PRD queue: ${validation.remainingPrds.length > 0 ? validation.remainingPrds.length : "exhausted"}`,
+    "",
+    "| PRD candidate | Role | Disposition | Next action or proof |",
+    "| --- | --- | --- | --- |",
+  );
+
+  if (inventory.prdCandidates.length === 0) {
+    lines.push("| None | N/A | N/A | No PRD candidates in source inventory. |");
+  } else {
+    for (const source of inventory.prdCandidates) {
+      const entry = prdsByTitle.get(source.title);
+      lines.push(
+        `| ${markdownTableCell(source.title)} | ${markdownTableCell(source.role)} | ${entry.disposition} | ${markdownTableCell(prdProof(entry))} |`,
+      );
+    }
+  }
+
+  lines.push(
+    "",
+    validation.remainingPrds.length > 0
+      ? `Next PRD action: ${validation.remainingPrds[0].toPrdInvocation}`
+      : "Next PRD action: none - PRD queue exhausted",
+    "Temporary artifacts: absent",
+    `Final branch: ${finalBranch}`,
+  );
+  if (finalWorktreeRows.length === 0) {
+    lines.push("Final worktree: clean");
+  } else {
+    lines.push("Final worktree:", "```text", ...finalWorktreeRows, "```");
+  }
+  return lines.join("\n");
+};
+
+const parseReceiptOptions = (args) => {
+  let finalBranch = null;
+  let finalWorktreeClean = false;
+  const finalWorktreeRows = [];
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (argument === "--final-worktree-clean") {
+      finalWorktreeClean = true;
+      continue;
+    }
+    if (argument !== "--final-branch" && argument !== "--final-worktree-row") {
+      throw new Error(`Unknown render-receipt option: ${argument}`);
+    }
+    const value = args[index + 1];
+    if (!nonEmpty(value) || value.startsWith("--")) {
+      throw new Error(`${argument} requires a value.`);
+    }
+    if (argument === "--final-branch") finalBranch = value;
+    else finalWorktreeRows.push(value);
+    index += 1;
+  }
+  if (!nonEmpty(finalBranch)) throw new Error("--final-branch is required for render-receipt.");
+  if (finalWorktreeClean === (finalWorktreeRows.length > 0)) {
+    throw new Error("Use exactly one of --final-worktree-clean or --final-worktree-row.");
+  }
+  return { finalBranch, finalWorktreeRows };
+};
+
 const main = () => {
   const [mode, prepPath, ledgerPath, ...rest] = process.argv.slice(2);
   if (mode === "--help") {
     console.log(usage);
     return;
   }
-  if (!new Set(["intake", "inspect", "validate"]).has(mode) || !prepPath || rest.length > 0 || (mode === "validate" && !ledgerPath)) {
+  const knownMode = new Set(["intake", "inspect", "validate", "render-receipt"]).has(mode);
+  const ledgerMode = mode === "validate" || mode === "render-receipt";
+  const unexpectedLedger = !ledgerMode && ledgerPath != null;
+  const unexpectedRest = mode !== "render-receipt" && rest.length > 0;
+  if (!knownMode || !prepPath || (ledgerMode && !ledgerPath) || unexpectedLedger || unexpectedRest) {
     console.error(usage);
     process.exit(2);
   }
@@ -412,6 +544,15 @@ const main = () => {
     }
 
     const ledger = JSON.parse(readFileSync(resolve(ledgerPath), "utf8"));
+    if (mode === "render-receipt") {
+      const receiptOptions = parseReceiptOptions(rest);
+      console.log(renderCustodyReceipt({
+        inventory: inspected.inventory,
+        ledger,
+        ...receiptOptions,
+      }));
+      return;
+    }
     const report = validateCustodyLedger({ inventory: inspected.inventory, ledger });
     console.log(JSON.stringify(report, null, 2));
     if (!report.custodyComplete) process.exit(1);

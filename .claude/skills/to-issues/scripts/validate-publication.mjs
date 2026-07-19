@@ -78,7 +78,7 @@ Child options:
   --expect-no-blocker          Require the house-style no-blocker phrase and zero tracker or external blockers.
   --expect-stories             Require the user-story coverage section.
   --expect-checklist-na        Require a checklist N/A summary.
-  --expect-ac-count <count>    Require an exact acceptance-criterion count.
+  --expect-ac-count <count>    Require an exact acceptance-criterion count; mandatory in child mode.
 
 Ledger options:
   --child <issue-ref>          Require a child reference; repeat as needed.
@@ -184,6 +184,9 @@ function parseArgs(argv) {
   if (mode === "child" && ((options.source == null) !== (options.sourceRelationship == null))) {
     failUsage("--source and --source-relationship must be provided together.");
   }
+  if (mode === "child" && options.expectAcCount == null) {
+    failUsage("child mode requires --expect-ac-count.");
+  }
   if (mode === "run-sheet" && options.sliceBodies.length === 0 && options.unaffectedSlices.length === 0) {
     failUsage("run-sheet mode requires --slice-body or --unaffected-slice.");
   }
@@ -250,7 +253,7 @@ function commonBodyChecks(body, options) {
 }
 
 function acceptanceCriteria(body) {
-  return (body.match(/^- \[ \] .+$/gm) ?? [])
+  return (sectionBody(body, "## Acceptance criteria").match(/^- \[ \] .+$/gm) ?? [])
     .map((line, index) => ({ ordinal: index + 1, text: line.replace(/^- \[ \] /, "").trim() }));
 }
 
@@ -319,7 +322,8 @@ export function validateChild(body, options) {
     hasOnlyExpectedExternalBlockers:
       options.expectNoBlocker ||
       actualExternalBlockers.every((blocker) => expectedExternalBlockers.includes(blocker)),
-    hasExpectedAcceptanceCount: options.expectAcCount == null || count === options.expectAcCount,
+    hasExpectedAcceptanceCount:
+      Number.isInteger(options.expectAcCount) && count === options.expectAcCount,
   };
   return {
     acceptanceCount: count,
@@ -327,6 +331,7 @@ export function validateChild(body, options) {
     actualExternalBlockers,
     expectedBlockers,
     expectedExternalBlockers,
+    expectedAcceptanceCount: options.expectAcCount,
     expectations: { noBlocker: options.expectNoBlocker },
     forbiddenLiterals: unique(options.forbidLiterals ?? []),
     forbiddenPatterns: unique(options.forbidPatterns ?? []),

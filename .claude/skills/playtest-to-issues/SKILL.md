@@ -50,6 +50,11 @@ Assign exactly one custody disposition:
   or
 - `blocked` — evidence, durability, tracker access, or a user decision prevents truthful custody.
 
+When `routed` names another `$<skill>`, resolve one current `SKILL.md`, read it completely, and
+confirm that the proposed invocation satisfies its trigger, input, and current state constraints.
+Record that contract check in the route evidence without executing the routed skill. An absent,
+ambiguous, or incompatible destination is `blocked`, not an informal future reminder.
+
 Ticket, coverage, doc-correction, and verification/reopen rows are issue candidates by default.
 Do not discard a coverage row because it is not yet a product bug; publish it as verification work
 without a false bug/enhancement label when it is bounded and actionable. Do not reopen, relabel,
@@ -135,16 +140,20 @@ Fix structural mismatches and rerun. A `blocked` row or blocked first action is 
 fails custody completion. In that branch, preserve the blocker, state that `/to-prd` must not
 proceed from this artifact, clean publication staging files, and stop.
 
-For a passing ledger, emit the exact `## Playtest Follow-Up Custody Receipt` shape from the
-contract. If PRDs remain, name the first candidate and give the exact next invocation:
+For a passing ledger, capture the final branch and exact full-worktree status, then use the
+contract's `render-receipt` command to capture the exact `## Playtest Follow-Up Custody Receipt`.
+Do not hand-format or abbreviate its paths, evidence, routes, inventory rows, or separators. If
+PRDs remain, the renderer names the first candidate and emits the exact next invocation:
 
 ```text
 $to-prd "<prep-artifact> - create <exact first remaining PRD candidate>"
 ```
 
-List deferred candidates without ratifying them. If none remain, state `PRD queue: exhausted` and
-do not recommend `/to-prd`. Remove every temporary ledger, body, run sheet, manifest, and snapshot;
-prove absence and report final branch plus full worktree status.
+List deferred candidates without ratifying them. If none remain, the renderer states
+`PRD queue: exhausted` and does not recommend `/to-prd`. Remove every temporary ledger, body, run
+sheet, manifest, and snapshot, prove absence, and rerun branch plus full worktree status. Emit the
+captured renderer output verbatim only when cleanup succeeded and those final values still match
+the renderer inputs; otherwise do not claim a passing receipt.
 
 The run is complete only when the prep hash still matches, every non-PRD row and PRD candidate is
 accounted for, every claimed tracker owner is exact-read, every approved creation is family-

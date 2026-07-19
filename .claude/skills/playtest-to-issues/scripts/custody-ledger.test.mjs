@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   classifyPrepIntake,
   inspectPrepCustody,
+  renderCustodyReceipt,
   validateCustodyLedger,
 } from "./custody-ledger.mjs";
+
+const script = fileURLToPath(new URL("./custody-ledger.mjs", import.meta.url));
 
 const mixedPrep = `# Playtest PRD Prep: Example
 
@@ -187,6 +195,83 @@ test("accepts complete issue, routed-workflow, consumed-PRD, and remaining-PRD c
   assert.deepEqual(report.remainingPrds.map((entry) => entry.title), ["First PRD"]);
 });
 
+test("renders the passing receipt with exact routes, source order, and worktree rows", () => {
+  const { inventory } = inspectMixed();
+  const ledger = validMixedLedger(inventory);
+  const receipt = renderCustodyReceipt({
+    inventory,
+    ledger,
+    finalBranch: "main",
+    finalWorktreeRows: [" M user-owned.md", "?? notes.md"],
+  });
+
+  assert.equal(receipt, `## Playtest Follow-Up Custody Receipt
+
+Prep artifact: reports/playtest-example-prd-prep.md
+Prep SHA-256: ${inventory.prepSha256}
+Custody validator: passed
+Non-PRD custody: 2/2
+First operational action: owned - Issue #123 owns the bounded verification.
+
+| Non-PRD item | Disposition | Owner or proof |
+| --- | --- | --- |
+| F001 - Product repair | published | [Issue #123](https://github.com/example/repo/issues/123) |
+| F002 - Method repair | routed | \`$skill-audit ".claude/skills/playtest"\` |
+
+PRD queue: 1
+
+| PRD candidate | Role | Disposition | Next action or proof |
+| --- | --- | --- | --- |
+| First PRD | first | remaining | \`$to-prd "reports/playtest-example-prd-prep.md - create First PRD"\` |
+| Deferred PRD | deferred | consumed | [Issue #122](https://github.com/example/repo/issues/122) |
+
+Next PRD action: $to-prd "reports/playtest-example-prd-prep.md - create First PRD"
+Temporary artifacts: absent
+Final branch: main
+Final worktree:
+\`\`\`text
+ M user-owned.md
+?? notes.md
+\`\`\``);
+  assert.equal(receipt.includes("…"), false);
+});
+
+test("render-receipt CLI requires explicit final worktree posture and emits the exact receipt", () => {
+  const directory = mkdtempSync(join(tmpdir(), "playtest-custody-receipt-"));
+  try {
+    const reportsDirectory = join(directory, "reports");
+    mkdirSync(reportsDirectory);
+    const prep = join(reportsDirectory, "playtest-example-prd-prep.md");
+    const ledgerPath = join(directory, "custody.json");
+    writeFileSync(prep, mixedPrep);
+    const { inventory } = inspectMixed();
+    writeFileSync(ledgerPath, JSON.stringify(validMixedLedger(inventory)));
+    const args = [
+      script,
+      "render-receipt",
+      "reports/playtest-example-prd-prep.md",
+      ledgerPath,
+      "--final-branch",
+      "main",
+    ];
+
+    const missingPosture = spawnSync(process.execPath, args, { cwd: directory, encoding: "utf8" });
+    const clean = spawnSync(
+      process.execPath,
+      [...args, "--final-worktree-clean"],
+      { cwd: directory, encoding: "utf8" },
+    );
+
+    assert.equal(missingPosture.status, 2);
+    assert.match(missingPosture.stderr, /Use exactly one of --final-worktree-clean or --final-worktree-row\./);
+    assert.equal(clean.status, 0, clean.stderr);
+    assert.match(clean.stdout, /^## Playtest Follow-Up Custody Receipt\n/);
+    assert.match(clean.stdout, /Final worktree: clean\n$/);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("accepts an explicit no-create disposition without inventing a tracker owner", () => {
   const { inventory } = inspectMixed();
   const ledger = validMixedLedger(inventory);
@@ -315,6 +400,59 @@ test("accepts an exhausted portfolio without inventing issues or PRDs", () => {
   assert.equal(report.custodyComplete, true);
   assert.equal(report.readyForToPrd, false);
   assert.deepEqual(report.remainingPrds, []);
+});
+
+test("renders explicit empty-inventory rows for an exhausted portfolio", () => {
+  const inspected = inspectPrepCustody({
+    markdown: noWorkPrep,
+    prepPath: "reports/playtest-empty-prd-prep.md",
+  });
+  const ledger = {
+    schemaVersion: 1,
+    prepArtifact: inspected.inventory.prepArtifact,
+    prepSha256: inspected.inventory.prepSha256,
+    firstOperationalAction: {
+      value: inspected.inventory.firstOperationalAction,
+      status: "not-required",
+      evidence: "The validated prep reports no live work.",
+    },
+    nonPrd: [],
+    prds: [],
+  };
+
+  const receipt = renderCustodyReceipt({
+    inventory: inspected.inventory,
+    ledger,
+    finalBranch: "main",
+    finalWorktreeRows: [],
+  });
+
+  assert.match(receipt, /\| None \| N\/A \| No non-PRD follow-ups in source inventory\. \|/);
+  assert.match(receipt, /PRD queue: exhausted/);
+  assert.match(receipt, /\| None \| N\/A \| N\/A \| No PRD candidates in source inventory\. \|/);
+  assert.match(receipt, /Next PRD action: none - PRD queue exhausted/);
+  assert.match(receipt, /Final worktree: clean$/);
+});
+
+test("refuses to render a passing receipt while custody is blocked", () => {
+  const { inventory } = inspectMixed();
+  const ledger = validMixedLedger(inventory);
+  ledger.nonPrd[0] = {
+    item: "F001 - Product repair",
+    disposition: "blocked",
+    reason: "Tracker access is unavailable.",
+    evidence: "The exact-title and owner reads both failed.",
+  };
+
+  assert.throws(
+    () => renderCustodyReceipt({
+      inventory,
+      ledger,
+      finalBranch: "main",
+      finalWorktreeRows: [],
+    }),
+    /Cannot render a passing custody receipt/,
+  );
 });
 
 test("rejects a stale prep hash and unverified tracker ownership", () => {

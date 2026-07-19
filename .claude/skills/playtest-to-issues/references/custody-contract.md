@@ -77,6 +77,12 @@ Do not use `routed` for an informal reminder. The route must name the owning wor
 durable tracker artifact. Do not use `no-create` merely because a row is inconvenient or was not
 part of the selected PRD.
 
+When a route names another `$<skill>`, resolve and read that skill's current `SKILL.md` before
+freezing custody. Its trigger, accepted input, and current state must support the exact proposed
+invocation. Record the successful contract check in `evidence`; use `blocked` when the destination
+is absent, ambiguous, or incompatible. This check validates ownership but does not execute the
+routed skill.
+
 ### PRD entries
 
 Allowed dispositions:
@@ -119,6 +125,36 @@ Temporary artifacts: absent
 Final branch: <branch>
 Final worktree: <exact status rows, or clean>
 ```
+
+Do not hand-format this block. Immediately before cleanup, capture the final branch and full
+`git status --short --untracked-files=all` rows, then render it with:
+
+```bash
+node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-receipt \
+  <prep-artifact> <custody-ledger.json> \
+  --final-branch <branch> \
+  --final-worktree-clean
+```
+
+Replace `--final-worktree-clean` with one exact, quoted `--final-worktree-row <row>` option per
+status row, preserving source order and leading status columns. Capture stdout, remove every
+temporary artifact, prove absence, and rerun branch plus full worktree status. Emit the captured
+receipt verbatim only if cleanup passes and the final values match the renderer inputs.
+
+When the source has zero non-PRD rows, retain the table header and emit:
+
+```markdown
+| None | N/A | No non-PRD follow-ups in source inventory. |
+```
+
+When the source has zero PRD candidates, retain the table header and emit:
+
+```markdown
+| None | N/A | N/A | No PRD candidates in source inventory. |
+```
+
+For a dirty worktree, the renderer preserves the exact status rows in a fenced `text` block after
+`Final worktree:`; a clean worktree remains `Final worktree: clean`.
 
 When the PRD queue is exhausted, replace `Next PRD action` with
 `Next PRD action: none - PRD queue exhausted`. List every deferred remaining candidate in its

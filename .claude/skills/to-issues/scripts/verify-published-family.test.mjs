@@ -134,6 +134,7 @@ const manifest = {
       title: "Contract",
       bodyFile: "354.md",
       slice: "Contract",
+      acceptanceCount: 1,
       labels: ["enhancement", "needs-triage"],
       blockers: [],
       externalBlockers: [],
@@ -146,6 +147,7 @@ const manifest = {
       title: "Server",
       bodyFile: "355.md",
       slice: "Server",
+      acceptanceCount: 1,
       labels: ["enhancement", "ready-for-agent"],
       blockers: ["#354"],
       externalBlockers: [],
@@ -206,6 +208,7 @@ const sourceManifest = {
     title: "Repair conformance before PRD delivery",
     bodyFile: "380.md",
     slice: "Conformance repair",
+    acceptanceCount: 1,
     labels: ["enhancement", "ready-for-agent"],
     blockers: [],
     externalBlockers: [],
@@ -267,6 +270,7 @@ const workingLedgerFor = (subject) => ({
   entries: subject.children.map((child, index) => ({
     slice: child.slice,
     title: child.title,
+    acceptanceCount: child.acceptanceCount,
     number: child.number,
     url: child.url,
     blockedBySlices: index === 0 ? [] : [subject.children[index - 1].slice],
@@ -314,6 +318,47 @@ test("fails the family when a published child has an unexpected label", () => {
   assert.equal(report.children[0].checks.labelsMatch, false);
   assert.equal(report.checks.childrenPass, false);
   assert.deepEqual(report.failedChecks, ["childrenPass"]);
+});
+
+test("fails the family when a published child's acceptance count changed", () => {
+  const wrongManifest = globalThis.structuredClone(manifest);
+  wrongManifest.children[0].acceptanceCount = 2;
+
+  const report = verifyPublishedFamily({
+    manifest: wrongManifest,
+    childPayloads,
+    stagedBodies,
+    parentPayload,
+    ledgerBody,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(wrongManifest),
+  });
+
+  assert.equal(report.children[0].actualAcceptanceCount, 1);
+  assert.equal(report.children[0].expectedAcceptanceCount, 2);
+  assert.equal(report.children[0].checks.acceptanceCountMatches, false);
+  assert.equal(report.checks.childrenPass, false);
+});
+
+test("family acceptance count ignores checklist rows outside the acceptance section", () => {
+  const expectedBody = body().replace(
+    "Build the slice.",
+    "- [ ] Prepare the implementation plan.\n\nBuild the slice.",
+  );
+  const actual = {
+    ...childPayloads.get(354),
+    body: expectedBody.trimEnd(),
+  };
+  const report = verifyPublishedChild({
+    actual,
+    checklistVerified: true,
+    expected: manifest.children[0],
+    expectedBody,
+    parentToken: manifest.parent.token,
+  });
+
+  assert.equal(report.actualAcceptanceCount, 1);
+  assert.equal(report.checks.acceptanceCountMatches, true);
 });
 
 test("fails the family when the parent label transition does not match approval", () => {
@@ -488,6 +533,15 @@ test("manifest validation requires valid custom forbidden values and a working l
   assert.equal(validateManifest(missing).includes("forbidPatterns must be an array"), true);
   assert.equal(validateManifest(missing).includes("workingLedger is required"), true);
 
+  const missingAcceptanceCount = globalThis.structuredClone(manifest);
+  delete missingAcceptanceCount.children[0].acceptanceCount;
+  assert.equal(
+    validateManifest(missingAcceptanceCount).includes(
+      "children[0].acceptanceCount must be a positive integer",
+    ),
+    true,
+  );
+
   const invalidLiteral = globalThis.structuredClone(manifest);
   invalidLiteral.forbidLiterals = ["   "];
   assert.equal(
@@ -574,6 +628,59 @@ test("single-child verification rejects exact family forbidden text", () => {
   assert.deepEqual(report.forbiddenLiterals, ["LOCAL_ONLY"]);
 });
 
+test("single-child CLI requires and enforces the frozen acceptance count from a snapshot", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-child-count-"));
+  try {
+    const bodyFile = join(directory, "354.md");
+    const snapshotFile = join(directory, "354.json");
+    writeFileSync(bodyFile, stagedBodies.get(354));
+    writeFileSync(snapshotFile, JSON.stringify(childPayloads.get(354)));
+    const baseArgs = [
+      script,
+      "child",
+      "354",
+      bodyFile,
+      "--title",
+      "Contract",
+      "--parent",
+      "PRD #353",
+      "--label",
+      "enhancement",
+      "--label",
+      "needs-triage",
+      "--expect-no-blocker",
+      "--snapshot",
+      snapshotFile,
+    ];
+
+    const missing = spawnSync(process.execPath, baseArgs, { encoding: "utf8" });
+    const exact = spawnSync(
+      process.execPath,
+      [...baseArgs, "--expect-ac-count", "1"],
+      { encoding: "utf8" },
+    );
+    const mismatch = spawnSync(
+      process.execPath,
+      [...baseArgs, "--expect-ac-count", "2"],
+      { encoding: "utf8" },
+    );
+
+    assert.equal(missing.status, 2);
+    assert.match(JSON.parse(missing.stderr).error, /requires --expect-ac-count/);
+    assert.equal(exact.status, 0, exact.stderr || exact.stdout);
+    const exactReport = JSON.parse(exact.stdout);
+    assert.equal(exactReport.expectedAcceptanceCount, 1);
+    assert.equal(exactReport.checks.acceptanceCountMatches, true);
+    assert.equal(mismatch.status, 1, mismatch.stderr || mismatch.stdout);
+    const mismatchReport = JSON.parse(mismatch.stdout);
+    assert.equal(mismatchReport.expectedAcceptanceCount, 2);
+    assert.equal(mismatchReport.checks.acceptanceCountMatches, false);
+    assert.deepEqual(mismatchReport.failedChecks, ["acceptanceCountMatches"]);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("single-child CLI rejects exact forbidden text from a snapshot", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-child-snapshot-"));
   try {
@@ -600,6 +707,8 @@ test("single-child CLI rejects exact forbidden text from a snapshot", () => {
       "--label",
       "needs-triage",
       "--expect-no-blocker",
+      "--expect-ac-count",
+      "1",
       "--forbid-literal",
       "LOCAL_ONLY",
       "--snapshot",
@@ -671,6 +780,26 @@ test("family verification requires every working-ledger entry to be verified", (
   assert.equal(report.failedChecks.includes("workingPublicationLedgerPass"), true);
 });
 
+test("family verification requires the working ledger to preserve each frozen acceptance count", () => {
+  const workingLedger = workingLedgerFor(manifest);
+  workingLedger.entries[0].acceptanceCount = 2;
+  const report = verifyPublishedFamily({
+    manifest,
+    childPayloads,
+    stagedBodies,
+    parentPayload,
+    ledgerBody,
+    checklistVerified: true,
+    workingLedger,
+  });
+
+  assert.equal(
+    report.workingPublicationLedger.entries[0].checks.acceptanceCountMatches,
+    false,
+  );
+  assert.equal(report.checks.workingPublicationLedgerPass, false);
+});
+
 test("working-ledger validation preserves logical blockers before numbers exist", () => {
   const workingLedger = {
     approvedCount: 2,
@@ -678,6 +807,7 @@ test("working-ledger validation preserves logical blockers before numbers exist"
       {
         slice: "Contract",
         title: "Contract",
+        acceptanceCount: 1,
         number: null,
         url: null,
         blockedBySlices: [],
@@ -689,6 +819,7 @@ test("working-ledger validation preserves logical blockers before numbers exist"
       {
         slice: "Server",
         title: "Server",
+        acceptanceCount: 1,
         number: null,
         url: null,
         blockedBySlices: ["Contract"],
@@ -725,6 +856,7 @@ test("working-ledger validation rejects forward and unknown dependency edges", (
       {
         slice: "Contract",
         title: "Contract",
+        acceptanceCount: 1,
         number: null,
         url: null,
         blockedBySlices: ["Server", "Missing"],
@@ -736,6 +868,7 @@ test("working-ledger validation rejects forward and unknown dependency edges", (
       {
         slice: "Server",
         title: "Server",
+        acceptanceCount: 1,
         number: null,
         url: null,
         blockedBySlices: [],
@@ -750,6 +883,18 @@ test("working-ledger validation rejects forward and unknown dependency edges", (
   const errors = validateWorkingPublicationState(workingLedger);
   assert.equal(errors.includes("entries[0].blockedBySlices must reference an earlier slice: Server"), true);
   assert.equal(errors.includes("entries[0].blockedBySlices references unknown slice Missing"), true);
+});
+
+test("working-ledger validation rejects a missing frozen acceptance count", () => {
+  const workingLedger = workingLedgerFor(manifest);
+  delete workingLedger.entries[0].acceptanceCount;
+
+  assert.equal(
+    validateWorkingPublicationState(workingLedger).includes(
+      "entries[0].acceptanceCount must be a positive integer",
+    ),
+    true,
+  );
 });
 
 test("family payload resolution uses complete snapshots without calling gh", () => {

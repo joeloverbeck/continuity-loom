@@ -49,7 +49,7 @@ Under `## Header And Freshness`:
 
 ```markdown
 Source report path: reports/<playtest-report>.md
-Source validation: <passed / nonblocking defects - concise summary>
+Source validation: passed
 Source durability: <durable / pending local publication / summarized, not cited, with proof>
 Authored artifact durability: <new/untracked / dirty / tracked-clean / publication-ref-visible>
 Live checkout: <branch, HEAD, and relevant baseline dirt>
@@ -65,9 +65,18 @@ External research: skipped - repo-local prep
 Use `External research: used - explicit user request: <scope>` only when the user explicitly
 expanded the run.
 
-Use the nonblocking-defect form only when the source inspector classifies a report-validator defect
-as safe for exhaustive disposition. Add the repair to Non-PRD Follow-Up as skill maintenance. Any
-blocking source error prevents writing or updating this artifact.
+For a clean source, use exactly `Source validation: passed`; do not append a summary. Put clean-run
+inspection detail in `## Source Inventory` or adjacent prose.
+
+Use this separate form only when the source inspector classifies a report-validator defect as safe
+for exhaustive disposition:
+
+```markdown
+Source validation: nonblocking defects - <concise summary>
+```
+
+Add the repair to Non-PRD Follow-Up as skill maintenance. Any blocking source error prevents
+writing or updating this artifact.
 
 Under `## Reassessment Verdict`:
 

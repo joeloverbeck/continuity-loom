@@ -92,7 +92,7 @@ If a tracker mutation returns an error or no usable URL after the request may ha
 
 Use outside-worktree temporary files when the environment permits safe edit and cleanup. In Codex-style sessions, use `apply_patch` for temporary files too. Otherwise use clearly temporary repo-local paths such as `reports/.tmp-<parent>-issue-<slice>.md`. Never publish a staging path.
 
-Create a temporary JSON working publication ledger beside the staged artifacts before any parent-label transition or child create. Record the approved slice count and one entry per approved slice in dependency order. Preserve internal dependency edges in `blockedBySlices` using exact approved slice titles, preserve already-existing tracker blockers in `prerequisiteIssues`, and place only currently resolved tracker references in `blockers`. An unpublished entry starts with `number`, `url`, and `verifierStatus` set to `null`. This ledger is the resumable source of publication state; do not rely on dependency edges or issue numbers held only in chat.
+Create a temporary JSON working publication ledger beside the staged artifacts before any parent-label transition or child create. Record the approved slice count and one entry per approved slice in dependency order, including the exact frozen `acceptanceCount` for each body. Preserve internal dependency edges in `blockedBySlices` using exact approved slice titles, preserve already-existing tracker blockers in `prerequisiteIssues`, and place only currently resolved tracker references in `blockers`. An unpublished entry starts with `number`, `url`, and `verifierStatus` set to `null`. This ledger is the resumable source of publication state; do not rely on acceptance counts, dependency edges, or issue numbers held only in chat.
 
 ```json
 {
@@ -101,6 +101,7 @@ Create a temporary JSON working publication ledger beside the staged artifacts b
     {
       "slice": "Contract slice",
       "title": "Contract slice",
+      "acceptanceCount": 8,
       "number": null,
       "url": null,
       "blockedBySlices": [],
@@ -112,6 +113,7 @@ Create a temporary JSON working publication ledger beside the staged artifacts b
     {
       "slice": "Consumer slice",
       "title": "Consumer slice",
+      "acceptanceCount": 6,
       "number": null,
       "url": null,
       "blockedBySlices": ["Contract slice"],
@@ -130,7 +132,7 @@ Validate this state before any parent-label transition or child create, and afte
 node .claude/skills/to-issues/scripts/verify-published-family.mjs working-ledger "$WORKING_LEDGER"
 ```
 
-The working-ledger validator requires unique dependency-ordered slices, rejects self/unknown/forward slice edges, and requires `blockers` to equal `prerequisiteIssues` plus the real references of every already-verified internal blocker. After a blocker slice is verified, update the resolved `blockers` on every later entry that names it in `blockedBySlices`; that update records established state and is not speculative.
+The working-ledger validator requires positive frozen acceptance counts, unique dependency-ordered slices, rejects self/unknown/forward slice edges, and requires `blockers` to equal `prerequisiteIssues` plus the real references of every already-verified internal blocker. After a blocker slice is verified, update the resolved `blockers` on every later entry that names it in `blockedBySlices`; that update records established state and is not speculative.
 
 For each fully specified affected slice, the local run sheet must contain exactly one row for every canonical item between the checklist markers in `docs/agents/issue-tracker.md`, even when the slice remains `needs-triage` solely because of an external sequencing or readiness gate. The issue-tracker document is the item and count authority; do not maintain a copied list here.
 
@@ -254,6 +256,7 @@ node .claude/skills/to-issues/scripts/verify-published-family.mjs child "$ISSUE_
   --blocker "#<backward-blocker>" \
   --external-blocker "<exact external prerequisite text>" \
   --forbid-literal '<run-specific-token-or-path>' \
+  --expect-ac-count "$ACCEPTANCE_COUNT" \
   --expect-stories \
   --placeholder-re '#SLICE|PLACEHOLDER'
 ```
@@ -263,11 +266,18 @@ If the host blocks the verifier's nested `gh` call, save one fresh exact `gh iss
 For standalone-source or artifact-source mode, replace `--parent` with `--source` and
 `--source-relationship` using the exact approved strings.
 
-Repeat label and blocker options exactly as approved. Use `--expect-no-blocker` instead of blocker options only when neither tracker nor external blockers exists. The verifier fetches the issue once, normalizes Markdown before comparing the full staged body, requires the exact label set and state, and checks the parent, required sections, story posture, blockers, placeholders, and machine-local paths. Correct defects with the tracker edit command and rerun this verifier before continuing.
+Repeat label and blocker options exactly as approved. Pass the slice's exact frozen
+`acceptanceCount` from the working publication ledger as `--expect-ac-count`; this is mandatory for
+both initial verification and resume-time re-verification. Use `--expect-no-blocker` instead of
+blocker options only when neither tracker nor external blockers exists. The verifier fetches the
+issue once, normalizes Markdown before comparing the full staged body, requires the exact label set
+and state, and checks the acceptance count, parent, required sections, story posture, blockers,
+placeholders, and machine-local paths. Correct defects with the tracker edit command and rerun this
+verifier before continuing.
 
 After the single-child verifier passes, immediately update that slice's working-publication-ledger entry with the actual issue number, returned URL, exact resolved tracker and external blockers, and `"verifierStatus": "verified"`. Resolve only established edges on later entries that name this slice in `blockedBySlices`, rerun working-ledger validation, and update nothing else speculatively. If the create or verification fails, leave the entry unpublished or record `"verifierStatus": "failed"`, then stop.
 
-On resume, read the working publication ledger before any duplicate guard or create call. Re-fetch each entry marked `verified`, rerun its single-child verifier against the staged body, and retain it only if number, URL, blockers, labels, and body still pass. Reconcile any entry with a number or URL but no verified status using the ambiguous-mutation rule in Step 1. Resume at the first unpublished slice in dependency order; never recreate an already verified slice.
+On resume, read the working publication ledger before any duplicate guard or create call. Re-fetch each entry marked `verified`, rerun its single-child verifier against the staged body with that entry's frozen `acceptanceCount`, and retain it only if number, URL, acceptance count, blockers, labels, and body still pass. Reconcile any entry with a number or URL but no verified status using the ambiguous-mutation rule in Step 1. Resume at the first unpublished slice in dependency order; never recreate an already verified slice.
 
 ## 6. Parent ledger or source relationship
 
@@ -325,6 +335,7 @@ Before cleanup, create a local JSON manifest and run the family verifier. Paths 
       "title": "Contract slice",
       "bodyFile": "reports/.tmp-parent-issue-1.md",
       "slice": "Contract slice",
+      "acceptanceCount": 8,
       "state": "OPEN",
       "labels": ["enhancement", "ready-for-agent"],
       "blockers": [],
@@ -338,6 +349,7 @@ Before cleanup, create a local JSON manifest and run the family verifier. Paths 
       "title": "Consumer slice",
       "bodyFile": "reports/.tmp-parent-issue-2.md",
       "slice": "Consumer slice",
+      "acceptanceCount": 6,
       "labels": ["enhancement", "ready-for-agent"],
       "blockers": ["#101"],
       "externalBlockers": [],
@@ -359,7 +371,11 @@ An externally gated child omits `noBlockerPhrase` and records its exact bullet t
 
 For a skipped ledger, use `"ledger": {"status": "skipped", "reason": "<approved reason>"}`. List exact non-tracker prerequisite bullets in `externalBlockers`; `noBlockerPhrase` is valid only when both `blockers` and `externalBlockers` are empty. `checklistMapped: yes` configures the child as an affected run-sheet slice regardless of label; an `N/A - ...` value configures it as genuinely unaffected.
 
-`forbidLiterals` and `forbidPatterns` are required even when empty. Copy every `--forbid-literal` value into `forbidLiterals` exactly as written and every intentional `--forbid-pattern` regex into `forbidPatterns`; do not fold either only into `placeholder-re`. Build the final manifest's child numbers, URLs, and blocker arrays from the working publication ledger, then point `workingLedger` at that file. The family verifier requires every approved entry to be verified and match the manifest plus live issue URL before it reruns the same forbidden literals and patterns across the run sheet, every published child, and any posted parent ledger.
+`forbidLiterals` and `forbidPatterns` are required even when empty. Copy every `--forbid-literal` value into `forbidLiterals` exactly as written and every intentional `--forbid-pattern` regex into `forbidPatterns`; do not fold either only into `placeholder-re`. Build the final manifest's child numbers, URLs, acceptance counts, and blocker arrays from the working publication ledger, then point `workingLedger` at that file. The family verifier requires every approved entry to be verified and match the manifest plus live issue URL before it reruns the same forbidden literals and patterns across the run sheet, every published child, and any posted parent ledger.
+
+Every child also records the exact frozen `acceptanceCount` used with `--expect-ac-count` during
+staged validation. The family verifier recounts the staged/live-equal body and fails if that count
+changed or was omitted from the manifest.
 
 For standalone-source mode, replace the top-level `parent` object with `source` and omit `ledger`:
 

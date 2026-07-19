@@ -11,8 +11,8 @@ const usage = `Usage:
   node .claude/skills/to-issues/scripts/verify-published-family.mjs child <issue-number> <body-file> [options]
   node .claude/skills/to-issues/scripts/verify-published-family.mjs working-ledger <ledger.json>
 
-The manifest records the approved count, source relationship, shared run sheet,
-and one entry per published issue. Single-issue options:
+The manifest records the approved count, frozen acceptance counts, source relationship,
+shared run sheet, and one entry per published issue. Single-issue options:
   --title <title>              Require the exact title.
   --parent <token>             Require the parent reference.
   --source <token>             Require the standalone tracker- or artifact-source reference.
@@ -23,6 +23,7 @@ and one entry per published issue. Single-issue options:
   --external-blocker <text>    Require exactly this external blocker; repeat as needed.
   --expect-no-blocker          Require the house-style no-blocker phrase and no blockers.
   --expect-stories             Require the user-story coverage section.
+  --expect-ac-count <count>    Require the frozen acceptance-criterion count; mandatory in child mode.
   --placeholder-re <pattern>   Placeholder regex; defaults to #SLICE|PLACEHOLDER.
   --forbid-literal <text>      Reject exact run-specific text; repeat as needed.
   --forbid-pattern <pattern>   Reject a run-specific regex; repeat as needed.
@@ -76,6 +77,11 @@ const blockerEntries = (body) => sectionBody(body, "## Blocked by")
   .map((line) => line.trim())
   .filter((line) => line.startsWith("- "))
   .map((line) => line.slice(2).trim());
+
+const acceptanceCount = (body) => sectionBody(body, "## Acceptance criteria")
+  .split(/\r?\n/)
+  .filter((line) => /^- \[ \] .+/.test(line))
+  .length;
 
 const classifiedBlockers = (body, expectedExternalBlockers = []) => {
   const entries = blockerEntries(body);
@@ -177,6 +183,9 @@ export const validateManifest = (manifest) => {
     if (!child.url) errors.push(`${prefix}.url is required`);
     if (!child.bodyFile) errors.push(`${prefix}.bodyFile is required`);
     if (!child.slice) errors.push(`${prefix}.slice is required`);
+    if (!Number.isInteger(child.acceptanceCount) || child.acceptanceCount < 1) {
+      errors.push(`${prefix}.acceptanceCount must be a positive integer`);
+    }
     if (!Array.isArray(child.labels) || child.labels.length === 0) errors.push(`${prefix}.labels is required`);
     if (!Array.isArray(child.blockers)) errors.push(`${prefix}.blockers must be an array`);
     if (child.externalBlockers != null && !Array.isArray(child.externalBlockers)) {
@@ -239,6 +248,7 @@ export const verifyPublishedChild = ({
     .map((pattern) => compilePattern(pattern, "--forbid-pattern"));
   const relationshipMode = parentToken == null ? sourceMode : "parent";
   const sourceSection = sectionBody(body, "## Source and coordination");
+  const actualAcceptanceCount = acceptanceCount(body);
   const checks = {
     fetched: actual != null,
     titleMatches: actual?.title === expected.title,
@@ -257,6 +267,9 @@ export const verifyPublishedChild = ({
     stagedBodyMatches: normalizeMarkdown(body) === normalizeMarkdown(expectedBody),
     hasWhat: body.includes("## What to build"),
     hasAcceptance: body.includes("## Acceptance criteria"),
+    ...(expected.acceptanceCount == null
+      ? {}
+      : { acceptanceCountMatches: actualAcceptanceCount === expected.acceptanceCount }),
     hasPrinciples: body.includes("## Principles"),
     storyCoverageMatches: expected.expectStories === false || body.includes("## User stories covered"),
     blockersMatch: exactValues(actualBlockers, expectedBlockers),
@@ -276,10 +289,12 @@ export const verifyPublishedChild = ({
       checklistVerified && (expected.checklistMapped === "yes" || /^N\/A - .+/.test(expected.checklistMapped));
   }
   return {
+    actualAcceptanceCount,
     actualBlockers,
     actualExternalBlockers,
     checks,
     expectedBlockers,
+    expectedAcceptanceCount: expected.acceptanceCount ?? null,
     expectedExternalBlockers,
     forbiddenLiterals: unique(forbiddenLiterals),
     forbiddenPatterns: unique(forbiddenPatterns),
@@ -314,6 +329,9 @@ export const validateWorkingPublicationState = (workingLedger) => {
     }
     if (typeof entry?.title !== "string" || !entry.title.trim()) {
       errors.push(`${prefix}.title is required`);
+    }
+    if (!Number.isInteger(entry?.acceptanceCount) || entry.acceptanceCount < 1) {
+      errors.push(`${prefix}.acceptanceCount must be a positive integer`);
     }
     for (const field of ["blockedBySlices", "prerequisiteIssues", "blockers", "externalBlockers"]) {
       if (!Array.isArray(entry?.[field])) errors.push(`${prefix}.${field} must be an array`);
@@ -384,6 +402,7 @@ export const verifyWorkingPublicationLedger = ({ manifest, workingLedger, childr
       present: entry != null,
       sliceMatches: entry?.slice === expected.slice,
       titleMatches: entry?.title === expected.title,
+      acceptanceCountMatches: entry?.acceptanceCount === expected.acceptanceCount,
       numberMatches: entry?.number === expected.number,
       urlMatchesManifest: entry?.url === expected.url,
       urlMatchesLiveIssue: entry?.url === child?.url,
@@ -645,6 +664,7 @@ const parsePublishedChildArgs = (argv) => {
   }
   const options = {
     blockers: [],
+    expectAcCount: null,
     expectNoBlocker: false,
     expectStories: false,
     externalBlockers: [],
@@ -663,7 +683,15 @@ const parsePublishedChildArgs = (argv) => {
     const argument = args[index];
     if (argument === "--expect-no-blocker") options.expectNoBlocker = true;
     else if (argument === "--expect-stories") options.expectStories = true;
-    else if ([
+    else if (argument === "--expect-ac-count") {
+      const value = requireChildValue(args, index, argument);
+      const count = Number(value);
+      if (!Number.isInteger(count) || count < 1) {
+        throw new Error("--expect-ac-count requires a positive integer.");
+      }
+      options.expectAcCount = count;
+      index += 1;
+    } else if ([
       "--title",
       "--parent",
       "--source",
@@ -698,6 +726,9 @@ const parsePublishedChildArgs = (argv) => {
   if (!options.title || options.labels.length === 0) {
     throw new Error("child mode requires --title and at least one --label.");
   }
+  if (options.expectAcCount == null) {
+    throw new Error("child mode requires --expect-ac-count.");
+  }
   if ((options.parentToken == null) === (options.sourceToken == null)) {
     throw new Error("child mode requires exactly one of --parent or --source.");
   }
@@ -714,6 +745,7 @@ const parsePublishedChildArgs = (argv) => {
   return {
     bodyFile,
     expected: {
+      acceptanceCount: options.expectAcCount,
       blockers: options.blockers,
       expectStories: options.expectStories,
       externalBlockers: options.externalBlockers,
