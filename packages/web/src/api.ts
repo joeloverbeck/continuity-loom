@@ -270,6 +270,11 @@ export type RecordSummary = {
   userOrder: number | null;
   createdAt: string;
   updatedAt: string;
+  browseIdentity?: {
+    primaryLabel: string | null;
+    secondaryLabel: string;
+    availability: "available" | "archived" | "missing";
+  };
 };
 
 export type RecordDetail = RecordSummary & {

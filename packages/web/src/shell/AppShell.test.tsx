@@ -116,6 +116,43 @@ afterEach(() => {
 });
 
 describe("AppShell", () => {
+  it("keeps the complete ordered navigation in a keyboard-focusable sidebar region", () => {
+    render(
+      <MemoryRouter>
+        <AppShell loadState={{ status: "ready", runtime: runtimeStatus }} />
+      </MemoryRouter>
+    );
+
+    const sidebar = screen.getByRole("complementary", { name: "Primary navigation" });
+    const navigation = within(sidebar).getByRole("navigation");
+    const links = within(navigation).getAllByRole("link");
+
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Project Library",
+      "Records",
+      "Private Notes",
+      "Active Working Set",
+      "Generation Brief",
+      "Validation / Prompt Preview",
+      "Generate / Candidate",
+      "Ideate",
+      "Record Hygiene",
+      "Segment Reconciliation",
+      "Accepted Segments",
+      "Story Configuration",
+      "Settings"
+    ]);
+    expect(sidebar.tabIndex).toBe(0);
+
+    sidebar.focus();
+    expect(document.activeElement).toBe(sidebar);
+
+    const settingsLink = links.at(-1);
+    expect(settingsLink?.getAttribute("href")).toBe("/settings");
+    settingsLink?.focus();
+    expect(document.activeElement).toBe(settingsLink);
+  });
+
   it("promotes Generate / Candidate, Ideate, Record Hygiene, and Accepted Segments to enabled routes", async () => {
     render(
       <MemoryRouter>

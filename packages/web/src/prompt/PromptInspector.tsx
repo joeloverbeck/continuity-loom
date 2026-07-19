@@ -1,5 +1,5 @@
 import type { CompileResult } from "@loom/core";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface PromptInspectorProps {
   result: CompileResult;
@@ -12,8 +12,32 @@ export function PromptInspector({
   searchTerm,
   onSearchTermChange
 }: PromptInspectorProps): React.JSX.Element {
-  const highlightedPrompt = useMemo(() => highlightPrompt(result.prompt, searchTerm), [result.prompt, searchTerm]);
-  const matchCount = countMatches(result.prompt, searchTerm);
+  const term = searchTerm.trim();
+  const matches = useMemo(() => findMatches(result.prompt, term), [result.prompt, term]);
+  const [navigation, setNavigation] = useState({ prompt: result.prompt, term, index: 0 });
+  const activeMarkRef = useRef<HTMLElement | null>(null);
+  const activeMatchIndex = matches.length === 0
+    ? -1
+    : navigation.prompt === result.prompt && navigation.term === term
+      ? Math.min(navigation.index, matches.length - 1)
+      : 0;
+  const highlightedPrompt = highlightPrompt(result.prompt, matches, activeMatchIndex, activeMarkRef);
+
+  useEffect(() => {
+    activeMarkRef.current?.scrollIntoView?.({ block: "center" });
+  }, [activeMatchIndex, result.prompt, term]);
+
+  function navigate(delta: -1 | 1): void {
+    if (matches.length === 0) {
+      return;
+    }
+
+    setNavigation({
+      prompt: result.prompt,
+      term,
+      index: (activeMatchIndex + delta + matches.length) % matches.length
+    });
+  }
 
   return (
     <>
@@ -21,7 +45,18 @@ export function PromptInspector({
         Search within prompt
         <input value={searchTerm} onChange={(event) => onSearchTermChange(event.target.value)} />
       </label>
-      {searchTerm.trim() ? <p className="muted" role="status">{matchCount} matches</p> : null}
+      {term ? (
+        <div className="promptSearchResults">
+          <p className="muted" role="status" aria-live="polite">
+            <span>{matches.length} {matches.length === 1 ? "match" : "matches"}</span>
+            {activeMatchIndex >= 0 ? <span> · Current match {activeMatchIndex + 1} of {matches.length}</span> : null}
+          </p>
+          <div className="promptSearchNavigation" aria-label="Prompt match navigation">
+            <button type="button" onClick={() => navigate(-1)} disabled={matches.length === 0}>Previous</button>
+            <button type="button" onClick={() => navigate(1)} disabled={matches.length === 0}>Next</button>
+          </div>
+        </div>
+      ) : null}
 
       <section className="promptPreviewLayout" aria-label="Compiled prompt preview">
         <pre className="promptBody" data-testid="prompt-body">{highlightedPrompt}</pre>
@@ -59,39 +94,63 @@ export function PromptInspector({
   );
 }
 
-function countMatches(prompt: string, searchTerm: string): number {
-  const term = searchTerm.trim();
-
-  if (!term) {
-    return 0;
-  }
-
-  return prompt.toLocaleLowerCase().split(term.toLocaleLowerCase()).length - 1;
+interface PromptMatch {
+  start: number;
+  end: number;
 }
 
-function highlightPrompt(prompt: string, searchTerm: string): React.ReactNode {
-  const term = searchTerm.trim();
-
+function findMatches(prompt: string, term: string): PromptMatch[] {
   if (!term) {
-    return prompt;
+    return [];
   }
 
   const lowerPrompt = prompt.toLocaleLowerCase();
   const lowerTerm = term.toLocaleLowerCase();
-  const nodes: React.ReactNode[] = [];
+  const matches: PromptMatch[] = [];
   let cursor = 0;
   let matchIndex = lowerPrompt.indexOf(lowerTerm, cursor);
 
   while (matchIndex !== -1) {
-    if (matchIndex > cursor) {
-      nodes.push(prompt.slice(cursor, matchIndex));
-    }
-
     const end = matchIndex + term.length;
-    nodes.push(<mark key={`${matchIndex}:${end}`}>{prompt.slice(matchIndex, end)}</mark>);
+    matches.push({ start: matchIndex, end });
     cursor = end;
     matchIndex = lowerPrompt.indexOf(lowerTerm, cursor);
   }
+
+  return matches;
+}
+
+function highlightPrompt(
+  prompt: string,
+  matches: PromptMatch[],
+  activeMatchIndex: number,
+  activeMarkRef: React.RefObject<HTMLElement | null>
+): React.ReactNode {
+  if (matches.length === 0) {
+    return prompt;
+  }
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+
+  matches.forEach((match, index) => {
+    if (match.start > cursor) {
+      nodes.push(prompt.slice(cursor, match.start));
+    }
+
+    const active = index === activeMatchIndex;
+    nodes.push(
+      <mark
+        key={`${match.start}:${match.end}`}
+        ref={active ? activeMarkRef : undefined}
+        className={active ? "activePromptMatch" : undefined}
+        aria-current={active ? "true" : undefined}
+      >
+        {prompt.slice(match.start, match.end)}
+      </mark>
+    );
+    cursor = match.end;
+  });
 
   if (cursor < prompt.length) {
     nodes.push(prompt.slice(cursor));

@@ -88,13 +88,18 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
   const [draft, setDraft] = useState<NoteDraft>(() => draftFromNote(note));
   const [savedDraft, setSavedDraft] = useState<NoteDraft>(() => draftFromNote(note));
   const [savedNoteId, setSavedNoteId] = useState<string | null>(note?.id ?? null);
+  const draftRef = useRef(draft);
+  const savedNoteIdRef = useRef(savedNoteId);
   const [status, setStatus] = useState<SaveStatus>(note ? "saved" : "needs-title");
   const [showPreview, setShowPreview] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const savingRef = useRef<Promise<boolean> | null>(null);
+  draftRef.current = draft;
 
   useEffect(() => {
     const nextDraft = draftFromNote(note);
+    draftRef.current = nextDraft;
+    savedNoteIdRef.current = note?.id ?? null;
     setDraft(nextDraft);
     setSavedDraft(nextDraft);
     setSavedNoteId(note?.id ?? null);
@@ -124,8 +129,9 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
     const input = toUpdateInput(draft);
     const request = (async () => {
       try {
-        const response = savedNoteId
-          ? await updateNote(savedNoteId, input)
+        const currentNoteId = savedNoteIdRef.current;
+        const response = currentNoteId
+          ? await updateNote(currentNoteId, input)
           : await createNote(input);
 
         if (!response.ok) {
@@ -134,9 +140,10 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
         }
 
         const nextSavedDraft = draftFromNote(response.note);
+        savedNoteIdRef.current = response.note.id;
         setSavedDraft(nextSavedDraft);
         setSavedNoteId(response.note.id);
-        setStatus("saved");
+        setStatus(sameDraft(draftRef.current, nextSavedDraft) ? "saved" : "idle");
         onSaved(response.note);
         return true;
       } catch {

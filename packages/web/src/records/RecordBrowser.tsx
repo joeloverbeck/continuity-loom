@@ -1,6 +1,7 @@
 import {
   allTypesColumns,
   compareSeverityDesc,
+  eligibleReferenceTargets,
   getColumnManifest,
   getEditorDescriptor,
   recordTypes,
@@ -40,7 +41,10 @@ function filterLocally(
   return records.filter((record) => {
     const typeMatches = filters.type ? record.type === filters.type : true;
     const statusMatches = filters.status ? record.status === filters.status : true;
-    const textMatches = q ? record.displayLabel.toLowerCase().includes(q) || record.id.toLowerCase().includes(q) : true;
+    const textMatches = q
+      ? [record.displayLabel, record.id, browsePrimaryLabel(record), browseSecondaryLabel(record)]
+          .some((value) => value.toLowerCase().includes(q))
+      : true;
     const workingSetMatches = filters.workingSetOnly ? workingSetIds.has(record.id) : true;
 
     return typeMatches && statusMatches && textMatches && workingSetMatches;
@@ -115,6 +119,7 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
     salience: record.salience,
     urgency: record.urgency,
     ...(record.displayValues === undefined ? {} : { displayValues: record.displayValues }),
+    ...(record.browseIdentity === undefined ? {} : { browseIdentity: record.browseIdentity }),
     archived: record.archived,
     userOrder: record.userOrder,
     createdAt: record.createdAt,
@@ -124,6 +129,48 @@ function toRecordSummary(record: RecordDetail): RecordSummary {
 
 function fullDisplayLabel(record: RecordDetail | RecordSummary): string {
   return record.fullDisplayLabel ?? record.displayLabel;
+}
+
+function browsePrimaryLabel(record: RecordDetail | RecordSummary): string {
+  if (record.type !== "CAST MEMBER" || !record.browseIdentity) {
+    return record.displayLabel;
+  }
+
+  if (record.browseIdentity.availability === "archived") {
+    return record.browseIdentity.primaryLabel
+      ? `${record.browseIdentity.primaryLabel} (linked ENTITY archived)`
+      : "Linked ENTITY unavailable (archived)";
+  }
+
+  if (record.browseIdentity.availability === "missing" || !record.browseIdentity.primaryLabel) {
+    return "Linked ENTITY unavailable";
+  }
+
+  return record.browseIdentity.primaryLabel;
+}
+
+function detailPrimaryLabel(record: RecordDetail | RecordSummary): string {
+  return record.type === "CAST MEMBER" ? browsePrimaryLabel(record) : fullDisplayLabel(record);
+}
+
+function browseSecondaryLabel(record: RecordDetail | RecordSummary): string {
+  return record.type === "CAST MEMBER" ? record.browseIdentity?.secondaryLabel ?? "" : "";
+}
+
+function browseUnavailableMessage(record: RecordDetail | RecordSummary): string | null {
+  if (record.type !== "CAST MEMBER" || !record.browseIdentity) {
+    return null;
+  }
+
+  if (record.browseIdentity.availability === "archived") {
+    return "The linked ENTITY is archived and unavailable for active use.";
+  }
+
+  if (record.browseIdentity.availability === "missing") {
+    return "The linked ENTITY could not be resolved. The CAST MEMBER record and its exact payload remain available.";
+  }
+
+  return null;
 }
 
 function displayCell(value: unknown): string {
@@ -195,10 +242,14 @@ export function RecordBrowser(): React.JSX.Element {
   const defaultTypeResolvedRef = useRef(isRecordType(initialType));
   const [records, setRecords] = useState<RecordSummary[]>([]);
   const [referenceTargets, setReferenceTargets] = useState<RecordSummary[]>([]);
+  const [referenceTargetsLoaded, setReferenceTargetsLoaded] = useState(false);
   const [workingSetIds, setWorkingSetIds] = useState<string[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<RecordDetail | RecordSummary | null>(null);
   const [genericEditorRecord, setGenericEditorRecord] = useState<{ recordType: string; record?: RecordDetail } | null>(null);
   const [castEditorRecord, setCastEditorRecord] = useState<RecordDetail | null | undefined>(undefined);
+  const [castPrerequisiteStep, setCastPrerequisiteStep] = useState<
+    "checking" | "explanation" | "create-entity" | null
+  >(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     type: isRecordType(initialType) ? initialType : "",
@@ -235,13 +286,21 @@ export function RecordBrowser(): React.JSX.Element {
 
     void listRecords({})
       .then((response) => {
-        if (active && response.ok) {
-          setReferenceTargets(response.records);
+        if (!active) {
+          return;
         }
+
+        if (response.ok) {
+          setReferenceTargets(response.records);
+        } else {
+          setReferenceTargets([]);
+        }
+        setReferenceTargetsLoaded(true);
       })
       .catch(() => {
         if (active) {
           setReferenceTargets([]);
+          setReferenceTargetsLoaded(true);
         }
       });
 
@@ -249,6 +308,20 @@ export function RecordBrowser(): React.JSX.Element {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (castPrerequisiteStep !== "checking" || !referenceTargetsLoaded) {
+      return;
+    }
+
+    if (eligibleReferenceTargets("entity_id", referenceTargets).length > 0) {
+      setCastPrerequisiteStep(null);
+      setCastEditorRecord(null);
+      return;
+    }
+
+    setCastPrerequisiteStep("explanation");
+  }, [castPrerequisiteStep, referenceTargets, referenceTargetsLoaded]);
 
   useEffect(() => {
     let active = true;
@@ -335,14 +408,14 @@ export function RecordBrowser(): React.JSX.Element {
           }
         }
 
-        return right.updatedAt.localeCompare(left.updatedAt) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
+        return right.updatedAt.localeCompare(left.updatedAt) || browsePrimaryLabel(left).localeCompare(browsePrimaryLabel(right)) || left.id.localeCompare(right.id);
       });
     }
 
     return [...filteredRecords].sort((left, right) => {
       const leftValue = String(left[filters.groupBy as "salience" | "urgency"] ?? "");
       const rightValue = String(right[filters.groupBy as "salience" | "urgency"] ?? "");
-      return leftValue.localeCompare(rightValue) || left.displayLabel.localeCompare(right.displayLabel) || left.id.localeCompare(right.id);
+      return leftValue.localeCompare(rightValue) || browsePrimaryLabel(left).localeCompare(browsePrimaryLabel(right)) || left.id.localeCompare(right.id);
     });
   }, [filteredRecords, filters.groupBy, filters.type, usesProjectedDisplayValues]);
 
@@ -382,6 +455,17 @@ export function RecordBrowser(): React.JSX.Element {
 
   function openCreateForm(recordType: string): void {
     if (recordType === "CAST MEMBER") {
+      if (!referenceTargetsLoaded) {
+        setCastPrerequisiteStep("checking");
+        return;
+      }
+
+      if (eligibleReferenceTargets("entity_id", referenceTargets).length === 0) {
+        setCastPrerequisiteStep("explanation");
+        return;
+      }
+
+      setCastPrerequisiteStep(null);
       setCastEditorRecord(null);
       return;
     }
@@ -435,6 +519,54 @@ export function RecordBrowser(): React.JSX.Element {
 
     openCreateForm(createType);
   }, [createType]);
+
+  if (castPrerequisiteStep === "checking") {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="cast-prerequisite-check-title">
+        <h2 id="cast-prerequisite-check-title">Checking CAST MEMBER prerequisites</h2>
+        <p role="status">Checking for an eligible ENTITY record.</p>
+      </section>
+    );
+  }
+
+  if (castPrerequisiteStep === "explanation") {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="cast-prerequisite-title">
+        <p className="eyebrow">CAST MEMBER prerequisite</p>
+        <h2 id="cast-prerequisite-title">ENTITY required before CAST MEMBER</h2>
+        <p role="status" className="status statusWarning">
+          An ENTITY owns the durable character identity. A CAST MEMBER is a distinct durable dossier that must link
+          to an explicitly authored ENTITY; the app will not infer either record from prose or assistance.
+        </p>
+        <div className="buttonRow">
+          <button type="button" onClick={() => setCastPrerequisiteStep("create-entity")}>Create ENTITY</button>
+          <button type="button" className="secondaryButton" onClick={() => setCastPrerequisiteStep(null)}>
+            Back to records
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (castPrerequisiteStep === "create-entity") {
+    return (
+      <section className="surface recordBrowser" aria-labelledby="records-title">
+        <button type="button" className="linkButton" onClick={() => setCastPrerequisiteStep("explanation")}>
+          Back to prerequisite
+        </button>
+        <RecordEditor
+          recordType="ENTITY"
+          headingEyebrow="Create prerequisite ENTITY"
+          referenceRecords={referenceTargets}
+          onSaved={(savedRecord) => {
+            handleSavedRecord(savedRecord);
+            setCastPrerequisiteStep(null);
+            setCastEditorRecord(null);
+          }}
+        />
+      </section>
+    );
+  }
 
   if (genericEditorRecord) {
     return (
@@ -606,10 +738,16 @@ export function RecordBrowser(): React.JSX.Element {
                           <button
                             type="button"
                             className="linkButton"
-                            title={fullDisplayLabel(row.original)}
+                            title={row.original.type === "CAST MEMBER" ? browsePrimaryLabel(row.original) : fullDisplayLabel(row.original)}
+                            {...(row.original.type === "CAST MEMBER"
+                              ? { "aria-label": `${browsePrimaryLabel(row.original)}${browseSecondaryLabel(row.original) ? ` ${browseSecondaryLabel(row.original)}` : ""}` }
+                              : {})}
                             onClick={() => void selectRecord(row.original)}
                           >
-                              {row.original.displayLabel}
+                              <span className="recordPrimaryLabel">{browsePrimaryLabel(row.original)}</span>
+                              {browseSecondaryLabel(row.original) ? (
+                                <span className="recordSecondaryLabel">{browseSecondaryLabel(row.original)}</span>
+                              ) : null}
                             </button>
                           ) : (
                             flexRender(cell.column.columnDef.cell, cell.getContext())
@@ -628,7 +766,13 @@ export function RecordBrowser(): React.JSX.Element {
           {selectedRecord ? (
             <>
               <p className="eyebrow">{selectedRecord.type}</p>
-              <h3>{fullDisplayLabel(selectedRecord)}</h3>
+              <h3>{detailPrimaryLabel(selectedRecord)}</h3>
+              {browseSecondaryLabel(selectedRecord) ? (
+                <p className="recordSecondaryLabel">{browseSecondaryLabel(selectedRecord)}</p>
+              ) : null}
+              {browseUnavailableMessage(selectedRecord) ? (
+                <p className="status statusWarning">{browseUnavailableMessage(selectedRecord)}</p>
+              ) : null}
               <dl className="runtimeGrid">
                 <div>
                   <dt>ID</dt>
@@ -643,7 +787,13 @@ export function RecordBrowser(): React.JSX.Element {
                   <dd>{selectedRecord.archived ? "yes" : "no"}</dd>
                 </div>
               </dl>
-              {"payload" in selectedRecord ? (
+              {selectedRecord.type === "CAST MEMBER" && "payload" in selectedRecord ? (
+                <details className="technicalPayload">
+                  <summary>Technical payload</summary>
+                  <pre className="payloadPreview">{JSON.stringify(selectedRecord.payload, null, 2)}</pre>
+                </details>
+              ) : null}
+              {selectedRecord.type !== "CAST MEMBER" && "payload" in selectedRecord ? (
                 <pre className="payloadPreview">{JSON.stringify(selectedRecord.payload, null, 2)}</pre>
               ) : null}
               {selectedRecord.type === "CAST MEMBER" && "payload" in selectedRecord ? (

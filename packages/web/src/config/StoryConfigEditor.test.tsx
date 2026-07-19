@@ -156,4 +156,80 @@ describe("StoryConfigEditor", () => {
     expect(within(picker).getByRole("option", { name: "Aster" })).toBeTruthy();
     expect((picker as HTMLSelectElement).value).toBe(entityId);
   });
+
+  it.each(Object.keys(payloads) as StoryConfigKind[])(
+    "reconciles a first %s save to one truthful loaded status and reloads the server value",
+    async (kind) => {
+      setupMocks();
+      const initialConfigs = { ...payloads } as Partial<Record<StoryConfigKind, unknown>>;
+      delete initialConfigs[kind];
+      vi.mocked(listStoryConfig).mockResolvedValueOnce({ ok: true, configs: initialConfigs });
+      render(<StoryConfigEditor />);
+
+      expect(await screen.findByText(`No saved ${kind} yet.`)).toBeTruthy();
+      fillMissingConfig(kind);
+      fireEvent.click(screen.getByRole("button", { name: `Save ${kind}` }));
+
+      await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith(kind, expect.any(Object)));
+      expect(screen.queryByText(`No saved ${kind} yet.`)).toBeNull();
+      const panel = screen.getByRole("button", { name: `Save ${kind}` }).closest(".configPanel") as HTMLElement;
+      expect(within(panel).getAllByRole("status")).toHaveLength(1);
+      expect(within(panel).getByRole("status").textContent).toBe(`${kind} saved.`);
+
+      cleanup();
+      vi.mocked(listStoryConfig).mockResolvedValueOnce({
+        ok: true,
+        configs: { ...initialConfigs, [kind]: payloads[kind] }
+      });
+      render(<StoryConfigEditor />);
+
+      expect(await screen.findByRole("button", { name: `Save ${kind}` })).toBeTruthy();
+      expect(screen.queryByText(`No saved ${kind} yet.`)).toBeNull();
+    }
+  );
+
+  it("removes stale success on failure, retains authored input, and clears the error on retry", async () => {
+    setupMocks();
+    vi.mocked(setStoryConfig)
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, kind: "save-failed", message: "Configuration save failed." })
+      .mockResolvedValueOnce({ ok: true });
+    render(<StoryConfigEditor />);
+
+    const premise = await screen.findByLabelText<HTMLInputElement>(/^premise/);
+    fireEvent.change(premise, { target: { value: "First successful revision." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
+    expect(await screen.findByText("STORY CONTRACT saved.")).toBeTruthy();
+
+    fireEvent.change(premise, { target: { value: "Retained after failure." } });
+    fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
+    expect((await screen.findByRole("alert")).textContent).toBe("Configuration save failed.");
+    expect(screen.queryByText("STORY CONTRACT saved.")).toBeNull();
+    expect(premise.value).toBe("Retained after failure.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
+    expect(await screen.findByText("STORY CONTRACT saved.")).toBeTruthy();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(premise.value).toBe("Retained after failure.");
+  });
 });
+
+function fillMissingConfig(kind: StoryConfigKind): void {
+  if (kind === "STORY CONTRACT") {
+    for (const [name, value] of Object.entries(payloads[kind] as Record<string, string>)) {
+      const control = screen.getByLabelText(new RegExp(`^${name}`));
+      fireEvent.change(control, { target: { value } });
+    }
+    return;
+  }
+
+  if (kind === "UNIVERSAL CONTENT POLICY") {
+    for (const [name, value] of Object.entries(payloads[kind] as Record<string, string>)) {
+      fireEvent.change(screen.getByLabelText(new RegExp(`^${name}`)), { target: { value } });
+    }
+    return;
+  }
+
+  fireEvent.change(screen.getByLabelText(/^pov_character/), { target: { value: entityId } });
+  fireEvent.change(screen.getByLabelText(/^language_output/), { target: { value: "English" } });
+}

@@ -95,11 +95,13 @@ type LoadedConfig =
 function ConfigPanel({
   kind,
   state,
-  referenceRecords
+  referenceRecords,
+  onSaved
 }: {
   kind: StoryConfigKind;
   state: LoadedConfig;
   referenceRecords: readonly RecordSummary[];
+  onSaved: (kind: StoryConfigKind, payload: unknown) => void;
 }): React.JSX.Element {
   const [saved, setSaved] = useState(false);
 
@@ -130,10 +132,12 @@ function ConfigPanel({
             headingEyebrow="Story configuration"
             submitLabel={`Save ${kind}`}
             onSubmitPayload={async (nextPayload) => {
+              setSaved(false);
               const response = await setStoryConfig(kind, nextPayload);
               if (!response.ok) {
                 return response;
               }
+              onSaved(kind, nextPayload);
               setSaved(true);
               return { ok: true };
             }}
@@ -211,6 +215,13 @@ export function StoryConfigEditor(): React.JSX.Element {
     };
   }, []);
 
+  function reconcileSavedConfig(kind: StoryConfigKind, payload: unknown): void {
+    setConfigs((current) => ({
+      ...current,
+      [kind]: { status: "ready", payload }
+    }));
+  }
+
   return (
     <section className="surface storyConfigSurface" aria-labelledby="story-config-title">
       <div className="projectHeader">
@@ -219,7 +230,13 @@ export function StoryConfigEditor(): React.JSX.Element {
       </div>
       <div className="configStack">
         {storyConfigKinds.map((kind) => (
-          <ConfigPanel key={kind} kind={kind} state={configs[kind]} referenceRecords={referenceRecords} />
+          <ConfigPanel
+            key={kind}
+            kind={kind}
+            state={configs[kind]}
+            referenceRecords={referenceRecords}
+            onSaved={reconcileSavedConfig}
+          />
         ))}
       </div>
     </section>

@@ -14,6 +14,7 @@ import {
   setWorkingSet,
   updateRecord,
   type ListRecordsFilters,
+  type RecordDetail,
   type RecordSummary
 } from "../api.js";
 
@@ -325,7 +326,7 @@ function titleCase(value: string): string {
 
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
 
 function renderBrowser(initialEntry = "/records"): ReturnType<typeof render> {
@@ -344,6 +345,115 @@ function mockWorkingSet(ids: string[] = []): void {
 }
 
 describe("RecordBrowser", () => {
+  it("browses CAST MEMBER records by linked human name with secondary context and collapsed exact payload", async () => {
+    const firstPayload = {
+      entity_id: "entity-mara-a",
+      identity: { one_line: "Careful archivist under pressure." },
+      exact_canary: "<raw>&payload-byte-canary"
+    };
+    const castRecords = [
+      {
+        ...fixtures[0]!,
+        id: "cast-a",
+        type: "CAST MEMBER",
+        displayLabel: "Opaque dossier A",
+        browseIdentity: {
+          primaryLabel: "Mara Vey",
+          secondaryLabel: "Careful archivist under pressure.",
+          availability: "available" as const
+        }
+      },
+      {
+        ...fixtures[0]!,
+        id: "cast-b",
+        type: "CAST MEMBER",
+        displayLabel: "Opaque dossier B",
+        browseIdentity: {
+          primaryLabel: "Mara Vey",
+          secondaryLabel: "Reckless gatekeeper under pressure.",
+          availability: "available" as const
+        }
+      },
+      {
+        ...fixtures[0]!,
+        id: "cast-missing",
+        type: "CAST MEMBER",
+        displayLabel: "Opaque missing dossier",
+        browseIdentity: {
+          primaryLabel: null,
+          secondaryLabel: "Unresolved identity context.",
+          availability: "missing" as const
+        }
+      },
+      {
+        ...fixtures[0]!,
+        id: "cast-archived-entity",
+        type: "CAST MEMBER",
+        displayLabel: "Opaque archived-link dossier",
+        browseIdentity: {
+          primaryLabel: "Archived Mara",
+          secondaryLabel: "Archived identity context.",
+          availability: "archived" as const
+        }
+      }
+    ];
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) => Promise.resolve({
+      ok: true,
+      records: castRecords.filter((record) => {
+        if (filters.type && record.type !== filters.type) {
+          return false;
+        }
+        const query = filters.q?.toLowerCase();
+        return query
+          ? `${record.browseIdentity.primaryLabel ?? ""} ${record.browseIdentity.secondaryLabel}`.toLowerCase().includes(query)
+          : true;
+      })
+    }));
+    vi.mocked(getRecord).mockImplementation((id: string) => Promise.resolve({
+      ok: true,
+      record: {
+        ...castRecords.find((record) => record.id === id)!,
+        payload: id === "cast-a" ? firstPayload : { entity_id: `entity-for-${id}` }
+      }
+    }));
+
+    renderBrowser("/records?type=CAST%20MEMBER");
+
+    const first = await screen.findByRole("button", { name: "Mara Vey Careful archivist under pressure." });
+    expect(screen.getByRole("button", { name: "Mara Vey Reckless gatekeeper under pressure." })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Linked ENTITY unavailable Unresolved identity context." })).toBeTruthy();
+    const archived = screen.getByRole("button", {
+      name: "Archived Mara (linked ENTITY archived) Archived identity context."
+    });
+    expect(screen.queryByText("entity-mara-a")).toBeNull();
+
+    fireEvent.click(archived);
+    const archivedDetail = screen.getByLabelText("Record detail");
+    expect(await within(archivedDetail).findByRole("heading", {
+      name: "Archived Mara (linked ENTITY archived)"
+    })).toBeTruthy();
+    expect(within(archivedDetail).getByText("Archived identity context.")).toBeTruthy();
+    expect(within(archivedDetail).getByText("The linked ENTITY is archived and unavailable for active use.")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Search"), { target: { value: "Mara Vey" } });
+    await waitFor(() => expect(vi.mocked(listRecords)).toHaveBeenLastCalledWith({
+      type: "CAST MEMBER",
+      q: "Mara Vey"
+    }));
+    expect(screen.getAllByRole("button", { name: /Mara Vey/ })).toHaveLength(2);
+
+    fireEvent.click(first);
+    const detail = screen.getByLabelText("Record detail");
+    expect(await within(detail).findByRole("heading", { name: "Mara Vey" })).toBeTruthy();
+    expect(within(detail).getByText("Careful archivist under pressure.")).toBeTruthy();
+    const disclosure = within(detail).getByText("Technical payload").closest("details");
+    expect(disclosure?.open).toBe(false);
+    fireEvent.click(within(detail).getByText("Technical payload"));
+    expect(disclosure?.open).toBe(true);
+    expect(detail.querySelector("pre")?.textContent).toBe(JSON.stringify(firstPayload, null, 2));
+  });
+
   it("renders per-type EMOTION columns from the manifest", async () => {
     mockWorkingSet();
     vi.mocked(getRecord).mockImplementation((id: string) =>
@@ -661,6 +771,112 @@ describe("RecordBrowser", () => {
     expect(screen.queryByRole("button", { name: "Create PROSE MODE" })).toBeNull();
   });
 
+  it("guides an empty project through failed and successful ENTITY save before explicit CAST MEMBER selection and save", async () => {
+    const entityId = "019b0298-5c00-7000-8000-000000000301";
+    const castId = "019b0298-5c00-7000-8000-000000000302";
+    const entityRecord: RecordDetail = {
+      id: entityId,
+      type: "ENTITY",
+      displayLabel: "Mara Vey",
+      status: null,
+      salience: null,
+      urgency: null,
+      archived: false,
+      userOrder: null,
+      createdAt: "2026-07-19T00:00:00.000Z",
+      updatedAt: "2026-07-19T00:00:00.000Z",
+      payload: {
+        id: entityId,
+        display_name: "Mara Vey",
+        entity_kind: "person",
+        roles_in_story: [],
+        short_description: "An archivist at the lower gate."
+      }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: [] });
+    vi.mocked(createRecord)
+      .mockResolvedValueOnce({ ok: false, kind: "save-failed", message: "ENTITY save failed." })
+      .mockResolvedValueOnce({ ok: true, record: entityRecord })
+      .mockImplementationOnce((request) => Promise.resolve({
+        ok: true,
+        record: {
+          id: castId,
+          type: "CAST MEMBER",
+          displayLabel: "Mara dossier",
+          status: null,
+          salience: null,
+          urgency: null,
+          archived: false,
+          userOrder: null,
+          createdAt: "2026-07-19T00:01:00.000Z",
+          updatedAt: "2026-07-19T00:01:00.000Z",
+          payload: request.payload
+        }
+      }));
+
+    renderBrowser();
+    await screen.findByText("No record selected.");
+    fireEvent.click(screen.getByRole("button", { name: "Create CAST MEMBER" }));
+
+    expect(await screen.findByRole("heading", { name: "ENTITY required before CAST MEMBER" })).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("durable character identity");
+    expect(screen.getByRole("button", { name: "Create ENTITY" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Back to records" })).toBeTruthy();
+    expect(createRecord).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Create ENTITY" }));
+    expect(await screen.findByRole("heading", { name: "ENTITY" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Back to prerequisite" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^display_name/), { target: { value: "Mara Vey" } });
+    fireEvent.change(screen.getByLabelText(/^short_description/), {
+      target: { value: "An archivist at the lower gate." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe("ENTITY save failed.");
+    expect(screen.getByLabelText<HTMLInputElement>(/^display_name/).value).toBe("Mara Vey");
+    expect(screen.getByLabelText<HTMLInputElement>(/^short_description/).value).toBe(
+      "An archivist at the lower gate."
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    expect(await screen.findByRole("heading", { name: "CAST MEMBER" })).toBeTruthy();
+    const entityPicker = screen.getByLabelText<HTMLSelectElement>(/^entity_id/);
+    expect(within(entityPicker).getByRole<HTMLOptionElement>("option", { name: "Mara Vey" }).value).toBe(entityId);
+    expect(entityPicker.value).toBe("");
+    expect(createRecord).toHaveBeenCalledTimes(2);
+
+    fireEvent.change(entityPicker, { target: { value: entityId } });
+    fillCastRequiredCore();
+    fireEvent.click(screen.getByRole("button", { name: "Create Record" }));
+
+    await waitFor(() => expect(createRecord).toHaveBeenCalledTimes(3));
+    expect(vi.mocked(createRecord).mock.calls[2]?.[0]).toMatchObject({
+      type: "CAST MEMBER",
+      payload: { entity_id: entityId }
+    });
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
+  });
+
+  it("does not let archived ENTITY records falsely satisfy the CAST MEMBER prerequisite", async () => {
+    mockWorkingSet();
+    vi.mocked(listRecords).mockResolvedValue({
+      ok: true,
+      records: [{ ...fixtures[0]!, archived: true, displayLabel: "Archived Aster" }]
+    });
+
+    renderBrowser();
+    await screen.findByRole("button", { name: "Archived Aster" });
+    fireEvent.click(screen.getByRole("button", { name: "Create CAST MEMBER" }));
+
+    expect(await screen.findByRole("heading", { name: "ENTITY required before CAST MEMBER" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Back to records" }));
+    expect(await screen.findByRole("heading", { name: "Records" })).toBeTruthy();
+    expect(createRecord).not.toHaveBeenCalled();
+  });
+
   it("opens typed editors from create actions instead of leaving inert buttons", async () => {
     mockWorkingSet();
     vi.mocked(listRecords).mockResolvedValue({ ok: true, records: fixtures });
@@ -760,3 +976,32 @@ describe("RecordBrowser", () => {
     await waitFor(() => expect(setWorkingSet).toHaveBeenLastCalledWith(["entity-1"]));
   });
 });
+
+function fillCastRequiredCore(): void {
+  for (const [label, value] of [
+    ["one_line", "A careful operator."],
+    ["public_face", "Composed and exacting."],
+    ["private_pressure", "Afraid of losing control."],
+    ["core_voice", "formal"],
+    ["rhythm_and_syntax", "measured clauses"],
+    ["register_and_diction", "precise diction"],
+    ["vocabulary_and_metaphor_pools", "weather and contracts"],
+    ["profanity_and_intensity", "low profanity"],
+    ["taboo_and_avoidance_patterns", "avoids family"],
+    ["dialogue_tactics_and_speech_functions", "deflects with procedure"],
+    ["address_terms_and_naming", "uses titles"],
+    ["silence_interruption_and_turntaking", "strategic pauses"],
+    ["under_pressure_voice", "clipped"],
+    ["suppression_or_evasion_rule", "redirects questions"],
+    ["cornered", "narrows choices"],
+    ["tempted_or_offered_power", "asks for terms"],
+    ["protecting_attachment", "deflects danger"],
+    ["physicality", "very still"],
+    ["habitual_gestures_or_presence", "folded hands"],
+    ["social_presentation", "controlled"],
+    ["default_strategy", "delay and document"],
+    ["risk_style", "calculated"]
+  ] as const) {
+    fireEvent.change(screen.getByLabelText(new RegExp(`^${label}`)), { target: { value } });
+  }
+}

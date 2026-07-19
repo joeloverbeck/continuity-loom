@@ -36,6 +36,13 @@ interface RecordMetadataResponse {
   userOrder: number | null;
   createdAt: string;
   updatedAt: string;
+  browseIdentity?: CastMemberBrowseIdentity;
+}
+
+interface CastMemberBrowseIdentity {
+  primaryLabel: string | null;
+  secondaryLabel: string;
+  availability: "available" | "archived" | "missing";
 }
 
 function noOpenProject() {
@@ -59,7 +66,35 @@ function referenceIntegrity(id: string, referrers: IncomingRecordReference[]) {
   };
 }
 
-function metadata(record: RecordRepositoryRecord): RecordMetadataResponse {
+function castMemberBrowseIdentity(
+  repo: RecordRepository,
+  record: RecordRepositoryRecord
+): CastMemberBrowseIdentity | undefined {
+  if (record.type !== "CAST MEMBER") {
+    return undefined;
+  }
+
+  const secondaryLabel = deriveFullDisplayLabel(record.type, record.payload);
+  const entityReference = repo.referencesForRecord(record.id).find((reference) => reference.refRole === "entity_id");
+  if (!entityReference) {
+    return { primaryLabel: null, secondaryLabel, availability: "missing" };
+  }
+
+  const entity = repo.getRecord(entityReference.targetId);
+  if (!entity.ok || entity.record.type !== "ENTITY") {
+    return { primaryLabel: null, secondaryLabel, availability: "missing" };
+  }
+
+  return {
+    primaryLabel: deriveFullDisplayLabel(entity.record.type, entity.record.payload),
+    secondaryLabel,
+    availability: entity.record.archived ? "archived" : "available"
+  };
+}
+
+function metadata(repo: RecordRepository, record: RecordRepositoryRecord): RecordMetadataResponse {
+  const browseIdentity = castMemberBrowseIdentity(repo, record);
+
   return {
     id: record.id,
     type: record.type,
@@ -72,17 +107,26 @@ function metadata(record: RecordRepositoryRecord): RecordMetadataResponse {
     archived: record.archived,
     userOrder: record.userOrder,
     createdAt: record.createdAt,
-    updatedAt: record.updatedAt
+    updatedAt: record.updatedAt,
+    ...(browseIdentity ? { browseIdentity } : {})
   };
 }
 
 function recordDetail(
+  repo: RecordRepository,
   record: RecordRepositoryRecord
-): RecordRepositoryRecord & { displayValues: Record<string, string | null>; fullDisplayLabel: string } {
+): RecordRepositoryRecord & {
+  displayValues: Record<string, string | null>;
+  fullDisplayLabel: string;
+  browseIdentity?: CastMemberBrowseIdentity;
+} {
+  const browseIdentity = castMemberBrowseIdentity(repo, record);
+
   return {
     ...record,
     fullDisplayLabel: deriveFullDisplayLabel(record.type, record.payload),
-    displayValues: projectDisplayValues(record.type, record.payload)
+    displayValues: projectDisplayValues(record.type, record.payload),
+    ...(browseIdentity ? { browseIdentity } : {})
   };
 }
 
@@ -94,13 +138,19 @@ function includeArchived(value: unknown): boolean {
   return value === "true" || value === "1" || value === true;
 }
 
-function textMatches(record: RecordRepositoryRecord, q: string | undefined): boolean {
+function textMatches(repo: RecordRepository, record: RecordRepositoryRecord, q: string | undefined): boolean {
   if (!q) {
     return true;
   }
 
   const needle = q.toLowerCase();
-  return record.displayLabel.toLowerCase().includes(needle) || JSON.stringify(record.payload).toLowerCase().includes(needle);
+  const browseIdentity = castMemberBrowseIdentity(repo, record);
+  return (
+    record.displayLabel.toLowerCase().includes(needle) ||
+    JSON.stringify(record.payload).toLowerCase().includes(needle) ||
+    browseIdentity?.primaryLabel?.toLowerCase().includes(needle) === true ||
+    browseIdentity?.secondaryLabel.toLowerCase().includes(needle) === true
+  );
 }
 
 function referenceMatches(
@@ -151,9 +201,9 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
       .listRecords(listOptions)
       .flatMap((result) => (result.ok ? [result.record] : []))
       .filter((record) => (query.status ? record.status === query.status : true))
-      .filter((record) => textMatches(record, query.q))
+      .filter((record) => textMatches(repo, record, query.q))
       .filter((record) => referenceMatches(repo, record, query.refRole, query.targetId))
-      .map(metadata);
+      .map((record) => metadata(repo, record));
 
     return { ok: true, records };
   });
@@ -189,7 +239,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
       return reply.code(result.kind === "not-found" ? 404 : 422).send(result);
     }
 
-    return { ok: true, record: recordDetail(result.record) };
+    return { ok: true, record: recordDetail(repo, result.record) };
   });
 
   app.post("/api/records", (request, reply) => {
@@ -219,7 +269,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
       const record = repo.createRecord({
         ...input
       });
-      return reply.code(201).send({ ok: true, record: recordDetail(record) });
+      return reply.code(201).send({ ok: true, record: recordDetail(repo, record) });
     } catch (error) {
       if (error instanceof ZodError) {
         return reply.code(400).send(malformedPayload(error));
@@ -253,7 +303,7 @@ export function registerRecordRoutes(app: FastifyInstance, manager: ProjectStore
         ...(body.userOrder !== undefined ? { userOrder: body.userOrder } : {})
       };
       const record = repo.updateRecord(input);
-      return { ok: true, record: recordDetail(record) };
+      return { ok: true, record: recordDetail(repo, record) };
     } catch (error) {
       if (error instanceof ZodError) {
         return reply.code(400).send(malformedPayload(error));

@@ -232,6 +232,38 @@ describe("segment reconciliation routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("returns an all-empty result as valid scratch with one provider call and zero project writes", async () => {
+    process.env.OPENROUTER_API_KEY = apiKey;
+    const fastify = app();
+    await prepareProject(fastify);
+    const before = await projectSurfaces(fastify);
+    const compile = await compileReconciliation(fastify);
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: emptyReconciliationOutput(compile) }
+    });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/analyze",
+      payload: { expectedPromptFingerprint: compile.metadata.fingerprint }
+    });
+    const after = await projectSurfaces(fastify);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      proposals: {
+        briefProposals: [],
+        recordChangeProposals: [],
+        recordCreationProposals: []
+      },
+      metadata: { fingerprint: compile.metadata.fingerprint }
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(after).toEqual(before);
+  });
+
   it("returns segment-reconciliation-prompt-too-large before transport", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
@@ -425,20 +457,23 @@ async function compileReconciliation(fastify: FastifyApp): Promise<{
 }
 
 async function projectSurfaces(fastify: FastifyApp): Promise<unknown> {
-  const [records, workingSet, acceptedSegments] = await Promise.all([
+  const [records, workingSet, acceptedSegments, durableChangeReminder] = await Promise.all([
     fastify.inject({ method: "GET", url: "/api/records" }),
     fastify.inject({ method: "GET", url: "/api/working-set" }),
-    fastify.inject({ method: "GET", url: "/api/accepted-segments" })
+    fastify.inject({ method: "GET", url: "/api/accepted-segments" }),
+    fastify.inject({ method: "GET", url: "/api/durable-change-reminder" })
   ]);
 
   expect(records.statusCode).toBe(200);
   expect(workingSet.statusCode).toBe(200);
   expect(acceptedSegments.statusCode).toBe(200);
+  expect(durableChangeReminder.statusCode).toBe(200);
 
   return {
     records: records.json(),
     workingSet: workingSet.json(),
-    acceptedSegments: acceptedSegments.json()
+    acceptedSegments: acceptedSegments.json(),
+    durableChangeReminder: durableChangeReminder.json()
   };
 }
 
@@ -466,6 +501,25 @@ function validReconciliationOutput(compile: {
         rationale: "The accepted segment gives the next handoff a concrete visible state."
       }
     ],
+    record_change_proposals: [],
+    record_creation_proposals: []
+  });
+}
+
+function emptyReconciliationOutput(compile: {
+  metadata: { fingerprint: string };
+  source: { acceptedSegmentId: string; acceptedSegmentSequence: number };
+}): string {
+  return JSON.stringify({
+    contract: "segment_reconciliation.v1",
+    source: {
+      profile: "segment-reconciliation",
+      accepted_segment_id: compile.source.acceptedSegmentId,
+      accepted_segment_sequence: compile.source.acceptedSegmentSequence,
+      record_scope: "active_working_set",
+      prompt_fingerprint: compile.metadata.fingerprint
+    },
+    brief_proposals: [],
     record_change_proposals: [],
     record_creation_proposals: []
   });

@@ -35,6 +35,22 @@ describe("segment reconciliation output parser", () => {
     }
   });
 
+  it("accepts a structurally valid all-empty proposal result", () => {
+    const parsed = parseSegmentReconciliationOutput(JSON.stringify({
+      ...validOutput(),
+      brief_proposals: [],
+      record_change_proposals: [],
+      record_creation_proposals: []
+    }), context());
+
+    expect(parsed.status).toBe("valid");
+    if (parsed.status === "valid") {
+      expect(parsed.output.briefProposals).toEqual([]);
+      expect(parsed.output.recordChangeProposals).toEqual([]);
+      expect(parsed.output.recordCreationProposals).toEqual([]);
+    }
+  });
+
   it.each([
     ["not-pure-json", "before {\"x\":true}", "not-pure-json"],
     ["schema-mismatch", JSON.stringify({ ...validOutput(), extra: true }), "schema-mismatch"],

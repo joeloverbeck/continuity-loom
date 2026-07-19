@@ -73,10 +73,9 @@ describe("story notes isolation capstone", () => {
       await putSettings(fastify);
       const notesSurface = await createSentinelNotesWorkspace(fastify);
       const allowedNotesJson = JSON.stringify(notesSurface);
-      expect(allowedNotesJson).toContain(sentinels.scratchBody);
-      expect(allowedNotesJson).toContain(sentinels.prepBody);
-      expect(allowedNotesJson).toContain(sentinels.clipWhole);
-      expect(allowedNotesJson).toContain(sentinels.clipExcerpt);
+      for (const sentinel of Object.values(sentinels)) {
+        expect(allowedNotesJson).toContain(sentinel);
+      }
 
       const validation = await fastify.inject({ method: "POST", url: "/api/validate" });
       const readiness = await fastify.inject({ method: "POST", url: "/api/readiness" });
@@ -279,7 +278,15 @@ async function createSentinelNotesWorkspace(fastify: ReturnType<typeof createSer
   const clips = await fastify.inject({ method: "GET", url: `/api/notes/${prepNote.note.id}/clips` });
   expect(clips.statusCode).toBe(200);
 
-  return [scratch.json(), prep.json(), capture.json(), list.json(), clips.json()];
+  return [
+    scratch.json(),
+    prep.json(),
+    source.json(),
+    capture.json(),
+    edited.json(),
+    list.json(),
+    clips.json()
+  ];
 }
 
 async function inertProjectSurfaces(fastify: ReturnType<typeof createServer>, databasePath: string): Promise<unknown> {

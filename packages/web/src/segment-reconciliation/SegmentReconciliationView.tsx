@@ -125,6 +125,7 @@ export function SegmentReconciliationView(): React.JSX.Element {
       return;
     }
 
+    setSendConfirmed(false);
     setScratchState({ status: "sending" });
 
     try {
@@ -409,9 +410,30 @@ function ProposalGroups({
     { title: "Existing Records", items: proposals.recordChangeProposals.map((proposal) => ({ kind: "record-change", proposal })) },
     { title: "New Records", items: proposals.recordCreationProposals.map((proposal) => ({ kind: "record-creation", proposal })) }
   ];
+  const allGroupsEmpty = groups.every((group) => group.items.length === 0);
 
   return (
     <>
+      {allGroupsEmpty ? (
+        <section
+          className="status statusWarning reconciliationEmptyWarning"
+          role="alert"
+          aria-labelledby="reconciliation-empty-warning-title"
+        >
+          <h4 id="reconciliation-empty-warning-title">Unverified no-change result</h4>
+          <p>
+            No proposals were returned, but Continuity Loom cannot verify that the analysis found every durable change.
+            Please manually compare the accepted segment with the Generation Brief and existing records.
+          </p>
+          <p>
+            Assistance remains advisory: accepted prose is evidence, not canon. This result writes no project data and
+            does not acknowledge the durable-change reminder.
+          </p>
+          <p>
+            To retry, confirm the one-time send again and choose Analyze with OpenRouter. No retry happens automatically.
+          </p>
+        </section>
+      ) : null}
       <div className="previewToolbar">
         <button type="button" className="secondaryButton" onClick={() => onCopy(JSON.stringify(proposals, null, 2))}>Copy proposals</button>
       </div>

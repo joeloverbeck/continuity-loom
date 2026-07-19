@@ -56,6 +56,11 @@ describe("SegmentReconciliationView", () => {
     expect(screen.getByTestId("prompt-body").textContent).toContain(
       'catalog "segment_reconciliation.schema_catalog.v1"'
     );
+    fireEvent.change(screen.getByLabelText("Search within prompt"), { target: { value: "CATALOG" } });
+    const matchNavigation = screen.getByLabelText("Prompt match navigation");
+    expect(matchNavigation.previousElementSibling?.textContent).toContain("Current match 1 of 2");
+    expect(screen.getByRole("button", { name: "Previous" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Next" })).toBeTruthy();
     const metadata = within(screen.getByLabelText("Prompt metadata"));
     expect(metadata.getByText("1.10.0")).toBeTruthy();
     expect(metadata.getByText("1.12.0")).toBeTruthy();
@@ -92,6 +97,76 @@ describe("SegmentReconciliationView", () => {
     for (const forbidden of ["Apply", "Prefill", "Create", "Deactivate", "Archive", "Merge", "Remove", "Add to working set", "Use as prose"]) {
       expect(screen.queryByRole("button", { name: forbidden })).toBeNull();
     }
+  });
+
+  it("labels an all-empty result unverified and replaces it only after an explicit confirmed retry", async () => {
+    vi.mocked(segmentReconciliationAnalyze)
+      .mockResolvedValueOnce(emptyAnalyzeResponse("fingerprint-a"))
+      .mockResolvedValueOnce(analyzeResponse("fingerprint-a"));
+    renderView();
+
+    const promptBody = await screen.findByTestId("prompt-body");
+    const promptBefore = promptBody.textContent;
+    const fingerprintBefore = within(screen.getByLabelText("Prompt metadata")).getByText("fingerprint-a").textContent;
+    fireEvent.click(screen.getByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+
+    const warning = await screen.findByRole("alert", { name: "Unverified no-change result" });
+    expect(warning.textContent).toContain("manually compare the accepted segment");
+    expect(warning.textContent).toContain("Assistance remains advisory");
+    expect(warning.textContent).toContain("accepted prose is evidence, not canon");
+    expect(warning.textContent).toContain("does not acknowledge the durable-change reminder");
+    for (const heading of ["Generation Brief", "Existing Records", "New Records"]) {
+      const groupHeading = screen.getByRole("heading", { name: heading });
+      expect(warning.compareDocumentPosition(groupHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(screen.getAllByText("No proposals in this group.")).toHaveLength(3);
+    expect(segmentReconciliationAnalyze).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Analyze with OpenRouter" }).disabled).toBe(true);
+    expect(promptBody.textContent).toBe(promptBefore);
+    expect(within(screen.getByLabelText("Prompt metadata")).getByText("fingerprint-a").textContent).toBe(fingerprintBefore);
+
+    fireEvent.click(screen.getByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+
+    expect(await screen.findAllByText("Suggestion only")).toHaveLength(3);
+    expect(screen.queryByRole("alert", { name: "Unverified no-change result" })).toBeNull();
+    expect(segmentReconciliationAnalyze).toHaveBeenCalledTimes(2);
+  });
+
+  it("clears the unverified warning as session scratch without persisted residue", async () => {
+    vi.mocked(segmentReconciliationAnalyze).mockResolvedValue(emptyAnalyzeResponse("fingerprint-a"));
+    renderView();
+
+    fireEvent.click(await screen.findByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+    expect(await screen.findByRole("alert", { name: "Unverified no-change result" })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.queryByRole("alert", { name: "Unverified no-change result" })).toBeNull();
+    expect(screen.getByText("No proposals yet.")).toBeTruthy();
+    expect(Object.keys(sessionStorage).some((key) => key.includes("unverified"))).toBe(false);
+    expect(segmentReconciliationAnalyze).toHaveBeenCalledTimes(1);
+  });
+
+  it("distinguishes an in-flight analysis from the eventual all-empty result", async () => {
+    let resolveAnalysis: ((response: SegmentReconciliationAnalyzeResponse) => void) | undefined;
+    vi.mocked(segmentReconciliationAnalyze).mockImplementation(() => new Promise((resolve) => {
+      resolveAnalysis = resolve;
+    }));
+    renderView();
+
+    fireEvent.click(await screen.findByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+
+    expect(await screen.findByText("Requesting segment reconciliation analysis...")).toBeTruthy();
+    expect(screen.queryByRole("alert", { name: "Unverified no-change result" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Generation Brief" })).toBeNull();
+
+    resolveAnalysis?.(emptyAnalyzeResponse("fingerprint-a"));
+
+    expect(await screen.findByRole("alert", { name: "Unverified no-change result" })).toBeTruthy();
+    expect(screen.queryByText("Requesting segment reconciliation analysis...")).toBeNull();
   });
 
   it("quarantines malformed output and clears scratch without parsed cards", async () => {
@@ -252,6 +327,26 @@ function analyzeResponse(fingerprint: string): SegmentReconciliationAnalyzeRespo
           rationale: "The object is now materially relevant."
         }
       ]
+    },
+    metadata: analyzeMetadata(fingerprint)
+  };
+}
+
+function emptyAnalyzeResponse(fingerprint: string): SegmentReconciliationAnalyzeResponse {
+  return {
+    ok: true,
+    proposals: {
+      contract: "segment_reconciliation.v1",
+      source: {
+        profile: "segment-reconciliation",
+        accepted_segment_id: "1",
+        accepted_segment_sequence: 1,
+        record_scope: "active_working_set",
+        prompt_fingerprint: fingerprint
+      },
+      briefProposals: [],
+      recordChangeProposals: [],
+      recordCreationProposals: []
     },
     metadata: analyzeMetadata(fingerprint)
   };

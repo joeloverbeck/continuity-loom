@@ -92,7 +92,7 @@ function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
 
   return (
     <main className="appFrame">
-      <aside className="sidebar" aria-label="Primary">
+      <aside className="sidebar" aria-label="Primary navigation" tabIndex={0}>
         <RuntimePanel loadState={loadState} />
         <nav className="primaryNav">
           {primaryRoutes.map((route) => {

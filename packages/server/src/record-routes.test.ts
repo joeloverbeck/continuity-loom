@@ -9,6 +9,7 @@ const apps: ReturnType<typeof createServer>[] = [];
 const idA = "019b0298-5c00-7000-8000-000000000001";
 const idB = "019b0298-5c00-7000-8000-000000000002";
 const idC = "019b0298-5c00-7000-8000-000000000003";
+const idD = "019b0298-5c00-7000-8000-000000000004";
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const factStatusKey = "sta" + "tus";
 
@@ -81,11 +82,11 @@ function emotionPayload(id: string, holder: string, intensity = "high") {
   };
 }
 
-function castMemberPayload(entityId: string) {
+function castMemberPayload(entityId: string, oneLine = "A careful operator.") {
   return {
     entity_id: entityId,
     identity: {
-      one_line: "A careful operator.",
+      one_line: oneLine,
       public_face: "Composed",
       private_pressure: "Fearful"
     },
@@ -213,6 +214,152 @@ describe("record routes", () => {
       ok: true,
       record: { type: "CAST MEMBER", payload: { entity_id: idB } }
     });
+  });
+
+  it("projects linked ENTITY names for CAST MEMBER browse without changing stored records", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    const completeName = "Mara Vey of the Lantern Archive, Keeper of the Lower Gate";
+
+    for (const [id, storedLabel] of [[idA, "Mara Vey… A"], [idB, "Mara Vey… B"]] as const) {
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/records",
+        payload: { type: "ENTITY", displayLabel: storedLabel, payload: entityPayload(id, completeName) }
+      });
+      expect(response.statusCode).toBe(201);
+    }
+
+    const firstCast = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: {
+        type: "CAST MEMBER",
+        displayLabel: "Opaque cast dossier A",
+        payload: castMemberPayload(idA, "Careful archivist under pressure.")
+      }
+    });
+    const secondCast = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: {
+        type: "CAST MEMBER",
+        displayLabel: "Opaque cast dossier B",
+        payload: castMemberPayload(idB, "Reckless gatekeeper under pressure.")
+      }
+    });
+    expect(firstCast.statusCode).toBe(201);
+    expect(secondCast.statusCode).toBe(201);
+    const firstRecord = firstCast.json().record as {
+      id: string;
+      payload: unknown;
+      createdAt: string;
+      updatedAt: string;
+    };
+
+    const list = await fastify.inject({ method: "GET", url: "/api/records?type=CAST%20MEMBER" });
+    expect(list.statusCode).toBe(200);
+    expect(list.json().records).toHaveLength(2);
+    expect(list.json().records).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        browseIdentity: {
+          primaryLabel: completeName,
+          secondaryLabel: "Careful archivist under pressure.",
+          availability: "available"
+        }
+      }),
+      expect.objectContaining({
+        browseIdentity: {
+          primaryLabel: completeName,
+          secondaryLabel: "Reckless gatekeeper under pressure.",
+          availability: "available"
+        }
+      })
+    ]));
+
+    const byHumanName = await fastify.inject({
+      method: "GET",
+      url: `/api/records?type=CAST%20MEMBER&q=${encodeURIComponent("Lantern Archive")}`
+    });
+    expect(byHumanName.statusCode).toBe(200);
+    expect(byHumanName.json().records).toHaveLength(2);
+
+    const detail = await fastify.inject({ method: "GET", url: `/api/records/${firstRecord.id}` });
+    expect(detail.json().record.browseIdentity).toEqual({
+      primaryLabel: completeName,
+      secondaryLabel: "Careful archivist under pressure.",
+      availability: "available"
+    });
+    expect(detail.json().record).toMatchObject({
+      id: firstRecord.id,
+      payload: firstRecord.payload,
+      createdAt: firstRecord.createdAt,
+      updatedAt: firstRecord.updatedAt
+    });
+  });
+
+  it("keeps archived and missing CAST MEMBER links visible through human-readable browse fallbacks", async () => {
+    const fastify = app();
+    await openProject(fastify);
+
+    for (const [id, name] of [[idC, "Archived Mara"], [idD, "Missing Mara"]] as const) {
+      await fastify.inject({
+        method: "POST",
+        url: "/api/records",
+        payload: { type: "ENTITY", displayLabel: name, payload: entityPayload(id, name) }
+      });
+    }
+
+    const archivedCastResponse = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: {
+        type: "CAST MEMBER",
+        displayLabel: "Archived linked cast",
+        payload: castMemberPayload(idC, "Archived linked context.")
+      }
+    });
+    const missingCastResponse = await fastify.inject({
+      method: "POST",
+      url: "/api/records",
+      payload: {
+        type: "CAST MEMBER",
+        displayLabel: "Missing linked cast",
+        payload: castMemberPayload(idD, "Missing linked context.")
+      }
+    });
+    const archivedCastId = archivedCastResponse.json().record.id as string;
+    const missingCastId = missingCastResponse.json().record.id as string;
+
+    expect((await fastify.inject({ method: "POST", url: `/api/records/${archivedCastId}/archive` })).statusCode).toBe(200);
+    expect((await fastify.inject({ method: "POST", url: `/api/records/${idC}/archive` })).statusCode).toBe(200);
+    expect((await fastify.inject({ method: "POST", url: `/api/records/${missingCastId}/archive` })).statusCode).toBe(200);
+    expect((await fastify.inject({ method: "DELETE", url: `/api/records/${idD}` })).statusCode).toBe(200);
+
+    const list = await fastify.inject({
+      method: "GET",
+      url: "/api/records?type=CAST%20MEMBER&includeArchived=true"
+    });
+    expect(list.statusCode).toBe(200);
+    expect(list.json().records).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: archivedCastId,
+        browseIdentity: {
+          primaryLabel: "Archived Mara",
+          secondaryLabel: "Archived linked context.",
+          availability: "archived"
+        }
+      }),
+      expect.objectContaining({
+        id: missingCastId,
+        browseIdentity: {
+          primaryLabel: null,
+          secondaryLabel: "Missing linked context.",
+          availability: "missing"
+        }
+      })
+    ]));
+    expect(JSON.stringify(list.json().records.map((record: { browseIdentity?: unknown }) => record.browseIdentity))).not.toContain(idD);
   });
 
   it("emits manifest display values on list and detail projections", async () => {

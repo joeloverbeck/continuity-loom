@@ -125,6 +125,11 @@ describe("PromptPreviewView", () => {
     fireEvent.change(screen.getByLabelText("Search within prompt"), { target: { value: "prompt" } });
     expect(await screen.findByText("2 matches")).toBeTruthy();
     expect(screen.getAllByText("prompt")).toHaveLength(2);
+    const nextMatch = screen.getByRole("button", { name: "Next" });
+    fireEvent.click(nextMatch);
+    const matchNavigation = screen.getByLabelText("Prompt match navigation");
+    expect(matchNavigation.previousElementSibling?.textContent).toContain("Current match 2 of 2");
+    expect(screen.getByTestId("prompt-body").querySelector("mark[aria-current='true']")?.textContent).toBe("prompt");
 
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(screen.queryByTestId("prompt-body")).toBeNull();

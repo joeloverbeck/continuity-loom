@@ -80,6 +80,76 @@ interface PovOption {
   disabled?: boolean;
 }
 
+interface UnavailableCastSelection {
+  optionLabel: string;
+  explanation: string;
+}
+
+function recognizableCastMemberLabel(record: RecordSummary): string | null {
+  const identity = record.browseIdentity;
+  if (!identity) {
+    return null;
+  }
+
+  return identity.primaryLabel
+    ? `${identity.primaryLabel} — ${identity.secondaryLabel}`
+    : identity.secondaryLabel || null;
+}
+
+function castMemberOptionLabel(record: RecordSummary): string | null {
+  const identity = record.browseIdentity;
+  if (
+    record.type !== "CAST MEMBER" ||
+    record.archived ||
+    !identity ||
+    identity.availability !== "available" ||
+    !identity.primaryLabel
+  ) {
+    return null;
+  }
+
+  return `${identity.primaryLabel} — ${identity.secondaryLabel}`;
+}
+
+function unavailableCastSelection(
+  selectedId: string,
+  castMembers: readonly RecordSummary[]
+): UnavailableCastSelection | null {
+  if (!selectedId) {
+    return null;
+  }
+
+  const selected = castMembers.find((record) => record.id === selectedId);
+  if (!selected) {
+    return {
+      optionLabel: "Unavailable CAST MEMBER (saved reference missing)",
+      explanation: "The saved CAST MEMBER is no longer available. Choose another or clear the selection."
+    };
+  }
+
+  if (selected.archived || selected.browseIdentity?.availability === "archived") {
+    const label = recognizableCastMemberLabel(selected);
+    return {
+      optionLabel: label
+        ? `${label} (archived and unavailable)`
+        : "Unavailable CAST MEMBER (archived)",
+      explanation: "The saved CAST MEMBER is archived and unavailable. Choose another or clear the selection."
+    };
+  }
+
+  if (!castMemberOptionLabel(selected)) {
+    const label = recognizableCastMemberLabel(selected);
+    return {
+      optionLabel: label
+        ? `${label} (linked ENTITY missing)`
+        : "Unavailable CAST MEMBER (linked ENTITY missing)",
+      explanation: "The saved CAST MEMBER's linked ENTITY is missing or unresolved. Choose another or clear the selection."
+    };
+  }
+
+  return null;
+}
+
 function formatPovLabel(
   value: string,
   labels: ReadonlyMap<string, string>,
@@ -164,6 +234,7 @@ export function GenerationBriefView(): React.JSX.Element {
   const [briefGenerationContext, setBriefGenerationContext] = useState<GenerationContextCoherence | null>(null);
   const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
   const [povEntities, setPovEntities] = useState<RecordSummary[]>([]);
+  const [castMembers, setCastMembers] = useState<RecordSummary[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [shapeIssues, setShapeIssues] = useState<string[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -173,8 +244,13 @@ export function GenerationBriefView(): React.JSX.Element {
   useEffect(() => {
     let active = true;
 
-    void Promise.all([getGenerationBrief(), listStoryConfig(), listRecords({ type: "ENTITY" })])
-      .then(([briefResponse, configResponse, entityResponse]) => {
+    void Promise.all([
+      getGenerationBrief(),
+      listStoryConfig(),
+      listRecords({ type: "ENTITY" }),
+      listRecords({ type: "CAST MEMBER", includeArchived: true })
+    ])
+      .then(([briefResponse, configResponse, entityResponse, castResponse]) => {
         if (!active) {
           return;
         }
@@ -194,7 +270,17 @@ export function GenerationBriefView(): React.JSX.Element {
         }
 
         if (entityResponse.ok) {
-          setPovEntities([...entityResponse.records].sort((left, right) => left.displayLabel.localeCompare(right.displayLabel)));
+          setPovEntities(
+            entityResponse.records
+              .filter((record) => record.type === "ENTITY")
+              .sort((left, right) => left.displayLabel.localeCompare(right.displayLabel))
+          );
+        }
+
+        if (castResponse.ok) {
+          setCastMembers(castResponse.records.filter((record) => record.type === "CAST MEMBER"));
+        } else {
+          setNotice(castResponse.message);
         }
       })
       .catch(() => {
@@ -283,6 +369,13 @@ export function GenerationBriefView(): React.JSX.Element {
     current_must_preserve: [],
     current_must_avoid: []
   };
+  const eligibleCastMembers = castMembers
+    .flatMap((record) => {
+      const label = castMemberOptionLabel(record);
+      return label ? [{ record, label }] : [];
+    })
+    .sort((left, right) => left.label.localeCompare(right.label) || left.record.id.localeCompare(right.record.id));
+  const unavailableVoiceSelection = unavailableCastSelection(currentVoicePressure.cast_member_id, castMembers);
   const voiceOverride = session.cast_voice_overrides?.[0] ?? {
     cast_member_id: currentVoicePressure.cast_member_id,
     reason: "none",
@@ -722,14 +815,30 @@ export function GenerationBriefView(): React.JSX.Element {
           description="Temporary voice, dialogue, narration, and silence pressure for this generation only."
         >
           <BriefFieldRow path="current_cast_voice_pressure[].cast_member_id" schemaLabel="cast_member_id" generationContext={generationContext}>
-            <input
+            <select
               name="generationSession.current_cast_voice_pressure.0.cast_member_id"
               value={currentVoicePressure.cast_member_id}
               onChange={(event) =>
                 updateSurface("current_cast_voice_pressure", [{ ...currentVoicePressure, cast_member_id: event.target.value }])
               }
-            />
+            >
+              <option value="">No CAST MEMBER selected</option>
+              {unavailableVoiceSelection ? (
+                <option value={currentVoicePressure.cast_member_id} disabled>
+                  {unavailableVoiceSelection.optionLabel}
+                </option>
+              ) : null}
+              {eligibleCastMembers.map(({ record, label }) => (
+                <option key={record.id} value={record.id}>{label}</option>
+              ))}
+            </select>
           </BriefFieldRow>
+          {unavailableVoiceSelection ? (
+            <p className="status statusWarning">{unavailableVoiceSelection.explanation}</p>
+          ) : null}
+          {!currentVoicePressure.cast_member_id && eligibleCastMembers.length === 0 ? (
+            <p className="status statusWarning">No eligible CAST MEMBER records are available.</p>
+          ) : null}
           <BriefFieldRow
             path="current_cast_voice_pressure[].current_voice_pressure"
             schemaLabel="current_voice_pressure"

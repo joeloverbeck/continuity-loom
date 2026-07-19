@@ -7,7 +7,14 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 
 import { GenerationBriefView } from "./GenerationBriefView.js";
 import { BriefFieldRow } from "./BriefFieldRow.js";
-import { getGenerationBrief, listRecords, listStoryConfig, readiness, setGenerationBrief } from "../api.js";
+import {
+  getGenerationBrief,
+  listRecords,
+  listStoryConfig,
+  readiness,
+  setGenerationBrief,
+  type RecordSummary
+} from "../api.js";
 
 vi.mock("../api.js", () => ({
   getGenerationBrief: vi.fn(),
@@ -41,7 +48,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
 
 afterAll(() => {
@@ -57,6 +64,177 @@ function renderView(): void {
 }
 
 describe("GenerationBriefView", () => {
+  it("selects and reopens current voice pressure by complete CAST MEMBER human labels while storing only the ID", async () => {
+    const firstCastId = "019b0298-5c00-7000-8000-000000000201";
+    const secondCastId = "019b0298-5c00-7000-8000-000000000202";
+    const completeName = "Mara Vey of the Lantern Archive, Keeper of the Lower Gate";
+    const firstPressure = voicePressure(firstCastId);
+    const secondPressure = voicePressure(secondCastId);
+    vi.mocked(getGenerationBrief)
+      .mockResolvedValueOnce({
+        ok: true,
+        session: { current_cast_voice_pressure: [firstPressure] },
+        generationContext: briefGenerationContext
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        session: { current_cast_voice_pressure: [secondPressure] },
+        generationContext: briefGenerationContext
+      });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    mockBriefRecords([], [
+      castSummary(firstCastId, completeName, "Careful archivist under pressure."),
+      castSummary(secondCastId, completeName, "Reckless gatekeeper under pressure.")
+    ]);
+    vi.mocked(setGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: { current_cast_voice_pressure: [secondPressure] }
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const picker = await screen.findByLabelText<HTMLSelectElement>(/cast_member_id/);
+    expect(picker.tagName).toBe("SELECT");
+    expect(picker.value).toBe(firstCastId);
+    expect(within(picker).getByRole("option", {
+      name: `${completeName} — Careful archivist under pressure.`
+    })).toBeTruthy();
+    expect(within(picker).getByRole("option", {
+      name: `${completeName} — Reckless gatekeeper under pressure.`
+    })).toBeTruthy();
+    expect(screen.queryByText(firstCastId)).toBeNull();
+
+    fireEvent.change(picker, { target: { value: secondCastId } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    const payload = vi.mocked(setGenerationBrief).mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(payload).toMatchObject({
+      current_cast_voice_pressure: [{ cast_member_id: secondCastId }]
+    });
+    expect(JSON.stringify(payload)).not.toContain(completeName);
+    expect(await screen.findByText("Draft saved.")).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>(/cast_member_id/).value).toBe(secondCastId);
+  });
+
+  it("supports a blank or cleared CAST MEMBER picker and explains when none are eligible", async () => {
+    const castId = "019b0298-5c00-7000-8000-000000000201";
+    vi.mocked(getGenerationBrief)
+      .mockResolvedValueOnce({
+        ok: true,
+        session: { current_cast_voice_pressure: [voicePressure(castId)] },
+        generationContext: briefGenerationContext
+      })
+      .mockResolvedValueOnce({ ok: true, session: {}, generationContext: briefGenerationContext });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    mockBriefRecords([], [castSummary(castId, "Mara Vey", "Careful archivist.")]);
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const picker = await screen.findByLabelText<HTMLSelectElement>(/cast_member_id/);
+    fireEvent.change(picker, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    expect(vi.mocked(setGenerationBrief).mock.calls[0]?.[0]).toMatchObject({ current_cast_voice_pressure: [] });
+    expect(await screen.findByText("Draft saved.")).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>(/cast_member_id/).value).toBe("");
+
+    cleanup();
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
+    mockBriefRecords([], []);
+    renderView();
+
+    const blankPicker = await screen.findByLabelText<HTMLSelectElement>(/cast_member_id/);
+    expect(blankPicker.value).toBe("");
+    expect(within(blankPicker).getByRole("option", { name: "No CAST MEMBER selected" })).toBeTruthy();
+    expect(screen.getByText("No eligible CAST MEMBER records are available.")).toBeTruthy();
+    expect(screen.queryByRole("textbox", { name: /cast_member_id/ })).toBeNull();
+  });
+
+  it.each([
+    {
+      label: "archived",
+      selectedId: "019b0298-5c00-7000-8000-000000000203",
+      selectedRecord: castSummary(
+        "019b0298-5c00-7000-8000-000000000203",
+        "Archived Mara",
+        "Archived context.",
+        { archived: true }
+      ),
+      optionName: "Archived Mara — Archived context. (archived and unavailable)",
+      explanation: "The saved CAST MEMBER is archived and unavailable. Choose another or clear the selection."
+    },
+    {
+      label: "missing linked ENTITY",
+      selectedId: "019b0298-5c00-7000-8000-000000000204",
+      selectedRecord: castSummary(
+        "019b0298-5c00-7000-8000-000000000204",
+        null,
+        "Unresolved identity context.",
+        { availability: "missing" }
+      ),
+      optionName: "Unresolved identity context. (linked ENTITY missing)",
+      explanation: "The saved CAST MEMBER's linked ENTITY is missing or unresolved. Choose another or clear the selection."
+    },
+    {
+      label: "stale saved reference",
+      selectedId: "019b0298-5c00-7000-8000-000000000205",
+      selectedRecord: null,
+      optionName: "Unavailable CAST MEMBER (saved reference missing)",
+      explanation: "The saved CAST MEMBER is no longer available. Choose another or clear the selection."
+    }
+  ])("retains an explanatory $label selection until the author deliberately replaces it", async ({
+    selectedId,
+    selectedRecord,
+    optionName,
+    explanation
+  }) => {
+    const eligibleId = "019b0298-5c00-7000-8000-000000000206";
+    vi.mocked(getGenerationBrief)
+      .mockResolvedValueOnce({
+        ok: true,
+        session: { current_cast_voice_pressure: [voicePressure(selectedId)] },
+        generationContext: briefGenerationContext
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        session: { current_cast_voice_pressure: [voicePressure(eligibleId)] },
+        generationContext: briefGenerationContext
+      });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    mockBriefRecords([], [
+      ...(selectedRecord ? [selectedRecord] : []),
+      castSummary(eligibleId, "Available Mara", "Available context.")
+    ]);
+    vi.mocked(setGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: { current_cast_voice_pressure: [voicePressure(eligibleId)] }
+    });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+
+    renderView();
+
+    const picker = await screen.findByLabelText<HTMLSelectElement>(/cast_member_id/);
+    expect(picker.value).toBe(selectedId);
+    expect(within(picker).getByRole("option", { name: optionName })).toBeTruthy();
+    expect(screen.getByText(explanation)).toBeTruthy();
+    expect(screen.queryByText(selectedId)).toBeNull();
+
+    fireEvent.change(picker, { target: { value: eligibleId } });
+    expect(screen.queryByText(explanation)).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalled());
+    expect(vi.mocked(setGenerationBrief).mock.calls[0]?.[0]).toMatchObject({
+      current_cast_voice_pressure: [{ cast_member_id: eligibleId }]
+    });
+    expect(await screen.findByText("Draft saved.")).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>(/cast_member_id/).value).toBe(eligibleId);
+  });
+
   it("shows saved and required generation context and keeps explicit repair saveable", async () => {
     vi.mocked(getGenerationBrief).mockResolvedValue({
       ok: true,
@@ -395,6 +573,7 @@ describe("GenerationBriefView", () => {
 
   it("edits all eight surfaces and persists them through the brief client", async () => {
     const jonId = "019ea213-8f7e-73dc-8e5b-67ba95ca94fe";
+    const castId = "019b0298-5c00-7000-8000-000000000201";
     vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
     vi.mocked(listStoryConfig).mockResolvedValue({
       ok: true,
@@ -402,10 +581,10 @@ describe("GenerationBriefView", () => {
         "PROSE MODE": { pov_character: "omniscient", person: "third", tense: "past" }
       }
     });
-    vi.mocked(listRecords).mockResolvedValue({
-      ok: true,
-      records: [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })]
-    });
+    mockBriefRecords(
+      [recordSummary({ id: jonId, displayLabel: "Jon Ureña" })],
+      [castSummary(castId, "Mara Vey", "Careful archivist.")]
+    );
     vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
     vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
 
@@ -441,7 +620,7 @@ describe("GenerationBriefView", () => {
     fireEvent.change(screen.getByLabelText(/must_render/), { target: { value: "The lock opens." } });
     fireEvent.change(screen.getByLabelText(/may_render_if_naturally_caused/), { target: { value: "The hinge complains." } });
     fireEvent.change(screen.getByLabelText(/do_not_force/), { target: { value: "Do not leave the dock." } });
-    fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: "019b0298-5c00-7000-8000-000000000001" } });
+    fireEvent.change(screen.getByLabelText(/cast_member_id/), { target: { value: castId } });
     fireEvent.change(screen.getByLabelText(/current_voice_pressure/), { target: { value: "clipped and wary" } });
     const overrideReason = screen.getByRole("textbox", { name: /Reason \(not sent to the writer\)/ });
     expect(overrideReason).toBeTruthy();
@@ -888,4 +1067,49 @@ function recordSummary(input: { id: string; displayLabel: string }) {
     createdAt: "2026-06-08T00:00:00.000Z",
     updatedAt: "2026-06-08T00:00:00.000Z"
   };
+}
+
+function castSummary(
+  id: string,
+  primaryLabel: string | null,
+  secondaryLabel: string,
+  options: { archived?: boolean; availability?: "available" | "archived" | "missing" } = {}
+): RecordSummary {
+  return {
+    id,
+    type: "CAST MEMBER",
+    displayLabel: "Opaque CAST MEMBER browse label",
+    fullDisplayLabel: secondaryLabel,
+    browseIdentity: {
+      primaryLabel,
+      secondaryLabel,
+      availability: options.availability ?? (options.archived ? "archived" : "available")
+    },
+    status: null,
+    salience: null,
+    urgency: null,
+    archived: options.archived ?? false,
+    userOrder: null,
+    createdAt: "2026-06-08T00:00:00.000Z",
+    updatedAt: "2026-06-08T00:00:00.000Z"
+  };
+}
+
+function voicePressure(castMemberId: string) {
+  return {
+    cast_member_id: castMemberId,
+    current_voice_pressure: "clipped and wary",
+    dialogue_pressure: "none",
+    pov_narration_pressure: "none",
+    nonverbal_or_silence_pressure: "none",
+    current_must_preserve: [],
+    current_must_avoid: []
+  };
+}
+
+function mockBriefRecords(entities: readonly RecordSummary[], castMembers: readonly RecordSummary[]): void {
+  vi.mocked(listRecords).mockImplementation((filters = {}) => Promise.resolve({
+    ok: true,
+    records: filters.type === "CAST MEMBER" ? [...castMembers] : [...entities]
+  }));
 }

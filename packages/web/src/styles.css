@@ -16,13 +16,25 @@ body {
 }
 
 .sidebar {
+  box-sizing: border-box;
   border-right: 1px solid #d8dee8;
   background: #ffffff;
   padding: 24px;
   position: sticky;
   top: 0;
   height: 100vh;
-  overflow-y: auto;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: scroll;
+  overscroll-behavior-y: contain;
+  scrollbar-color: #7b8799 #eef1f5;
+  scrollbar-gutter: stable;
+}
+
+.sidebar:focus-visible {
+  outline: 3px solid #276b9f;
+  outline-offset: -3px;
 }
 
 .contentPane {
@@ -268,6 +280,19 @@ h1 {
   border: 1px solid #c99a2e;
   color: #6d4a00;
   background: #fff8e7;
+}
+
+.reconciliationEmptyWarning {
+  margin-bottom: 16px;
+}
+
+.reconciliationEmptyWarning h4 {
+  margin: 0 0 8px;
+}
+
+.reconciliationEmptyWarning p {
+  margin: 6px 0 0;
+  font-weight: 400;
 }
 
 .runtimeGrid {
@@ -562,6 +587,18 @@ button:disabled:hover {
   line-clamp: 2;
 }
 
+.recordPrimaryLabel,
+.recordSecondaryLabel {
+  display: block;
+}
+
+.recordSecondaryLabel {
+  margin-top: 3px;
+  color: #5c677d;
+  font-size: 0.86rem;
+  font-weight: 400;
+}
+
 .workingSetTable {
   table-layout: fixed;
 }
@@ -646,6 +683,16 @@ button:disabled:hover {
   background: #f8fafc;
   padding: 12px;
   white-space: pre-wrap;
+}
+
+.technicalPayload {
+  margin: 14px 0;
+}
+
+.technicalPayload summary {
+  cursor: pointer;
+  color: #17466d;
+  font-weight: 700;
 }
 
 .recordEditor {
@@ -1063,6 +1110,23 @@ button:disabled:hover {
   max-width: 420px;
 }
 
+.promptSearchResults {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 12px;
+}
+
+.promptSearchResults .muted {
+  margin: 0;
+}
+
+.promptSearchNavigation {
+  display: flex;
+  gap: 8px;
+}
+
 .promptPreviewLayout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
@@ -1091,6 +1155,12 @@ button:disabled:hover {
 .promptBody mark {
   background: #fff2a8;
   color: #202124;
+}
+
+.promptBody mark.activePromptMatch {
+  outline: 2px solid #8a5200;
+  outline-offset: 1px;
+  background: #ffc76b;
 }
 
 .candidatePanel {
@@ -2161,7 +2231,10 @@ button:disabled:hover {
     border-bottom: 1px solid #d8dee8;
     position: static;
     height: auto;
+    max-height: none;
     overflow: visible;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: auto;
   }
 
   .contentPane {
