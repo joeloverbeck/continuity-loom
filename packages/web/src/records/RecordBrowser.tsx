@@ -258,6 +258,7 @@ export function RecordBrowser(): React.JSX.Element {
     refRole: "",
     targetId: "",
     groupBy: "",
+    includeArchived: false,
     workingSetOnly: false
   });
 
@@ -331,7 +332,8 @@ export function RecordBrowser(): React.JSX.Element {
       ...(filters.status ? { status: filters.status } : {}),
       ...(filters.q ? { q: filters.q } : {}),
       ...(filters.refRole ? { refRole: filters.refRole } : {}),
-      ...(filters.targetId ? { targetId: filters.targetId } : {})
+      ...(filters.targetId ? { targetId: filters.targetId } : {}),
+      ...(filters.includeArchived ? { includeArchived: true } : {})
     })
       .then((response) => {
         if (!active) {
@@ -368,7 +370,7 @@ export function RecordBrowser(): React.JSX.Element {
     return () => {
       active = false;
     };
-  }, [filters.type, filters.status, filters.q, filters.refRole, filters.targetId]);
+  }, [filters.type, filters.status, filters.q, filters.refRole, filters.targetId, filters.includeArchived]);
 
   useEffect(() => {
     setSearchParams((current) => {
@@ -666,6 +668,14 @@ export function RecordBrowser(): React.JSX.Element {
                 <option value="all">All records</option>
                 <option value="selected">Selected only</option>
               </select>
+            </label>
+            <label className="checkboxField">
+              <input
+                type="checkbox"
+                checked={filters.includeArchived}
+                onChange={(event) => setFilters((current) => ({ ...current, includeArchived: event.target.checked }))}
+              />
+              Include archived
             </label>
             <label>
               Group by

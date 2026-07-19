@@ -5,10 +5,11 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createServer } from "../../../server/src/server.js";
-import { NoteEditor } from "./NoteEditor.js";
+import { createServer } from "../packages/server/src/server.js";
+import { NoteEditor } from "../packages/web/src/notes/NoteEditor.js";
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";
 
@@ -25,6 +26,13 @@ interface PlannedResponse {
   url: string;
   gate?: Promise<void>;
   failure?: { statusCode: number; body: unknown };
+}
+
+interface DraftFields {
+  title: string;
+  body: string;
+  tag: string;
+  pinned: boolean;
 }
 
 function deferred(): { promise: Promise<void>; resolve: () => void } {
@@ -158,6 +166,33 @@ async function listStoredNotes(): Promise<StoryNote[]> {
   }));
 }
 
+function renderEditor(note: StoryNote | null): void {
+  render(createElement(NoteEditor, {
+    note,
+    onSaved: vi.fn(),
+    onDeleted: vi.fn(),
+    onCancel: vi.fn()
+  }));
+}
+
+function enterDraft(fields: DraftFields): void {
+  fireEvent.change(screen.getByLabelText("Title"), { target: { value: fields.title } });
+  fireEvent.change(screen.getByLabelText("Body"), { target: { value: fields.body } });
+  fireEvent.change(screen.getByLabelText("Tags"), { target: { value: fields.tag } });
+
+  const pinned = screen.getByLabelText<HTMLInputElement>("Pinned");
+  if (pinned.checked !== fields.pinned) {
+    fireEvent.click(pinned);
+  }
+}
+
+function expectDraft(fields: DraftFields): void {
+  expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe(fields.title);
+  expect(screen.getByLabelText<HTMLTextAreaElement>("Body").value).toBe(fields.body);
+  expect(screen.getByLabelText<HTMLInputElement>("Tags").value).toBe(fields.tag);
+  expect(screen.getByLabelText<HTMLInputElement>("Pinned").checked).toBe(fields.pinned);
+}
+
 beforeEach(async () => {
   fastify = createServer();
   apps.push(fastify);
@@ -185,7 +220,7 @@ afterEach(async () => {
 describe("NoteEditor persistence identity", () => {
   it("keeps one identity when edits, blur, and Retry Save happen while first create is in flight", async () => {
     const releaseCreate = bridge.deferNext("POST", "/api/notes");
-    render(<NoteEditor note={null} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
+    renderEditor(null);
 
     fireEvent.change(screen.getByLabelText("Title"), {
       target: { value: "NOTE_IDENTITY_TITLE_SAFE_31b9" }
@@ -252,21 +287,21 @@ describe("NoteEditor persistence identity", () => {
   });
 
   it("retries a failed create without losing the local draft or creating two rows", async () => {
+    const draft = {
+      title: "NOTE_CREATE_RETRY_TITLE_SAFE_a817",
+      body: "NOTE_CREATE_RETRY_BODY_SAFE_a817",
+      tag: "NOTE_CREATE_RETRY_TAG_SAFE_a817",
+      pinned: true
+    };
     bridge.failNext("POST", "/api/notes");
-    render(<NoteEditor note={null} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
+    renderEditor(null);
 
-    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "NOTE_CREATE_RETRY_TITLE_SAFE_a817" } });
-    fireEvent.change(screen.getByLabelText("Body"), { target: { value: "NOTE_CREATE_RETRY_BODY_SAFE_a817" } });
-    fireEvent.change(screen.getByLabelText("Tags"), { target: { value: "NOTE_CREATE_RETRY_TAG_SAFE_a817" } });
-    fireEvent.click(screen.getByLabelText("Pinned"));
+    enterDraft(draft);
     await advanceAutosave();
     await settleRequests();
 
     expect(screen.getByRole("status").textContent).toBe("Save failed - retry");
-    expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("NOTE_CREATE_RETRY_TITLE_SAFE_a817");
-    expect(screen.getByLabelText<HTMLTextAreaElement>("Body").value).toBe("NOTE_CREATE_RETRY_BODY_SAFE_a817");
-    expect(screen.getByLabelText<HTMLInputElement>("Tags").value).toBe("NOTE_CREATE_RETRY_TAG_SAFE_a817");
-    expect(screen.getByLabelText<HTMLInputElement>("Pinned").checked).toBe(true);
+    expectDraft(draft);
     expect(await listStoredNotes()).toHaveLength(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
@@ -275,16 +310,22 @@ describe("NoteEditor persistence identity", () => {
     const stored = await listStoredNotes();
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({
-      title: "NOTE_CREATE_RETRY_TITLE_SAFE_a817",
-      body: "NOTE_CREATE_RETRY_BODY_SAFE_a817",
-      tags: ["NOTE_CREATE_RETRY_TAG_SAFE_a817"],
-      pinned: true
+      title: draft.title,
+      body: draft.body,
+      tags: [draft.tag],
+      pinned: draft.pinned
     });
     expect(bridge.requests.filter((request) => request.method === "POST")).toHaveLength(2);
     expect(bridge.requests.filter((request) => request.returnedNoteId)).toHaveLength(1);
   });
 
   it("retries a failed update without losing local title, body, tags, or pinned state", async () => {
+    const draft = {
+      title: "NOTE_UPDATE_RETRY_TITLE_SAFE_e4c2",
+      body: "NOTE_UPDATE_RETRY_BODY_SAFE_e4c2",
+      tag: "NOTE_UPDATE_RETRY_TAG_SAFE_e4c2",
+      pinned: true
+    };
     const seed = await fastify.inject({
       method: "POST",
       url: "/api/notes",
@@ -293,20 +334,14 @@ describe("NoteEditor persistence identity", () => {
     const seedBody: { note: StoryNote } = seed.json();
     const note = seedBody.note;
     bridge.failNext("PUT", `/api/notes/${note.id}`);
-    render(<NoteEditor note={note} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
+    renderEditor(note);
 
-    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "NOTE_UPDATE_RETRY_TITLE_SAFE_e4c2" } });
-    fireEvent.change(screen.getByLabelText("Body"), { target: { value: "NOTE_UPDATE_RETRY_BODY_SAFE_e4c2" } });
-    fireEvent.change(screen.getByLabelText("Tags"), { target: { value: "NOTE_UPDATE_RETRY_TAG_SAFE_e4c2" } });
-    fireEvent.click(screen.getByLabelText("Pinned"));
+    enterDraft(draft);
     await advanceAutosave();
     await settleRequests();
 
     expect(screen.getByRole("status").textContent).toBe("Save failed - retry");
-    expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("NOTE_UPDATE_RETRY_TITLE_SAFE_e4c2");
-    expect(screen.getByLabelText<HTMLTextAreaElement>("Body").value).toBe("NOTE_UPDATE_RETRY_BODY_SAFE_e4c2");
-    expect(screen.getByLabelText<HTMLInputElement>("Tags").value).toBe("NOTE_UPDATE_RETRY_TAG_SAFE_e4c2");
-    expect(screen.getByLabelText<HTMLInputElement>("Pinned").checked).toBe(true);
+    expectDraft(draft);
 
     fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
     await settleRequests();
@@ -315,10 +350,10 @@ describe("NoteEditor persistence identity", () => {
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({
       id: note.id,
-      title: "NOTE_UPDATE_RETRY_TITLE_SAFE_e4c2",
-      body: "NOTE_UPDATE_RETRY_BODY_SAFE_e4c2",
-      tags: ["NOTE_UPDATE_RETRY_TAG_SAFE_e4c2"],
-      pinned: true
+      title: draft.title,
+      body: draft.body,
+      tags: [draft.tag],
+      pinned: draft.pinned
     });
     expect(bridge.requests.filter((request) => request.method === "PUT")).toHaveLength(2);
     expect(bridge.requests.every((request) => request.method !== "PUT" || request.url === `/api/notes/${note.id}`)).toBe(true);

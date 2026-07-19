@@ -454,6 +454,56 @@ describe("RecordBrowser", () => {
     expect(detail.querySelector("pre")?.textContent).toBe(JSON.stringify(firstPayload, null, 2));
   });
 
+  it("can include an archived CAST MEMBER whose linked ENTITY is unavailable without hiding its exact payload", async () => {
+    const exactPayload = {
+      entity_id: "entity-archived-mara",
+      identity: { one_line: "Archivist whose source identity is no longer active." },
+      exact_canary: "ARCHIVED_CAST_PAYLOAD_SAFE_5f2c"
+    };
+    const archivedCast = {
+      ...fixtures[0]!,
+      id: "cast-archived-mara",
+      type: "CAST MEMBER",
+      displayLabel: "Opaque archived dossier",
+      archived: true,
+      browseIdentity: {
+        primaryLabel: "Archived Mara",
+        secondaryLabel: "Archivist whose source identity is no longer active.",
+        availability: "archived" as const
+      }
+    };
+    mockWorkingSet();
+    vi.mocked(listRecords).mockImplementation((filters = {}) => Promise.resolve({
+      ok: true,
+      records: filters.includeArchived ? [archivedCast] : []
+    }));
+    vi.mocked(getRecord).mockResolvedValue({
+      ok: true,
+      record: { ...archivedCast, payload: exactPayload }
+    });
+
+    renderBrowser("/records?type=CAST%20MEMBER");
+
+    expect(await screen.findByText("No CAST MEMBER records.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Archived Mara/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Include archived" }));
+
+    await waitFor(() => expect(vi.mocked(listRecords)).toHaveBeenLastCalledWith({
+      type: "CAST MEMBER",
+      includeArchived: true
+    }));
+    const archived = await screen.findByRole("button", {
+      name: "Archived Mara (linked ENTITY archived) Archivist whose source identity is no longer active."
+    });
+    fireEvent.click(archived);
+
+    const detail = screen.getByLabelText("Record detail");
+    expect(await within(detail).findByText("The linked ENTITY is archived and unavailable for active use.")).toBeTruthy();
+    fireEvent.click(within(detail).getByText("Technical payload"));
+    expect(detail.querySelector("pre")?.textContent).toBe(JSON.stringify(exactPayload, null, 2));
+  });
+
   it("renders per-type EMOTION columns from the manifest", async () => {
     mockWorkingSet();
     vi.mocked(getRecord).mockImplementation((id: string) =>
