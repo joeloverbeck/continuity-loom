@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isAllowedAppRequest, isGuardedProviderRequest } from "./browser-session.mjs";
+import {
+  getBrowserSessionTermination,
+  isAllowedAppRequest,
+  isGuardedProviderRequest
+} from "./browser-session.mjs";
 
 const guardedPaths = [
   "/api/generate",
@@ -41,4 +45,35 @@ test("allows only the app origin and its same-host websocket", () => {
   assert.equal(isAllowedAppRequest(base, "http://127.0.0.1:4174/"), false);
   assert.equal(isAllowedAppRequest(base, "https://example.com/"), false);
   assert.equal(isAllowedAppRequest(base, "wss://example.com/events"), false);
+});
+
+test("treats only shutdown.request as an expected browser-session termination", () => {
+  assert.deepEqual(getBrowserSessionTermination("shutdown-request"), {
+    trigger: "shutdown-request",
+    expected: true,
+    exitCode: 0,
+    message: "Browser session closed after shutdown.request."
+  });
+  assert.deepEqual(getBrowserSessionTermination("SIGTERM"), {
+    trigger: "signal:SIGTERM",
+    expected: false,
+    exitCode: 2,
+    message: "Browser session received SIGTERM before shutdown.request."
+  });
+  assert.deepEqual(getBrowserSessionTermination("SIGINT"), {
+    trigger: "signal:SIGINT",
+    expected: false,
+    exitCode: 2,
+    message: "Browser session received SIGINT before shutdown.request."
+  });
+  assert.deepEqual(getBrowserSessionTermination("browser-context-close"), {
+    trigger: "browser-context-close",
+    expected: false,
+    exitCode: 2,
+    message: "Browser context closed before shutdown.request."
+  });
+  assert.throws(
+    () => getBrowserSessionTermination("unknown"),
+    /Unknown browser-session termination trigger/
+  );
 });

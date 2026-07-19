@@ -58,6 +58,11 @@ The session also refuses browser requests outside the exact app origin from
 `app-session.json`; any such attempt is recorded in `external-request-blocks.jsonl`. This keeps
 the playtest local and prevents an accidental navigation to a different localhost service.
 
+`shutdown.request` is the browser holder's only expected termination and exits with status `0`.
+If the holder receives `SIGINT` or `SIGTERM`, or if its browser context closes first, it appends a
+privacy-safe `session-termination` entry with the trigger and exit status to `console-log.jsonl`
+and exits nonzero.
+
 The helper first uses Playwright's managed Chromium, then the system Chrome channel. If both are
 unavailable, request permission to run `npx playwright install chromium`, retry once, and produce
 a blocked report if no browser launches. Do not switch to a different automation framework
@@ -73,6 +78,15 @@ or intended browser action.
 
 Record the denied attempt and authorized retry as harness recovery rather than product behavior.
 If the exact retry still fails at the same host permission boundary, follow the blocker policy.
+
+## Recover an unexpected browser-holder termination
+
+If the browser holder exits before the planned shutdown request, stop interacting. Inspect
+`console-log.jsonl` for a `session-termination` entry and copy its trigger, expected flag, and exit
+status into the scratchpad before bounded recovery. If no such entry exists, record the cause as
+unavailable rather than describing the exit as clean. Then follow the fresh-browser limit in
+[Blockers and diagnostics](blockers-and-diagnostics.md#bounded-recovery); do not restart the app or
+replace the story project.
 
 ## Act through visible UI
 
@@ -139,8 +153,9 @@ must not reveal hidden state or compensate for poor discoverability.
 
 Before creating either shutdown request, copy the needed safety counts and browser/app metadata
 into the scratchpad or draft report. Then create `<evidence-dir>/shutdown.request` and wait for the
-browser holder to exit. Create `<app-session-dir>/shutdown.request` and wait for the app holder to
-exit. Stop only these run-owned processes.
+browser holder to exit with status `0`. Create `<app-session-dir>/shutdown.request` and wait for the
+app holder to exit. Stop only these run-owned processes. A nonzero browser-holder exit or a
+`session-termination` entry belongs in the scratchpad and report even when later recovery succeeds.
 
 Remove `session.json`, empty diagnostic streams, other session plumbing, routine screenshots, and
 every uncited or forbidden evidence artifact before invoking the report validator. Follow

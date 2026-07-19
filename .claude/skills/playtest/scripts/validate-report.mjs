@@ -74,6 +74,7 @@ const PAIR_CLASSES = new Set([
 ]);
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 const FINGERPRINT_PATTERN = /^[a-f0-9]{64}$/;
+const FINDING_ID_PATTERN = /^F\d{3,}$/;
 
 export const REQUIRED_SECTION_HEADINGS = [
   "## Run Status",
@@ -98,12 +99,14 @@ const V1_FINDINGS_HEADER =
   "| ID | Severity | Classification | Category | Summary | Confidence | Status |";
 const V2_FINDINGS_HEADER =
   "| ID | Severity | Classification | Category | Summary | Confidence | Status | Evidence basis |";
+const CUMULATIVE_FINDINGS_HEADER =
+  "| ID | First seen | Classification | Summary | Current status | Latest evidence |";
 
 const COMMON_REQUIRED_TABLE_HEADERS = [
   "| Prompt | Author need | Contract compliance | Actionable outputs | No-change / low-value outputs | Adopted | Verdict | Confidence |",
   "| Field | Author need | Intended observable influence | Visible prompt evidence | Response evidence | Verdict | Confidence |",
   "| Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |",
-  "| ID | First seen | Classification | Summary | Current status | Latest evidence |"
+  CUMULATIVE_FINDINGS_HEADER
 ];
 
 function usage() {
@@ -215,6 +218,48 @@ function tableRows(section, header) {
     rows.push(tableCells(line));
   }
   return rows;
+}
+
+function stableIds(rows, tableName, errors) {
+  const ids = [];
+  for (const row of rows) {
+    const id = row?.[0]?.trim() ?? "";
+    if (!FINDING_ID_PATTERN.test(id)) {
+      errors.push(`${tableName} has invalid stable ID: ${id || "<blank>"}`);
+      continue;
+    }
+    ids.push(id);
+  }
+  for (const id of new Set(ids)) {
+    if (ids.filter((candidate) => candidate === id).length > 1) {
+      errors.push(`${tableName} contains duplicate stable ID: ${id}`);
+    }
+  }
+  return ids;
+}
+
+function findingLedgerErrors(markdown, schemaVersion) {
+  const errors = [];
+  const prioritizedHeader = schemaVersion === "2" ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER;
+  const prioritizedRows = tableRows(
+    reportSection(markdown, "## Prioritized Findings") ?? "",
+    prioritizedHeader
+  );
+  const cumulativeRows = tableRows(
+    reportSection(markdown, "## Cumulative Finding Ledger") ?? "",
+    CUMULATIVE_FINDINGS_HEADER
+  );
+  if (prioritizedRows === null || cumulativeRows === null) return errors;
+
+  const prioritizedIds = stableIds(prioritizedRows, "Prioritized Findings", errors);
+  const cumulativeIds = stableIds(cumulativeRows, "Cumulative Finding Ledger", errors);
+  const cumulativeSet = new Set(cumulativeIds);
+  for (const id of prioritizedIds) {
+    if (!cumulativeSet.has(id)) {
+      errors.push(`Prioritized finding ${id} is absent from the Cumulative Finding Ledger.`);
+    }
+  }
+  return errors;
 }
 
 function evidenceBasisErrors(value, context) {
@@ -919,6 +964,7 @@ export function validateReport(reportPath) {
       errors.push(`Missing required report table header: ${header}`);
     }
   }
+  errors.push(...findingLedgerErrors(markdown, frontmatter.schema_version));
   if (!markdown.includes("### Evidence Index")) {
     errors.push("Missing required subsection: ### Evidence Index");
   }

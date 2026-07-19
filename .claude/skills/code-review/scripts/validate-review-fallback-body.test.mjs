@@ -534,9 +534,18 @@ test("accepts the cross-validator-safe superseded-token sweep", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
-test("fallback guidance plans closeout size before composition", () => {
+test("fallback guidance delegates split closeout mechanics", () => {
   const fallback = readFileSync(new URL("../fallback-evidence.md", import.meta.url), "utf8");
-  assert.match(fallback, /--review fallback --size-plan --require-headroom/);
-  assert.match(fallback, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
+  assert.match(
+    fallback,
+    /\.\.\/implement\/references\/closeout-templates\.md#large-tracker-body-workflow/
+  );
+  assert.match(fallback, /complete fallback review evidence once in the shared evidence core/);
+  assert.match(fallback, /validate that core with the fallback review contract/);
+  assert.match(fallback, /must not repeat fallback review evidence or claim to revalidate it/);
+  assert.doesNotMatch(fallback, /build-closeout-body\.mjs <manifest\.json>/);
+  assert.doesNotMatch(fallback, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
+  assert.doesNotMatch(fallback, /--scope issue-set --anchor <issue>/);
+  assert.doesNotMatch(fallback, /--audit-chunk --shared-evidence-core-url/);
   assert.match(fallback, /US1-US36.*does not replace individual story rows/);
 });

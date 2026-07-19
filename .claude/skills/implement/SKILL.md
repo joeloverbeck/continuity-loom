@@ -99,9 +99,9 @@ Tracker mutation is blocked until all of these are true:
 - Applicable closeout validators have run against the exact inspected body when available, and visual inspection still confirms grouped criteria and literal statuses.
 - For parent PRD closure, related child states have been verified by exact issue number.
 
-Immediately before the first tracker mutation, make the exact `Closeout preflight:` block and literal `Closeout gate passed: audit sink ...` line visible in the conversation or durable audit sink. Do not run `gh issue close`, `glab issue close`, or equivalent until the closeout command gate in [references/tracker-closeout-gates.md](references/tracker-closeout-gates.md) passes.
+Immediately before the first tracker mutation, run the applicable closing validator with `--emit-preflight --mutation-ready`, then make its exact `Closeout preflight:` block and literal `Closeout gate passed: audit sink ...` line visible in the conversation or durable audit sink. A successful `--closing` run without those two flags is explicitly not mutation-ready. Do not run `gh issue comment`, `gh issue close`, `glab issue close`, or equivalent until the closeout command gate in [references/tracker-closeout-gates.md](references/tracker-closeout-gates.md) passes.
 
-If review ended with accepted residuals, preserve their count and affected axes in the final response, cite their durable record, and state `unhandled findings none beyond accepted residuals`; never replace that outcome with `no findings` or `no remaining findings`.
+If review ended with accepted residuals, use the implement validator's `--emit-final-summary` output as the final-response source of truth: preserve its count and affected axes, cite its durable record, and retain the exact phrase `unhandled findings none beyond accepted residuals`. Never replace that outcome with `no findings` or `no remaining findings`. `--mutation-ready` also emits this machine-derived summary.
 
 If browser/manual proof started a dev server, browser session, or long-running proof process, stop it before the final response or explicitly report why it remains running.
 

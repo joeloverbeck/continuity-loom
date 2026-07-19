@@ -9,7 +9,7 @@ Which recap a grilling run owes, and what has to be in it. `SKILL.md` routes her
 | Design / plan stress-test | Ratified-decision ledger, plus the provenance clauses below when the run cites a report, module, architecture review, artifact, or repo authority | Add the PRD-ready provenance clauses whenever the run closes PRD-ready or issue-ready. |
 | Determination / recommendation | [PRD-ready / issue-ready recap checklist](#prd-ready--issue-ready-recap-checklist) | The recap *is* the deliverable — it carries the determination. |
 | Diagnostic / audit | [Diagnostic / audit recap checklist](#diagnostic--audit-recap-checklist), then the [final preflight](#final-preflight) | Candidate set and winning candidate may be `N/A`. |
-| Operational / triage / delegated-execution | [Operational recap](#operational-recap) — always owed, at minimum | "Keep the ledger minimal" bounds the *branch count*, never the recap. An operational run is never recap-less. |
+| Operational / triage / delegated-execution | [Operational recap](#operational-recap), then the [final preflight](#final-preflight) — always owed, at minimum | "Keep the ledger minimal" bounds the *branch count*, never the recap. An operational run is never recap-less. |
 
 ### Deciding which contract applies
 
@@ -65,7 +65,22 @@ Use `Finding:` or `Explored fact:` lines for factual conclusions and evidence-ba
 
 ## Final preflight
 
-Before sending a concise diagnostic, scan the answer for these labels or their explicit `N/A`: `Source`, `Selected section`, `Verdict`, `Evidence`, `Inspected authorities`, `Tracker overlap`, `Existing prep artifact status` when any was found, `Rejected/no-op alternatives`, `Recommendation`, `Out of scope`, `External research`, `Supporting skill result`, and `Freshness`.
+Before sending any closing recap, resolve its applicable contract or union through the class-routing
+rules above, then apply every matching scan below. For a class shift, scan every occupied class; for
+simultaneous mixed requests, scan the dominant contract plus every subordinate field carried into
+it.
+
+- **Diagnostic / audit:** require these labels or their explicit `N/A`: `Source`, `Selected
+  section`, `Verdict`, `Evidence`, `Inspected authorities`, `Tracker overlap`, `Existing prep
+  artifact status` when any was found, `Rejected/no-op alternatives`, `Recommendation`, `Out of
+  scope`, `External research`, `Supporting skill result`, and `Freshness`.
+- **Operational / triage / delegated-execution:** require `Context`, `Finding`, `Evidence`,
+  `Rejected operations`, `Recommendation`, `Out of scope`, and `Freshness/external research`. For
+  a durable-artifact subject, also require `Source`, `Inspected authorities`, `Tracker overlap`,
+  `Supporting skill result` when one was used, and `Existing prep artifact status` when one was
+  found. After a mutation, require the exact touched resources and their read-back proof. For a run
+  governed by `operational-execution.md`, include exactly one baseline receipt from
+  [Operational closeout](operational-execution.md#operational-closeout).
 
 Concision is fine, but do not drop a required provenance field merely because no document or issue is being written.
 

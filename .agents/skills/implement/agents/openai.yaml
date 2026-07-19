@@ -1,0 +1,7 @@
+interface:
+  display_name: "Implement"
+  short_description: "Implement scoped PRDs and issue sets"
+  default_prompt: "Use $implement to implement the named PRD or issue set."
+
+policy:
+  allow_implicit_invocation: false

@@ -533,14 +533,32 @@ test("rejects HTML-like angle tokens and documents shared identity safety", () =
     assert.match(contract, /65,536-byte body maximum/);
     assert.match(contract, /--max-bytes <positive integer>/);
     assert.match(contract, /US1-US36.*does not replace individual story rows/);
-    assert.match(contract, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
+    assert.match(
+      contract,
+      /\.\.\/implement\/references\/closeout-templates\.md#large-tracker-body-workflow/
+    );
+    assert.doesNotMatch(contract, /build-closeout-body\.mjs <manifest\.json>/);
+    assert.doesNotMatch(contract, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
+    assert.doesNotMatch(contract, /--scope issue-set --anchor <issue>/);
+    assert.doesNotMatch(contract, /--audit-chunk --shared-evidence-core-url/);
   }
-  assert.match(skill, /--review normal --size-plan --require-headroom/);
+  assert.match(skill, /complete normal review evidence once in the shared evidence core/);
+  assert.match(skill, /validate that core with the normal review contract/);
+  assert.match(skill, /must not repeat normal review evidence or claim to revalidate it/);
   assert.match(skill, /multi-pass review or more than one TDD review fix/);
   assert.match(skill, /--evidence-input <evidence\.json> --immediate-fix --tdd-parent-rollup/);
   assert.match(skill, /\.\.\/implement\/references\/closeout-templates\.md/);
   assert.match(skill, /Do not hand-copy those derived fields/);
-  assert.match(fallback, /--review fallback --size-plan --require-headroom/);
+  assert.match(fallback, /complete fallback review evidence once in the shared evidence core/);
+  assert.match(fallback, /validate that core with the fallback review contract/);
+  assert.match(fallback, /must not repeat fallback review evidence or claim to revalidate it/);
+});
+
+test("Spec reviewer prose cap excludes mandatory evidence structures", () => {
+  const skill = readFileSync(new URL("../SKILL.md", import.meta.url), "utf8");
+  assert.match(skill, /Keep narrative prose under 400 words/);
+  assert.match(skill, /mandatory coverage tables and keyed ledgers are excluded from this limit/);
+  assert.match(skill, /Output hard stop:.*Reject a zero-residual Spec response/);
 });
 
 test("rejects non-terminal review subagent status", () => {

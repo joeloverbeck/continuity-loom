@@ -31,8 +31,8 @@ function usage() {
 Launches a fresh 1440x900 persistent Chromium context, exposes CDP to
 browser-act.mjs, installs provider-request guards before navigation, and logs
 console/network failures. Requests outside the supplied app origin are also
-blocked. Runs until shutdown.request appears in evidence-dir or it receives
-SIGINT/SIGTERM.`;
+blocked. Runs until shutdown.request appears in evidence-dir. SIGINT/SIGTERM
+are recorded as unexpected terminations and exit nonzero.`;
 }
 
 function parseArgs(argv) {
@@ -113,6 +113,34 @@ export function isAllowedAppRequest(baseUrl, requestUrl) {
     candidate.hostname === base.hostname &&
     candidate.port === base.port
   );
+}
+
+export function getBrowserSessionTermination(trigger) {
+  if (trigger === "shutdown-request") {
+    return {
+      trigger,
+      expected: true,
+      exitCode: 0,
+      message: "Browser session closed after shutdown.request."
+    };
+  }
+  if (trigger === "SIGINT" || trigger === "SIGTERM") {
+    return {
+      trigger: `signal:${trigger}`,
+      expected: false,
+      exitCode: 2,
+      message: `Browser session received ${trigger} before shutdown.request.`
+    };
+  }
+  if (trigger === "browser-context-close") {
+    return {
+      trigger,
+      expected: false,
+      exitCode: 2,
+      message: "Browser context closed before shutdown.request."
+    };
+  }
+  throw new Error(`Unknown browser-session termination trigger: ${trigger}`);
 }
 
 function isGuardedRequest(request) {
@@ -258,24 +286,24 @@ async function main() {
 
   let shuttingDown = false;
   let poller = null;
-  const shutdown = async (exitCode = 0) => {
+  const shutdown = async (trigger) => {
     if (shuttingDown) return;
     shuttingDown = true;
+    const termination = getBrowserSessionTermination(trigger);
+    if (!termination.expected) {
+      record(consoleLog, { kind: "session-termination", ...termination });
+    }
     if (poller) globalThis.clearInterval(poller);
     await context.close().catch(() => undefined);
     rmSync(profileDir, { recursive: true, force: true });
-    process.exitCode = exitCode;
+    process.exitCode = termination.exitCode;
   };
 
-  process.once("SIGINT", () => void shutdown(0));
-  process.once("SIGTERM", () => void shutdown(0));
+  process.once("SIGINT", () => void shutdown("SIGINT"));
+  process.once("SIGTERM", () => void shutdown("SIGTERM"));
   context.once("close", () => {
     if (shuttingDown) return;
-    record(consoleLog, {
-      kind: "session",
-      message: "Browser context closed unexpectedly."
-    });
-    void shutdown(2);
+    void shutdown("browser-context-close");
   });
 
   const session = {
@@ -304,7 +332,7 @@ async function main() {
   poller = globalThis.setInterval(() => {
     if (!existsSync(shutdownPath)) return;
     unlinkSync(shutdownPath);
-    void shutdown(0);
+    void shutdown("shutdown-request");
   }, 250);
 }
 

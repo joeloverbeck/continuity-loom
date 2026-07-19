@@ -129,8 +129,12 @@ phase.
 | F001 | moderate | friction       | generation-brief | Optional field cost exceeds visible value | medium     | new    | direct-visible, single-observer-inference |
 ```
 
-Use stable IDs. On continuation, preserve inherited IDs; allocate new IDs after the highest prior
-number. Consolidate repeated manifestations of one underlying issue and state frequency.
+Use one stable ID namespace across Prioritized Findings and the Cumulative Finding Ledger: `F`
+followed by at least three digits, such as `F001`. The `F` identifies a finding-ledger item,
+not a defect classification. Strengths, resolved harness friction, snags, blockers, and prompt
+findings use the same namespace; do not allocate `S`, `H`, or other category-prefixed IDs. On
+continuation, preserve inherited IDs and allocate new IDs after the highest prior number.
+Consolidate repeated manifestations of one underlying issue and state frequency.
 
 Each detailed current-run finding contains:
 
@@ -210,12 +214,16 @@ cards were not exercised on the cold path.
 ```markdown
 | ID  | First seen | Classification | Summary | Current status | Latest evidence |
 | --- | ---------- | -------------- | ------- | -------------- | --------------- |
+| F001 | Current run | friction | <concise finding> | new | <current evidence> |
+| F002 | Current run | strength | <proven behavior> | preserve-strength | <regression evidence> |
+| F003 | Current run | friction | <resolved harness snag> | resolved | <explicit retest> |
 ```
 
 Carry every prior strength, snag, friction, confusion, defect, blocker, and prompt finding forward
 as a concise row. Status is `new`, `open`, `repeated`, `resolved`, `not-retested`, or
 `preserve-strength`. Mark `resolved` only after explicit current-run retest. Do not duplicate prior
-detailed finding bodies; the ledger plus `prior_report` preserves the chain.
+detailed finding bodies; the ledger plus `prior_report` preserves the chain. Every row uses the
+shared `F`-prefixed stable-ID namespace, whether or not it is a current prioritized problem.
 
 ## Method evidence subsections
 

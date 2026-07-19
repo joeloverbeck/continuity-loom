@@ -10,17 +10,23 @@ After every GitHub closeout body posted with `gh issue comment --body-file`, cap
 
 `Post-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.`
 
-When `implement` owns a combined parent/issue closeout, plan size before filling TDD evidence:
+When `implement` owns a combined parent/issue closeout, follow the implement-owned
+[closeout template contract](../implement/references/closeout-templates.md#large-tracker-body-workflow).
+That section is the sole authority for implement-owned closeout mechanics:
+builder invocations, parent versus issue-set scope, structured evidence, size
+planning, subset manifests, shared-core and audit-chunk publication order, exact
+readback, and the final chunk-URL index. Do not reconstruct or copy that sequence
+here.
 
-```bash
-node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --audit-input <audit.md> --output <body.md> --parent <issue> --review <normal|fallback> --tdd-parent-rollup --size-plan --require-headroom
-```
+TDD owns only these cross-sink invariants:
 
-For a multi-pass review or more than one TDD review fix, you must use the structured evidence JSON defined by the implement-owned [closeout template contract](../implement/references/closeout-templates.md) and add `--evidence-input <evidence.json> --immediate-fix --tdd-parent-rollup` to the normal-review builder command. That input is the single source for compact TDD rows, RF rows, the review-finding ledger, finding counts and worst severities, issue/seam accounting, and repeated TDD/review summaries. Do not hand-copy those derived fields or maintain a second manual version after generation. Fill the remaining non-derived placeholders, then run every applicable TDD, review, and implementation closeout validator.
-
-Carry the other applicable implement flags into that command. A `low-headroom` or `exceeds-limit` result is a precomposition stop, not permission to shorten atoms, proof surfaces, or sequence evidence. Generate disjoint subset manifests and matching audit scaffolds with repeatable `--select <issue[:check-id[,check-id...]]>` arguments to `.claude/skills/implement/scripts/build-acceptance-manifest.mjs`, then allocate the corresponding TDD issue/seam rows to separately validated chunks. Ensure the subsets are disjoint and collectively cover the full authoritative manifest.
-
-Before tracker mutation, run `wc -c <body.md>` as an independent final size readback. If the exact body still exceeds the provider ceiling, do not weaken atoms or proof surfaces to recover space. Split the detailed TDD table into the planned disjoint issue/seam groups, validate each chunk with the matching subset acceptance manifest and appropriate flags, post and read back every chunk, and cite all stable comment URLs from the compact closing body and affected child comments. Validate the compact body separately against only the rows it contains; do not claim one validator invocation covered rows stored in other comments.
+- Treat a `low-headroom` or `exceeds-limit` size result as a precomposition stop;
+  never shorten acceptance atoms, proof surfaces, or sequence evidence to fit.
+- Keep the complete compact TDD table exactly once in the shared evidence core;
+  do not repeat or partition it across linked audit chunks.
+- Validate the shared evidence core with the full applicable TDD contract. Linked
+  audit chunks own only their disjoint acceptance rows; do not claim that a chunk
+  validator revalidated TDD evidence held by the core.
 
 For parent/child issue families, named issue sets, and long or compaction-prone runs, the interim durable sink defaults to a file-backed or tracker-backed ledger established before the first red command. Conversation-only evidence qualifies only while its exact preflight block, compact rows, and command chronology remain inspectable verbatim; a compaction summary does not preserve that proof.
 

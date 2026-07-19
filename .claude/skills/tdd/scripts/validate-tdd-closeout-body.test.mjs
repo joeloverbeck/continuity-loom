@@ -925,6 +925,10 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   const skill = readFileSync(new URL("../SKILL.md", import.meta.url), "utf8");
   const testsGuide = readFileSync(new URL("../tests.md", import.meta.url), "utf8");
   const closeout = readFileSync(new URL("../closeout-evidence.md", import.meta.url), "utf8");
+  const implementCloseout = readFileSync(
+    new URL("../../implement/references/closeout-templates.md", import.meta.url),
+    "utf8"
+  );
 
   assert.match(closeout, /When the exact body will be posted or linked for tracker closeout/);
   assert.doesNotMatch(closeout, /inspected body file path before tracker URL exists/);
@@ -964,13 +968,17 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /Evidence-only proof server preflight:/);
   assert.match(closeout, /--expected-final-sha "\$\(git rev-parse HEAD\)"/);
   assert.match(closeout, /--acceptance-manifest <path>/);
-  assert.match(closeout, /--size-plan --require-headroom/);
-  assert.match(closeout, /multi-pass review or more than one TDD review fix/);
-  assert.match(closeout, /must use the structured evidence JSON/);
-  assert.match(closeout, /--evidence-input <evidence\.json>/);
-  assert.match(closeout, /\.\.\/implement\/references\/closeout-templates\.md/);
-  assert.match(closeout, /Do not hand-copy those derived fields/);
-  assert.match(closeout, /--select <issue\[:check-id\[,check-id\.\.\.\]\]>/);
+  assert.match(
+    closeout,
+    /\[closeout template contract\]\(\.\.\/implement\/references\/closeout-templates\.md#large-tracker-body-workflow\)/
+  );
+  assert.match(closeout, /sole authority for implement-owned closeout mechanics/);
+  assert.match(closeout, /complete compact TDD table exactly once in the shared evidence core/);
+  assert.match(closeout, /do not repeat or partition it across linked audit chunks/);
+  assert.match(closeout, /Validate the shared evidence core with the full applicable TDD contract/);
+  assert.doesNotMatch(closeout, /build-closeout-body\.mjs <manifest\.json>/);
+  assert.doesNotMatch(closeout, /--audit-chunk --shared-evidence-core-url/);
+  assert.match(implementCloseout, /^## Large Tracker Body Workflow$/m);
   assert.match(skill, /authoritative acceptance manifest/);
   assert.match(closeout, /\| Exact command \| Observed result\/counts \| Run count \| Represented SHA\/tree \|/);
   assert.match(closeout, /output-derived result or count/);

@@ -251,6 +251,55 @@ test("accepts a complete privacy-safe report", () => {
   assert.deepEqual(warnings, []);
 });
 
+test("accepts one F-prefixed stable-ID namespace across the cumulative ledger", () => {
+  const body = BODY.replace(
+    "| F001 | current | friction | Optional field cost | new | Current run |",
+    `| F001 | current | friction | Optional field cost | new | Current run |
+| F002 | current | strength | Exact custody readback | preserve-strength | Current run |
+| F003 | current | friction | Browser permission retry | resolved | Current run |`
+  );
+  const { errors, warnings } = validateReport(fixture(frontmatter(), body));
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("rejects non-F stable IDs in prioritized and cumulative finding tables", () => {
+  const body = BODY.replace(
+    "| F001 | moderate | friction | brief | Optional field cost | medium | new |",
+    "| H001 | moderate | friction | brief | Optional field cost | medium | new |"
+  ).replace(
+    "| F001 | current | friction | Optional field cost | new | Current run |",
+    "| S001 | current | strength | Exact custody readback | preserve-strength | Current run |"
+  );
+  const { errors } = validateReport(fixture(frontmatter(), body));
+  assert.ok(errors.includes("Prioritized Findings has invalid stable ID: H001"));
+  assert.ok(errors.includes("Cumulative Finding Ledger has invalid stable ID: S001"));
+});
+
+test("rejects duplicate stable IDs in both finding tables", () => {
+  const body = BODY.replace(
+    "| F001 | moderate | friction | brief | Optional field cost | medium | new |",
+    `| F001 | moderate | friction | brief | Optional field cost | medium | new |
+| F001 | minor | confusion | records | Duplicate identity | high | new |`
+  ).replace(
+    "| F001 | current | friction | Optional field cost | new | Current run |",
+    `| F001 | current | friction | Optional field cost | new | Current run |
+| F001 | current | strength | Exact custody readback | preserve-strength | Current run |`
+  );
+  const { errors } = validateReport(fixture(frontmatter(), body));
+  assert.ok(errors.includes("Prioritized Findings contains duplicate stable ID: F001"));
+  assert.ok(errors.includes("Cumulative Finding Ledger contains duplicate stable ID: F001"));
+});
+
+test("requires every prioritized finding in the cumulative ledger", () => {
+  const body = BODY.replace(
+    "| F001 | current | friction | Optional field cost | new | Current run |",
+    "| F002 | current | friction | Different cumulative item | new | Current run |"
+  );
+  const { errors } = validateReport(fixture(frontmatter(), body));
+  assert.ok(errors.includes("Prioritized finding F001 is absent from the Cumulative Finding Ledger."));
+});
+
 test("accepts a complete schema v2 report with bounded method evidence", () => {
   const { errors, warnings } = validateReport(fixture(v2Frontmatter(), v2Body()));
   assert.deepEqual(errors, []);

@@ -77,6 +77,19 @@ const auditBody = (rows) => `| Issue | Acceptance criterion or conformance check
 ${rows.join("\n")}
 `;
 
+const auditChunkBody = (rows, sharedEvidenceCoreUrl) => `Acceptance evidence chunk
+
+Final SHA: ${expectedFinalSha}
+
+Shared evidence core: ${sharedEvidenceCoreUrl}
+
+| Issue | Acceptance criterion or conformance check | Evidence | Status |
+|---|---|---|---|
+${rows.join("\n")}
+
+Audit chunk body check passed: exact manifest rows inspected and shared evidence core exact-read verified.
+`;
+
 const runValidator = (body, manifest, modeFlags = ["--closing"], expectedSha = expectedFinalSha) => {
   const directory = mkdtempSync(join(tmpdir(), "implement-closeout-test-"));
   const bodyPath = join(directory, "body.md");
@@ -375,6 +388,109 @@ test("emit-preflight prints the exact validated preflight block and gate line", 
 
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout, expected);
+});
+
+test("ordinary closing validation warns that it is not mutation-ready", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]);
+  const result = runValidator(body, manifest);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /not mutation-ready/i);
+  assert.match(result.stdout, /--emit-preflight --mutation-ready/);
+});
+
+test("mutation-ready validation requires and confirms preflight emission", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]);
+  const missingEmit = runValidator(body, manifest, ["--closing", "--mutation-ready"]);
+  const ready = runValidator(body, manifest, ["--closing", "--emit-preflight", "--mutation-ready"]);
+
+  assert.equal(missingEmit.status, 2);
+  assert.match(missingEmit.stderr, /--mutation-ready requires --emit-preflight/);
+  assert.equal(ready.status, 0, ready.stderr);
+  assert.match(ready.stdout, /Mutation-ready closeout validation passed/);
+  assert.match(
+    ready.stdout,
+    /Accepted residuals: 0; affected axes none; durable record local test body; unhandled findings none beyond accepted residuals\./
+  );
+});
+
+test("final-summary emission derives accepted residual count, axis, and required wording", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]).replace(
+    "Browser evidence: N/A because process-only work changed no browser-consumed surface",
+    `- **Accepted residual**: Context-specific availability wording remains separate\n  - **Axis**: Standards\n  - **Source**: final Standards review\n  - **Rationale**: the two consumers present different decisions\n  - **Revisit trigger**: a third consumer appears\n\nBrowser evidence: N/A because process-only work changed no browser-consumed surface`
+  );
+  const result = runValidator(body, manifest, ["--closing", "--emit-final-summary"]);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Accepted residuals: 1; affected axes Standards; durable record local test body; unhandled findings none beyond accepted residuals\./
+  );
+});
+
+test("final-summary emission reads accepted residuals from the structured review ledger", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const findingLedger = `| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| P1-standards-1 | P1 | Standards | reviewer-1 | Context-specific wording remains separate | standards-only | N/A because accepted residual is intentional | accepted with rationale | node --test passed | accepted residual |`;
+  const body = closeoutBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ]).replace(
+    "Browser evidence: N/A because process-only work changed no browser-consumed surface",
+    `${findingLedger}\n\nBrowser evidence: N/A because process-only work changed no browser-consumed surface`
+  );
+  const result = runValidator(body, manifest, ["--closing", "--emit-final-summary"]);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(
+    result.stdout,
+    /Accepted residuals: 1; affected axes Standards; durable record local test body; unhandled findings none beyond accepted residuals\./
+  );
+});
+
+test("linked audit chunks validate exact rows without repeating the shared evidence core", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const sharedEvidenceCoreUrl = "https://github.com/example/repo/issues/359#issuecomment-123";
+  const body = auditChunkBody([
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ], sharedEvidenceCoreUrl);
+  const result = runValidator(body, manifest, [
+    "--closing",
+    "--audit-chunk",
+    "--shared-evidence-core-url",
+    sharedEvidenceCoreUrl
+  ]);
+  const repeatedReview = runValidator(`${body}\nReview: duplicated from shared core\n`, manifest, [
+    "--closing",
+    "--audit-chunk",
+    "--shared-evidence-core-url",
+    sharedEvidenceCoreUrl
+  ]);
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /Acceptance audit chunk validation passed/);
+  assert.match(result.stdout, new RegExp(sharedEvidenceCoreUrl.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.equal(repeatedReview.status, 1);
+  assert.match(repeatedReview.stderr, /forbidden repeated review evidence/);
 });
 
 test("audit-only validator accepts a review-ready audit without closeout fields", () => {
@@ -776,8 +892,12 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(template, /## Sibling-Issue Rollup/);
   assert.match(template, /capture-github-issues\.mjs 369 370 371/);
   assert.match(template, /build-closeout-body\.mjs/);
+  assert.match(template, /--scope issue-set --anchor 369/);
+  assert.doesNotMatch(template, /--parent 369[^\n]*--fixed-child pending/);
+  assert.match(template, /--audit-chunk --shared-evidence-core-url/);
+  assert.match(template, /Linked acceptance-audit chunks:/);
   assert.match(template, /--review normal --immediate-fix/);
-  assert.match(template, /--expected-final-sha "\$\(git rev-parse HEAD\)" --emit-preflight/);
+  assert.match(template, /--expected-final-sha "\$\(git rev-parse HEAD\)" --emit-preflight --mutation-ready/);
   assert.match(reviewGuide, /Two-sink boundary/);
   assert.match(reviewGuide, /Do not amend a tracked evidence report solely to append/);
   assert.match(template, /stable issue reference before tracker URL exists/);
@@ -793,7 +913,7 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(template, /unique `\(issue, seam\)` tuple/);
   assert.match(template, /Authority-sensitive alternative when local fixture paths must not be published/);
   assert.match(reviewGuide, /no hits outside classified identity\/history lines and no active-proof hits/);
-  assert.match(reviewGuide, /final response must preserve the accepted-residual count/);
+  assert.match(reviewGuide, /machine-derived `Accepted residuals:` line into the final response/);
   assert.doesNotMatch(template, /Durable sink\/body inspected: <inspected body file path/);
   assert.match(gates, /Working pre-review audit/);
   assert.match(gates, /--audit-only --acceptance-manifest/);
@@ -805,11 +925,19 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(gates, /atoms or surfaces point circularly/);
   assert.match(gates, /exact stored-body verification with `verify-github-comment-body\.mjs`/);
   assert.match(gates, /Post-comment verification next:/);
+  assert.match(gates, /not mutation-ready/);
+  assert.match(gates, /--emit-final-summary/);
+  assert.match(gates, /Linked acceptance-audit chunk/);
   assert.match(childGuide, /Low-headroom split exception/);
-  assert.match(childGuide, /post and read back every disjoint evidence chunk before composing the compact parent body/);
+  assert.match(childGuide, /shared evidence core/);
+  assert.match(childGuide, /Post and read back every disjoint evidence chunk before closing any issue/);
+  assert.match(childGuide, /--audit-chunk --shared-evidence-core-url/);
+  assert.match(childGuide, /Linked acceptance-audit chunks:/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <parent-comment-url> <parent-body>/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <child-comment-url> <child-body>/);
   assert.match(skill, /published `Current evidence identities:` inventory is not safe to remove/);
+  assert.match(skill, /--emit-preflight --mutation-ready/);
+  assert.match(skill, /--emit-final-summary/);
 });
 
 test("documented normal-review fields satisfy the normal-review validator", () => {

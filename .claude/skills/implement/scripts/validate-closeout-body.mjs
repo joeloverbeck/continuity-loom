@@ -9,8 +9,10 @@ const maxBytesFlag = args.indexOf("--max-bytes");
 const maxBytesText = maxBytesFlag >= 0 ? args[maxBytesFlag + 1] : undefined;
 const expectedFinalShaFlag = args.indexOf("--expected-final-sha");
 const expectedFinalSha = expectedFinalShaFlag >= 0 ? args[expectedFinalShaFlag + 1] : undefined;
+const sharedEvidenceCoreUrlFlag = args.indexOf("--shared-evidence-core-url");
+const sharedEvidenceCoreUrl = sharedEvidenceCoreUrlFlag >= 0 ? args[sharedEvidenceCoreUrlFlag + 1] : undefined;
 const valueIndexes = new Set(
-  [acceptanceManifestFlag, maxBytesFlag, expectedFinalShaFlag]
+  [acceptanceManifestFlag, maxBytesFlag, expectedFinalShaFlag, sharedEvidenceCoreUrlFlag]
     .filter((index) => index >= 0)
     .map((index) => index + 1)
 );
@@ -21,9 +23,12 @@ const flags = new Set(args.filter((arg) => arg.startsWith("--")));
 const auditOnly = flags.has("--audit-only");
 const reviewEntry = flags.has("--review-entry");
 const emitPreflight = flags.has("--emit-preflight");
+const mutationReady = flags.has("--mutation-ready");
+const emitFinalSummary = flags.has("--emit-final-summary");
+const auditChunk = flags.has("--audit-chunk");
 
 const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
-const usage = `Usage: node .claude/skills/implement/scripts/validate-closeout-body.mjs <body.md> [--audit-only [--review-entry] | --closing --expected-final-sha <sha> [--emit-preflight]] [--principles] [--local-only] [--fixed-child | --fixed-child-pending] [--review-fallback] [--acceptance-manifest <manifest.json>] [--max-bytes <positive integer>]`;
+const usage = `Usage: node .claude/skills/implement/scripts/validate-closeout-body.mjs <body.md> [--audit-only [--review-entry] | --closing --expected-final-sha <sha> [--emit-preflight --mutation-ready] [--emit-final-summary] | --closing --audit-chunk --shared-evidence-core-url <url> --expected-final-sha <sha>] [--principles] [--local-only] [--fixed-child | --fixed-child-pending] [--review-fallback] [--acceptance-manifest <manifest.json>] [--max-bytes <positive integer>]`;
 
 if (flags.has("--help")) {
   console.error(usage);
@@ -53,6 +58,12 @@ if (expectedFinalShaFlag >= 0 && (!expectedFinalSha || expectedFinalSha.startsWi
   process.exit(2);
 }
 
+if (sharedEvidenceCoreUrlFlag >= 0 && (!sharedEvidenceCoreUrl || sharedEvidenceCoreUrl.startsWith("--"))) {
+  console.error("--shared-evidence-core-url requires a URL");
+  console.error(usage);
+  process.exit(2);
+}
+
 if (expectedFinalSha && !/^[0-9a-f]{7,40}$/i.test(expectedFinalSha)) {
   console.error("--expected-final-sha must be a 7-40 character hexadecimal commit SHA");
   console.error(usage);
@@ -67,6 +78,57 @@ if (flags.has("--closing") && !auditOnly && !expectedFinalSha) {
 
 if (emitPreflight && !flags.has("--closing")) {
   console.error("--emit-preflight requires --closing");
+  console.error(usage);
+  process.exit(2);
+}
+
+if (mutationReady && !emitPreflight) {
+  console.error("--mutation-ready requires --emit-preflight");
+  console.error(usage);
+  process.exit(2);
+}
+
+if (emitFinalSummary && !flags.has("--closing")) {
+  console.error("--emit-final-summary requires --closing");
+  console.error(usage);
+  process.exit(2);
+}
+
+if (auditChunk) {
+  if (!flags.has("--closing")) {
+    console.error("--audit-chunk requires --closing");
+    console.error(usage);
+    process.exit(2);
+  }
+  if (!acceptanceManifestPath) {
+    console.error("--audit-chunk requires --acceptance-manifest");
+    console.error(usage);
+    process.exit(2);
+  }
+  if (!sharedEvidenceCoreUrl || !/^https:\/\/\S+$/i.test(sharedEvidenceCoreUrl)) {
+    console.error("--audit-chunk requires a concrete HTTPS --shared-evidence-core-url");
+    console.error(usage);
+    process.exit(2);
+  }
+  const incompatible = [
+    "--audit-only",
+    "--review-entry",
+    "--emit-preflight",
+    "--mutation-ready",
+    "--emit-final-summary",
+    "--principles",
+    "--local-only",
+    "--fixed-child",
+    "--fixed-child-pending",
+    "--review-fallback"
+  ].filter((flag) => flags.has(flag));
+  if (incompatible.length) {
+    console.error(`--audit-chunk cannot be combined with ${incompatible.join(", ")}`);
+    console.error(usage);
+    process.exit(2);
+  }
+} else if (sharedEvidenceCoreUrlFlag >= 0) {
+  console.error("--shared-evidence-core-url requires --audit-chunk");
   console.error(usage);
   process.exit(2);
 }
@@ -98,7 +160,11 @@ const auditOnlyIncompatibleFlags = [
   "--fixed-child-pending",
   "--review-fallback",
   "--expected-final-sha",
-  "--emit-preflight"
+  "--emit-preflight",
+  "--mutation-ready",
+  "--emit-final-summary",
+  "--audit-chunk",
+  "--shared-evidence-core-url"
 ].filter((flag) => flags.has(flag));
 if (auditOnly && auditOnlyIncompatibleFlags.length) {
   console.error(`--audit-only cannot be combined with ${auditOnlyIncompatibleFlags.join(", ")}`);
@@ -169,6 +235,64 @@ const closeoutPreflightBlock = () => {
   const content = lines.slice(start + 1, end).filter((line) => line.trim());
   if (!content.length || content.some((line) => !/^\s*[-*]\s+\S/.test(line))) return "";
   return lines.slice(start, end + 1).join("\n");
+};
+
+const acceptedResidualRecords = () => {
+  const records = [];
+  const findingHeader = "| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |";
+  for (const cells of tableRowsAfter(findingHeader)) {
+    if (cells[9]?.toLowerCase() === "accepted residual") {
+      records.push({ title: cells[4], axis: cells[2] });
+    }
+  }
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const title = lines[index].match(
+      /^\s*[-*]?\s*(?:\*\*)?Accepted residual(?:\*\*)?:\s*(\S.*)$/i
+    )?.[1];
+    if (!title) continue;
+    let axis;
+    for (let offset = index + 1; offset < Math.min(lines.length, index + 12); offset += 1) {
+      if (/^\s*[-*]?\s*(?:\*\*)?Accepted residual(?:\*\*)?:/i.test(lines[offset])) break;
+      if (/^#{1,6}\s+/.test(lines[offset])) break;
+      axis = lines[offset].match(
+        /^\s*[-*]?\s*(?:\*\*)?Axis(?:\*\*)?:\s*(\S.*)$/i
+      )?.[1] ?? axis;
+      if (axis) break;
+    }
+    records.push({ title, axis });
+  }
+
+  const unique = new Map();
+  for (const record of records) {
+    const title = record.title?.replaceAll("&#124;", "|").replace(/\s+/g, " ").trim() ?? "";
+    const rawAxis = record.axis?.replace(/\s+/g, " ").trim() ?? "";
+    const axis = /^standards$/i.test(rawAxis) ? "Standards" : /^spec$/i.test(rawAxis) ? "Spec" : rawAxis;
+    unique.set(`${axis.toLowerCase()}\u0000${title.toLowerCase()}`, { title, axis });
+  }
+  return [...unique.values()];
+};
+
+const durableRecord = () => {
+  const value = ["Audit sink", "Durable sink/body inspected"]
+    .flatMap(valuesForField)
+    .find((candidate) => candidate && !/^<.*>$/.test(candidate));
+  return value?.replace(/^`|`$/g, "").replace(/[.;]+$/u, "").trim();
+};
+
+const buildFinalSummary = (records, sink) => {
+  const orderedAxes = ["Standards", "Spec"];
+  const axes = [...new Set(records.map((record) => record.axis).filter(Boolean))]
+    .sort((left, right) => {
+      const leftIndex = orderedAxes.indexOf(left);
+      const rightIndex = orderedAxes.indexOf(right);
+      if (leftIndex >= 0 || rightIndex >= 0) {
+        return (leftIndex < 0 ? orderedAxes.length : leftIndex) -
+          (rightIndex < 0 ? orderedAxes.length : rightIndex);
+      }
+      return left.localeCompare(right);
+    });
+  return `Accepted residuals: ${records.length}; affected axes ${axes.join(", ") || "none"}; durable record ${sink}; unhandled findings none beyond accepted residuals.`;
 };
 
 const concreteSha = (value) => value.match(/`?\b([0-9a-f]{7,40})\b`?/i)?.[1];
@@ -251,62 +375,81 @@ if (!auditOnly) {
       }
     }
   }
-  requireMatch(/(^|\n)(#{1,6}\s*)?Verification\b:?/i, "verification evidence");
-  requireMatch(/TDD evidence gate passed:|N\/A because no tdd skill was invoked/i, "TDD evidence or explicit N/A");
-  requireMatch(/Review:|Review fallback:/, "review evidence");
-  requireMatch(/Browser evidence:|browser evidence|browser smoke/i, "browser evidence or N/A");
-  requireMatch(/Console state:|Browser console state:|browser console state recorded/i, "browser console state or N/A");
-  requireMatch(/Final freshness delta|Browser\/manual evidence freshness|final browser\/manual freshness/i, "final browser/manual freshness");
-  requireText("Evidence identity refresh:");
-  requireMatch(
-    /^\s*[-*]?\s*Current evidence identities:\s+.*fixture paths.+browser sessions.+packet paths\/hashes.+active revisions.+artifacts/im,
-    "current evidence identity categories"
-  );
-  requireMatch(
-    /^\s*[-*]?\s*Superseded evidence identities:\s+.*fixture paths.+browser sessions.+packet paths\/hashes.+active revisions.+artifacts/im,
-    "superseded evidence identity categories"
-  );
-  requireMatch(/^\s*[-*]?\s*Superseded-token sweep:\s+\S.+$/im, "superseded-token sweep result");
-  const currentIdentities = body.match(
-    /^\s*[-*]?\s*Current evidence identities:\s+(.+)$/im
-  )?.[1] ?? "";
-  const supersededIdentities = body.match(
-    /^\s*[-*]?\s*Superseded evidence identities:\s+(.+)$/im
-  )?.[1] ?? "";
-  const normalizedSupersededIdentities = supersededIdentities.replace(/[.,;:!?]+$/u, "");
-  const supersededSweep = body.match(/^\s*[-*]?\s*Superseded-token sweep:\s+(.+)$/im)?.[1] ?? "";
-  const withheldFixtureIdentity = /fixture paths\s+withheld\b/i.test(currentIdentities);
-  const completeWithheldFixtureIdentity = /fixture paths\s+withheld because\s+[^;]+;\s*logical fixture\s+[^;]+;\s*content SHA-256\s+[0-9a-f]{64};\s*provenance\s+[^;]+(?=;|$)/i;
-  const allSupersededCategoriesNone = [
-    /fixture paths\s+none(?:;|$)/i,
-    /browser sessions\s+none(?:;|$)/i,
-    /packet paths\/hashes\s+none(?:;|$)/i,
-    /active revisions\s+none(?:;|$)/i,
-    /artifacts\s+none(?:;|$)/i
-  ].every((pattern) => pattern.test(normalizedSupersededIdentities));
-  if (/\b(?:TODO|TBD|pending|unknown)\b/i.test(`${currentIdentities} ${supersededIdentities} ${supersededSweep}`)) {
-    errors.push("evidence identity refresh contains an unresolved value");
-  }
-  if (/fixture paths\s+none published because/i.test(currentIdentities)) {
-    errors.push("withheld fixture paths must use the structured 'fixture paths withheld because ...' identity form");
-  }
-  if (withheldFixtureIdentity && !completeWithheldFixtureIdentity.test(currentIdentities)) {
-    errors.push(
-      "withheld fixture identity must include reason, logical fixture, 64-character content SHA-256, and provenance"
+  if (auditChunk) {
+    requireText(`Shared evidence core: ${sharedEvidenceCoreUrl}`, "exact shared evidence core URL");
+    requireText("Audit chunk body check passed:", "audit chunk body check line");
+    for (const [pattern, label] of [
+      [/(^|\n)(#{1,6}\s*)?Verification\b:?/i, "repeated verification evidence"],
+      [/^\s*TDD evidence(?:\s+gate passed:.*|:.*)?\s*$/im, "repeated TDD evidence"],
+      [/^\s*Review(?: fallback)?:/im, "repeated review evidence"],
+      [/^\s*Browser evidence:/im, "repeated browser evidence"],
+      [/^\s*Evidence identity refresh:/im, "repeated evidence identity block"],
+      [/^\s*Principles\/ADR conformance:/im, "repeated Principles/ADR evidence"],
+      [/^\s*Local-only SHA:/im, "repeated local-only SHA evidence"],
+      [/^\s*Closeout preflight:/im, "repeated closeout preflight"],
+      [/^\s*Closeout gate passed:/im, "repeated closeout gate"],
+      [/^\s*Fixed child/im, "repeated fixed-child evidence"]
+    ]) {
+      forbidMatch(pattern, label);
+    }
+  } else {
+    requireMatch(/(^|\n)(#{1,6}\s*)?Verification\b:?/i, "verification evidence");
+    requireMatch(/TDD evidence gate passed:|N\/A because no tdd skill was invoked/i, "TDD evidence or explicit N/A");
+    requireMatch(/Review:|Review fallback:/, "review evidence");
+    requireMatch(/Browser evidence:|browser evidence|browser smoke/i, "browser evidence or N/A");
+    requireMatch(/Console state:|Browser console state:|browser console state recorded/i, "browser console state or N/A");
+    requireMatch(/Final freshness delta|Browser\/manual evidence freshness|final browser\/manual freshness/i, "final browser/manual freshness");
+    requireText("Evidence identity refresh:");
+    requireMatch(
+      /^\s*[-*]?\s*Current evidence identities:\s+.*fixture paths.+browser sessions.+packet paths\/hashes.+active revisions.+artifacts/im,
+      "current evidence identity categories"
     );
-  }
-  const hasClassifiedHistoryResult = /\bno hits outside classified identity\/history lines\b/i.test(supersededSweep);
-  const hasActiveProofResult = /\bno active-proof hits\b/i.test(supersededSweep);
-  if (!allSupersededCategoriesNone && (!hasClassifiedHistoryResult || !hasActiveProofResult)) {
-    errors.push(
-      "superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities"
+    requireMatch(
+      /^\s*[-*]?\s*Superseded evidence identities:\s+.*fixture paths.+browser sessions.+packet paths\/hashes.+active revisions.+artifacts/im,
+      "superseded evidence identity categories"
     );
+    requireMatch(/^\s*[-*]?\s*Superseded-token sweep:\s+\S.+$/im, "superseded-token sweep result");
+    const currentIdentities = body.match(
+      /^\s*[-*]?\s*Current evidence identities:\s+(.+)$/im
+    )?.[1] ?? "";
+    const supersededIdentities = body.match(
+      /^\s*[-*]?\s*Superseded evidence identities:\s+(.+)$/im
+    )?.[1] ?? "";
+    const normalizedSupersededIdentities = supersededIdentities.replace(/[.,;:!?]+$/u, "");
+    const supersededSweep = body.match(/^\s*[-*]?\s*Superseded-token sweep:\s+(.+)$/im)?.[1] ?? "";
+    const withheldFixtureIdentity = /fixture paths\s+withheld\b/i.test(currentIdentities);
+    const completeWithheldFixtureIdentity = /fixture paths\s+withheld because\s+[^;]+;\s*logical fixture\s+[^;]+;\s*content SHA-256\s+[0-9a-f]{64};\s*provenance\s+[^;]+(?=;|$)/i;
+    const allSupersededCategoriesNone = [
+      /fixture paths\s+none(?:;|$)/i,
+      /browser sessions\s+none(?:;|$)/i,
+      /packet paths\/hashes\s+none(?:;|$)/i,
+      /active revisions\s+none(?:;|$)/i,
+      /artifacts\s+none(?:;|$)/i
+    ].every((pattern) => pattern.test(normalizedSupersededIdentities));
+    if (/\b(?:TODO|TBD|pending|unknown)\b/i.test(`${currentIdentities} ${supersededIdentities} ${supersededSweep}`)) {
+      errors.push("evidence identity refresh contains an unresolved value");
+    }
+    if (/fixture paths\s+none published because/i.test(currentIdentities)) {
+      errors.push("withheld fixture paths must use the structured 'fixture paths withheld because ...' identity form");
+    }
+    if (withheldFixtureIdentity && !completeWithheldFixtureIdentity.test(currentIdentities)) {
+      errors.push(
+        "withheld fixture identity must include reason, logical fixture, 64-character content SHA-256, and provenance"
+      );
+    }
+    const hasClassifiedHistoryResult = /\bno hits outside classified identity\/history lines\b/i.test(supersededSweep);
+    const hasActiveProofResult = /\bno active-proof hits\b/i.test(supersededSweep);
+    if (!allSupersededCategoriesNone && (!hasClassifiedHistoryResult || !hasActiveProofResult)) {
+      errors.push(
+        "superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities"
+      );
+    }
+    if (allSupersededCategoriesNone && /^N\/A\b/i.test(supersededSweep) && !/because/i.test(supersededSweep)) {
+      errors.push("superseded-token sweep N/A must include 'because'");
+    }
+    requireText("Closeout body check passed:", "closeout body check line");
+    requireText("Closeout gate passed: audit sink", "closeout gate line");
   }
-  if (allSupersededCategoriesNone && /^N\/A\b/i.test(supersededSweep) && !/because/i.test(supersededSweep)) {
-    errors.push("superseded-token sweep N/A must include 'because'");
-  }
-  requireText("Closeout body check passed:", "closeout body check line");
-  requireText("Closeout gate passed: audit sink", "closeout gate line");
 }
 
 if (flags.has("--principles")) {
@@ -321,7 +464,7 @@ if (flags.has("--local-only")) {
   forbidMatch(/^Local-only SHA status:/m, "Local-only SHA status paraphrase");
 }
 
-if (flags.has("--closing")) {
+if (flags.has("--closing") && !auditChunk) {
   const verificationHeader = "| Exact command | Observed result/counts | Run count | Represented SHA/tree |";
   requireText(verificationHeader, "verification command ledger header");
   const verificationRows = tableRowsAfter(verificationHeader);
@@ -557,6 +700,27 @@ if (emitPreflight && !preflight) {
   errors.push("--emit-preflight requires an exact Closeout preflight block followed by the Closeout gate passed line");
 }
 
+const finalSummaryRequested = emitFinalSummary || mutationReady;
+const residualRecords = finalSummaryRequested ? acceptedResidualRecords() : [];
+const invalidResidualAxes = residualRecords.filter(
+  (record) => !["Standards", "Spec"].includes(record.axis)
+);
+if (invalidResidualAxes.length) {
+  errors.push(
+    `accepted residual records must name Axis Standards or Spec before final-summary emission: ${invalidResidualAxes.map((record) => record.title).join("; ")}`
+  );
+}
+if (finalSummaryRequested && /\baccepted residuals?\b/i.test(body) && residualRecords.length === 0) {
+  errors.push("final-summary emission found an accepted-residual claim without a structured residual record");
+}
+const summarySink = finalSummaryRequested ? durableRecord() : undefined;
+if (finalSummaryRequested && !summarySink) {
+  errors.push("final-summary emission requires a concrete Audit sink or Durable sink/body inspected field");
+}
+const finalSummary = finalSummaryRequested && summarySink
+  ? buildFinalSummary(residualRecords, summarySink)
+  : "";
+
 if (errors.length) {
   console.error(`Closeout body validation failed for ${file}:`);
   for (const error of errors) console.error(`- ${error}`);
@@ -564,7 +728,18 @@ if (errors.length) {
 }
 
 if (emitPreflight) {
-  console.log(`${preflight}\n\nPost-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.`);
+  const mutationConfirmation = mutationReady
+    ? `\n\nMutation-ready closeout validation passed: ${file}`
+    : "";
+  const summary = finalSummary ? `\n\n${finalSummary}` : "";
+  console.log(`${preflight}\n\nPost-comment verification next: after gh issue comment --body-file returns a URL, run node .claude/skills/implement/scripts/verify-github-comment-body.mjs "$comment_url" "$body" before any close command.${mutationConfirmation}${summary}`);
+} else if (auditChunk) {
+  console.log(`Acceptance audit chunk validation passed: ${file}; shared evidence core ${sharedEvidenceCoreUrl}`);
+} else if (auditOnly) {
+  console.log(`Acceptance audit validation passed: ${file}`);
+} else if (flags.has("--closing")) {
+  const summary = finalSummary ? `\n${finalSummary}` : "";
+  console.log(`Closeout body validation passed: ${file}; not mutation-ready. Re-run with --emit-preflight --mutation-ready before any tracker mutation.${summary}`);
 } else {
-  console.log(`${auditOnly ? "Acceptance audit" : "Closeout body"} validation passed: ${file}`);
+  console.log(`Closeout body validation passed: ${file}`);
 }

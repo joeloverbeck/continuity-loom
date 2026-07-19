@@ -16,7 +16,7 @@ import {
 export const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
 export const DEFAULT_CLOSEOUT_EVIDENCE_HEADROOM_BYTES = 16_384;
 
-const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> --parent <issue> --review <normal|fallback> [--audit-input <audit.md>] [--evidence-input <evidence.json>] [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
+const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> (--parent <issue> | --scope issue-set --anchor <issue>) [--audit-input <audit.md>] [--evidence-input <evidence.json>] (--review <normal|fallback> [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] | --audit-chunk --shared-evidence-core-url <url>) [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
 
 export const assertCloseoutBodySize = (body, maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES) => {
   if (!Number.isInteger(maxBytes) || maxBytes <= 0) {
@@ -404,9 +404,16 @@ TDD closeout preflight:
 TDD evidence gate passed: durable sink <stable issue reference>; compact table/header <present after structural check>; seams accounted for ${accountedGate}; CONTEXT.md status <present, absent, or N/A>; ADRs/principles/docs status <present or N/A>; sequence evidence <present or N/A>; evidence identities <present>; partial-red / red-first skip reasons <none or listed>; evidence-only rows <none or listed>; proof server preflight <present or N/A>; existing-test contract-change rows <none or listed>.`;
 };
 
+const reviewAcceptanceSource = (issue) => {
+  const requiresExactAuditCitation = issue.checks.every(
+    (check) => !/^(?:AC|US)\d+$/i.test(check.id)
+  );
+  return `${acceptanceIds(issue)}${requiresExactAuditCitation ? "; exact adjacent acceptance audit table rows below" : ""}; sequence: <ordered events and observing proof or justified N/A>`;
+};
+
 const reviewRows = (manifest) => manifest.issues.map(
   (issue) =>
-    `| #${issue.number} | ${acceptanceIds(issue)}; sequence: <ordered events and observing proof or justified N/A> | <diff, tests, docs, and artifacts reviewed> | <none or finding> |`
+    `| #${issue.number} | ${reviewAcceptanceSource(issue)} | <diff, tests, docs, and artifacts reviewed> | <none or finding> |`
 ).join("\n");
 
 const reviewRuntimeEvidenceBlock = `Browser/manual evidence freshness: <final-tree rerun, justified not affected proof, blocked reason, or N/A because no browser/manual evidence was used>
@@ -509,7 +516,7 @@ Commit handling: <amended/follow-up/unchanged commit SHA or no commit yet>
 Residual findings: <remaining Standards and Spec findings or none>`;
 };
 
-const normalReviewBlock = (manifest, immediateFix, evidence) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
+const normalReviewBlock = (manifest, immediateFix, evidence, scopeMode) => `Review frame: fixed point input <ref>; fixed point resolved SHA <sha>; reviewed HEAD SHA <sha>; diff command \`git diff <resolved SHA>...HEAD\`; commits <commit list>; worktree scope <scope>; excluded dirty files <none or paths>; spec source <issues and specs>.
 
 Review: code-review against <resolved fixed point>; outcome ${immediateFix ? "findings fixed in SHA <final SHA>" : "<no findings or accepted residuals>"}; verification rerun <commands>.
 
@@ -547,7 +554,7 @@ Axis summary: Standards <count/worst>, Spec <count/worst>
 
 Residual findings: <none or accepted residual records>
 
-Parent PRD coverage: <parent row present, exact audit rows cited, or N/A>
+Parent PRD coverage: ${scopeMode === "issue-set" ? "N/A because this is a sibling issue set with no parent PRD." : "<parent row present, exact audit rows cited, or N/A>"}
 
 Spec sequence coverage: sequence: <ordered events and observing proof or justified N/A>
 
@@ -617,10 +624,98 @@ Fixed child final inline close comment inspected: Completed by <final SHA>. Evid
 Fixed child final inline close comment inspected: N/A because no fixed-template child closeout applies`;
 };
 
+const resolveScope = ({ scopeMode = "parent", parentIssue, anchorIssue }) => {
+  if (!new Set(["parent", "issue-set"]).has(scopeMode)) {
+    throw new Error("scope mode must be parent or issue-set");
+  }
+  if (scopeMode === "parent") {
+    if (!Number.isInteger(parentIssue) || parentIssue <= 0) {
+      throw new Error("parent issue must be a positive integer");
+    }
+    if (anchorIssue !== undefined) throw new Error("anchor issue applies only to issue-set scope");
+    return { scopeMode, subjectIssue: parentIssue };
+  }
+  if (!Number.isInteger(anchorIssue) || anchorIssue <= 0) {
+    throw new Error("issue-set anchor must be a positive integer");
+  }
+  if (parentIssue !== undefined) throw new Error("use either parent scope or issue-set scope, not both");
+  return { scopeMode, subjectIssue: anchorIssue };
+};
+
+const scopeHeading = ({ scopeMode, subjectIssue }) => scopeMode === "issue-set"
+  ? `sibling issue set anchored at #${subjectIssue}`
+  : `#${subjectIssue}`;
+
+const auditSourceFor = (manifest, audit, auditRows) => {
+  if (audit !== undefined && auditRows.length > 0) {
+    throw new Error("use either audit input or evidence auditRows, not both");
+  }
+  const source = auditRows.length > 0
+    ? buildStructuredAudit(manifest, auditRows)
+    : audit ?? buildAuditScaffold(manifest);
+  return validateAuditInput(manifest, source);
+};
+
+const validateSharedEvidenceCoreUrl = (value) => {
+  if (typeof value !== "string" || !/^https:\/\/\S+$/i.test(value)) {
+    throw new Error("shared evidence core URL must be a concrete HTTPS URL");
+  }
+  return value;
+};
+
+const renderAuditChunkScaffold = (manifest, options, scope) => {
+  const {
+    audit,
+    evidence,
+    sharedEvidenceCoreUrl,
+    fixedChildMode = "none",
+    maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES
+  } = options;
+  if (fixedChildMode !== "none") {
+    throw new Error("audit chunks cannot use fixed-child modes");
+  }
+  const incompatibleModes = [
+    ["immediate-fix", options.immediateFix],
+    ["tdd-parent-rollup", options.tddParentRollup],
+    ["browser", options.browser],
+    ["principles", options.principles],
+    ["local-only", options.localOnly]
+  ].filter(([, enabled]) => enabled).map(([mode]) => mode);
+  if (incompatibleModes.length > 0) {
+    throw new Error(`audit chunks cannot use shared-core modes: ${incompatibleModes.join(", ")}`);
+  }
+  for (const field of ["tddRows", "tddReviewFixes", "reviewFindings"]) {
+    if (Array.isArray(evidence?.[field]) && evidence[field].length > 0) {
+      throw new Error("audit chunk evidence may contain auditRows only");
+    }
+  }
+  const auditRows = validateStructuredAuditRows(manifest, evidence?.auditRows ?? []);
+  const auditText = auditSourceFor(manifest, audit, auditRows);
+  const coreUrl = validateSharedEvidenceCoreUrl(sharedEvidenceCoreUrl);
+  const body = `Acceptance evidence chunk for ${scopeHeading(scope)}
+
+Scaffold status: incomplete — replace every angle-bracket placeholder and validate before publication.
+
+Final SHA: <final SHA>
+
+Shared evidence core: ${coreUrl}
+
+The exact-read shared evidence core owns verification, TDD, review, browser, evidence-identity, Principles/ADR, and mutation-preflight evidence. This chunk owns only the disjoint acceptance rows below.
+
+## Acceptance audit
+
+${auditText}
+
+Audit chunk body check passed: exact manifest rows inspected and shared evidence core exact-read verified.
+`;
+  return { body, auditText, maxBytes };
+};
+
 const renderCloseoutBodyScaffold = (manifest, options) => {
   requireManifest(manifest);
+  const scope = resolveScope(options);
+  if (options.auditChunk) return renderAuditChunkScaffold(manifest, options, scope);
   const {
-    parentIssue,
     audit,
     evidence,
     reviewMode,
@@ -633,25 +728,21 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
     maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES
   } = options;
 
-  if (!Number.isInteger(parentIssue) || parentIssue <= 0) throw new Error("parent issue must be a positive integer");
   if (!["normal", "fallback"].includes(reviewMode)) throw new Error("review mode must be normal or fallback");
   if (!["none", "pending", "final"].includes(fixedChildMode)) {
     throw new Error("fixed child mode must be none, pending, or final");
+  }
+  if (scope.scopeMode === "issue-set" && fixedChildMode !== "none") {
+    throw new Error("issue-set scope cannot use fixed-child modes");
   }
 
   const structuredEvidence = validateStructuredEvidence(manifest, evidence, {
     immediateFix,
     tddParentRollup
   });
-  if (audit !== undefined && structuredEvidence?.auditRows.length > 0) {
-    throw new Error("use either audit input or evidence auditRows, not both");
-  }
-  const auditSource = structuredEvidence?.auditRows.length > 0
-    ? buildStructuredAudit(manifest, structuredEvidence.auditRows)
-    : audit ?? buildAuditScaffold(manifest);
-  const auditText = validateAuditInput(manifest, auditSource);
+  const auditText = auditSourceFor(manifest, audit, structuredEvidence?.auditRows ?? []);
   const review = reviewMode === "normal"
-    ? normalReviewBlock(manifest, immediateFix, structuredEvidence)
+    ? normalReviewBlock(manifest, immediateFix, structuredEvidence, scope.scopeMode)
     : fallbackReviewBlock(manifest, immediateFix, structuredEvidence);
   const tdd = tddParentRollup
     ? tddBlock(manifest, structuredEvidence)
@@ -663,7 +754,21 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
     ? "Principles/ADR conformance: <no deliberate exceptions or approved exception>."
     : "Principles/ADR conformance: N/A because no in-scope issue has a Principles section.";
 
-  const body = `Implementation closeout for #${parentIssue}
+  const stateBlock = scope.scopeMode === "issue-set"
+    ? `Issue-set state snapshot before closeout: <exact issue states>
+
+Post-closeout issue-set verification: <exact CLOSED/open states by issue number>`
+    : `Child state snapshot before child closeout: <exact issue states or N/A>
+
+Post-child closure verification before parent closeout: <exact issue states or pending follow-up>`;
+  const parentRollupValue = scope.scopeMode === "issue-set"
+    ? "N/A because this is a sibling issue set with no parent PRD"
+    : "<this comment URL, real URL, or N/A>";
+  const fixedChildInspection = scope.scopeMode === "issue-set"
+    ? "N/A because sibling issues do not use fixed-child closeout"
+    : "<inspection status or N/A>";
+
+  const body = `Implementation closeout for ${scopeHeading(scope)}
 
 Scaffold status: incomplete — replace every angle-bracket placeholder and validate before publication.
 
@@ -693,16 +798,14 @@ ${principlesLine}
 
 ${fixedChildBlock(fixedChildMode)}
 
-Child state snapshot before child closeout: <exact issue states or N/A>
-
-Post-child closure verification before parent closeout: <exact issue states or pending follow-up>
+${stateBlock}
 
 Closeout preflight:
 - Audit sink: <stable issue reference>
 - Body file(s) inspected: <local body inspected privately or N/A>
-- Parent rollup URL: <this comment URL, real URL, or N/A>
-- Fixed child inline close comment: <inspection status or N/A>
-- Fixed child final inline close comment inspected: <exact final text or N/A>
+- Parent rollup URL: ${parentRollupValue}
+- Fixed child inline close comment: ${fixedChildInspection}
+- Fixed child final inline close comment inspected: ${fixedChildInspection}
 - Final SHA: <final SHA>
 - Remote reachability: <remote branch contains SHA or no remote branch contains SHA>
 - Principles/ADR conformance: <present or N/A>
@@ -745,7 +848,10 @@ if (isCli) {
     "--audit-input",
     "--evidence-input",
     "--parent",
+    "--scope",
+    "--anchor",
     "--review",
+    "--shared-evidence-core-url",
     "--fixed-child",
     "--max-bytes"
   ];
@@ -770,11 +876,35 @@ if (isCli) {
     if (!manifestPath) throw new Error("manifest path is required");
     const outputPath = valueFor("--output");
     const parentText = valueFor("--parent");
+    const scopeMode = valueFor("--scope") ?? "parent";
+    const anchorText = valueFor("--anchor");
     const reviewMode = valueFor("--review");
+    const auditChunk = args.includes("--audit-chunk");
+    const sharedEvidenceCoreUrl = valueFor("--shared-evidence-core-url");
     const fixedChildMode = valueFor("--fixed-child") ?? "none";
-    for (const flag of ["--output", "--parent", "--review"]) {
+    for (const flag of ["--output"]) {
       const value = valueFor(flag);
       if (!value || value.startsWith("--")) throw new Error(`${flag} requires a value`);
+    }
+    if (scopeMode === "parent") {
+      if (!parentText || parentText.startsWith("--")) throw new Error("--parent requires a value");
+      if (anchorText !== undefined) throw new Error("--anchor requires --scope issue-set");
+    } else if (scopeMode === "issue-set") {
+      if (!anchorText || anchorText.startsWith("--")) throw new Error("--scope issue-set requires --anchor");
+      if (parentText !== undefined) throw new Error("use either --parent or --scope issue-set --anchor, not both");
+    } else {
+      throw new Error("--scope must be issue-set when supplied");
+    }
+    if (auditChunk) {
+      if (!sharedEvidenceCoreUrl || sharedEvidenceCoreUrl.startsWith("--")) {
+        throw new Error("--audit-chunk requires --shared-evidence-core-url");
+      }
+      if (reviewMode !== undefined) throw new Error("--audit-chunk cannot be combined with --review");
+    } else {
+      if (!reviewMode || reviewMode.startsWith("--")) throw new Error("--review requires a value");
+      if (sharedEvidenceCoreUrl !== undefined) {
+        throw new Error("--shared-evidence-core-url requires --audit-chunk");
+      }
     }
     if (args.includes("--audit-input")) {
       const value = valueFor("--audit-input");
@@ -796,10 +926,14 @@ if (isCli) {
     const auditPath = valueFor("--audit-input");
     const evidencePath = valueFor("--evidence-input");
     const { body, sizePlan } = buildCloseoutBodyPlan(manifest, {
-      parentIssue: Number(parentText),
+      scopeMode,
+      parentIssue: scopeMode === "parent" ? Number(parentText) : undefined,
+      anchorIssue: scopeMode === "issue-set" ? Number(anchorText) : undefined,
       audit: auditPath ? readFileSync(auditPath, "utf8") : undefined,
       evidence: evidencePath ? JSON.parse(readFileSync(evidencePath, "utf8")) : undefined,
       reviewMode,
+      auditChunk,
+      sharedEvidenceCoreUrl,
       immediateFix: args.includes("--immediate-fix"),
       tddParentRollup: args.includes("--tdd-parent-rollup"),
       browser: args.includes("--browser"),

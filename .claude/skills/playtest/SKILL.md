@@ -1,6 +1,6 @@
 ---
 name: playtest
-description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates prose, Ideate, Record Hygiene, and Segment Reconciliation prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
+description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates the prose prompt and any naturally invoked Ideate, Record Hygiene, or Segment Reconciliation prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
 ---
 
 # Continuity Loom Author Playtest
@@ -77,10 +77,10 @@ reports to reconstruct counts.
 
 | Instrument                         | State  | Completed | Sunset |
 | ---------------------------------- | ------ | --------: | -----: |
-| Cold First-View Witness            | active |         0 |      1 |
-| Paired-Draw Check                  | active |         0 |      2 |
-| Independent Claim Challenge report | active |         0 |      2 |
-| Method-register natural-run row    | active |         2 |      3 |
+| Cold First-View Witness            | awaiting-disposition |         1 |      1 |
+| Paired-Draw Check                  | active               |         1 |      2 |
+| Independent Claim Challenge report | active               |         1 |      2 |
+| Method-register natural-run row    | awaiting-disposition |         3 |      3 |
 
 Only after the final report validation passes:
 
@@ -156,6 +156,11 @@ when the accepted sequence is visibly confirmed and records, Generation Brief, a
 represent the author's chosen continuity for a later run, or a post-acceptance blocker is logged.
 
 ### 7. Report and close
+
+The source-and-doc-blind product journey ends before closeout. Before drafting any repository
+artifact, read root `AGENTS.md` and `docs/ACTIVE-DOCS.md`, then follow only the post-journey
+authorities they select for those writes. Do not use those reads to revise the sealed mental model,
+contemporaneous observations, product findings, or evidence tags.
 
 Read [Blockers and diagnostics](references/blockers-and-diagnostics.md) when any probable blocker
 or visible defect appears, then read [Report format](references/report-format.md). Consolidate the

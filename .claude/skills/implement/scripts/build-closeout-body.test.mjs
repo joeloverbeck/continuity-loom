@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,6 +20,7 @@ import {
   buildCloseoutBodySizePlan,
   validateAuditInput
 } from "./build-closeout-body.mjs";
+import { validateReviewSpecCoverage } from "../../code-review/scripts/review-evidence-contract.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const builder = resolve(here, "build-closeout-body.mjs");
@@ -951,6 +952,65 @@ test("closeout scaffold CLI writes a deterministic body", () => {
   assert.match(secondBody, /TDD review-fix map: RF-1, RF-2, RF-3 below\./);
 });
 
+test("closeout scaffold CLI supports sibling issue sets and linked audit chunks", () => {
+  const directory = mkdtempSync(join(tmpdir(), "implement-issue-set-scaffold-test-"));
+  const manifestPath = join(directory, "manifest.json");
+  const auditPath = join(directory, "audit.md");
+  const corePath = join(directory, "core.md");
+  const chunkPath = join(directory, "chunk.md");
+  const sharedEvidenceCoreUrl = "https://github.com/example/repo/issues/364#issuecomment-123";
+  writeFileSync(manifestPath, JSON.stringify(manifest));
+  writeFileSync(auditPath, buildAuditScaffold(manifest));
+
+  const core = spawnSync(
+    process.execPath,
+    [
+      builder,
+      manifestPath,
+      "--audit-input",
+      auditPath,
+      "--output",
+      corePath,
+      "--scope",
+      "issue-set",
+      "--anchor",
+      "364",
+      "--review",
+      "normal"
+    ],
+    { encoding: "utf8" }
+  );
+  const chunk = spawnSync(
+    process.execPath,
+    [
+      builder,
+      manifestPath,
+      "--audit-input",
+      auditPath,
+      "--output",
+      chunkPath,
+      "--scope",
+      "issue-set",
+      "--anchor",
+      "364",
+      "--audit-chunk",
+      "--shared-evidence-core-url",
+      sharedEvidenceCoreUrl
+    ],
+    { encoding: "utf8" }
+  );
+  const coreBody = readFileSync(corePath, "utf8");
+  const chunkBody = readFileSync(chunkPath, "utf8");
+  rmSync(directory, { recursive: true, force: true });
+
+  assert.equal(core.status, 0, core.stderr);
+  assert.equal(chunk.status, 0, chunk.stderr);
+  assert.match(coreBody, /^Implementation closeout for sibling issue set anchored at #364$/m);
+  assert.match(coreBody, /^Parent PRD coverage: N\/A because this is a sibling issue set with no parent PRD\.$/m);
+  assert.match(chunkBody, /^Acceptance evidence chunk for sibling issue set anchored at #364$/m);
+  assert.match(chunkBody, new RegExp(`^Shared evidence core: ${sharedEvidenceCoreUrl}$`, "m"));
+});
+
 test("closeout scaffold CLI refuses an oversized output", () => {
   const directory = mkdtempSync(join(tmpdir(), "implement-closeout-size-test-"));
   const manifestPath = join(directory, "manifest.json");
@@ -1024,8 +1084,8 @@ test("closeout guidance documents structured splits, audit rows, and withheld-fi
     "utf8"
   );
 
-  assert.match(templates, /Structured-evidence split rule:/);
-  assert.match(templates, /filter `auditRows` to exactly the checks selected into that chunk/);
+  assert.match(templates, /Shared-core structured-evidence rule:/);
+  assert.match(templates, /linked audit chunk's evidence file may contain `auditRows` only/);
   assert.match(templates, /Use either `auditRows` or `--audit-input`, never both/);
   assert.match(templates, /Repair classes are `behavior`, `coverage-only`, `Standards-only`/);
   assert.match(templates, /form is non-`none` for review validation/);
@@ -1050,4 +1110,78 @@ test("closeout guidance documents structured splits, audit rows, and withheld-fi
     tddParentRollup: true,
     evidence: documentedEvidence
   }));
+});
+
+test("Principles-only issue-set review rows cite their adjacent exact audit rows", () => {
+  const principlesManifest = selectAcceptanceManifest(manifest, ["364:Principles"]);
+  const generated = buildCloseoutBodyScaffold(principlesManifest, {
+    scopeMode: "issue-set",
+    anchorIssue: 364,
+    reviewMode: "normal"
+  });
+  const body = generated.replace(
+    /^\| #364 \| `Principles`; exact adjacent acceptance audit table rows below; sequence:.*$/m,
+    "| #364 | `Principles`; exact adjacent acceptance audit table rows below; sequence: N/A because the criterion is not sequence-sensitive | implementation diff and node --test | none |"
+  );
+  const errors = [];
+
+  validateReviewSpecCoverage(body, errors, {
+    requireIssueSet: true,
+    acceptanceManifest: principlesManifest
+  });
+
+  assert.deepEqual(errors, []);
+  assert.match(body, /^Implementation closeout for sibling issue set anchored at #364$/m);
+  assert.match(body, /^Parent PRD coverage: N\/A because this is a sibling issue set with no parent PRD\.$/m);
+});
+
+test("linked audit chunks omit repeated review evidence and retain exact manifest rows", () => {
+  const sharedEvidenceCoreUrl = "https://github.com/example/repo/issues/364#issuecomment-123";
+  const body = buildCloseoutBodyScaffold(manifest, {
+    scopeMode: "issue-set",
+    anchorIssue: 364,
+    auditChunk: true,
+    sharedEvidenceCoreUrl,
+    evidence: { auditRows: structuredAuditRows }
+  });
+
+  assert.match(body, /^Acceptance evidence chunk for sibling issue set anchored at #364$/m);
+  assert.match(body, new RegExp(`^Shared evidence core: ${sharedEvidenceCoreUrl}$`, "m"));
+  assert.match(body, /\| #364 \| AC1 - Parent behavior \|/);
+  assert.match(body, /\| #368 \| AC1 - Replay the production route \|/);
+  assert.doesNotMatch(body, /^Review frame:/m);
+  assert.doesNotMatch(body, /^TDD evidence/m);
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      scopeMode: "issue-set",
+      anchorIssue: 364,
+      auditChunk: true,
+      sharedEvidenceCoreUrl,
+      evidence: structuredEvidence
+    }),
+    /audit chunk evidence may contain auditRows only/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      scopeMode: "issue-set",
+      anchorIssue: 364,
+      auditChunk: true,
+      sharedEvidenceCoreUrl,
+      principles: true
+    }),
+    /audit chunks cannot use shared-core modes: principles/
+  );
+});
+
+test("Codex implement adapter is independent, explicit-only, and points to the canonical skill", () => {
+  const adapterRoot = resolve(here, "../../../../.agents/skills/implement");
+  const adapter = readFileSync(resolve(adapterRoot, "SKILL.md"), "utf8");
+  const metadata = readFileSync(resolve(adapterRoot, "agents/openai.yaml"), "utf8");
+
+  assert.equal(lstatSync(adapterRoot).isSymbolicLink(), false);
+  assert.match(adapter, /^---\nname: implement\ndescription:/);
+  assert.doesNotMatch(adapter, /disable-model-invocation/);
+  assert.match(adapter, /\.claude\/skills\/implement\/SKILL\.md/);
+  assert.match(metadata, /allow_implicit_invocation: false/);
+  assert.match(metadata, /\$implement/);
 });
