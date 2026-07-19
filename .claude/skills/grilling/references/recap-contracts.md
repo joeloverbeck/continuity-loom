@@ -81,4 +81,10 @@ When the run's **subject** is a durable artifact (a report, PRD, issue, spec, AD
 
 When the run **mutated live state**, also record what changed and the proof it changed as intended: the exact issues, refs, or resources touched, and the read-back that verified the end state.
 
+An approval preflight or earlier recap does not satisfy final closeout after a live mutation.
+Rebuild the complete applicable union in the final response from current proof, including source,
+authorities, tracker overlap, supporting-skill result, rejected operations, out-of-scope boundary,
+freshness and external-research posture, mutations, and read-back. The reader must not need an
+earlier message to reconstruct final provenance.
+
 Mark artifact-only fields such as selected section/title as `N/A` when they truly do not apply — but never omit freshness, out-of-scope boundaries, or rejected operations.

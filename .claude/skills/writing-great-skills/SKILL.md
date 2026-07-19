@@ -27,7 +27,7 @@ After choosing invocation, inspect sibling skills and sync every host metadata s
 
 When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each.
 
-Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata and policy match sibling skills, optional display metadata is coherent, repo mirrors resolve where the repo uses them, the final text has passed the failure-mode scan, and the branch-proof receipt below is structurally complete with any `unproven` shipping explicitly accepted by the owner.
+Before shipping a new skill, run this pre-ship check: initializer placeholders removed, every context pointer resolves to current material, invocation metadata and policy match sibling skills, optional display metadata is coherent, repo mirrors resolve where the repo uses them, and the final text has passed the failure-mode scan.
 
 ## Proving predictability
 
@@ -40,7 +40,9 @@ Record the walk in the repo workflow's validation artifact, or in the final resp
 
 Prefix each Branch cell with `load-bearing -` when the skill cannot fulfil its purpose without that branch; otherwise use `supporting -`. Write Evidence as `exercised - <fixture, command, or trace>` or `unexercised - <reason>`. Tests and validators may supply evidence, but do not substitute their coverage for the raw-invocation walk or infer one branch from a neighboring branch.
 
-The receipt is structurally complete only when every enumerated branch has exactly one row and every unexercised row is reported at closeout. Structural completeness is not shipping readiness: any unexercised load-bearing row makes the skill `unproven`. Do not call it ship-ready until every load-bearing branch is exercised. If exercise is unsafe, unavailable, or disproportionate, stop and obtain explicit owner acceptance before shipping it as `unproven`; a supporting branch may remain unexercised with its reason reported.
+The receipt is structurally complete only when every enumerated branch has exactly one row and every unexercised row is reported at closeout. Immediately before any readiness or completion claim, reconcile the enumerated branch set against the receipt rows and confirm zero missing, extra, or duplicate branches.
+
+Record `Branch proof status: proven` only when the receipt is structurally complete and every load-bearing branch is exercised; otherwise record `Branch proof status: unproven - <reason>`. Do not call the skill ready, complete, ship-ready, or equivalent unless the recorded status is `proven`. If exercise is unsafe, unavailable, or disproportionate, stop and obtain explicit owner acceptance before shipping it as `unproven`; keep the `unproven` label at closeout and report every unexercised load-bearing row. A supporting branch may remain unexercised with its reason reported without making the skill `unproven`.
 
 Use the repo's skill-creation or refactoring workflow for fixtures, forward tests, validator commands, custody, and mirror proof rather than duplicating those mechanics here. Do not create a standalone skill document solely for the receipt.
 

@@ -8,8 +8,7 @@ Explore live facts first and resolve only decisions that materially affect the a
 
 For local file edits:
 
-- run `git status --short` before the first write;
-- capture the current branch;
+- capture `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short` before the first write;
 - distinguish pre-existing or user-owned artifacts from intended outputs; and
 - keep unrelated worktree changes untouched.
 
@@ -18,6 +17,11 @@ For tracker, remote, or other external mutations:
 - capture affected issue or PR numbers, labels, dependency lines, refs, or resource identifiers before the first write;
 - re-read the affected state before the final summary; and
 - state explicitly when the repo worktree is untouched.
+
+When a repository supplies evidence or local staging for an external mutation, capture its branch,
+HEAD, and full worktree status even when no repo write is planned. Preserve those exact baseline
+values for comparison. `Worktree untouched` means the run made no repo change; it does not mean the
+worktree was clean or remained at the same HEAD.
 
 For a versioned repo file committed directly on the remote, the local worktree checklist is N/A. Capture the pre-write path, blob SHA, and branch; state that the local worktree is untouched; and prove the end state with a remote read-back of committed content.
 
@@ -59,6 +63,16 @@ After acting, verify the result with the smallest truthful proof surface: status
 
 ## Operational closeout
 
-Immediately before the final summary, refresh the relevant baseline again. For local file writes, re-run `git status --short` and `git branch --show-current`. For remote or tracker mutations, re-read the exact affected resources.
+Immediately before the final summary, refresh the same identity fields captured at baseline. For a
+repository, re-run branch, HEAD, and full worktree status. For remote or tracker mutations, re-read
+the exact affected resources.
 
-If the baseline moved during the session, verify that committed or current content still matches the intended edits and report the corrected state rather than repeating the earlier snapshot.
+Compare the initial and final values, then include exactly one closeout receipt:
+
+- `Baseline: unchanged - <identity and status proof>`; or
+- `Baseline: moved - <old identity/status> -> <new identity/status>; reconciliation: <what was reread or reverified>`.
+
+When the baseline moved, verify that current content still contains the intended edits and that
+every source or workflow surface used after the earlier snapshot remains valid. Report the
+corrected state rather than repeating the earlier snapshot. Never use `remains clean` to mean only
+that the run made no repo edits when the initial status was dirty or the HEAD changed.

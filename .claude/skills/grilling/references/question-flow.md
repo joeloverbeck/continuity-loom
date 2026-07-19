@@ -48,8 +48,7 @@ The closing recap lists PROVISIONAL decisions separately as open to veto. Procee
 
 When repo authorities or live facts can answer a branch, explore first.
 
-- Record a conclusive factual branch as RATIFIED.
-- Record material evidence that is not a design choice under `Explored facts:`, `Finding:`, or `Explored fact:`.
+- Record conclusive factual branches and material evidence that is not a design choice under `Explored facts:`, `Finding:`, or `Explored fact:`. Treat a conclusive fact as settled for question routing, not as a decision.
 - Do not re-ask a conclusively answered factual branch.
 - If facts leave a stewardship or design choice unresolved, ask only that choice and cite the explored fact in the rationale.
 - If the answer depends on user intent rather than repo truth, keep it open to correction.
@@ -69,7 +68,7 @@ Decision: RATIFIED severity boundary -> neutral thresholds stay shared; rational
 Decision: PROVISIONAL ADR need -> create one short ADR; rationale: the user is away and the trade-off is hard to reverse.
 ```
 
-Mark RATIFIED when the user confirms a decision or exploration conclusively resolves a factual branch. Mark PROVISIONAL when the answer comes from timeout fallback, autonomous execution, or an unconfirmed recommendation.
+Mark RATIFIED only when the user confirms a stewardship or design decision. Mark PROVISIONAL when a stewardship or design answer comes from timeout fallback, autonomous execution, or an unconfirmed recommendation. Facts never receive either decision status.
 
 Keep the ledger in conversation for short sessions. Create a scratchpad only when session length or branch count makes in-context tracking unreliable.
 

@@ -1,6 +1,6 @@
 ---
 name: playtest-prd-prep
-description: Reconcile one validated Continuity Loom author-playtest report against live repo and tracker state, preserve proven strengths, and write one same-stem PRD-ready change portfolio for a later /to-prd pass. Invoke explicitly with a reports/playtest-*.md path; this skill diagnoses and prepares but does not implement or publish.
+description: Reconcile one validated Continuity Loom author-playtest report against live repo and tracker state, preserve proven strengths, and write one same-stem change portfolio for playtest-to-issues custody before any later /to-prd pass. Invoke explicitly with a reports/playtest-*.md path; this skill diagnoses and prepares but does not implement or publish.
 disable-model-invocation: true
 ---
 
@@ -9,7 +9,8 @@ disable-model-invocation: true
 Reconcile a `.claude/skills/playtest` report into one PRD-ready portfolio. The stopping point is
 `reports/<playtest-report-stem>-prd-prep.md`. Do not edit the source report, product code, tests,
 docs, skills, specs, tickets, or tracker state; do not invoke `/to-prd` or satisfy its seam
-checkpoint.
+checkpoint. The closeout must route the completed artifact through `$playtest-to-issues` before
+recommending `/to-prd`.
 
 ## Input
 
@@ -199,6 +200,8 @@ Before sending the final response, complete this closeout checklist from the val
 - `Publication verdict`: state the package and intended first PRD or no-new-PRD result.
 - `Deferred work`: name every deferred PRD candidate, or `none`.
 - `Non-PRD work`: name every Non-PRD Follow-Up item with its destination, or `none`.
+- `Issue-custody handoff`: give the exact `$playtest-to-issues "<prep-artifact>"` invocation and
+  state that it precedes `/to-prd`, even when Non-PRD Follow-Up is `none`.
 - `Tracker and durability`: state tracker limitations and both source and artifact durability.
 - `Intentional change`: name the authored prep artifact.
 - `Remaining dirt`: name and classify every remaining path individually.
@@ -208,4 +211,5 @@ Before sending the final response, complete this closeout checklist from the val
 The run is complete only when the source inspector reports `passed` or `nonblocking-defects` with
 the required skill-maintenance follow-up, every source row and strength is covered, the final prep
 validator passes, semantic review is recorded, privacy and freshness scans are clear, and the final
-worktree boundary is reconciled.
+worktree boundary is reconciled. A closeout that points directly to `/to-prd` without the exact
+`$playtest-to-issues` custody handoff is incomplete.

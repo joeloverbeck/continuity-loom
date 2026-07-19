@@ -74,6 +74,34 @@ None - can start immediately
 No exception.
 `;
 
+const artifactBody = () => `
+## Source and coordination
+
+Playtest report reports/playtest-example.md
+
+Standalone non-PRD follow-up from the playtest report; it does not ratify or implement the remaining PRD candidates.
+
+## What to build
+
+Build the bounded follow-up.
+
+## User stories covered
+
+N/A - the source report has no user stories.
+
+## Acceptance criteria
+
+- [ ] Observable behavior.
+
+## Blocked by
+
+None - can start immediately
+
+## Principles
+
+No exception.
+`;
+
 const ledgerBody = `
 # Child Issue Map for PRD #353 - Issues #354-#355
 
@@ -199,6 +227,39 @@ const sourcePayload = {
   number: 379,
   state: "OPEN",
   url: "https://example.test/issues/379",
+};
+
+const artifactManifest = {
+  ...globalThis.structuredClone(sourceManifest),
+  artifactSource: {
+    path: "reports/playtest-example.md",
+    token: "Playtest report reports/playtest-example.md",
+    relationship:
+      "Standalone non-PRD follow-up from the playtest report; it does not ratify or implement the remaining PRD candidates.",
+    publicationRef: "origin/main",
+  },
+};
+delete artifactManifest.source;
+artifactManifest.children[0].title = "Publish bounded playtest follow-up";
+const artifactStagedBodies = new Map([[380, artifactBody()]]);
+const artifactChildPayloads = new Map([[380, {
+  ...sourceChildPayloads.get(380),
+  title: artifactManifest.children[0].title,
+  body: artifactBody().trimEnd(),
+}]]);
+const artifactSourceDurability = {
+  publicationRef: "origin/main",
+  publicationRefSha: "a".repeat(40),
+  allDurable: true,
+  artifacts: [{
+    path: "reports/playtest-example.md",
+    tracked: true,
+    worktreeClean: true,
+    visibleAtRef: true,
+    identicalToRef: true,
+    durable: true,
+    reasons: [],
+  }],
 };
 
 const workingLedgerFor = (subject) => ({
@@ -343,6 +404,77 @@ test("manifest validation rejects a parent ledger in standalone-source mode", ()
   assert.equal(
     validateManifest(wrongManifest).includes(
       "source.ledger is not allowed in standalone-source mode"),
+    true,
+  );
+});
+
+test("verifies a published family against a durable artifact source", () => {
+  assert.deepEqual(validateManifest(artifactManifest), []);
+
+  const report = verifyPublishedFamily({
+    manifest: artifactManifest,
+    childPayloads: artifactChildPayloads,
+    stagedBodies: artifactStagedBodies,
+    artifactSourceDurability,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(artifactManifest),
+  });
+
+  assert.deepEqual(report.failedChecks, []);
+  assert.equal(report.checks.artifactSourcePass, true);
+  assert.equal(report.children[0].relationshipMode, "artifact-source");
+  assert.equal(report.children[0].checks.sourcePresent, true);
+  assert.equal(report.children[0].checks.sourceRelationshipPresent, true);
+  assert.equal(report.artifactSource.checks.artifactDurable, true);
+  assert.equal(report.artifactSource.path, "reports/playtest-example.md");
+  assert.equal("parent" in report, false);
+  assert.equal("source" in report, false);
+});
+
+test("fails artifact-source verification when source bytes are not durable", () => {
+  const durability = globalThis.structuredClone(artifactSourceDurability);
+  durability.allDurable = false;
+  durability.artifacts[0].durable = false;
+  durability.artifacts[0].identicalToRef = false;
+  durability.artifacts[0].reasons = ["content-differs-from-ref"];
+
+  const report = verifyPublishedFamily({
+    manifest: artifactManifest,
+    childPayloads: artifactChildPayloads,
+    stagedBodies: artifactStagedBodies,
+    artifactSourceDurability: durability,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(artifactManifest),
+  });
+
+  assert.equal(report.checks.artifactSourcePass, false);
+  assert.deepEqual(report.failedChecks, ["artifactSourcePass"]);
+  assert.deepEqual(report.artifactSource.reasons, ["content-differs-from-ref"]);
+});
+
+test("manifest validation requires a complete exclusive artifact source", () => {
+  const incomplete = globalThis.structuredClone(artifactManifest);
+  delete incomplete.artifactSource.publicationRef;
+  assert.equal(
+    validateManifest(incomplete).includes(
+      "artifactSource.path, artifactSource.token, artifactSource.relationship, and artifactSource.publicationRef are required",
+    ),
+    true,
+  );
+
+  const ambiguous = globalThis.structuredClone(artifactManifest);
+  ambiguous.source = globalThis.structuredClone(sourceManifest.source);
+  assert.equal(
+    validateManifest(ambiguous).includes("exactly one of parent, source, or artifactSource is required"),
+    true,
+  );
+
+  const traversing = globalThis.structuredClone(artifactManifest);
+  traversing.artifactSource.path = "../private-report.md";
+  assert.equal(
+    validateManifest(traversing).includes(
+      "artifactSource.path must be a repo-relative path without parent traversal",
+    ),
     true,
   );
 });
@@ -648,6 +780,37 @@ test("family payload resolution uses complete snapshots without calling gh", () 
   }
 });
 
+test("artifact-source snapshot mode requires only complete child snapshots", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-artifact-snapshots-"));
+  try {
+    const childPath = join(directory, "380.json");
+    writeFileSync(childPath, JSON.stringify(artifactChildPayloads.get(380)));
+    const childPaths = new Map([[380, childPath]]);
+
+    const resolved = resolveFamilyPayloads({
+      manifest: artifactManifest,
+      childSnapshots: childPaths,
+      fetcher: () => {
+        throw new Error("gh should not be called in artifact-source snapshot mode");
+      },
+    });
+
+    assert.deepEqual(resolved.childPayloads.get(380), artifactChildPayloads.get(380));
+    assert.equal(resolved.parentPayload, null);
+    assert.equal(resolved.sourcePayload, null);
+    assert.throws(
+      () => resolveFamilyPayloads({
+        manifest: artifactManifest,
+        childSnapshots: childPaths,
+        sourceSnapshot: childPath,
+      }),
+      /--source-snapshot is not valid in artifact-source mode/,
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 test("family CLI verifies a complete standalone-source snapshot set without gh", () => {
   const directory = mkdtempSync(join(tmpdir(), "to-issues-family-snapshots-"));
   try {
@@ -686,6 +849,58 @@ test("family CLI verifies a complete standalone-source snapshot set without gh",
     assert.equal(result.status, 0, result.stderr || result.stdout);
     const report = JSON.parse(result.stdout);
     assert.equal(report.checks.sourcePass, true);
+    assert.deepEqual(report.failedChecks, []);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("family CLI verifies child snapshots against a live durable artifact source", () => {
+  const directory = mkdtempSync(join(tmpdir(), "to-issues-artifact-family-"));
+  try {
+    const bodyFile = join(directory, "380.md");
+    const runSheet = join(directory, "run-sheet.md");
+    const workingLedger = join(directory, "working-ledger.json");
+    const childSnapshot = join(directory, "380.json");
+    const manifestFile = join(directory, "manifest.json");
+    const cliManifest = globalThis.structuredClone(artifactManifest);
+    cliManifest.runSheet = runSheet;
+    cliManifest.workingLedger = workingLedger;
+    cliManifest.artifactSource.path = "docs/ACTIVE-DOCS.md";
+    cliManifest.artifactSource.token = "Authority artifact docs/ACTIVE-DOCS.md";
+    cliManifest.artifactSource.publicationRef = "HEAD";
+    cliManifest.children[0].bodyFile = bodyFile;
+    cliManifest.children[0].checklistMapped = "N/A - validator fixture only";
+    const cliBody = artifactBody().replace(
+      "Playtest report reports/playtest-example.md",
+      "Authority artifact docs/ACTIVE-DOCS.md",
+    );
+    const cliPayload = {
+      ...artifactChildPayloads.get(380),
+      body: cliBody.trimEnd(),
+    };
+
+    writeFileSync(bodyFile, cliBody);
+    writeFileSync(runSheet, `
+| Slice | Checklist item | Covered by final AC mapping | N/A reason |
+|---|---|---|---|
+| Conformance repair | browser-visible guidance checklist | N/A | N/A - validator fixture only |
+`);
+    writeFileSync(workingLedger, JSON.stringify(workingLedgerFor(cliManifest)));
+    writeFileSync(childSnapshot, JSON.stringify(cliPayload));
+    writeFileSync(manifestFile, JSON.stringify(cliManifest));
+
+    const result = spawnSync(process.execPath, [
+      script,
+      manifestFile,
+      "--child-snapshot",
+      `380=${childSnapshot}`,
+    ], { encoding: "utf8" });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.checks.artifactSourcePass, true);
+    assert.equal(report.artifactSource.path, "docs/ACTIVE-DOCS.md");
     assert.deepEqual(report.failedChecks, []);
   } finally {
     rmSync(directory, { recursive: true, force: true });

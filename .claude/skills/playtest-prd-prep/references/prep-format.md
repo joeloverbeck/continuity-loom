@@ -326,5 +326,7 @@ must contain no `pending` self-check value.
 
 The artifact is complete when every source ID and strength passes the structural validator, every
 semantic disposition has been manually reviewed, the publication verdict and package agree, and a
-later `/to-prd` pass need not reconstruct provenance or scope from the source report. Its final
-branch and worktree ledger must also match the post-validation Git comparison.
+later `$playtest-to-issues` custody pass can resolve every non-PRD row and return the residual queue
+without reconstructing provenance or scope from the source report. `/to-prd` follows that custody
+pass, never the prep artifact directly. The final branch and worktree ledger must also match the
+post-validation Git comparison.

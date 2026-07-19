@@ -28,7 +28,7 @@ Before a downstream deliverable, the recap is a hard checkpoint whenever at leas
 
 Do not start the deliverable until the user confirms. A follow-up such as `proceed`, `implement this`, or `implement all` satisfies that confirmation.
 
-Explored facts recorded as RATIFIED do not by themselves trigger a blocking confirmation in delegated operational work. If the deliverable was explicitly requested up front and no unresolved user-owned choice remains, record the facts in the final recap and proceed.
+Conclusive explored facts do not by themselves trigger a blocking confirmation in delegated operational work. If the deliverable was explicitly requested up front and no unresolved user-owned choice remains, record the facts in the final recap and proceed.
 
 In a diagnose-and-fix or audit-plus-edit hybrid, a terminal option selection or prose confirmation can satisfy the checkpoint when it already enumerates the exact deliverable shape. This does not let an ordinary mid-interview acceptance skip the final checkpoint.
 
@@ -53,10 +53,10 @@ Edits mechanically required for the confirmed deliverable's internal consistency
 
 For local file writes:
 
-1. immediately before the first write, run `git status --short` and `git branch --show-current`;
+1. immediately before the first write, run `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short`;
 2. preserve unrelated worktree changes;
 3. run the repository's canonical verification gates when the deliverable includes code; and
-4. immediately before the final summary, run `git status --short` and `git branch --show-current` again.
+4. immediately before the final summary, rerun the same branch, HEAD, and unscoped status commands.
 
 Report each relevant verification gate as passed, failed, or unavailable with a reason. Never claim code implementation complete on unrun required gates.
 
@@ -64,7 +64,7 @@ For tracker or external mutations, re-read every affected item before the summar
 
 For direct remote commits, use the remote baseline and read-back rules in [operational-execution.md](operational-execution.md); the local worktree checklist is N/A.
 
-If the baseline moved mid-session, verify the final content still includes the session's intended edits and report the corrected state.
+If the baseline moved mid-session, apply the comparison, reconciliation, and receipt rules in [operational-execution.md](operational-execution.md) before reporting the corrected state.
 
 ## Closeout
 

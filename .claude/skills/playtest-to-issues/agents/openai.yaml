@@ -1,0 +1,6 @@
+interface:
+  display_name: "Playtest To Issues"
+  short_description: "Publish playtest follow-ups before PRDs"
+  default_prompt: "Use $playtest-to-issues to take custody of this playtest PRD-prep report, publish its non-PRD follow-ups, and return the remaining PRD queue."
+policy:
+  allow_implicit_invocation: true

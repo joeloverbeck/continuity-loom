@@ -32,7 +32,7 @@ Do not turn an operational request into a broad design interview unless the user
 
 ## Explore before asking
 
-If repo facts can answer a branch, inspect them first. Relevant authorities include entrypoint instructions, active docs, principles, specs, ADRs, glossaries, tracker items, implementation surfaces, and runtime state. Record conclusive factual branches as RATIFIED; record material observations that are not design choices as `Finding:` or `Explored fact:`.
+If repo facts can answer a branch, inspect them first. Relevant authorities include entrypoint instructions, active docs, principles, specs, ADRs, glossaries, tracker items, implementation surfaces, and runtime state. Record conclusive factual branches and other evidence-backed observations as `Finding:` or `Explored fact:`. Reserve RATIFIED and PROVISIONAL for user-owned stewardship or design decisions.
 
 For cited reports, modules, architecture reviews, artifacts, or repo authorities:
 
@@ -67,7 +67,7 @@ Use the available permitted question tool. If it is unavailable or mode-restrict
 
 `Question N: <decision surface>. My recommendation (Recommended): <answer and why>. Do you agree?`
 
-Explore factual branches before asking, maintain the exact decision-ledger format below, and derive the closing recap from it:
+Explore and record factual branches before asking. Maintain the exact decision-ledger format below only for user-owned stewardship or design decisions, and derive the closing recap from both the factual record and that ledger:
 
 `Decision: [RATIFIED|PROVISIONAL] <question> -> <answer>; rationale: <why this answer wins>`
 
@@ -75,7 +75,7 @@ Detailed rules for acceptance, amendments, challenges, timeouts, autonomous fall
 
 ## Recap and execution
 
-Route the closing recap through [recap-contracts.md](references/recap-contracts.md). No class is recap-less, and a minimal operational ledger does not permit a minimal or missing recap.
+Route the closing recap through [recap-contracts.md](references/recap-contracts.md). No class is recap-less, and a minimal operational ledger does not permit a minimal or missing recap. After any mutation, rebuild the applicable recap union in the final response; an earlier approval preflight does not satisfy closeout.
 
 Before any downstream deliverable, apply [deliverable-execution.md](references/deliverable-execution.md). It defines the hard recap checkpoint, explicit-request rules, the read-only override, supporting-skill inline writes, autonomous execution, file and remote verification, mechanically required consistency edits, and closeout behavior.
 

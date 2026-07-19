@@ -9,9 +9,11 @@ Actively build and sharpen the project's domain model as you design. This is the
 
 ## File structure
 
-If `docs/agents/domain.md` exists, follow it first; it is the repo-specific routing rule for where contexts and ADRs live. The rules below are the default shape when no repo-local routing doc exists.
+Resolve routing before any context or ADR read:
 
-Context files, context maps, and ADR directories are often created lazily. Check whether optional routing files exist before opening them; if one is absent, treat that as silent routing information and fall back according to this section or the repo-local routing doc rather than surfacing a file-not-found error.
+1. If `docs/agents/domain.md` exists, read and follow it first; it is the repo-specific routing rule for where contexts and ADRs live. The rules below are the default shape when no repo-local routing doc exists.
+2. Probe each optional `CONTEXT.md`, `CONTEXT-MAP.md`, and ADR directory for existence without opening it.
+3. Open only paths proven to exist. Treat absence as silent routing information; do not include optional paths in unconditional bulk-read or line-count commands, and do not surface a file-not-found error.
 
 Most repos have a single context:
 
@@ -89,6 +91,14 @@ If any of the three is missing, skip the ADR. Use the format in [ADR-FORMAT.md](
 
 ### Before the session closes
 
-When this skill was invoked in a supporting role (e.g., by another skill) and no trigger fired, don't end silently: review the session's resolved decisions once and confirm none introduced a term owed to the relevant `CONTEXT.md`, sharpened or contradicted an existing entry's definition, or made a decision passing the three-part ADR test. State the conclusion explicitly in one line (e.g., "Domain model unchanged — no new app-layer terms, no ADR-worthy decisions"), so the dormant path is auditable rather than implicit. If another skill is driving the session, include that one-line result in the caller's recap or pre-deliverable checkpoint before documents, issues, code, or implementation begin. When the reviewed decisions are themselves provisional (applied without user ratification), qualify the closing line accordingly — e.g., "Domain model unchanged — contingent on ratification of the provisional decisions" — so a later veto re-triggers the check.
+When this skill was invoked in a supporting role (e.g., by another skill) and no trigger fired, don't end silently:
+
+1. Review the session's resolved decisions once and confirm none introduced a term owed to the relevant `CONTEXT.md`, sharpened or contradicted an existing entry's definition, or made a decision passing the three-part ADR test.
+2. Choose exactly one result line based on the current decision state:
+   - Settled facts and user-ratified decisions only: `Domain model unchanged — no new app-layer terms, no ADR-worthy decisions`.
+   - Any provisional decision: `Domain model unchanged — contingent on ratification of the provisional decisions`.
+3. If another skill is driving the session, include that line in the caller's recap or pre-deliverable checkpoint before documents, issues, code, or implementation begin.
+
+Ratification without amendment resolves the contingency. A veto or amendment reopens the domain check and requires a refreshed result line before the next deliverable or mutation.
 
 When this skill changes the domain model in a supporting role, make the caller's recap just as explicit: list the exact `CONTEXT.md` term changes and any ADRs created or offered, including paths when files were written.

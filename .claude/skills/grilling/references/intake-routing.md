@@ -21,7 +21,7 @@ When no plan exists, broader intake is legitimate because the run must assemble 
 - Include current open work and the latest relevant closed parent or PRD so the candidate set does not duplicate or contradict live work.
 - For a large requested document glob, either read it exhaustively or disclose the bounded strategy. Targeted scans do not count as line-by-line review.
 - After candidate choice, grill the winning candidate's design tree one branch at a time.
-- Candidate choice is user-owned unless repo facts conclusively leave only one valid option. Conclusive facts may be RATIFIED, but a recommended winner remains PROVISIONAL or outside the decision ledger until the user confirms it.
+- Candidate choice is user-owned unless repo facts conclusively leave only one valid option. In that exceptional case, record the surviving option as an explored fact and omit candidate choice from the decision ledger. A merely recommended winner remains PROVISIONAL or outside the decision ledger until the user confirms it.
 - Once candidate choice, scope boundary, and deliverable depth are resolved, stop at a PRD-ready or issue-ready recap unless publication, issue creation, document writing, or implementation was explicitly requested and permitted.
 
 For issue-ready recaps, a skill such as `/to-issues` may be consulted for house style and granularity after relevant decisions are ratified. This is not permission to create issues.

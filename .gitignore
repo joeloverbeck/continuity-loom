@@ -156,3 +156,6 @@ packages/*/dist/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Playwright CLI artifacts
+.playwright-cli/

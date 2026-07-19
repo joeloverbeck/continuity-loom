@@ -1,6 +1,6 @@
 ---
 name: playtest-prd-prep
-description: Reconcile one validated Continuity Loom author-playtest report against live repo and tracker state, preserve proven strengths, and write one same-stem PRD-ready change portfolio for a later /to-prd pass. Invoke explicitly with a reports/playtest-*.md path; this skill diagnoses and prepares but does not implement or publish.
+description: Reconcile one validated Continuity Loom author-playtest report against live repo and tracker state, preserve proven strengths, and write one same-stem change portfolio for playtest-to-issues custody before any later /to-prd pass. Invoke explicitly with a reports/playtest-*.md path; this skill diagnoses and prepares but does not implement or publish.
 ---
 
 # Playtest PRD Prep

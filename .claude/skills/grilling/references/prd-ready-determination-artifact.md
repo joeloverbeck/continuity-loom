@@ -31,7 +31,7 @@ Before filling the skeleton:
 - Include a "recap only, no file" option in the artifact-home prompt.
 - For prep-only requests that name a later `/to-prd` pass, consult `/to-prd` for house style only. Do not invoke publication, issue creation, or `/to-prd`'s seam checkpoint. Do not ask testing-seam questions for the purpose of discharging that future checkpoint. Record recommended seams from the current evidence and mark the checkpoint as still owed; even if a seam is discussed for present design clarity, do not claim the later `/to-prd` checkpoint was satisfied.
 - Before drafting likely label, downgrade conditions, or browser-visible guidance mapping, read the issue-tracker and triage-label authorities named by the repo's entrypoint guidance.
-- Re-check `git status --short` and `git branch --show-current` before the final summary, so the artifact's own durability posture is stated from current worktree state rather than a pre-write snapshot.
+- Re-check `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short` before the final summary, so the artifact's own durability posture is stated from current checkout state rather than a pre-write snapshot.
 
 When fresh findings are independently implementable and do not belong in one PRD, choose the first candidate by this priority order: blocker severity, guided-flow or methodology-conformance risk, direct field-build frontier, dependency order, and proof readiness. If that still leaves no clear winner, mark the result as a multi-PRD program or ask the user to choose the first publication target.
 
@@ -43,7 +43,7 @@ Include:
 - Source durability status: durable, dirty, untracked, or temp-only. For durable local source artifacts, include tracked, clean, and publication-ref-visible proof; otherwise mark pending local publication or summarize without stable citation wording.
 - Authored artifact status: for the determination file being written, state whether it is new/untracked, dirty, tracked-clean, or publication-ref-visible as applicable.
 - Primary evidence summarized from local files, tracker state, reports, issue IDs, screenshots, or runtime captures.
-- Live checkout or freshness snapshot, including branch and relevant worktree dirt.
+- Live checkout or freshness snapshot, including branch, HEAD, and relevant worktree dirt.
 - Tracker freshness, including the command or issue IDs checked.
 - Deliverable status: PRD-ready determination only, with no tracker/code/spec mutation unless that actually happened.
 

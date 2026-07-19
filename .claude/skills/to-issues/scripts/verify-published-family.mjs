@@ -4,17 +4,18 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { checkArtifactDurability } from "./check-artifact-durability.mjs";
 
 const usage = `Usage:
   node .claude/skills/to-issues/scripts/verify-published-family.mjs <manifest.json> [snapshot options]
   node .claude/skills/to-issues/scripts/verify-published-family.mjs child <issue-number> <body-file> [options]
   node .claude/skills/to-issues/scripts/verify-published-family.mjs working-ledger <ledger.json>
 
-The manifest records the approved count, tracker relationship, shared run sheet,
+The manifest records the approved count, source relationship, shared run sheet,
 and one entry per published issue. Single-issue options:
   --title <title>              Require the exact title.
   --parent <token>             Require the parent reference.
-  --source <token>             Require the standalone source reference.
+  --source <token>             Require the standalone tracker- or artifact-source reference.
   --source-relationship <text> Require the exact standalone source relationship.
   --state <state>              Require the state; defaults to OPEN.
   --label <label>              Require the exact label set; repeat as needed.
@@ -33,7 +34,9 @@ Family snapshot options:
   --source-snapshot <path>     Read the exact standalone-source payload from JSON.
 
 Supplying any family snapshot option enables snapshot mode: provide every child
-and the applicable parent or source snapshot. Snapshot mode makes no gh calls.
+and the applicable tracker parent or source snapshot. Artifact-source mode needs
+only child snapshots and still verifies the artifact against Git. Snapshot mode
+makes no gh calls.
 
 See references/publication-protocol.md.`;
 
@@ -108,8 +111,9 @@ export const validateManifest = (manifest) => {
   }
   const hasParent = manifest.parent != null;
   const hasSource = manifest.source != null;
-  if (hasParent === hasSource) {
-    errors.push("exactly one of parent or source is required");
+  const hasArtifactSource = manifest.artifactSource != null;
+  if ([hasParent, hasSource, hasArtifactSource].filter(Boolean).length !== 1) {
+    errors.push("exactly one of parent, source, or artifactSource is required");
   } else if (hasParent && (!Number.isInteger(manifest.parent.number) || !manifest.parent.token)) {
     errors.push("parent.number and parent.token are required");
   } else if (hasSource && (
@@ -118,9 +122,26 @@ export const validateManifest = (manifest) => {
     !manifest.source.relationship
   )) {
     errors.push("source.number, source.token, and source.relationship are required");
+  } else if (hasArtifactSource && (
+    !manifest.artifactSource.path ||
+    !manifest.artifactSource.token ||
+    !manifest.artifactSource.relationship ||
+    !manifest.artifactSource.publicationRef
+  )) {
+    errors.push(
+      "artifactSource.path, artifactSource.token, artifactSource.relationship, and artifactSource.publicationRef are required",
+    );
+  } else if (hasArtifactSource && (
+    manifest.artifactSource.path.startsWith("/")
+    || manifest.artifactSource.path.split(/[\\/]/).includes("..")
+  )) {
+    errors.push("artifactSource.path must be a repo-relative path without parent traversal");
   }
   if (hasSource && manifest.source.ledger != null) {
     errors.push("source.ledger is not allowed in standalone-source mode");
+  }
+  if (hasArtifactSource && manifest.artifactSource.ledger != null) {
+    errors.push("artifactSource.ledger is not allowed in artifact-source mode");
   }
   if (!manifest.runSheet) errors.push("runSheet is required");
   if (!manifest.workingLedger) errors.push("workingLedger is required");
@@ -198,6 +219,7 @@ export const verifyPublishedChild = ({
   parentToken = null,
   sourceToken = null,
   sourceRelationship = null,
+  sourceMode = "standalone-source",
   checklistVerified = null,
   forbiddenLiterals = [],
   forbiddenPatterns = [],
@@ -215,7 +237,7 @@ export const verifyPublishedChild = ({
   const placeholderPattern = compilePattern(placeholderRe, "--placeholder-re");
   const compiledForbiddenPatterns = forbiddenPatterns
     .map((pattern) => compilePattern(pattern, "--forbid-pattern"));
-  const relationshipMode = parentToken == null ? "standalone-source" : "parent";
+  const relationshipMode = parentToken == null ? sourceMode : "parent";
   const sourceSection = sectionBody(body, "## Source and coordination");
   const checks = {
     fetched: actual != null,
@@ -387,11 +409,18 @@ export const verifyPublishedFamily = ({
   stagedBodies,
   parentPayload = null,
   sourcePayload = null,
+  artifactSourceDurability = null,
   ledgerBody = null,
   checklistVerified,
   workingLedger = null,
 }) => {
-  const usesSource = manifest.source != null;
+  const relationshipKind = manifest.parent != null
+    ? "parent"
+    : manifest.source != null
+      ? "source"
+      : "artifactSource";
+  const source = manifest.source ?? manifest.artifactSource ?? null;
+  const usesParent = relationshipKind === "parent";
   const children = manifest.children.map((expected) => verifyPublishedChild({
     actual: childPayloads.get(expected.number),
     checklistVerified,
@@ -399,16 +428,17 @@ export const verifyPublishedFamily = ({
     expectedBody: stagedBodies.get(expected.number) ?? "",
     forbiddenLiterals: manifest.forbidLiterals,
     forbiddenPatterns: manifest.forbidPatterns,
-    parentToken: usesSource ? null : manifest.parent.token,
-    sourceRelationship: usesSource ? manifest.source.relationship : null,
-    sourceToken: usesSource ? manifest.source.token : null,
+    parentToken: usesParent ? manifest.parent.token : null,
+    sourceMode: relationshipKind === "artifactSource" ? "artifact-source" : "standalone-source",
+    sourceRelationship: usesParent ? null : source.relationship,
+    sourceToken: usesParent ? null : source.token,
   }));
 
   const workingPublication = verifyWorkingPublicationLedger({ manifest, workingLedger, children });
 
   let relationshipChecks;
   let relationshipReport;
-  if (usesSource) {
+  if (relationshipKind === "source") {
     relationshipChecks = {
       fetched: sourcePayload != null,
       numberMatches: sourcePayload?.number === manifest.source.number,
@@ -423,6 +453,31 @@ export const verifyPublishedFamily = ({
       relationship: manifest.source.relationship,
       state: sourcePayload?.state ?? null,
       url: sourcePayload?.url ?? null,
+    };
+  } else if (relationshipKind === "artifactSource") {
+    const artifact = artifactSourceDurability?.artifacts?.find(
+      (candidate) => candidate.path === manifest.artifactSource.path,
+    );
+    relationshipChecks = {
+      checked: artifactSourceDurability != null,
+      publicationRefMatches:
+        artifactSourceDurability?.publicationRef === manifest.artifactSource.publicationRef,
+      publicationRefResolved:
+        typeof artifactSourceDurability?.publicationRefSha === "string"
+        && artifactSourceDurability.publicationRefSha.length > 0,
+      pathMatches: artifact?.path === manifest.artifactSource.path,
+      artifactDurable: artifact?.durable === true,
+      sourcePresentInChildren: children.every((child) => child.checks.sourcePresent),
+      relationshipPresentInChildren:
+        children.every((child) => child.checks.sourceRelationshipPresent),
+    };
+    relationshipReport = {
+      checks: relationshipChecks,
+      path: manifest.artifactSource.path,
+      publicationRef: manifest.artifactSource.publicationRef,
+      publicationRefSha: artifactSourceDurability?.publicationRefSha ?? null,
+      reasons: artifact?.reasons ?? [],
+      relationship: manifest.artifactSource.relationship,
     };
   } else {
     const ledger = manifest.parent.ledger;
@@ -471,7 +526,7 @@ export const verifyPublishedFamily = ({
     checklistVerified,
     childrenPass: children.every((child) => allTrue(child.checks)),
     workingPublicationLedgerPass: allTrue(workingPublication.checks),
-    [usesSource ? "sourcePass" : "parentPass"]: allTrue(relationshipChecks),
+    [`${relationshipKind}Pass`]: allTrue(relationshipChecks),
   };
   return {
     approvedCount: manifest.approvedCount,
@@ -482,7 +537,7 @@ export const verifyPublishedFamily = ({
     forbiddenLiterals: unique(manifest.forbidLiterals),
     forbiddenPatterns: unique(manifest.forbidPatterns),
     workingPublicationLedger: workingPublication,
-    [usesSource ? "source" : "parent"]: relationshipReport,
+    [relationshipKind]: relationshipReport,
   };
 };
 
@@ -554,6 +609,12 @@ export const resolveFamilyPayloads = ({
   }
   if (manifest.source != null && parentSnapshot != null) {
     throw new Error("--parent-snapshot is not valid in standalone-source mode.");
+  }
+  if (manifest.artifactSource != null && parentSnapshot != null) {
+    throw new Error("--parent-snapshot is not valid in artifact-source mode.");
+  }
+  if (manifest.artifactSource != null && sourceSnapshot != null) {
+    throw new Error("--source-snapshot is not valid in artifact-source mode.");
   }
 
   return {
@@ -804,6 +865,12 @@ const main = () => {
       parentSnapshot,
       sourceSnapshot,
     });
+    const artifactSourceDurability = manifest.artifactSource == null
+      ? null
+      : checkArtifactDurability({
+          paths: [manifest.artifactSource.path],
+          publicationRef: manifest.artifactSource.publicationRef,
+        });
     const ledgerBody = manifest.parent?.ledger.status === "posted"
       ? readText(manifest.parent.ledger.bodyFile)
       : null;
@@ -813,6 +880,7 @@ const main = () => {
       stagedBodies,
       parentPayload,
       sourcePayload,
+      artifactSourceDurability,
       ledgerBody,
       checklistVerified: checklist.passed,
       workingLedger,

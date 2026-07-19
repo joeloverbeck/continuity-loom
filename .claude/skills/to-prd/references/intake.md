@@ -42,6 +42,17 @@ If the bounded search yields no published PRD title of the same kind, record `Sa
 
 If the conversation or user references a PRD-ready determination artifact such as `reports/*-prd-prep.md`, read it before drafting. Refresh its source durability, tracker freshness, and any cited authority that could have drifted. Treat its selected first PRD as the intended publication scope unless the user revises it, asks only for a draft, or keeps decisions open. Preserve its deferred follow-on candidates in Out of Scope or Further Notes unless the user explicitly asks to publish a multi-PRD program or bundle them into the current PRD.
 
+For a `reports/playtest-*-prd-prep.md` artifact, require a current
+`## Playtest Follow-Up Custody Receipt` before treating any PRD candidate as the publication scope.
+The receipt is current only when it names the exact artifact, its SHA-256 matches the live bytes,
+its custody validator passed, every `## Non-PRD Follow-Up` row has a verified issue, existing owner,
+routed workflow, or explicit no-create disposition, and no first-action or portfolio row is
+blocked. If the receipt is absent, stale, incomplete, or held only in an older issue's Further
+Notes, suspend `/to-prd` intake and run `$playtest-to-issues "<prep-artifact>"`. Resume this intake
+only from that skill's passing receipt and use only its ordered remaining PRD queue. This gate also
+applies when the prep currently has no non-PRD rows: the intermediary must confirm zero custody and
+return the queue rather than making omission indistinguishable from completion.
+
 When a PRD-ready artifact declares a completed repo-local validator result, identify its producing skill or documented validation command and rerun the current final-mode validator against the exact artifact and every required source input before the seam checkpoint. Record the command and result in working notes. A passing structural check refreshes only the claims that validator covers; it does not replace durability, freshness, semantic, privacy, or decision-closure checks. If the artifact and its producer expose no stable validator, record `Artifact validator: not available` and use the bounded trust rebuild below rather than inventing a command.
 
 Before the seam checkpoint, extract every named provisional decision, label-downgrade condition, open mechanism, and open-to-veto note into a decision-closure ledger:
