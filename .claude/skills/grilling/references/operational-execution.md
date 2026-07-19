@@ -8,7 +8,7 @@ Explore live facts first and resolve only decisions that materially affect the a
 
 For local file edits:
 
-- capture `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short` before the first write;
+- capture `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short --untracked-files=all` before the first write;
 - distinguish pre-existing or user-owned artifacts from intended outputs; and
 - keep unrelated worktree changes untouched.
 
@@ -19,9 +19,9 @@ For tracker, remote, or other external mutations:
 - state explicitly when the repo worktree is untouched.
 
 When a repository supplies evidence or local staging for an external mutation, capture its branch,
-HEAD, and full worktree status even when no repo write is planned. Preserve those exact baseline
-values for comparison. `Worktree untouched` means the run made no repo change; it does not mean the
-worktree was clean or remained at the same HEAD.
+HEAD, and full `git status --short --untracked-files=all` output even when no repo write is planned.
+Preserve those exact baseline values for comparison. `Worktree untouched` means the run made no
+repo change; it does not mean the worktree was clean or remained at the same HEAD.
 
 For a versioned repo file committed directly on the remote, the local worktree checklist is N/A. Capture the pre-write path, blob SHA, and branch; state that the local worktree is untouched; and prove the end state with a remote read-back of committed content.
 
@@ -64,8 +64,8 @@ After acting, verify the result with the smallest truthful proof surface: status
 ## Operational closeout
 
 Immediately before the final summary, refresh the same identity fields captured at baseline. For a
-repository, re-run branch, HEAD, and full worktree status. For remote or tracker mutations, re-read
-the exact affected resources.
+repository, re-run branch, HEAD, and full `git status --short --untracked-files=all` output. For
+remote or tracker mutations, re-read the exact affected resources.
 
 Compare the initial and final values, then include exactly one closeout receipt:
 

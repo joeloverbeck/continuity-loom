@@ -10,7 +10,7 @@ Publication is complete only when:
 - every issue has the approved title, state, labels, source relationship, dependencies, story coverage, acceptance criteria, and Principles section;
 - every fully specified affected child has a validated final browser-visible guidance mapping, including a `needs-triage` child held solely by an external sequencing or readiness gate;
 - published bodies and any ledger contain no placeholders or machine-local paths;
-- child mode has a posted parent ledger or its approved fallback; standalone-source and artifact-source modes have the exact source relationship in every published body;
+- child mode has a posted parent ledger or its approved fallback; standalone-source and artifact-source modes have the exact source relationship in every published body, and artifact-source mode has verified the primary artifact plus every declared evidence dependency;
 - temporary artifacts are absent; and
 - final `git status --short` names only pre-existing or intentional changes.
 
@@ -58,7 +58,7 @@ Avoid volatile code paths and snippets in issue prose. Stable principle, ADR, sp
 
 ## 1. Freeze publication posture
 
-Freeze one relationship for the run before staging. **Child mode** requires a parent token, approved parent disposition, and approved parent-ledger posture. **Standalone-source mode** requires a tracker-source token and exact relationship text in `## Source and coordination`. **Artifact-source mode** requires a durable repo-relative artifact, publication ref, source token, and exact relationship text in that same section. Both source modes have parent disposition N/A and no parent ledger. Do not describe a predecessor, follow-on, or coordination issue as a child merely because its source is a tracker item. Never use artifact-source mode for an untracked, dirty, ref-invisible, or ref-different source; publish or durably summarize that evidence first.
+Freeze one relationship for the run before staging. **Child mode** requires a parent token, approved parent disposition, and approved parent-ledger posture. **Standalone-source mode** requires a tracker-source token and exact relationship text in `## Source and coordination`. **Artifact-source mode** requires a durable repo-relative primary artifact, an explicit array of every repo-relative evidence dependency linked by that artifact, a publication ref, source token, and exact relationship text in that same section. Both source modes have parent disposition N/A and no parent ledger. Do not describe a predecessor, follow-on, or coordination issue as a child merely because its source is a tracker item. Never use artifact-source mode when the primary artifact or any declared dependency is untracked, dirty, ref-invisible, or ref-different; publish the exact required paths or durably summarize that evidence first.
 
 For every approved slice, select the full house-style label set. Use `ready-for-agent` only when dependencies are explicit, all provisional or open decisions were resolved at approval, and repository implementability checks pass. Otherwise use `needs-triage` and record why.
 
@@ -285,7 +285,8 @@ This section branches on the frozen relationship. Standalone-source and artifact
 no parent ledger: the staged and published `## Source and coordination` section is the durable
 relationship record, and its exact source token and relationship text are verified in Steps 5 and
 7. Artifact-source mode additionally rechecks tracked, clean, publication-ref-visible, and
-content-identical durability during final family verification.
+content-identical durability for the primary artifact and every declared evidence dependency
+during final family verification.
 
 In child mode, when approved, post a child-map ledger after all children exist. Match the fetched parent-ledger heading/table style and any stable repository disclaimer; do not invent a disclaimer when tracker docs and precedent are silent.
 
@@ -397,12 +398,19 @@ token and relationship must be the exact strings used in every child body:
 {
   "artifactSource": {
     "path": "reports/playtest-example.md",
+    "dependencies": [
+      "reports/assets/playtest-example-overview.png"
+    ],
     "token": "Playtest report reports/playtest-example.md",
     "relationship": "Standalone non-PRD follow-up from the playtest report; it does not ratify or implement the remaining PRD candidates.",
     "publicationRef": "origin/main"
   }
 }
 ```
+
+`artifactSource.dependencies` is required and must contain every linked repo-relative evidence
+asset exactly once; use `[]` only when the primary artifact has none. Dependencies must not repeat
+the primary path. Every declared path is checked against the same `publicationRef`.
 
 Run:
 
@@ -428,10 +436,11 @@ The verifier validates the working publication ledger, reruns the complete check
 fetches every published issue live through `gh`. In child mode it also fetches the parent and
 verifies its exact approved labels, state, parent token, and posted ledger or skipped-ledger reason.
 In standalone-source mode it fetches the tracker source. In artifact-source mode it resolves the
-publication ref and verifies the exact artifact remains tracked, clean, ref-visible, and
-content-identical. Both source modes verify the exact source token and relationship in every staged
-and published body. The verifier also checks exact blockers, labels, state, title, body equality,
-live URL, and every custom forbidden pattern. A nonzero exit blocks final reporting.
+publication ref and verifies the exact primary artifact plus every declared dependency remain
+tracked, clean, ref-visible, and content-identical. Both source modes verify the exact source token
+and relationship in every staged and published body. The verifier also checks exact blockers,
+labels, state, title, body equality, live URL, and every custom forbidden pattern. A nonzero exit
+blocks final reporting.
 
 ## 8. Cleanup and final response
 
@@ -446,7 +455,7 @@ Final Response Blocker: do not report publication complete unless the final answ
 - parent, standalone-source, or artifact-source relationship plus individual tracker-blocker, external-blocker, or no-blocker proof per issue;
 - placeholder/path sweep result per issue;
 - checklist mapped `yes` or specific N/A per issue;
-- child-mode parent ledger posted/skipped and reason, standalone-source relationship verified, or artifact-source relationship plus durability verified;
+- child-mode parent ledger posted/skipped and reason, standalone-source relationship verified, or artifact-source relationship plus primary-and-dependency durability verified;
 - working publication ledger consumed by final verification and removed;
 - temporary-file cleanup result; and
 - final worktree status with unrelated or intentional dirty files called out.

@@ -7,6 +7,7 @@ earlier misunderstandings and append corrections rather than rewriting history.
 
 - [Required opening blocks](#required-opening-blocks)
 - [Observation entry](#observation-entry)
+- [Quantitative journey ledger](#quantitative-journey-ledger)
 - [Method evidence checkpoints](#method-evidence-checkpoints)
 - [Evidence-basis vocabulary](#evidence-basis-vocabulary)
 - [Classification vocabulary](#classification-vocabulary)
@@ -93,6 +94,43 @@ expectation mismatch, recovery, or prompt-quality result:
 
 Keep observed fact separate from interpretation. A later technical diagnostic may explain a
 visible issue, but it does not replace what the author experienced.
+
+## Quantitative journey ledger
+
+Use this ledger only when the invocation asks for action counts, authored-field counts, setup
+cost, promotion cost, or another quantitative journey comparison. Otherwise leave its prepared
+status `inactive` and do not create measurement work merely because the section exists.
+
+When active, name the requested boundaries before browser launch and append one privacy-safe row
+immediately after each candidate action. Record only visible labels and a short action summary;
+never copy field values, record payloads, prompt text, candidate prose, or accepted prose.
+
+```markdown
+## Quantitative journey ledger
+
+- Status: active
+- Requested boundaries:
+- Comparison / shortest-path question:
+
+| ID | Timestamp | Phase | Visible action | Kind | Field label / instance | Distinct field? | Successful write / selection? | Counted? | Exclusion reason |
+| -- | --------- | ----- | -------------- | ---- | ---------------------- | --------------- | ----------------------------- | -------- | ---------------- |
+| A001 | ... | project setup | Open Create Project | navigation | — | no | no | yes | — |
+
+### Quantitative boundary snapshots
+
+| Boundary | Through action ID | Counted visible actions | Distinct authored fields | Successful writes / selections | Notes |
+| -------- | ----------------- | ----------------------: | -----------------------: | -----------------------------: | ----- |
+| First readiness | <last-id> | <n> | <n> | <n> | ... |
+```
+
+Use the fixed kinds `navigation`, `control`, `field-write`, `selection`, `submit`, and
+`inspection`. `Visible action` names what the author did, never the authored value. Boundary
+snapshots are cumulative through a stable action ID; calculate later deltas from those snapshots
+instead of reconstructing the journey from memory.
+
+Keep the observed path intact. If the request also asks for a shortest demonstrated path, mark
+which successful checks or navigation steps are removable and calculate that path separately;
+never rewrite the observed count to make it look minimal.
 
 ## Method evidence checkpoints
 
@@ -223,4 +261,6 @@ evidence.
 
 **Completion criterion:** every meaningful first occurrence, repeat, expectation mismatch,
 prompt verdict, retry, edit burden, recovery, accepted-segment milestone, and post-acceptance
-decision has a contemporaneous entry or checkpoint.
+decision has a contemporaneous entry or checkpoint. When quantitative tracking is active, every
+candidate action has a contemporaneous ledger row and every requested boundary has a reconciled
+snapshot.

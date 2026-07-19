@@ -4,7 +4,10 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import { validatePrepArtifact } from "../../playtest-prd-prep/scripts/validate-prd-prep.mjs";
+import {
+  inspectTicketPackets,
+  validatePrepArtifact,
+} from "../../playtest-prd-prep/scripts/validate-prd-prep.mjs";
 
 const FOLLOW_UP_HEADERS = ["Item", "Destination", "Trigger or next action", "Evidence required"];
 const ISSUE_DISPOSITIONS = new Set([
@@ -16,19 +19,13 @@ const ISSUE_DISPOSITIONS = new Set([
 ]);
 const PRD_DISPOSITIONS = new Set(["remaining", "consumed", "rejected", "blocked"]);
 const FIRST_ACTION_STATUSES = new Set(["satisfied", "owned", "not-required", "blocked"]);
-const LEGACY_COMPATIBILITY_PATTERNS = [
-  /^Prep artifact requires exactly one bare line-start field: (Prior-report prep path|Prior-report prep classification|Final branch|Final worktree rows): value$/,
-  /^Source validation must be: (passed|nonblocking defects - .+)$/,
-  /^Prior-report prep path must be: .+$/,
-  /^Prior-report prep classification must be: .+$/,
-  /^Missing section for table: ### Final Worktree Ledger$/,
-];
 
 const usage = `Usage:
   node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs intake <prep-artifact>
   node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs inspect <prep-artifact>
   node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs validate <prep-artifact> <custody-ledger.json>
-  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-receipt <prep-artifact> <custody-ledger.json> --final-branch <branch> (--final-worktree-clean | --final-worktree-row <row>...)`;
+  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-receipt <prep-artifact> <custody-ledger.json> --final-branch <branch> (--final-worktree-clean | --final-worktree-row <row>...)
+  node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-blocked-receipt <prep-artifact> <custody-ledger.json> --final-branch <branch> (--final-worktree-clean | --final-worktree-row <row>...)`;
 
 const sha256 = (text) => createHash("sha256").update(text).digest("hex");
 
@@ -187,6 +184,9 @@ export const inspectPrepCustody = ({ markdown, prepPath }) => {
     errors.push(`Duplicate Non-PRD Follow-Up item: ${item}`);
   }
 
+  const ticketPacketInspection = inspectTicketPackets(markdown, { requireFields: false });
+  errors.push(...ticketPacketInspection.errors);
+
   const candidateParts = candidateSections(markdown);
   if (candidateParts === null) errors.push("Missing section: ## Recommended PRD Package");
   const prdCandidates = (candidateParts ?? []).map((candidate) => ({
@@ -208,6 +208,7 @@ export const inspectPrepCustody = ({ markdown, prepPath }) => {
       firstOperationalAction,
       publicationPackage,
       nonPrdFollowUps,
+      ticketPackets: ticketPacketInspection.packets,
       prdCandidates,
     },
   };
@@ -218,28 +219,37 @@ export const inspectPrepFile = (prepPath) => {
   return inspectPrepCustody({ markdown, prepPath });
 };
 
-export const classifyPrepIntake = ({ inspected, currentValidation }) => {
+export const classifyPrepIntake = ({ inspected, currentValidation, contractValidation }) => {
+  const declaredValidation = contractValidation ?? currentValidation;
   const errors = [...inspected.errors];
-  const validatorErrors = currentValidation.errors ?? [];
-  const sourceValidation = currentValidation.source?.sourceValidation;
+  const validatorErrors = currentValidation?.errors ?? [];
+  const declaredErrors = declaredValidation?.errors ?? [];
+  const sourceValidation = declaredValidation?.source?.sourceValidation;
   if (!new Set(["passed", "nonblocking-defects"]).has(sourceValidation)) {
     errors.push(`Current source validation is not usable: ${sourceValidation ?? "unknown"}.`);
   }
-  const incompatibleErrors = validatorErrors.filter(
-    (error) => !LEGACY_COMPATIBILITY_PATTERNS.some((pattern) => pattern.test(error)),
-  );
-  errors.push(...incompatibleErrors);
-  const intakeStatus = errors.length > 0
-    ? "invalid"
-    : validatorErrors.length === 0
-      ? "current"
-      : "legacy-compatible";
+  errors.push(...declaredErrors);
+  const contract = declaredValidation?.contract ?? null;
+  if (contract === null) errors.push("Declared producer-contract validation returned no contract identity.");
+  const uniqueErrors = [...new Set(errors)];
+  const intakeStatus = uniqueErrors.length > 0 ? "invalid" : contract.status;
+  const migration = intakeStatus === "migration-required"
+    ? {
+        sourceReport: inspected.inventory.sourceReport,
+        invocation: contract.migrationInvocation,
+        reasons: contract.diagnostics.filter(
+          (diagnostic) => diagnostic.disposition === "migration-required",
+        ),
+      }
+    : null;
   return {
     mode: "intake",
     intakeStatus,
-    errors,
-    warnings: currentValidation.warnings ?? [],
+    errors: uniqueErrors,
+    warnings: declaredValidation?.warnings ?? [],
     currentValidatorErrors: validatorErrors,
+    contract,
+    migration,
     inventory: inspected.inventory,
   };
 };
@@ -406,11 +416,7 @@ const prdProof = (entry) => {
   return `${entry.reason} Evidence: ${entry.evidence}`;
 };
 
-export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWorktreeRows }) => {
-  const validation = validateCustodyLedger({ inventory, ledger });
-  if (!validation.custodyComplete) {
-    throw new Error("Cannot render a passing custody receipt from an incomplete custody ledger.");
-  }
+const validateReceiptPosture = ({ finalBranch, finalWorktreeRows }) => {
   if (!nonEmpty(finalBranch)) throw new Error("finalBranch is required to render a custody receipt.");
   if (!Array.isArray(finalWorktreeRows)) {
     throw new Error("finalWorktreeRows must be an array.");
@@ -418,7 +424,17 @@ export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWork
   if (finalWorktreeRows.some((row) => !nonEmpty(row))) {
     throw new Error("finalWorktreeRows must contain only non-empty status rows.");
   }
+};
 
+const renderReceipt = ({
+  inventory,
+  ledger,
+  validation,
+  finalBranch,
+  finalWorktreeRows,
+  blocked,
+}) => {
+  validateReceiptPosture({ finalBranch, finalWorktreeRows });
   const nonPrdByItem = new Map(ledger.nonPrd.map((entry) => [entry.item, entry]));
   const prdsByTitle = new Map(ledger.prds.map((entry) => [entry.title, entry]));
   const lines = [
@@ -426,13 +442,25 @@ export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWork
     "",
     `Prep artifact: ${inventory.prepArtifact}`,
     `Prep SHA-256: ${inventory.prepSha256}`,
-    "Custody validator: passed",
+    `Custody validator: ${blocked ? "blocked" : "passed"}`,
     `Non-PRD custody: ${validation.resolvedNonPrdCount}/${validation.sourceNonPrdCount}`,
     `First operational action: ${ledger.firstOperationalAction.status} - ${ledger.firstOperationalAction.evidence}`,
+  ];
+
+  if (blocked) {
+    lines.push("", "Custody blockers:");
+    for (const item of validation.blockedItems) lines.push(`- Non-PRD item: ${item}`);
+    for (const title of validation.blockedPrds) lines.push(`- PRD candidate: ${title}`);
+    if (validation.firstActionBlocked) {
+      lines.push(`- First operational action: ${ledger.firstOperationalAction.value}`);
+    }
+  }
+
+  lines.push(
     "",
     "| Non-PRD item | Disposition | Owner or proof |",
     "| --- | --- | --- |",
-  ];
+  );
 
   if (inventory.nonPrdFollowUps.length === 0) {
     lines.push("| None | N/A | No non-PRD follow-ups in source inventory. |");
@@ -447,7 +475,9 @@ export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWork
 
   lines.push(
     "",
-    `PRD queue: ${validation.remainingPrds.length > 0 ? validation.remainingPrds.length : "exhausted"}`,
+    blocked
+      ? `PRD queue: blocked - ${validation.remainingPrds.length} remaining candidate${validation.remainingPrds.length === 1 ? "" : "s"}`
+      : `PRD queue: ${validation.remainingPrds.length > 0 ? validation.remainingPrds.length : "exhausted"}`,
     "",
     "| PRD candidate | Role | Disposition | Next action or proof |",
     "| --- | --- | --- | --- |",
@@ -466,7 +496,9 @@ export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWork
 
   lines.push(
     "",
-    validation.remainingPrds.length > 0
+    blocked
+      ? "Next PRD action: blocked - resolve follow-up custody first"
+      : validation.remainingPrds.length > 0
       ? `Next PRD action: ${validation.remainingPrds[0].toPrdInvocation}`
       : "Next PRD action: none - PRD queue exhausted",
     "Temporary artifacts: absent",
@@ -480,6 +512,44 @@ export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWork
   return lines.join("\n");
 };
 
+export const renderCustodyReceipt = ({ inventory, ledger, finalBranch, finalWorktreeRows }) => {
+  const validation = validateCustodyLedger({ inventory, ledger });
+  if (!validation.custodyComplete) {
+    throw new Error("Cannot render a passing custody receipt from an incomplete custody ledger.");
+  }
+  return renderReceipt({
+    inventory,
+    ledger,
+    validation,
+    finalBranch,
+    finalWorktreeRows,
+    blocked: false,
+  });
+};
+
+export const renderBlockedCustodyReceipt = ({
+  inventory,
+  ledger,
+  finalBranch,
+  finalWorktreeRows,
+}) => {
+  const validation = validateCustodyLedger({ inventory, ledger });
+  if (validation.errors.length > 0) {
+    throw new Error("Cannot render a blocked custody receipt from a structurally invalid custody ledger.");
+  }
+  if (validation.custodyComplete) {
+    throw new Error("Cannot render a blocked custody receipt from a complete custody ledger.");
+  }
+  return renderReceipt({
+    inventory,
+    ledger,
+    validation,
+    finalBranch,
+    finalWorktreeRows,
+    blocked: true,
+  });
+};
+
 const parseReceiptOptions = (args) => {
   let finalBranch = null;
   let finalWorktreeClean = false;
@@ -491,7 +561,7 @@ const parseReceiptOptions = (args) => {
       continue;
     }
     if (argument !== "--final-branch" && argument !== "--final-worktree-row") {
-      throw new Error(`Unknown render-receipt option: ${argument}`);
+      throw new Error(`Unknown receipt-renderer option: ${argument}`);
     }
     const value = args[index + 1];
     if (!nonEmpty(value) || value.startsWith("--")) {
@@ -501,7 +571,7 @@ const parseReceiptOptions = (args) => {
     else finalWorktreeRows.push(value);
     index += 1;
   }
-  if (!nonEmpty(finalBranch)) throw new Error("--final-branch is required for render-receipt.");
+  if (!nonEmpty(finalBranch)) throw new Error("--final-branch is required for receipt rendering.");
   if (finalWorktreeClean === (finalWorktreeRows.length > 0)) {
     throw new Error("Use exactly one of --final-worktree-clean or --final-worktree-row.");
   }
@@ -514,10 +584,17 @@ const main = () => {
     console.log(usage);
     return;
   }
-  const knownMode = new Set(["intake", "inspect", "validate", "render-receipt"]).has(mode);
-  const ledgerMode = mode === "validate" || mode === "render-receipt";
+  const receiptMode = mode === "render-receipt" || mode === "render-blocked-receipt";
+  const knownMode = new Set([
+    "intake",
+    "inspect",
+    "validate",
+    "render-receipt",
+    "render-blocked-receipt",
+  ]).has(mode);
+  const ledgerMode = mode === "validate" || receiptMode;
   const unexpectedLedger = !ledgerMode && ledgerPath != null;
-  const unexpectedRest = mode !== "render-receipt" && rest.length > 0;
+  const unexpectedRest = !receiptMode && rest.length > 0;
   if (!knownMode || !prepPath || (ledgerMode && !ledgerPath) || unexpectedLedger || unexpectedRest) {
     console.error(usage);
     process.exit(2);
@@ -529,9 +606,14 @@ const main = () => {
       const currentValidation = inspected.inventory.sourceReport == null
         ? { errors: ["Cannot run current producer validation without Source report path."], warnings: [] }
         : validatePrepArtifact(inspected.inventory.sourceReport, prepPath);
-      const report = classifyPrepIntake({ inspected, currentValidation });
+      const contractValidation = inspected.inventory.sourceReport == null
+        ? currentValidation
+        : validatePrepArtifact(inspected.inventory.sourceReport, prepPath, {
+            contractMode: "declared",
+          });
+      const report = classifyPrepIntake({ inspected, currentValidation, contractValidation });
       console.log(JSON.stringify(report, null, 2));
-      if (report.intakeStatus === "invalid") process.exit(1);
+      if (new Set(["invalid", "migration-required"]).has(report.intakeStatus)) process.exit(1);
       return;
     }
     if (inspected.errors.length > 0) {
@@ -544,9 +626,12 @@ const main = () => {
     }
 
     const ledger = JSON.parse(readFileSync(resolve(ledgerPath), "utf8"));
-    if (mode === "render-receipt") {
+    if (receiptMode) {
       const receiptOptions = parseReceiptOptions(rest);
-      console.log(renderCustodyReceipt({
+      const renderer = mode === "render-receipt"
+        ? renderCustodyReceipt
+        : renderBlockedCustodyReceipt;
+      console.log(renderer({
         inventory: inspected.inventory,
         ledger,
         ...receiptOptions,

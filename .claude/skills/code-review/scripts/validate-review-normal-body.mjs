@@ -163,14 +163,14 @@ const validateSubagentCleanup = (value, proof, subagents, errors) => {
       const unaddressable =
         /\b(?:follow-up|followup|message|send)\b[\s\S]*?\b(?:unavailable|unaddressable|unknown (?:agent|target)|not found)\b/i.test(proofBlock);
       if (/\bstill lists?\b/i.test(proofBlock) || !hasTerminalProof || (!inventoryAbsence && !unaddressable)) {
-        errors.push(`${axis} auto-disposed cleanup requires verified absence or unaddressability after terminal completion`);
+        errors.push(`${axis} auto-disposed cleanup requires verified absence or unaddressability after terminal completion. If the host has no close primitive, use 'close operation unavailable after terminal completion' instead`);
       }
     } else if (/\bclose operation unavailable after terminal completion\b/i.test(cleanupBlock)) {
       const unavailableCapability =
         /\bno close (?:operation|primitive|capability)(?: was)? (?:available|surfaced|exposed|present)\b/i.test(proofBlock) ||
         /\bclose (?:operation|primitive|capability) (?:was )?(?:unavailable|absent|not exposed)\b/i.test(proofBlock);
       if (!hasTerminalProof || !unavailableCapability) {
-        errors.push(`${axis} unavailable-close cleanup requires terminal status and proof that no close capability surfaced`);
+        errors.push(`${axis} unavailable-close cleanup requires terminal status and proof that no close capability surfaced. Example proof: '<id> reached terminal status and both passes completed; no close capability surfaced'`);
       }
     } else if (/\bclosed\b/i.test(cleanupBlock)) {
       const successfulClose =

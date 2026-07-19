@@ -102,6 +102,12 @@ const allTrue = (checks) => Object.values(checks).every(Boolean);
 const exactValues = (actual, expected) =>
   actual.length === expected.length && expected.every((value) => actual.includes(value));
 
+const isRepoRelativePath = (value) =>
+  typeof value === "string"
+  && value.trim().length > 0
+  && !/^(?:[\\/]|[A-Za-z]:[\\/])/.test(value)
+  && !value.split(/[\\/]/).includes("..");
+
 const compilePattern = (pattern, option) => {
   try {
     return new RegExp(pattern);
@@ -137,11 +143,30 @@ export const validateManifest = (manifest) => {
     errors.push(
       "artifactSource.path, artifactSource.token, artifactSource.relationship, and artifactSource.publicationRef are required",
     );
-  } else if (hasArtifactSource && (
-    manifest.artifactSource.path.startsWith("/")
-    || manifest.artifactSource.path.split(/[\\/]/).includes("..")
-  )) {
+  } else if (hasArtifactSource && !isRepoRelativePath(manifest.artifactSource.path)) {
     errors.push("artifactSource.path must be a repo-relative path without parent traversal");
+  }
+  if (hasArtifactSource) {
+    const dependencies = manifest.artifactSource.dependencies;
+    if (!Array.isArray(dependencies)) {
+      errors.push("artifactSource.dependencies must be an array");
+    } else {
+      for (const [index, dependency] of dependencies.entries()) {
+        if (!isRepoRelativePath(dependency)) {
+          errors.push(
+            `artifactSource.dependencies[${index}] must be a repo-relative path without parent traversal`,
+          );
+        }
+      }
+      if (dependencies.every((dependency) => typeof dependency === "string")) {
+        if (new Set(dependencies).size !== dependencies.length) {
+          errors.push("artifactSource.dependencies must contain unique paths");
+        }
+        if (dependencies.includes(manifest.artifactSource.path)) {
+          errors.push("artifactSource.dependencies must not repeat artifactSource.path");
+        }
+      }
+    }
   }
   if (hasSource && manifest.source.ledger != null) {
     errors.push("source.ledger is not allowed in standalone-source mode");
@@ -474,9 +499,18 @@ export const verifyPublishedFamily = ({
       url: sourcePayload?.url ?? null,
     };
   } else if (relationshipKind === "artifactSource") {
-    const artifact = artifactSourceDurability?.artifacts?.find(
-      (candidate) => candidate.path === manifest.artifactSource.path,
+    const expectedArtifactPaths = [
+      manifest.artifactSource.path,
+      ...manifest.artifactSource.dependencies,
+    ];
+    const actualArtifacts = artifactSourceDurability?.artifacts ?? [];
+    const actualArtifactPaths = actualArtifacts.map((candidate) => candidate.path);
+    const artifactsByPath = new Map(
+      actualArtifacts.map((candidate) => [candidate.path, candidate]),
     );
+    const artifact = artifactsByPath.get(manifest.artifactSource.path);
+    const artifacts = expectedArtifactPaths.map((path) =>
+      artifactsByPath.get(path) ?? { path, durable: false, reasons: ["not-checked"] });
     relationshipChecks = {
       checked: artifactSourceDurability != null,
       publicationRefMatches:
@@ -484,8 +518,12 @@ export const verifyPublishedFamily = ({
       publicationRefResolved:
         typeof artifactSourceDurability?.publicationRefSha === "string"
         && artifactSourceDurability.publicationRefSha.length > 0,
-      pathMatches: artifact?.path === manifest.artifactSource.path,
-      artifactDurable: artifact?.durable === true,
+      pathsMatch:
+        actualArtifactPaths.length === expectedArtifactPaths.length
+        && actualArtifactPaths.every((path, index) => path === expectedArtifactPaths[index]),
+      artifactsDurable:
+        artifactSourceDurability?.allDurable === true
+        && artifacts.every((candidate) => candidate.durable === true),
       sourcePresentInChildren: children.every((child) => child.checks.sourcePresent),
       relationshipPresentInChildren:
         children.every((child) => child.checks.sourceRelationshipPresent),
@@ -493,6 +531,8 @@ export const verifyPublishedFamily = ({
     relationshipReport = {
       checks: relationshipChecks,
       path: manifest.artifactSource.path,
+      dependencies: [...manifest.artifactSource.dependencies],
+      artifacts,
       publicationRef: manifest.artifactSource.publicationRef,
       publicationRefSha: artifactSourceDurability?.publicationRefSha ?? null,
       reasons: artifact?.reasons ?? [],
@@ -900,7 +940,10 @@ const main = () => {
     const artifactSourceDurability = manifest.artifactSource == null
       ? null
       : checkArtifactDurability({
-          paths: [manifest.artifactSource.path],
+          paths: [
+            manifest.artifactSource.path,
+            ...manifest.artifactSource.dependencies,
+          ],
           publicationRef: manifest.artifactSource.publicationRef,
         });
     const ledgerBody = manifest.parent?.ledger.status === "posted"

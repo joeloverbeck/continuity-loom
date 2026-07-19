@@ -5,7 +5,11 @@ import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { inspectSourceReport, validatePrepArtifact } from "./validate-prd-prep.mjs";
+import {
+  PREP_CONTRACT_DIAGNOSTIC_CODES,
+  inspectSourceReport,
+  validatePrepArtifact
+} from "./validate-prd-prep.mjs";
 
 const validatorPath = fileURLToPath(new URL("./validate-prd-prep.mjs", import.meta.url));
 
@@ -208,6 +212,33 @@ Out of scope: Unrelated fixture cleanup.
 `;
 }
 
+function ticketPacketBlock(title, sources, strengths, { omitField = null } = {}) {
+  const field = (label, value) => (omitField === label ? "" : `${label}: ${value}\n`);
+  const bulletField = (label, value) =>
+    omitField === label ? "" : `${label}:\n\n- ${value}\n\n`;
+  return `### Ticket Packet: ${title}
+
+${field("Sources", sources)}${field(
+    "Type and readiness",
+    "bug plus ready-for-agent, supported by fixture evidence."
+  )}${field("Problem", "The fixture exposes a bounded author-visible defect.")}${field(
+    "Product rule",
+    "The fixture behavior remains explicit at the existing boundary."
+  )}${field("Affected surfaces", "Fixture code, tests, active docs, and skill evidence.")}${field(
+    "Scope",
+    "Correct the bounded fixture behavior."
+  )}${bulletField(
+    "Acceptance",
+    "The bounded fixture scenario passes at the existing behavior seam."
+  )}${field("Preserved strengths", strengths)}${field(
+    "Testing seam",
+    "Existing fixture integration seam."
+  )}${field("Out of scope", "Unrelated fixture cleanup.")}${bulletField(
+    "Browser-visible guidance checklist mapping",
+    "`entry point and availability`: existing fixture entry point."
+  )}`;
+}
+
 function createPrepFixture(t, sourceFixture, options = {}) {
   const source = inspectSourceReport(sourceFixture.reportPath);
   assert.deepEqual(source.errors, []);
@@ -220,6 +251,7 @@ function createPrepFixture(t, sourceFixture, options = {}) {
         ? "No-new-PRD verdict: The fixture needs no broad product change."
         : "Recommended first new PRD: Fixture rule");
 
+  const dispositionById = new Map();
   const dispositionRows = source.cumulativeRows
     .filter((row) => row.ID !== options.omitDispositionId)
     .map((row) => {
@@ -231,6 +263,7 @@ function createPrepFixture(t, sourceFixture, options = {}) {
           : packageValue === "no new PRD"
             ? "ticket-candidate"
             : "fresh-prd-scope");
+      dispositionById.set(row.ID, disposition);
       return `| ${row.ID} | ${row.Summary} | ${disposition} | Current fixture evidence. | Fixture impact. |`;
     });
   if (options.duplicateDispositionId) {
@@ -263,6 +296,33 @@ function createPrepFixture(t, sourceFixture, options = {}) {
       "program 2"
     )}`;
   }
+
+  const ticketCandidateIds = source.cumulativeRows
+    .map((row) => row.ID)
+    .filter((id) => dispositionById.get(id) === "ticket-candidate");
+  const followUpRows =
+    ticketCandidateIds.length === 0
+      ? ["| None | N/A | No additional fixture action. | Current fixture proof. |"]
+      : ticketCandidateIds.map(
+          (id) =>
+            `| ${id} | ticket - Fixture ${id} | Publish the bounded fixture ticket. | Existing fixture proof. |`
+        );
+  const packetStrengths =
+    source.strengthIds.length > 0
+      ? source.strengthIds.join(", ")
+      : "N/A - no affected source strength";
+  const ticketPackets = ticketCandidateIds
+    .filter((id) => id !== options.omitTicketPacketId)
+    .flatMap((id) => {
+      const packet = ticketPacketBlock(
+        `Fixture ${id}`,
+        options.ticketPacketSources?.[id] ?? id,
+        packetStrengths,
+        { omitField: options.ticketPacketOmitField ?? null }
+      );
+      return id === options.duplicateTicketPacketId ? [packet, packet] : [packet];
+    })
+    .join("\n");
 
   const existingClassification = options.existingClassification ?? "missing at intake";
   const priorPrepClassification =
@@ -330,7 +390,7 @@ ${markdownRows(finalWorktreeRows)}
 
 ## Header And Freshness
 
-Source report path: reports/${basename(sourceFixture.reportPath)}
+${options.omitPrepContractVersion ? "" : `Prep contract version: ${options.prepContractVersion ?? 2}\n`}Source report path: reports/${basename(sourceFixture.reportPath)}
 Source validation: ${
     source.sourceValidation === "passed"
       ? "passed"
@@ -349,7 +409,7 @@ External research: skipped - repo-local prep
 
 ## Reassessment Verdict
 
-First operational action: none - fixture needs no preceding action
+First operational action: ${options.firstOperationalAction ?? "none - fixture needs no preceding action"}
 ${verdict}
 Publication package: ${packageValue}
 
@@ -386,7 +446,9 @@ ${candidates}
 
 | Item | Destination | Trigger or next action | Evidence required |
 | --- | --- | --- | --- |
-| None | N/A | No additional fixture action. | Current fixture proof. |
+${followUpRows.join("\n")}
+
+${ticketPackets}
 
 ## Rejected Or No-Op Alternatives
 
@@ -594,6 +656,128 @@ test("validates a no-new-PRD package and a report with no ledger rows", (t) => {
   assert.equal(result.prep.candidateCount, 0);
   assert.equal(result.prep.dispositionRows, 0);
   assert.equal(result.prep.strengthConstraintRows, 0);
+});
+
+test("validates one complete named packet for every ticket-candidate destination", (t) => {
+  const fixture = createSourceFixture(t);
+  const prepPath = createPrepFixture(t, fixture, { packageValue: "no new PRD" });
+  const result = validatePrepArtifact(fixture.reportPath, prepPath);
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.prep.ticketPacketCount, 1);
+});
+
+test("requires current contract version while recognizing implicit version 1 at intake", (t) => {
+  const fixture = createSourceFixture(t);
+  const prepPath = createPrepFixture(t, fixture, { omitPrepContractVersion: true });
+
+  const current = validatePrepArtifact(fixture.reportPath, prepPath);
+  assert(current.errors.includes("Prep contract version must be: 2"));
+  assert.equal(current.contract.status, "invalid");
+
+  const declared = validatePrepArtifact(fixture.reportPath, prepPath, {
+    contractMode: "declared"
+  });
+  assert.deepEqual(declared.errors, []);
+  assert.equal(declared.contract.declaredVersion, null);
+  assert.equal(declared.contract.effectiveVersion, 1);
+  assert.equal(declared.contract.status, "legacy-compatible");
+  assert.equal(
+    declared.contract.diagnostics[0].code,
+    PREP_CONTRACT_DIAGNOSTIC_CODES.IMPLICIT_LEGACY_VERSION
+  );
+});
+
+test("requires producer migration for a circular legacy first action", (t) => {
+  const fixture = createSourceFixture(t);
+  const prepPath = createPrepFixture(t, fixture, {
+    omitPrepContractVersion: true,
+    firstOperationalAction: "/to-prd after custody"
+  });
+  const result = validatePrepArtifact(fixture.reportPath, prepPath, {
+    contractMode: "declared"
+  });
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.contract.status, "migration-required");
+  assert.equal(
+    result.contract.diagnostics.at(-1).code,
+    PREP_CONTRACT_DIAGNOSTIC_CODES.FIRST_ACTION_MIGRATION_REQUIRED
+  );
+  assert.equal(result.contract.migrationInvocation, `$playtest-prd-prep "${result.source.reportPath}"`);
+});
+
+test("rejects unsupported future prep contract versions", (t) => {
+  const fixture = createSourceFixture(t);
+  const prepPath = createPrepFixture(t, fixture, { prepContractVersion: 3 });
+  const result = validatePrepArtifact(fixture.reportPath, prepPath, {
+    contractMode: "declared"
+  });
+
+  assert.equal(result.contract.status, "invalid");
+  assert(
+    result.contract.diagnostics.some(
+      (diagnostic) =>
+        diagnostic.code === PREP_CONTRACT_DIAGNOSTIC_CODES.FUTURE_VERSION
+    )
+  );
+});
+
+test("rejects custody and PRD handoffs as circular first operational actions", (t) => {
+  const fixture = createSourceFixture(t);
+  for (const firstOperationalAction of [
+    '$playtest-to-issues "reports/playtest-fixture-prd-prep.md"',
+    "/to-prd after custody"
+  ]) {
+    const prepPath = createPrepFixture(t, fixture, { firstOperationalAction });
+    const result = validatePrepArtifact(fixture.reportPath, prepPath);
+    assert(
+      result.errors.includes(
+        "First operational action must name substantive portfolio work, not playtest-to-issues or /to-prd."
+      )
+    );
+  }
+});
+
+test("rejects missing, incomplete, and disposition-mismatched ticket packets", (t) => {
+  const fixture = createSourceFixture(t);
+
+  const missingPath = createPrepFixture(t, fixture, {
+    packageValue: "no new PRD",
+    omitTicketPacketId: "F001"
+  });
+  const missing = validatePrepArtifact(fixture.reportPath, missingPath);
+  assert(missing.errors.includes("Ticket destination Fixture F001 requires exactly one Ticket Packet."));
+  assert(
+    missing.errors.includes("Ticket-candidate source F001 is not covered by exactly one Ticket Packet.")
+  );
+
+  const incompletePath = createPrepFixture(t, fixture, {
+    packageValue: "no new PRD",
+    ticketPacketOmitField: "Testing seam"
+  });
+  const incomplete = validatePrepArtifact(fixture.reportPath, incompletePath);
+  assert(
+    incomplete.errors.includes(
+      "Ticket Packet Fixture F001 requires exactly one bare line-start field: Testing seam: value"
+    )
+  );
+
+  const mismatchedPath = createPrepFixture(t, fixture, {
+    packageValue: "no new PRD",
+    ticketPacketSources: { F001: "F002" }
+  });
+  const mismatched = validatePrepArtifact(fixture.reportPath, mismatchedPath);
+  assert(
+    mismatched.errors.includes(
+      "Ticket Packet Fixture F001 cites non-ticket-candidate source ID F002."
+    )
+  );
+  assert(
+    mismatched.errors.includes(
+      "Ticket-candidate source F001 is not covered by exactly one Ticket Packet."
+    )
+  );
 });
 
 test("requires every cumulative row exactly once", (t) => {

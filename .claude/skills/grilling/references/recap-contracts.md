@@ -32,6 +32,26 @@ When one user request contains multiple independent items at the same time, clas
 
 For example, a request containing one concrete diagnostic and one design determination should use the determination or diagnostic contract that matches the requested final deliverable, while still preserving the other item's verdict and evidence. Apply the class-shift union only when the same subject or action actually changes class, or when one action genuinely spans multiple classes; mere coexistence of independent items is not a class shift.
 
+### Supporting-skill closeout composition
+
+When a loaded supporting or downstream skill requires exact final-response fields, a keyed block, a
+machine-readable trailer, or a specific final position, treat that requirement as a closeout
+constraint rather than evidence that the dominant recap may paraphrase:
+
+- inventory every active closeout constraint before the downstream deliverable begins;
+- keep the dominant grilling recap as the outer human-readable contract, then reproduce each
+  subordinate block with its required keys and order after that recap;
+- place higher-priority system or developer trailers after skill-owned blocks when those
+  instructions require the trailer to be the final content;
+- do not omit or summarize a subordinate block merely because the dominant recap covers the same
+  facts; and
+- if two same-priority constraints both require an exclusive final position and cannot be composed,
+  stop before mutation and surface the conflict for explicit resolution.
+
+The final preflight must give every active closeout constraint exactly one output home. Do not
+duplicate a supporting skill's surrounding narrative template when its exact mandatory block is
+sufficient.
+
 ## PRD-ready / issue-ready recap checklist
 
 Keep this checklist visible during determination and report-cited grilling runs. The closing recap must include:
@@ -68,7 +88,9 @@ Use `Finding:` or `Explored fact:` lines for factual conclusions and evidence-ba
 Before sending any closing recap, resolve its applicable contract or union through the class-routing
 rules above, then apply every matching scan below. For a class shift, scan every occupied class; for
 simultaneous mixed requests, scan the dominant contract plus every subordinate field carried into
-it.
+it. Also reconcile every active constraint from
+[Supporting-skill closeout composition](#supporting-skill-closeout-composition); implicit narrative
+coverage does not satisfy a required label or exact block.
 
 - **Diagnostic / audit:** require these labels or their explicit `N/A`: `Source`, `Selected
   section`, `Verdict`, `Evidence`, `Inspected authorities`, `Tracker overlap`, `Existing prep

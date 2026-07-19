@@ -128,6 +128,11 @@ do.
 fingerprint and visible metadata before extracting it. `fill-file` is the required path for raw
 subagent prose so the content is not exposed in shell arguments or command output.
 
+`text`, `tree`, and `html` fail closed when their selected scope contains or intersects a visible
+compiled prompt body. For diagnostics on a prompt page, select a narrow semantic region outside
+the prompt. Do not bypass this guard with a broad page snapshot; use `text-file` for the exact
+visible prompt.
+
 ## Perception and evidence
 
 After every consequential action, wait for the UI to settle and inspect a fresh screenshot or

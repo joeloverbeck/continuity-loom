@@ -236,6 +236,7 @@ const artifactManifest = {
   ...globalThis.structuredClone(sourceManifest),
   artifactSource: {
     path: "reports/playtest-example.md",
+    dependencies: ["reports/assets/playtest-example.png"],
     token: "Playtest report reports/playtest-example.md",
     relationship:
       "Standalone non-PRD follow-up from the playtest report; it does not ratify or implement the remaining PRD candidates.",
@@ -256,6 +257,14 @@ const artifactSourceDurability = {
   allDurable: true,
   artifacts: [{
     path: "reports/playtest-example.md",
+    tracked: true,
+    worktreeClean: true,
+    visibleAtRef: true,
+    identicalToRef: true,
+    durable: true,
+    reasons: [],
+  }, {
+    path: "reports/assets/playtest-example.png",
     tracked: true,
     worktreeClean: true,
     visibleAtRef: true,
@@ -470,13 +479,47 @@ test("verifies a published family against a durable artifact source", () => {
   assert.equal(report.children[0].relationshipMode, "artifact-source");
   assert.equal(report.children[0].checks.sourcePresent, true);
   assert.equal(report.children[0].checks.sourceRelationshipPresent, true);
-  assert.equal(report.artifactSource.checks.artifactDurable, true);
+  assert.equal(report.artifactSource.checks.artifactsDurable, true);
+  assert.equal(report.artifactSource.checks.pathsMatch, true);
   assert.equal(report.artifactSource.path, "reports/playtest-example.md");
+  assert.deepEqual(
+    report.artifactSource.dependencies,
+    ["reports/assets/playtest-example.png"],
+  );
+  assert.deepEqual(
+    report.artifactSource.artifacts.map((artifact) => artifact.path),
+    ["reports/playtest-example.md", "reports/assets/playtest-example.png"],
+  );
   assert.equal("parent" in report, false);
   assert.equal("source" in report, false);
 });
 
-test("fails artifact-source verification when source bytes are not durable", () => {
+test("fails artifact-source verification when a linked evidence dependency is not durable", () => {
+  const durability = globalThis.structuredClone(artifactSourceDurability);
+  durability.allDurable = false;
+  durability.artifacts[1].durable = false;
+  durability.artifacts[1].identicalToRef = false;
+  durability.artifacts[1].reasons = ["content-differs-from-ref"];
+
+  const report = verifyPublishedFamily({
+    manifest: artifactManifest,
+    childPayloads: artifactChildPayloads,
+    stagedBodies: artifactStagedBodies,
+    artifactSourceDurability: durability,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(artifactManifest),
+  });
+
+  assert.equal(report.checks.artifactSourcePass, false);
+  assert.deepEqual(report.failedChecks, ["artifactSourcePass"]);
+  assert.deepEqual(report.artifactSource.reasons, []);
+  assert.deepEqual(
+    report.artifactSource.artifacts[1].reasons,
+    ["content-differs-from-ref"],
+  );
+});
+
+test("fails artifact-source verification when the primary source bytes are not durable", () => {
   const durability = globalThis.structuredClone(artifactSourceDurability);
   durability.allDurable = false;
   durability.artifacts[0].durable = false;
@@ -495,6 +538,29 @@ test("fails artifact-source verification when source bytes are not durable", () 
   assert.equal(report.checks.artifactSourcePass, false);
   assert.deepEqual(report.failedChecks, ["artifactSourcePass"]);
   assert.deepEqual(report.artifactSource.reasons, ["content-differs-from-ref"]);
+});
+
+test("fails artifact-source verification when a declared dependency was not checked", () => {
+  const durability = globalThis.structuredClone(artifactSourceDurability);
+  durability.artifacts.pop();
+
+  const report = verifyPublishedFamily({
+    manifest: artifactManifest,
+    childPayloads: artifactChildPayloads,
+    stagedBodies: artifactStagedBodies,
+    artifactSourceDurability: durability,
+    checklistVerified: true,
+    workingLedger: workingLedgerFor(artifactManifest),
+  });
+
+  assert.equal(report.checks.artifactSourcePass, false);
+  assert.equal(report.artifactSource.checks.pathsMatch, false);
+  assert.equal(report.artifactSource.checks.artifactsDurable, false);
+  assert.deepEqual(report.artifactSource.artifacts[1], {
+    path: "reports/assets/playtest-example.png",
+    durable: false,
+    reasons: ["not-checked"],
+  });
 });
 
 test("manifest validation requires a complete exclusive artifact source", () => {
@@ -519,6 +585,50 @@ test("manifest validation requires a complete exclusive artifact source", () => 
   assert.equal(
     validateManifest(traversing).includes(
       "artifactSource.path must be a repo-relative path without parent traversal",
+    ),
+    true,
+  );
+
+  const missingDependencies = globalThis.structuredClone(artifactManifest);
+  delete missingDependencies.artifactSource.dependencies;
+  assert.equal(
+    validateManifest(missingDependencies).includes("artifactSource.dependencies must be an array"),
+    true,
+  );
+
+  const invalidDependencies = globalThis.structuredClone(artifactManifest);
+  invalidDependencies.artifactSource.dependencies = ["/absolute.png", "../private.png"];
+  const invalidDependencyErrors = validateManifest(invalidDependencies);
+  assert.equal(
+    invalidDependencyErrors.includes(
+      "artifactSource.dependencies[0] must be a repo-relative path without parent traversal",
+    ),
+    true,
+  );
+  assert.equal(
+    invalidDependencyErrors.includes(
+      "artifactSource.dependencies[1] must be a repo-relative path without parent traversal",
+    ),
+    true,
+  );
+
+  const duplicateDependencies = globalThis.structuredClone(artifactManifest);
+  duplicateDependencies.artifactSource.dependencies = [
+    "reports/assets/repeated.png",
+    "reports/assets/repeated.png",
+  ];
+  assert.equal(
+    validateManifest(duplicateDependencies).includes(
+      "artifactSource.dependencies must contain unique paths",
+    ),
+    true,
+  );
+
+  const repeatedPrimary = globalThis.structuredClone(artifactManifest);
+  repeatedPrimary.artifactSource.dependencies = [repeatedPrimary.artifactSource.path];
+  assert.equal(
+    validateManifest(repeatedPrimary).includes(
+      "artifactSource.dependencies must not repeat artifactSource.path",
     ),
     true,
   );
@@ -1011,14 +1121,15 @@ test("family CLI verifies child snapshots against a live durable artifact source
     const cliManifest = globalThis.structuredClone(artifactManifest);
     cliManifest.runSheet = runSheet;
     cliManifest.workingLedger = workingLedger;
-    cliManifest.artifactSource.path = "docs/ACTIVE-DOCS.md";
-    cliManifest.artifactSource.token = "Authority artifact docs/ACTIVE-DOCS.md";
+    cliManifest.artifactSource.path = "package.json";
+    cliManifest.artifactSource.dependencies = [];
+    cliManifest.artifactSource.token = "Repository artifact package.json";
     cliManifest.artifactSource.publicationRef = "HEAD";
     cliManifest.children[0].bodyFile = bodyFile;
     cliManifest.children[0].checklistMapped = "N/A - validator fixture only";
     const cliBody = artifactBody().replace(
       "Playtest report reports/playtest-example.md",
-      "Authority artifact docs/ACTIVE-DOCS.md",
+      "Repository artifact package.json",
     );
     const cliPayload = {
       ...artifactChildPayloads.get(380),
@@ -1045,7 +1156,7 @@ test("family CLI verifies child snapshots against a live durable artifact source
     assert.equal(result.status, 0, result.stderr || result.stdout);
     const report = JSON.parse(result.stdout);
     assert.equal(report.checks.artifactSourcePass, true);
-    assert.equal(report.artifactSource.path, "docs/ACTIVE-DOCS.md");
+    assert.equal(report.artifactSource.path, "package.json");
     assert.deepEqual(report.failedChecks, []);
   } finally {
     rmSync(directory, { recursive: true, force: true });

@@ -7,6 +7,8 @@ description: Test-driven development. Use when the user wants to build features 
 
 TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.
 
+**Orientation.** For a single feature or bug fix, the operative guidance is *What a good test is*, *Seams*, *Anti-patterns*, and *Rules of the loop* below. The preflight, acceptance-manifest, shared-boundary-table, atom/sequence-map, and closeout hard-stops between here and those sections apply when the work is a PRD or multi-issue family — typically when this skill runs under the `implement` skill; that closeout contract lives in [closeout-evidence.md](closeout-evidence.md).
+
 When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.
 
 Before the first red test, record whether `CONTEXT.md` exists and was read, and note any ADRs or principle docs that shape the test vocabulary or seam choice.

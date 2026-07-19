@@ -984,6 +984,6 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /output-derived result or count/);
   assert.equal(
     closeout.match(/no hits outside classified identity\/history lines and no active-proof hits/g)?.length,
-    3
+    4 // 3 canonical guidance occurrences plus 1 in the Validator-passing field examples section
   );
 });

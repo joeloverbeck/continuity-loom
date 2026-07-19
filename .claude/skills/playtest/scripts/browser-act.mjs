@@ -31,6 +31,16 @@ const VERBS = new Set([
   "pages"
 ]);
 
+const PROMPT_BODY_SELECTOR = '[aria-label="Compiled prompt preview"] pre';
+const COMPILED_PROMPT_SECTION_PAIRS = [
+  ["<role>", "<final_output_instruction>"],
+  ["<ideation_role>", "<ideation_output_format>"],
+  ["<record_hygiene_role>", "<record_hygiene_output_format>"],
+  ["<segment_reconciliation_role>", "<segment_reconciliation_output_format>"]
+];
+const PROMPT_OUTPUT_ERROR =
+  "Visible output appears to contain a compiled prompt; use text-file on the prompt element.";
+
 function usage() {
   return `Usage:
   node .claude/skills/playtest/scripts/browser-act.mjs \\
@@ -94,11 +104,28 @@ function cap(value, maxChars) {
 
 export function appearsToContainCompiledPrompt(value) {
   return (
-    (value.includes("<role>") && value.includes("<final_output_instruction>")) ||
-    /^# (?:Generated Prose|Grounded Ideation|Story-Record Hygiene|Segment Reconciliation) Prompt\b/m.test(
+    COMPILED_PROMPT_SECTION_PAIRS.some(([first, last]) =>
+      value.includes(first) && value.includes(last)
+    ) ||
+    /(?:^|[^#])# (?:Generated Prose|Grounded Ideation|Story-Record Hygiene|Segment Reconciliation) Prompt\b/m.test(
       value
     )
   );
+}
+
+export async function visibleScopeContainsCompiledPrompt(locator) {
+  if ((await locator.locator(`${PROMPT_BODY_SELECTOR}:visible`).count()) > 0) return true;
+
+  return locator.evaluate((element, promptBodySelector) => {
+    const promptBody = element.closest(promptBodySelector);
+    if (!promptBody) return false;
+    const style = globalThis.getComputedStyle(promptBody);
+    return (
+      style.display !== "none" &&
+      style.visibility !== "hidden" &&
+      promptBody.getClientRects().length > 0
+    );
+  }, PROMPT_BODY_SELECTOR);
 }
 
 export function isSupportedVerb(verb) {
@@ -107,11 +134,15 @@ export function isSupportedVerb(verb) {
 
 function safeTerminalOutput(value) {
   if (appearsToContainCompiledPrompt(value)) {
-    throw new Error(
-      "Visible output appears to contain a compiled prompt; use text-file on the prompt element."
-    );
+    throw new Error(PROMPT_OUTPUT_ERROR);
   }
   return value;
+}
+
+async function assertTerminalOutputScopeSafe(locator) {
+  if (await visibleScopeContainsCompiledPrompt(locator)) {
+    throw new Error(PROMPT_OUTPUT_ERROR);
+  }
 }
 
 function sha256(value) {
@@ -321,12 +352,15 @@ async function main() {
         result.screenshot = outputPath(rest[1], session);
         await target(rest[0]).screenshot({ path: result.screenshot });
         break;
-      case "text":
+      case "text": {
+        const locator = rest[0] ? target(rest[0]) : page.locator("body");
+        await assertTerminalOutputScopeSafe(locator);
         rawOutput = cap(
-          safeTerminalOutput(await (rest[0] ? target(rest[0]) : page.locator("body")).innerText()),
+          safeTerminalOutput(await locator.innerText()),
           args.maxChars
         );
         break;
+      }
       case "text-file": {
         requireArgs(verb, rest, 2);
         const outputFile = assertTmpFilePath("text-file output", rest[1]);
@@ -345,14 +379,15 @@ async function main() {
         result.sha256 = sha256(value);
         break;
       }
-      case "tree":
+      case "tree": {
+        const locator = rest[0] ? target(rest[0]) : page.locator("body");
+        await assertTerminalOutputScopeSafe(locator);
         rawOutput = cap(
-          safeTerminalOutput(
-            await (rest[0] ? target(rest[0]) : page.locator("body")).ariaSnapshot()
-          ),
+          safeTerminalOutput(await locator.ariaSnapshot()),
           args.maxChars
         );
         break;
+      }
       case "box": {
         requireArgs(verb, rest, 1);
         const box = await target(rest[0]).boundingBox();
@@ -370,6 +405,7 @@ async function main() {
         if (!(await target(rest[0]).isVisible())) {
           throw new Error("html diagnostics are restricted to a visible element.");
         }
+        await assertTerminalOutputScopeSafe(target(rest[0]));
         rawOutput = cap(
           safeTerminalOutput(await target(rest[0]).evaluate((element) => element.outerHTML)),
           args.maxChars

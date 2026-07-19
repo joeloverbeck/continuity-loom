@@ -115,7 +115,7 @@ export const validateFreshnessValue = (value) => {
     return "uses non-semantic freshness without changed path, unaffected evidence route/action/API/fixture, and proof";
   }
 
-  return "must state rerun proof, justified not affected, blocked/stale reason, non-semantic proof, N/A because, or none";
+  return "must state rerun proof, justified not affected, blocked/stale reason, non-semantic proof, N/A because, or none. Example rerun form: 'browser smoke rerun passed on final tree <sha> for route/action/API/fixture <...> with observed outcome <...>'";
 };
 
 export const validateRegressionDurabilityValue = (value) => {
@@ -132,7 +132,7 @@ export const validateRegressionDurabilityValue = (value) => {
   }
   if (/^blocked\b.+\bbecause\b.+/i.test(normalized)) return "";
   if (/^N\/A\b.+\bbecause\b.+\bnot (?:a )?transient browser\/manual probe\b/i.test(normalized)) return "";
-  return "must state durable test added at a path, evidence-only because no supported committed harness exists, blocked because, or N/A because the intended red was not a transient browser/manual probe";
+  return "must state durable test added at a path, evidence-only because no supported committed harness exists, blocked because, or N/A because the intended red was not a transient browser/manual probe. Example: 'durable regression test added at packages/<...>/<file>.test.tsx'";
 };
 
 export const validateBackendCurrentnessValue = (value) => {
@@ -153,7 +153,7 @@ export const validateBackendCurrentnessValue = (value) => {
     /\bexpected(?: [\w-]+){0,3} API (?:field|behavior)(?: probe)?\b|\bAPI probe\b/i.test(normalized);
   if (hasServerCommand && hasWatchMode && hasOwnership && hasRestartOrReloadProof && hasExpectedApiProbe) return "";
 
-  return "must state server command, watch/reload mode, process or port ownership, restart/reload proof, and expected API field/behavior probe, or a justified N/A/blocked reason";
+  return "must state server command, watch/reload mode, process or port ownership, restart/reload proof, and expected API field/behavior probe, or a justified N/A/blocked reason. Example: 'server command npm start, no watch/reload mode; process/port ownership pid <n> on 127.0.0.1:<port>; restart proof: <...>; expected API behavior probe <...>'";
 };
 
 export const fixtureSnapshotCurrentnessErrors = (

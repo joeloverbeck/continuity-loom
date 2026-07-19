@@ -26,6 +26,11 @@ Only include these when they add genuine value. Most ADRs won't need them.
 
 Scan `docs/adr/` for the highest existing number and increment by one.
 
+Once an ADR path is named in a user-approved mutation checkpoint, treat the full path as frozen
+identity. If later drafting suggests a different number, directory, or slug, renew confirmation
+before writing. After the write, verify that the created path and every registry or index reference
+exactly match the approved path.
+
 ## When to offer an ADR
 
 All three of these must be true:

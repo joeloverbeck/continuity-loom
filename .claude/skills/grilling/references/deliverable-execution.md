@@ -32,7 +32,7 @@ Conclusive explored facts do not by themselves trigger a blocking confirmation i
 
 In a diagnose-and-fix or audit-plus-edit hybrid, a terminal option selection or prose confirmation can satisfy the checkpoint when it already enumerates the exact deliverable shape. This does not let an ordinary mid-interview acceptance skip the final checkpoint.
 
-## Supporting-skill writes
+## Supporting-skill writes and closeouts
 
 Mandatory inline writes from a supporting skill are not optional downstream deliverables, but they may occur only when:
 
@@ -40,6 +40,13 @@ Mandatory inline writes from a supporting skill are not optional downstream deli
 - every branch governing whether standing files change this session is resolved.
 
 Until then, hold the changes aside and list them as pending in the recap. If the supporting skill concludes no update is owed, report that as a supporting-skill result, not as a decision.
+
+When a supporting or downstream skill is loaded, inventory any mandatory final-response fields,
+exact keyed block, machine-readable trailer, or final-position requirement before the deliverable
+begins. Compose those constraints through
+[Supporting-skill closeout composition](recap-contracts.md#supporting-skill-closeout-composition).
+A dominant grilling recap does not permit paraphrasing or omitting an exact subordinate block. If
+the active constraints cannot coexist, stop before the first mutation and surface the conflict.
 
 ## Autonomous deliverables
 
@@ -53,7 +60,7 @@ Edits mechanically required for the confirmed deliverable's internal consistency
 
 For local file writes:
 
-1. immediately before the first write, run `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short`;
+1. immediately before the first write, run `git branch --show-current`, `git rev-parse HEAD`, and an unscoped `git status --short --untracked-files=all`;
 2. preserve unrelated worktree changes;
 3. run the repository's canonical verification gates when the deliverable includes code; and
 4. immediately before the final summary, rerun the same branch, HEAD, and unscoped status commands.

@@ -21,3 +21,15 @@ Nested-validator angle-token rule: in compact review, TDD, or audit cells and in
 Evidence-artifact lifecycle rule: before deleting proof-owned fixtures, scripts, packets, or artifacts, compare them with the published `Current evidence identities:` inventory and closeout references. A published current artifact is not safe to remove until closeout is complete and its retained-or-removed disposition is recorded. If it is removed after publication, update the durable evidence so it does not imply that the local artifact remains inspectable; retain the command/result or tracker-hosted evidence needed to support the claim.
 
 When `--browser` is used and `Current evidence identities:` names non-`none` fixture paths, `Backend process currentness:` must also state `stateful fixture snapshot method`, `snapshot source`, and `expected-state probe`, or the exact disposition `N/A because no stateful fixture was copied`. For SQLite with possible live WAL state, use `.backup` or a checkpoint-aware copy rather than raw `cp`.
+
+## Validator-passing field examples
+
+The review-evidence fields below are enforced by exact-token regexes in `scripts/validate-review-normal-body.mjs` and `scripts/review-evidence-contract.mjs`; the descriptions above and the validator error messages do not always map to the literal tokens the regex needs. When a validator rejects a field that already looks filled, match one of these copy-paste passing forms, then re-run the validator:
+
+- **Review subagent cleanup disposition** — when the host has no close primitive, use `close operation unavailable after terminal completion` (not `closed` or `auto-disposed`).
+- **Review subagent cleanup proof** for the unavailable-close disposition must say `completed` (not "completion") plus `no close capability surfaced`:
+  > Standards <id> reached terminal status and both passes completed via task-notification, and no close capability surfaced on the background surface; Spec <id> same shape with its own id
+- **Issue-set coverage `sequence:`** must name ordered events (`->` / `then` / `before` / `after`) and an observing-proof token (`observed` / `asserted` / `test` / `browser` / ...):
+  > sequence: provider-blocked render -> recovery visible -> click -> focus lands on existing button, asserted on one active instance by the recovery test
+- **Superseded-token sweep** must name `rg`/`grep`, include every superseded value verbatim (with extensions, e.g. `index-<hash>.js`), and the literals `no hits outside classified identity/history lines`, `no active-proof hits`, and — unless `Historical red identities retained:` is `none` — `historical-red hits classified`:
+  > `rg -n '<value1>|<value2>'` over the review body returns hits only inside the classified identity/history lines; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified in the Historical red identities line

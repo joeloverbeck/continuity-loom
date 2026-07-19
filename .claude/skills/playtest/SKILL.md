@@ -78,8 +78,8 @@ reports to reconstruct counts.
 | Instrument                         | State  | Completed | Sunset |
 | ---------------------------------- | ------ | --------: | -----: |
 | Cold First-View Witness            | awaiting-disposition |         1 |      1 |
-| Paired-Draw Check                  | active               |         1 |      2 |
-| Independent Claim Challenge report | active               |         1 |      2 |
+| Paired-Draw Check                  | awaiting-disposition |         2 |      2 |
+| Independent Claim Challenge report | awaiting-disposition |         2 |      2 |
 | Method-register natural-run row    | awaiting-disposition |         3 |      3 |
 
 Only after the final report validation passes:

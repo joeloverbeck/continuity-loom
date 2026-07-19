@@ -42,8 +42,9 @@ and baseline worktree dirt are known.
 
 ### 1. Establish live provenance
 
-1. Retain exact `git status --short`, `git branch --show-current`, and `git rev-parse HEAD` output.
-   Treat pre-existing dirt as unowned unless this invocation explicitly adopts it.
+1. Retain exact `git status --short --untracked-files=all`, `git branch --show-current`, and
+   `git rev-parse HEAD` output. Treat pre-existing dirt as unowned unless this invocation explicitly
+   adopts it.
 2. Read `AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`, and the active domain authorities
    for every affected surface. Read `docs/agents/issue-tracker.md`,
    `docs/agents/triage-labels.md`, and `tickets/README.md` before assigning destinations or label
@@ -130,6 +131,11 @@ severity, dependency order, evidence strength, proof readiness, and strength-reg
 Keep `First operational action` separate from the first new PRD when verification, a reopen, or
 skill maintenance must happen first.
 
+`First operational action` is the first substantive portfolio action that custody must resolve,
+not the mandatory custody or publication handoff. Never set it to `$playtest-to-issues`,
+`playtest-to-issues`, or `/to-prd`; use `none - <reason>` when no substantive action precedes the
+remaining portfolio.
+
 Describe behavior, authority, the existing seam, affected surfaces, acceptance, and testing at
 PRD-ready depth. Do not prescribe patch order, volatile symbols, components, or new abstractions
 unless current architecture makes the constraint unavoidable.
@@ -148,6 +154,12 @@ Read [Prep artifact contract](references/prep-format.md) in full immediately bef
 or update the default same-stem artifact; never fork numbered or timestamped copies. On rerun, carry
 the prior-recommendation consumption ledger into the updated artifact. For a continuation, include
 the prior report's prep recommendations in that same ledger when its derived prep exists.
+
+Always write the current `Prep contract version` from the artifact contract. An unversioned or
+older same-stem prep is historical recommendation input, never a template to preserve byte-for-byte.
+The producer alone migrates it: inventory its prior recommendations, classify each one against live
+evidence, and rewrite the same-stem artifact at the current version. Do not delegate migration to
+`$playtest-to-issues`.
 
 Consult `/to-prd` for house style only: publication-package vocabulary, source durability, label
 posture, browser-visible checklist mapping, and recommended testing seams. Do not draft or stage a
@@ -175,10 +187,11 @@ Fix every structural or privacy error. Compare the emitted source and output cou
 tables; the helper proves shape and coverage, never semantic correctness. Manually review each
 disposition, candidate grouping, authority impact, preservation constraint, and evidence claim,
 then complete the privacy scan. Immediately before completing the freshness scan, re-run
-`git status --short` and `git branch --show-current`; replace the artifact's final branch and
-worktree ledger with that exact snapshot and classify every remaining path as the intentional prep
-artifact, pre-existing, or concurrent/unowned. Only after those checks actually complete, replace
-the three draft self-check values with the final values from the artifact contract and run:
+`git status --short --untracked-files=all` and `git branch --show-current`; replace the artifact's
+final branch and worktree ledger with that exact snapshot and classify every remaining path as the
+intentional prep artifact, pre-existing, or concurrent/unowned. Only after those checks actually
+complete, replace the three draft self-check values with the final values from the artifact contract
+and run:
 
 ```bash
 node .claude/skills/playtest-prd-prep/scripts/validate-prd-prep.mjs <report> <prep-artifact>
@@ -186,30 +199,33 @@ node .claude/skills/playtest-prd-prep/scripts/validate-prd-prep.mjs <report> <pr
 
 Fix every final-validation error and rerun until it passes. Never leave final completion claims in
 an artifact that has not passed the final command. Immediately after a pass, re-run
-`git status --short` and `git branch --show-current` and compare both outputs with the validated
-snapshot. If either differs, update the snapshot and classifications, repeat the affected freshness
-and privacy review, rerun final validation, and compare again. Stop only when the post-validation
-comparison matches the validated snapshot exactly. Do not run root gates merely for a report-only
-prep; report focused tests, probes, browser checks, and broader gates skipped.
-
-Before sending the final response, complete this closeout checklist from the validated artifact:
-
-- `Source report`: name the canonical source.
-- `Prep artifact`: name the same-stem deliverable.
-- `First operational action`: state the selected next action.
-- `Publication verdict`: state the package and intended first PRD or no-new-PRD result.
-- `Deferred work`: name every deferred PRD candidate, or `none`.
-- `Non-PRD work`: name every Non-PRD Follow-Up item with its destination, or `none`.
-- `Issue-custody handoff`: give the exact `$playtest-to-issues "<prep-artifact>"` invocation and
-  state that it precedes `/to-prd`, even when Non-PRD Follow-Up is `none`.
-- `Tracker and durability`: state tracker limitations and both source and artifact durability.
-- `Intentional change`: name the authored prep artifact.
-- `Remaining dirt`: name and classify every remaining path individually.
-- `Non-actions`: state explicitly that no implementation, source-report edit, tracker mutation, PRD
-  publication, or `/to-prd` seam checkpoint occurred.
+`git status --short --untracked-files=all` and `git branch --show-current` and compare both outputs
+with the validated snapshot. If either differs, update the snapshot and classifications, repeat the
+affected freshness and privacy review, rerun final validation, and compare again. Stop only when
+the post-validation comparison matches the validated snapshot exactly. Do not run root gates merely
+for a report-only prep; report focused tests, probes, browser checks, and broader gates skipped.
 
 The run is complete only when the source inspector reports `passed` or `nonblocking-defects` with
 the required skill-maintenance follow-up, every source row and strength is covered, the final prep
 validator passes, semantic review is recorded, privacy and freshness scans are clear, and the final
 worktree boundary is reconciled. A closeout that points directly to `/to-prd` without the exact
 `$playtest-to-issues` custody handoff is incomplete.
+
+Before sending the final response, render this exact keyed block as the final content from the
+validated artifact. Keep every key, use `none` where applicable, and list every remaining path
+individually under `Remaining dirt` rather than collapsing an untracked directory:
+
+```text
+Source report: <canonical source report>
+Prep artifact: <same-stem prep artifact>
+First operational action: <substantive action or none - reason>
+Publication verdict: <package and intended first PRD, or no-new-PRD result>
+Deferred work: <every deferred PRD candidate, or none>
+Non-PRD work: <every item and destination, or none>
+Issue-custody handoff: $playtest-to-issues "<prep-artifact>"; required before /to-prd
+Tracker and durability: <tracker limitations; source durability; artifact durability>
+Intentional change: <authored prep artifact>
+Remaining dirt:
+- <path>: <pre-existing, concurrent/unowned, or intentional classification>
+Non-actions: no implementation, source-report edit, tracker mutation, PRD publication, or /to-prd seam checkpoint occurred
+```

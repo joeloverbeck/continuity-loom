@@ -1,5 +1,12 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import test from "node:test";
@@ -28,6 +35,17 @@ test("prepares a new-story run without creating the project folder", () => {
     assert.equal(existsSync(result.projectPath), false);
     assert.equal(existsSync(result.scratchpad), true);
     assert.equal(existsSync(result.evidenceDir), true);
+    const scratchpad = readFileSync(result.scratchpad, "utf8");
+    assert.match(scratchpad, /## Quantitative journey ledger/);
+    assert.match(
+      scratchpad,
+      /- Status: inactive - activate only when the invocation requests counts or cost comparisons/
+    );
+    assert.match(
+      scratchpad,
+      /\| ID \| Timestamp \| Phase \| Visible action \| Kind \| Field label \/ instance \| Distinct field\? \| Successful write \/ selection\? \| Counted\? \| Exclusion reason \|/
+    );
+    assert.match(scratchpad, /### Quantitative boundary snapshots/);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
     rmSync(

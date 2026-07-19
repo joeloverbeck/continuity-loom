@@ -19,16 +19,22 @@ node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs intake <prep-a
 ```
 
 The intake command runs the current final-mode producer validator and the custody inspector. Use
-its exact `sourceReport`, `nonPrdFollowUps`, `prdCandidates`, prep SHA-256, publication package,
-and first operational action as the inventory frontier. `current` and `legacy-compatible` are the
-only passing intake states. The latter accepts only enumerated producer-contract fields added after
-an otherwise complete historical artifact; it never waives source, inventory, privacy, or semantic
-errors. Any other failure blocks custody. Never repair or reinterpret the producer artifact here.
+its exact `sourceReport`, `nonPrdFollowUps`, `ticketPackets`, `prdCandidates`, prep SHA-256,
+publication package, first operational action, contract identity, and contract diagnostics as the
+inventory frontier. `current` and `legacy-compatible` are the only passing intake states. The
+latter accepts only versioned, additive, evidence-preserving omissions from an otherwise complete
+historical artifact; it never waives source, inventory, privacy, or semantic errors.
+`migration-required` means a legacy field changed meaning: stop and surface the exact
+`migration.invocation` returned by intake. `invalid` covers malformed current artifacts, unsupported
+future versions, and non-compatibility failures. Both block custody. Never repair, rewrite, or
+reinterpret the producer artifact here; only `$playtest-prd-prep` migrates the same-stem artifact.
 
 Capture `git status --short --untracked-files=all`, branch, HEAD, and the publication ref. Read
 `AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`,
 `docs/agents/issue-tracker.md`, and `docs/agents/triage-labels.md`, plus the active authorities for
-the affected surfaces. Classify the source report and prep artifact separately for durability.
+the affected surfaces. Enumerate every repo-relative evidence asset linked from the source report,
+including screenshot and image links. Classify the source report, each linked evidence dependency,
+and the prep artifact separately for durability; do not assume report durability covers its links.
 
 This step is complete only when the exact prep bytes, complete downstream inventory, live
 authority set, tracker vocabulary, and baseline dirt are known.
@@ -39,6 +45,13 @@ For each inspector row, read its matching Evidence Disposition Ledger and Author
 Change-Surface Map entries. Refresh current code/test evidence and search open and relevant closed
 tracker work with exact report IDs, scoped terms, and exact-title guards. Fetch likely owners by
 number; never treat an empty or failed tracker read as proof of no owner.
+
+For each `ticket - <name>` destination in a current artifact, read the matching named ticket packet
+as the proposed problem, product rule, affected surfaces, scope, acceptance, preservation, testing,
+exclusion, and browser-guidance contract. Verify it against live authority and evidence rather than
+silently widening it. For a `legacy-compatible` artifact without the newer packet fields, use the
+existing disposition, authority-map, and follow-up evidence and record the missing modern packet as
+an intake limitation.
 
 Assign exactly one custody disposition:
 
@@ -77,14 +90,22 @@ Classify every inspector PRD candidate as:
 - `rejected` — current authority or evidence removes it from PRD scope; or
 - `blocked` — its PRD status cannot yet be determined truthfully.
 
-Classify the exact `First operational action` as `satisfied`, `owned`, `not-required`, or
-`blocked`. Preserve candidate order and role. Do not promote a non-PRD row into a PRD merely to
-avoid creating an individual issue, and do not bundle deferred candidates into the first PRD.
+Classify the exact substantive `First operational action` as `satisfied`, `owned`, `not-required`,
+or `blocked`. The producer and inspector reject the mandatory `$playtest-to-issues` or `/to-prd`
+handoff as circular first actions. Preserve candidate order and role. Do not promote a non-PRD row
+into a PRD merely to avoid creating an individual issue, and do not bundle deferred candidates into
+the first PRD.
 
 This step is complete only when every PRD candidate and the first operational action have one
 evidence-backed current disposition.
 
 ## 4. Present one custody checkpoint
+
+Read [`../to-issues/SKILL.md`](../to-issues/SKILL.md) completely before presenting this checkpoint.
+Its Step 4 owns the approval-safe issue breakdown and checklist-to-final-acceptance mapping shape.
+Apply that preapproval contract here without staging bodies or reading the approval-only publication
+protocol early. In particular, resolve every named component of a composite checklist item in the
+proposed final acceptance criteria before asking for publication approval.
 
 Before any tracker mutation, present:
 
@@ -97,8 +118,12 @@ Before any tracker mutation, present:
    coverage.
 
 Use artifact-source mode when the canonical playtest report is durable at the publication ref and
-there is no truthful tracker parent. Each proposed issue must carry `## Source and coordination`,
-the durable report token, and exact wording that it is a standalone non-PRD follow-up which neither
+every linked evidence dependency is durable at that same ref, and there is no truthful tracker
+parent. Name the report and complete dependency set in the artifact posture. If any required path
+is untracked, dirty, ref-invisible, or ref-different, obtain explicit source-publication
+authorization and publish those exact paths before requesting issue-publication approval; otherwise
+artifact-source mode is blocked. Each proposed issue must carry `## Source and coordination`, the
+durable report token, and exact wording that it is a standalone non-PRD follow-up which neither
 ratifies nor implements the remaining PRD candidates. Parent disposition and parent ledger are
 N/A. Never cite an untracked prep path as durable source.
 
@@ -119,6 +144,10 @@ completely and follow it in artifact-source mode. Do not duplicate its staging, 
 working-publication-ledger, serial-create, exact-read, recovery, family-verification, or cleanup
 rules here.
 
+Declare the report path as `artifactSource.path` and the complete linked evidence set as
+`artifactSource.dependencies` in the family manifest. The dependency array is required even when
+empty.
+
 Freeze the approved custody ledger before staging. After each issue verifies, update both the
 publication ledger and the corresponding custody entries. If a mutation fails ambiguously, stop
 and reconcile the exact title before retrying. Never continue past a failed per-issue verifier.
@@ -137,8 +166,12 @@ node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs validate <prep
 ```
 
 Fix structural mismatches and rerun. A `blocked` row or blocked first action is valid evidence but
-fails custody completion. In that branch, preserve the blocker, state that `/to-prd` must not
-proceed from this artifact, clean publication staging files, and stop.
+fails custody completion. In that branch, capture the final branch and exact full-worktree status,
+then use the contract's `render-blocked-receipt` command. Remove every temporary artifact, prove
+absence, and rerun branch plus full worktree status. Emit the captured blocked receipt verbatim
+only when cleanup succeeded and those final values still match the renderer inputs, then stop.
+The renderer preserves every blocker and both inventory tables and states that `/to-prd` must not
+proceed from this artifact; do not hand-format or abbreviate that closeout.
 
 For a passing ledger, capture the final branch and exact full-worktree status, then use the
 contract's `render-receipt` command to capture the exact `## Playtest Follow-Up Custody Receipt`.

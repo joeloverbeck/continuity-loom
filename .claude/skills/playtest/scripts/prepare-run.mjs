@@ -192,6 +192,19 @@ export function prepareRun({
 - Expected assistance:
 - Sealed mental model:
 
+## Quantitative journey ledger
+- Status: inactive - activate only when the invocation requests counts or cost comparisons
+- Requested boundaries: none
+- Comparison / shortest-path question: none
+
+| ID | Timestamp | Phase | Visible action | Kind | Field label / instance | Distinct field? | Successful write / selection? | Counted? | Exclusion reason |
+| -- | --------- | ----- | -------------- | ---- | ---------------------- | --------------- | ----------------------------- | -------- | ---------------- |
+
+### Quantitative boundary snapshots
+
+| Boundary | Through action ID | Counted visible actions | Distinct authored fields | Successful writes / selections | Notes |
+| -------- | ----------------- | ----------------------: | -----------------------: | -----------------------------: | ----- |
+
 ## Prompt ledger
 
 ## Generation Brief field-influence ledger

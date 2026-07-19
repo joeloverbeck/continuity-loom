@@ -181,3 +181,22 @@ If the parent PRD itself is in scope and child rows own the runnable seams, incl
 
   TDD evidence gate passed: durable sink <conversation/comment URL/stable issue reference before tracker URL exists>; compact table/header <present after structural check/equivalent fields present after structural check>; seams accounted for <all listed / exceptions named>; CONTEXT.md status <present/absent/N/A>; ADRs/principles/docs status <present/N/A>; sequence evidence <present/N/A>; evidence identities <present/N/A>; partial-red / red-first skip reasons <none/listed>; evidence-only rows <none/listed>; proof server preflight <present/N/A>; existing-test contract-change rows <none / listed expectation-rewrite rows>.
   ```
+
+## Validator-passing field examples
+
+Several closeout fields are enforced by exact-token regexes in `scripts/tdd-evidence-contract.mjs` and `scripts/validate-tdd-closeout-body.mjs`; the requirement descriptions above do not always map to the literal tokens the regex needs (the validator error messages now also quote a short passing form). When a validator rejects a field that already looks filled, match one of these copy-paste passing forms, then re-run the validator:
+
+- **Backend process currentness** needs the literal tokens `server command`, `watch/reload mode`, `process/port ownership`, `restart proof` (or `reload proof`), and an `expected ... API ... probe`:
+  > server command npm start (build then node ...launch.js), no watch/reload mode; process/port ownership pid <n> on 127.0.0.1:<port>; restart proof: proof server restarted on the post-fix build; expected API behavior probe POST /api/<route> returned <field>; N/A because no stateful fixture was copied
+- **Regression durability** must name a path or a canonical N/A (bare prose fails):
+  > durable regression test added at packages/<...>/<file>.test.tsx — or — N/A because the intended red was not a transient browser/manual probe
+- **Evidence-only rows freshness / Browser-manual evidence freshness** must say `rerun ... passed` or `smoke rerun ... passed`, not just `rerun`:
+  > browser smoke rerun passed on final tree <sha> for route/action/API/fixture <...> with observed outcome <...>
+- **Acceptance atom map** must literally start with `all rows ... atoms ... proof surfaces` (`all acceptance-audit rows` breaks the `\ball rows\b` match):
+  > all rows in the acceptance audit below list authoritative atoms and proof surfaces
+- **Acceptance sequence map** must literally say `all rows list ordered proof or ... sequence N/A`:
+  > all rows list ordered proof or a justified sequence N/A; the order-sensitive rows carry ordered proof on one active instance
+- **Pre-red evidence reference** needs a durable sink (use `ledger file <path>`, not bare `ledger`), an anchor word (`section`/`heading`/`line`/`row`), and a chronology token (`chronology`, or `precede ... first red`):
+  > durable file-backed ledger file <path> at the '<heading>' section; the preflight and compact table appear above that heading and each red command is appended in file line order before its green, so file line order proves they precede the first red command
+- **Superseded-token sweep** must name `rg`/`grep`, include every superseded value verbatim (with extensions, e.g. `index-<hash>.js`), and the literals `no hits outside classified identity/history lines`, `no active-proof hits`, and — unless `Historical red identities retained:` is `none` — `historical-red hits classified`:
+  > `rg -n '<value1>|<value2>'` over this closeout body returns hits only inside the classified identity/history lines; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified in the Historical red identities line

@@ -243,7 +243,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     if (/\bblocked\b.+\b(because|reason|unable|cannot)\b/i.test(normalized)) return "";
     if (/\ball rows?\b.+\batoms?\b.+\bproof surfaces?\b/i.test(normalized)) return "";
     if (/\ball criteria (?:are )?atomic\b.+\bproof surfaces?\b/i.test(normalized)) return "";
-    return "must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because";
+    return "must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'";
   };
 
   const validateAcceptanceSequenceMapValue = (value) => {
@@ -253,7 +253,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     if (/\bblocked\b.+\b(because|reason|unable|cannot)\b/i.test(normalized)) return "";
     if (/\ball rows?\b.+\b(sequence|ordered proof|sequence N\/A)\b/i.test(normalized)) return "";
     if (/\ball criteria\b.+\bnot sequence-sensitive\b/i.test(normalized)) return "";
-    return "must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because";
+    return "must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'";
   };
 
   const validateBackendCurrentnessValues = (label, values) => {
@@ -424,7 +424,7 @@ export const validateTddCloseoutBody = (body, options = {}) => {
         normalizedReference
       );
     if (namesDurableSink && namesAnchor && namesChronology) return "";
-    return "must name a durable sink, an exact heading/row/section/line anchor, and chronology proof that it precedes the first red command";
+    return "must name a durable sink, an exact heading/row/section/line anchor, and chronology proof that it precedes the first red command. Example: 'durable file-backed ledger file <path> at the <heading> section; file line order proves the preflight and table precede the first red command'";
   };
 
   const validateRecoveryAddendum = () => {

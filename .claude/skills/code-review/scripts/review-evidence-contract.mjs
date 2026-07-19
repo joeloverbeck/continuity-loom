@@ -225,7 +225,7 @@ const validateSequenceSource = (source) => {
   const hasOrder = /(?:→|->|\b(?:before|after|then|followed by|ordered)\b)/i.test(sequence);
   const hasProof = /\b(?:observ(?:e|ed|es|ing)|asserted|verified|proved|test|trace|evidence|artifact|log|browser|report|API)\b/i.test(sequence);
   if (!hasOrder || !hasProof) {
-    return "must name ordered events and the proof that observes their order";
+    return "must name ordered events and the proof that observes their order. Example: 'submit-fail -> retain input -> retry, observed on one active instance by the recovery test'";
   }
   return "";
 };
@@ -539,7 +539,7 @@ export const validateReviewEvidenceIdentities = (body, errors) => {
     !namesAllSupersededValues
   ) {
     errors.push(
-      "Superseded-token sweep must name rg/grep, every normalized superseded value, no hits outside classified identity/history lines and no active-proof hits, and classified historical-red hits"
+      "Superseded-token sweep must name rg/grep, every normalized superseded value, no hits outside classified identity/history lines and no active-proof hits, and classified historical-red hits. Example: 'rg -n <value1>|<value2> over the body finds hits only inside the classified identity/history lines; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified'"
     );
   }
 };

@@ -8,6 +8,7 @@ import test from "node:test";
 import {
   classifyPrepIntake,
   inspectPrepCustody,
+  renderBlockedCustodyReceipt,
   renderCustodyReceipt,
   validateCustodyLedger,
 } from "./custody-ledger.mjs";
@@ -18,6 +19,7 @@ const mixedPrep = `# Playtest PRD Prep: Example
 
 ## Header And Freshness
 
+Prep contract version: 2
 Source report path: reports/playtest-example.md
 
 ## Reassessment Verdict
@@ -41,8 +43,27 @@ Sources: F009
 
 | Item | Destination | Trigger or next action | Evidence required |
 | --- | --- | --- | --- |
-| F001 - Product repair | ticket | Publish a bounded bug | Exact component regression |
+| F001 - Product repair | ticket - Product repair | Publish a bounded bug | Exact component regression |
 | F002 - Method repair | skill-audit | Audit the playtest skill | Audit report |
+
+### Ticket Packet: Product repair
+
+Sources: F001
+Type and readiness: bug plus ready-for-agent with current fixture evidence.
+Problem: The example exposes a bounded author-visible defect.
+Product rule: Preserve the example boundary while correcting the defect.
+Affected surfaces: Example code, tests, active docs, and skill evidence.
+Scope: Correct the bounded product behavior.
+Acceptance:
+
+- The existing component regression passes.
+
+Preserved strengths: N/A - no affected source strength
+Testing seam: Existing component regression seam.
+Out of scope: Unrelated example cleanup.
+Browser-visible guidance checklist mapping:
+
+- \`entry point and availability\`: existing example entry point.
 
 ## Completion Self-Check
 
@@ -55,6 +76,7 @@ const noWorkPrep = `# Playtest PRD Prep: Empty
 
 ## Header And Freshness
 
+Prep contract version: 2
 Source report path: reports/playtest-empty.md
 
 ## Reassessment Verdict
@@ -82,6 +104,23 @@ Privacy and stale-language scan: clear
 const inspectMixed = () => inspectPrepCustody({
   markdown: mixedPrep,
   prepPath: "reports/playtest-example-prd-prep.md",
+});
+
+const contractIdentity = (status, diagnostics = []) => ({
+  declaredVersion: status === "current" ? 2 : null,
+  effectiveVersion: status === "current" ? 2 : 1,
+  currentVersion: 2,
+  status,
+  diagnostics,
+  migrationInvocation:
+    status === "migration-required" ? '$playtest-prd-prep "reports/playtest-example.md"' : null,
+});
+
+const producerValidation = ({ status = "current", errors = [], diagnostics = [] } = {}) => ({
+  errors,
+  warnings: [],
+  source: { sourceValidation: "passed" },
+  contract: contractIdentity(status, diagnostics),
 });
 
 const validMixedLedger = (inventory) => ({
@@ -133,6 +172,29 @@ const validMixedLedger = (inventory) => ({
   ],
 });
 
+const blockedMixedLedger = (inventory) => {
+  const ledger = validMixedLedger(inventory);
+  ledger.firstOperationalAction = {
+    value: inventory.firstOperationalAction,
+    status: "blocked",
+    evidence: "The required owner decision is unavailable.",
+  };
+  ledger.nonPrd[0] = {
+    item: "F001 - Product repair",
+    disposition: "blocked",
+    reason: "Tracker access is unavailable.",
+    evidence: "The exact-title and owner reads both failed.",
+  };
+  ledger.prds[0] = {
+    title: "First PRD",
+    role: "first",
+    disposition: "blocked",
+    reason: "Current authority conflicts with the report's proposed scope.",
+    evidence: "The conflict must be resolved before PRD intake can proceed.",
+  };
+  return ledger;
+};
+
 test("inspects every non-PRD row and PRD candidate in source order", () => {
   const result = inspectMixed();
 
@@ -147,38 +209,83 @@ test("inspects every non-PRD row and PRD candidate in source order", () => {
     result.inventory.prdCandidates.map((entry) => [entry.title, entry.role]),
     [["First PRD", "first"], ["Deferred PRD", "deferred"]],
   );
+  assert.deepEqual(
+    result.inventory.ticketPackets.map((entry) => [entry.title, entry.sourceIds]),
+    [["Product repair", ["F001"]]],
+  );
   assert.match(result.inventory.prepSha256, /^[a-f0-9]{64}$/);
 });
 
-test("accepts current and bounded legacy producer validation without accepting semantic defects", () => {
+test("requires producer migration for a circular legacy first operational action", () => {
+  const inspected = inspectPrepCustody({
+    markdown: mixedPrep
+      .replace("Prep contract version: 2\n", "")
+      .replace(
+        "First operational action: Publish the bounded verification issue",
+        'First operational action: run $playtest-to-issues "reports/playtest-example-prd-prep.md"',
+      ),
+    prepPath: "reports/playtest-example-prd-prep.md",
+  });
+
+  assert.deepEqual(inspected.errors, []);
+  const intake = classifyPrepIntake({
+    inspected,
+    currentValidation: producerValidation({
+      status: "invalid",
+      errors: ["Prep contract version must be: 2"],
+    }),
+    contractValidation: producerValidation({
+      status: "migration-required",
+      diagnostics: [
+        {
+          code: "PREP_CONTRACT_FIRST_ACTION_MIGRATION_REQUIRED",
+          disposition: "migration-required",
+          message: "Legacy first action requires producer migration.",
+        },
+      ],
+    }),
+  });
+  assert.equal(intake.intakeStatus, "migration-required");
+  assert.deepEqual(intake.errors, []);
+  assert.equal(intake.migration.invocation, '$playtest-prd-prep "reports/playtest-example.md"');
+});
+
+test("classifies current, bounded legacy, and invalid producer contracts without message matching", () => {
   const inspected = inspectMixed();
   const current = classifyPrepIntake({
     inspected,
-    currentValidation: { errors: [], warnings: [], source: { sourceValidation: "passed" } },
+    currentValidation: producerValidation(),
+    contractValidation: producerValidation(),
   });
   assert.equal(current.intakeStatus, "current");
 
   const legacy = classifyPrepIntake({
     inspected,
-    currentValidation: {
+    currentValidation: producerValidation({
+      status: "invalid",
       errors: [
         "Prep artifact requires exactly one bare line-start field: Final branch: value",
         "Missing section for table: ### Final Worktree Ledger",
+        "Ticket Packet Product repair requires exactly one bare line-start field: Testing seam: value",
+        "Ticket-candidate source F001 is not covered by exactly one Ticket Packet.",
       ],
-      warnings: [],
-      source: { sourceValidation: "passed" },
-    },
+    }),
+    contractValidation: producerValidation({ status: "legacy-compatible" }),
   });
   assert.equal(legacy.intakeStatus, "legacy-compatible");
   assert.deepEqual(legacy.errors, []);
+  assert.equal(legacy.currentValidatorErrors.length, 4);
 
   const invalid = classifyPrepIntake({
     inspected,
-    currentValidation: {
+    currentValidation: producerValidation({
+      status: "invalid",
       errors: ["Evidence Disposition Ledger is missing source ID F003"],
-      warnings: [],
-      source: { sourceValidation: "passed" },
-    },
+    }),
+    contractValidation: producerValidation({
+      status: "invalid",
+      errors: ["Evidence Disposition Ledger is missing source ID F003"],
+    }),
   });
   assert.equal(invalid.intakeStatus, "invalid");
   assert.deepEqual(invalid.errors, ["Evidence Disposition Ledger is missing source ID F003"]);
@@ -236,6 +343,46 @@ Final worktree:
   assert.equal(receipt.includes("…"), false);
 });
 
+test("renders the blocked receipt with exact inventory tables and every blocker", () => {
+  const { inventory } = inspectMixed();
+  const receipt = renderBlockedCustodyReceipt({
+    inventory,
+    ledger: blockedMixedLedger(inventory),
+    finalBranch: "main",
+    finalWorktreeRows: [],
+  });
+
+  assert.equal(receipt, `## Playtest Follow-Up Custody Receipt
+
+Prep artifact: reports/playtest-example-prd-prep.md
+Prep SHA-256: ${inventory.prepSha256}
+Custody validator: blocked
+Non-PRD custody: 1/2
+First operational action: blocked - The required owner decision is unavailable.
+
+Custody blockers:
+- Non-PRD item: F001 - Product repair
+- PRD candidate: First PRD
+- First operational action: Publish the bounded verification issue
+
+| Non-PRD item | Disposition | Owner or proof |
+| --- | --- | --- |
+| F001 - Product repair | blocked | Tracker access is unavailable. Evidence: The exact-title and owner reads both failed. |
+| F002 - Method repair | routed | \`$skill-audit ".claude/skills/playtest"\` |
+
+PRD queue: blocked - 0 remaining candidates
+
+| PRD candidate | Role | Disposition | Next action or proof |
+| --- | --- | --- | --- |
+| First PRD | first | blocked | Current authority conflicts with the report's proposed scope. Evidence: The conflict must be resolved before PRD intake can proceed. |
+| Deferred PRD | deferred | consumed | [Issue #122](https://github.com/example/repo/issues/122) |
+
+Next PRD action: blocked - resolve follow-up custody first
+Temporary artifacts: absent
+Final branch: main
+Final worktree: clean`);
+});
+
 test("render-receipt CLI requires explicit final worktree posture and emits the exact receipt", () => {
   const directory = mkdtempSync(join(tmpdir(), "playtest-custody-receipt-"));
   try {
@@ -267,6 +414,24 @@ test("render-receipt CLI requires explicit final worktree posture and emits the 
     assert.equal(clean.status, 0, clean.stderr);
     assert.match(clean.stdout, /^## Playtest Follow-Up Custody Receipt\n/);
     assert.match(clean.stdout, /Final worktree: clean\n$/);
+
+    writeFileSync(ledgerPath, JSON.stringify(blockedMixedLedger(inventory)));
+    const blocked = spawnSync(
+      process.execPath,
+      [
+        script,
+        "render-blocked-receipt",
+        "reports/playtest-example-prd-prep.md",
+        ledgerPath,
+        "--final-branch",
+        "main",
+        "--final-worktree-clean",
+      ],
+      { cwd: directory, encoding: "utf8" },
+    );
+    assert.equal(blocked.status, 0, blocked.stderr);
+    assert.match(blocked.stdout, /Custody validator: blocked/);
+    assert.match(blocked.stdout, /Next PRD action: blocked - resolve follow-up custody first/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -452,6 +617,32 @@ test("refuses to render a passing receipt while custody is blocked", () => {
       finalWorktreeRows: [],
     }),
     /Cannot render a passing custody receipt/,
+  );
+});
+
+test("refuses to render a blocked receipt from complete or structurally invalid custody", () => {
+  const { inventory } = inspectMixed();
+  const completeLedger = validMixedLedger(inventory);
+  const invalidLedger = blockedMixedLedger(inventory);
+  invalidLedger.nonPrd.pop();
+
+  assert.throws(
+    () => renderBlockedCustodyReceipt({
+      inventory,
+      ledger: completeLedger,
+      finalBranch: "main",
+      finalWorktreeRows: [],
+    }),
+    /Cannot render a blocked custody receipt from a complete custody ledger/,
+  );
+  assert.throws(
+    () => renderBlockedCustodyReceipt({
+      inventory,
+      ledger: invalidLedger,
+      finalBranch: "main",
+      finalWorktreeRows: [],
+    }),
+    /Cannot render a blocked custody receipt from a structurally invalid custody ledger/,
   );
 });
 

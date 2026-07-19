@@ -44,6 +44,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/agents/issue-tracker.md` | Engineering-skill GitHub issue-tracker commands and external-PR request-surface policy. | reference | support |
 | `docs/agents/triage-labels.md` | Canonical triage roles mapped to this repository's GitHub label vocabulary. | reference | support |
 | `docs/agents/domain.md` | Engineering-skill rules for consuming the repository's single-context domain glossary and ADRs. | reference | support |
+| `docs/adr/0001-version-playtest-prep-contracts.md` | Version identity and producer-owned migration boundary for playtest PRD-prep artifacts. | decision | support |
 | `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
 
 ### Constitutional authority
@@ -86,6 +87,7 @@ Use these when changing validation coverage, demo fixture behavior, prompt/compi
 - `docs/agents/issue-tracker.md`
 - `docs/agents/triage-labels.md`
 - `docs/agents/domain.md`
+- `docs/adr/0001-version-playtest-prep-contracts.md`
 - `docs/archival-workflow.md`
 - `tickets/README.md`
 - `tickets/_TEMPLATE.md`

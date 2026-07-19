@@ -77,7 +77,9 @@ Detailed rules for acceptance, amendments, challenges, timeouts, autonomous fall
 
 Route the closing recap through [recap-contracts.md](references/recap-contracts.md). No class is recap-less, and a minimal operational ledger does not permit a minimal or missing recap. After any mutation, rebuild the applicable recap union in the final response; an earlier approval preflight does not satisfy closeout.
 
-Before any downstream deliverable, apply [deliverable-execution.md](references/deliverable-execution.md). It defines the hard recap checkpoint, explicit-request rules, the read-only override, supporting-skill inline writes, autonomous execution, file and remote verification, mechanically required consistency edits, and closeout behavior.
+Immediately before the final response, run the literal-label [final preflight](references/recap-contracts.md#final-preflight). Every required label must appear verbatim or carry its explicit `N/A`; implicit narrative coverage does not satisfy the gate.
+
+Before any downstream deliverable, apply [deliverable-execution.md](references/deliverable-execution.md). It defines the hard recap checkpoint, explicit-request rules, the read-only override, supporting-skill writes and closeouts, autonomous execution, file and remote verification, mechanically required consistency edits, and closeout behavior.
 
 For live-state operations, also apply [operational-execution.md](references/operational-execution.md). It defines drift refreshes, local and remote baselines, high-risk preflight confirmation, rollback expectations, and post-write proof.
 

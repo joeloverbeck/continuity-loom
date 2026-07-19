@@ -8,6 +8,8 @@ Two-axis review of the diff between `HEAD` and a fixed point the user supplies:
 - **Standards** — does the code conform to this repo's documented coding standards?
 - **Spec** — does the code faithfully implement the originating issue / PRD / spec?
 
+**Orientation.** The core review is Steps 1–5 (pin the fixed point, identify the spec and standards sources, run both axes, aggregate) plus the sub-agent prompts. The immediate-fix compact shape, TDD closeout gate, and evidence-identity / backend-currentness handoff fields further down apply only when this skill is invoked by the `implement` skill for tracker closeout; a standalone "review since X" needs only the core.
+
 Both axes should run as **parallel sub-agents** when the available tool policy permits it, so they don't pollute each other's context. Tool availability alone is not permission: if the sub-agent tool policy requires explicit user authorization and the user did not grant it, treat sub-agents as policy-blocked. If sub-agents are unavailable or policy-blocked, run both axes locally in separate sections and document the deviation.
 
 The issue tracker should have been provided to you — run `/setup-matt-pocock-skills` if `docs/agents/issue-tracker.md` is missing.

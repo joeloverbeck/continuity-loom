@@ -15,6 +15,10 @@ Resolve routing before any context or ADR read:
 2. Probe each optional `CONTEXT.md`, `CONTEXT-MAP.md`, and ADR directory for existence without opening it.
 3. Open only paths proven to exist. Treat absence as silent routing information; do not include optional paths in unconditional bulk-read or line-count commands, and do not surface a file-not-found error.
 
+Before proposing or creating a context or ADR file, inspect the repository entrypoint and active-doc
+map for any required registry or index updates. Name those paths in the same mutation checkpoint and
+write them in the same change as the domain document.
+
 Most repos have a single context:
 
 ```

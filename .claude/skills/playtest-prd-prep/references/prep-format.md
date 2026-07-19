@@ -48,6 +48,7 @@ Write each field as one bare line-start `Key: value` line, never as a bullet or 
 Under `## Header And Freshness`:
 
 ```markdown
+Prep contract version: 2
 Source report path: reports/<playtest-report>.md
 Source validation: passed
 Source durability: <durable / pending local publication / summarized, not cited, with proof>
@@ -61,6 +62,11 @@ Prior-report traversal: <not applicable, not needed with reason, or exact follow
 Deliverable status: PRD-ready determination only; prep artifact write only
 External research: skipped - repo-local prep
 ```
+
+Version 2 is the current producer contract. Historical artifacts with no version field are implicit
+version 1; the current producer must never emit or preserve that omission. A same-stem rerun rewrites
+the artifact at version 2 after accounting for every prior recommendation. `$playtest-to-issues`
+may inspect compatible legacy evidence but never adds, changes, or infers producer fields.
 
 Use `External research: used - explicit user request: <scope>` only when the user explicitly
 expanded the run.
@@ -83,6 +89,10 @@ Under `## Reassessment Verdict`:
 ```markdown
 First operational action: <action, or none - reason>
 ```
+
+This is the first substantive portfolio action that the custody pass must resolve, separate from
+the mandatory handoff and PRD-candidate ordering. It must never be `$playtest-to-issues`, bare
+`playtest-to-issues`, or `/to-prd`; use `none - <reason>` when no substantive action comes first.
 
 Then write exactly one verdict field:
 
@@ -246,13 +256,48 @@ or the explicit N/A reason; the Strength Preservation Ledger remains the detaile
 Use exactly:
 
 ```markdown
-| Item                        | Destination                                                                         | Trigger or next action | Evidence required |
-| --------------------------- | ----------------------------------------------------------------------------------- | ---------------------- | ----------------- |
-| <report ID or grouped name> | <ticket / skill-audit / doc correction / verification-reopen / coverage / research> | <bounded action>       | <proof>           |
+| Item                        | Destination                  | Trigger or next action | Evidence required |
+| --------------------------- | ---------------------------- | ---------------------- | ----------------- |
+| <report ID or grouped name> | ticket - <exact packet name> | <bounded action>       | <proof>           |
 ```
 
 When none exists, include one row beginning `None` and explain why. Do not create these artifacts or
-run their mutation checkpoints during prep.
+run their mutation checkpoints during prep. Other allowed destinations are `skill-audit`,
+`doc correction`, `verification-reopen`, `coverage`, and `research`, with a bounded suffix when it
+clarifies ownership.
+
+Every row whose destination begins `ticket - ` must have one matching packet after the table. The
+packet heading suffix must exactly equal the destination suffix, and the packets must collectively
+cover every `ticket-candidate` source ID exactly once. Use this shape:
+
+```markdown
+### Ticket Packet: <exact packet name>
+
+Sources: <one or more ticket-candidate report IDs>
+Type and readiness: <proposed type and triage posture with current evidence>
+Problem: <author-visible gap and impact>
+Product rule: <stable behavior rule>
+Affected surfaces: <code, tests, active docs, and skills>
+Scope: <included outcomes>
+Acceptance:
+
+- <observable criterion>
+
+Preserved strengths: <strength IDs, or N/A - no affected source strength>
+Testing seam: <highest existing behavior seam>
+Out of scope: <explicit exclusions>
+Browser-visible guidance checklist mapping:
+
+- `<current canonical checklist item>`: <issue-body home, or N/A - specific reason>
+```
+
+Use the exact current checklist items from `docs/agents/issue-tracker.md`; do not rely on a copied
+historical list. `Sources` may group several ticket-candidate rows only when the packet owns their
+complete live scope. `Preserved strengths` must cite affected source strengths or use the exact N/A
+reason. `Acceptance` and the checklist mapping each require at least one bullet. The table remains
+the complete custody inventory; the packets supply enough problem, rule, surface, scope, proof,
+preservation, and exclusion detail for `$playtest-to-issues` to assess or stage a ticket without
+reconstructing it from the source report.
 
 ## Prior recommendation consumption
 
@@ -296,9 +341,9 @@ Final worktree rows: <integer>
 | <repo-relative remaining worktree path> | concurrent/unowned        |
 ```
 
-Include every path from the final `git status --short` snapshot exactly once. Allowed
-classifications are `intentional prep artifact`, `pre-existing`, and `concurrent/unowned`. Use an
-empty table after the header and divider when the final worktree is clean, and record
+Include every path from the final `git status --short --untracked-files=all` snapshot exactly once.
+Allowed classifications are `intentional prep artifact`, `pre-existing`, and
+`concurrent/unowned`. Use an empty table after the header and divider when the final worktree is clean, and record
 `Final worktree rows: 0`. At most one row may be `intentional prep artifact`, and that row must name
 the authored same-stem prep path. The validator proves table shape, count, uniqueness, allowed
 classifications, and authored-path identity; the manual freshness scan proves equality with live

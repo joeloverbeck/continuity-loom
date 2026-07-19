@@ -72,6 +72,36 @@ post-validation bookkeeping, not priming material. Do not search unrelated repor
 whether another pilot instrument should trigger; use only the Authoritative pilot state in
 `SKILL.md` and record a natural non-trigger as pending. Never guess or reconstruct a count.
 
+## Quantitative coverage
+
+Activate the prepared Quantitative journey ledger only when the invocation asks for action counts,
+authored-field counts, setup or promotion cost, or another quantitative journey comparison. Before
+launching the browser, set the ledger to `active`, name every requested boundary, and state any
+observed-versus-shortest-path comparison. Otherwise leave it `inactive`.
+
+Apply these rules contemporaneously:
+
+- Count one visible author action when a visible control is successfully actuated for navigation,
+  authoring, submission, or purposeful UI inspection. Count a product-visible failed activation
+  when it becomes an observation; do not count an automation locator failure that never actuated
+  the control.
+- Do not count passive `text`, `tree`, `box`, screenshot, wait, shell, helper, or cold-subagent
+  operations. A visible search, expansion, help toggle, or other deliberately actuated inspection
+  control may count as an `inspection` action.
+- Count a distinct authored field once per visible field instance that receives an intentional
+  author write or selection within the measured boundary. Re-edits add successful writes but not
+  another distinct field. Use visible list-item instances such as `Item 1` and `Item 2` separately;
+  blank optional fields and untouched defaults do not count. A default-valued control counts only
+  when the author visibly actuates it and preserves that value as an authored choice.
+- Count every successful visible field write or selection, including a correction. Buttons and
+  navigation controls are actions, not authored fields or writes.
+- Append cumulative boundary snapshots through stable action IDs. Derive deltas and any separately
+  requested shortest demonstrated path from the ledger; never reconstruct or overwrite the
+  observed path at report time.
+
+Keep the ledger privacy-safe: labels, action kinds, booleans, counts, and short value-free action
+summaries only.
+
 ## Run boundary
 
 One invocation accepts exactly one new segment. The post-acceptance record and brief work belongs

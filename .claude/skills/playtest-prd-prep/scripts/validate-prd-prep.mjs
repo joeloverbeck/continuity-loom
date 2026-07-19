@@ -65,6 +65,20 @@ const CONSUMPTION_HEADERS = [
 
 const FINAL_WORKTREE_HEADERS = ["Path", "Classification"];
 
+export const CURRENT_PREP_CONTRACT_VERSION = 2;
+export const IMPLICIT_LEGACY_PREP_CONTRACT_VERSION = 1;
+
+export const PREP_CONTRACT_DIAGNOSTIC_CODES = Object.freeze({
+  IMPLICIT_LEGACY_VERSION: "PREP_CONTRACT_IMPLICIT_V1",
+  EXPLICIT_LEGACY_VERSION: "PREP_CONTRACT_EXPLICIT_LEGACY_VERSION",
+  INVALID_VERSION: "PREP_CONTRACT_INVALID_VERSION",
+  FUTURE_VERSION: "PREP_CONTRACT_UNSUPPORTED_FUTURE_VERSION",
+  FIRST_ACTION_MIGRATION_REQUIRED: "PREP_CONTRACT_FIRST_ACTION_MIGRATION_REQUIRED",
+  CURRENT_FIRST_ACTION_INVALID: "PREP_CONTRACT_CURRENT_FIRST_ACTION_INVALID"
+});
+
+const CONTRACT_MODES = new Set(["current", "declared"]);
+
 const PREP_HEADINGS = [
   "## Header And Freshness",
   "## Reassessment Verdict",
@@ -81,6 +95,7 @@ const PREP_HEADINGS = [
 ];
 
 const REQUIRED_FIELDS = [
+  "Prep contract version",
   "Source report path",
   "Source validation",
   "Source durability",
@@ -112,6 +127,14 @@ const REQUIRED_FIELDS = [
   "Final worktree rows"
 ];
 
+const LEGACY_OPTIONAL_FIELDS = new Set([
+  "Prep contract version",
+  "Prior-report prep path",
+  "Prior-report prep classification",
+  "Final branch",
+  "Final worktree rows"
+]);
+
 const VERDICT_FIELDS = [
   "Recommended first new PRD",
   "Recommended multi-PRD program",
@@ -131,6 +154,21 @@ const CANDIDATE_FIELDS = [
   "Testing seam",
   "Out of scope"
 ];
+
+const TICKET_PACKET_FIELDS = [
+  "Sources",
+  "Type and readiness",
+  "Problem",
+  "Product rule",
+  "Affected surfaces",
+  "Scope",
+  "Preserved strengths",
+  "Testing seam",
+  "Out of scope"
+];
+
+const TICKET_DESTINATION_PATTERN = /^ticket\s+-\s+(.+)$/i;
+const CIRCULAR_FIRST_ACTION_PATTERN = /(?:\$?playtest-to-issues|\/to-prd)\b/i;
 
 const DISPOSITIONS = new Set([
   "preserve-strength",
@@ -314,6 +352,112 @@ function oneField(markdown, label, errors, scope = "Prep artifact") {
   return values[0];
 }
 
+function optionalField(markdown, label) {
+  const values = fieldValues(markdown, label);
+  return values.length === 1 && values[0] ? values[0] : null;
+}
+
+function bulletField(markdown, label, errors, scope, { required }) {
+  const lines = markdown.split(/\r?\n/);
+  const pattern = new RegExp(`^${escapeRegExp(label)}:\\s*$`);
+  const starts = lines
+    .map((line, index) => (pattern.test(line) ? index : -1))
+    .filter((index) => index >= 0);
+  if (starts.length !== 1) {
+    if (required) {
+      errors.push(`${scope} requires exactly one bare line-start list field: ${label}:`);
+    }
+    return [];
+  }
+
+  let end = lines.length;
+  for (let index = starts[0] + 1; index < lines.length; index += 1) {
+    if (/^[^\s|#*-][^:]*:\s*.*$/.test(lines[index])) {
+      end = index;
+      break;
+    }
+  }
+  const bullets = lines
+    .slice(starts[0] + 1, end)
+    .map((line) => /^\s*-\s+(.+)$/.exec(line)?.[1]?.trim())
+    .filter(Boolean);
+  if (required && bullets.length === 0) {
+    errors.push(`${scope} field ${label} must contain at least one bullet.`);
+  }
+  return bullets;
+}
+
+export function isCircularFirstOperationalAction(value) {
+  return typeof value === "string" && CIRCULAR_FIRST_ACTION_PATTERN.test(value);
+}
+
+const contractDiagnostic = (code, disposition, message) => ({ code, disposition, message });
+
+export function inspectPrepContract(markdown) {
+  const values = fieldValues(markdown, "Prep contract version");
+  if (values.length === 0) {
+    return {
+      declaredVersion: null,
+      effectiveVersion: IMPLICIT_LEGACY_PREP_CONTRACT_VERSION,
+      currentVersion: CURRENT_PREP_CONTRACT_VERSION,
+      diagnostics: [
+        contractDiagnostic(
+          PREP_CONTRACT_DIAGNOSTIC_CODES.IMPLICIT_LEGACY_VERSION,
+          "legacy-compatible",
+          `Missing Prep contract version is the historical implicit version ${IMPLICIT_LEGACY_PREP_CONTRACT_VERSION}.`
+        )
+      ]
+    };
+  }
+
+  if (values.length !== 1 || !/^[1-9]\d*$/.test(values[0])) {
+    return {
+      declaredVersion: null,
+      effectiveVersion: null,
+      currentVersion: CURRENT_PREP_CONTRACT_VERSION,
+      diagnostics: [
+        contractDiagnostic(
+          PREP_CONTRACT_DIAGNOSTIC_CODES.INVALID_VERSION,
+          "invalid",
+          "Prep contract version must be exactly one positive integer field."
+        )
+      ]
+    };
+  }
+
+  const declaredVersion = Number(values[0]);
+  if (declaredVersion > CURRENT_PREP_CONTRACT_VERSION) {
+    return {
+      declaredVersion,
+      effectiveVersion: declaredVersion,
+      currentVersion: CURRENT_PREP_CONTRACT_VERSION,
+      diagnostics: [
+        contractDiagnostic(
+          PREP_CONTRACT_DIAGNOSTIC_CODES.FUTURE_VERSION,
+          "invalid",
+          `Prep contract version ${declaredVersion} is newer than supported version ${CURRENT_PREP_CONTRACT_VERSION}.`
+        )
+      ]
+    };
+  }
+
+  return {
+    declaredVersion,
+    effectiveVersion: declaredVersion,
+    currentVersion: CURRENT_PREP_CONTRACT_VERSION,
+    diagnostics:
+      declaredVersion < CURRENT_PREP_CONTRACT_VERSION
+        ? [
+            contractDiagnostic(
+              PREP_CONTRACT_DIAGNOSTIC_CODES.EXPLICIT_LEGACY_VERSION,
+              "legacy-compatible",
+              `Prep contract version ${declaredVersion} is older than current version ${CURRENT_PREP_CONTRACT_VERSION}.`
+            )
+          ]
+        : []
+  };
+}
+
 function validateHeadingOrder(markdown, title) {
   const errors = [];
   const body = stripFrontmatter(markdown);
@@ -484,6 +628,69 @@ function candidateSections(markdown) {
   });
 }
 
+function ticketPacketSections(markdown) {
+  const followUpBody = section(markdown, "## Non-PRD Follow-Up");
+  if (followUpBody === null) return [];
+  const lines = followUpBody.split(/\r?\n/);
+  const headingIndexes = lines
+    .map((line, index) => (line.startsWith("### ") ? index : -1))
+    .filter((index) => index >= 0);
+  return headingIndexes
+    .filter((index) => lines[index].startsWith("### Ticket Packet:"))
+    .map((start) => {
+      const end = headingIndexes.find((index) => index > start) ?? lines.length;
+      return {
+        title: lines[start].slice("### Ticket Packet:".length).trim(),
+        body: lines.slice(start + 1, end).join("\n")
+      };
+    });
+}
+
+export function inspectTicketPackets(markdown, { requireFields = true } = {}) {
+  const errors = [];
+  const titles = new Set();
+  const packets = ticketPacketSections(markdown).map((packet) => {
+    const scope = `Ticket Packet ${packet.title || "<blank>"}`;
+    if (!packet.title) errors.push("Ticket Packet heading must include a name.");
+    if (titles.has(packet.title)) errors.push(`Duplicate Ticket Packet name: ${packet.title}`);
+    titles.add(packet.title);
+
+    const fields = {};
+    for (const field of TICKET_PACKET_FIELDS) {
+      fields[field] = requireFields
+        ? oneField(packet.body, field, errors, scope)
+        : optionalField(packet.body, field);
+    }
+    const acceptance = bulletField(packet.body, "Acceptance", errors, scope, {
+      required: requireFields
+    });
+    const checklistMapping = bulletField(
+      packet.body,
+      "Browser-visible guidance checklist mapping",
+      errors,
+      scope,
+      { required: requireFields }
+    );
+
+    return {
+      title: packet.title,
+      sources: fields.Sources,
+      sourceIds: fields.Sources?.match(/\bF\d{3,}\b/g) ?? [],
+      typeAndReadiness: fields["Type and readiness"],
+      problem: fields.Problem,
+      productRule: fields["Product rule"],
+      affectedSurfaces: fields["Affected surfaces"],
+      scope: fields.Scope,
+      acceptance,
+      preservedStrengths: fields["Preserved strengths"],
+      testingSeam: fields["Testing seam"],
+      outOfScope: fields["Out of scope"],
+      browserVisibleGuidanceChecklistMapping: checklistMapping
+    };
+  });
+  return { errors, packets };
+}
+
 function inventoryPrepRecommendations(prepPath) {
   const errors = [];
   let markdown;
@@ -616,6 +823,84 @@ function validateCandidates(markdown, packageValue, source, errors) {
   return candidates.length;
 }
 
+function validateTicketPackets(markdown, followUps, dispositions, source, errors) {
+  const inspection = inspectTicketPackets(markdown);
+  errors.push(...inspection.errors);
+
+  const destinationNames = [];
+  for (const row of followUps.rows) {
+    const item = literal(row.Item ?? "");
+    const destination = literal(row.Destination ?? "");
+    if (/^none\b/i.test(item) || !/^ticket\b/i.test(destination)) continue;
+    const match = TICKET_DESTINATION_PATTERN.exec(destination);
+    if (!match?.[1]?.trim()) {
+      errors.push(
+        `Ticket destination for ${item || "<blank>"} must use: ticket - <exact packet name>`
+      );
+      continue;
+    }
+    destinationNames.push(match[1].trim());
+  }
+
+  for (const name of new Set(destinationNames)) {
+    const destinationCount = destinationNames.filter((candidate) => candidate === name).length;
+    if (destinationCount > 1) errors.push(`Duplicate ticket destination name: ${name}`);
+    const packetCount = inspection.packets.filter((packet) => packet.title === name).length;
+    if (packetCount !== 1) errors.push(`Ticket destination ${name} requires exactly one Ticket Packet.`);
+  }
+  const destinationSet = new Set(destinationNames);
+  for (const packet of inspection.packets) {
+    if (!destinationSet.has(packet.title)) {
+      errors.push(`Ticket Packet has no matching ticket destination: ${packet.title || "<blank>"}`);
+    }
+  }
+
+  const sourceIds = new Set(source.cumulativeIds);
+  const strengthIds = new Set(source.strengthIds);
+  const ticketCandidateIds = new Set(
+    dispositions.rows
+      .filter((row) => literal(row.Disposition ?? "") === "ticket-candidate")
+      .map((row) => literal(row["Report item"] ?? ""))
+      .filter((id) => ID_PATTERN.test(id))
+  );
+  const coverage = new Map();
+  for (const packet of inspection.packets) {
+    if (packet.sourceIds.length === 0) {
+      errors.push(`Ticket Packet ${packet.title} must cite at least one report ID in Sources.`);
+    }
+    for (const id of packet.sourceIds) {
+      if (!sourceIds.has(id)) {
+        errors.push(`Ticket Packet ${packet.title} cites unknown source ID ${id}.`);
+      } else if (!ticketCandidateIds.has(id)) {
+        errors.push(`Ticket Packet ${packet.title} cites non-ticket-candidate source ID ${id}.`);
+      }
+      coverage.set(id, (coverage.get(id) ?? 0) + 1);
+    }
+
+    const preservation = packet.preservedStrengths ?? "";
+    if (preservation && !preservation.startsWith("N/A - no affected source strength")) {
+      const citedStrengthIds = preservation.match(/\bF\d{3,}\b/g) ?? [];
+      if (citedStrengthIds.length === 0) {
+        errors.push(
+          `Ticket Packet ${packet.title} must cite a source strength or use the explicit N/A reason.`
+        );
+      }
+      for (const id of citedStrengthIds) {
+        if (!strengthIds.has(id)) {
+          errors.push(`Ticket Packet ${packet.title} cites non-strength preservation ID ${id}.`);
+        }
+      }
+    }
+  }
+  for (const id of ticketCandidateIds) {
+    if (coverage.get(id) !== 1) {
+      errors.push(`Ticket-candidate source ${id} is not covered by exactly one Ticket Packet.`);
+    }
+  }
+
+  return inspection.packets.length;
+}
+
 function integerField(markdown, label, expected, errors) {
   const value = oneField(markdown, label, errors);
   if (value === null) return;
@@ -628,11 +913,16 @@ function integerField(markdown, label, expected, errors) {
   }
 }
 
-function validateFixedFields(markdown, fields, source, completionMode, errors) {
-  if (source.sourceValidation === "passed" && fields["Source validation"] !== "passed") {
+function validateFixedFields(markdown, fields, source, completionMode, errors, { legacyContract }) {
+  if (
+    !legacyContract &&
+    source.sourceValidation === "passed" &&
+    fields["Source validation"] !== "passed"
+  ) {
     errors.push("Source validation must be: passed");
   }
   if (
+    !legacyContract &&
     source.sourceValidation === "nonblocking-defects" &&
     !fields["Source validation"]?.startsWith("nonblocking defects - ")
   ) {
@@ -654,6 +944,11 @@ function validateFixedFields(markdown, fields, source, completionMode, errors) {
   }
   if (fields["/to-prd consultation"] !== "house style only; seam checkpoint still owed") {
     errors.push("/to-prd consultation must state: house style only; seam checkpoint still owed");
+  }
+  if (!legacyContract && isCircularFirstOperationalAction(fields["First operational action"])) {
+    errors.push(
+      "First operational action must name substantive portfolio work, not playtest-to-issues or /to-prd."
+    );
   }
 
   const expectedCompletion = COMPLETION_VALUES[completionMode];
@@ -682,9 +977,16 @@ function privacyAndStaleLanguageErrors(markdown) {
   return checks.filter(([pattern]) => pattern.test(markdown)).map(([, message]) => message);
 }
 
-export function validatePrepArtifact(reportPath, prepPath, { completionMode = "final" } = {}) {
+export function validatePrepArtifact(
+  reportPath,
+  prepPath,
+  { completionMode = "final", contractMode = "current" } = {}
+) {
   if (!Object.hasOwn(COMPLETION_VALUES, completionMode)) {
     throw new TypeError(`Unsupported completion mode: ${completionMode}`);
+  }
+  if (!CONTRACT_MODES.has(contractMode)) {
+    throw new TypeError(`Unsupported contract mode: ${contractMode}`);
   }
 
   const source = inspectSourceReport(reportPath);
@@ -700,6 +1002,23 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
     return { errors: [...errors, `Cannot read prep artifact: ${absolutePrep}`], warnings, source };
   }
 
+  const inspectedContract = inspectPrepContract(markdown);
+  const contractDiagnostics = [...inspectedContract.diagnostics];
+  const contractHasInvalidDiagnostic = contractDiagnostics.some(
+    (diagnostic) => diagnostic.disposition === "invalid"
+  );
+  if (contractHasInvalidDiagnostic) {
+    errors.push(
+      ...contractDiagnostics
+        .filter((diagnostic) => diagnostic.disposition === "invalid")
+        .map((diagnostic) => diagnostic.message)
+    );
+  }
+  const legacyContract =
+    contractMode === "declared" &&
+    !contractHasInvalidDiagnostic &&
+    inspectedContract.effectiveVersion === IMPLICIT_LEGACY_PREP_CONTRACT_VERSION;
+
   if (basename(dirname(absolutePrep)) !== "reports") {
     errors.push("Prep artifact must be a direct child of reports/.");
   }
@@ -714,8 +1033,29 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
   errors.push(...privacyAndStaleLanguageErrors(markdown));
 
   const fields = {};
-  for (const label of REQUIRED_FIELDS) fields[label] = oneField(markdown, label, errors);
-  validateFixedFields(markdown, fields, source, completionMode, errors);
+  for (const label of REQUIRED_FIELDS) {
+    fields[label] =
+      legacyContract && LEGACY_OPTIONAL_FIELDS.has(label)
+        ? optionalField(markdown, label)
+        : oneField(markdown, label, errors);
+  }
+  if (!legacyContract && fields["Prep contract version"] !== String(CURRENT_PREP_CONTRACT_VERSION)) {
+    errors.push(`Prep contract version must be: ${CURRENT_PREP_CONTRACT_VERSION}`);
+  }
+  if (isCircularFirstOperationalAction(fields["First operational action"])) {
+    contractDiagnostics.push(
+      contractDiagnostic(
+        legacyContract
+          ? PREP_CONTRACT_DIAGNOSTIC_CODES.FIRST_ACTION_MIGRATION_REQUIRED
+          : PREP_CONTRACT_DIAGNOSTIC_CODES.CURRENT_FIRST_ACTION_INVALID,
+        legacyContract ? "migration-required" : "invalid",
+        legacyContract
+          ? "The legacy First operational action names a custody or PRD handoff and requires producer migration to substantive portfolio work."
+          : "First operational action must name substantive portfolio work, not playtest-to-issues or /to-prd."
+      )
+    );
+  }
+  validateFixedFields(markdown, fields, source, completionMode, errors, { legacyContract });
   if (fields["Source report path"] !== source.reportPath) {
     errors.push(`Source report path must be: ${source.reportPath}`);
   }
@@ -833,6 +1173,13 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
   const candidateCount = PACKAGE_VALUES.has(packageValue)
     ? validateCandidates(markdown, packageValue, source, errors)
     : 0;
+  const legacyTicketPacketInspection = legacyContract
+    ? inspectTicketPackets(markdown, { requireFields: false })
+    : null;
+  if (legacyTicketPacketInspection) errors.push(...legacyTicketPacketInspection.errors);
+  const ticketPacketCount = legacyTicketPacketInspection
+    ? legacyTicketPacketInspection.packets.length
+    : validateTicketPackets(markdown, followUps, dispositions, source, errors);
 
   const existingPrep = fields["Existing same-stem prep classification"];
   if (existingPrep && !PREP_CLASSIFICATIONS.has(existingPrep)) {
@@ -844,7 +1191,10 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
   if (priorPrepClassification && !PRIOR_PREP_CLASSIFICATIONS.has(priorPrepClassification)) {
     errors.push(`Unsupported prior-report prep classification: ${priorPrepClassification}`);
   }
-  if (source.priorPrepPath === null) {
+  if (legacyContract) {
+    // Version 1 predates mandatory prior-prep identity fields. Current source inspection remains
+    // authoritative, and any present consumption ledger is still validated below.
+  } else if (source.priorPrepPath === null) {
     if (priorPrepPath !== "not applicable") {
       errors.push("Prior-report prep path must be: not applicable");
     }
@@ -953,43 +1303,70 @@ export function validatePrepArtifact(reportPath, prepPath, { completionMode = "f
     }
   }
 
-  const finalWorktree = parseTable(markdown, "### Final Worktree Ledger", FINAL_WORKTREE_HEADERS, {
-    allowEmpty: true
-  });
-  errors.push(...finalWorktree.errors);
-  integerField(markdown, "Final worktree rows", finalWorktree.rows.length, errors);
-  const worktreePaths = new Set();
-  let intentionalPrepRows = 0;
-  for (const row of finalWorktree.rows) {
-    const path = literal(row.Path ?? "");
-    const classification = literal(row.Classification ?? "");
-    if (!path) errors.push("Final Worktree Ledger has a blank Path.");
-    if (worktreePaths.has(path))
-      errors.push(`Final Worktree Ledger contains duplicate path: ${path}`);
-    worktreePaths.add(path);
-    if (!FINAL_WORKTREE_CLASSIFICATIONS.has(classification)) {
-      errors.push(
-        `Unsupported final worktree classification for ${path || "<blank>"}: ${classification}`
-      );
-    }
-    if (classification === "intentional prep artifact") {
-      intentionalPrepRows += 1;
-      if (path !== `reports/${expectedPrepName}`) {
-        errors.push(`Intentional prep artifact path must be: reports/${expectedPrepName}`);
+  if (!legacyContract) {
+    const finalWorktree = parseTable(
+      markdown,
+      "### Final Worktree Ledger",
+      FINAL_WORKTREE_HEADERS,
+      { allowEmpty: true }
+    );
+    errors.push(...finalWorktree.errors);
+    integerField(markdown, "Final worktree rows", finalWorktree.rows.length, errors);
+    const worktreePaths = new Set();
+    let intentionalPrepRows = 0;
+    for (const row of finalWorktree.rows) {
+      const path = literal(row.Path ?? "");
+      const classification = literal(row.Classification ?? "");
+      if (!path) errors.push("Final Worktree Ledger has a blank Path.");
+      if (worktreePaths.has(path))
+        errors.push(`Final Worktree Ledger contains duplicate path: ${path}`);
+      worktreePaths.add(path);
+      if (!FINAL_WORKTREE_CLASSIFICATIONS.has(classification)) {
+        errors.push(
+          `Unsupported final worktree classification for ${path || "<blank>"}: ${classification}`
+        );
+      }
+      if (classification === "intentional prep artifact") {
+        intentionalPrepRows += 1;
+        if (path !== `reports/${expectedPrepName}`) {
+          errors.push(`Intentional prep artifact path must be: reports/${expectedPrepName}`);
+        }
       }
     }
+    if (intentionalPrepRows > 1) {
+      errors.push("Final Worktree Ledger may contain at most one intentional prep artifact.");
+    }
   }
-  if (intentionalPrepRows > 1) {
-    errors.push("Final Worktree Ledger may contain at most one intentional prep artifact.");
-  }
+
+  const contractStatus =
+    errors.length > 0 || contractDiagnostics.some((diagnostic) => diagnostic.disposition === "invalid")
+      ? "invalid"
+      : contractDiagnostics.some(
+            (diagnostic) => diagnostic.disposition === "migration-required"
+          )
+        ? "migration-required"
+        : legacyContract
+          ? "legacy-compatible"
+          : "current";
+  const contract = {
+    ...inspectedContract,
+    status: contractStatus,
+    diagnostics: contractDiagnostics,
+    migrationInvocation:
+      contractStatus === "migration-required"
+        ? `$playtest-prd-prep "${source.reportPath}"`
+        : null
+  };
 
   return {
     errors,
     warnings,
     source,
+    contract,
     prep: {
       completionMode,
       candidateCount,
+      ticketPacketCount,
       dispositionRows: dispositions.rows.length,
       strengthConstraintRows: strengths.rows.length,
       verdict: verdicts[0] ?? null,
@@ -1017,6 +1394,7 @@ function printResult(result, mode) {
       cumulativeIds: source?.cumulativeIds ?? [],
       strengthIds: source?.strengthIds ?? []
     },
+    ...(result.contract ? { contract: result.contract } : {}),
     ...(result.prep ? { prep: result.prep } : {}),
     warnings: result.warnings,
     errors: result.errors

@@ -61,7 +61,8 @@ Allowed statuses:
   or
 - `blocked` — it cannot yet be owned or resolved truthfully.
 
-Every status requires non-empty `evidence`. `blocked` prevents a complete receipt.
+Every status requires non-empty `evidence`. The value is substantive portfolio work, never the
+mandatory `$playtest-to-issues` or `/to-prd` handoff. `blocked` prevents a complete receipt.
 
 ### Non-PRD entries
 
@@ -160,6 +161,25 @@ When the PRD queue is exhausted, replace `Next PRD action` with
 `Next PRD action: none - PRD queue exhausted`. List every deferred remaining candidate in its
 source order, but only the first remaining candidate belongs in the next invocation.
 
-When validation fails because custody is blocked, use the same inventory tables with
-`Custody validator: blocked`, name every blocker, omit a passing receipt claim, and write
+When validation returns no structural errors but custody is blocked, capture the same final branch
+and full-worktree posture and render the blocked receipt with:
+
+```bash
+node .claude/skills/playtest-to-issues/scripts/custody-ledger.mjs render-blocked-receipt \
+  <prep-artifact> <custody-ledger.json> \
+  --final-branch <branch> \
+  --final-worktree-clean
+```
+
+Use exact `--final-worktree-row` options instead of `--final-worktree-clean` for a dirty worktree,
+as in the passing branch. The blocked renderer rejects structurally invalid or complete ledgers.
+It preserves both inventory tables, writes `Custody validator: blocked`, and emits a `Custody
+blockers:` list containing every blocked non-PRD item, blocked PRD candidate, and blocked first
+operational action. Its queue field is `PRD queue: blocked - <count> remaining candidate(s)`, and
+its next-action field is exactly
 `Next PRD action: blocked - resolve follow-up custody first`.
+
+Capture stdout, remove every temporary artifact, prove absence, and rerun branch plus full
+worktree status exactly as for a passing receipt. Emit the captured blocked receipt verbatim only
+when cleanup passes and the final values match the renderer inputs. Never hand-format a blocked
+receipt or replace its inventory tables with a summary.
