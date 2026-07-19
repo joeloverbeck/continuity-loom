@@ -611,6 +611,78 @@ describe("GenerateView", () => {
       }
     });
   });
+
+  it("surfaces a manual-entry recovery beside a provider-only blocker and moves focus to the existing control", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      providerConfigured: false,
+      providerBlockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "provider-configuration-missing",
+        legacyCode: "provider-configuration-missing",
+        title: "Configure OpenRouter before generating",
+        group: "required-before-prompt-generation"
+      })]
+    }));
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(true);
+
+    const manualEntry = screen.getByRole<HTMLButtonElement>("button", { name: "Write or paste candidate" });
+    const recovery = screen.getByRole<HTMLButtonElement>("button", { name: "Go to Write or paste candidate" });
+    expect(recovery.disabled).toBe(false);
+
+    // Discoverable near the top of the READINESS panel, ahead of the (potentially long)
+    // diagnostic checklist, so it stays in the first desktop viewport.
+    const checklist = document.querySelector(".readinessChecklist");
+    expect(checklist).toBeTruthy();
+    expect(
+      recovery.compareDocumentPosition(checklist as Node) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+
+    fireEvent.click(recovery);
+
+    expect(document.activeElement).toBe(manualEntry);
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(generate).not.toHaveBeenCalled();
+    expect(compile).toHaveBeenCalledTimes(1);
+    expect(readiness).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows no manual-entry recovery action when there is no provider-only blocker", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Go to Write or paste candidate" })).toBeNull();
+  });
+
+  it("does not offer the manual-entry recovery action when prompt blockers prevent preview", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      blockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "missing-current-state",
+        legacyCode: "missing-current-authoritative-state",
+        title: "Current state is required",
+        group: "required-before-prompt-generation"
+      })]
+    }));
+    vi.mocked(compile).mockResolvedValue({
+      ok: false,
+      kind: "validation-blocked",
+      validation: { blockers: [], warnings: [], isBlocked: true }
+    });
+
+    renderGenerate();
+
+    expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Go to Write or paste candidate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Write or paste candidate" })).toBeNull();
+  });
 });
 
 function renderGenerate() {

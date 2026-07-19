@@ -283,4 +283,52 @@ describe("ProjectPicker", () => {
     expect(await screen.findByText("/tmp/loom/alpha/backups/loom-backup.sqlite")).toBeTruthy();
     expect(createBackupMock).toHaveBeenCalledTimes(1);
   });
+
+  it("explains local project paths and associates the guidance with the Parent path control before submission", () => {
+    render(<ProjectPicker />);
+
+    const parentPath = screen.getByLabelText("Parent path");
+    const describedBy = parentPath.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+
+    const guidance = document.getElementById(describedBy as string);
+    expect(guidance).not.toBeNull();
+    const text = guidance?.textContent ?? "";
+    expect(text).toMatch(/existing absolute folder/i);
+    expect(text).toMatch(/child folder/i);
+    expect(text).toContain("/Users/alex/Stories");
+    expect(text).toContain("winter-letter");
+    expect(text).toContain("/Users/alex/Stories/winter-letter");
+
+    expect(createProjectMock).not.toHaveBeenCalled();
+    expect(createDemoProjectMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the local-path guidance and authored values available during invalid-path recovery", async () => {
+    createProjectMock.mockResolvedValue({
+      ok: false,
+      kind: "parent-missing",
+      message: "The parent path does not exist: /tmp/nope"
+    });
+
+    render(<ProjectPicker />);
+
+    fireEvent.change(screen.getByLabelText("Parent path"), { target: { value: "/tmp/nope" } });
+    fireEvent.change(screen.getByLabelText("Folder name"), { target: { value: "winter-letter" } });
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "The Winter Letter" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create Project" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "parent-missing: The parent path does not exist: /tmp/nope"
+    );
+
+    const parentPath = screen.getByLabelText<HTMLInputElement>("Parent path");
+    const describedBy = parentPath.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    expect(document.getElementById(describedBy as string)?.textContent ?? "").toMatch(/existing absolute folder/i);
+
+    expect(parentPath.value).toBe("/tmp/nope");
+    expect(screen.getByLabelText<HTMLInputElement>("Folder name").value).toBe("winter-letter");
+    expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("The Winter Letter");
+  });
 });

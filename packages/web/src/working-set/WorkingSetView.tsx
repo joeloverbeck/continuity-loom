@@ -14,6 +14,11 @@ import {
   setWorkingSet,
   type RecordSummary
 } from "../api.js";
+import {
+  browsePrimaryLabel,
+  browseSecondaryLabel,
+  browseUnavailableMessage
+} from "../records/browse-identity.js";
 
 type ActiveWorkingSet = z.infer<typeof activeWorkingSetSchema>;
 
@@ -136,6 +141,7 @@ export function WorkingSetView(): React.JSX.Element {
     () => whatWillCompile(selectedRecords, activeWorkingSet),
     [activeWorkingSet, selectedRecords]
   );
+  const recordById = useMemo(() => new Map(records.map((record) => [record.id, record])), [records]);
 
   async function persistActiveWorkingSet(next: ActiveWorkingSet): Promise<void> {
     setActiveWorkingSet(next);
@@ -227,14 +233,22 @@ export function WorkingSetView(): React.JSX.Element {
                 <tbody>
                   {typeRecords.map((record) => (
                     <tr key={record.id}>
-                      <td className="labelCol">{record.displayLabel}</td>
+                      <td className="labelCol">
+                        <span className="recordPrimaryLabel">{browsePrimaryLabel(record)}</span>
+                        {browseSecondaryLabel(record) ? (
+                          <span className="recordSecondaryLabel">{browseSecondaryLabel(record)}</span>
+                        ) : null}
+                        {browseUnavailableMessage(record) ? (
+                          <span className="status statusWarning">{browseUnavailableMessage(record)}</span>
+                        ) : null}
+                      </td>
                       <td className="statusCol">{record.status ?? "none"}</td>
                       {type === "CAST MEMBER" ? (
                         <td className="bandCol">
                           <label>
                             band
                             <select
-                              aria-label={`Cast band for ${record.displayLabel}`}
+                              aria-label={`Cast band for ${browsePrimaryLabel(record)}`}
                               value={castBand(record.id, activeWorkingSet)}
                               onChange={(event) => void assignCastBand(record.id, event.target.value as "none" | "active" | "present_minor" | "offstage")}
                             >
@@ -248,7 +262,7 @@ export function WorkingSetView(): React.JSX.Element {
                             <label>
                               local_function
                               <select
-                                aria-label={`Local function for ${record.displayLabel}`}
+                                aria-label={`Local function for ${browsePrimaryLabel(record)}`}
                                 value={
                                   activeWorkingSet.active_onstage_cast_full.find((entry) => entry.cast_member_id === record.id)
                                     ?.local_function ?? "active_speaker"
@@ -285,9 +299,17 @@ export function WorkingSetView(): React.JSX.Element {
               <section key={bucket.familyId} aria-labelledby={`compile-preview-${bucket.familyId}`}>
                 <h4 id={`compile-preview-${bucket.familyId}`}>{bucket.label}</h4>
                 <ul>
-                  {bucket.records.map((record) => (
-                    <li key={record.id}>{record.displayLabel}</li>
-                  ))}
+                  {bucket.records.map((record) => {
+                    const fullRecord = recordById.get(record.id);
+                    const primary = fullRecord ? browsePrimaryLabel(fullRecord) : record.displayLabel;
+                    const secondary = fullRecord ? browseSecondaryLabel(fullRecord) : "";
+                    return (
+                      <li key={record.id}>
+                        <span className="recordPrimaryLabel">{primary}</span>
+                        {secondary ? <span className="recordSecondaryLabel">{secondary}</span> : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               </section>
             ))}

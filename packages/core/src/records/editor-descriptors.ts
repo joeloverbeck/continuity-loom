@@ -22,6 +22,14 @@ export interface FieldDescriptor {
   kind: FieldKind;
   required: boolean;
   promptFacing: boolean;
+  /**
+   * Optional author-facing primary label for presentation surfaces. When set,
+   * editors lead the field with this label as the control's accessible name and
+   * keep `name` (the exact schema key) as visible secondary metadata that also
+   * participates in the accessible description. Purely presentational: it never
+   * changes payload keys, help lookup, or compilation.
+   */
+  label?: string;
   enumValues?: readonly string[];
   referenceRole?: string;
   itemDescriptor?: FieldDescriptor;

@@ -1,5 +1,5 @@
 import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -422,12 +422,32 @@ function ReadyGenerate({
   const candidateTransitionUnavailable = isCandidateTransitionUnavailable(candidateState, pendingDiscardAction);
   const canGenerate = readiness.canGenerate && !candidateTransitionUnavailable;
   const showReadinessChecklist = readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
+  const writeOrPasteRef = useRef<HTMLButtonElement>(null);
+  const showManualEntryRecovery =
+    readiness.provider.blockers.length > 0 && candidateState.status !== "candidate";
+
+  function focusManualEntry(): void {
+    const target = writeOrPasteRef.current;
+    if (!target) {
+      return;
+    }
+    target.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    target.focus();
+  }
 
   return (
     <section className="previewStack">
       {showReadinessChecklist ? (
         <section className="configPanel validationPanel" aria-labelledby="generate-readiness-title">
           <h3 id="generate-readiness-title">READINESS</h3>
+          {showManualEntryRecovery ? (
+            <div className="providerRecovery">
+              <p className="muted">Manual candidate intake is still available without a configured provider.</p>
+              <button type="button" className="secondaryButton" onClick={focusManualEntry}>
+                Go to Write or paste candidate
+              </button>
+            </div>
+          ) : null}
           <ReadinessChecklist readiness={readiness} actions={onChecklistAction} />
         </section>
       ) : (
@@ -441,7 +461,7 @@ function ReadyGenerate({
         {candidateState.status !== "candidate" ? (
           <>
             <button type="button" onClick={onGenerate} disabled={!canGenerate}>Generate</button>
-            <button type="button" onClick={onWriteOrPaste} disabled={candidateTransitionUnavailable}>Write or paste candidate</button>
+            <button type="button" ref={writeOrPasteRef} onClick={onWriteOrPaste} disabled={candidateTransitionUnavailable}>Write or paste candidate</button>
           </>
         ) : null}
         <button type="button" onClick={onRefresh} disabled={candidateTransitionUnavailable}>Refresh prompt</button>

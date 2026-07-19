@@ -722,6 +722,35 @@ button:disabled:hover {
   font-weight: 700;
 }
 
+.fieldSchemaKey {
+  display: block;
+  margin: 2px 0 8px;
+  color: #5c677d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+}
+
+.providerRecovery {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.projectCreateGuidance {
+  margin: 4px 0 12px;
+  line-height: 1.5;
+}
+
+.projectCreateGuidance code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: #eef1f6;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
 .nestedGroup {
   border: 1px solid #d8dee8;
   border-radius: 8px;

@@ -45,6 +45,35 @@ const payloads: Record<StoryConfigKind, unknown> = {
   }
 };
 
+const primaryLabels: Record<string, string> = {
+  title: "Story title",
+  premise: "Premise",
+  genre_mode: "Genre / mode",
+  tone: "Tone",
+  setting_baseline: "Setting baseline",
+  content_intensity: "Content intensity",
+  explicitness: "Explicitness",
+  language_register: "Language register",
+  rating_label: "Rating label",
+  allowed_content_scope: "Allowed content scope",
+  tonal_handling: "Tonal handling",
+  character_bias_handling: "Character bias handling",
+  pov_character: "POV character",
+  person: "Person",
+  tense: "Tense",
+  psychic_distance: "Psychic distance",
+  interiority_mode: "Interiority mode",
+  dialogue_density: "Dialogue density",
+  paragraphing: "Paragraphing",
+  language_output: "Output language",
+  special_style_constraints: "Special style constraints"
+};
+
+function labelPattern(schemaKey: string): RegExp {
+  const label = (primaryLabels[schemaKey] ?? schemaKey).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^${label}`);
+}
+
 function descriptorNames(fields: readonly FieldDescriptor[]): string[] {
   return fields.flatMap((field) => [
     field.name,
@@ -93,20 +122,20 @@ describe("StoryConfigEditor", () => {
       }
     }
 
-    expect(screen.getByRole("button", { name: "Help for premise" })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText(/^premise/), { target: { value: "A city remembers every broken promise." } });
+    expect(screen.getByRole("button", { name: "Help for Premise" })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText(/^Premise/), { target: { value: "A city remembers every broken promise." } });
     fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
     await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith("STORY CONTRACT", expect.objectContaining({
       premise: "A city remembers every broken promise."
     })));
 
-    fireEvent.change(screen.getByLabelText(/^rating_label/), { target: { value: "Mature revised" } });
+    fireEvent.change(screen.getByLabelText(/^Rating label/), { target: { value: "Mature revised" } });
     fireEvent.click(screen.getByRole("button", { name: "Save UNIVERSAL CONTENT POLICY" }));
     await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith("UNIVERSAL CONTENT POLICY", expect.objectContaining({
       rating_label: "Mature revised"
     })));
 
-    fireEvent.change(screen.getByLabelText(/^language_output/), { target: { value: "English with close POV" } });
+    fireEvent.change(screen.getByLabelText(/^Output language/), { target: { value: "English with close POV" } });
     fireEvent.click(screen.getByRole("button", { name: "Save PROSE MODE" }));
     await waitFor(() => expect(setStoryConfig).toHaveBeenCalledWith("PROSE MODE", expect.objectContaining({
       language_output: "English with close POV"
@@ -141,7 +170,7 @@ describe("StoryConfigEditor", () => {
       "tonal_handling",
       "character_bias_handling"
     ]) {
-      expect(screen.getByLabelText(new RegExp(`^${field}`))).toBeTruthy();
+      expect(screen.getByLabelText(labelPattern(field))).toBeTruthy();
     }
     expect(screen.queryByText(/NO RESTRICTIONS/i)).toBeNull();
   });
@@ -150,8 +179,8 @@ describe("StoryConfigEditor", () => {
     setupMocks();
     render(<StoryConfigEditor />);
 
-    const picker = await screen.findByLabelText(/^pov_character/);
-    expect(screen.getByRole("button", { name: "Help for pov_character" })).toBeTruthy();
+    const picker = await screen.findByLabelText(/^POV character/);
+    expect(screen.getByRole("button", { name: "Help for POV character" })).toBeTruthy();
     expect(picker.tagName).toBe("SELECT");
     expect(within(picker).getByRole("option", { name: "Aster" })).toBeTruthy();
     expect((picker as HTMLSelectElement).value).toBe(entityId);
@@ -196,7 +225,7 @@ describe("StoryConfigEditor", () => {
       .mockResolvedValueOnce({ ok: true });
     render(<StoryConfigEditor />);
 
-    const premise = await screen.findByLabelText<HTMLInputElement>(/^premise/);
+    const premise = await screen.findByLabelText<HTMLInputElement>(/^Premise/);
     fireEvent.change(premise, { target: { value: "First successful revision." } });
     fireEvent.click(screen.getByRole("button", { name: "Save STORY CONTRACT" }));
     expect(await screen.findByText("STORY CONTRACT saved.")).toBeTruthy();
@@ -212,12 +241,81 @@ describe("StoryConfigEditor", () => {
     expect(screen.queryByRole("alert")).toBeNull();
     expect(premise.value).toBe("Retained after failure.");
   });
+
+  it("leads each field with an author-facing label while keeping the schema key as secondary described metadata", async () => {
+    setupMocks();
+    render(<StoryConfigEditor />);
+
+    // Primary author label supplies the accessible name.
+    const premise = await screen.findByLabelText<HTMLTextAreaElement>(/^Premise/);
+    expect(premise.tagName).toBe("TEXTAREA");
+    expect(screen.getByLabelText(/^Story title/)).toBeTruthy();
+    expect(screen.getByLabelText(/^POV character/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Output language/)).toBeTruthy();
+
+    // Exact schema key remains visible as secondary technical metadata.
+    expect(screen.getAllByText("premise").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("language_output").length).toBeGreaterThan(0);
+
+    // The schema key participates in the accessible description.
+    const describedBy = premise.getAttribute("aria-describedby");
+    expect(describedBy).toBeTruthy();
+    const describedText = (describedBy as string)
+      .split(/\s+/)
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ");
+    expect(describedText).toContain("premise");
+
+    // Requiredness is still announced on the primary-labeled control.
+    expect(within(premise.closest(".editorField") as HTMLElement).getByLabelText("required")).toBeTruthy();
+
+    // Field help continues to resolve through the canonical schema-key path.
+    expect(screen.getByRole("button", { name: "Help for Premise" })).toBeTruthy();
+  });
+
+  it("leads enum fields with the author label and keeps the schema key in the accessible description", async () => {
+    setupMocks();
+    render(<StoryConfigEditor />);
+
+    // Card-style enum: the radiogroup is named by the author label, not the schema-key path.
+    const contentIntensity = await screen.findByRole("radiogroup", { name: "Content intensity" });
+    const cardDescribedBy = contentIntensity.getAttribute("aria-describedby");
+    expect(cardDescribedBy).toBeTruthy();
+    expect(document.getElementById(cardDescribedBy as string)?.textContent).toBe("content_intensity");
+
+    // Plain-select enum: named by the author label via its wrapping label, schema key described.
+    const person = screen.getByLabelText<HTMLSelectElement>(/^Person/);
+    expect(person.tagName).toBe("SELECT");
+    const selectDescribedBy = person.getAttribute("aria-describedby");
+    expect(selectDescribedBy).toBeTruthy();
+    expect(document.getElementById(selectDescribedBy as string)?.textContent).toBe("person");
+  });
+
+  it("leads the special_style_constraints list group and its controls with the author label and describes it by the schema key", async () => {
+    setupMocks();
+    render(<StoryConfigEditor />);
+
+    // The list renders as a group named by the author label, described by the schema key.
+    const group = await screen.findByRole("group", { name: "Special style constraints" });
+    const groupDescribedBy = group.getAttribute("aria-describedby");
+    expect(groupDescribedBy).toBeTruthy();
+    expect(document.getElementById(groupDescribedBy as string)?.textContent).toBe("special_style_constraints");
+
+    // The add control reads with the author label, not the raw schema key.
+    expect(screen.getByRole("button", { name: "Add Special style constraints" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Add special_style_constraints" })).toBeNull();
+  });
 });
 
 function fillMissingConfig(kind: StoryConfigKind): void {
   if (kind === "STORY CONTRACT") {
     for (const [name, value] of Object.entries(payloads[kind] as Record<string, string>)) {
-      const control = screen.getByLabelText(new RegExp(`^${name}`));
+      // content_intensity is a required enum with a valid default; its author label
+      // now also names the radiogroup, so a text-input label lookup is intentionally skipped.
+      if (name === "content_intensity") {
+        continue;
+      }
+      const control = screen.getByLabelText(labelPattern(name));
       fireEvent.change(control, { target: { value } });
     }
     return;
@@ -225,11 +323,11 @@ function fillMissingConfig(kind: StoryConfigKind): void {
 
   if (kind === "UNIVERSAL CONTENT POLICY") {
     for (const [name, value] of Object.entries(payloads[kind] as Record<string, string>)) {
-      fireEvent.change(screen.getByLabelText(new RegExp(`^${name}`)), { target: { value } });
+      fireEvent.change(screen.getByLabelText(labelPattern(name)), { target: { value } });
     }
     return;
   }
 
-  fireEvent.change(screen.getByLabelText(/^pov_character/), { target: { value: entityId } });
-  fireEvent.change(screen.getByLabelText(/^language_output/), { target: { value: "English" } });
+  fireEvent.change(screen.getByLabelText(/^POV character/), { target: { value: entityId } });
+  fireEvent.change(screen.getByLabelText(/^Output language/), { target: { value: "English" } });
 }

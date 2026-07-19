@@ -172,12 +172,19 @@ export function ProjectPicker(): React.JSX.Element {
       <div className="projectGrid">
         <form className="projectForm" onSubmit={(event) => void onCreate(event)}>
           <h3>Create</h3>
+          <p className="muted projectCreateGuidance" id="project-create-guidance">
+            <strong>Parent path</strong> is an existing absolute folder on your computer.{" "}
+            <strong>Folder name</strong> is the new child folder Continuity Loom will create inside it.
+            For example, Parent path <code>/Users/alex/Stories</code> plus Folder name{" "}
+            <code>winter-letter</code> creates <code>/Users/alex/Stories/winter-letter</code>.
+          </p>
           <label>
             Parent path
             <input
               id="project-parent-path"
               name="parentPath"
               required
+              aria-describedby="project-create-guidance"
               value={createFields.parentPath}
               onChange={(event) =>
                 setCreateFields((fields) => ({ ...fields, parentPath: event.target.value }))

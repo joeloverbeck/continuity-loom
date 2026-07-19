@@ -8,7 +8,7 @@ import {
   type RecordEditorDescriptor
 } from "@loom/core";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   useForm,
   type FieldErrors,
@@ -237,7 +237,8 @@ function FieldShell({
   ownerKind,
   children,
   form,
-  serverIssues
+  serverIssues,
+  describedById
 }: {
   field: FieldDescriptor;
   path: string;
@@ -245,21 +246,26 @@ function FieldShell({
   children: React.ReactNode;
   form: UseFormReturn<FormValues>;
   serverIssues: Map<string, string>;
+  describedById?: string | undefined;
 }): React.JSX.Element {
   const clientError = errorMessage(form.formState.errors, path);
   const serverError = serverIssues.get(path);
   const canonicalPath = `${ownerKind}.${normalizeListIndices(path)}`;
+  const primaryLabel = field.label ?? field.name;
 
   return (
     <div className={`editorField ${field.promptFacing ? "promptFacing" : "validationField"}`}>
       <label>
         <span>
-          {field.name}
+          {primaryLabel}
           {field.required ? <strong aria-label="required"> *</strong> : null}
         </span>
         {children}
       </label>
-      <FieldHelp fieldPath={canonicalPath} fieldLabel={field.name} listContext={path} />
+      {field.label ? (
+        <span className="fieldSchemaKey" id={describedById}>{field.name}</span>
+      ) : null}
+      <FieldHelp fieldPath={canonicalPath} fieldLabel={primaryLabel} listContext={path} />
       {clientError || serverError ? (
         <p className="fieldError" role="alert">
           {clientError ?? serverError}
@@ -273,18 +279,20 @@ function ReferencePicker({
   field,
   path,
   form,
-  referenceRecords
+  referenceRecords,
+  describedById
 }: {
   field: FieldDescriptor;
   path: string;
   form: UseFormReturn<FormValues>;
   referenceRecords: readonly RecordSummary[];
+  describedById?: string | undefined;
 }): React.JSX.Element {
   const options = eligibleReferenceTargets(field.referenceRole ?? "", referenceRecords);
   const fallbackOption = unresolvedReferenceOption(form.watch(path), options, referenceRecords);
 
   return (
-    <select {...form.register(path, inputOptions(field))}>
+    <select {...form.register(path, inputOptions(field))} aria-describedby={describedById}>
       <option value="">Select record</option>
       {fallbackOption ? (
         <option value={fallbackOption.value}>{fallbackOption.label}</option>
@@ -339,7 +347,9 @@ function ListField({
   ownerKind,
   form,
   referenceRecords,
-  serverIssues
+  serverIssues,
+  label,
+  describedById
 }: {
   field: FieldDescriptor;
   path: string;
@@ -347,10 +357,16 @@ function ListField({
   form: UseFormReturn<FormValues>;
   referenceRecords: readonly RecordSummary[];
   serverIssues: Map<string, string>;
+  label?: string | undefined;
+  describedById?: string | undefined;
 }): React.JSX.Element {
   const item = field.itemDescriptor;
   const value = form.watch(path) as unknown;
   const items: unknown[] = Array.isArray(value) ? value as unknown[] : [];
+  const displayName = label ?? field.name;
+  const groupProps = label
+    ? { role: "group" as const, "aria-label": label, ...(describedById ? { "aria-describedby": describedById } : {}) }
+    : {};
 
   function appendItem(): void {
     form.setValue(path, [...items, fieldDefault(item ?? field)], { shouldDirty: true });
@@ -361,12 +377,12 @@ function ListField({
   }
 
   return (
-    <div className="listField">
+    <div className="listField" {...groupProps}>
       {items.map((_, index) => (
         <div className="listRow" key={`${path}.${index}`}>
           {item ? (
             <FieldRenderer
-              field={{ ...item, name: `${field.name} ${index + 1}`, required: true }}
+              field={{ ...item, name: `${displayName} ${index + 1}`, required: true }}
               path={`${path}.${index}`}
               ownerKind={ownerKind}
               form={form}
@@ -375,13 +391,13 @@ function ListField({
               listItem
             />
           ) : null}
-          <button type="button" aria-label={`Remove ${field.name} ${index + 1}`} onClick={() => removeItem(index)}>
+          <button type="button" aria-label={`Remove ${displayName} ${index + 1}`} onClick={() => removeItem(index)}>
             Remove
           </button>
         </div>
       ))}
-      <button type="button" aria-label={`Add ${field.name}`} onClick={appendItem}>
-        Add {field.name}
+      <button type="button" aria-label={`Add ${displayName}`} onClick={appendItem}>
+        Add {displayName}
       </button>
     </div>
   );
@@ -570,6 +586,8 @@ export function FieldRenderer({
   serverIssues: Map<string, string>;
   listItem?: boolean;
 }): React.JSX.Element {
+  const generatedDescriptionId = useId();
+  const describedById = field.label ? generatedDescriptionId : undefined;
   const control = (() => {
     switch (field.kind) {
       case "boolean":
@@ -582,6 +600,8 @@ export function FieldRenderer({
             value={String(form.watch(path) ?? "")}
             onChange={(value) => form.setValue(path, value, { shouldDirty: true, shouldValidate: true })}
             allowUnset={!field.required}
+            label={field.label}
+            describedById={describedById}
           />
         );
       case "list":
@@ -593,6 +613,8 @@ export function FieldRenderer({
             form={form}
             referenceRecords={referenceRecords}
             serverIssues={serverIssues}
+            label={field.label}
+            describedById={describedById}
           />
         );
       case "nested_group":
@@ -615,9 +637,9 @@ export function FieldRenderer({
       case "number":
         return <input type="number" {...form.register(path, inputOptions(field))} />;
       case "prose":
-        return <textarea {...registerText(form.register, path, field)} />;
+        return <textarea {...registerText(form.register, path, field)} aria-describedby={describedById} />;
       case "reference":
-        return <ReferencePicker field={field} path={path} form={form} referenceRecords={referenceRecords} />;
+        return <ReferencePicker field={field} path={path} form={form} referenceRecords={referenceRecords} describedById={describedById} />;
       case "sentinel_reference":
         return (
           <SentinelReferencePicker
@@ -654,7 +676,7 @@ export function FieldRenderer({
       case "sentinel_prose":
         return <SentinelProseField field={field} path={path} form={form} multiline />;
       case "short_string":
-        return <input type="text" {...registerText(form.register, path, field)} />;
+        return <input type="text" {...registerText(form.register, path, field)} aria-describedby={describedById} />;
     }
   })();
 
@@ -663,7 +685,7 @@ export function FieldRenderer({
   }
 
   return (
-    <FieldShell field={field} path={path} ownerKind={ownerKind} form={form} serverIssues={serverIssues}>
+    <FieldShell field={field} path={path} ownerKind={ownerKind} form={form} serverIssues={serverIssues} describedById={describedById}>
       {control}
     </FieldShell>
   );

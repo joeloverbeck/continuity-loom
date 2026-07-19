@@ -155,6 +155,8 @@ After readiness passes and the compiled prompt is visible, choose one of two way
 
 Both paths use the same ephemeral editor. The draft remains not accepted and not canon. Its source, prompt fingerprint, and compiler versions stay visible while you work. A user-supplied draft remains available when OpenRouter is unconfigured, out of credits, rate limited, or unavailable, provided prompt readiness itself allows preview.
 
+When provider readiness blocks Generate but prompt readiness still allows preview, a **Go to Write or paste candidate** action appears beside the provider blocker so manual intake stays discoverable. Activating it scrolls to and moves keyboard focus onto the existing **Write or paste candidate** button; it never opens a draft, sends a request, refreshes the prompt, or bypasses readiness on its own. The **Write or paste candidate** button remains the only control that opens an empty user-supplied draft.
+
 You can:
 
 - edit the candidate before accepting it;

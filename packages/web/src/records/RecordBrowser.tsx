@@ -24,6 +24,11 @@ import {
   type RecordDetail,
   type RecordSummary
 } from "../api.js";
+import {
+  browsePrimaryLabel,
+  browseSecondaryLabel,
+  browseUnavailableMessage
+} from "./browse-identity.js";
 import { CastMemberEditor } from "./CastMemberEditor.js";
 import { RecordEditor } from "./RecordEditor.js";
 
@@ -131,46 +136,8 @@ function fullDisplayLabel(record: RecordDetail | RecordSummary): string {
   return record.fullDisplayLabel ?? record.displayLabel;
 }
 
-function browsePrimaryLabel(record: RecordDetail | RecordSummary): string {
-  if (record.type !== "CAST MEMBER" || !record.browseIdentity) {
-    return record.displayLabel;
-  }
-
-  if (record.browseIdentity.availability === "archived") {
-    return record.browseIdentity.primaryLabel
-      ? `${record.browseIdentity.primaryLabel} (linked ENTITY archived)`
-      : "Linked ENTITY unavailable (archived)";
-  }
-
-  if (record.browseIdentity.availability === "missing" || !record.browseIdentity.primaryLabel) {
-    return "Linked ENTITY unavailable";
-  }
-
-  return record.browseIdentity.primaryLabel;
-}
-
 function detailPrimaryLabel(record: RecordDetail | RecordSummary): string {
   return record.type === "CAST MEMBER" ? browsePrimaryLabel(record) : fullDisplayLabel(record);
-}
-
-function browseSecondaryLabel(record: RecordDetail | RecordSummary): string {
-  return record.type === "CAST MEMBER" ? record.browseIdentity?.secondaryLabel ?? "" : "";
-}
-
-function browseUnavailableMessage(record: RecordDetail | RecordSummary): string | null {
-  if (record.type !== "CAST MEMBER" || !record.browseIdentity) {
-    return null;
-  }
-
-  if (record.browseIdentity.availability === "archived") {
-    return "The linked ENTITY is archived and unavailable for active use.";
-  }
-
-  if (record.browseIdentity.availability === "missing") {
-    return "The linked ENTITY could not be resolved. The CAST MEMBER record and its exact payload remain available.";
-  }
-
-  return null;
 }
 
 function displayCell(value: unknown): string {

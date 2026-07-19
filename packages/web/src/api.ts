@@ -257,6 +257,12 @@ export interface DurableChangeReminder {
 
 export type DurableChangeReminderResponse = { ok: true; reminder: DurableChangeReminder } | ApiFailure;
 
+export interface BrowseIdentity {
+  primaryLabel: string | null;
+  secondaryLabel: string;
+  availability: "available" | "archived" | "missing";
+}
+
 export type RecordSummary = {
   id: string;
   type: string;
@@ -270,11 +276,7 @@ export type RecordSummary = {
   userOrder: number | null;
   createdAt: string;
   updatedAt: string;
-  browseIdentity?: {
-    primaryLabel: string | null;
-    secondaryLabel: string;
-    availability: "available" | "archived" | "missing";
-  };
+  browseIdentity?: BrowseIdentity;
 };
 
 export type RecordDetail = RecordSummary & {

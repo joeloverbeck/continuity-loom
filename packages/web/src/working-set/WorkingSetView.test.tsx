@@ -277,4 +277,135 @@ describe("WorkingSetView", () => {
     expect(setWorkingSet).not.toHaveBeenCalled();
     expect(setGenerationBrief).not.toHaveBeenCalled();
   });
+
+  it("leads CAST MEMBER rows with the linked ENTITY identity and names cast controls by it", async () => {
+    const castId = "019b0298-5c00-7000-8000-000000000014";
+    const castRecords: RecordSummary[] = [
+      {
+        id: castId,
+        type: "CAST MEMBER",
+        displayLabel: "the reluctant courier",
+        status: null,
+        salience: null,
+        urgency: null,
+        archived: false,
+        userOrder: null,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        browseIdentity: {
+          primaryLabel: "Aster Vale",
+          secondaryLabel: "the reluctant courier",
+          availability: "available"
+        }
+      }
+    ];
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: castRecords });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [castId] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+
+    render(<WorkingSetView />);
+
+    const castHeading = await screen.findByRole("heading", { name: "CAST MEMBER" });
+    const section = castHeading.closest("section") as HTMLElement;
+    expect(within(section).getByText("Aster Vale")).toBeTruthy();
+    expect(within(section).getByText("the reluctant courier")).toBeTruthy();
+    expect(within(section).getByLabelText("Cast band for Aster Vale")).toBeTruthy();
+    expect(screen.queryByText(castId)).toBeNull();
+    expect(screen.queryByLabelText("Cast band for the reluctant courier")).toBeNull();
+  });
+
+  it("renders archived and missing linked ENTITY fallbacks without exposing a raw id", async () => {
+    const archivedId = "019b0298-5c00-7000-8000-000000000015";
+    const missingId = "019b0298-5c00-7000-8000-000000000016";
+    const castRecords: RecordSummary[] = [
+      {
+        id: archivedId,
+        type: "CAST MEMBER",
+        displayLabel: "the exiled brother",
+        status: null,
+        salience: null,
+        urgency: null,
+        archived: false,
+        userOrder: null,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        browseIdentity: {
+          primaryLabel: "Bram Vale",
+          secondaryLabel: "the exiled brother",
+          availability: "archived"
+        }
+      },
+      {
+        id: missingId,
+        type: "CAST MEMBER",
+        displayLabel: "an unnamed informant",
+        status: null,
+        salience: null,
+        urgency: null,
+        archived: false,
+        userOrder: null,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        browseIdentity: {
+          primaryLabel: null,
+          secondaryLabel: "an unnamed informant",
+          availability: "missing"
+        }
+      }
+    ];
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: castRecords });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [archivedId, missingId] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({ ok: true, session: {}, generationContext: briefGenerationContext });
+
+    render(<WorkingSetView />);
+
+    expect((await screen.findAllByText("Bram Vale (linked ENTITY archived)")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Linked ENTITY unavailable").length).toBeGreaterThan(0);
+    expect(screen.queryByText(archivedId)).toBeNull();
+    expect(screen.queryByText(missingId)).toBeNull();
+  });
+
+  it("leads What Will Compile cast summaries with the linked ENTITY identity", async () => {
+    const castId = "019b0298-5c00-7000-8000-000000000014";
+    const castRecords: RecordSummary[] = [
+      {
+        id: castId,
+        type: "CAST MEMBER",
+        displayLabel: "the reluctant courier",
+        status: null,
+        salience: null,
+        urgency: null,
+        archived: false,
+        userOrder: null,
+        createdAt: "2026-06-05T00:00:00.000Z",
+        updatedAt: "2026-06-05T00:00:00.000Z",
+        browseIdentity: {
+          primaryLabel: "Aster Vale",
+          secondaryLabel: "the reluctant courier",
+          availability: "available"
+        }
+      }
+    ];
+    vi.mocked(listRecords).mockResolvedValue({ ok: true, records: castRecords });
+    vi.mocked(getWorkingSet).mockResolvedValue({ ok: true, selectedRecordIds: [castId] });
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        active_working_set: {
+          selected_records: [castId],
+          active_onstage_cast_full: [{ cast_member_id: castId, local_function: "active_speaker" }]
+        }
+      },
+      generationContext: briefGenerationContext
+    });
+
+    render(<WorkingSetView />);
+
+    const compileHeading = await screen.findByRole("heading", { name: "Rich active cast dossiers" });
+    const compileSection = compileHeading.closest("section") as HTMLElement;
+    expect(within(compileSection).getByText("Aster Vale")).toBeTruthy();
+    expect(setWorkingSet).not.toHaveBeenCalled();
+    expect(setGenerationBrief).not.toHaveBeenCalled();
+  });
 });

@@ -11,6 +11,8 @@ export interface EnumGuidanceProps {
   value: string;
   onChange: (value: string) => void;
   allowUnset?: boolean;
+  label?: string | undefined;
+  describedById?: string | undefined;
 }
 
 const cardEnumPaths = new Set([
@@ -28,7 +30,9 @@ export function EnumGuidance({
   enumValues,
   value,
   onChange,
-  allowUnset = false
+  allowUnset = false,
+  label,
+  describedById
 }: EnumGuidanceProps): React.JSX.Element {
   const radioGroupName = useId();
   const canonicalPath = normalizeListIndices(fieldPath);
@@ -39,7 +43,12 @@ export function EnumGuidance({
   if (cardEnumPaths.has(canonicalPath) && valueGuidance) {
     return (
       <div className="enumGuidance">
-        <div className="enumCardGroup" role="radiogroup" aria-label={`${fieldPath} values`}>
+        <div
+          className="enumCardGroup"
+          role="radiogroup"
+          aria-label={label ?? `${fieldPath} values`}
+          aria-describedby={describedById}
+        >
           {enumValues.map((option) => (
             <label className="enumCard" key={option}>
               <input
@@ -63,7 +72,7 @@ export function EnumGuidance({
 
   return (
     <div className="enumGuidance">
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <select value={value} onChange={(event) => onChange(event.target.value)} aria-describedby={describedById}>
         {allowUnset ? <option value="">Unset</option> : null}
         {enumValues.map((option) => (
           <option key={option} value={option}>

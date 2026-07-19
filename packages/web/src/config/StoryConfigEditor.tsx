@@ -27,6 +27,7 @@ function field(
     kind,
     required: options.required ?? true,
     promptFacing: options.promptFacing ?? true,
+    ...(options.label ? { label: options.label } : {}),
     ...(options.enumValues ? { enumValues: options.enumValues } : {}),
     ...(options.referenceRole ? { referenceRole: options.referenceRole } : {}),
     ...(options.itemDescriptor ? { itemDescriptor: options.itemDescriptor } : {}),
@@ -42,37 +43,38 @@ const storyConfigEditorDescriptors: Record<StoryConfigKind, RecordEditorDescript
   "STORY CONTRACT": descriptor(
     "STORY CONTRACT",
     [
-      field("title", "short_string"),
-      field("premise", "prose"),
-      field("genre_mode", "short_string"),
-      field("tone", "short_string"),
-      field("setting_baseline", "prose"),
-      field("content_intensity", "enum", { enumValues: ["general", "mature", "explicit", "graphic", "variable"] }),
-      field("explicitness", "prose"),
-      field("language_register", "short_string")
+      field("title", "short_string", { label: "Story title" }),
+      field("premise", "prose", { label: "Premise" }),
+      field("genre_mode", "short_string", { label: "Genre / mode" }),
+      field("tone", "short_string", { label: "Tone" }),
+      field("setting_baseline", "prose", { label: "Setting baseline" }),
+      field("content_intensity", "enum", { label: "Content intensity", enumValues: ["general", "mature", "explicit", "graphic", "variable"] }),
+      field("explicitness", "prose", { label: "Explicitness" }),
+      field("language_register", "short_string", { label: "Language register" })
     ]
   ),
   "UNIVERSAL CONTENT POLICY": descriptor(
     "UNIVERSAL CONTENT POLICY",
     [
-      field("rating_label", "short_string"),
-      field("allowed_content_scope", "prose"),
-      field("tonal_handling", "prose"),
-      field("character_bias_handling", "prose")
+      field("rating_label", "short_string", { label: "Rating label" }),
+      field("allowed_content_scope", "prose", { label: "Allowed content scope" }),
+      field("tonal_handling", "prose", { label: "Tonal handling" }),
+      field("character_bias_handling", "prose", { label: "Character bias handling" })
     ]
   ),
   "PROSE MODE": descriptor(
     "PROSE MODE",
     [
-      field("pov_character", "reference", { referenceRole: "pov_character" }),
-      field("person", "enum", { enumValues: ["first", "second", "third", "omniscient"] }),
-      field("tense", "enum", { enumValues: ["past", "present", "future", "variable"] }),
-      field("psychic_distance", "enum", { enumValues: ["close", "medium", "distant", "variable"] }),
-      field("interiority_mode", "enum", { enumValues: ["minimal", "filtered", "free_indirect", "direct", "variable"] }),
-      field("dialogue_density", "enum", { enumValues: ["sparse", "balanced", "moment_led", "dense"] }),
-      field("paragraphing", "enum", { enumValues: ["spare", "mixed", "lush", "variable"] }),
-      field("language_output", "short_string"),
+      field("pov_character", "reference", { label: "POV character", referenceRole: "pov_character" }),
+      field("person", "enum", { label: "Person", enumValues: ["first", "second", "third", "omniscient"] }),
+      field("tense", "enum", { label: "Tense", enumValues: ["past", "present", "future", "variable"] }),
+      field("psychic_distance", "enum", { label: "Psychic distance", enumValues: ["close", "medium", "distant", "variable"] }),
+      field("interiority_mode", "enum", { label: "Interiority mode", enumValues: ["minimal", "filtered", "free_indirect", "direct", "variable"] }),
+      field("dialogue_density", "enum", { label: "Dialogue density", enumValues: ["sparse", "balanced", "moment_led", "dense"] }),
+      field("paragraphing", "enum", { label: "Paragraphing", enumValues: ["spare", "mixed", "lush", "variable"] }),
+      field("language_output", "short_string", { label: "Output language" }),
       field("special_style_constraints", "list", {
+        label: "Special style constraints",
         required: false,
         itemDescriptor: field("special_style_constraints item", "short_string")
       })
