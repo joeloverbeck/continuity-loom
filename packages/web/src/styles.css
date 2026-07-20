@@ -364,6 +364,15 @@ label {
   font-weight: 700;
 }
 
+.fieldCollection {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+  color: #39445a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 input,
 textarea,
 select {

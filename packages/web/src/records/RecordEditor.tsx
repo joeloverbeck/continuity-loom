@@ -252,16 +252,26 @@ function FieldShell({
   const serverError = serverIssues.get(path);
   const canonicalPath = `${ownerKind}.${normalizeListIndices(path)}`;
   const primaryLabel = field.label ?? field.name;
+  const labelContent = (
+    <span>
+      {primaryLabel}
+      {field.required ? <strong aria-label="required"> *</strong> : null}
+    </span>
+  );
 
   return (
     <div className={`editorField ${field.promptFacing ? "promptFacing" : "validationField"}`}>
-      <label>
-        <span>
-          {primaryLabel}
-          {field.required ? <strong aria-label="required"> *</strong> : null}
-        </span>
-        {children}
-      </label>
+      {field.kind === "list" ? (
+        <div className="fieldCollection">
+          {labelContent}
+          {children}
+        </div>
+      ) : (
+        <label>
+          {labelContent}
+          {children}
+        </label>
+      )}
       {field.label ? (
         <span className="fieldSchemaKey" id={describedById}>{field.name}</span>
       ) : null}

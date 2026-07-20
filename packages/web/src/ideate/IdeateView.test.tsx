@@ -72,7 +72,15 @@ describe("IdeateView", () => {
     const describedIds = focus.getAttribute("aria-describedby")?.split(" ") ?? [];
     expect(describedIds.length).toBeGreaterThanOrEqual(2);
     expect(describedIds.every((id) => document.getElementById(id))).toBe(true);
-    expect(screen.getByText(/temporary, non-canonical request context/i)).toBeTruthy();
+    const accessibleDescription = describedIds
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ");
+    expect(accessibleDescription).toContain("temporary, non-canonical request context");
+    expect(accessibleDescription).toContain("inside already assigned response slots");
+    expect(accessibleDescription).toContain("does not choose response kinds or operators");
+    expect(accessibleDescription).toContain("change their grounding");
+    expect(accessibleDescription).toContain("change the active working set");
+    expect(accessibleDescription).toContain("creates neither canon nor story prose");
 
     const callsBeforeInvalidEdit = vi.mocked(compileIdeation).mock.calls.length;
     fireEvent.change(focus, { target: { value: "😀".repeat(501) } });

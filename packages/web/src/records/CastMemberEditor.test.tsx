@@ -657,6 +657,49 @@ describe("CastMemberEditor", () => {
     expect(screen.queryByRole("group", { name: "sample_utterances 2" })).toBeNull();
   });
 
+  it("removes every imported nested-list item and saves the lawful empty list", async () => {
+    vi.mocked(updateRecord).mockResolvedValue({
+      ok: true,
+      record: { ...castRecord, payload: { ...castPayload, sample_utterances: [] } }
+    });
+    render(<CastMemberEditor record={castRecord} referenceRecords={referenceRecords} />);
+
+    reviewDraftImport(
+      openDraftImport(),
+      JSON.stringify({
+        sample_utterances: [
+          ...castPayload.sample_utterances,
+          { ...castPayload.sample_utterances[0], text: "The second sample." }
+        ],
+        uncertainties: [],
+        invented_fields: []
+      })
+    );
+    fireEvent.click(
+      within(await screen.findByRole("alertdialog", { name: "Confirm draft import overwrites" }))
+        .getByRole("button", { name: "Import and overwrite listed fields" })
+    );
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "Cast Member draft import report" })).toBeTruthy();
+    });
+
+    let removeSample = screen.getByRole<HTMLButtonElement>("button", { name: "Remove sample_utterances 1" });
+    expect(removeSample.closest("label")).toBeNull();
+    removeSample.focus();
+    fireEvent.click(removeSample);
+    expect(screen.getAllByRole("group", { name: /^sample_utterances \d+$/ })).toHaveLength(1);
+    removeSample = screen.getByRole<HTMLButtonElement>("button", { name: "Remove sample_utterances 1" });
+    removeSample.focus();
+    fireEvent.click(removeSample);
+    expect(screen.queryByRole("group", { name: "sample_utterances 1" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Save Record" }));
+
+    await waitFor(() => expect(updateRecord).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(updateRecord).mock.calls[0]?.[1].payload).toMatchObject({
+      sample_utterances: []
+    });
+  });
+
   it("marks required CAST MEMBER core guardrail lists as may-be-empty", () => {
     render(<CastMemberEditor referenceRecords={referenceRecords} />);
 

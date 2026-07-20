@@ -40,8 +40,9 @@ export function IdeateControls({
       <div className="ideateFocusField">
         <label htmlFor={focusId}>What do you need ideas or questions about?</label>
         <p className="muted" id={helpId}>
-          Author focus is temporary, non-canonical request context. It shapes grounded ideas or questions without
-          changing story records or slot grounding.
+          Author focus is temporary, non-canonical request context. It steers treatment inside already assigned
+          response slots; it does not choose response kinds or operators, change their grounding, change the active
+          working set, or change story records. Typing here creates neither canon nor story prose.
         </p>
         <textarea
           id={focusId}
