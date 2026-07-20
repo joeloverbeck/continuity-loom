@@ -123,7 +123,7 @@ The local-first and authority boundaries were visible and trustworthy throughout
 ## Prioritized Findings
 
 | ID | Severity | Classification | Category | Summary | Confidence | Status | Evidence basis |
-| -- | -------- | -------------- | -------- | ------- | ---------- | ------ | -------------- |
+| --- | -------- | -------------- | -------- | ------- | ---------- | ------ | -------------- |
 | F001 | moderate | defect | records | Removing every imported optional sample left an unremovable blank item that blocked Cast save | high | new | direct-visible, reproduced, source-confirmed |
 | F002 | moderate | friction | assistance | The fill-every-field clipboard contract imposed optional-dossier invention and correction cost far beyond lawful manual minimums | high | new | direct-visible, source-confirmed |
 | F003 | moderate | defect | compiler | Cast prompt rendering omitted Elias's literal record name in both compressed offstage and full active forms | high | new | direct-visible, reproduced, source-confirmed |
@@ -242,7 +242,7 @@ The candidate was staged once, first as the raw local response and then as the v
 ## Cumulative Finding Ledger
 
 | ID | First seen | Classification | Summary | Current status | Latest evidence |
-| -- | ---------- | -------------- | ------- | -------------- | --------------- |
+| --- | ---------- | -------------- | ------- | -------------- | --------------- |
 | F001 | Current run | defect | Imported optional sample list could not return to lawful zero-item state | new | Reproduced failed saves; privacy-safe UI evidence; zero-item test seam absent |
 | F002 | Current run | friction | Assistance contract forced all optional dossier fields into the truth-review queue | new | Two 79-instance imports required 45 and 59 corrections; schema/template comparison |
 | F003 | Current run | defect | Compiled Cast forms omitted the record's literal name when one-line identity omitted it | new | Both refreshed packets plus post-journey renderer inspection |
