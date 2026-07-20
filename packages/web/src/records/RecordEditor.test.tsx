@@ -189,6 +189,32 @@ describe("RecordEditor", () => {
     expect(describedBy?.split(" ")).toContain(note.getAttribute("id"));
   });
 
+  it("associates a registered nonzero minimum with the rendered collection", () => {
+    const constrainedList: FieldDescriptor = {
+      name: "requirements",
+      kind: "list",
+      required: false,
+      promptFacing: false,
+      minItems: 2,
+      itemDescriptor: {
+        name: "item",
+        kind: "short_string",
+        required: true,
+        promptFacing: false
+      }
+    };
+    render(
+      <RecordEditor
+        recordType="ENTITY"
+        descriptor={{ recordType: "ENTITY", fields: [constrainedList] }}
+      />
+    );
+
+    const requirementsGroup = screen.getByRole("group", { name: "requirements" });
+    const note = within(requirementsGroup).getByText("This list requires at least 2 items.");
+    expect(requirementsGroup.getAttribute("aria-describedby")?.split(" ")).toContain(note.getAttribute("id"));
+  });
+
   it("round-trips edits through the update route", async () => {
     vi.mocked(updateRecord).mockResolvedValue({ ok: true, record: { ...factRecord, displayLabel: "New fact" } });
 
@@ -803,8 +829,13 @@ describe("listRequirednessNote", () => {
     expect(listRequirednessNote(listField({ minItems: 2 }))).toBe("This list requires at least 2 items.");
   });
 
-  it("adds no note for an optional list or a non-list field", () => {
-    expect(listRequirednessNote(listField({ required: false, minItems: 0 }))).toBeNull();
+  it("states that an optional zero-minimum list may be left empty", () => {
+    expect(listRequirednessNote(listField({ required: false, minItems: 0 }))).toBe(
+      "This list may be left empty."
+    );
+  });
+
+  it("adds no note for a non-list field", () => {
     expect(listRequirednessNote({ name: "statement", kind: "prose", required: true, promptFacing: true })).toBeNull();
   });
 });

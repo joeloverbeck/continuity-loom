@@ -355,8 +355,9 @@ function SentinelReferencePicker({
  * Truthful accessible note that distinguishes a list's structural requiredness from its item-count
  * requirement (#114 / F003). A required list whose schema declares no array-level minimum lawfully
  * accepts an empty array, so its `*` marker means the property is structurally present, not that an
- * item must be added. A list with a registered nonzero minimum states that actual minimum instead.
- * Returns `null` when no note is warranted (an optional list carries no `*` to disambiguate).
+ * item must be added. Optional zero-minimum lists state the same lawful item-count outcome without
+ * implying structural requiredness. A list with a registered nonzero minimum states that actual
+ * minimum instead.
  */
 export function listRequirednessNote(field: FieldDescriptor): string | null {
   if (field.kind !== "list") {
@@ -374,7 +375,7 @@ export function listRequirednessNote(field: FieldDescriptor): string | null {
     return "This list is required as a property, but it may be left empty.";
   }
 
-  return null;
+  return "This list may be left empty.";
 }
 
 function ListField({
