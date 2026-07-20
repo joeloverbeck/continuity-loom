@@ -14,6 +14,7 @@ import {
   type TransportFailure,
   readiness
 } from "../api.js";
+import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 import { useReminderRefresh } from "../shell/reminder-refresh.js";
@@ -143,8 +144,8 @@ export function GenerateView(): React.JSX.Element {
       setCandidateState(replacedCandidate
         ? updateCandidate(replacedCandidate, { replacementStatus: "idle", replacementError: message })
         : { status: "error", message });
-    } catch {
-      const message = "Could not generate candidate prose.";
+    } catch (error) {
+      const message = presentThrownOpenRouterFailure(error, "Could not generate candidate prose.");
       setCandidateState(replacedCandidate
         ? updateCandidate(replacedCandidate, { replacementStatus: "idle", replacementError: message })
         : { status: "error", message });
@@ -616,20 +617,7 @@ function errorMessage(kind: string, message: string): string {
 
 function generateErrorMessage(result: ApiFailure | TransportFailure): string {
   if ("category" in result) {
-    switch (result.category) {
-      case "missing-key":
-        return "API key missing. Configure it in Settings.";
-      case "insufficient-credits":
-        return "Insufficient OpenRouter credits.";
-      case "rate-limit":
-        return "Rate limited. Wait before retrying.";
-      case "provider-unavailable":
-        return "Provider or model unavailable.";
-      case "moderation-refusal":
-        return "Provider refused the request for policy reasons.";
-      default:
-        return result.message;
-    }
+    return presentOpenRouterFailure(result);
   }
 
   return errorMessage(result.kind, result.message);

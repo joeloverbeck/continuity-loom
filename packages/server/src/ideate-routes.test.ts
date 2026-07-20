@@ -114,6 +114,34 @@ describe("ideate routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("preserves the normalized transport detail across the ideate route", async () => {
+    sendChatCompletionMock.mockResolvedValue({
+      ok: false,
+      category: "structured-output-rejection",
+      message: "OpenRouter rejected the structured-output request.",
+      providerStatus: 400,
+      providerReason: "The response format is not supported."
+    });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: await inspectedIdeationPayload(fastify)
+    });
+
+    expect(response.json()).toEqual({
+      ok: false,
+      category: "structured-output-rejection",
+      message: "OpenRouter rejected the structured-output request.",
+      providerStatus: 400,
+      providerReason: "The response format is not supported."
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects a missing inspected fingerprint before transport", async () => {
     const fastify = app();
     await prepareIdeationProject(fastify);

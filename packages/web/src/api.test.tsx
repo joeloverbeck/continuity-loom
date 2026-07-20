@@ -360,11 +360,34 @@ describe("api client", () => {
     const failure = {
       ok: false,
       category: "network",
-      message: "Could not reach OpenRouter."
+      message: "Could not reach OpenRouter.",
+      providerStatus: 502,
+      providerReason: "Upstream connection closed.",
+      retryAfter: 12
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 200))));
 
     await expect(refreshModels()).resolves.toEqual(failure);
+  });
+
+  it("returns a typed safe failure when an OpenRouter API response is not JSON", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response("<html>provider gateway failure</html>", {
+            status: 502,
+            headers: { "Content-Type": "text/html" }
+          })
+        )
+      )
+    );
+
+    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual({
+      ok: false,
+      category: "unknown",
+      message: "OpenRouter request failed."
+    });
   });
 
   it("returns successful generate responses", async () => {

@@ -167,6 +167,39 @@ describe("RecordHygieneView", () => {
     expect(localStorage.length).toBe(0);
   });
 
+  it("renders shared provider detail and manual recovery without an automatic request", async () => {
+    vi.mocked(recordHygieneAnalyze).mockResolvedValue({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 503,
+      providerReason: "Model is warming up."
+    });
+    renderRecordHygiene();
+
+    await analyzeOnce();
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "The selected model or provider is unavailable. Provider status: 503. Provider reason: Model is warming up. " +
+      "Use the existing action to try again when ready. No retry is automatic."
+    );
+    expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the workflow-local prompt-size failure outside transport presentation", async () => {
+    vi.mocked(recordHygieneAnalyze).mockResolvedValue({
+      ok: false,
+      kind: "prompt-too-large",
+      message: "Compiled record hygiene prompt exceeds the selected model context window."
+    });
+    renderRecordHygiene();
+
+    await analyzeOnce();
+
+    expect(await screen.findByText("Compiled record hygiene prompt is too large for the selected model.")).toBeTruthy();
+    expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
+  });
+
   it("labels malformed output as non-canonical scratch and makes it copyable", async () => {
     vi.mocked(recordHygieneAnalyze).mockResolvedValue({
       ok: true,

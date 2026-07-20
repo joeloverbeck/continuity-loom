@@ -123,8 +123,11 @@ describe("OpenRouter settings routes", () => {
   it("returns normalized refresh failures while settings remain available", async () => {
     refreshModelListMock.mockResolvedValue({
       ok: false,
-      category: "network",
-      message: "Could not reach OpenRouter."
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 7
     });
     const fastify = app();
 
@@ -133,8 +136,11 @@ describe("OpenRouter settings routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       ok: false,
-      category: "network",
-      message: "Could not reach OpenRouter."
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 7
     });
     expect(response.body).not.toMatch(/openRouterApiKey|OPENROUTER_API_KEY|apiKey|sk-|Bearer/);
 

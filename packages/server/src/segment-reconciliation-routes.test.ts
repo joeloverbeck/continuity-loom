@@ -264,6 +264,35 @@ describe("segment reconciliation routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("preserves the normalized transport detail across the reconciliation route", async () => {
+    process.env.OPENROUTER_API_KEY = apiKey;
+    const fastify = app();
+    await prepareProject(fastify);
+    const compile = await compileReconciliation(fastify);
+    sendChatCompletionMock.mockResolvedValue({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 503,
+      providerReason: "Model is warming up."
+    });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/analyze",
+      payload: { expectedPromptFingerprint: compile.metadata.fingerprint }
+    });
+
+    expect(response.json()).toEqual({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 503,
+      providerReason: "Model is warming up."
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("returns segment-reconciliation-prompt-too-large before transport", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
@@ -284,7 +313,7 @@ describe("segment reconciliation routes", () => {
 
     expect(response.json()).toEqual({
       ok: false,
-      category: "segment-reconciliation-prompt-too-large",
+      kind: "segment-reconciliation-prompt-too-large",
       message: "Compiled segment reconciliation prompt exceeds the selected model context window."
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();

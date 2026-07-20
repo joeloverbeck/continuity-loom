@@ -207,6 +207,32 @@ describe("record hygiene routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("preserves the normalized transport detail across the record hygiene route", async () => {
+    sendChatCompletionMock.mockResolvedValue({
+      ok: false,
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 11
+    });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await prepareHygieneProject(fastify);
+
+    const response = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+
+    expect(response.json()).toEqual({
+      ok: false,
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 11
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("quarantines malformed model output as raw scratch", async () => {
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform hygiene answer" } });
     process.env.OPENROUTER_API_KEY = keySecretText;
@@ -235,7 +261,7 @@ describe("record hygiene routes", () => {
 
     expect(response.json()).toEqual({
       ok: false,
-      category: "prompt-too-large",
+      kind: "prompt-too-large",
       message: "Compiled record hygiene prompt exceeds the selected model context window."
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();

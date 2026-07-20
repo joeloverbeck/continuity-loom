@@ -229,12 +229,14 @@ describe("GenerateView", () => {
     expect(acceptCandidate).not.toHaveBeenCalled();
   });
 
-  it("renders actionable generate errors without a candidate", async () => {
+  it("renders shared safe detail and Settings recovery without an automatic retry", async () => {
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
     vi.mocked(generate).mockResolvedValue({
       ok: false,
-      category: "missing-key",
-      message: "OpenRouter API key is missing."
+      category: "invalid-key",
+      message: "OpenRouter API key was rejected.",
+      providerStatus: 401,
+      providerReason: "Credential is no longer valid."
     });
 
     renderGenerate();
@@ -242,8 +244,12 @@ describe("GenerateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
-    expect(await screen.findByText("API key missing. Configure it in Settings.")).toBeTruthy();
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "OpenRouter API key was rejected. Provider status: 401. Provider reason: Credential is no longer valid. " +
+      "Open Settings and replace the rejected API key before trying again. No retry is automatic."
+    );
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(generate).toHaveBeenCalledTimes(1);
   });
 
   it("prevents competing manual or refresh transitions while an initial generation is pending", async () => {
@@ -275,15 +281,15 @@ describe("GenerateView", () => {
   });
 
   it.each([
-    ["insufficient-credits", "Insufficient OpenRouter credits."],
-    ["rate-limit", "Rate limited. Wait before retrying."],
-    ["provider-unavailable", "Provider or model unavailable."]
-  ])("keeps manual entry available after a %s transport failure", async (category, expectedMessage) => {
+    ["insufficient-credits", "OpenRouter account has insufficient credits.", "Add OpenRouter credits"],
+    ["rate-limit", "OpenRouter rate limit reached. Wait before retrying.", "Wait before using the existing action"],
+    ["provider-unavailable", "The selected model or provider is unavailable.", "Use the existing action to try again"]
+  ] as const)("keeps manual entry available after a %s transport failure", async (category, message, recovery) => {
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
     vi.mocked(generate).mockResolvedValue({
       ok: false,
       category,
-      message: "The selected model or provider is unavailable."
+      message
     });
 
     renderGenerate();
@@ -291,7 +297,9 @@ describe("GenerateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Generate" }));
 
-    expect(await screen.findByText(expectedMessage)).toBeTruthy();
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent?.startsWith(message)).toBe(true);
+    expect(alert.textContent).toContain(recovery);
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Write or paste candidate" }));
     expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("");
@@ -561,7 +569,7 @@ describe("GenerateView", () => {
       .mockResolvedValueOnce({
         ok: false,
         category: "provider-unavailable",
-        message: "The selected provider is unavailable."
+        message: "The selected model or provider is unavailable."
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -586,7 +594,9 @@ describe("GenerateView", () => {
     expect(generate).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Discard draft and replace with OpenRouter generation" }));
 
-    expect(await screen.findByText("Provider or model unavailable.")).toBeTruthy();
+    expect((await screen.findByRole("alert")).textContent).toMatch(
+      /^The selected model or provider is unavailable\./
+    );
     expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe("Original user draft.");
     expect(screen.getByText("Source: User-supplied")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Replace with OpenRouter generation" })).toBeTruthy();

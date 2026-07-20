@@ -80,7 +80,20 @@ describe("sendChatCompletion", () => {
 
     await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
-      category
+      category,
+      providerStatus: status,
+      providerReason: "Failure."
+    });
+  });
+
+  it("retains provider status but falls back safely when the response body is not JSON", async () => {
+    vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response("upstream html", { status: 502 }))));
+
+    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toEqual({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 502
     });
   });
 
@@ -99,6 +112,8 @@ describe("sendChatCompletion", () => {
     await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "rate-limit",
+      providerStatus: 429,
+      providerReason: "Rate limit.",
       retryAfter: 10
     });
   });

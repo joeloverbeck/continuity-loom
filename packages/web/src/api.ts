@@ -16,6 +16,9 @@ import type {
   ValidationResult,
   VersionInfo
 } from "@loom/core";
+import { isTransportFailure, type TransportFailure } from "./openrouter-transport.js";
+
+export type { TransportErrorCategory, TransportFailure } from "./openrouter-transport.js";
 
 export interface HealthResponse {
   status: "ok";
@@ -67,13 +70,6 @@ export type ApiFailure = {
   referrers?: unknown[];
   danglingSelectedRecordIds?: string[];
   suggestedAction?: string;
-};
-
-export type TransportFailure = {
-  ok: false;
-  category: string;
-  message: string;
-  retryAfter?: number;
 };
 
 export type CompileBlocked = {
@@ -404,6 +400,36 @@ async function postJson<T>(url: string, body?: unknown): Promise<T> {
   return requestJson<T>(url, "POST", body);
 }
 
+async function requestOpenRouterJson<T>(url: string, body?: unknown): Promise<T> {
+  try {
+    const result: unknown = await postJson<unknown>(url, body);
+    if (isMalformedTransportEnvelope(result)) {
+      return unknownTransportFailure() as T;
+    }
+    return result as T;
+  } catch (error) {
+    return (isTransportFailure(error) ? error : unknownTransportFailure()) as T;
+  }
+}
+
+function isMalformedTransportEnvelope(value: unknown): boolean {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    (value as { ok?: unknown }).ok === false &&
+    "category" in value &&
+    !isTransportFailure(value)
+  );
+}
+
+function unknownTransportFailure(): TransportFailure {
+  return {
+    ok: false,
+    category: "unknown",
+    message: "OpenRouter request failed."
+  };
+}
+
 function queryString(filters: Record<string, string | string[] | boolean | undefined>): string {
   const params = new URLSearchParams();
 
@@ -613,18 +639,18 @@ export async function putOpenRouterSettings(patch: OpenRouterSettingsPatch): Pro
 }
 
 export async function refreshModels(): Promise<RefreshModelsResponse> {
-  return postJson<RefreshModelsResponse>("/api/settings/openrouter/models");
+  return requestOpenRouterJson<RefreshModelsResponse>("/api/settings/openrouter/models");
 }
 
 export async function generate(request: { expectedPromptFingerprint: string }): Promise<GenerateResponse> {
-  return postJson<GenerateResponse>("/api/generate", request);
+  return requestOpenRouterJson<GenerateResponse>("/api/generate", request);
 }
 
 export async function ideate(
   request: Partial<IdeationRequest>,
   expectedPromptFingerprint: string
 ): Promise<IdeateResponse> {
-  return postJson<IdeateResponse>("/api/ideate", {
+  return requestOpenRouterJson<IdeateResponse>("/api/ideate", {
     ...request,
     expectedPromptFingerprint
   });
@@ -637,7 +663,7 @@ export async function recordHygieneCompile(mode: RecordHygieneRequest["mode"] = 
 }
 
 export async function recordHygieneAnalyze(mode: RecordHygieneRequest["mode"] = "full_active_atomic_review"): Promise<RecordHygieneAnalyzeResponse> {
-  return postJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
+  return requestOpenRouterJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
     mode
   });
 }
@@ -651,7 +677,7 @@ export async function segmentReconciliationCompile(
 export async function segmentReconciliationAnalyze(
   request: SegmentReconciliationRequest & { expectedPromptFingerprint: string }
 ): Promise<SegmentReconciliationAnalyzeResponse> {
-  return postJson<SegmentReconciliationAnalyzeResponse>("/api/segment-reconciliation/analyze", request);
+  return requestOpenRouterJson<SegmentReconciliationAnalyzeResponse>("/api/segment-reconciliation/analyze", request);
 }
 
 export async function acceptCandidate(input: {

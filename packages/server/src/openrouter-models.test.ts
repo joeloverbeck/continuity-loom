@@ -92,6 +92,8 @@ describe("refreshModelList", () => {
     await expect(refreshModelList({ apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "rate-limit",
+      providerStatus: 429,
+      providerReason: "Rate limit.",
       retryAfter: 7
     });
   });

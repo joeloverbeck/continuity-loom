@@ -62,6 +62,28 @@ describe("IdeateView", () => {
     });
   });
 
+  it("renders shared rate-limit detail and retry timing without an automatic request", async () => {
+    vi.mocked(ideate).mockResolvedValue({
+      ok: false,
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 9
+    });
+    renderIdeate();
+
+    await screen.findByTestId("prompt-body");
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "OpenRouter rate limit reached. Wait before retrying. Provider status: 429. " +
+      "Provider reason: Quota window is still active. Wait at least 9 seconds, then use the existing action to try again. " +
+      "No retry is automatic."
+    );
+    expect(ideate).toHaveBeenCalledTimes(1);
+  });
+
   it("associates Author focus help, normalized code-point count, and recoverable limit error", async () => {
     renderIdeate();
 
@@ -449,7 +471,7 @@ describe("IdeateView", () => {
       outcome: "transport failure",
       response: {
         ok: false as const,
-        category: "provider-unavailable",
+        category: "provider-unavailable" as const,
         message: "Provider unavailable."
       }
     },

@@ -193,6 +193,44 @@ describe("SegmentReconciliationView", () => {
     expect(screen.getByText("No proposals yet.")).toBeTruthy();
   });
 
+  it("renders shared structured-output detail and manual recovery without an automatic request", async () => {
+    vi.mocked(segmentReconciliationAnalyze).mockResolvedValue({
+      ok: false,
+      category: "structured-output-rejection",
+      message: "OpenRouter rejected the structured-output request.",
+      providerStatus: 400,
+      providerReason: "The response format is not supported."
+    });
+    renderView();
+
+    fireEvent.click(await screen.findByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "OpenRouter rejected the structured-output request. Provider status: 400. " +
+      "Provider reason: The response format is not supported. Choose a model that supports the requested structured output, " +
+      "then use the existing action to try again. No retry is automatic."
+    );
+    expect(segmentReconciliationAnalyze).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the workflow-local prompt-size failure outside transport presentation", async () => {
+    vi.mocked(segmentReconciliationAnalyze).mockResolvedValue({
+      ok: false,
+      kind: "segment-reconciliation-prompt-too-large",
+      message: "Compiled segment reconciliation prompt exceeds the selected model context window."
+    });
+    renderView();
+
+    fireEvent.click(await screen.findByLabelText("Confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+
+    expect(
+      await screen.findByText("Compiled segment reconciliation prompt is too large for the selected model.")
+    ).toBeTruthy();
+    expect(segmentReconciliationAnalyze).toHaveBeenCalledTimes(1);
+  });
+
   it("shows stale-prompt invalidation from analyze and serializes changed scope requests", async () => {
     vi.mocked(segmentReconciliationAnalyze).mockResolvedValue({
       ok: false,

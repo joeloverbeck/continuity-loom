@@ -3,6 +3,7 @@ export type TransportErrorCategory =
   | "invalid-key"
   | "insufficient-credits"
   | "invalid-request"
+  | "structured-output-rejection"
   | "provider-unavailable"
   | "rate-limit"
   | "timeout"
@@ -14,6 +15,8 @@ export type TransportErrorCategory =
 export interface NormalizedTransportError {
   category: TransportErrorCategory;
   message: string;
+  providerStatus?: number;
+  providerReason?: string;
   retryAfter?: number;
 }
 
@@ -22,6 +25,7 @@ const categoryMessages = {
   "invalid-key": "OpenRouter API key was rejected.",
   "insufficient-credits": "OpenRouter account has insufficient credits.",
   "invalid-request": "OpenRouter rejected the request.",
+  "structured-output-rejection": "OpenRouter rejected the structured-output request.",
   "provider-unavailable": "The selected model or provider is unavailable.",
   "rate-limit": "OpenRouter rate limit reached. Wait before retrying.",
   timeout: "OpenRouter request timed out.",
@@ -33,17 +37,72 @@ const categoryMessages = {
 
 export function normalizeOpenRouterError(status?: number, body?: unknown, cause?: unknown): NormalizedTransportError {
   const retryAfter = parseRetryAfter(body);
+  const providerReason = extractProviderReason(body);
   const category = categoryFromCause(cause) ?? categoryFromBody(body) ?? categoryFromStatus(status) ?? "unknown";
   const normalized: NormalizedTransportError = {
     category,
     message: categoryMessages[category]
   };
 
+  if (status !== undefined) {
+    normalized.providerStatus = status;
+  }
+
+  if (providerReason !== undefined) {
+    normalized.providerReason = providerReason;
+  }
+
   if (retryAfter !== undefined) {
     normalized.retryAfter = retryAfter;
   }
 
   return normalized;
+}
+
+function extractProviderReason(body: unknown): string | undefined {
+  const directMessage = getUnknownProperty(body, "message");
+  if (typeof directMessage === "string") {
+    return sanitizeProviderReason(directMessage);
+  }
+
+  const error = getUnknownProperty(body, "error");
+  const nestedMessage = getUnknownProperty(error, "message");
+  return typeof nestedMessage === "string" ? sanitizeProviderReason(nestedMessage) : undefined;
+}
+
+function sanitizeProviderReason(reason: string): string | undefined {
+  const normalized = reason.replace(/\s+/gu, " ").trim();
+  if (!normalized || containsPayloadMaterial(normalized)) {
+    return undefined;
+  }
+
+  const redacted = normalized
+    .replace(/authorization\s*[:=]\s*(?:bearer\s+)?[^\s,;]+/giu, "Authorization: [REDACTED]")
+    .replace(/\bbearer\s+[a-z0-9._~+/-]+=*/giu, "[REDACTED]")
+    .replace(/\bsk-or-(?:v1-)?[a-z0-9_-]+\b/giu, "[REDACTED]");
+
+  return redacted.slice(0, 240);
+}
+
+function containsPayloadMaterial(reason: string): boolean {
+  const trimmed = reason.trimStart();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    return true;
+  }
+
+  if (/request\s+(?:json|payload)\s*[:=]/iu.test(reason)) {
+    return true;
+  }
+
+  if (
+    /(?:prompt|records?|accepted[-_ ]?segment)(?:[-_ ]?payload)?\s*[:=]/iu.test(reason) ||
+    /["'](?:prompt|messages|records?|accepted[-_]?segment|candidate)["']\s*:/iu.test(reason) ||
+    /<(?:prompt|records?|accepted[-_]?segment)(?:\s|>)/iu.test(reason)
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function categoryFromStatus(status: number | undefined): TransportErrorCategory | undefined {
@@ -81,7 +140,7 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
     return "malformed-response";
   }
 
-  const text = JSON.stringify(body).toLowerCase();
+  const text = supportedClassificationText(body);
 
   if (text.includes("moderation") || text.includes("guardrail") || text.includes("content_policy")) {
     return "moderation-refusal";
@@ -99,11 +158,35 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
     return "invalid-key";
   }
 
+  if (
+    text.includes("response_format") ||
+    text.includes("response format") ||
+    text.includes("json schema") ||
+    text.includes("structured output") ||
+    text.includes("structured-output")
+  ) {
+    return "structured-output-rejection";
+  }
+
   if (text.includes("unsupported parameter") || text.includes("invalid request")) {
     return "invalid-request";
   }
 
   return undefined;
+}
+
+function supportedClassificationText(body: unknown): string {
+  const error = getUnknownProperty(body, "error");
+  return [
+    getStringProperty(body, "message"),
+    getStringProperty(body, "code"),
+    getStringProperty(body, "type"),
+    getStringProperty(error, "message"),
+    getStringProperty(error, "code"),
+    getStringProperty(error, "type")
+  ]
+    .join(" ")
+    .toLowerCase();
 }
 
 function isTransportErrorCategory(value: unknown): value is TransportErrorCategory {
@@ -112,6 +195,7 @@ function isTransportErrorCategory(value: unknown): value is TransportErrorCatego
     value === "invalid-key" ||
     value === "insufficient-credits" ||
     value === "invalid-request" ||
+    value === "structured-output-rejection" ||
     value === "provider-unavailable" ||
     value === "rate-limit" ||
     value === "timeout" ||

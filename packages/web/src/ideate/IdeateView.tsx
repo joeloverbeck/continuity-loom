@@ -19,6 +19,7 @@ import {
   type ParsedIdeationIdea,
   type TransportFailure
 } from "../api.js";
+import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 import { IdeateControls } from "./IdeateControls.js";
@@ -205,8 +206,11 @@ export function IdeateView(): React.JSX.Element {
 
       setScratchState({ status: "error", message: ideateErrorMessage(result) });
       clearAvoidListAndRefresh();
-    } catch {
-      setScratchState({ status: "error", message: "Could not request ideation scratch." });
+    } catch (error) {
+      setScratchState({
+        status: "error",
+        message: presentThrownOpenRouterFailure(error, "Could not request ideation scratch.")
+      });
       clearAvoidListAndRefresh();
     }
   }
@@ -588,20 +592,7 @@ function errorMessage(kind: string, message: string): string {
 
 function ideateErrorMessage(result: ApiFailure | TransportFailure): string {
   if ("category" in result) {
-    switch (result.category) {
-      case "missing-key":
-        return "API key missing. Configure it in Settings.";
-      case "insufficient-credits":
-        return "Insufficient OpenRouter credits.";
-      case "rate-limit":
-        return "Rate limited. Wait before retrying.";
-      case "provider-unavailable":
-        return "Provider or model unavailable.";
-      case "moderation-refusal":
-        return "Provider refused the request for policy reasons.";
-      default:
-        return result.message;
-    }
+    return presentOpenRouterFailure(result);
   }
 
   return errorMessage(result.kind, result.message);

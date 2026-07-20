@@ -57,7 +57,7 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
     if (isPromptTooLarge(compileResult.metadata.tokenEstimate, settings)) {
       return {
         ok: false,
-        category: "prompt-too-large",
+        kind: "prompt-too-large",
         message: "Compiled record hygiene prompt exceeds the selected model context window."
       };
     }

@@ -14,6 +14,7 @@ import {
   type SegmentReconciliationSourceMetadata,
   type TransportFailure
 } from "../api.js";
+import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReconciliationProposalCard, type ReconciliationProposal } from "./ReconciliationProposalCard.js";
 import {
@@ -154,8 +155,11 @@ export function SegmentReconciliationView(): React.JSX.Element {
       }
 
       setScratchState({ status: "error", message: errorMessage(result) });
-    } catch {
-      setScratchState({ status: "error", message: "Could not request segment reconciliation analysis." });
+    } catch (error) {
+      setScratchState({
+        status: "error",
+        message: presentThrownOpenRouterFailure(error, "Could not request segment reconciliation analysis.")
+      });
     }
   }
 
@@ -507,22 +511,11 @@ function errorMessage(
   result: ApiFailure | TransportFailure | SegmentReconciliationAnalyzeResponse | SegmentReconciliationCompileResponse
 ): string {
   if ("category" in result) {
-    switch (result.category) {
-      case "missing-key":
-        return "API key missing. Configure it in Settings.";
-      case "insufficient-credits":
-        return "Insufficient OpenRouter credits.";
-      case "rate-limit":
-        return "Rate limited. Wait before retrying.";
-      case "provider-unavailable":
-        return "Provider or model unavailable.";
-      case "moderation-refusal":
-        return "Provider refused the request for policy reasons.";
-      case "segment-reconciliation-prompt-too-large":
-        return "Compiled segment reconciliation prompt is too large for the selected model.";
-      default:
-        return result.message;
-    }
+    return presentOpenRouterFailure(result);
+  }
+
+  if ("kind" in result && result.kind === "segment-reconciliation-prompt-too-large") {
+    return "Compiled segment reconciliation prompt is too large for the selected model.";
   }
 
   if ("kind" in result && result.kind === "no-open-project") {

@@ -79,7 +79,7 @@ export function registerSegmentReconciliationRoutes(app: FastifyInstance, manage
     if (isPromptTooLarge(compileResult.metadata.tokenEstimate, settings)) {
       return {
         ok: false,
-        category: "segment-reconciliation-prompt-too-large",
+        kind: "segment-reconciliation-prompt-too-large",
         message: "Compiled segment reconciliation prompt exceeds the selected model context window."
       };
     }

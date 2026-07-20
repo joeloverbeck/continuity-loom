@@ -9,6 +9,7 @@ import {
   type OpenRouterSettings,
   type OpenRouterSettingsResponse
 } from "../api.js";
+import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 
 type LoadState =
   | { status: "loading" }
@@ -89,14 +90,14 @@ export function SettingsSurface(): React.JSX.Element {
     try {
       const result = await refreshModels();
       if (!result.ok) {
-        setRefreshNotice(result.message);
+        setRefreshNotice(presentOpenRouterFailure(result));
         return;
       }
 
       setForm((current) => ({ ...current, cachedModels: result.models }));
       setRefreshNotice("Model list refreshed.");
-    } catch {
-      setRefreshNotice("Model list could not be refreshed.");
+    } catch (error) {
+      setRefreshNotice(presentThrownOpenRouterFailure(error, "Model list could not be refreshed."));
     } finally {
       setIsRefreshing(false);
     }
@@ -211,7 +212,7 @@ export function SettingsSurface(): React.JSX.Element {
           </form>
 
           {saveNotice ? <p className="status statusSuccess">{saveNotice}</p> : null}
-          {refreshNotice ? <p className="status statusWarning">{refreshNotice}</p> : null}
+          {refreshNotice ? <p role="alert" className="status statusWarning">{refreshNotice}</p> : null}
         </div>
       ) : null}
     </section>

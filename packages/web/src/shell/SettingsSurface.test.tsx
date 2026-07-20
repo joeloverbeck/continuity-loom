@@ -116,9 +116,32 @@ describe("SettingsSurface", () => {
     const modelInput = await screen.findByLabelText<HTMLInputElement>("Model ID");
     fireEvent.click(screen.getByRole("button", { name: "Refresh model list" }));
 
-    expect(await screen.findByText("Could not reach OpenRouter.")).toBeTruthy();
+    expect((await screen.findByRole("alert")).textContent).toMatch(/^Could not reach OpenRouter\./);
     expect(modelInput.disabled).toBe(false);
     fireEvent.change(modelInput, { target: { value: "manual/model" } });
     expect(modelInput.value).toBe("manual/model");
+  });
+
+  it("presents safe provider detail, retry timing, and manual recovery accessibly without retrying", async () => {
+    refreshModelsMock.mockResolvedValue({
+      ok: false,
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached. Wait before retrying.",
+      providerStatus: 429,
+      providerReason: "Quota window is still active.",
+      retryAfter: 13
+    });
+    render(<SettingsSurface />);
+
+    await screen.findByLabelText("Model ID");
+    fireEvent.click(screen.getByRole("button", { name: "Refresh model list" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe(
+      "OpenRouter rate limit reached. Wait before retrying. Provider status: 429. " +
+      "Provider reason: Quota window is still active. Wait at least 13 seconds, then use the existing action to try again. " +
+      "No retry is automatic."
+    );
+    expect(refreshModelsMock).toHaveBeenCalledTimes(1);
   });
 });

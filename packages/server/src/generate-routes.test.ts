@@ -10,6 +10,7 @@ vi.mock("./openrouter/client.js", () => ({
 }));
 
 import { sendChatCompletion } from "./openrouter/client.js";
+import { normalizeOpenRouterError } from "./openrouter/errors.js";
 import { createServer } from "./server.js";
 
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
@@ -213,7 +214,10 @@ describe("generate routes", () => {
     sendChatCompletionMock.mockResolvedValue({
       ok: false,
       category: "provider-unavailable",
-      message: "The selected model or provider is unavailable."
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 503,
+      providerReason: "Model is warming up.",
+      retryAfter: 8
     });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -230,9 +234,49 @@ describe("generate routes", () => {
     expect(response.json()).toEqual({
       ok: false,
       category: "provider-unavailable",
-      message: "The selected model or provider is unavailable."
+      message: "The selected model or provider is unavailable.",
+      providerStatus: 503,
+      providerReason: "Model is warming up.",
+      retryAfter: 8
     });
     expect(after).toEqual(before);
+  });
+
+  it("keeps adversarial provider failure material out of route responses and logs", async () => {
+    const authorizationSecret = "sk-or-v1-provider-log-secret";
+    const payloadSecret = "PROVIDER_PROMPT_PAYLOAD_DO_NOT_LOG";
+    sendChatCompletionMock
+      .mockResolvedValueOnce(
+        normalizeOpenRouterError(401, {
+          error: { message: `Authorization: Bearer ${authorizationSecret}` }
+        })
+      )
+      .mockResolvedValueOnce(
+        normalizeOpenRouterError(400, {
+          error: { message: `Request JSON: {"prompt":"${payloadSecret}"}` }
+        })
+      );
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const capture = captureProcessWrites();
+    const fastify = app({ logger: true });
+
+    try {
+      await openProject(fastify);
+      await putStoryConfig(fastify);
+      await putBrief(fastify);
+      await putSettings(fastify);
+
+      const responses = [await injectGenerate(fastify), await injectGenerate(fastify)];
+      const serializedResponses = responses.map((response) => response.body).join("\n");
+      expect(serializedResponses).not.toContain(authorizationSecret);
+      expect(serializedResponses).not.toContain(payloadSecret);
+    } finally {
+      const output = capture.restore();
+      expect(output).not.toContain(authorizationSecret);
+      expect(output).not.toContain(payloadSecret);
+      expect(output).not.toContain(keySecretText);
+      expect(output).not.toContain(promptSecretText);
+    }
   });
 
   it("does not log key, prompt, or candidate text", async () => {
