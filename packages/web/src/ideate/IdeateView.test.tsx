@@ -16,6 +16,7 @@ import {
   readiness,
   type IdeateResponse
 } from "../api.js";
+import { accessibleDescriptionTexts } from "../test-accessibility.js";
 import { IdeateView } from "./IdeateView.js";
 
 vi.mock("../api.js", () => ({
@@ -69,12 +70,9 @@ describe("IdeateView", () => {
     });
     expect(focus.value).toBe("");
     expect(screen.getByText(`0 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
-    const describedIds = focus.getAttribute("aria-describedby")?.split(" ") ?? [];
-    expect(describedIds.length).toBeGreaterThanOrEqual(2);
-    expect(describedIds.every((id) => document.getElementById(id))).toBe(true);
-    const accessibleDescription = describedIds
-      .map((id) => document.getElementById(id)?.textContent ?? "")
-      .join(" ");
+    const descriptions = accessibleDescriptionTexts(focus);
+    expect(descriptions.length).toBeGreaterThanOrEqual(2);
+    const accessibleDescription = descriptions.join(" ");
     expect(accessibleDescription).toContain("temporary, non-canonical request context");
     expect(accessibleDescription).toContain("inside already assigned response slots");
     expect(accessibleDescription).toContain("does not choose response kinds or operators");

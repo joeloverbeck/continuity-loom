@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StoryConfigEditor } from "./StoryConfigEditor.js";
 import { listRecords, listStoryConfig, setStoryConfig, type StoryConfigKind } from "../api.js";
+import { accessibleDescriptionTexts } from "../test-accessibility.js";
 
 vi.mock("../api.js", () => ({
   listRecords: vi.fn(),
@@ -298,8 +299,7 @@ describe("StoryConfigEditor", () => {
     // The list renders as a group named by the author label, described by both the schema key and
     // its truthful zero-item outcome.
     const group = await screen.findByRole("group", { name: "Special style constraints" });
-    const groupDescriptions = (group.getAttribute("aria-describedby")?.split(" ") ?? [])
-      .map((id) => document.getElementById(id)?.textContent);
+    const groupDescriptions = accessibleDescriptionTexts(group);
     expect(groupDescriptions).toEqual(
       expect.arrayContaining(["special_style_constraints", "This list may be left empty."])
     );
