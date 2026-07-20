@@ -2,6 +2,18 @@
 
 import { readFileSync } from "node:fs";
 
+import {
+  ACCEPTANCE_AUDIT_HEADER,
+  acceptanceAuditRowMatchesCheck,
+  parseAcceptanceAuditRows
+} from "./acceptance-audit-contract.mjs";
+import {
+  SPLIT_CORE_FINAL_INSPECTION,
+  SPLIT_CORE_PREINDEX_INSPECTION,
+  hasSplitCoreIndex,
+  validateSplitCoreIndex
+} from "./split-core-contract.mjs";
+
 const args = process.argv.slice(2);
 const acceptanceManifestFlag = args.indexOf("--acceptance-manifest");
 const acceptanceManifestPath = acceptanceManifestFlag >= 0 ? args[acceptanceManifestFlag + 1] : undefined;
@@ -26,9 +38,12 @@ const emitPreflight = flags.has("--emit-preflight");
 const mutationReady = flags.has("--mutation-ready");
 const emitFinalSummary = flags.has("--emit-final-summary");
 const auditChunk = flags.has("--audit-chunk");
+const splitCorePreindex = flags.has("--split-core-preindex");
+const splitCoreFinal = flags.has("--split-core-final");
+const splitCoreMode = splitCorePreindex ? "preindex" : splitCoreFinal ? "final" : undefined;
 
 const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
-const usage = `Usage: node .claude/skills/implement/scripts/validate-closeout-body.mjs <body.md> [--audit-only [--review-entry] | --closing --expected-final-sha <sha> [--emit-preflight --mutation-ready] [--emit-final-summary] | --closing --audit-chunk --shared-evidence-core-url <url> --expected-final-sha <sha>] [--principles] [--local-only] [--fixed-child | --fixed-child-pending] [--review-fallback] [--acceptance-manifest <manifest.json>] [--max-bytes <positive integer>]`;
+const usage = `Usage: node .claude/skills/implement/scripts/validate-closeout-body.mjs <body.md> [--audit-only [--review-entry] | --closing --expected-final-sha <sha> [--emit-preflight --mutation-ready] [--emit-final-summary] [--split-core-preindex | --split-core-final] | --closing --audit-chunk --shared-evidence-core-url <url> --expected-final-sha <sha>] [--principles] [--local-only] [--fixed-child | --fixed-child-pending] [--review-fallback] [--acceptance-manifest <manifest.json>] [--max-bytes <positive integer>]`;
 
 if (flags.has("--help")) {
   console.error(usage);
@@ -94,6 +109,24 @@ if (emitFinalSummary && !flags.has("--closing")) {
   process.exit(2);
 }
 
+if (splitCorePreindex && splitCoreFinal) {
+  console.error("use only one of --split-core-preindex or --split-core-final");
+  console.error(usage);
+  process.exit(2);
+}
+
+if (splitCoreMode && !flags.has("--closing")) {
+  console.error("split-core validation requires --closing");
+  console.error(usage);
+  process.exit(2);
+}
+
+if (splitCoreMode && !acceptanceManifestPath) {
+  console.error("split-core validation requires --acceptance-manifest");
+  console.error(usage);
+  process.exit(2);
+}
+
 if (auditChunk) {
   if (!flags.has("--closing")) {
     console.error("--audit-chunk requires --closing");
@@ -120,7 +153,9 @@ if (auditChunk) {
     "--local-only",
     "--fixed-child",
     "--fixed-child-pending",
-    "--review-fallback"
+    "--review-fallback",
+    "--split-core-preindex",
+    "--split-core-final"
   ].filter((flag) => flags.has(flag));
   if (incompatible.length) {
     console.error(`--audit-chunk cannot be combined with ${incompatible.join(", ")}`);
@@ -164,7 +199,9 @@ const auditOnlyIncompatibleFlags = [
   "--mutation-ready",
   "--emit-final-summary",
   "--audit-chunk",
-  "--shared-evidence-core-url"
+  "--shared-evidence-core-url",
+  "--split-core-preindex",
+  "--split-core-final"
 ].filter((flag) => flags.has(flag));
 if (auditOnly && auditOnlyIncompatibleFlags.length) {
   console.error(`--audit-only cannot be combined with ${auditOnlyIncompatibleFlags.join(", ")}`);
@@ -205,6 +242,29 @@ const valuesForField = (label) => {
   );
   return [...body.matchAll(pattern)].map((match) => match[1].trim());
 };
+
+if (splitCoreMode) {
+  try {
+    validateSplitCoreIndex(body, splitCoreMode);
+  } catch (error) {
+    errors.push(error.message);
+  }
+  const inspections = valuesForField("Body file(s) inspected");
+  const expectedInspection = splitCoreMode === "preindex"
+    ? SPLIT_CORE_PREINDEX_INSPECTION
+    : SPLIT_CORE_FINAL_INSPECTION;
+  if (inspections.length !== 1 || inspections[0] !== expectedInspection) {
+    errors.push(
+      splitCoreMode === "preindex"
+        ? "pre-index Body file(s) inspected must state that linked audit chunk bodies do not exist"
+        : "final Body file(s) inspected must state that every linked audit chunk body was inspected after URL capture"
+    );
+  }
+} else if (hasSplitCoreIndex(body)) {
+  errors.push(
+    "Linked acceptance-audit chunks requires --split-core-preindex or --split-core-final"
+  );
+}
 
 const valuesAfterInlineLabel = (label) => {
   const escaped = label.replace(/[.*+?^{}$()|[\]\\]/g, "\\$&");
@@ -343,7 +403,7 @@ const isAllowedAngleToken = (token) => {
   return htmlTag ? allowedHtmlTags.has(htmlTag[1].toLowerCase()) : false;
 };
 
-requireText("| Issue | Acceptance criterion or conformance check | Evidence | Status |", "audit table header");
+requireText(ACCEPTANCE_AUDIT_HEADER, "audit table header");
 
 let finalSha;
 if (!auditOnly) {
@@ -569,8 +629,8 @@ for (const match of body.matchAll(/<[^>\n]{1,120}>/g)) {
   }
 }
 
-const statusRows = [];
-const auditHeader = "| Issue | Acceptance criterion or conformance check | Evidence | Status |";
+const parsedAuditRows = parseAcceptanceAuditRows(body);
+const statusRows = parsedAuditRows.map((row) => row.cells);
 const circularEvidenceReference = /\b(?:exact named (?:items?|atoms?|surfaces?) in (?:this|the) (?:criterion|checkbox|requirement)|(?:criterion|checkbox|requirement) (?:above|as written|itself)|(?:all|every) (?:named|listed) (?:items?|atoms?|surfaces?))\b/i;
 const concreteProofAnchor = /(?:https?:\/\/\S+|#\d+\b|\b(?:pnpm|npm|npx|node|cargo|gh|curl|bash)\s+[^;]+|(?:^|[\s`(])\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+|\b(?:[A-Za-z0-9_.-]+\/)+[A-Za-z0-9_.-]+\b|\b[A-Za-z0-9_.-]+\.(?:test|spec)\.[cm]?[jt]sx?\b|\b[A-Za-z0-9_.-]+\.(?:md|json|html|sql|sqlite|wasm)\b)/i;
 
@@ -578,17 +638,6 @@ const evidenceField = (evidence, label, nextLabels) => {
   const next = nextLabels.map((nextLabel) => nextLabel.replace(" ", "\\s+")).join("|");
   return evidence.match(new RegExp(`${label.replace(" ", "\\s+")}:\\s*(.*?)(?=;\\s*(?:${next}):|$)`, "i"))?.[1].trim() ?? "";
 };
-
-for (let index = 0; index < lines.length; index += 1) {
-  if (lines[index].trim() !== auditHeader) continue;
-  for (let row = index + 2; row < lines.length; row += 1) {
-    const line = lines[row].trim();
-    if (!line.startsWith("|")) break;
-    if (/^\|\s*#\d+/.test(line)) {
-      statusRows.push(line.split("|").map((cell) => cell.trim()).filter(Boolean));
-    }
-  }
-}
 
 if (!statusRows.length) errors.push("audit table has no issue rows");
 
@@ -648,9 +697,6 @@ if (acceptanceManifestPath) {
     if (manifest.version !== 1 || !Array.isArray(manifest.issues)) {
       errors.push("acceptance manifest must have version 1 and an issues array");
     } else {
-      const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const normalizeCriterion = (value) =>
-        value.replaceAll("&#124;", "|").replace(/\s+/g, " ").trim().toLowerCase();
       const seenIssueNumbers = new Set();
       for (const issue of manifest.issues) {
         if (!Number.isInteger(issue.number) || !Array.isArray(issue.checks)) {
@@ -667,7 +713,7 @@ if (acceptanceManifestPath) {
           continue;
         }
 
-        const issueRows = statusRows.filter((cells) => cells[0] === `#${issue.number}`);
+        const issueRows = parsedAuditRows.filter((row) => row.issueNumber === issue.number);
         const knownIds = new Set(issue.checks.map((check) => check.id));
         if (knownIds.size !== issue.checks.length) {
           errors.push(`acceptance manifest #${issue.number} contains duplicate check IDs`);
@@ -678,12 +724,9 @@ if (acceptanceManifestPath) {
             errors.push(`acceptance manifest #${issue.number} has an invalid check`);
             continue;
           }
-          const idPattern = new RegExp(`(^|\\W)${escapeRegex(check.id)}(?=\\W|$)`, "i");
-          const expectedText = normalizeCriterion(check.text);
-          const matches = issueRows.filter((cells) => {
-            const criterion = cells[1] ?? "";
-            return idPattern.test(criterion) && normalizeCriterion(criterion).includes(expectedText);
-          });
+          const matches = issueRows.filter((row) =>
+            acceptanceAuditRowMatchesCheck(row, issue, check)
+          );
           if (matches.length !== 1) {
             errors.push(
               `acceptance manifest #${issue.number} ${check.id} requires exactly one audit row with exact criterion text; found ${matches.length}`
@@ -691,8 +734,8 @@ if (acceptanceManifestPath) {
           }
         }
 
-        for (const cells of issueRows) {
-          for (const id of (cells[1] ?? "").match(/\bAC\d+\b/gi) ?? []) {
+        for (const row of issueRows) {
+          for (const id of row.criterion.match(/\bAC\d+\b/gi) ?? []) {
             if (![...knownIds].some((knownId) => knownId.toLowerCase() === id.toLowerCase())) {
               errors.push(`audit row for #${issue.number} contains unknown acceptance ID ${id}`);
             }

@@ -11,7 +11,7 @@ The issue tracker and triage label vocabulary should have been provided to you �
 
 When another skill says to consult `/to-prd` for house style only, do not draft, stage, publish, label, or verify an issue. Reuse only the publication expectations that make the upstream artifact PRD-ready: the PRD template shape, source-durability posture, publication-package taxonomy, browser-visible checklist mapping, seam input expectations, label-readiness inputs, and final note that `/to-prd` was consulted for house style only.
 
-In that branch, load only the needed sections of the [PRD body contract](references/prd-body.md), [source-durability rules](references/source-durability.md), and [publication-package and label rules](references/publication.md). Do not run the publication or closeout steps.
+In that branch, load only the needed sections of the [PRD body contract](references/prd-body.md), [source-durability rules](references/source-durability.md), and [publication-package and label rules](references/publication.md). Minimal load map: template shape and section expectations → the PRD body contract's template-conformance list; source posture and citation wording → the source-durability local-citation rules; title form, package taxonomy, label posture, and checklist-gate inputs → the publication reference's title, label-decision, and browser-visible checklist sections. A consultation that skips a mapped section for an input it produces is incomplete. Do not run the publication or closeout steps.
 
 ## Process
 

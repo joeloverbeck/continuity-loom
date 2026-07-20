@@ -295,6 +295,80 @@ test("manifest CLI writes a selected check subset and matching audit scaffold", 
   rmSync(directory, { recursive: true, force: true });
 });
 
+test("manifest CLI projects selected rows from one completed full audit", () => {
+  const directory = mkdtempSync(join(tmpdir(), "implement-manifest-projection-test-"));
+  const inputPath = join(directory, "issues.json");
+  const completedAuditPath = join(directory, "completed-audit.md");
+  const manifestPath = join(directory, "manifest.json");
+  const auditPath = join(directory, "audit.md");
+  const fullManifest = buildAcceptanceManifest(issueInput);
+  const completedAudit = buildAuditScaffold(fullManifest)
+    .replaceAll("atoms: TODO", "atoms: exact behavior")
+    .replaceAll("proof surfaces: TODO", "proof surfaces: node --test")
+    .replaceAll(
+      "sequence: TODO or N/A because criterion is not sequence-sensitive",
+      "sequence: N/A because criterion is not sequence-sensitive"
+    )
+    .replaceAll("| not done |", "| satisfied |");
+  writeFileSync(inputPath, JSON.stringify({ issues: issueInput }));
+  writeFileSync(completedAuditPath, completedAudit);
+
+  const result = spawnSync(
+    process.execPath,
+    [
+      builder,
+      inputPath,
+      "--select",
+      "359:AC2,Principles",
+      "--completed-audit-input",
+      completedAuditPath,
+      "--output",
+      manifestPath,
+      "--audit-output",
+      auditPath
+    ],
+    { encoding: "utf8" }
+  );
+  const projectedAudit = readFileSync(auditPath, "utf8");
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.doesNotMatch(projectedAudit, /\| #359 \| AC1 -/);
+  assert.match(projectedAudit, /\| #359 \| AC2 - Second exact behavior with a continuation \| atoms: exact behavior;/);
+  assert.match(projectedAudit, /\| #359 \| Principles - Principles\/ADR conformance for #359 \| atoms: exact behavior;/);
+  const manifestBeforeInvalidProjection = readFileSync(manifestPath, "utf8");
+  const auditBeforeInvalidProjection = readFileSync(auditPath, "utf8");
+
+  writeFileSync(
+    completedAuditPath,
+    completedAudit.replace(
+      "AC1 - First exact behavior |",
+      "AC1 - First exact behavior with a descriptive suffix |"
+    )
+  );
+  const invalid = spawnSync(
+    process.execPath,
+    [
+      builder,
+      inputPath,
+      "--select",
+      "359:AC2",
+      "--completed-audit-input",
+      completedAuditPath,
+      "--output",
+      manifestPath,
+      "--audit-output",
+      auditPath
+    ],
+    { encoding: "utf8" }
+  );
+
+  assert.equal(invalid.status, 1);
+  assert.match(invalid.stderr, /completed audit #359 AC1 requires exactly one exact audit row; found 0/);
+  assert.equal(readFileSync(manifestPath, "utf8"), manifestBeforeInvalidProjection);
+  assert.equal(readFileSync(auditPath, "utf8"), auditBeforeInvalidProjection);
+  rmSync(directory, { recursive: true, force: true });
+});
+
 test("closeout validator accepts exact one-to-one manifest coverage", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const result = runValidator(
@@ -526,6 +600,83 @@ test("linked audit chunks validate exact rows without repeating the shared evide
   assert.match(repeatedReview.stderr, /forbidden repeated review evidence/);
 });
 
+test("split-core validation distinguishes pre-index truth from the final concrete URL index", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const rows = [
+    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
+    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+  ];
+  const preindexLine = "Linked acceptance-audit chunks: not indexed in this first-post core; this core claims only the disjoint rows in its supplied subset manifest.";
+  const preindexInspection = "shared core body inspected; linked audit chunk bodies do not exist in the pre-index state";
+  const preindexBody = closeoutBody(rows)
+    .replace("\nCloseout body check passed:", `\n${preindexLine}\n\nCloseout body check passed:`)
+    .replace("- Audit sink: local test body", `- Audit sink: local test body\n- Body file(s) inspected: ${preindexInspection}`);
+  const preindex = runValidator(preindexBody, manifest, ["--closing", "--split-core-preindex"]);
+  const falseInspection = runValidator(
+    preindexBody.replace(preindexInspection, "shared core body and linked chunk bodies inspected"),
+    manifest,
+    ["--closing", "--split-core-preindex"]
+  );
+  const invalidPreindexClaims = [
+    `not ${preindexInspection}`,
+    `operator reports ${preindexInspection}`,
+    `${preindexInspection}; except the final chunk`
+  ].map((claim) => runValidator(
+    preindexBody.replace(preindexInspection, claim),
+    manifest,
+    ["--closing", "--split-core-preindex"]
+  ));
+
+  const firstChunkUrl = "https://github.com/example/repo/issues/359#issuecomment-201";
+  const secondChunkUrl = "https://github.com/example/repo/issues/359#issuecomment-202";
+  const finalIndex = `Linked acceptance-audit chunks:\n- ${firstChunkUrl}\n- ${secondChunkUrl}`;
+  const finalInspection = "shared core body and every linked audit chunk body inspected after URL capture";
+  const finalBody = closeoutBody(rows)
+    .replace("\nCloseout body check passed:", `\n${finalIndex}\n\nCloseout body check passed:`)
+    .replace("- Audit sink: local test body", `- Audit sink: local test body\n- Body file(s) inspected: ${finalInspection}`);
+  const final = runValidator(finalBody, manifest, ["--closing", "--split-core-final"]);
+  const missingFinalUrl = runValidator(
+    finalBody.replace(`${finalIndex}\n\n`, "Linked acceptance-audit chunks:\n\n"),
+    manifest,
+    ["--closing", "--split-core-final"]
+  );
+  const invalidFinalUrl = runValidator(
+    finalBody.replace(firstChunkUrl, "http://example.test/chunk"),
+    manifest,
+    ["--closing", "--split-core-final"]
+  );
+  const invalidFinalClaims = [
+    `not ${finalInspection}`,
+    `operator reports ${finalInspection}`,
+    `${finalInspection}; except the final chunk`
+  ].map((claim) => runValidator(
+    finalBody.replace(finalInspection, claim),
+    manifest,
+    ["--closing", "--split-core-final"]
+  ));
+  const unflagged = runValidator(preindexBody, manifest);
+
+  assert.equal(preindex.status, 0, preindex.stderr);
+  assert.equal(falseInspection.status, 1);
+  assert.match(falseInspection.stderr, /pre-index Body file\(s\) inspected must state that linked audit chunk bodies do not exist/);
+  for (const invalidClaim of invalidPreindexClaims) {
+    assert.equal(invalidClaim.status, 1);
+    assert.match(invalidClaim.stderr, /pre-index Body file\(s\) inspected must state that linked audit chunk bodies do not exist/);
+  }
+  assert.equal(final.status, 0, final.stderr);
+  assert.equal(missingFinalUrl.status, 1);
+  assert.match(missingFinalUrl.stderr, /final split-core index requires at least one concrete HTTPS URL/);
+  assert.equal(invalidFinalUrl.status, 1);
+  assert.match(invalidFinalUrl.stderr, /final split-core index contains a non-HTTPS or malformed URL row/);
+  for (const invalidClaim of invalidFinalClaims) {
+    assert.equal(invalidClaim.status, 1);
+    assert.match(invalidClaim.stderr, /final Body file\(s\) inspected must state that every linked audit chunk body was inspected after URL capture/);
+  }
+  assert.equal(unflagged.status, 1);
+  assert.match(unflagged.stderr, /Linked acceptance-audit chunks requires --split-core-preindex or --split-core-final/);
+});
+
 test("audit-only validator accepts a review-ready audit without closeout fields", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const result = runValidator(
@@ -615,6 +766,21 @@ test("closeout validator rejects a matching ID with substituted criterion text",
   const result = runValidator(
     closeoutBody([
       `| #359 | AC1 - Nearby behavior instead | ${evidence} | satisfied |`,
+      `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
+      `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
+    ]),
+    manifest
+  );
+
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /#359 AC1 requires exactly one audit row with exact criterion text; found 0/);
+});
+
+test("closeout validator rejects a matching ID with a descriptive criterion suffix", () => {
+  const manifest = buildAcceptanceManifest(issueInput);
+  const result = runValidator(
+    closeoutBody([
+      `| #359 | AC1 - First exact behavior with a descriptive suffix | ${evidence} | satisfied |`,
       `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
       `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
     ]),
@@ -929,12 +1095,20 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.doesNotMatch(template, /--parent 369[^\n]*--fixed-child pending/);
   assert.match(template, /--audit-chunk --shared-evidence-core-url/);
   assert.match(template, /Linked acceptance-audit chunks:/);
+  assert.match(template, /--completed-audit-input/);
+  assert.match(template, /--split-core-preindex/);
+  assert.match(template, /--split-core-final/);
+  assert.match(template, /--linked-audit-chunk-url/);
   assert.match(template, /--review normal --immediate-fix/);
   assert.match(template, /--expected-final-sha "\$\(git rev-parse HEAD\)" --emit-preflight --mutation-ready/);
   assert.match(reviewGuide, /Two-sink boundary/);
   assert.match(reviewGuide, /Do not amend a tracked evidence report solely to append/);
   assert.match(template, /stable issue reference before tracker URL exists/);
   assert.match(template, /Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed/);
+  assert.match(template, /Review recovery: <none/);
+  assert.match(template, /Final-review Standards source inventory:/);
+  assert.match(template, /Final-review Spec source inventory:/);
+  assert.match(template, /main-agent synthesis switches the whole review to fallback/);
   assert.match(template, /keyed review finding ledger/);
   assert.match(template, /no hits outside classified identity\/history lines and no active-proof hits/);
   assert.match(template, /verify-github-comment-body\.mjs "\$comment_url" "\$body"/);
@@ -961,11 +1135,15 @@ test("implementation guidance carries the audited staging, exactness, and siblin
   assert.match(gates, /not mutation-ready/);
   assert.match(gates, /--emit-final-summary/);
   assert.match(gates, /Linked acceptance-audit chunk/);
+  assert.match(gates, /Shared evidence core, first-post pre-index state/);
+  assert.match(gates, /Shared evidence core, final indexed state/);
   assert.match(childGuide, /Low-headroom split exception/);
   assert.match(childGuide, /shared evidence core/);
   assert.match(childGuide, /Post and read back every disjoint evidence chunk before closing any issue/);
   assert.match(childGuide, /--audit-chunk --shared-evidence-core-url/);
   assert.match(childGuide, /Linked acceptance-audit chunks:/);
+  assert.match(childGuide, /--split-core-preindex/);
+  assert.match(childGuide, /--split-core-final/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <parent-comment-url> <parent-body>/);
   assert.match(childGuide, /verify-github-comment-body\.mjs <child-comment-url> <child-body>/);
   assert.match(skill, /published `Current evidence identities:` inventory is not safe to remove/);
@@ -982,6 +1160,7 @@ test("documented normal-review fields satisfy the normal-review validator", () =
     bodyPath,
     `Review: code-review against abcdef0; outcome no findings; verification rerun node --test.
 Review subagents: Standards final reviewer reviewer-1 completed; Spec final reviewer reviewer-2 completed
+Review recovery: none
 Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
 Review subagent cleanup proof: Standards reviewer reviewer-1 terminal status completed; no close primitive surfaced; Spec reviewer reviewer-2 terminal status completed; no close primitive surfaced
 Pre-dispatch Standards source inventory: AGENTS.md | CLAUDE.md | smell baseline

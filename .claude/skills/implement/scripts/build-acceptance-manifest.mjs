@@ -4,8 +4,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { projectCompletedAcceptanceAudit } from "./acceptance-audit-contract.mjs";
+
 const usage =
-  "Usage: node .claude/skills/implement/scripts/build-acceptance-manifest.mjs <issues.json> [--output <manifest.json>] [--audit-output <audit.md>] [--select <issue[:check-id[,check-id...]]>]...";
+  "Usage: node .claude/skills/implement/scripts/build-acceptance-manifest.mjs <issues.json> [--output <manifest.json>] [--audit-output <audit.md> [--completed-audit-input <completed-audit.md>]] [--select <issue[:check-id[,check-id...]]>]...";
 
 const sectionLines = (body, heading) => {
   const lines = body.split(/\r?\n/);
@@ -237,7 +239,7 @@ if (isCli) {
   };
   const valuesFor = (flag) => indexesFor(flag).map((index) => args[index + 1]);
   const valueIndexes = new Set(
-    ["--output", "--audit-output", "--select"]
+    ["--output", "--audit-output", "--completed-audit-input", "--select"]
       .flatMap(indexesFor)
       .map((index) => index + 1)
   );
@@ -261,6 +263,7 @@ if (isCli) {
     const manifest = selectAcceptanceManifest(fullManifest, selectors);
     const outputPath = valueFor("--output");
     const auditOutputPath = valueFor("--audit-output");
+    const completedAuditInputPath = valueFor("--completed-audit-input");
     const json = `${JSON.stringify(manifest, null, 2)}\n`;
 
     if (args.includes("--output") && (!outputPath || outputPath.startsWith("--"))) {
@@ -269,10 +272,29 @@ if (isCli) {
     if (args.includes("--audit-output") && (!auditOutputPath || auditOutputPath.startsWith("--"))) {
       throw new Error("--audit-output requires a path");
     }
+    if (
+      args.includes("--completed-audit-input") &&
+      (!completedAuditInputPath || completedAuditInputPath.startsWith("--"))
+    ) {
+      throw new Error("--completed-audit-input requires a path");
+    }
+    if (completedAuditInputPath && !auditOutputPath) {
+      throw new Error("--completed-audit-input requires --audit-output");
+    }
+
+    const audit = auditOutputPath
+      ? completedAuditInputPath
+        ? projectCompletedAcceptanceAudit(
+          fullManifest,
+          manifest,
+          readFileSync(completedAuditInputPath, "utf8")
+        )
+        : buildAuditScaffold(manifest)
+      : undefined;
 
     if (outputPath) writeFileSync(outputPath, json);
     else process.stdout.write(json);
-    if (auditOutputPath) writeFileSync(auditOutputPath, buildAuditScaffold(manifest));
+    if (auditOutputPath) writeFileSync(auditOutputPath, audit);
   } catch (error) {
     console.error(`Acceptance manifest build failed: ${error.message}`);
     process.exit(1);

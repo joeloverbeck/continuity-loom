@@ -106,7 +106,16 @@ const validateSubagentStatuses = (value, errors, options = {}) => {
         `\\binitial and final reviewer\\s+\\S+\\s+${terminal}\\b`,
         "i"
       );
-      if (!separateReviewers.test(axisBlock) && !sameReviewer.test(axisBlock)) {
+      const recoveredInitial =
+        new RegExp(
+          `\\binitial reviewer\\s+\\S+\\s+(?:was\\s+)?(?:interrupted|partial(?:\\s+output)?)\\b`,
+          "i"
+        ).test(axisBlock) &&
+        new RegExp(`\\brecovery reviewer\\s+\\S+\\s+${terminal}\\b`, "i").test(axisBlock) &&
+        new RegExp(`\\bfinal reviewer\\s+\\S+\\s+${terminal}\\b`, "i").test(axisBlock) &&
+        new RegExp(`\\b${axis}\\b`, "i").test(options.recovery ?? "") &&
+        !/^none\.?$/i.test((options.recovery ?? "").trim());
+      if (!separateReviewers.test(axisBlock) && !sameReviewer.test(axisBlock) && !recoveredInitial) {
         errors.push(
           `Review subagents must name initial and final ${axis} reviewer identities with terminal statuses after fixes`
         );
@@ -197,6 +206,7 @@ const concretePath = (value) =>
 const concreteSpecSource = (value) =>
   concretePath(value) ||
   /^(?:(?:issue|PRD|PR|GitHub issue)\s+)?#\d+$/i.test(value) ||
+  /^(?:GitHub\s+)?(?:issue|PR)\s+#?\d+\s+comment\s+#?\d+$/i.test(value) ||
   /^!\d+$/.test(value);
 
 const normalizedInventory = (entries) =>
@@ -234,16 +244,123 @@ const validateSourceInventory = (value, axis, phase, errors) => {
   return entries;
 };
 
-const validateSourceInventories = (inventories, errors) => {
+const validateSourceInventories = (inventories, errors, options = {}) => {
   for (const axis of ["Standards", "Spec"]) {
     const preDispatch = validateSourceInventory(inventories[`preDispatch${axis}`], axis, "Pre-dispatch", errors);
+    const finalReview = options.immediateFix
+      ? validateSourceInventory(inventories[`finalReview${axis}`], axis, "Final-review", errors)
+      : [];
     const handoff = validateSourceInventory(inventories[`handoff${axis}`], axis, "Handoff", errors);
+    const expectedHandoff = options.immediateFix ? finalReview : preDispatch;
     if (
-      preDispatch.length &&
+      expectedHandoff.length &&
       handoff.length &&
-      JSON.stringify(normalizedInventory(preDispatch)) !== JSON.stringify(normalizedInventory(handoff))
+      JSON.stringify(normalizedInventory(expectedHandoff)) !== JSON.stringify(normalizedInventory(handoff))
     ) {
-      errors.push(`Handoff ${axis} source inventory does not match pre-dispatch inventory`);
+      errors.push(
+        `Handoff ${axis} source inventory does not match ${options.immediateFix ? "final-review" : "pre-dispatch"} inventory`
+      );
+    }
+
+    const preDispatchIsNoSpec =
+      axis === "Spec" &&
+      preDispatch.length === 1 &&
+      /^no spec available$/i.test(preDispatch[0]);
+    if (options.immediateFix && !preDispatchIsNoSpec && preDispatch.length && finalReview.length) {
+      const finalSet = new Set(finalReview);
+      for (const entry of preDispatch) {
+        if (!finalSet.has(entry)) {
+          errors.push(`Final-review ${axis} source inventory dropped pre-dispatch entry: ${entry}`);
+        }
+      }
+    }
+  }
+};
+
+const validateReviewRecovery = (value, subagents, errors) => {
+  if (unresolvedValue(value)) return;
+
+  const normalized = value.trim();
+  const subagentsNameRecovery = /\b(?:interrupted|partial(?:\s+output)?|recovery reviewer)\b/i.test(subagents);
+  if (/^none\.?$/i.test(normalized)) {
+    if (subagentsNameRecovery) {
+      errors.push("Review recovery cannot be none when Review subagents records interrupted or partial output");
+    }
+    return;
+  }
+
+  if (/\b(?:synthesi[sz]|local fallback|main[- ]agent completion)\b/i.test(normalized)) {
+    errors.push("Review recovery using local synthesis requires the fallback review route");
+  }
+
+  const requirements = [
+    [/\bP\d+\b/i, "must name the affected review pass (for example P1)"],
+    [/\b(?:Standards|Spec)\b/i, "must name the affected review axis"],
+    [
+      /\breviewer\s+`?[A-Za-z0-9._:/-]+`?\s+(?:was\s+)?interrupted\b[\s\S]*?\bpartial output\b/i,
+      "must name the interrupted reviewer and partial-output state"
+    ],
+    [
+      /(?:\braw output\b[\s\S]*?\bpreserved\b|\bpreserved\b[\s\S]*?\braw output\b)/i,
+      "must state that raw output was preserved"
+    ],
+    [/\bdurable (?:sink|source|reference)\b/i, "must name the durable preservation sink"],
+    [
+      /\bcompletion obtained from (?:same|fresh) reviewer\s+`?[A-Za-z0-9._:/-]+`?\s+(?:completed|complete|done)\b/i,
+      "must name the same or fresh reviewer that completed the output"
+    ],
+    [/\boutput gate rerun passed\b/i, "must record that the output gate was rerun and passed"]
+  ];
+
+  for (const [pattern, message] of requirements) {
+    if (!pattern.test(normalized)) errors.push(`Review recovery ${message}`);
+  }
+
+  const escapeRegExp = (candidate) => candidate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const recoveryAxis = normalized.match(/\b(Standards|Spec)\b/i)?.[1];
+  const recoverySubagents = recoveryAxis
+    ? axisBlock(
+        subagents,
+        recoveryAxis,
+        recoveryAxis.toLowerCase() === "standards" ? "Spec" : "Standards"
+      )
+    : subagents;
+  const interruptedReviewer = normalized.match(
+    /\breviewer\s+`?([A-Za-z0-9._:/-]+)`?\s+(?:was\s+)?interrupted\b/i
+  )?.[1];
+  if (
+    interruptedReviewer &&
+    !new RegExp(
+      `\\breviewer\\s+\`?${escapeRegExp(interruptedReviewer)}\`?[^;\\n]*\\b(?:interrupted|partial(?:\\s+output)?)\\b`,
+      "i"
+    ).test(recoverySubagents)
+  ) {
+    errors.push(
+      `Review subagents must record interrupted reviewer ${interruptedReviewer} with interrupted or partial status`
+    );
+  }
+
+  const completingReviewer = normalized.match(
+    /\bcompletion obtained from (?:same|fresh) reviewer\s+`?([A-Za-z0-9._:/-]+)`?\s+(?:completed|complete|done)\b/i
+  )?.[1];
+  if (
+    completingReviewer &&
+    !new RegExp(
+      `\\brecovery reviewer\\s+\`?${escapeRegExp(completingReviewer)}\`?\\s+(?:completed|complete|done)\\b`,
+      "i"
+    ).test(recoverySubagents)
+  ) {
+    errors.push(
+      `Review subagents must record completing reviewer ${completingReviewer} as a terminal recovery reviewer`
+    );
+  }
+
+  const namedReviewers = [
+    ...normalized.matchAll(/\breviewer\s+`?([A-Za-z0-9._:/-]+)`?/gi)
+  ].map((match) => match[1]);
+  for (const identity of namedReviewers) {
+    if (!subagents.toLowerCase().includes(identity.toLowerCase())) {
+      errors.push(`Review recovery reviewer ${identity} is missing from Review subagents`);
     }
   }
 };
@@ -329,20 +446,30 @@ export const validateReviewNormalBody = (body, options = {}) => {
 
   const immediateFix = flags.has("--immediate-fix") || Boolean(fieldValue(body, "Findings found"));
   const reviewedHeadSha = body.match(/\breviewed HEAD SHA\s+`?([0-9a-f]{7,40})\b`?/i)?.[1] ?? "";
+  const reviewRecovery = requireField("Review recovery");
   const reviewSubagents = requireField("Review subagents");
-  validateSubagentStatuses(reviewSubagents, errors, { requireFinal: immediateFix });
+  validateReviewRecovery(reviewRecovery, reviewSubagents, errors);
+  validateSubagentStatuses(reviewSubagents, errors, {
+    requireFinal: immediateFix,
+    recovery: reviewRecovery
+  });
   validateSubagentCleanup(
     requireField("Review subagent cleanup"),
     requireField("Review subagent cleanup proof"),
     reviewSubagents,
     errors
   );
-  validateSourceInventories({
+  const sourceInventories = {
     preDispatchStandards: requireField("Pre-dispatch Standards source inventory"),
     preDispatchSpec: requireField("Pre-dispatch Spec source inventory"),
     handoffStandards: requireField("Handoff Standards source inventory"),
     handoffSpec: requireField("Handoff Spec source inventory")
-  }, errors);
+  };
+  if (immediateFix) {
+    sourceInventories.finalReviewStandards = requireField("Final-review Standards source inventory");
+    sourceInventories.finalReviewSpec = requireField("Final-review Spec source inventory");
+  }
+  validateSourceInventories(sourceInventories, errors, { immediateFix });
   const axisSummary = requireField("Axis summary");
   if (!/^Standards\s+.+?,\s*Spec\s+.+/i.test(axisSummary)) {
     errors.push("Axis summary must report Standards and Spec separately");

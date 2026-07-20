@@ -14,6 +14,7 @@ import {
 
 const validator = fileURLToPath(new URL("./validate-tdd-closeout-body.mjs", import.meta.url));
 const expectedFinalSha = "abcdef0123456789";
+const alignedAuthority = "aligned because ADR 0001 and active principles authorize the seam";
 const closingOptions = { flags: ["--closing"], expectedFinalSha };
 const singleIssueManifest = {
   version: 1,
@@ -76,6 +77,9 @@ const bodyWith = ({
   acceptance =
     "AC1 exact workflow; atoms: proposal + staging + pressure; proof surfaces: production browser; sequence: Proposal -> staging -> Pressure observed in one browser session",
   green = "`pnpm test -- workflow-order` passed and production browser observed Proposal then staging then Pressure",
+  authorityRow = alignedAuthority,
+  authorityPreflight = alignedAuthority,
+  authorityGate = alignedAuthority,
   current = "fixture paths none; browser sessions issue-1; packet paths/hashes proposal.txt abc123; active revisions run-2; artifacts proof.png",
   historical = "fixture FAC-17 retained in the red row",
   superseded = "fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none",
@@ -86,7 +90,7 @@ Final SHA: ${expectedFinalSha}
 
 | Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |
 |---|---|---|---|---|---|---|---|
-| #1 | read | ADR 0001 read | red-first public workflow | \`pnpm test -- workflow-order\` failed because Pressure appeared before staging | ${green} | ${acceptance} | N/A |
+| #1 | read | ${authorityRow} | red-first public workflow | \`pnpm test -- workflow-order\` failed because Pressure appeared before staging | ${green} | ${acceptance} | N/A |
 
 Verification command ledger:
 | Exact command | Observed result/counts | Run count | Represented SHA/tree |
@@ -104,7 +108,7 @@ TDD closeout preflight:
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
 - Pre-red evidence reference: issue #1 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
-- ADRs/principles/docs status: present
+- ADRs/principles/docs status: ${authorityPreflight}
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces
 - Acceptance sequence map: all rows list ordered proof or justified sequence N/A
 - Partial-red / red-first skip reasons: none
@@ -120,7 +124,7 @@ Evidence identity refresh:
 - Superseded evidence identities: ${superseded}
 - Superseded-token sweep: ${sweep}
 
-TDD evidence gate passed: durable sink test fixture; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status present; sequence evidence present; evidence identities present; partial-red / red-first skip reasons none; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
+TDD evidence gate passed: durable sink test fixture; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status ${authorityGate}; sequence evidence present; evidence identities present; partial-red / red-first skip reasons none; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
 `;
 
 const browserEvidenceBodyWith = (
@@ -194,8 +198,8 @@ Verification command ledger:`
 const existingContractChangeBodyWith = (red) =>
   bodyWith()
     .replace(
-      "| #1 | read | ADR 0001 read | red-first public workflow | `pnpm test -- workflow-order` failed because Pressure appeared before staging |",
-      `| #1 | read | ADR 0001 read | existing contract-change expectation | ${red} |`
+      `| #1 | read | ${alignedAuthority} | red-first public workflow | \`pnpm test -- workflow-order\` failed because Pressure appeared before staging |`,
+      `| #1 | read | ${alignedAuthority} | existing contract-change expectation | ${red} |`
     )
     .replaceAll("Existing-test contract-change rows: none", "Existing-test contract-change rows: compact row #1")
     .replace(
@@ -205,6 +209,83 @@ const existingContractChangeBodyWith = (red) =>
 
 test("accepts sequence evidence and reconciled evidence identities", () => {
   assert.deepEqual(validateTddCloseoutBody(bodyWith()), []);
+});
+
+test("rejects read/present-only authority statuses in every TDD evidence surface", () => {
+  const errors = validateTddCloseoutBody(
+    bodyWith({
+      authorityRow: "ADR 0001 read",
+      authorityPreflight: "present",
+      authorityGate: "present"
+    })
+  );
+
+  assert.ok(
+    errors.some((error) =>
+      error.includes("compact TDD row") && error.includes("ADRs/principles/docs status")
+    )
+  );
+  assert.ok(
+    errors.some((error) =>
+      error.includes("preflight ADRs/principles/docs status")
+    )
+  );
+  assert.ok(
+    errors.some((error) =>
+      error.includes("gate ADRs/principles/docs status")
+    )
+  );
+});
+
+test("rejects an unresolved authority conflict", () => {
+  const conflict = "conflict - blocked because FOUNDATIONS forbids the requested behavior";
+  const errors = validateTddCloseoutBody(
+    bodyWith({
+      authorityRow: conflict,
+      authorityPreflight: conflict,
+      authorityGate: conflict
+    })
+  );
+
+  assert.ok(errors.some((error) => error.includes("unresolved authority conflict")));
+});
+
+test("rejects an approved authority change without a durable reference", () => {
+  const approval = "approved amendment for the requested behavior";
+  const errors = validateTddCloseoutBody(
+    bodyWith({
+      authorityRow: approval,
+      authorityPreflight: approval,
+      authorityGate: approval
+    })
+  );
+
+  assert.ok(errors.some((error) => error.includes("durable authority reference")));
+});
+
+test("accepts explicit aligned and approved-amendment authority dispositions", () => {
+  assert.deepEqual(
+    validateTddCloseoutBody(
+      bodyWith({
+        authorityRow: alignedAuthority,
+        authorityPreflight: alignedAuthority,
+        authorityGate: alignedAuthority
+      })
+    ),
+    []
+  );
+
+  const amended = "approved amendment recorded in docs/FOUNDATIONS.md §26.2";
+  assert.deepEqual(
+    validateTddCloseoutBody(
+      bodyWith({
+        authorityRow: amended,
+        authorityPreflight: amended,
+        authorityGate: amended
+      })
+    ),
+    []
+  );
 });
 
 test("accepts terminal punctuation on an all-none superseded inventory", () => {
@@ -834,9 +915,9 @@ test("rejects a review-fix map that does not target the exact compact seam", () 
 
 test("rejects one review-fix identity reused by a second compact TDD row", () => {
   const body = reviewFixBodyWith().replace(
-    "| #1 | read | ADR 0001 read | red-first public workflow",
-    `| #2 | read | ADR 0001 read | second public workflow | red-first skipped because Standards-only/conformance-only fix did not change behavior | \`pnpm typecheck\` passed | AC2; atoms: atomic; proof surfaces: second workflow test; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review fix |
-| #1 | read | ADR 0001 read | red-first public workflow`
+    `| #1 | read | ${alignedAuthority} | red-first public workflow`,
+    `| #2 | read | ${alignedAuthority} | second public workflow | red-first skipped because Standards-only/conformance-only fix did not change behavior | \`pnpm typecheck\` passed | AC2; atoms: atomic; proof surfaces: second workflow test; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review fix |
+| #1 | read | ${alignedAuthority} | red-first public workflow`
   );
 
   assert.ok(
@@ -848,9 +929,9 @@ test("rejects one review-fix identity reused by a second compact TDD row", () =>
 
 test("rejects a review-fix identity reused in an N/A-prefixed parent mapping row", () => {
   const body = reviewFixBodyWith().replace(
-    "| #1 | read | ADR 0001 read | red-first public workflow",
-    `| #2 | read | ADR 0001 read | parent closeout evidence | N/A because parent PRD maps already-tested child seams rather than adding a new behavior seam | child row #1 plus root gates passed | AC2; atoms: inherited from child row #1; proof surfaces: inherited from child row #1; sequence: N/A because criterion is not sequence-sensitive | N/A because parent mapping; RF-1 maps to child row #1 below |
-| #1 | read | ADR 0001 read | red-first public workflow`
+    `| #1 | read | ${alignedAuthority} | red-first public workflow`,
+    `| #2 | read | ${alignedAuthority} | parent closeout evidence | N/A because parent PRD maps already-tested child seams rather than adding a new behavior seam | child row #1 plus root gates passed | AC2; atoms: inherited from child row #1; proof surfaces: inherited from child row #1; sequence: N/A because criterion is not sequence-sensitive | N/A because parent mapping; RF-1 maps to child row #1 below |
+| #1 | read | ${alignedAuthority} | red-first public workflow`
   );
 
   assert.ok(
@@ -924,6 +1005,7 @@ test("downstream review validation rejects HTML-like angle tokens in compact val
 test("guidance carries sink, snapshot, exactness, and shared closeout contracts", () => {
   const skill = readFileSync(new URL("../SKILL.md", import.meta.url), "utf8");
   const testsGuide = readFileSync(new URL("../tests.md", import.meta.url), "utf8");
+  const mockingGuide = readFileSync(new URL("../mocking.md", import.meta.url), "utf8");
   const closeout = readFileSync(new URL("../closeout-evidence.md", import.meta.url), "utf8");
   const implementCloseout = readFileSync(
     new URL("../../implement/references/closeout-templates.md", import.meta.url),
@@ -933,6 +1015,9 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(closeout, /When the exact body will be posted or linked for tracker closeout/);
   assert.doesNotMatch(closeout, /inspected body file path before tracker URL exists/);
   assert.match(skill, /two independent snapshots or server renders are not equivalent/);
+  assert.match(skill, /do not run the first red command while any authority conflict is unresolved/i);
+  assert.match(skill, /re-entry while state is active/i);
+  assert.match(skill, /attempt A remains pending.+attempt B settles.+attempt A settles/is);
   assert.match(skill, /every named value unless the source explicitly permits/);
   assert.match(skill, /Dependency state is a precondition, not a behavior red/);
   assert.match(skill, /Cross-workspace build freshness is a precondition, not a behavior red/);
@@ -947,6 +1032,13 @@ test("guidance carries sink, snapshot, exactness, and shared closeout contracts"
   assert.match(skill, /Authority-sensitive fixture identity stays explicit/);
   assert.match(skill, /Before starting or attaching to any proof server/);
   assert.match(testsGuide, /SQLite `.backup`/);
+  assert.match(testsGuide, /repeat the entry action while the first session is active/i);
+  assert.match(testsGuide, /success, failure, cancel, discard, and persistence/i);
+  assert.match(mockingGuide, /deferred promise/i);
+  assert.match(mockingGuide, /older success.+newer failure/is);
+  assert.match(mockingGuide, /older failure.+newer success/is);
+  assert.match(closeout, /authority disposition/i);
+  assert.match(closeout, /stateful re-entry and terminal-path adversaries/i);
   assert.match(closeout, /copied stateful fixture snapshot method\/source and expected-state probe/);
   assert.match(closeout, /Nested-validator angle-token check/);
   assert.match(closeout, /no hits outside classified identity\/history lines and no active-proof hits/);

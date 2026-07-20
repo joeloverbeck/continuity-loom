@@ -256,6 +256,27 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     return "must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'";
   };
 
+  const validateAuthorityDispositionValue = (value) => {
+    const normalized = value.replace(/\s+/g, " ").trim();
+    if (!normalized) return "is empty";
+    if (/^<.*>$/.test(normalized)) return "is an unresolved placeholder";
+    if (/\b(?:conflict|blocked|unresolved)\b/i.test(normalized)) {
+      return "records an unresolved authority conflict; resolve it before the first red command";
+    }
+    if (/^N\/A\b.+\bbecause\b.+/i.test(normalized)) return "";
+    if (/\baligned\b\s*(?:[-:]|because\b|with\b|against\b|per\b)\s*.+/i.test(normalized)) {
+      return "";
+    }
+    if (/\bapproved\s+(?:authority\s+)?(?:amendment|exception|waiver)\b/i.test(normalized)) {
+      const durableReference =
+        /https?:\/\/|#\d+\b|(?:^|[\s`(])(?:docs|specs|tickets|archive)\/[A-Za-z0-9._/-]+|\bADR[- ]?\d+\b|§\s*\d+/i;
+      return durableReference.test(normalized)
+        ? ""
+        : "must include a durable authority reference for the approved amendment, exception, or waiver";
+    }
+    return "must state an explicit authority disposition: aligned with a concrete basis, approved amendment/exception with a durable authority reference, or N/A because";
+  };
+
   const validateBackendCurrentnessValues = (label, values) => {
     const candidates = values.length ? values : [""];
     for (const [index, value] of candidates.entries()) {
@@ -607,6 +628,21 @@ export const validateTddCloseoutBody = (body, options = {}) => {
   requireText("Existing-test contract-change rows:", "existing-test contract-change rows field");
   forbidMatch(/\bpending tracker URL\b/i, "pending tracker URL placeholder");
 
+  const authorityStatusValues = extractFieldValues("ADRs/principles/docs status");
+  for (const [index, value] of authorityStatusValues.entries()) {
+    const authorityError = validateAuthorityDispositionValue(value);
+    if (authorityError) {
+      const occurrence = index === 0 ? "preflight" : `field occurrence ${index + 1}`;
+      errors.push(`${occurrence} ADRs/principles/docs status ${authorityError}`);
+    }
+  }
+  const gateAuthorityStatus =
+    gateLine.match(/ADRs\/principles\/docs status\s+(.+?)(?=;\s*sequence evidence\b|$)/i)?.[1]?.trim() ?? "";
+  const gateAuthorityError = validateAuthorityDispositionValue(gateAuthorityStatus);
+  if (gateAuthorityError) {
+    errors.push(`gate ADRs/principles/docs status ${gateAuthorityError}`);
+  }
+
   if (closing) {
     const localAbsolutePath = /(?:^|[\s\x60("'=])((?:\/(?!\/)|[A-Za-z]:\\)[^\s\x60"'),;]+)/;
     const publishableSinkValues = [
@@ -838,6 +874,14 @@ export const validateTddCloseoutBody = (body, options = {}) => {
     if (cells.length < 8) {
       errors.push(`compact TDD row ${lineNumber} has ${cells.length} cells; expected 8`);
       continue;
+    }
+
+    const authorityStatusCell = cells[2] ?? "";
+    const authorityStatusError = validateAuthorityDispositionValue(authorityStatusCell);
+    if (authorityStatusError) {
+      errors.push(
+        `compact TDD row ${lineNumber} ADRs/principles/docs status ${authorityStatusError}`
+      );
     }
 
     const seamCell = cells[3] ?? "";

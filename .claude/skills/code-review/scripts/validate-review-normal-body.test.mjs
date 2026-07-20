@@ -58,6 +58,7 @@ Findings: none.
 Spec sequence coverage: sequence: N/A because the reviewed acceptance is not sequence-sensitive
 
 - **Review subagents**: Standards reviewer standards-1 completed; Spec reviewer spec-1 completed
+- **Review recovery**: none
 - **Review subagent cleanup**: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
 - **Review subagent cleanup proof**: Standards reviewer standards-1 terminal status completed; no close primitive surfaced; Spec reviewer spec-1 terminal status completed; no close primitive surfaced
 - **Pre-dispatch Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
@@ -100,10 +101,13 @@ Spec sequence coverage: sequence: N/A because the reviewed acceptance is not seq
 
 - **Fixes made**: packages/web/src/main.tsx corrected and proof added
 - **Review subagents**: Standards initial reviewer standards-1 completed, final reviewer standards-2 completed; Spec initial reviewer spec-1 completed, final reviewer spec-2 completed
+- **Review recovery**: none
 - **Review subagent cleanup**: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion
 - **Review subagent cleanup proof**: Standards reviewers standards-1 and standards-2 terminal status completed; no close primitive surfaced; Spec reviewers spec-1 and spec-2 terminal status completed; no close primitive surfaced
 - **Pre-dispatch Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
 - **Pre-dispatch Spec source inventory**: issue #1
+- **Final-review Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
+- **Final-review Spec source inventory**: issue #1
 - **Handoff Standards source inventory**: AGENTS.md | CLAUDE.md | smell baseline
 - **Handoff Spec source inventory**: issue #1
 - **TDD/review-fix evidence**: red-first skipped because Standards-only fix did not change behavior
@@ -524,7 +528,10 @@ test("rejects HTML-like angle tokens and documents shared identity safety", () =
   assert.match(implementTemplate, /normalized value independently/);
   for (const contract of [skill, implementTemplate]) {
     assert.match(contract, /Review subagent cleanup proof:/);
+    assert.match(contract, /Review recovery:/);
     assert.match(contract, /Pre-dispatch Standards source inventory:/);
+    assert.match(contract, /Final-review Standards source inventory:/);
+    assert.match(contract, /Final-review Spec source inventory:/);
     assert.match(contract, /Handoff Spec source inventory:/);
   }
   for (const contract of [skill, fallback]) {
@@ -682,6 +689,165 @@ test("requires concrete pre-dispatch source inventories and reconciles handoff c
 
   assert.deepEqual(
     validateReviewNormalBody(noFixBody.replaceAll("issue #1", "no spec available")),
+    []
+  );
+});
+
+test("requires an explicit recovery disposition and rejects improvised synthesis", () => {
+  const missing = validateReviewNormalBody(
+    noFixBody.replace(/^- \*\*Review recovery.*\n/m, "")
+  );
+  assert.ok(missing.some((error) => error.includes("Review recovery")));
+
+  const vague = validateReviewNormalBody(
+    noFixBody.replace(
+      "Review recovery**: none",
+      "Review recovery**: bounded interrupt-and-synthesis recovery"
+    )
+  );
+  assert.ok(vague.some((error) => error.includes("Review recovery")));
+
+  const localSynthesis = validateReviewNormalBody(
+    noFixBody.replace(
+      "Review recovery**: none",
+      "Review recovery**: P1 Spec reviewer spec-1 interrupted after partial output; raw output preserved in durable sink issue #1 comment 123; completion obtained through local synthesis; output gate rerun passed"
+    )
+  );
+  assert.ok(
+    localSynthesis.some((error) =>
+      error.includes("local synthesis requires the fallback review route")
+    )
+  );
+
+  const falseNone = noFixBody
+    .replace(
+      "Spec reviewer spec-1 completed",
+      "Spec reviewer spec-1 interrupted after partial output, recovery reviewer spec-2 completed"
+    )
+    .replace(
+      "Spec reviewer spec-1 terminal status completed; no close primitive surfaced",
+      "Spec reviewers spec-1 and spec-2 terminal statuses recorded; spec-1 interrupted after partial output; spec-2 completed; no close primitive surfaced"
+    );
+  const falseNoneErrors = validateReviewNormalBody(falseNone);
+  assert.ok(
+    falseNoneErrors.some((error) =>
+      error.includes("Review recovery cannot be none")
+    )
+  );
+});
+
+test("accepts a fully attributed fresh-reviewer recovery", () => {
+  const recovered = immediateFixBody
+    .replace(
+      "Spec initial reviewer spec-1 completed, final reviewer spec-2 completed",
+      "Spec initial reviewer spec-1 interrupted after partial output, recovery reviewer spec-3 completed, final reviewer spec-2 completed"
+    )
+    .replace(
+      "Review recovery**: none",
+      "Review recovery**: P1 Spec reviewer spec-1 interrupted after partial output; raw output preserved in durable sink issue #1 comment 123; completion obtained from fresh reviewer spec-3 completed; output gate rerun passed"
+    )
+    .replace(
+      "Spec reviewers spec-1 and spec-2 terminal status completed; no close primitive surfaced",
+      "Spec reviewers spec-1, spec-3, and spec-2 reached terminal status; spec-1 interrupted after partial output; spec-3 and spec-2 completed; no close primitive surfaced"
+    );
+
+  assert.deepEqual(validateReviewNormalBody(recovered, { flags: ["--immediate-fix"] }), []);
+
+  const misattributed = recovered.replace(
+    "Spec initial reviewer spec-1 interrupted after partial output",
+    "Spec initial reviewer spec-1 completed"
+  );
+  const attributionErrors = validateReviewNormalBody(misattributed, {
+    flags: ["--immediate-fix"]
+  });
+  assert.ok(
+    attributionErrors.some((error) =>
+      error.includes("Review subagents must record interrupted reviewer spec-1")
+    )
+  );
+
+  const wrongAxis = recovered.replace(
+    "Review recovery**: P1 Spec reviewer spec-1",
+    "Review recovery**: P1 Standards reviewer spec-1"
+  );
+  const wrongAxisErrors = validateReviewNormalBody(wrongAxis, {
+    flags: ["--immediate-fix"]
+  });
+  assert.ok(
+    wrongAxisErrors.some((error) =>
+      error.includes("Review subagents must record interrupted reviewer spec-1")
+    )
+  );
+});
+
+test("immediate-fix inventories preserve dispatch sources and reconcile final-review additions", () => {
+  const missingFinal = validateReviewNormalBody(
+    immediateFixBody.replace(/^- \*\*Final-review Spec source inventory.*\n/m, ""),
+    { flags: ["--immediate-fix"] }
+  );
+  assert.ok(missingFinal.some((error) => error.includes("Final-review Spec source inventory")));
+
+  const addedSource = immediateFixBody
+    .replace(
+      "Final-review Spec source inventory**: issue #1",
+      "Final-review Spec source inventory**: issue #1 | issue #1 comment 123"
+    )
+    .replace(
+      "Handoff Spec source inventory**: issue #1",
+      "Handoff Spec source inventory**: issue #1 | issue #1 comment 123"
+    );
+  assert.deepEqual(
+    validateReviewNormalBody(addedSource, { flags: ["--immediate-fix"] }),
+    []
+  );
+
+  const droppedDispatchSource = immediateFixBody
+    .replace("Final-review Spec source inventory**: issue #1", "Final-review Spec source inventory**: issue #2")
+    .replace("Handoff Spec source inventory**: issue #1", "Handoff Spec source inventory**: issue #2");
+  const droppedErrors = validateReviewNormalBody(droppedDispatchSource, {
+    flags: ["--immediate-fix"]
+  });
+  assert.ok(
+    droppedErrors.some((error) =>
+      error.includes("Final-review Spec source inventory dropped pre-dispatch entry: issue #1")
+    )
+  );
+
+  const staleHandoff = immediateFixBody.replace(
+    "Final-review Spec source inventory**: issue #1",
+    "Final-review Spec source inventory**: issue #1 | issue #1 comment 123"
+  );
+  const staleErrors = validateReviewNormalBody(staleHandoff, { flags: ["--immediate-fix"] });
+  assert.ok(
+    staleErrors.some((error) =>
+      error.includes("Handoff Spec source inventory does not match final-review inventory")
+    )
+  );
+
+  const suppliedAfterDispatch = immediateFixBody
+    .replace(
+      "Pre-dispatch Spec source inventory**: issue #1",
+      "Pre-dispatch Spec source inventory**: no spec available"
+    )
+    .replace(
+      "Final-review Spec source inventory**: issue #1",
+      "Final-review Spec source inventory**: issue #2 comment 456"
+    )
+    .replace(
+      "Handoff Spec source inventory**: issue #1",
+      "Handoff Spec source inventory**: issue #2 comment 456"
+    );
+  assert.deepEqual(
+    validateReviewNormalBody(suppliedAfterDispatch, { flags: ["--immediate-fix"] }),
+    []
+  );
+});
+
+test("accepts concrete tracker-comment notation in Spec source inventories", () => {
+  assert.deepEqual(
+    validateReviewNormalBody(
+      noFixBody.replaceAll("issue #1", "issue #1 comment 123")
+    ),
     []
   );
 });
@@ -964,7 +1130,7 @@ Final SHA: def5678
 
 | Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |
 |---|---|---|---|---|---|---|---|
-| #355 | read | ADR 0008 read | typed public contract | red-first skipped because Standards-only/conformance-only fix did not change behavior | pnpm typecheck passed | AC1; atoms: atomic; proof surfaces: server type contract; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review-fix evidence |
+| #355 | read | aligned because ADR 0008 authorizes the typed public contract seam | typed public contract | red-first skipped because Standards-only/conformance-only fix did not change behavior | pnpm typecheck passed | AC1; atoms: atomic; proof surfaces: server type contract; sequence: N/A because criterion is not sequence-sensitive | RF-1 - review-fix evidence |
 
 Verification command ledger:
 | Exact command | Observed result/counts | Run count | Represented SHA/tree |
@@ -986,7 +1152,7 @@ TDD closeout preflight:
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
 - Pre-red evidence reference: issue #355 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
-- ADRs/principles/docs status: present
+- ADRs/principles/docs status: aligned because ADR 0008 authorizes the typed public contract seam
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces
 - Acceptance sequence map: all rows list justified sequence N/A
 - Partial-red / red-first skip reasons: listed
@@ -1002,7 +1168,7 @@ Evidence identity refresh:
 - Superseded evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none
 - Superseded-token sweep: N/A because every superseded category is none
 
-TDD evidence gate passed: durable sink issue #355 closeout comment; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status present; sequence evidence N/A; evidence identities present; partial-red / red-first skip reasons listed; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
+TDD evidence gate passed: durable sink issue #355 closeout comment; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status aligned because ADR 0008 authorizes the typed public contract seam; sequence evidence N/A; evidence identities present; partial-red / red-first skip reasons listed; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
 `;
 
   assert.deepEqual(validateReviewNormalBody(body, { flags: ["--immediate-fix", "--tdd"] }), []);

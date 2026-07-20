@@ -140,7 +140,7 @@ Use columns `Slice | Checklist item | Covered by final AC mapping | N/A reason`.
 
 For a composite checklist item, the resolved AC text must cover every named component. One AC may cover multiple components, multiple exact mappings may divide them, or an AC may encode an explicit cross-slice handoff that names the component and the slice that closes it. Every inapplicable row uses `N/A - <specific reason>`. An unaffected slice gets one `browser-visible guidance checklist` row with a specific N/A reason. A generic body criterion or final-ledger `yes` never substitutes for this run sheet.
 
-Composite coverage is semantic, not a demand to copy checklist labels into issue prose. Use repository-native terms when they prove every component named by the canonical item, and keep validator negative controls for meaningful omissions. Do not add checklist phrases solely to make the checker pass.
+Composite coverage is checked mechanically, not by free-form semantics: the validator resolves each composite item against the bounded component-synonym regex table (`COMPOSITE_CHECKLIST_COMPONENTS`) in `scripts/validate-publication.mjs`, so only vocabulary that table recognizes proves a component — a semantically equivalent phrasing outside it fails (for example, "permits retrying" does not prove `recovery`). Draft the acceptance criteria of browser-visible slices in the checklist items' component vocabulary from the start, as prior child exemplars do. On failure the validator names the unmet components in `missingCompositeComponents`. Do not pad prose with checklist phrases the acceptance criterion does not actually deliver — the vocabulary must sit on real behavior the slice commits to.
 
 ## 3. Validate staged artifacts
 
@@ -275,7 +275,13 @@ and state, and checks the acceptance count, parent, required sections, story pos
 placeholders, and machine-local paths. Correct defects with the tracker edit command and rerun this
 verifier before continuing.
 
-After the single-child verifier passes, immediately update that slice's working-publication-ledger entry with the actual issue number, returned URL, exact resolved tracker and external blockers, and `"verifierStatus": "verified"`. Resolve only established edges on later entries that name this slice in `blockedBySlices`, rerun working-ledger validation, and update nothing else speculatively. If the create or verification fails, leave the entry unpublished or record `"verifierStatus": "failed"`, then stop.
+After the single-child verifier passes, complete this post-verification sequence before the next create call, and never batch it into the same command as that create:
+
+1. Update that slice's working-publication-ledger entry with the actual issue number, returned URL, exact resolved tracker and external blockers, and `"verifierStatus": "verified"`.
+2. Resolve the now-established edge on every later entry that names this slice in `blockedBySlices`; update nothing else speculatively.
+3. Rerun working-ledger validation and confirm it passes before proceeding.
+
+If the create or verification fails, leave the entry unpublished or record `"verifierStatus": "failed"`, then stop.
 
 On resume, read the working publication ledger before any duplicate guard or create call. Re-fetch each entry marked `verified`, rerun its single-child verifier against the staged body with that entry's frozen `acceptanceCount`, and retain it only if number, URL, acceptance count, blockers, labels, and body still pass. Reconcile any entry with a number or URL but no verified status using the ambiguous-mutation rule in Step 1. Resume at the first unpublished slice in dependency order; never recreate an already verified slice.
 

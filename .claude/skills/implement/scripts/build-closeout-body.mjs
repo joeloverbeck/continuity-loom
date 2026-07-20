@@ -6,6 +6,16 @@ import { pathToFileURL } from "node:url";
 
 import { buildAuditScaffold } from "./build-acceptance-manifest.mjs";
 import {
+  ACCEPTANCE_AUDIT_HEADER,
+  matchingAcceptanceAuditRows,
+  parseAcceptanceAuditRows
+} from "./acceptance-audit-contract.mjs";
+import {
+  SPLIT_CORE_FINAL_INSPECTION,
+  SPLIT_CORE_PREINDEX_INSPECTION,
+  renderSplitCoreIndex
+} from "./split-core-contract.mjs";
+import {
   hasConcreteGreenEvidence,
   hasConcreteRedEvidence,
   validateBackendCurrentnessValue as backendCurrentnessError,
@@ -16,7 +26,7 @@ import {
 export const DEFAULT_CLOSEOUT_BODY_MAX_BYTES = 65_536;
 export const DEFAULT_CLOSEOUT_EVIDENCE_HEADROOM_BYTES = 16_384;
 
-const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> (--parent <issue> | --scope issue-set --anchor <issue>) [--audit-input <audit.md>] [--evidence-input <evidence.json>] (--review <normal|fallback> [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] | --audit-chunk --shared-evidence-core-url <url>) [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
+const usage = `Usage: node .claude/skills/implement/scripts/build-closeout-body.mjs <manifest.json> --output <body.md> (--parent <issue> | --scope issue-set --anchor <issue>) [--audit-input <audit.md>] [--evidence-input <evidence.json>] (--review <normal|fallback> [--immediate-fix] [--tdd-parent-rollup] [--browser] [--principles] [--local-only] [--fixed-child <none|pending|final>] [--split-core-preindex | --split-core-final --linked-audit-chunk-url <https-url>...] | --audit-chunk --shared-evidence-core-url <url>) [--max-bytes <positive integer>] [--size-plan] [--require-headroom]`;
 
 export const assertCloseoutBodySize = (body, maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES) => {
   if (!Number.isInteger(maxBytes) || maxBytes <= 0) {
@@ -85,17 +95,15 @@ const requireManifest = (manifest) => {
   }
 };
 
-const exactAuditKey = (issue, check) =>
-  `| #${issue.number} | ${check.id} - ${tableText(check.text)} |`;
-
 export const validateAuditInput = (manifest, audit) => {
-  const header = "| Issue | Acceptance criterion or conformance check | Evidence | Status |";
-  if (!audit.includes(header)) throw new Error("audit input is missing the exact audit table header");
+  if (!audit.includes(ACCEPTANCE_AUDIT_HEADER)) {
+    throw new Error("audit input is missing the exact audit table header");
+  }
+  const rows = parseAcceptanceAuditRows(audit);
 
   for (const issue of manifest.issues) {
     for (const check of issue.checks) {
-      const key = exactAuditKey(issue, check);
-      const count = audit.split(key).length - 1;
+      const count = matchingAcceptanceAuditRows(rows, issue, check).length;
       if (count !== 1) {
         throw new Error(`#${issue.number} ${check.id} requires exactly one exact audit row; found ${count}`);
       }
@@ -351,7 +359,7 @@ const tddBlock = (manifest, evidence) => {
     })
     : manifest.issues.map(
       (issue) =>
-        `| #${issue.number} | <CONTEXT.md status> | <ADRs/principles/docs status> | <seam> | <red command/failure or skip reason> | <green command/evidence with passing result> | ${acceptanceIds(issue)}; atoms: <authoritative atoms>; proof surfaces: <surface for each atom>; sequence: <ordered proof or justified N/A> | <review fix / red-first skip reason> |`
+        `| #${issue.number} | <CONTEXT.md status> | <aligned authority disposition, approved amendment/exception with durable reference, or reasoned N/A> | <seam> | <red command/failure or skip reason> | <green command/evidence with passing result> | ${acceptanceIds(issue)}; atoms: <authoritative atoms>; proof surfaces: <surface for each atom>; sequence: <ordered proof including applicable stateful/async adversaries or justified N/A> | <review fix / red-first skip reason> |`
     );
   const reviewFixIds = evidenceIds(reviewFixes);
   const reviewFixMap = reviewFixes.length > 0
@@ -390,9 +398,9 @@ TDD closeout preflight:
 - Pre-red recovery status: <status>
 - Pre-red evidence reference: <durable sink plus heading/row anchor and chronology proof, anchored recovery addendum, or reasoned N/A>
 - CONTEXT.md status: <present, absent, or N/A>
-- ADRs/principles/docs status: <present or N/A>
+- ADRs/principles/docs status: <aligned because authorities and concrete basis, approved amendment/exception with durable authority reference, or N/A because>
 - Acceptance atom map: <all rows list exact criteria, atoms, and proof surfaces>
-- Acceptance sequence map: <all rows list ordered proof or justified N/A>
+- Acceptance sequence map: <all rows list ordered proof including applicable stateful re-entry/terminal paths and async settlement order, or justified N/A>
 - Partial-red / red-first skip reasons: <none or listed>
 - Evidence-only rows freshness: <none or freshness result>
 - Evidence-only browser console state: <state or N/A>
@@ -401,7 +409,7 @@ TDD closeout preflight:
 - Evidence identity refresh: <same-sink identity block inspected>
 - Existing-test contract-change rows: <none or listed>
 
-TDD evidence gate passed: durable sink <stable issue reference>; compact table/header <present after structural check>; seams accounted for ${accountedGate}; CONTEXT.md status <present, absent, or N/A>; ADRs/principles/docs status <present or N/A>; sequence evidence <present or N/A>; evidence identities <present>; partial-red / red-first skip reasons <none or listed>; evidence-only rows <none or listed>; proof server preflight <present or N/A>; existing-test contract-change rows <none or listed>.`;
+TDD evidence gate passed: durable sink <stable issue reference>; compact table/header <present after structural check>; seams accounted for ${accountedGate}; CONTEXT.md status <present, absent, or N/A>; ADRs/principles/docs status <aligned because authorities and concrete basis, approved amendment/exception with durable authority reference, or N/A because>; sequence evidence <present or N/A>; evidence identities <present>; partial-red / red-first skip reasons <none or listed>; evidence-only rows <none or listed>; proof server preflight <present or N/A>; existing-test contract-change rows <none or listed>.`;
 };
 
 const reviewAcceptanceSource = (issue) => {
@@ -522,17 +530,24 @@ Review: code-review against <resolved fixed point>; outcome ${immediateFix ? "fi
 
 Review subagents: Standards initial reviewer <ID> completed, final reviewer <ID> completed; Spec initial reviewer <ID> completed, final reviewer <ID> completed
 
+Review recovery: <none / structured interrupted-review recovery; local synthesis requires fallback>
+
 Review subagent cleanup: Standards <disposition>; Spec <disposition>
 
 Review subagent cleanup proof: Standards <reviewer IDs and observed cleanup proof>; Spec <reviewer IDs and observed cleanup proof>
 
 Pre-dispatch Standards source inventory: <concrete path | concrete path | smell baseline>
 
-Pre-dispatch Spec source inventory: <issue #N | concrete spec path | no spec available>
+Pre-dispatch Spec source inventory: <issue #N | issue #N comment NNN | concrete spec path | no spec available>
+${immediateFix ? `
+Final-review Standards source inventory: <every pre-dispatch entry plus concrete authorities introduced before final re-review>
+
+Final-review Spec source inventory: <every pre-dispatch entry plus concrete authorities introduced before final re-review; exact no spec available may be replaced by a later source>
+` : ""}
 
 ## Standards
 
-Handoff Standards source inventory: <exact same entry set as Pre-dispatch Standards source inventory>
+Handoff Standards source inventory: <exact same entry set as ${immediateFix ? "Final-review" : "Pre-dispatch"} Standards source inventory>
 
 Sources reviewed: <standards sources and smell baseline>
 
@@ -540,7 +555,7 @@ Findings: <none or findings>
 
 ## Spec
 
-Handoff Spec source inventory: <exact same entry set as Pre-dispatch Spec source inventory>
+Handoff Spec source inventory: <exact same entry set as ${immediateFix ? "Final-review" : "Pre-dispatch"} Spec source inventory>
 
 Sources reviewed: <issues, PRD, principles, ADRs, and specs>
 
@@ -679,7 +694,9 @@ const renderAuditChunkScaffold = (manifest, options, scope) => {
     ["tdd-parent-rollup", options.tddParentRollup],
     ["browser", options.browser],
     ["principles", options.principles],
-    ["local-only", options.localOnly]
+    ["local-only", options.localOnly],
+    ["split-core", options.splitCoreMode],
+    ["linked-audit-chunk-url", options.linkedAuditChunkUrls?.length]
   ].filter(([, enabled]) => enabled).map(([mode]) => mode);
   if (incompatibleModes.length > 0) {
     throw new Error(`audit chunks cannot use shared-core modes: ${incompatibleModes.join(", ")}`);
@@ -725,6 +742,8 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
     principles = false,
     localOnly = false,
     fixedChildMode = "none",
+    splitCoreMode,
+    linkedAuditChunkUrls = [],
     maxBytes = DEFAULT_CLOSEOUT_BODY_MAX_BYTES
   } = options;
 
@@ -735,6 +754,7 @@ const renderCloseoutBodyScaffold = (manifest, options) => {
   if (scope.scopeMode === "issue-set" && fixedChildMode !== "none") {
     throw new Error("issue-set scope cannot use fixed-child modes");
   }
+  const splitCoreIndex = renderSplitCoreIndex(splitCoreMode, linkedAuditChunkUrls);
 
   const structuredEvidence = validateStructuredEvidence(manifest, evidence, {
     immediateFix,
@@ -767,6 +787,11 @@ Post-child closure verification before parent closeout: <exact issue states or p
   const fixedChildInspection = scope.scopeMode === "issue-set"
     ? "N/A because sibling issues do not use fixed-child closeout"
     : "<inspection status or N/A>";
+  const bodyFilesInspected = splitCoreMode === "preindex"
+    ? `<${SPLIT_CORE_PREINDEX_INSPECTION}>`
+    : splitCoreMode === "final"
+      ? `<${SPLIT_CORE_FINAL_INSPECTION}>`
+      : "<local body inspected privately or N/A>";
 
   const body = `Implementation closeout for ${scopeHeading(scope)}
 
@@ -794,7 +819,7 @@ ${identityBlock}
 
 ${auditText}
 
-${principlesLine}
+${splitCoreIndex ? `${splitCoreIndex}\n\n` : ""}${principlesLine}
 
 ${fixedChildBlock(fixedChildMode)}
 
@@ -802,7 +827,7 @@ ${stateBlock}
 
 Closeout preflight:
 - Audit sink: <stable issue reference>
-- Body file(s) inspected: <local body inspected privately or N/A>
+- Body file(s) inspected: ${bodyFilesInspected}
 - Parent rollup URL: ${parentRollupValue}
 - Fixed child inline close comment: ${fixedChildInspection}
 - Fixed child final inline close comment inspected: ${fixedChildInspection}
@@ -852,17 +877,20 @@ if (isCli) {
     "--anchor",
     "--review",
     "--shared-evidence-core-url",
+    "--linked-audit-chunk-url",
     "--fixed-child",
     "--max-bytes"
   ];
+  const indexesFor = (flag) =>
+    args.flatMap((arg, index) => arg === flag ? [index] : []);
   const valueFor = (flag) => {
     const index = args.indexOf(flag);
     return index < 0 ? undefined : args[index + 1];
   };
+  const valuesFor = (flag) => indexesFor(flag).map((index) => args[index + 1]);
   const valueIndexes = new Set(
     valueFlags
-      .map((flag) => args.indexOf(flag))
-      .filter((index) => index >= 0)
+      .flatMap(indexesFor)
       .map((index) => index + 1)
   );
   const manifestPath = args.find((arg, index) => !arg.startsWith("--") && !valueIndexes.has(index));
@@ -881,6 +909,10 @@ if (isCli) {
     const reviewMode = valueFor("--review");
     const auditChunk = args.includes("--audit-chunk");
     const sharedEvidenceCoreUrl = valueFor("--shared-evidence-core-url");
+    const splitCorePreindex = args.includes("--split-core-preindex");
+    const splitCoreFinal = args.includes("--split-core-final");
+    const linkedAuditChunkUrls = valuesFor("--linked-audit-chunk-url");
+    const splitCoreMode = splitCorePreindex ? "preindex" : splitCoreFinal ? "final" : undefined;
     const fixedChildMode = valueFor("--fixed-child") ?? "none";
     for (const flag of ["--output"]) {
       const value = valueFor(flag);
@@ -895,16 +927,26 @@ if (isCli) {
     } else {
       throw new Error("--scope must be issue-set when supplied");
     }
+    if (splitCorePreindex && splitCoreFinal) {
+      throw new Error("use only one of --split-core-preindex or --split-core-final");
+    }
+    if (linkedAuditChunkUrls.some((url) => !url || url.startsWith("--"))) {
+      throw new Error("--linked-audit-chunk-url requires a concrete HTTPS URL");
+    }
     if (auditChunk) {
       if (!sharedEvidenceCoreUrl || sharedEvidenceCoreUrl.startsWith("--")) {
         throw new Error("--audit-chunk requires --shared-evidence-core-url");
       }
       if (reviewMode !== undefined) throw new Error("--audit-chunk cannot be combined with --review");
+      if (splitCoreMode !== undefined) throw new Error("--audit-chunk cannot be combined with split-core modes");
     } else {
       if (!reviewMode || reviewMode.startsWith("--")) throw new Error("--review requires a value");
       if (sharedEvidenceCoreUrl !== undefined) {
         throw new Error("--shared-evidence-core-url requires --audit-chunk");
       }
+    }
+    if (linkedAuditChunkUrls.length > 0 && splitCoreMode !== "final") {
+      throw new Error("--linked-audit-chunk-url requires --split-core-final");
     }
     if (args.includes("--audit-input")) {
       const value = valueFor("--audit-input");
@@ -934,6 +976,8 @@ if (isCli) {
       reviewMode,
       auditChunk,
       sharedEvidenceCoreUrl,
+      splitCoreMode,
+      linkedAuditChunkUrls,
       immediateFix: args.includes("--immediate-fix"),
       tddParentRollup: args.includes("--tdd-parent-rollup"),
       browser: args.includes("--browser"),

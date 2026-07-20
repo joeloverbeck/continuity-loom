@@ -55,6 +55,28 @@ expect(record.shortId).toMatch(/^FAC-/); // setup contract reached
 expect(selectPressureContext(world, record.id)).toContainEqual(expectedContext); // intended behavior red
 ```
 
+**Stateful interaction tracers**: A stateful UI test must prove ownership and continuity on one active instance, not only isolated snapshots. Repeat the entry action while the first session is active and observe whether it is blocked, rejected, or safely replaces the session according to the public contract. Cover every applicable terminal outcome — success, failure, cancel, discard, and persistence — and assert which outcome retains state, clears provenance, restores the original baseline, or re-enables entry.
+
+```typescript
+test("one imported draft owns provenance until the user resolves it", async () => {
+  const editor = renderDraftEditor({ name: "Original" });
+
+  await editor.importDraft({ name: "First import" });
+  expect(editor.importControl()).toBeDisabled();
+  expect(editor.visibleProvenance()).toDescribe("First import");
+
+  await editor.attemptSecondImport({ name: "Second import" });
+  expect(editor.value("name")).toBe("First import");
+  expect(editor.visibleProvenance()).toDescribe("First import");
+
+  await editor.discardImport();
+  expect(editor.value("name")).toBe("Original");
+  expect(editor.importControl()).toBeEnabled();
+});
+```
+
+Use adjacent tracers when successful persistence should clear the session but failed persistence should retain it. Keep those assertions at the public component, route, or API seam.
+
 **Static contract checks**: Use these only when the spec names a source-level contract, such as a required route string or a forbidden legacy import. Pair them with public-interface coverage when behavior is user-visible. Do not use source-file string checks merely to prove browser-visible UI text, controls, or flow behavior; use a public UI/rendered DOM test or evidence-only browser smoke unless the spec names the source contract.
 
 ```typescript

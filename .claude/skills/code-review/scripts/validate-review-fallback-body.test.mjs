@@ -159,7 +159,7 @@ Final SHA: def5678
 
 | Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |
 |---|---|---|---|---|---|---|---|
-| #355 | read | ADR 0008 read | red-first public workflow | \`pnpm test -- workflow-order\` failed because Pressure appeared before staging | \`pnpm test -- workflow-order\` passed and observed Proposal then staging then Pressure | AC1 exact workflow; atoms: proposal + staging + pressure; proof surfaces: production test; sequence: Proposal -> staging -> Pressure observed by the test | N/A |
+| #355 | read | aligned because ADR 0008 authorizes the public workflow seam | red-first public workflow | \`pnpm test -- workflow-order\` failed because Pressure appeared before staging | \`pnpm test -- workflow-order\` passed and observed Proposal then staging then Pressure | AC1 exact workflow; atoms: proposal + staging + pressure; proof surfaces: production test; sequence: Proposal -> staging -> Pressure observed by the test | N/A |
 
 Verification command ledger:
 | Exact command | Observed result/counts | Run count | Represented SHA/tree |
@@ -177,7 +177,7 @@ TDD closeout preflight:
 - Pre-red recovery status: N/A - pre-red preflight/table was visible before first red
 - Pre-red evidence reference: issue #355 implementation ledger; anchor TDD preflight heading; chronology same-sink line order before first red command
 - CONTEXT.md status: present
-- ADRs/principles/docs status: present
+- ADRs/principles/docs status: aligned because ADR 0008 authorizes the public workflow seam
 - Acceptance atom map: all rows list authoritative atoms and proof surfaces
 - Acceptance sequence map: all rows list ordered proof or justified sequence N/A
 - Partial-red / red-first skip reasons: none
@@ -193,7 +193,7 @@ Evidence identity refresh:
 - Superseded evidence identities: fixture paths none; browser sessions none; packet paths/hashes none; active revisions none; artifacts none
 - Superseded-token sweep: N/A because every superseded category is none
 
-TDD evidence gate passed: durable sink issue #355 closeout comment; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status present; sequence evidence present; evidence identities present; partial-red / red-first skip reasons none; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
+TDD evidence gate passed: durable sink issue #355 closeout comment; compact table/header present after structural check; seams accounted for all listed; CONTEXT.md status present; ADRs/principles/docs status aligned because ADR 0008 authorizes the public workflow seam; sequence evidence present; evidence identities present; partial-red / red-first skip reasons none; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none.
 `;
 
 const fallbackWithCurrentTdd = `${baseBody

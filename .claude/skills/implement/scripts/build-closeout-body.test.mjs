@@ -54,7 +54,7 @@ const structuredEvidence = {
     {
       issue: 364,
       contextStatus: "absent",
-      authorityStatus: "Principles read",
+      authorityStatus: "aligned because Principles authorize the parent integration seam",
       seam: "parent integration",
       red: "red-first skipped because the parent row is evidence-only",
       green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
@@ -64,7 +64,7 @@ const structuredEvidence = {
     {
       issue: 368,
       contextStatus: "absent",
-      authorityStatus: "active docs read",
+      authorityStatus: "aligned because active docs authorize the replay seam",
       seam: "replay route",
       red: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` failed because the replay assertion did not match",
       green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
@@ -171,6 +171,7 @@ const completeStructuredEvidenceBody = (generated) => generated
     /^Review subagents:.*$/m,
     "Review subagents: Standards initial reviewer standards-initial completed, final reviewer standards-final completed; Spec initial reviewer spec-initial completed, final reviewer spec-final completed"
   )
+  .replace(/^Review recovery:.*$/m, "Review recovery: none")
   .replace(
     /^Review subagent cleanup:.*$/m,
     "Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion"
@@ -180,11 +181,11 @@ const completeStructuredEvidenceBody = (generated) => generated
     "Review subagent cleanup proof: Standards reviewers standards-initial and standards-final terminal status completed; no close primitive surfaced; Spec reviewers spec-initial and spec-final terminal status completed; no close primitive surfaced"
   )
   .replace(
-    /^(?:Pre-dispatch|Handoff) Standards source inventory:.*$/gm,
+    /^(?:Pre-dispatch|Final-review|Handoff) Standards source inventory:.*$/gm,
     (line) => `${line.split(":")[0]}: AGENTS.md | CLAUDE.md | smell baseline`
   )
   .replace(
-    /^(?:Pre-dispatch|Handoff) Spec source inventory:.*$/gm,
+    /^(?:Pre-dispatch|Final-review|Handoff) Spec source inventory:.*$/gm,
     (line) => `${line.split(":")[0]}: issue #364 | issue #368`
   )
   .replace(/^Sources reviewed:.*$/gm, "Sources reviewed: AGENTS.md, active issue bodies, and the implementation diff")
@@ -239,7 +240,10 @@ const completeStructuredEvidenceBody = (generated) => generated
     "- Pre-red evidence reference: durable sink issue #364; exact heading TDD closeout preflight; line order proves this section precedes the first red command"
   )
   .replace(/^- CONTEXT\.md status:.*$/m, "- CONTEXT.md status: absent")
-  .replace(/^- ADRs\/principles\/docs status:.*$/m, "- ADRs/principles/docs status: active docs read")
+  .replace(
+    /^- ADRs\/principles\/docs status:.*$/m,
+    "- ADRs/principles/docs status: aligned because active docs authorize the structured evidence seams"
+  )
   .replace(
     /^- Acceptance atom map:.*$/m,
     "- Acceptance atom map: all rows list authoritative atoms and proof surfaces"
@@ -268,7 +272,7 @@ const completeStructuredEvidenceBody = (generated) => generated
   )
   .replace(
     /^TDD evidence gate passed:.*$/m,
-    "TDD evidence gate passed: durable sink structured evidence integration test fixture; compact table/header present after structural check; seams accounted for #364 / parent integration; #368 / replay route; RF-1, RF-2, RF-3; CONTEXT.md status absent; ADRs/principles/docs status present; sequence evidence present; evidence identities present; partial-red / red-first skip reasons listed; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none."
+    "TDD evidence gate passed: durable sink structured evidence integration test fixture; compact table/header present after structural check; seams accounted for #364 / parent integration; #368 / replay route; RF-1, RF-2, RF-3; CONTEXT.md status absent; ADRs/principles/docs status aligned because active docs authorize the structured evidence seams; sequence evidence present; evidence identities present; partial-red / red-first skip reasons listed; evidence-only rows none; proof server preflight N/A; existing-test contract-change rows none."
   )
   .replace(
     /^- Current evidence identities:.*$/m,
@@ -324,7 +328,10 @@ test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", (
     "Verification rerun:",
     "Browser/manual evidence freshness:",
     "Browser/manual console state:",
-    "Commit handling:"
+    "Commit handling:",
+    "Review recovery:",
+    "Final-review Standards source inventory:",
+    "Final-review Spec source inventory:"
   ]) {
     assert.match(body, new RegExp(label));
   }
@@ -340,6 +347,25 @@ test("buildCloseoutBodyScaffold emits selected normal-review closeout fields", (
   assert.doesNotMatch(body, /Review fallback:/);
 });
 
+test("normal no-fix scaffold keeps handoff tied to pre-dispatch inventories", () => {
+  const body = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal"
+  });
+
+  assert.match(body, /Review recovery: <none/);
+  assert.match(
+    body,
+    /Handoff Standards source inventory: <exact same entry set as Pre-dispatch Standards source inventory>/
+  );
+  assert.match(
+    body,
+    /Handoff Spec source inventory: <exact same entry set as Pre-dispatch Spec source inventory>/
+  );
+  assert.doesNotMatch(body, /Final-review Standards source inventory:/);
+  assert.doesNotMatch(body, /Final-review Spec source inventory:/);
+});
+
 test("structured evidence single-sources multi-pass review and TDD summaries", () => {
   const body = buildCloseoutBodyScaffold(manifest, {
     parentIssue: 364,
@@ -353,7 +379,7 @@ test("structured evidence single-sources multi-pass review and TDD summaries", (
   assert.match(body, /Rows accounted for: #364 \/ parent integration; #368 \/ replay route; RF-1, RF-2, RF-3/);
   assert.match(body, /seams accounted for #364 \/ parent integration; #368 \/ replay route; RF-1, RF-2, RF-3/);
   assert.match(body, /\| RF-3 \| second-pass behavior repair \| `node --test [^`]+` failed because the RF-3 assertion did not match \|/);
-  assert.match(body, /\| #368 \| absent \| active docs read \| replay route \|[^\n]+RF-1, RF-3 mapped below \|/);
+  assert.match(body, /\| #368 \| absent \| aligned because active docs authorize the replay seam \| replay route \|[^\n]+RF-1, RF-3 mapped below \|/);
   assert.match(body, /Initial Standards outcome: 1 finding, worst high: first behavior repair/);
   assert.match(body, /Initial Spec outcome: 1 finding, worst medium: spec coverage repair/);
   assert.match(body, /Findings found: 3: first behavior repair; spec coverage repair; second-pass behavior repair/);
@@ -539,7 +565,7 @@ test("split manifests can reuse complete TDD evidence while partitioning structu
     {
       issue: 500,
       contextStatus: "absent",
-      authorityStatus: "active docs read",
+      authorityStatus: "aligned because active docs authorize the parent split seam",
       seam: "parent split",
       red: "red-first skipped because the split row is evidence-only",
       green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
@@ -549,7 +575,7 @@ test("split manifests can reuse complete TDD evidence while partitioning structu
     {
       issue: 501,
       contextStatus: "absent",
-      authorityStatus: "active docs read",
+      authorityStatus: "aligned because active docs authorize the child split seam",
       seam: "child split",
       red: "red-first skipped because the split row is evidence-only",
       green: "`node --test .claude/skills/implement/scripts/build-closeout-body.test.mjs` passed",
@@ -715,6 +741,7 @@ test("normal immediate-fix scaffold satisfies the normal-review validator after 
       /^Review subagents:.*$/m,
       "Review subagents: Standards initial reviewer standards-initial completed, final reviewer standards-final completed; Spec initial and final reviewer spec-final completed"
     )
+    .replace(/^Review recovery:.*$/m, "Review recovery: none")
     .replace(
       /^Review subagent cleanup:.*$/m,
       "Review subagent cleanup: Standards close operation unavailable after terminal completion; Spec close operation unavailable after terminal completion"
@@ -724,11 +751,11 @@ test("normal immediate-fix scaffold satisfies the normal-review validator after 
       "Review subagent cleanup proof: Standards reviewers standards-initial and standards-final terminal status completed; no close primitive surfaced; Spec reviewer spec-final terminal status completed; no close primitive surfaced"
     )
     .replace(
-      /^(?:Pre-dispatch|Handoff) Standards source inventory:.*$/gm,
+      /^(?:Pre-dispatch|Final-review|Handoff) Standards source inventory:.*$/gm,
       (line) => `${line.split(":")[0]}: AGENTS.md | CLAUDE.md | smell baseline`
     )
     .replace(
-      /^(?:Pre-dispatch|Handoff) Spec source inventory:.*$/gm,
+      /^(?:Pre-dispatch|Final-review|Handoff) Spec source inventory:.*$/gm,
       (line) => `${line.split(":")[0]}: issue #364`
     )
     .replace(/^Findings:.*$/gm, "Findings: none")
@@ -844,6 +871,18 @@ test("validateAuditInput rejects missing exact manifest coverage", () => {
   );
 });
 
+test("validateAuditInput rejects a descriptive suffix after exact criterion text", () => {
+  const audit = buildAuditScaffold(manifest).replace(
+    "AC1 - Parent behavior |",
+    "AC1 - Parent behavior with an operator-added suffix |"
+  );
+
+  assert.throws(
+    () => validateAuditInput(manifest, audit),
+    /#364 AC1 requires exactly one exact audit row; found 0/
+  );
+});
+
 test("closeout scaffold enforces the configured UTF-8 byte ceiling", () => {
   assert.equal(assertCloseoutBodySize("é", 2), "é");
   assert.throws(() => assertCloseoutBodySize("é", 1), /closeout body is 2 bytes; maximum is 1 bytes/);
@@ -909,6 +948,71 @@ test("buildCloseoutBodyScaffold emits fallback and explicit N/A branches", () =>
   assert.match(body, /Fixed child inline close comment: N\/A because no fixed-template child closeout applies/);
 });
 
+test("split-core scaffolds distinguish truthful pre-index and final URL-index states", () => {
+  const firstChunkUrl = "https://github.com/example/repo/issues/364#issuecomment-201";
+  const secondChunkUrl = "https://github.com/example/repo/issues/364#issuecomment-202";
+  const preindex = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    splitCoreMode: "preindex"
+  });
+  const final = buildCloseoutBodyScaffold(manifest, {
+    parentIssue: 364,
+    reviewMode: "normal",
+    splitCoreMode: "final",
+    linkedAuditChunkUrls: [firstChunkUrl, secondChunkUrl]
+  });
+
+  assert.match(
+    preindex,
+    /^Linked acceptance-audit chunks: not indexed in this first-post core; this core claims only the disjoint rows in its supplied subset manifest\.$/m
+  );
+  assert.match(
+    preindex,
+    /Body file\(s\) inspected: <shared core body inspected; linked audit chunk bodies do not exist in the pre-index state>/
+  );
+  assert.match(final, /^Linked acceptance-audit chunks:\n- https:\/\/github\.com\/example\/repo\/issues\/364#issuecomment-201\n- https:\/\/github\.com\/example\/repo\/issues\/364#issuecomment-202$/m);
+  assert.match(
+    final,
+    /Body file\(s\) inspected: <shared core body and every linked audit chunk body inspected after URL capture>/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      splitCoreMode: "final"
+    }),
+    /final split-core state requires at least one linked audit chunk URL/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      splitCoreMode: "preindex",
+      linkedAuditChunkUrls: [firstChunkUrl]
+    }),
+    /pre-index split-core state cannot include linked audit chunk URLs/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      splitCoreMode: "final",
+      linkedAuditChunkUrls: ["http://example.test/chunk"]
+    }),
+    /linked audit chunk URL must be a concrete HTTPS URL/
+  );
+  assert.throws(
+    () => buildCloseoutBodyScaffold(manifest, {
+      parentIssue: 364,
+      reviewMode: "normal",
+      splitCoreMode: "final",
+      linkedAuditChunkUrls: [firstChunkUrl, firstChunkUrl]
+    }),
+    /linked audit chunk URLs must be unique/
+  );
+});
+
 test("closeout scaffold CLI writes a deterministic body", () => {
   const directory = mkdtempSync(join(tmpdir(), "implement-closeout-scaffold-test-"));
   const manifestPath = join(directory, "manifest.json");
@@ -957,8 +1061,11 @@ test("closeout scaffold CLI supports sibling issue sets and linked audit chunks"
   const manifestPath = join(directory, "manifest.json");
   const auditPath = join(directory, "audit.md");
   const corePath = join(directory, "core.md");
+  const indexedCorePath = join(directory, "indexed-core.md");
   const chunkPath = join(directory, "chunk.md");
   const sharedEvidenceCoreUrl = "https://github.com/example/repo/issues/364#issuecomment-123";
+  const firstChunkUrl = "https://github.com/example/repo/issues/364#issuecomment-201";
+  const secondChunkUrl = "https://github.com/example/repo/issues/364#issuecomment-202";
   writeFileSync(manifestPath, JSON.stringify(manifest));
   writeFileSync(auditPath, buildAuditScaffold(manifest));
 
@@ -976,7 +1083,31 @@ test("closeout scaffold CLI supports sibling issue sets and linked audit chunks"
       "--anchor",
       "364",
       "--review",
-      "normal"
+      "normal",
+      "--split-core-preindex"
+    ],
+    { encoding: "utf8" }
+  );
+  const indexedCore = spawnSync(
+    process.execPath,
+    [
+      builder,
+      manifestPath,
+      "--audit-input",
+      auditPath,
+      "--output",
+      indexedCorePath,
+      "--scope",
+      "issue-set",
+      "--anchor",
+      "364",
+      "--review",
+      "normal",
+      "--split-core-final",
+      "--linked-audit-chunk-url",
+      firstChunkUrl,
+      "--linked-audit-chunk-url",
+      secondChunkUrl
     ],
     { encoding: "utf8" }
   );
@@ -1000,13 +1131,18 @@ test("closeout scaffold CLI supports sibling issue sets and linked audit chunks"
     { encoding: "utf8" }
   );
   const coreBody = readFileSync(corePath, "utf8");
+  const indexedCoreBody = readFileSync(indexedCorePath, "utf8");
   const chunkBody = readFileSync(chunkPath, "utf8");
   rmSync(directory, { recursive: true, force: true });
 
   assert.equal(core.status, 0, core.stderr);
+  assert.equal(indexedCore.status, 0, indexedCore.stderr);
   assert.equal(chunk.status, 0, chunk.stderr);
   assert.match(coreBody, /^Implementation closeout for sibling issue set anchored at #364$/m);
   assert.match(coreBody, /^Parent PRD coverage: N\/A because this is a sibling issue set with no parent PRD\.$/m);
+  assert.match(coreBody, /^Linked acceptance-audit chunks: not indexed in this first-post core;/m);
+  assert.match(indexedCoreBody, new RegExp(`^- ${firstChunkUrl}$`, "m"));
+  assert.match(indexedCoreBody, new RegExp(`^- ${secondChunkUrl}$`, "m"));
   assert.match(chunkBody, /^Acceptance evidence chunk for sibling issue set anchored at #364$/m);
   assert.match(chunkBody, new RegExp(`^Shared evidence core: ${sharedEvidenceCoreUrl}$`, "m"));
 });
@@ -1087,6 +1223,10 @@ test("closeout guidance documents structured splits, audit rows, and withheld-fi
   assert.match(templates, /Shared-core structured-evidence rule:/);
   assert.match(templates, /linked audit chunk's evidence file may contain `auditRows` only/);
   assert.match(templates, /Use either `auditRows` or `--audit-input`, never both/);
+  assert.match(templates, /--completed-audit-input/);
+  assert.match(templates, /--split-core-preindex/);
+  assert.match(templates, /--split-core-final/);
+  assert.match(templates, /--linked-audit-chunk-url/);
   assert.match(templates, /Repair classes are `behavior`, `coverage-only`, `Standards-only`/);
   assert.match(templates, /form is non-`none` for review validation/);
   assert.match(templates, /`N\/A because no stateful fixture was copied`/);
