@@ -3,6 +3,7 @@ import {
   DIAGNOSTIC_CODES,
   runValidation,
   type BuildValidationSnapshotInput,
+  type SelectedCastBand,
   type ValidationRecord,
   type ValidationResult
 } from "../src/index.js";
@@ -21,6 +22,11 @@ const locationId = "019b0298-5c00-7000-8000-000000000503";
 const unselectedEntityId = "019b0298-5c00-7000-8000-000000000504";
 const wrongTypeId = "019b0298-5c00-7000-8000-000000000505";
 const danglingId = "019b0298-5c00-7000-8000-000000000506";
+const castBands = [
+  "active_onstage_cast_full",
+  "present_minor_cast_compressed",
+  "offstage_relevant_cast"
+] as const satisfies readonly SelectedCastBand[];
 
 describe("record-internal reference validation", () => {
   it("stays silent for selected coherent record references", () => {
@@ -53,6 +59,50 @@ describe("record-internal reference validation", () => {
 
     expect(blockerCodes(input)).toContain(DIAGNOSTIC_CODES.recordReferenceUnselectedRequired);
   });
+
+  it.each(castBands)(
+    "blocks every invalid CAST MEMBER entity_id path and supports both repairs in %s",
+    (castBand) => {
+      const danglingInput = castInput(castBand, danglingId);
+      expect(referenceDiagnostic(danglingInput)).toMatchObject({
+        severity: "blocker",
+        code: DIAGNOSTIC_CODES.recordReferenceDangling,
+        message: `Record ${sourceId} entity_id reference ${danglingId} does not resolve to a project record.`
+      });
+
+      const wrongKindInput = castInput(castBand, wrongTypeId);
+      expect(referenceDiagnostic(wrongKindInput)).toMatchObject({
+        severity: "blocker",
+        code: DIAGNOSTIC_CODES.recordReferenceTypeMismatch,
+        message: `Record ${sourceId} entity_id reference ${wrongTypeId} resolves to FACT instead of the required record type.`
+      });
+
+      const unselectedInput = castInput(castBand, unselectedEntityId);
+      expect(referenceDiagnostic(unselectedInput)).toMatchObject({
+        severity: "blocker",
+        code: DIAGNOSTIC_CODES.recordReferenceUnselectedRequired,
+        message: `Record ${sourceId} entity_id reference ${unselectedEntityId} must be selected for this required prompt lane.`,
+        affected: [{ recordId: sourceId, field: "CAST MEMBER.entity_id" }]
+      });
+      expect(codes(validate(unselectedInput).warnings)).not.toContain(
+        DIAGNOSTIC_CODES.recordReferenceUnselectedOptional
+      );
+
+      const selectionRepair = castInput(castBand, unselectedEntityId);
+      selectionRepair.records = [
+        ...selectionRepair.records,
+        record(unselectedEntityId, "ENTITY", { id: unselectedEntityId })
+      ];
+      selectionRepair.generationSession.active_working_set!.selected_records = [
+        ...selectionRepair.generationSession.active_working_set!.selected_records,
+        unselectedEntityId
+      ];
+      expect(referenceDiagnostic(selectionRepair)).toBeUndefined();
+
+      const correctionRepair = castInput(castBand, entityId);
+      expect(referenceDiagnostic(correctionRepair)).toBeUndefined();
+    }
+  );
 
   it("does not require unselected secret references when the secret is inactive", () => {
     const input = baseInput();
@@ -190,6 +240,24 @@ describe("record-internal reference validation", () => {
     ["revealed secret holder", record(sourceId, "SECRET", secretPayload({ status: "revealed" })), "secret_holder", true],
     ["resolved secret holder", record(sourceId, "SECRET", secretPayload({ status: "resolved" })), "secret_holder", false],
     ["non-secret secret-holder role", record(sourceId, "BELIEF", beliefPayload(entityId)), "secret_holder", false],
+    ["affordance availability", record(sourceId, "VISIBLE AFFORDANCE", {}), "available_to", false],
+    ["object carrier", record(sourceId, "OBJECT", {}), "carried_by", false],
+    ["entity-status location", record(sourceId, "ENTITY STATUS", {}), "current_location", false],
+    ["object location", record(sourceId, "OBJECT", {}), "current_location", false],
+    ["entity-status entity", record(sourceId, "ENTITY STATUS", {}), "entity_id", false],
+    ["relationship source", record(sourceId, "RELATIONSHIP", {}), "from", false],
+    ["belief holder", record(sourceId, "BELIEF", {}), "holder", false],
+    ["emotion holder", record(sourceId, "EMOTION", {}), "holder", false],
+    ["intention holder", record(sourceId, "INTENTION", {}), "holder", false],
+    ["consequence target", record(sourceId, "CONSEQUENCE", {}), "holder_or_target", false],
+    ["fact knower", record(sourceId, "FACT", {}), "known_by", false],
+    ["event location", record(sourceId, "EVENT", {}), "location", false],
+    ["obligation debtor", record(sourceId, "OBLIGATION", {}), "owed_by", false],
+    ["obligation creditor", record(sourceId, "OBLIGATION", {}), "owed_to", false],
+    ["object owner", record(sourceId, "OBJECT", {}), "owner", false],
+    ["event participant", record(sourceId, "EVENT", {}), "participant", false],
+    ["relationship target", record(sourceId, "RELATIONSHIP", {}), "to", false],
+    ["broad record link", record(sourceId, "EVENT", {}), "record_link", false],
     ["selected active plan holder", record(sourceId, "PLAN", planPayload()), "holder", true],
     ["selected inactive plan holder", record(sourceId, "PLAN", planPayload({ plan_status: "abandoned" })), "holder", false],
     ["selected active plan participant", record(sourceId, "PLAN", planPayload()), "participant", false]
@@ -212,6 +280,12 @@ function validate(input: BuildValidationSnapshotInput): ValidationResult {
 
 function blockerCodes(input: BuildValidationSnapshotInput): readonly string[] {
   return codes(validate(input).blockers);
+}
+
+function referenceDiagnostic(input: BuildValidationSnapshotInput) {
+  return validate(input).blockers.find((diagnostic) => diagnostic.affected.some(
+    (affected) => affected.recordId === sourceId && affected.field === "CAST MEMBER.entity_id"
+  ));
 }
 
 function codes(diagnostics: ValidationResult["blockers"]): readonly string[] {
@@ -259,11 +333,32 @@ function baseInput(): BuildValidationSnapshotInput {
   };
 }
 
-function record(id: string, type: string, payload: unknown) {
+function castInput(castBand: SelectedCastBand, targetId: string): BuildValidationSnapshotInput {
+  const input = baseInput();
+  input.records = [...input.records, record(sourceId, "CAST MEMBER", { entity_id: targetId }, castBand)];
+  input.generationSession.active_working_set!.selected_records = [
+    ...input.generationSession.active_working_set!.selected_records,
+    sourceId
+  ];
+
+  if (castBand === "active_onstage_cast_full") {
+    input.generationSession.active_working_set!.active_onstage_cast_full = [{
+      cast_member_id: sourceId,
+      local_function: "active_speaker"
+    }];
+  } else {
+    input.generationSession.active_working_set![castBand] = [sourceId];
+  }
+
+  return input;
+}
+
+function record(id: string, type: string, payload: unknown, castBand?: SelectedCastBand) {
   return {
     id,
     type,
-    payload
+    payload,
+    ...(castBand ? { castBand } : {})
   };
 }
 

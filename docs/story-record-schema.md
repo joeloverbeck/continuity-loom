@@ -510,7 +510,7 @@ Core fields are required for materially involved active/onstage person-like cast
 
 Validation:
 
-- `entity_id` must resolve to an ENTITY record. Dangling or mistyped references block; unselected resolved entity ids warn while optional.
+- `entity_id` is a required reference for every selected CAST MEMBER, whether active/onstage-full, present-minor, or offstage-relevant. It must resolve to a selected ENTITY record. Dangling, mistyped, and unselected resolved targets block before compilation; the id remains validation-only and never falls back to a raw id in the prompt.
 
 ### 5.2 Optional extended fields
 

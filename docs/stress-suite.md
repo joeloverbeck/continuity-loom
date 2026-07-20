@@ -1129,7 +1129,9 @@ Stress target: selected durable records must not contain dangling, mistyped, or 
 Required records:
 
 - BELIEF, SECRET, OBJECT, RELATIONSHIP, and PLAN records with reference fields.
+- CAST MEMBER records in active/onstage-full, present-minor, and offstage-relevant bands, each linked through `entity_id` to an ENTITY target.
 - One dangling holder, one current-location type mismatch, one hidden secret holder that is present but unselected, and one optional relationship endpoint that is unselected.
+- For each CAST MEMBER band, exercise dangling, wrong-kind, and existing-but-unselected `entity_id` targets. Then verify both recovery paths in every band: select the existing ENTITY target, and correct `entity_id` to an already selected ENTITY.
 
 Validation focus tags:
 
@@ -1148,10 +1150,11 @@ Warnings:
 Expected readiness outcome:
 
 - Required unresolved internal references block; optional unselected internal references warn.
+- Every invalid CAST MEMBER `entity_id` path blocks Preview and Generate with `record-reference-unselected-required` for an existing-but-unselected ENTITY, while selection or correction restores ordinary readiness without changing any other reference role's posture.
 
 Prompt-quality risk:
 
-- Compiler-resolved labels fall back to UUIDs or omit important selected-record context.
+- Compiler-resolved labels fall back to UUIDs or omit important selected-record context. CAST MEMBER `entity_id` is the deliberate exception: its target must be selected and its raw id never reaches the prompt.
 
 ---
 

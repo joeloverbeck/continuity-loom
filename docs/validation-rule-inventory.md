@@ -110,7 +110,7 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `voice-pressure-attachment-invalid` | blocker | applies | Current voice pressure or voice override targets a dangling or non-CAST MEMBER record. | §11.3 | — |
 | `record-reference-dangling` | blocker | applies | A selected record's extracted internal reference does not resolve to a project record. | §11.3 | — |
 | `record-reference-type-mismatch` | blocker | applies | A selected record's extracted internal reference resolves to a record outside the lane's expected type family. | §11.3 | — |
-| `record-reference-unselected-required` | blocker | applies | A selected record's extracted internal reference resolves to an unselected record in a required prompt lane. | §11.2 | — |
+| `record-reference-unselected-required` | blocker | applies | A selected record's extracted internal reference resolves to an unselected record in a required prompt lane, including every selected CAST MEMBER `entity_id` in all three cast bands. | §11.2 | Case 35 |
 | `onstage-entity-reference-invalid` | blocker | applies | A generation-brief onstage entity id is dangling, mistyped, or not selected for the readiness-required onstage-entities lane. | §11.2 / §11.3 | — |
 | `offstage-entity-reference-invalid` | blocker | applies | A generation-brief offstage pressure id is dangling or mistyped, or is unselected when offstage pressure is context-required. | §11.2 / §11.3 | — |
 | `entity-statuses-reference-invalid` | blocker | applies | A generation-brief entity-status record id is dangling or mistyped, or is unselected when current agency/status is context-required. | §11.2 / §11.3 | — |

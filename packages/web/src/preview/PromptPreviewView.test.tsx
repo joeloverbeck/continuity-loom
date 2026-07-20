@@ -164,6 +164,70 @@ describe("PromptPreviewView", () => {
     expect(readiness).toHaveBeenCalledTimes(2);
   });
 
+  it("clears stale prompt bytes for a required CAST MEMBER reference blocker and recovers accessibly", async () => {
+    const castMemberId = "019b0298-5c00-7000-8000-0000000003b0";
+    vi.mocked(readiness)
+      .mockResolvedValueOnce(readinessFixture({}))
+      .mockResolvedValueOnce(readinessFixture({
+        blockers: [diagnostic({
+          severity: "blocker",
+          code: "record-reference-unselected-required",
+          legacyCode: "record-reference-unselected-required",
+          title: "Record Reference Unselected Required",
+          group: "required-before-prompt-generation",
+          affected: [{
+            kind: "record",
+            recordId: castMemberId,
+            displayLabel: "Iven Rook dossier",
+            fieldPath: "CAST MEMBER.entity_id"
+          }],
+          actions: [{ kind: "open-record", target: castMemberId, label: "Open Iven Rook dossier" }]
+        })]
+      }))
+      .mockResolvedValueOnce(readinessFixture({}));
+    vi.mocked(compile)
+      .mockResolvedValueOnce(compileResult("<role>\nFIRST", "fingerprint-first"))
+      .mockResolvedValueOnce({
+        ok: false,
+        kind: "validation-blocked",
+        validation: {
+          blockers: [{
+            severity: "blocker",
+            code: "record-reference-unselected-required",
+            message: "Required CAST MEMBER reference is unselected.",
+            affected: [],
+            whyItMatters: "The cast dossier needs its linked entity.",
+            suggestedActions: ["revise"]
+          }],
+          warnings: [],
+          isBlocked: true
+        }
+      })
+      .mockResolvedValueOnce(compileResult("<role>\nSECOND", "fingerprint-second"));
+
+    renderPreview();
+    expect(await screen.findByText(/FIRST/)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh preview" }));
+
+    expect(await screen.findByRole("heading", { name: "Record Reference Unselected Required" })).toBeTruthy();
+    expect(screen.queryByTestId("prompt-body")).toBeNull();
+    expect(screen.queryByText(/FIRST/)).toBeNull();
+    expect(screen.queryByText("fingerprint-first")).toBeNull();
+    const repairAction = screen.getByRole("button", { name: "Open Iven Rook dossier" });
+    repairAction.focus();
+    expect(document.activeElement).toBe(repairAction);
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh preview" }));
+
+    expect(await screen.findByText(/SECOND/)).toBeTruthy();
+    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+    expect(screen.queryByText(/FIRST/)).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Record Reference Unselected Required" })).toBeNull();
+    expect(compile).toHaveBeenCalledTimes(3);
+    expect(readiness).toHaveBeenCalledTimes(3);
+  });
+
   it("shows a selected non-person entity's material-pressure description while excluding a person entity", async () => {
     // #113 (F004): Prompt Preview coverage. The preview renders the real compiled non-person entity
     // description but never the person entity's short_description, which the compiler excludes.
@@ -258,7 +322,7 @@ function compiledEntityPrompt(): string {
   ).prompt;
 }
 
-function compileResult(prompt: string): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
   return {
     prompt,
     metadata: {
@@ -267,7 +331,7 @@ function compileResult(prompt: string): CompileResult {
         compiler: "compiler-1",
         contract: "contract-1"
       },
-      fingerprint: "fingerprint-1",
+      fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
     }
@@ -305,6 +369,7 @@ function diagnostic(input: {
   title: string;
   group: ReadinessDiagnostic["group"];
   affected?: ReadinessDiagnostic["affected"];
+  actions?: ReadinessDiagnostic["actions"];
 }): ReadinessDiagnostic {
   return {
     severity: input.severity,
@@ -315,7 +380,7 @@ function diagnostic(input: {
     whyItMatters: `${input.title} matters.`,
     fastestFix: `${input.title} fastest fix.`,
     affected: input.affected ?? [],
-    actions: [{ kind: "copy-technical-json", label: "Copy technical JSON" }],
+    actions: input.actions ?? [{ kind: "copy-technical-json", label: "Copy technical JSON" }],
     dedupeKey: `${input.severity}:${input.code}`,
     sortKey: `${input.severity}:${input.code}`,
     technical: {

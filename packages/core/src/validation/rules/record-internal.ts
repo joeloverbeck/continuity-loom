@@ -55,6 +55,10 @@ export function expectedRecordReferenceTypes(refRole: string, sourceRecord?: Val
 }
 
 export function isRecordReferenceRequired(snapshot: ValidationSnapshot, sourceRecord: ValidationRecord, refRole: string): boolean {
+  if (sourceRecord.type === "CAST MEMBER" && refRole === "entity_id") {
+    return true;
+  }
+
   if (
     sourceRecord.type === "SECRET" &&
     (refRole === "secret_holder" || refRole === "non_holder_to_protect")
