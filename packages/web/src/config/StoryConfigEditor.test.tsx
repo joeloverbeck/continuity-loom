@@ -295,11 +295,14 @@ describe("StoryConfigEditor", () => {
     setupMocks();
     render(<StoryConfigEditor />);
 
-    // The list renders as a group named by the author label, described by the schema key.
+    // The list renders as a group named by the author label, described by both the schema key and
+    // its truthful zero-item outcome.
     const group = await screen.findByRole("group", { name: "Special style constraints" });
-    const groupDescribedBy = group.getAttribute("aria-describedby");
-    expect(groupDescribedBy).toBeTruthy();
-    expect(document.getElementById(groupDescribedBy as string)?.textContent).toBe("special_style_constraints");
+    const groupDescriptions = (group.getAttribute("aria-describedby")?.split(" ") ?? [])
+      .map((id) => document.getElementById(id)?.textContent);
+    expect(groupDescriptions).toEqual(
+      expect.arrayContaining(["special_style_constraints", "This list may be left empty."])
+    );
 
     // The add control reads with the author label, not the raw schema key.
     expect(screen.getByRole("button", { name: "Add Special style constraints" })).toBeTruthy();
