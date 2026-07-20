@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { createNote, deleteNote, updateNote } from "../api.js";
 import { SafeMarkdown } from "./safe-markdown.js";
 
-type SaveStatus = "idle" | "needs-title" | "saving" | "saved" | "failed";
+type EditorStatus = "idle" | "needs-title" | "saving" | "saved" | "failed" | "delete-failed";
 
 interface NoteDraft {
   title: string;
@@ -66,7 +66,7 @@ function sameDraft(left: NoteDraft, right: NoteDraft): boolean {
     && left.pinned === right.pinned;
 }
 
-function statusLabel(status: SaveStatus): string {
+function statusLabel(status: EditorStatus): string {
   switch (status) {
     case "needs-title":
       return "Add a title to create.";
@@ -76,6 +76,8 @@ function statusLabel(status: SaveStatus): string {
       return "Saved";
     case "failed":
       return "Save failed - retry";
+    case "delete-failed":
+      return "Delete failed - try again.";
     case "idle":
       return "Unsaved changes";
   }
@@ -90,7 +92,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
   const [savedNoteId, setSavedNoteId] = useState<string | null>(note?.id ?? null);
   const draftRef = useRef(draft);
   const savedNoteIdRef = useRef(savedNoteId);
-  const [status, setStatus] = useState<SaveStatus>(note ? "saved" : "needs-title");
+  const [status, setStatus] = useState<EditorStatus>(note ? "saved" : "needs-title");
   const [showPreview, setShowPreview] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const savingRef = useRef<Promise<boolean> | null>(null);
@@ -198,7 +200,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
       return;
     }
 
-    setStatus("failed");
+    setStatus("delete-failed");
   }
 
   return (
@@ -223,7 +225,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
         </div>
       </div>
 
-      <p role="status" className={`status${status === "failed" ? " statusError" : ""}`}>
+      <p role="status" className={`status${status === "failed" || status === "delete-failed" ? " statusError" : ""}`}>
         {statusLabel(status)}
       </p>
 

@@ -200,6 +200,19 @@ describe("NoteEditor", () => {
     expect(onDeleted).toHaveBeenCalledWith("note-1");
   });
 
+  it("keeps delete failures separate from save retry state", async () => {
+    vi.mocked(deleteNote).mockResolvedValue({ ok: false, kind: "bad-request", message: "Nope" });
+    render(<NoteEditor note={existingNote} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete note" }));
+    await flushPromises();
+
+    expect(screen.getByRole("status").textContent).toBe("Delete failed - try again.");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+  });
+
   it("renders safe preview without cross-surface actions", () => {
     render(<NoteEditor note={existingNote} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
 
