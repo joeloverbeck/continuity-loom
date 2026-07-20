@@ -14,8 +14,8 @@ Use it as the starting map before opening tickets or making code changes. It doe
 1. Read `docs/FOUNDATIONS.md` before changing runtime behavior, stored data, prompt compilation, validation rules, generation behavior, accepted-segment behavior, OpenRouter behavior, or any LLM-assistance surface.
 2. Read this file to identify the active source of truth for the area you are touching.
 3. Read the relevant domain docs listed below.
-4. Read `tickets/README.md` and any active ticket you are implementing.
-5. Treat `archive/**` as historical evidence, not active instructions, unless an active doc or ticket explicitly points to a specific archived file for provenance.
+4. Read the GitHub PRD or implementation issue you are working from, per `docs/agents/issue-tracker.md`.
+5. Treat `archive/**` as historical evidence, not active instructions, unless an active doc or issue explicitly points to a specific archived file for provenance.
 
 ## Authority hierarchy
 
@@ -46,6 +46,7 @@ Every active `docs/*.md` file must appear in the registry below. A new file unde
 | `docs/agents/triage-labels.md` | Canonical triage roles mapped to this repository's GitHub label vocabulary. | reference | support |
 | `docs/agents/domain.md` | Engineering-skill rules for consuming the repository's single-context domain glossary and ADRs. | reference | support |
 | `docs/adr/0001-version-playtest-prep-contracts.md` | Version identity and producer-owned migration boundary for playtest PRD-prep artifacts. | decision | support |
+| `docs/adr/0002-validation-gates-fail-closed.md` | Validators must emit an error on unparseable input rather than returning an empty error set. | decision | support |
 | `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
 
 ### Constitutional authority
@@ -90,11 +91,10 @@ Use these when changing validation coverage, demo fixture behavior, prompt/compi
 - `docs/agents/triage-labels.md`
 - `docs/agents/domain.md`
 - `docs/adr/0001-version-playtest-prep-contracts.md`
+- `docs/adr/0002-validation-gates-fail-closed.md`
 - `docs/archival-workflow.md`
-- `tickets/README.md`
-- `tickets/_TEMPLATE.md`
 
-Use these for repository workflow, ticket shape, archival decisions, and completion standards.
+Use these for repository workflow, PRD and issue shape, archival decisions, and completion standards. `tickets/README.md` and `tickets/_TEMPLATE.md` are no longer active authorities; they remain only as historical format references for the retired local-ticket workflow.
 
 ## Historical material
 
@@ -111,44 +111,24 @@ Completed reports should live under:
 
 - `archive/reports/`
 
-Do not use archived files as current implementation instructions. Use them only for historical provenance, rationale recovery, or when an active ticket explicitly depends on one.
+Do not use archived files as current implementation instructions. Use them only for historical provenance, rationale recovery, or when an active issue explicitly depends on one.
 
-## Active tickets and specs
+## Active work lives on the issue tracker
 
-Active implementation tickets live in:
+The repository-native `specs/` and `tickets/` workflow is **retired**. Do not open new local specs or tickets, and do not treat the absence of a local spec as a gate on published work.
 
-- `tickets/`
+All active work lives in GitHub Issues, as PRDs and implementation issues. See `docs/agents/issue-tracker.md` for tracker conventions and `docs/agents/triage-labels.md` for the label vocabulary. The tracker contents are the current task authority, not a point-in-time statement in this map.
 
-Check `tickets/` directly for active implementation tickets. The directory contents are the current task authority, not a point-in-time statement in this map.
+`tickets/README.md` and `tickets/_TEMPLATE.md` survive only as historical format references. Completed local specs and tickets remain under `archive/specs/` and `archive/tickets/` as historical evidence, including:
 
-The post-v1 cleanup ticket that removed the orphaned validation diagnostic code is complete and archived at:
+- `archive/tickets/CLEANUP-001.md` — post-v1 cleanup that removed orphaned validation diagnostic code
+- `archive/specs/SPEC-035-author-focused-ideation.md` — bounded Author focus contract for grounded Ideation
+- `archive/specs/SPEC-034-accepted-segment-generation-context-coherence.md` — accepted-segment generation-context coherence
+- `archive/specs/SPEC-implementation-order-and-regression-plan.md` and `archive/specs/IMPLEMENTATION-ORDER-2026-06-08.md` — the generation-readiness ordering and regression-plan spine
 
-- `archive/tickets/CLEANUP-001.md`
+## When a change needs a PRD, an issue, an ADR, or a doc correction
 
-Active specs live in:
-
-- `specs/`
-
-The bounded Author focus contract for grounded Ideation is complete and
-archived as historical evidence at:
-
-- `archive/specs/SPEC-035-author-focused-ideation.md`
-
-The accepted-segment generation-context coherence implementation contract is
-complete and archived as historical evidence at:
-
-- `archive/specs/SPEC-034-accepted-segment-generation-context-coherence.md`
-
-Check `specs/` directly for active implementation specs. The directory contents are the current spec authority, not a point-in-time statement in this map. The generation-readiness spec sequence (draftability/save, validation gating taxonomy, readiness/three-page UX) and its ordering/regression-plan spine are complete and archived under `archive/specs/`:
-
-- `archive/specs/SPEC-implementation-order-and-regression-plan.md`
-- `archive/specs/IMPLEMENTATION-ORDER-2026-06-08.md`
-
-Create a new active spec only when the change is too broad or risky for a single ticket.
-
-## When a change needs a spec, ticket, ADR, or doc correction
-
-Use a new spec when the change touches one or more of these:
+Publish a **PRD** to the issue tracker when the change touches one or more of these:
 
 - deterministic prompt compilation or compiler metadata;
 - validation blockers, warnings, focus tags, or fail-closed gates;
@@ -158,11 +138,11 @@ Use a new spec when the change touches one or more of these:
 - local-first project ownership, backup, migration, or storage safety;
 - any feature that could introduce branches, plot rails, autonomous continuity changes, or hidden prompt context.
 
-Use a ticket when the work is narrow, already scoped, and can be verified with direct tests or grep-proof. `archive/tickets/CLEANUP-001.md` is the historical model for a small cleanup ticket.
+Publish a plain **implementation issue** when the work is narrow, already scoped, and can be verified with direct tests or grep-proof.
 
 Use a doc correction when an active doc misstates current behavior, points at a stale path, duplicates authority in a confusing way, or could mislead agents into implementing completed v1 planning as new backlog.
 
-Use an ADR only for a durable architectural decision that should remain discoverable independently from an implementation spec. Do not create an ADR log just to record routine implementation choices.
+Use an ADR only for a durable architectural decision that should remain discoverable independently from the PRD that prompted it. Do not create an ADR log just to record routine implementation choices.
 
 ## Non-negotiable invariants
 

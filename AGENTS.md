@@ -4,11 +4,11 @@ Continuity Loom is a local-first story-state app: a Node process serves a React 
 
 ## Start Here
 
-Before changing code or docs, read `docs/ACTIVE-DOCS.md`. It is the post-v1 map of active authorities, archived material, tickets, and change-intake rules.
+Before changing code or docs, read `docs/ACTIVE-DOCS.md`. It is the post-v1 map of active authorities, archived material, and change-intake rules.
 
 Then read `docs/FOUNDATIONS.md` for any change touching runtime behavior, stored data, prompt compilation, validation rules, generation behavior, accepted-segment behavior, OpenRouter behavior, or LLM-assistance surfaces. Features that conflict with it are wrong unless `FOUNDATIONS.md` is deliberately amended first.
 
-Treat `archive/**` as historical evidence, not active implementation guidance, unless an active ticket or doc explicitly points to a specific archived file.
+Treat `archive/**` as historical evidence, not active implementation guidance, unless an active issue or doc explicitly points to a specific archived file.
 
 ## Repository Shape
 
@@ -35,7 +35,7 @@ Before claiming a code change complete, run the relevant checks and report any t
 
 ## Governing Docs
 
-`docs/FOUNDATIONS.md` is the project constitution. Section 29 is the alignment checklist for specs and tickets.
+`docs/FOUNDATIONS.md` is the project constitution. Section 29 is the alignment checklist every PRD and implementation issue must clear.
 
 Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domain. In particular:
 
@@ -46,19 +46,19 @@ Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domai
 - Non-binding validation research candidates: `docs/narrative-theory-blocker-roadmap.md`
 - User-facing behavior: `docs/user-guide.md`
 
-## Tickets, Specs, and Archive
+## Change Intake and Archive
 
-Active tickets live in `tickets/` and must follow `tickets/README.md` and `tickets/_TEMPLATE.md`.
+All change intake goes through GitHub. Broad or risky behavior changes — compiler, validation, storage, schema, accepted-prose boundaries, OpenRouter/security, local-first data, or anything that could violate `FOUNDATIONS.md` — start as a **PRD** published to GitHub Issues. Narrow, already-scoped implementation work starts as a **GitHub issue**. See `docs/agents/issue-tracker.md`.
 
-Use a new spec for broad or risky behavior changes: compiler, validation, storage, schema, accepted-prose boundaries, OpenRouter/security, local-first data, or anything that could violate `FOUNDATIONS.md`. Use a ticket for narrow, already-scoped implementation work.
+The repository-native `specs/` and `tickets/` workflow is retired. Do not open new local specs or tickets, and do not treat the absence of a local spec as a gate on published work. `tickets/README.md` and `tickets/_TEMPLATE.md` survive only as historical format references.
 
-Completed specs, tickets, requirements sets, and reports move under `archive/` according to `docs/archival-workflow.md`. Do not revive archived v1 requirements as active backlog.
+Completed requirements sets and reports move under `archive/` according to `docs/archival-workflow.md`. Do not revive archived v1 requirements as active backlog.
 
 ## Conventions
 
 - Use ESM only; do not add CommonJS `require`.
 - Keep changes narrow and aligned with existing package boundaries.
 - Never adapt tests to match a bug; fix the code.
-- Do not introduce backwards-compatibility aliases, shims, or duplicate authority paths unless a spec explicitly justifies them.
+- Do not introduce backwards-compatibility aliases, shims, or duplicate authority paths unless a published PRD explicitly justifies them.
 - Do not let accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context.
 - Do not weaken validation gates, deterministic compilation, API-key secrecy, localhost binding, or local-first project ownership.
