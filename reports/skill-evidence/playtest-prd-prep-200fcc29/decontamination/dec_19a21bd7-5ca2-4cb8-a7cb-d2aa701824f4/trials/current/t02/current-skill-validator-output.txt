@@ -1,0 +1,57 @@
+Command:
+node <frozen-current-skill>/scripts/validate-prd-prep.mjs reports/playtest-the-unbidden-oath-2026-07-18T145754Z.md reports/playtest-the-unbidden-oath-2026-07-18T145754Z-prd-prep.md
+
+Validator SHA-256: da49f2a67ff8d9b9506f285728be52816295e458b7ad5f8eed1e5772d4aeb08e
+Exit: 0
+
+{
+  "status": "ok",
+  "mode": "validate-prep",
+  "source": {
+    "reportPath": "reports/playtest-the-unbidden-oath-2026-07-18T145754Z.md",
+    "reportStem": "playtest-the-unbidden-oath-2026-07-18T145754Z",
+    "runMode": "continuation",
+    "priorReport": "reports/playtest-the-unbidden-oath-2026-07-17T104952Z.md",
+    "priorPrepPath": "reports/playtest-the-unbidden-oath-2026-07-17T104952Z-prd-prep.md",
+    "priorPrepExists": true,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 5,
+      "cumulativeLedgerRows": 27,
+      "strengthRows": 12
+    },
+    "prioritizedIds": ["F003", "F022", "F005", "F013", "F009"],
+    "cumulativeIds": [
+      "F001", "F002", "F003", "F004", "F005", "F006", "F007", "F008", "F009",
+      "F010", "F011", "F012", "F013", "F014", "F015", "F016", "F017", "F018",
+      "F019", "F020", "F021", "F022", "F023", "F024", "F025", "F026", "F027"
+    ],
+    "strengthIds": [
+      "F015", "F016", "F017", "F018", "F019", "F020",
+      "F021", "F023", "F024", "F025", "F026", "F027"
+    ]
+  },
+  "contract": {
+    "declaredVersion": 2,
+    "effectiveVersion": 2,
+    "currentVersion": 2,
+    "diagnostics": [],
+    "status": "current",
+    "migrationInvocation": null
+  },
+  "prep": {
+    "completionMode": "final",
+    "candidateCount": 0,
+    "ticketPacketCount": 1,
+    "dispositionRows": 27,
+    "strengthConstraintRows": 12,
+    "verdict": {
+      "label": "No-new-PRD verdict",
+      "value": "every broad or risky report-derived change has been delivered; the only live product gap is narrow enforcement of the existing Ideate output contract"
+    },
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [],
+  "errors": []
+}

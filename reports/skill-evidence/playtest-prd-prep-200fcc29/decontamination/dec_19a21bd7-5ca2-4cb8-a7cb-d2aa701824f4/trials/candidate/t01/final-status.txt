@@ -1,0 +1,10 @@
+PASS
+source-inspector=ok-with-historical-schema-v1-warning
+candidate-validator=pass
+frozen-current-validator=pass
+dispositions=21
+strength-constraints=7
+prd-candidates=0
+ticket-packets=1
+focused-tests=148-passed
+final-status=matches-validated-snapshot

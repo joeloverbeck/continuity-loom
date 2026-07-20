@@ -1,0 +1,18 @@
+65009392cf2d4eff0eb66093a1b661e414499259e3af0031327dc9ca6687565d  corpus/t06/prompt.md
+457239ac24551154242b45d6d8571b6f07e74c714b8739af26dcb3c07720afe9  corpus/t06/inputs/reports/playtest-the-winter-letter-2026-07-19T022000Z.md
+6a70a39bec6a93c186e5a642b06fa12fa70fe10e78d55f35c6a43e5c0e269b6a  corpus/t06/inputs/reports/playtest-the-winter-letter-2026-07-19T022000Z-prd-prep.md
+75c7d0083ae1d1eef2ef2831914c76003c3d88ea1cdb0532a0cb8b0f267601d2  corpus/t06/inputs/reports/playtest-the-winter-letter-2026-07-20T023325Z.md
+64d7cbed2dd38ac965c541c9aed3a1cf600b233ad994f9d7eea5bc395d2feeb6  corpus/t06/inputs/reports/playtest-the-winter-letter-2026-07-20T023325Z-prd-prep.md
+f9d709242f9a4a1209ae61d86e49746140b54213fcf98f7c05afe40c3c1d4a29  corpus/t06/inputs/reports/playtest-the-winter-letter-2026-07-20T092714Z.md
+d79372a11b375bc99a2cc8ee743972cb9ab50ad8990dd09324b3aa9ef5ae3ab1  corpus/t06/inputs/reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/001-durable-change-reminder.png
+b57e0bed3c7926340d9e2d4f55d78b8ef077fc9880cc7dd61c9a0bda74be3aa3  corpus/t06/inputs/reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/002-final-readiness.png
+f159ad53ba3b357cff9053f4368f26bd5ddc39f5ac700f06d63452417848ca16  candidate/SKILL.md
+e4efb0fe933fb9145e83db1764554d5e485746a02a617e23a55da17c096aac56  candidate/agents/openai.yaml
+29224c4e1cc17503aeb7e571b77664c7c19289fc5defabb16aae673cdba0233b  candidate/references/prep-format.md
+da49f2a67ff8d9b9506f285728be52816295e458b7ad5f8eed1e5772d4aeb08e  candidate/scripts/validate-prd-prep.mjs
+94fe319cf73f56807b641122feae3781805688632eea0ad2e51a8cf7da8a18e9  candidate/scripts/validate-prd-prep.test.mjs
+
+Artifact copies:
+79bc6499e39ca0d377c3f5fa46bd65790782d373d759c0817a367d0e3611301a  reports/playtest-the-winter-letter-2026-07-20T092714Z-prd-prep.md
+79bc6499e39ca0d377c3f5fa46bd65790782d373d759c0817a367d0e3611301a  /home/joeloverbeck/projects/continuity-loom/reports/skill-evidence/playtest-prd-prep-200fcc29/decontamination/dec_19a21bd7-5ca2-4cb8-a7cb-d2aa701824f4/trials/candidate/t06/raw-prep.md
+

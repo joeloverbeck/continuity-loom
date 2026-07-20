@@ -1,0 +1,71 @@
+{
+  "status": "ok",
+  "mode": "inspect-source",
+  "source": {
+    "reportPath": "reports/playtest-the-unbidden-oath-2026-07-18T145754Z.md",
+    "reportStem": "playtest-the-unbidden-oath-2026-07-18T145754Z",
+    "runMode": "continuation",
+    "priorReport": "reports/playtest-the-unbidden-oath-2026-07-17T104952Z.md",
+    "priorPrepPath": "reports/playtest-the-unbidden-oath-2026-07-17T104952Z-prd-prep.md",
+    "priorPrepExists": true,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 5,
+      "cumulativeLedgerRows": 27,
+      "strengthRows": 12
+    },
+    "prioritizedIds": [
+      "F003",
+      "F022",
+      "F005",
+      "F013",
+      "F009"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012",
+      "F013",
+      "F014",
+      "F015",
+      "F016",
+      "F017",
+      "F018",
+      "F019",
+      "F020",
+      "F021",
+      "F022",
+      "F023",
+      "F024",
+      "F025",
+      "F026",
+      "F027"
+    ],
+    "strengthIds": [
+      "F015",
+      "F016",
+      "F017",
+      "F018",
+      "F019",
+      "F020",
+      "F021",
+      "F023",
+      "F024",
+      "F025",
+      "F026",
+      "F027"
+    ]
+  },
+  "warnings": [],
+  "errors": []
+}

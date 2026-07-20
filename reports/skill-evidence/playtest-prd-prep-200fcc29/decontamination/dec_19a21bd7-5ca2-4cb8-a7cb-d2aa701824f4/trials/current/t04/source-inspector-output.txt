@@ -1,0 +1,50 @@
+{
+  "status": "ok",
+  "mode": "inspect-source",
+  "source": {
+    "reportPath": "reports/playtest-the-winter-letter-2026-07-20T023325Z.md",
+    "reportStem": "playtest-the-winter-letter-2026-07-20T023325Z",
+    "runMode": "continuation",
+    "priorReport": "reports/playtest-the-winter-letter-2026-07-19T022000Z.md",
+    "priorPrepPath": "reports/playtest-the-winter-letter-2026-07-19T022000Z-prd-prep.md",
+    "priorPrepExists": true,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 2,
+      "cumulativeLedgerRows": 15,
+      "strengthRows": 6
+    },
+    "prioritizedIds": [
+      "F006",
+      "F015"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012",
+      "F013",
+      "F014",
+      "F015"
+    ],
+    "strengthIds": [
+      "F008",
+      "F009",
+      "F010",
+      "F012",
+      "F013",
+      "F014"
+    ]
+  },
+  "warnings": [],
+  "errors": []
+}

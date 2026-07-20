@@ -1,0 +1,11 @@
+git branch --show-current
+trial-t05-baseline
+
+git rev-parse HEAD
+7e8a545860c0d70f25be429d0a02b37d44be8bbc
+
+git status --short --untracked-files=all
+ M reports/playtest-ash-at-low-water-2026-07-19T102650Z-prd-prep.md
+
+Post-baseline-validator comparison: matched
+Post-current-skill-validator comparison: matched

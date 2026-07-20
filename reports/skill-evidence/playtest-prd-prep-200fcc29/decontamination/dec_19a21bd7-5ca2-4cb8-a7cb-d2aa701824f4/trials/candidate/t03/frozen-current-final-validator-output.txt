@@ -1,0 +1,30 @@
+{
+  "status": "ok",
+  "mode": "validate-prep",
+  "source": {
+    "reportPath": "reports/playtest-the-winter-letter-2026-07-19T022000Z.md",
+    "reportStem": "playtest-the-winter-letter-2026-07-19T022000Z",
+    "runMode": "new_story",
+    "priorReport": "null",
+    "priorPrepPath": null,
+    "priorPrepExists": false,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {"prioritizedFindings": 6, "cumulativeLedgerRows": 14, "strengthRows": 6},
+    "prioritizedIds": ["F001", "F002", "F003", "F004", "F005", "F006"],
+    "cumulativeIds": ["F007", "F001", "F008", "F002", "F003", "F009", "F004", "F010", "F011", "F012", "F005", "F013", "F006", "F014"],
+    "strengthIds": ["F008", "F009", "F010", "F012", "F013", "F014"]
+  },
+  "contract": {"declaredVersion": 2, "effectiveVersion": 2, "currentVersion": 2, "diagnostics": [], "status": "current", "migrationInvocation": null},
+  "prep": {
+    "completionMode": "final",
+    "candidateCount": 0,
+    "ticketPacketCount": 0,
+    "dispositionRows": 14,
+    "strengthConstraintRows": 6,
+    "verdict": {"label": "No-new-PRD verdict", "value": "all product findings are covered by closed issue #100, closed issues #109-#112, or delivered closed PRD #117; no uncustodied report scope remains"},
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [],
+  "errors": []
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Playtest PRD Prep"
+  short_description: "Prepare playtest portfolio for issue custody"
+  default_prompt: "Use $playtest-prd-prep to reconcile this playtest report into a portfolio for $playtest-to-issues custody."
+policy:
+  allow_implicit_invocation: false

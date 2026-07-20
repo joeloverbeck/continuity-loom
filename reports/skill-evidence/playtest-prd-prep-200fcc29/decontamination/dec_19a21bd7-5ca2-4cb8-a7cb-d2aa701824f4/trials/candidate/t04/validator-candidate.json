@@ -1,0 +1,70 @@
+{
+  "status": "ok",
+  "mode": "validate-prep",
+  "source": {
+    "reportPath": "reports/playtest-the-winter-letter-2026-07-20T023325Z.md",
+    "reportStem": "playtest-the-winter-letter-2026-07-20T023325Z",
+    "runMode": "continuation",
+    "priorReport": "reports/playtest-the-winter-letter-2026-07-19T022000Z.md",
+    "priorPrepPath": "reports/playtest-the-winter-letter-2026-07-19T022000Z-prd-prep.md",
+    "priorPrepExists": true,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 2,
+      "cumulativeLedgerRows": 15,
+      "strengthRows": 6
+    },
+    "prioritizedIds": [
+      "F006",
+      "F015"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012",
+      "F013",
+      "F014",
+      "F015"
+    ],
+    "strengthIds": [
+      "F008",
+      "F009",
+      "F010",
+      "F012",
+      "F013",
+      "F014"
+    ]
+  },
+  "contract": {
+    "declaredVersion": 2,
+    "effectiveVersion": 2,
+    "currentVersion": 2,
+    "diagnostics": [],
+    "status": "current",
+    "migrationInvocation": null
+  },
+  "prep": {
+    "completionMode": "final",
+    "candidateCount": 0,
+    "ticketPacketCount": 0,
+    "dispositionRows": 15,
+    "strengthConstraintRows": 6,
+    "verdict": {
+      "label": "No-new-PRD verdict",
+      "value": "F006 is already guarded as an unverified all-empty reconciliation result by closed #100, F015 is fixed by closed #123, F003's required comparison was consumed by closed #122 with an evidence-backed no-create conclusion, and all other rows are resolved, preservation-only, or no-op"
+    },
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [],
+  "errors": []
+}

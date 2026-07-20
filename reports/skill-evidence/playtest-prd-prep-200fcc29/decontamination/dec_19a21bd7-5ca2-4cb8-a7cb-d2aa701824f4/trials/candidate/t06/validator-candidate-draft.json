@@ -1,0 +1,78 @@
+{
+  "status": "ok",
+  "mode": "validate-prep-draft",
+  "source": {
+    "reportPath": "reports/playtest-the-winter-letter-2026-07-20T092714Z.md",
+    "reportStem": "playtest-the-winter-letter-2026-07-20T092714Z",
+    "runMode": "continuation",
+    "priorReport": "reports/playtest-the-winter-letter-2026-07-20T023325Z.md",
+    "priorPrepPath": "reports/playtest-the-winter-letter-2026-07-20T023325Z-prd-prep.md",
+    "priorPrepExists": true,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 3,
+      "cumulativeLedgerRows": 19,
+      "strengthRows": 8
+    },
+    "prioritizedIds": [
+      "F016",
+      "F006",
+      "F017"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012",
+      "F013",
+      "F014",
+      "F015",
+      "F016",
+      "F017",
+      "F018",
+      "F019"
+    ],
+    "strengthIds": [
+      "F008",
+      "F009",
+      "F010",
+      "F012",
+      "F013",
+      "F014",
+      "F018",
+      "F019"
+    ]
+  },
+  "contract": {
+    "declaredVersion": 2,
+    "effectiveVersion": 2,
+    "currentVersion": 2,
+    "diagnostics": [],
+    "status": "current",
+    "migrationInvocation": null
+  },
+  "prep": {
+    "completionMode": "draft",
+    "candidateCount": 0,
+    "ticketPacketCount": 1,
+    "dispositionRows": 19,
+    "strengthConstraintRows": 8,
+    "verdict": {
+      "label": "No-new-PRD verdict",
+      "value": "the frontier supports one narrow browser-copy bug ticket and one bounded prompt-attribution verification; F006 and both prior recommendations are already consumed, while neither F016 nor F017 supplies evidence for a new broad product rule"
+    },
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [],
+  "errors": []
+}
+

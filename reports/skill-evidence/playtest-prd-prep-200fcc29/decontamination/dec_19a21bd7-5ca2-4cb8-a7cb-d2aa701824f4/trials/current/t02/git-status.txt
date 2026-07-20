@@ -1,0 +1,7 @@
+git branch --show-current
+<empty; detached HEAD>
+
+git status --short --untracked-files=all
+ M reports/playtest-the-unbidden-oath-2026-07-18T145754Z-prd-prep.md
+
+Post-validation comparison: matched the snapshot encoded in the validated prep artifact.

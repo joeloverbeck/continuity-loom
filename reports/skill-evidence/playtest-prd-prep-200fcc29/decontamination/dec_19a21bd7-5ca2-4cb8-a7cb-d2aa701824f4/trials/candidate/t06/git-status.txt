@@ -1,0 +1,14 @@
+Branch: HEAD (detached)
+HEAD: 7e8a545860c0d70f25be429d0a02b37d44be8bbc
+origin/main: 7e8a545860c0d70f25be429d0a02b37d44be8bbc
+
+Final git status --short --untracked-files=all:
+ M .claude/skills/playtest-prd-prep/SKILL.md
+ M .claude/skills/playtest-prd-prep/references/prep-format.md
+?? reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/001-durable-change-reminder.png
+?? reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/002-final-readiness.png
+?? reports/playtest-the-winter-letter-2026-07-20T092714Z-prd-prep.md
+?? reports/playtest-the-winter-letter-2026-07-20T092714Z.md
+
+Prep SHA-256: 79bc6499e39ca0d377c3f5fa46bd65790782d373d759c0817a367d0e3611301a
+

@@ -1,0 +1,67 @@
+{
+  "status": "ok",
+  "mode": "validate-prep",
+  "source": {
+    "reportPath": "reports/playtest-ash-at-low-water-2026-07-19T102650Z.md",
+    "reportStem": "playtest-ash-at-low-water-2026-07-19T102650Z",
+    "runMode": "new_story",
+    "priorReport": "null",
+    "priorPrepPath": null,
+    "priorPrepExists": false,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 5,
+      "cumulativeLedgerRows": 10,
+      "strengthRows": 5
+    },
+    "prioritizedIds": [
+      "F002",
+      "F004",
+      "F008",
+      "F009",
+      "F010"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010"
+    ],
+    "strengthIds": [
+      "F001",
+      "F002",
+      "F006",
+      "F007",
+      "F010"
+    ]
+  },
+  "contract": {
+    "declaredVersion": 2,
+    "effectiveVersion": 2,
+    "currentVersion": 2,
+    "diagnostics": [],
+    "status": "current",
+    "migrationInvocation": null
+  },
+  "prep": {
+    "completionMode": "final",
+    "candidateCount": 0,
+    "ticketPacketCount": 0,
+    "dispositionRows": 10,
+    "strengthConstraintRows": 5,
+    "verdict": {
+      "label": "No-new-PRD verdict",
+      "value": "current code and closed issues #100 and #113-#116 satisfy F003-F005 and F008-F009, while later evidence-only issue #122 reached another bounded no-create conclusion for the dossier-cost question; the remaining rows are preservation constraints"
+    },
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [],
+  "errors": []
+}

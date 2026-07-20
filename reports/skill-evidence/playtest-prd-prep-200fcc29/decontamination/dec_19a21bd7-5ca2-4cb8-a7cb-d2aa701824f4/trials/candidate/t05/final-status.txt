@@ -1,0 +1,9 @@
+PASS
+
+Candidate validator: ok
+Frozen-current validator: ok
+Disposition coverage: 10/10
+Strength coverage: 5/5
+PRD candidates: 0
+Ticket packets: 0
+Publication package: no new PRD

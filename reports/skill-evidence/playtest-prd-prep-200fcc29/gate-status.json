@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T12:52:10.981Z",
+  "target_content_hash": "b1a066e29020c0f09d5f7a68b7845e3f594b3c8bfb585a94aab9f635930cd474",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": "dec_19a21bd7-5ca2-4cb8-a7cb-d2aa701824f4",
+  "target_name": "playtest-prd-prep",
+  "target_repo_relative_path": ".claude/skills/playtest-prd-prep",
+  "derivation_session_id": null
+}

@@ -1,0 +1,89 @@
+{
+  "status": "ok",
+  "mode": "validate-prep",
+  "source": {
+    "reportPath": "reports/playtest-the-unbidden-oath-2026-07-17T104952Z.md",
+    "reportStem": "playtest-the-unbidden-oath-2026-07-17T104952Z",
+    "runMode": "new_story",
+    "priorReport": "null",
+    "priorPrepPath": null,
+    "priorPrepExists": false,
+    "sourceValidation": "passed",
+    "nonBlockingReportErrors": [],
+    "counts": {
+      "prioritizedFindings": 12,
+      "cumulativeLedgerRows": 21,
+      "strengthRows": 7
+    },
+    "prioritizedIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012"
+    ],
+    "cumulativeIds": [
+      "F001",
+      "F002",
+      "F003",
+      "F004",
+      "F005",
+      "F006",
+      "F007",
+      "F008",
+      "F009",
+      "F010",
+      "F011",
+      "F012",
+      "F013",
+      "F014",
+      "F015",
+      "F016",
+      "F017",
+      "F018",
+      "F019",
+      "F020",
+      "F021"
+    ],
+    "strengthIds": [
+      "F015",
+      "F016",
+      "F017",
+      "F018",
+      "F019",
+      "F020",
+      "F021"
+    ]
+  },
+  "contract": {
+    "declaredVersion": 2,
+    "effectiveVersion": 2,
+    "currentVersion": 2,
+    "diagnostics": [],
+    "status": "current",
+    "migrationInvocation": null
+  },
+  "prep": {
+    "completionMode": "final",
+    "candidateCount": 0,
+    "ticketPacketCount": 1,
+    "dispositionRows": 21,
+    "strengthConstraintRows": 7,
+    "verdict": {
+      "label": "No-new-PRD verdict",
+      "value": "broad and risky findings already have closed owners and passing current proof; the only live product gap is one narrow presentation ticket"
+    },
+    "publicationPackage": "no new PRD"
+  },
+  "warnings": [
+    "Historical schema v1 report declares one counterfactual probe without the later disclosure block; compatibility mode cannot reconstruct it."
+  ],
+  "errors": []
+}

@@ -1,0 +1,6 @@
+HEAD 7e8a545860c0d70f25be429d0a02b37d44be8bbc
+BRANCH (detached)
+?? reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/001-durable-change-reminder.png
+?? reports/assets/playtest-the-winter-letter-2026-07-20T092714Z/002-final-readiness.png
+?? reports/playtest-the-winter-letter-2026-07-20T092714Z-prd-prep.md
+?? reports/playtest-the-winter-letter-2026-07-20T092714Z.md
