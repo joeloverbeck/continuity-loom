@@ -1015,9 +1015,9 @@ Compiled prompt size never causes silent eviction. Oversize and salience risks a
 
 ---
 
-## 29. Alignment checklist for future specs and tickets
+## 29. Alignment checklist for future PRDs and issues
 
-A future spec, ticket, feature, workflow, validation rule, compiler change, schema change, or UI change must pass this checklist.
+A future PRD, implementation issue, feature, workflow, validation rule, compiler change, schema change, or UI change must pass this checklist.
 
 If any hard-fail question is answered “yes,” the proposal violates the foundation and must be rejected or redesigned.
 

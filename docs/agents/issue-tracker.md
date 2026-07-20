@@ -2,7 +2,7 @@
 
 Engineering-workflow issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all tracker operations.
 
-Existing repository-native implementation tickets under `tickets/` remain governed by `tickets/README.md`.
+The repository-native `specs/` and `tickets/` workflow is retired; GitHub is the sole change-intake surface. `tickets/README.md` and `tickets/_TEMPLATE.md` remain only as historical format references.
 
 ## Conventions
 
