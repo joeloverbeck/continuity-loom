@@ -68,11 +68,15 @@ describe("NoteEditor", () => {
     const onSaved = vi.fn();
     render(<NoteEditor note={null} onSaved={onSaved} onDeleted={vi.fn()} onCancel={vi.fn()} />);
 
+    expect(screen.getByRole("button", { name: "Save note" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+
     fireEvent.change(screen.getByLabelText("Body"), { target: { value: "Loose scratch." } });
     await advanceAutosave();
 
     expect(createNote).not.toHaveBeenCalled();
     expect(screen.getByRole("status").textContent).toBe("Add a title to create.");
+    expect(screen.getByRole("button", { name: "Save note" })).toBeTruthy();
 
     fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Fresh note" } });
     await advanceAutosave();
@@ -86,6 +90,43 @@ describe("NoteEditor", () => {
     expect(onSaved).toHaveBeenCalled();
   });
 
+  it("uses Save note through a new-note save and Save changes after identity exists", async () => {
+    let resolveSave: (value: Awaited<ReturnType<typeof createNote>>) => void = () => undefined;
+    vi.mocked(createNote).mockReturnValue(new Promise((resolve) => {
+      resolveSave = resolve;
+    }));
+
+    render(<NoteEditor note={null} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Fresh note" } });
+    fireEvent.change(screen.getByLabelText("Body"), { target: { value: "Loose scratch." } });
+
+    expect(screen.getByRole("button", { name: "Save note" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+
+    await advanceAutosave();
+
+    expect(screen.getByRole("status").textContent).toBe("Saving...");
+    expect(screen.getByRole("button", { name: "Save note" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+
+    resolveSave({
+      ok: true,
+      note: savedNote({
+        id: "note-new",
+        title: "Fresh note",
+        body: "Loose scratch.",
+        tags: [],
+        pinned: false
+      })
+    });
+    await flushPromises();
+
+    expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+  });
+
   it("autosaves existing notes and reports saving then saved", async () => {
     let resolveSave: (value: Awaited<ReturnType<typeof updateNote>>) => void = () => undefined;
     vi.mocked(updateNote).mockReturnValue(new Promise((resolve) => {
@@ -94,10 +135,16 @@ describe("NoteEditor", () => {
 
     render(<NoteEditor note={existingNote} onSaved={vi.fn()} onDeleted={vi.fn()} onCancel={vi.fn()} />);
 
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
+
     fireEvent.change(screen.getByLabelText("Body"), { target: { value: "Changed body." } });
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
     await advanceAutosave();
 
     expect(screen.getByRole("status").textContent).toBe("Saving...");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
     expect(updateNote).toHaveBeenCalledWith("note-1", {
       title: "Pinned reminder",
       body: "Changed body.",
@@ -108,6 +155,8 @@ describe("NoteEditor", () => {
     resolveSave({ ok: true, note: savedNote({ body: "Changed body." }) });
     await flushPromises();
     expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
   });
 
   it("retains the local buffer when save fails", async () => {
@@ -120,6 +169,16 @@ describe("NoteEditor", () => {
 
     expect(screen.getByRole("status").textContent).toBe("Save failed - retry");
     expect(screen.getByLabelText<HTMLTextAreaElement>("Body").value).toBe("Unsaved local body.");
+    expect(screen.getAllByRole("button", { name: "Retry Save" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
+
+    vi.mocked(updateNote).mockResolvedValue({ ok: true, note: savedNote({ body: "Unsaved local body." }) });
+    fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
+    await flushPromises();
+
+    expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
   });
 
   it("requires title-bearing confirmation before deleting", async () => {

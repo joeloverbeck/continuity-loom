@@ -218,7 +218,7 @@ afterEach(async () => {
 });
 
 describe("NoteEditor persistence identity", () => {
-  it("keeps one identity when edits, blur, and Retry Save happen while first create is in flight", async () => {
+  it("keeps one identity when edits, blur, and Save note happen while first create is in flight", async () => {
     const releaseCreate = bridge.deferNext("POST", "/api/notes");
     renderEditor(null);
 
@@ -239,7 +239,7 @@ describe("NoteEditor persistence identity", () => {
     });
     fireEvent.click(screen.getByLabelText("Pinned"));
     fireEvent.blur(screen.getByLabelText("Body"));
-    fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save note" }));
 
     expect(bridge.requests).toHaveLength(1);
     expect(screen.getByLabelText<HTMLInputElement>("Title").value).toBe("NOTE_IDENTITY_TITLE_SAFE_31b9");
@@ -250,8 +250,13 @@ describe("NoteEditor persistence identity", () => {
     releaseCreate();
     await settleRequests();
     expect(screen.getByRole("status").textContent).toBe("Unsaved changes");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
     await advanceAutosave();
     await settleRequests();
+
+    expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
 
     const creates = bridge.requests.filter((request) => request.method === "POST" && request.url === "/api/notes");
     const createId = creates[0]?.returnedNoteId;
@@ -303,11 +308,16 @@ describe("NoteEditor persistence identity", () => {
     expect(screen.getByRole("status").textContent).toBe("Save failed - retry");
     expectDraft(draft);
     expect(await listStoredNotes()).toHaveLength(0);
+    expect(screen.getAllByRole("button", { name: "Retry Save" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Save note" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
     await settleRequests();
 
     const stored = await listStoredNotes();
+    expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({
       title: draft.title,
@@ -342,11 +352,16 @@ describe("NoteEditor persistence identity", () => {
 
     expect(screen.getByRole("status").textContent).toBe("Save failed - retry");
     expectDraft(draft);
+    expect(screen.getAllByRole("button", { name: "Retry Save" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Retry Save" }));
     await settleRequests();
 
     const stored = await listStoredNotes();
+    expect(screen.getByRole("status").textContent).toBe("Saved");
+    expect(screen.getByRole("button", { name: "Save changes" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Retry Save" })).toBeNull();
     expect(stored).toHaveLength(1);
     expect(stored[0]).toMatchObject({
       id: note.id,

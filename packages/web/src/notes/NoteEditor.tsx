@@ -110,6 +110,11 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
   const titleIsValid = draft.title.trim().length > 0;
   const dirty = useMemo(() => !sameDraft(draft, savedDraft), [draft, savedDraft]);
   const canDelete = savedNoteId !== null;
+  const saveActionLabel = status === "failed"
+    ? "Retry Save"
+    : savedNoteId
+      ? "Save changes"
+      : "Save note";
 
   async function saveNow(): Promise<boolean> {
     if (!dirty) {
@@ -205,7 +210,7 @@ export const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(function
         </div>
         <div className="notesDetailActions">
           <button type="button" onClick={() => void saveNow()}>
-            Retry Save
+            {saveActionLabel}
           </button>
           {canDelete ? (
             <button type="button" onClick={() => setConfirmingDelete(true)}>
