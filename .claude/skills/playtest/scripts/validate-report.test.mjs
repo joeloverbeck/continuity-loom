@@ -300,6 +300,25 @@ test("requires every prioritized finding in the cumulative ledger", () => {
   assert.ok(errors.includes("Prioritized finding F001 is absent from the Cumulative Finding Ledger."));
 });
 
+test("reports an error instead of silently skipping ledger checks on a malformed divider", () => {
+  const body = BODY.replace(
+    `| ID | Severity | Classification | Category | Summary | Confidence | Status |
+|---|---|---|---|---|---|---|`,
+    `| ID | Severity | Classification | Category | Summary | Confidence | Status |
+| -- | -- | -- | -- | -- | -- | -- |`
+  ).replace(
+    `| ID | First seen | Classification | Summary | Current status | Latest evidence |
+|---|---|---|---|---|---|`,
+    `| ID | First seen | Classification | Summary | Current status | Latest evidence |
+| -- | -- | -- | -- | -- | -- |`
+  );
+  const { errors } = validateReport(fixture(frontmatter(), body));
+  assert.ok(errors.includes("Prioritized Findings table is missing or has a malformed divider."));
+  assert.ok(
+    errors.includes("Cumulative Finding Ledger table is missing or has a malformed divider.")
+  );
+});
+
 test("accepts a complete schema v2 report with bounded method evidence", () => {
   const { errors, warnings } = validateReport(fixture(v2Frontmatter(), v2Body()));
   assert.deepEqual(errors, []);

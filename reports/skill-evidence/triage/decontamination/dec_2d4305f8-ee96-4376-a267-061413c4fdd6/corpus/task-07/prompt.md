@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage the ambiguous reference safely. Explain how to resolve the request surface, the immediate safety posture, the recommended state, and the minimum follow-up. This is an analysis-only simulation: do not query or mutate GitHub.

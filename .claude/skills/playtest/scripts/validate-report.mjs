@@ -249,6 +249,12 @@ function findingLedgerErrors(markdown, schemaVersion) {
     reportSection(markdown, "## Cumulative Finding Ledger") ?? "",
     CUMULATIVE_FINDINGS_HEADER
   );
+  if (prioritizedRows === null) {
+    errors.push("Prioritized Findings table is missing or has a malformed divider.");
+  }
+  if (cumulativeRows === null) {
+    errors.push("Cumulative Finding Ledger table is missing or has a malformed divider.");
+  }
   if (prioritizedRows === null || cumulativeRows === null) return errors;
 
   const prioritizedIds = stableIds(prioritizedRows, "Prioritized Findings", errors);

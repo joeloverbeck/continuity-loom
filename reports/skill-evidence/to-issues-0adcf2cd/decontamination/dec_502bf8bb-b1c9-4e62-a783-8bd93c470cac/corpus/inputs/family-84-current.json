@@ -1,0 +1,87 @@
+{
+  "snapshot_date": "2026-07-20",
+  "parent": 84,
+  "children": [
+    {
+      "closedAt": "2026-07-17T04:19:32Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 85,
+      "state": "CLOSED",
+      "title": "Introduce truthful accepted-segment provenance and migrate legacy archives"
+    },
+    {
+      "closedAt": "2026-07-17T07:55:19Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt0Q",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 88,
+      "state": "CLOSED",
+      "title": "Use complete payload-derived labels for Prose ordering and Ideate"
+    },
+    {
+      "closedAt": "2026-07-17T07:55:33Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt0Q",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 89,
+      "state": "CLOSED",
+      "title": "Serialize one complete label across Record Hygiene records and references"
+    },
+    {
+      "closedAt": "2026-07-17T07:55:47Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt0Q",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 90,
+      "state": "CLOSED",
+      "title": "Serialize complete labels across Segment Reconciliation records and stubs"
+    }
+  ]
+}
+

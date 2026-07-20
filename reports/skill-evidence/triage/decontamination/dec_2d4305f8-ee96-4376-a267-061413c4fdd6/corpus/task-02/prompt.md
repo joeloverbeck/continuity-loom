@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage the supplied issue snapshot and write the agent-ready implementation brief if justified. Return the recommended labels/state, evidence basis, bounded scope, acceptance checks, and next action. This is an analysis-only simulation: do not query or mutate GitHub.

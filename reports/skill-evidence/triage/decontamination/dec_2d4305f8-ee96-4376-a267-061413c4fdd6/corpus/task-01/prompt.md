@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage the supplied issue snapshot. Return a concise recommendation, the proposed labels/state, the evidence still needed, and the next owner or workflow. This is an analysis-only simulation: do not query or mutate GitHub.

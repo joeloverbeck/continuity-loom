@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage this pull request as a request surface. Return eligibility, categorisation, verification findings, recommended state/labels, and next owner. This is an analysis-only simulation: do not query or mutate GitHub.

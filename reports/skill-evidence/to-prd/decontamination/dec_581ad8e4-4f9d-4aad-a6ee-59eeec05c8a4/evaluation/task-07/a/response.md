@@ -1,0 +1,5 @@
+Publication stops at the exact-title guard: the tracker already contains exactly one issue with the intended title, #97, `PRD: Author-Focused Ideation — Bounded Non-Canonical Request Context`.
+
+The workflow would recover and verify #97 rather than create a duplicate. Under the supplied fixture, the issue already contains the agreed PRD package and has labels `enhancement` and `needs-triage`. Because this request does not authorize replacement, editing, relabeling, reopening, or duplication, the workflow would make no tracker mutation: #97 would retain its existing body, labels, and state, and no new issue would be created. The later child map and implementation history remain outside this publication pass.
+
+In a live run, the remaining action would be read-only verification of #97's exact metadata, body, validation policy, and source durability. Any discrepancy requiring repair would be reported for separate authorization rather than changed implicitly. In this simulation, no GitHub access or product/repository edit was performed.

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T19:28:30.839Z",
+  "target_content_hash": "9f4af0e9003a6abfad3b87bd9246ed58813616864fe4127d0411e90b8e856f8b",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "tdd",
+  "target_repo_relative_path": ".claude/skills/tdd",
+  "derivation_session_id": null
+}

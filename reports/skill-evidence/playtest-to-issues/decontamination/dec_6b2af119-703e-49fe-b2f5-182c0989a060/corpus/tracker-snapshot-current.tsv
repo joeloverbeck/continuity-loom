@@ -1,0 +1,25 @@
+captured_at_utc	2026-07-20T13:00:32Z
+number	state	title	labels
+91	CLOSED	PRD: Bounded Segment Reconciliation Schema Catalog — One Complete Compact Representation	bug,needs-triage
+94	CLOSED	PRD: Accepted-Segment Generation Context Coherence — Fail Closed on Archive/Draft Mismatches	bug,needs-triage
+97	CLOSED	PRD: Author-Focused Ideation — Bounded Non-Canonical Request Context	enhancement,needs-triage
+100	CLOSED	Warn that an all-empty Segment Reconciliation result is unverified	bug,ready-for-agent
+101	CLOSED	Replace raw voice-pressure CAST MEMBER IDs with a named picker	bug,ready-for-agent
+102	CLOSED	Keep every primary route reachable in the desktop sidebar	bug,ready-for-agent
+103	CLOSED	Guide CAST MEMBER creation through its ENTITY prerequisite	enhancement,ready-for-agent
+104	CLOSED	Navigate current matches in Prompt Inspector search	enhancement,ready-for-agent
+105	CLOSED	Reconcile Story Configuration state after a successful first save	bug,ready-for-agent
+106	CLOSED	Make CAST MEMBER records scannable by linked ENTITY name	enhancement,ready-for-agent
+107	CLOSED	Verify Private Note first-save identity remains singular	ready-for-agent
+108	CLOSED	Prevent duplicate Private Note creation after a delayed first save	bug,ready-for-agent
+109	CLOSED	Explain local project paths at the Create entry point	enhancement,ready-for-agent
+110	CLOSED	Lead Story Configuration fields with author-facing labels	enhancement,ready-for-agent
+111	CLOSED	Show linked ENTITY names in Active Working Set CAST MEMBER rows	enhancement,ready-for-agent
+112	CLOSED	Surface manual Draft Candidate entry beside provider-only blockers	enhancement,ready-for-agent
+113	CLOSED	ENTITY prompt-eligibility guidance correction	bug,ready-for-agent
+114	CLOSED	Required-list marker clarification	bug,ready-for-agent
+115	CLOSED	Structured-pressure warning copy correction	bug,ready-for-agent
+116	CLOSED	Linked CAST creation and activation handoff	enhancement,ready-for-agent
+117	CLOSED	PRD: Cast Member Dossier Draft Import — Clipboard Round-Trip with Tolerant Per-Field Import	enhancement,needs-triage
+122	CLOSED	Clipboard-Assisted Offstage Cast Cost Verification	ready-for-agent
+123	CLOSED	Private Note Save-State Copy	bug,ready-for-agent

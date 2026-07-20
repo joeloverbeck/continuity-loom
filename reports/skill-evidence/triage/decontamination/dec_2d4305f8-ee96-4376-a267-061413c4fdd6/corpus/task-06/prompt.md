@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to plan the already approved state transition. State the exact proposed tracker operations in order, the required readbacks, and the final handoff. This is an analysis-only simulation: do not query or mutate GitHub even though the snapshot contains approval.

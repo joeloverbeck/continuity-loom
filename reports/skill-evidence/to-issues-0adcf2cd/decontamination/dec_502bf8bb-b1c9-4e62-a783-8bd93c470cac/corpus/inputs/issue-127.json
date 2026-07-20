@@ -1,0 +1,22 @@
+{
+  "body": "## Source and coordination\n\nPlaytest report reports/playtest-the-signal-at-long-barrow-2026-07-20T042703Z.md at origin/main (f9ed9a4a9f5bb497793605951e099ee0e40dfcac)\n\nThis is a standalone non-PRD follow-up which neither ratifies nor implements the remaining PRD candidates. This portfolio has no PRD candidates.\n\nThis issue consumes F003 from the report. Coordinate the shared active-spec and compiler change-control boundary with #125, which owns active voice-pressure pins but is not a backward implementation blocker for this naming and relevance slice.\n\n## What to build\n\nMake every compiled CAST MEMBER dossier independently attributable by leading active, present-minor, and offstage entries with the validated linked ENTITY name while retaining the dossier's identity.one_line and all current band-specific relevance or voice content. Preserve deterministic ordering and fail closed when the linked ENTITY cannot supply the validated name.\n\nThe implementation requires maintainer assignment of the shared active-spec and compiler change-control boundary coordinated with the existing active-cast voice-pressure-pin work. It changes naming and attribution only, not working-set membership, cast bands, pressure derivation, storage, or story authority.\n\n## User stories covered\n\nN/A - the source portfolio contains no formal user stories; this issue implements the approved attribution outcome without expanding it into a new product narrative.\n\n## Acceptance criteria\n\n- [ ] Active dossier headings lead with the validated linked ENTITY name and retain identity.one_line separately, without dropping any existing full-dossier content.\n- [ ] Present-minor and offstage entries lead with the same validated linked ENTITY name and retain all current relevance and voice content.\n- [ ] Similarly described CAST MEMBER records remain independently attributable in deterministic order in the compiled prompt.\n- [ ] Invalid links fail closed with a visible validation error rather than a warning-only state or raw-ID fallback; correcting the link provides recovery and restores deterministic compilation.\n- [ ] Working-set membership, cast bands, ordering, payloads, storage and persistence, migration, export and provenance, readiness, and assistance remain unchanged; candidates, accepted prose, and canon authority retain their visibly distinct boundary.\n- [ ] The existing Prompt Inspector remains the entry point whenever preview is available; no new navigation, action, or interactive accessibility surface is added.\n- [ ] After existing working-set actions and explicit Refresh, the user-visible states and outcomes in prompt inspection show the correct linked-name-led compressed or active contents with fresh deterministic bytes and fingerprint.\n- [ ] Prompt inspection and refresh remain user-initiated local actions that make no provider call, cross no external LLM boundary, and add no external-model action.\n- [ ] Active spec, compiler and prompt authorities and versions, deterministic goldens, invalid-link coverage, and a Prompt Inspector browser and component accessibility regression scenario with keyboard reachability and accessible names prove the change.\n\n## Blocked by\n\n- Maintainer assignment of the shared active-spec and compiler change-control boundary coordinated with the existing active-cast voice-pressure-pin work.\n\n## Principles\n\nAlign with docs/FOUNDATIONS.md Sections 4, 13, 17, 26.2, 27, and 29; docs/compiler-contract.md; docs/prompt-template.md; docs/prompt-template-rationale.md; and docs/story-record-schema.md. Compilation must remain deterministic and fail closed, linked ENTITY names must come from validated records rather than raw identifiers, and no accepted prose, candidate, or inferred summary becomes prompt context. No deliberate exception is approved.\n",
+  "closedAt": null,
+  "labels": [
+    {
+      "id": "LA_kwDOSxAST88AAAACmBZt9w",
+      "name": "enhancement",
+      "description": "New feature or request",
+      "color": "a2eeef"
+    },
+    {
+      "id": "LA_kwDOSxAST88AAAACsGjOIg",
+      "name": "needs-triage",
+      "description": "Maintainer needs to evaluate this issue",
+      "color": "FBCA04"
+    }
+  ],
+  "number": 127,
+  "state": "OPEN",
+  "title": "Name Cast Dossiers and Relevance by Linked ENTITY"
+}
+

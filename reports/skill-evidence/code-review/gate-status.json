@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T19:28:55.708Z",
+  "target_content_hash": "cfe5983e0f4750546abc29f5802cf28c62db3841614cafc9e1c53a873c058f71",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [
+    "evt_79c332b8-d979-43f4-8a49-9d9ee162e3e4"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "tool-compatibility",
+      "open_event_ids": [
+        "evt_79c332b8-d979-43f4-8a49-9d9ee162e3e4"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "collecting",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "code-review",
+  "target_repo_relative_path": ".claude/skills/code-review",
+  "derivation_session_id": null
+}

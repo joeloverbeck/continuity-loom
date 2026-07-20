@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T17:31:31.269Z",
+  "target_content_hash": "9c65bc9b2e4617eea9c0d2a1a27a0af1d7a1c3088beddaf7d5c6d3d04dee443c",
+  "qualifying_uses_on_current_hash": 2,
+  "open_incident_ids": [
+    "evt_5ac43a47-0d7e-4a97-9070-3deb21eb1260",
+    "evt_5d9bb978-ce71-4423-9685-7501a6327ec9"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "tool-compatibility",
+      "open_event_ids": [
+        "evt_5ac43a47-0d7e-4a97-9070-3deb21eb1260"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    },
+    {
+      "symptom_key": "output",
+      "open_event_ids": [
+        "evt_5d9bb978-ce71-4423-9685-7501a6327ec9"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "material_failure"
+    }
+  ],
+  "state": "collecting",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": "dec_6b2af119-703e-49fe-b2f5-182c0989a060",
+  "target_name": "playtest-to-issues",
+  "target_repo_relative_path": ".claude/skills/playtest-to-issues",
+  "derivation_session_id": null
+}

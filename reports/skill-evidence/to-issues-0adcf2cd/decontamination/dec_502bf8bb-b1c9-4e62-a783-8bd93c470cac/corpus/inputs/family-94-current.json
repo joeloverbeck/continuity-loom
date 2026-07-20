@@ -1,0 +1,47 @@
+{
+  "snapshot_date": "2026-07-20",
+  "parent": 94,
+  "children": [
+    {
+      "closedAt": "2026-07-18T06:18:51Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt0Q",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 95,
+      "state": "CLOSED",
+      "title": "Specify accepted-segment generation-context coherence"
+    },
+    {
+      "closedAt": "2026-07-18T06:18:59Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt0Q",
+          "name": "bug",
+          "description": "Something isn't working",
+          "color": "d73a4a"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 96,
+      "state": "CLOSED",
+      "title": "Enforce accepted-segment generation-context coherence end to end"
+    }
+  ]
+}
+

@@ -1,0 +1,87 @@
+{
+  "snapshot_date": "2026-07-20",
+  "parent": 117,
+  "children": [
+    {
+      "closedAt": "2026-07-19T23:22:07Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 118,
+      "state": "CLOSED",
+      "title": "Author the Cast Member draft prompt template doc and register it"
+    },
+    {
+      "closedAt": "2026-07-19T23:22:15Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 119,
+      "state": "CLOSED",
+      "title": "Implement the copy side: core versioned draft-prompt template, schema drift test, and editor copy affordance"
+    },
+    {
+      "closedAt": "2026-07-19T23:22:24Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 120,
+      "state": "CLOSED",
+      "title": "Implement the import side: tolerant parse/map/report core functions and the editor import flow"
+    },
+    {
+      "closedAt": "2026-07-19T23:22:34Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 121,
+      "state": "CLOSED",
+      "title": "Archive the Cast Member field guide as superseded"
+    }
+  ]
+}
+

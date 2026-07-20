@@ -1,0 +1,9 @@
+# candidate
+d201fc60c7c6d1e474c5737d683ff99cfacf9e9eaa2fb335f464df1cd5f5c2c0  candidate/ADR-FORMAT.md
+8cffb395639b6d379dea3dc24a25e87b23d9c8811ec0c1df897dab0d11927a72  candidate/CONTEXT-FORMAT.md
+9161e9ef2176b9ec6d998f8d24f0ffc1c71fd24b45ae8e8ae89dd928aa72a481  candidate/SKILL.md
+
+# baseline
+a23047f0b994c1da26dc5de430e78c854af20da65ce1908a093acbd725fab84c  baseline/ADR-FORMAT.md
+8dfed51ad7cfbdab34d68e33c093a8e08eec550f2a4b169bc235eaa757b09780  baseline/CONTEXT-FORMAT.md
+6d163ac7cdc74815be0c3b4580d5ba8be33b01172e063042a255ea6b7646c6d2  baseline/SKILL.md

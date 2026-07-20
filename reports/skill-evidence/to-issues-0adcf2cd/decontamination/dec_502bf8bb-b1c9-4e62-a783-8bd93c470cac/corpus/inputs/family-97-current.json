@@ -1,0 +1,47 @@
+{
+  "snapshot_date": "2026-07-20",
+  "parent": 97,
+  "children": [
+    {
+      "closedAt": "2026-07-18T21:22:38Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 98,
+      "state": "CLOSED",
+      "title": "Specify bounded Author Focus for grounded Ideation"
+    },
+    {
+      "closedAt": "2026-07-18T21:22:55Z",
+      "labels": [
+        {
+          "id": "LA_kwDOSxAST88AAAACmBZt9w",
+          "name": "enhancement",
+          "description": "New feature or request",
+          "color": "a2eeef"
+        },
+        {
+          "id": "LA_kwDOSxAST88AAAACsDY6Tg",
+          "name": "ready-for-agent",
+          "description": "Fully specified and ready for an AFK agent",
+          "color": "0E8A16"
+        }
+      ],
+      "number": 99,
+      "state": "CLOSED",
+      "title": "Implement Author Focus in Ideate end to end"
+    }
+  ]
+}
+

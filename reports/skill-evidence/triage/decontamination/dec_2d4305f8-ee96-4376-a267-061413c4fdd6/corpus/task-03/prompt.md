@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage the supplied report. Return the recommended state, the smallest useful reporter questions, and what would make the report verifiable. This is an analysis-only simulation: do not query or mutate GitHub.

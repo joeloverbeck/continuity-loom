@@ -1,0 +1,3 @@
+# Candidate hypothesis
+
+One candidate only: preserve the complete decomposition and publication state machine, executable helpers, safety invariants, repository authority boundaries, and output proof while making prose describe each invariant once at its natural phase. The candidate shortens `SKILL.md` to the recommendation/approval path and shortens `publication-protocol.md` to the approved execution state machine. It removes incident-shaped command narration, duplicated schema examples, repeated self-audit wording, and timeout-based implicit authorization. No executable helper, test, trigger, issue-body contract, or external-state gate changes.

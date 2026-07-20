@@ -1,0 +1,1 @@
+Use the supplied triage skill and repository context to triage this architecture request. Return the recommended state, the unresolved decision tree, the workflow/owner that should resolve it, and the condition for later readiness. This is an analysis-only simulation: do not query or mutate GitHub.
