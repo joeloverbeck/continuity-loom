@@ -1,0 +1,3 @@
+Agreed. I’m withdrawing the top recommendation. The duplicated normalization is a deliberate boundary between components that are maintained and released independently; moving it into a server-owned module would violate that ownership and release constraint.
+
+I won’t implement anything or change repository documentation. Because this durable constraint is not discoverable from call sites and has no current ADR, the next checkpoint is authorization: would you like me to use the domain-modeling workflow to propose and record an ADR for the independent ownership/release boundary, or leave the repository unchanged? If authorized, that would be documentation only—no code changes.

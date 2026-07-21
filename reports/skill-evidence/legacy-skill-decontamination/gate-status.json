@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T02:49:00.489Z",
+  "generated_at": "2026-07-21T11:12:49.149Z",
   "target_content_hash": "20a458b487908362bc7bd7d14305d40c5dbacb9c8afede36e8e5c36d7016648c",
-  "qualifying_uses_on_current_hash": 9,
+  "qualifying_uses_on_current_hash": 10,
   "open_incident_ids": [
     "evt_6460a315-7f9f-4c31-adbd-a8cca8218161",
     "evt_32c12af0-3984-484a-99a1-06d1b84984c3",
@@ -36,12 +36,17 @@
       "max_severity": "friction"
     }
   ],
-  "state": "collecting",
-  "authorized_workflow": null,
-  "authorization_reason": null,
-  "trigger_event_ids": [],
+  "state": "eligible_pending_cooldown",
+  "authorized_workflow": "skill-evolution",
+  "authorization_reason": "ten_use_unresolved",
+  "trigger_event_ids": [
+    "evt_6460a315-7f9f-4c31-adbd-a8cca8218161",
+    "evt_32c12af0-3984-484a-99a1-06d1b84984c3",
+    "evt_746c9691-a35f-4dfb-b53f-192f6102a426",
+    "evt_4535ac1b-90de-4b25-a0ed-2b38c2b75c05"
+  ],
   "threshold_session_id": null,
-  "not_before": null,
+  "not_before": "2026-07-21T23:11:22.347Z",
   "active_review_id": null,
   "last_completed_review_id": null,
   "target_name": "legacy-skill-decontamination",
