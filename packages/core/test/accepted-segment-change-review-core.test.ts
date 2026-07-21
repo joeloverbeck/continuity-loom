@@ -288,7 +288,12 @@ describe("Accepted-Segment Change Review core contract", () => {
     ["missing coverage row", (output: Record<string, unknown>) => ({ ...output, coverage: (output.coverage as unknown[]).slice(1) }), "coverage-incomplete"],
     ["non-object coverage row", (output: Record<string, unknown>) => ({ ...output, coverage: [null, ...(output.coverage as unknown[]).slice(1)] }), "schema-mismatch"],
     ["unknown coverage dimension", (output: Record<string, unknown>) => mutateFirstCoverage(output, { dimension: "plot" }), "coverage-incomplete"],
-    ["unknown coverage status", (output: Record<string, unknown>) => mutateFirstCoverage(output, { status: "complete" }), "invalid-enum"]
+    ["unknown coverage status", (output: Record<string, unknown>) => mutateFirstCoverage(output, { status: "complete" }), "invalid-enum"],
+    // Constraints removed from the strict schema by #142 (uniqueItems, pattern, maxItems) must
+    // still be enforced by the parser with equal strength.
+    ["duplicate evidence citations", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence: duplicateFirstCitation(output) }), "schema-mismatch"],
+    ["malformed item id shape", (output: Record<string, unknown>) => mutateFirstItem(output, { id: "ITEM-1" }), "schema-mismatch"],
+    ["too many coverage rows", (output: Record<string, unknown>) => ({ ...output, coverage: [...(output.coverage as unknown[]), (output.coverage as unknown[])[0]] }), "coverage-incomplete"]
   ] as const)("quarantines the whole response for %s", (_label, mutate, reasonCode) => {
     const fixture = loadFixture("death");
     const parsed = parseAcceptedSegmentChangeReviewOutput(
@@ -412,4 +417,14 @@ function mutateFirstCoverage(
     ...output,
     coverage: [{ ...coverage[0], ...replacement }, ...coverage.slice(1)]
   };
+}
+
+function duplicateFirstCitation(output: Record<string, unknown>): string[] {
+  const firstItem = (output.items as readonly Record<string, unknown>[])[0];
+  const evidence = firstItem?.evidence as readonly string[] | undefined;
+  const firstKey = evidence?.[0];
+  if (firstKey === undefined) {
+    throw new Error("Expected the gold fixture's first item to cite at least one evidence key.");
+  }
+  return [firstKey, firstKey];
 }

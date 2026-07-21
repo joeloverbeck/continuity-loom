@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 3,
+  "protocolId": "accepted-segment-change-review-comparison.v3",
+  "supersedes": "accepted-segment-change-review-comparison.v2",
+  "supersededReason": "v2 passed capability-preflight (5 of 8 anthropic/claude-sonnet-4.6 endpoints advertise the full routing-capability set) but its compatibility-smoke failed HTTP 400 pre-generation: the compiled strict response_format schemas emitted JSON-Schema keywords the Anthropic structured-output implementation rejects before generation. Provider error (Anthropic via Azure): output_config.format.schema: For 'array' type, property 'uniqueItems' is not supported. The provider reports one offending keyword per request, so GitHub issue #142 stripped the whole provider-unsupported set (uniqueItems, minItems, maxItems, pattern, const) from both compiled output schemas in one pass and moved every dropped constraint into the deterministic parsers (ID shape, non-empty arrays, uniqueness, exactly-six coverage, contract/profile literals) so validation strength is unchanged. v2 and its failed field-run evidence remain historical and are not rewritten. A completing compatibility smoke is still required and is deferred to GitHub issue #136's re-triaged v3 field run, exactly as #138 deferred live proof to #136.",
+  "caseOrder": [
+    "death",
+    "injury",
+    "location-change",
+    "custody-change",
+    "clock-threshold-crossing",
+    "commitment-change",
+    "secret-disclosure",
+    "no-change"
+  ],
+  "workflows": ["old", "new"],
+  "workflowContracts": {
+    "old": "segment_reconciliation.v1",
+    "new": "accepted_segment_change_review.v1"
+  },
+  "sharedEnvelope": {
+    "model": "anthropic/claude-sonnet-4.6",
+    "settings": {
+      "temperature": 0,
+      "maxOutputTokens": 4096,
+      "topP": 1
+    },
+    "segmentSelection": "latest",
+    "recordScope": "active_working_set"
+  },
+  "routingEnvelope": {
+    "responseFormat": "json_schema",
+    "strictJsonSchema": true,
+    "requireParameters": true,
+    "allowFallbacks": false,
+    "toolChoice": "none",
+    "requiredCapabilities": [
+      "response_format",
+      "structured_outputs",
+      "temperature",
+      "top_p",
+      "max_tokens|max_completion_tokens"
+    ],
+    "capabilityProof": {
+      "method": "read-only OpenRouter endpoint capability check",
+      "endpointsSource": "https://openrouter.ai/api/v1/models/anthropic/claude-sonnet-4.6/endpoints",
+      "eligibleEndpointExample": "Anthropic | anthropic/claude-4.6-sonnet-20260217",
+      "eligibleEndpointSupportedParameters": [
+        "max_tokens",
+        "top_p",
+        "temperature",
+        "stop",
+        "reasoning",
+        "include_reasoning",
+        "tools",
+        "tool_choice",
+        "structured_outputs",
+        "response_format",
+        "verbosity",
+        "reasoning_effort"
+      ],
+      "providerCompletionRequests": 0,
+      "provenanceStartingRevision": "5e6c9a18186aa468512da83656a490fb0bfca59f"
+    }
+  },
+  "requestPolicy": {
+    "maximumProviderRequests": 16,
+    "automaticRetries": 0,
+    "fallbackRequests": 0,
+    "repairCalls": 0,
+    "unapprovedSubstitutions": "prohibited"
+  },
+  "phaseAccounting": {
+    "thisRepairAuthorizesCompletionRequests": false,
+    "repairIssue": "GitHub issue #142",
+    "phases": [
+      {
+        "id": "capability-preflight",
+        "authority": "GitHub issue #138",
+        "maximumProviderCompletionRequests": 0,
+        "cost": "none",
+        "readOnlyEndpointCheck": true,
+        "stopsFlowOnFailure": true
+      },
+      {
+        "id": "compatibility-smoke",
+        "authority": "GitHub issue #136",
+        "maximumProviderCompletionRequests": 1,
+        "requiresPriorPhase": "capability-preflight",
+        "stopsFlowOnFailure": true
+      },
+      {
+        "id": "bounded-comparison",
+        "authority": "GitHub issue #136",
+        "maximumProviderCompletionRequests": 16,
+        "requiresPriorPhase": "compatibility-smoke",
+        "stopsFlowOnFailure": true
+      }
+    ]
+  },
+  "completionBoundary": {
+    "executionAuthorized": false,
+    "providerCallsExecuted": 0,
+    "liveExecutionOwner": "GitHub issue #136",
+    "issueClosureIsGo": false
+  }
+}

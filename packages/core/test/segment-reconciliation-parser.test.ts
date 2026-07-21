@@ -118,6 +118,34 @@ describe("segment reconciliation output parser", () => {
         ]
       }),
       "cyclic-creation-dependency"
+    ],
+    // Constraints removed from the strict schema by #142 (const contract/profile literals,
+    // pattern id shapes) must still be enforced by the parser with equal strength.
+    ["wrong contract literal", JSON.stringify({ ...validOutput(), contract: "accepted_segment_change_review.v1" }), "schema-mismatch"],
+    [
+      "wrong source profile literal",
+      JSON.stringify({ ...validOutput(), source: { ...validOutput().source, profile: "segment-generation" } }),
+      "schema-mismatch"
+    ],
+    [
+      "non-sequential BRIEF id",
+      JSON.stringify({ ...validOutput(), brief_proposals: [{ ...validOutput().brief_proposals[0], id: "BRIEF-002" }] }),
+      "schema-mismatch"
+    ],
+    [
+      "malformed BRIEF id shape",
+      JSON.stringify({ ...validOutput(), brief_proposals: [{ ...validOutput().brief_proposals[0], id: "BRIEF-1" }] }),
+      "schema-mismatch"
+    ],
+    [
+      "non-sequential RECORD id",
+      JSON.stringify({ ...validOutput(), record_change_proposals: [{ ...validOutput().record_change_proposals[0], id: "RECORD-002" }] }),
+      "schema-mismatch"
+    ],
+    [
+      "non-sequential NEW id",
+      JSON.stringify({ ...validOutput(), record_creation_proposals: [{ ...validOutput().record_creation_proposals[0], id: "NEW-002" }] }),
+      "schema-mismatch"
     ]
   ])("quarantines %s as a full malformed response", (_name, raw, reasonCode) => {
     const parsed = parseSegmentReconciliationOutput(raw, context());

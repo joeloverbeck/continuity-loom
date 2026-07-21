@@ -4,8 +4,11 @@ import { GOLD_CASE_ORDER } from "./corpus.mjs";
 
 const PROTOCOL_V1_URL = new URL("./protocol.json", import.meta.url);
 const PROTOCOL_V2_URL = new URL("./protocol.v2.json", import.meta.url);
+const PROTOCOL_V3_URL = new URL("./protocol.v3.json", import.meta.url);
 // v2 is the active comparison protocol; v1 is retained only as historical evidence of the failed
-// #136 run (see GitHub issue #138).
+// #136 run (see GitHub issue #138). v3 is prepared but NOT pinned active: it repairs the strict
+// response_format schema keywords (GitHub issue #142) and stays pending a real compatibility smoke
+// owned by #136, so the active protocol deliberately remains v2.
 const ACTIVE_PROTOCOL_URL = PROTOCOL_V2_URL;
 
 const WORKFLOW_CONTRACTS = Object.freeze({
@@ -34,6 +37,10 @@ export async function loadProtocolV1() {
   return loadProtocolFromUrl(PROTOCOL_V1_URL);
 }
 
+export async function loadProtocolV3() {
+  return loadProtocolFromUrl(PROTOCOL_V3_URL);
+}
+
 async function loadProtocolFromUrl(url) {
   let protocol;
   try {
@@ -46,8 +53,8 @@ async function loadProtocolFromUrl(url) {
 
 export function validateProtocol(protocol) {
   requireObject(protocol, "protocol");
-  if (protocol.schemaVersion !== 1 && protocol.schemaVersion !== 2) {
-    throw new Error("Protocol schemaVersion must be 1 or 2.");
+  if (protocol.schemaVersion !== 1 && protocol.schemaVersion !== 2 && protocol.schemaVersion !== 3) {
+    throw new Error("Protocol schemaVersion must be 1, 2, or 3.");
   }
   requireString(protocol.protocolId, "protocolId");
   requireDeepEqual(protocol.caseOrder, GOLD_CASE_ORDER, "caseOrder");
@@ -92,16 +99,21 @@ export function validateProtocol(protocol) {
   }
   requireString(completionBoundary.liveExecutionOwner, "completionBoundary.liveExecutionOwner");
 
-  if (protocol.schemaVersion === 2) {
-    validateVersionTwo(protocol, envelope);
+  if (protocol.schemaVersion === 2 || protocol.schemaVersion === 3) {
+    validateComparisonRoutingEnvelope(protocol, envelope);
+  }
+  if (protocol.schemaVersion === 3) {
+    validateVersionThree(protocol);
   }
 
   return protocol;
 }
 
-function validateVersionTwo(protocol, envelope) {
+// v3 mirrors the v2 routing/envelope/phase contract exactly; only the identity and provenance
+// fields differ (see protocol.v3.json / GitHub issue #142), so both share this validation.
+function validateComparisonRoutingEnvelope(protocol, envelope) {
   if (envelope.model !== V2_MODEL) {
-    throw new Error(`sharedEnvelope.model must be ${V2_MODEL} for the version-2 protocol.`);
+    throw new Error(`sharedEnvelope.model must be ${V2_MODEL} for the comparison protocol.`);
   }
 
   const routing = requireObject(protocol.routingEnvelope, "routingEnvelope");
@@ -151,6 +163,13 @@ function validateVersionTwo(protocol, envelope) {
     }
     requireString(phase.authority, `phaseAccounting.phases[${index}].authority`);
   });
+}
+
+function validateVersionThree(protocol) {
+  if (protocol.supersedes !== "accepted-segment-change-review-comparison.v2") {
+    throw new Error("version-3 protocol must supersede accepted-segment-change-review-comparison.v2.");
+  }
+  requireString(protocol.supersededReason, "supersededReason");
 }
 
 export function buildDryRunPlan(corpus, protocol) {

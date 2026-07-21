@@ -53,6 +53,11 @@ export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
 export {
+  PROVIDER_SAFE_OUTPUT_SCHEMA_KEYWORDS,
+  PROVIDER_UNSAFE_OUTPUT_SCHEMA_KEYWORDS,
+  collectDisallowedOutputSchemaKeywords
+} from "./compiler/provider-safe-output-schema.js";
+export {
   compileAcceptedSegmentChangeReviewPrompt
 } from "./compiler/change-review/compile-accepted-segment-change-review-prompt.js";
 export {

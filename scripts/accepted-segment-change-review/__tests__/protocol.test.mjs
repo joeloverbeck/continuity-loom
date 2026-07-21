@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { loadGoldCorpus } from "../corpus.mjs";
-import { buildDryRunPlan, loadProtocol, loadProtocolV1, validateProtocol } from "../protocol.mjs";
+import { buildDryRunPlan, loadProtocol, loadProtocolV1, loadProtocolV3, validateProtocol } from "../protocol.mjs";
 
 test("pins one old and one new request for every case under one shared envelope", async () => {
   const corpus = await loadGoldCorpus();
@@ -118,4 +118,47 @@ test("version 1 protocol remains identifiable and validatable and is distinct fr
   assert.notEqual(v1.protocolId, v2.protocolId);
   assert.notEqual(v1.sharedEnvelope.model, v2.sharedEnvelope.model);
   assert.notEqual(v1.schemaVersion, v2.schemaVersion);
+});
+
+test("version 3 protocol is prepared, validatable, records the schema repair, and is not pinned active", async () => {
+  const [active, v3] = await Promise.all([loadProtocol(), loadProtocolV3()]);
+
+  // Prepared and validatable.
+  assert.equal(v3.schemaVersion, 3);
+  assert.equal(v3.protocolId, "accepted-segment-change-review-comparison.v3");
+  assert.equal(v3.supersedes, "accepted-segment-change-review-comparison.v2");
+  assert.doesNotThrow(() => validateProtocol(v3));
+
+  // Mirrors the v2 envelope: same model, same routing, same phases.
+  assert.equal(v3.sharedEnvelope.model, "anthropic/claude-sonnet-4.6");
+  assert.deepEqual(
+    v3.phaseAccounting.phases.map((phase) => [phase.id, phase.maximumProviderCompletionRequests]),
+    [
+      ["capability-preflight", 0],
+      ["compatibility-smoke", 1],
+      ["bounded-comparison", 16]
+    ]
+  );
+
+  // Records the schema-repair provenance (GitHub issue #142) and the offending keyword.
+  assert.match(v3.supersededReason, /#142/);
+  assert.match(v3.supersededReason, /uniqueItems/);
+
+  // NOT live-authorized: never authorizes a run, never a GO, never executes a call.
+  assert.equal(v3.completionBoundary.executionAuthorized, false);
+  assert.equal(v3.completionBoundary.providerCallsExecuted, 0);
+  assert.equal(v3.completionBoundary.issueClosureIsGo, false);
+  assert.equal(v3.phaseAccounting.thisRepairAuthorizesCompletionRequests, false);
+
+  // NOT pinned as the active comparison protocol; the active one stays v2.
+  assert.equal(active.schemaVersion, 2);
+  assert.equal(active.protocolId, "accepted-segment-change-review-comparison.v2");
+  assert.notEqual(v3.protocolId, active.protocolId);
+
+  // A usable-but-inactive protocol still builds a 16-request dry-run plan.
+  const corpus = await loadGoldCorpus();
+  const plan = buildDryRunPlan(corpus, v3);
+  assert.equal(plan.schemaVersion, 3);
+  assert.equal(plan.executionAuthorized, false);
+  assert.equal(plan.requests.length, 16);
 });

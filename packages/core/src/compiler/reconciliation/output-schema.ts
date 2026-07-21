@@ -1,10 +1,21 @@
 export const SEGMENT_RECONCILIATION_OUTPUT_CONTRACT = "segment_reconciliation.v1";
 
+/**
+ * Strict `response_format` schema for the live Segment Reconciliation workflow.
+ *
+ * The compiled schema emits only provider-safe JSON-Schema keywords (see
+ * `provider-safe-output-schema.ts`). The constraints the Anthropic
+ * structured-output implementation rejects pre-generation — `pattern`
+ * (`^BRIEF/RECORD/NEW-[0-9]{3}$`) and `const` (the contract and source-profile
+ * literals) — are intentionally absent. Each is re-enforced with equal strength
+ * by `parseSegmentReconciliationOutput`, which quarantines any violating output
+ * (sequential id check, contract/profile literal check). See GitHub issue #142.
+ */
 export function segmentReconciliationOutputJsonSchema(): unknown {
   return strictObject({
-    contract: { const: SEGMENT_RECONCILIATION_OUTPUT_CONTRACT },
+    contract: literal(SEGMENT_RECONCILIATION_OUTPUT_CONTRACT),
     source: strictObject({
-      profile: { const: "segment-reconciliation" },
+      profile: literal("segment-reconciliation"),
       accepted_segment_id: { type: "string" },
       accepted_segment_sequence: { type: "number" },
       record_scope: { enum: ["active_working_set", "whole_project"] },
@@ -13,7 +24,7 @@ export function segmentReconciliationOutputJsonSchema(): unknown {
     brief_proposals: {
       type: "array",
       items: strictObject({
-        id: { type: "string", pattern: "^BRIEF-[0-9]{3}$" },
+        id: { type: "string" },
         action: { enum: ["FILL", "REPLACE", "CLEAR"] },
         field_path: { type: "string" },
         proposed_value: {},
@@ -25,7 +36,7 @@ export function segmentReconciliationOutputJsonSchema(): unknown {
     record_change_proposals: {
       type: "array",
       items: strictObject({
-        id: { type: "string", pattern: "^RECORD-[0-9]{3}$" },
+        id: { type: "string" },
         action: { enum: ["UPDATE_FIELDS", "DEACTIVATE"] },
         record_key: { type: "string" },
         patches: {
@@ -45,7 +56,7 @@ export function segmentReconciliationOutputJsonSchema(): unknown {
     record_creation_proposals: {
       type: "array",
       items: strictObject({
-        id: { type: "string", pattern: "^NEW-[0-9]{3}$" },
+        id: { type: "string" },
         record_type: { type: "string" },
         payload: {},
         dependencies: stringArray(),
@@ -64,6 +75,10 @@ function strictObject(properties: Record<string, unknown>): Record<string, unkno
     required: Object.keys(properties),
     properties
   };
+}
+
+function literal(value: string): Record<string, unknown> {
+  return { enum: [value] };
 }
 
 function stringArray(): Record<string, unknown> {
