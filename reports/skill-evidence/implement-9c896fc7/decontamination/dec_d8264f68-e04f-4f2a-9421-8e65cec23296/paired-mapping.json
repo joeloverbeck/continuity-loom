@@ -1,0 +1,9 @@
+{
+  "01_single_doc_issue": { "A": "baseline", "B": "candidate" },
+  "02_issue_family_greenfield": { "A": "baseline", "B": "candidate" },
+  "03_browser_visible_ui": { "A": "baseline", "B": "candidate" },
+  "04_direct_resume_boundary": { "A": "baseline", "B": "candidate" },
+  "05_review_fix_closeout": { "A": "candidate", "B": "baseline" },
+  "06_blocked_dependency": { "A": "baseline", "B": "candidate" },
+  "07_tampered_resume_handoff": { "A": "baseline", "B": "candidate" }
+}
