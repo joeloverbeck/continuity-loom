@@ -2,16 +2,42 @@ import { readFile } from "node:fs/promises";
 
 import { GOLD_CASE_ORDER } from "./corpus.mjs";
 
-const PROTOCOL_URL = new URL("./protocol.json", import.meta.url);
+const PROTOCOL_V1_URL = new URL("./protocol.json", import.meta.url);
+const PROTOCOL_V2_URL = new URL("./protocol.v2.json", import.meta.url);
+// v2 is the active comparison protocol; v1 is retained only as historical evidence of the failed
+// #136 run (see GitHub issue #138).
+const ACTIVE_PROTOCOL_URL = PROTOCOL_V2_URL;
+
 const WORKFLOW_CONTRACTS = Object.freeze({
   old: "segment_reconciliation.v1",
   new: "accepted_segment_change_review.v1"
 });
+const V2_MODEL = "anthropic/claude-sonnet-4.6";
+const V2_REQUIRED_CAPABILITIES = Object.freeze([
+  "response_format",
+  "structured_outputs",
+  "temperature",
+  "top_p",
+  "max_tokens|max_completion_tokens"
+]);
+const V2_PHASES = Object.freeze([
+  { id: "capability-preflight", maximumProviderCompletionRequests: 0 },
+  { id: "compatibility-smoke", maximumProviderCompletionRequests: 1 },
+  { id: "bounded-comparison", maximumProviderCompletionRequests: 16 }
+]);
 
 export async function loadProtocol() {
+  return loadProtocolFromUrl(ACTIVE_PROTOCOL_URL);
+}
+
+export async function loadProtocolV1() {
+  return loadProtocolFromUrl(PROTOCOL_V1_URL);
+}
+
+async function loadProtocolFromUrl(url) {
   let protocol;
   try {
-    protocol = JSON.parse(await readFile(PROTOCOL_URL, "utf8"));
+    protocol = JSON.parse(await readFile(url, "utf8"));
   } catch (error) {
     throw new Error(`Unable to load comparison protocol: ${errorMessage(error)}`, { cause: error });
   }
@@ -20,8 +46,8 @@ export async function loadProtocol() {
 
 export function validateProtocol(protocol) {
   requireObject(protocol, "protocol");
-  if (protocol.schemaVersion !== 1) {
-    throw new Error("Protocol schemaVersion must be 1.");
+  if (protocol.schemaVersion !== 1 && protocol.schemaVersion !== 2) {
+    throw new Error("Protocol schemaVersion must be 1 or 2.");
   }
   requireString(protocol.protocolId, "protocolId");
   requireDeepEqual(protocol.caseOrder, GOLD_CASE_ORDER, "caseOrder");
@@ -56,17 +82,75 @@ export function validateProtocol(protocol) {
 
   const completionBoundary = requireObject(protocol.completionBoundary, "completionBoundary");
   if (completionBoundary.executionAuthorized !== false) {
-    throw new Error("completionBoundary.executionAuthorized must remain false for issue #134.");
+    throw new Error("completionBoundary.executionAuthorized must remain false; this repository never authorizes a live run.");
   }
   if (completionBoundary.providerCallsExecuted !== 0) {
-    throw new Error("completionBoundary.providerCallsExecuted must remain 0 for issue #134.");
+    throw new Error("completionBoundary.providerCallsExecuted must remain 0; this repository never executes a provider call.");
   }
   if (completionBoundary.issueClosureIsGo !== false) {
     throw new Error("completionBoundary.issueClosureIsGo must remain false.");
   }
   requireString(completionBoundary.liveExecutionOwner, "completionBoundary.liveExecutionOwner");
 
+  if (protocol.schemaVersion === 2) {
+    validateVersionTwo(protocol, envelope);
+  }
+
   return protocol;
+}
+
+function validateVersionTwo(protocol, envelope) {
+  if (envelope.model !== V2_MODEL) {
+    throw new Error(`sharedEnvelope.model must be ${V2_MODEL} for the version-2 protocol.`);
+  }
+
+  const routing = requireObject(protocol.routingEnvelope, "routingEnvelope");
+  if (routing.responseFormat !== "json_schema") {
+    throw new Error("routingEnvelope.responseFormat must be json_schema.");
+  }
+  if (routing.strictJsonSchema !== true) {
+    throw new Error("routingEnvelope.strictJsonSchema must be true.");
+  }
+  if (routing.requireParameters !== true) {
+    throw new Error("routingEnvelope.requireParameters must be true.");
+  }
+  if (routing.allowFallbacks !== false) {
+    throw new Error("routingEnvelope.allowFallbacks must be false.");
+  }
+  if (routing.toolChoice !== "none") {
+    throw new Error("routingEnvelope.toolChoice must be none.");
+  }
+  requireDeepEqual(routing.requiredCapabilities, V2_REQUIRED_CAPABILITIES, "routingEnvelope.requiredCapabilities");
+
+  const capabilityProof = requireObject(routing.capabilityProof, "routingEnvelope.capabilityProof");
+  requireString(capabilityProof.method, "routingEnvelope.capabilityProof.method");
+  requireString(capabilityProof.endpointsSource, "routingEnvelope.capabilityProof.endpointsSource");
+  requireString(capabilityProof.eligibleEndpointExample, "routingEnvelope.capabilityProof.eligibleEndpointExample");
+  if (capabilityProof.providerCompletionRequests !== 0) {
+    throw new Error("routingEnvelope.capabilityProof.providerCompletionRequests must be 0; the endpoint check makes no completion request.");
+  }
+
+  const phaseAccounting = requireObject(protocol.phaseAccounting, "phaseAccounting");
+  if (phaseAccounting.thisRepairAuthorizesCompletionRequests !== false) {
+    throw new Error("phaseAccounting.thisRepairAuthorizesCompletionRequests must be false; issue #138 authorizes no completion request.");
+  }
+  const phases = phaseAccounting.phases;
+  if (!Array.isArray(phases) || phases.length !== V2_PHASES.length) {
+    throw new Error(`phaseAccounting.phases must list exactly ${V2_PHASES.length} phases.`);
+  }
+  phases.forEach((phase, index) => {
+    const expected = V2_PHASES[index];
+    requireObject(phase, `phaseAccounting.phases[${index}]`);
+    if (phase.id !== expected.id) {
+      throw new Error(`phaseAccounting.phases[${index}].id must be ${expected.id}.`);
+    }
+    if (phase.maximumProviderCompletionRequests !== expected.maximumProviderCompletionRequests) {
+      throw new Error(
+        `phaseAccounting.phases[${index}].maximumProviderCompletionRequests must be ${expected.maximumProviderCompletionRequests}.`
+      );
+    }
+    requireString(phase.authority, `phaseAccounting.phases[${index}].authority`);
+  });
 }
 
 export function buildDryRunPlan(corpus, protocol) {
@@ -104,8 +188,8 @@ export function buildDryRunPlan(corpus, protocol) {
     );
   }
 
-  return {
-    schemaVersion: 1,
+  const plan = {
+    schemaVersion: protocol.schemaVersion,
     protocolId: protocol.protocolId,
     executionAuthorized: false,
     providerCallsExecuted: 0,
@@ -113,6 +197,12 @@ export function buildDryRunPlan(corpus, protocol) {
     notice: "Dry run only. No provider request was or can be executed by this plan builder.",
     requests
   };
+
+  if (protocol.phaseAccounting !== undefined) {
+    plan.phaseAccounting = globalThis.structuredClone(protocol.phaseAccounting);
+  }
+
+  return plan;
 }
 
 function requireObject(value, label) {

@@ -161,6 +161,7 @@ describe("AcceptedSegmentChangeReviewView", () => {
     ["quarantined", quarantineResponse(), "Quarantined response", "schema-mismatch"],
     ["stale", staleResponse(), "Source changed", "Compile and inspect again"],
     ["provider", providerResponse(), "OpenRouter request failed", "No retry is automatic"],
+    ["incompatible model", incompatibleModelResponse(), "Strict structured output unavailable", "advertises strict structured output"],
     ["oversize", oversizeResponse(), "Complete source is too large", "Choose Whole Project only when needed"],
     ["local request", localRequestResponse(), "Local request failed", "Inspect local project state"]
   ] as const)("renders the %s state with distinct manual recovery", async (_label, response, heading, detail) => {
@@ -297,6 +298,16 @@ function providerResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {
     ok: false as const,
     category: "provider-unavailable" as const,
     message: "OpenRouter request failed."
+  };
+}
+
+function incompatibleModelResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {
+  return {
+    ok: false as const,
+    category: "structured-output-incompatible-model" as const,
+    message: "The selected model does not support the strict structured-output request this workflow requires.",
+    recovery:
+      "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
   };
 }
 

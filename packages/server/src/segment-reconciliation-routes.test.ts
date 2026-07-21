@@ -190,6 +190,7 @@ describe("segment reconciliation routes", () => {
   it("sends strict provider policy, parses valid proposals, and leaves project data unchanged", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
+    await configureCompatibleModel(fastify);
     await prepareProject(fastify);
     const before = await projectSurfaces(fastify);
     const compile = await compileReconciliation(fastify);
@@ -235,6 +236,7 @@ describe("segment reconciliation routes", () => {
   it("returns an all-empty result as valid scratch with one provider call and zero project writes", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
+    await configureCompatibleModel(fastify);
     await prepareProject(fastify);
     const before = await projectSurfaces(fastify);
     const compile = await compileReconciliation(fastify);
@@ -267,6 +269,7 @@ describe("segment reconciliation routes", () => {
   it("preserves the normalized transport detail across the reconciliation route", async () => {
     process.env.OPENROUTER_API_KEY = apiKey;
     const fastify = app();
+    await configureCompatibleModel(fastify);
     await prepareProject(fastify);
     const compile = await compileReconciliation(fastify);
     sendChatCompletionMock.mockResolvedValue({
@@ -291,6 +294,65 @@ describe("segment reconciliation routes", () => {
       providerReason: "Model is warming up."
     });
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails closed before transport when the selected model cannot produce strict structured output", async () => {
+    process.env.OPENROUTER_API_KEY = apiKey;
+    const fastify = app();
+    await putSettings(fastify, {
+      model: "anthropic/claude-sonnet-4",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      topP: 1,
+      cachedModels: [
+        {
+          id: "anthropic/claude-sonnet-4",
+          name: "Sonnet 4",
+          supportedParameters: ["max_tokens", "temperature", "tool_choice", "tools", "top_p"]
+        }
+      ]
+    });
+    await prepareProject(fastify);
+    const compile = await compileReconciliation(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/analyze",
+      payload: { expectedPromptFingerprint: compile.metadata.fingerprint }
+    });
+    const body = response.json() as { ok: false; category: string; recovery: string; message: string };
+
+    expect(body.ok).toBe(false);
+    expect(body.category).toBe("structured-output-incompatible-model");
+    expect(body.recovery).toMatch(/structured output/i);
+    expect(body.message.length).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain(acceptedText);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed before transport when capability metadata for the selected model is unavailable", async () => {
+    process.env.OPENROUTER_API_KEY = apiKey;
+    const fastify = app();
+    await putSettings(fastify, {
+      model: "vendor/uncached",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      cachedModels: [{ id: "vendor/uncached", name: "Uncached" }]
+    });
+    await prepareProject(fastify);
+    const compile = await compileReconciliation(fastify);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/segment-reconciliation/analyze",
+      payload: { expectedPromptFingerprint: compile.metadata.fingerprint }
+    });
+    const body = response.json() as { ok: false; category: string; recovery: string };
+
+    expect(body.ok).toBe(false);
+    expect(body.category).toBe("structured-output-capability-unknown");
+    expect(body.recovery).toMatch(/refresh/i);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
   it("returns segment-reconciliation-prompt-too-large before transport", async () => {
@@ -438,6 +500,24 @@ async function putWorkingSet(fastify: FastifyApp, selectedRecordIds: string[]): 
   });
 
   expect(response.statusCode).toBe(200);
+}
+
+// A selected model whose capability union covers the exact strict structured-output envelope, so the
+// pre-send capability admission passes and Analyze reaches the (mocked) transport.
+async function configureCompatibleModel(fastify: FastifyApp): Promise<void> {
+  await putSettings(fastify, {
+    model: "test/structured-output-capable",
+    temperature: 0,
+    maxOutputTokens: 4096,
+    topP: 1,
+    cachedModels: [
+      {
+        id: "test/structured-output-capable",
+        name: "Structured Output Capable",
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+      }
+    ]
+  });
 }
 
 async function putSettings(fastify: FastifyApp, payload: Record<string, unknown>): Promise<void> {

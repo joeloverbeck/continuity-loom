@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 2,
+  "protocolId": "accepted-segment-change-review-comparison.v2",
+  "supersedes": "accepted-segment-change-review-comparison.v1",
+  "supersededReason": "v1 pinned anthropic/claude-sonnet-4, whose endpoints advertise no response_format or structured_outputs capability, so the strict-schema require_parameters:true envelope was excluded before generation. The authorized GitHub issue #136 run made 16 attempts and received 16 pre-generation endpoint rejections with zero model responses. See GitHub issue #138 for the capability repair. v1 and its failed evidence remain historical and are not rewritten.",
+  "caseOrder": [
+    "death",
+    "injury",
+    "location-change",
+    "custody-change",
+    "clock-threshold-crossing",
+    "commitment-change",
+    "secret-disclosure",
+    "no-change"
+  ],
+  "workflows": ["old", "new"],
+  "workflowContracts": {
+    "old": "segment_reconciliation.v1",
+    "new": "accepted_segment_change_review.v1"
+  },
+  "sharedEnvelope": {
+    "model": "anthropic/claude-sonnet-4.6",
+    "settings": {
+      "temperature": 0,
+      "maxOutputTokens": 4096,
+      "topP": 1
+    },
+    "segmentSelection": "latest",
+    "recordScope": "active_working_set"
+  },
+  "routingEnvelope": {
+    "responseFormat": "json_schema",
+    "strictJsonSchema": true,
+    "requireParameters": true,
+    "allowFallbacks": false,
+    "toolChoice": "none",
+    "requiredCapabilities": [
+      "response_format",
+      "structured_outputs",
+      "temperature",
+      "top_p",
+      "max_tokens|max_completion_tokens"
+    ],
+    "capabilityProof": {
+      "method": "read-only OpenRouter endpoint capability check",
+      "endpointsSource": "https://openrouter.ai/api/v1/models/anthropic/claude-sonnet-4.6/endpoints",
+      "eligibleEndpointExample": "Anthropic | anthropic/claude-4.6-sonnet-20260217",
+      "eligibleEndpointSupportedParameters": [
+        "max_tokens",
+        "top_p",
+        "temperature",
+        "stop",
+        "reasoning",
+        "include_reasoning",
+        "tools",
+        "tool_choice",
+        "structured_outputs",
+        "response_format",
+        "verbosity",
+        "reasoning_effort"
+      ],
+      "providerCompletionRequests": 0,
+      "provenanceStartingRevision": "08a85deca318ab0fbe07904f5ef873c6cc2d664b"
+    }
+  },
+  "requestPolicy": {
+    "maximumProviderRequests": 16,
+    "automaticRetries": 0,
+    "fallbackRequests": 0,
+    "repairCalls": 0,
+    "unapprovedSubstitutions": "prohibited"
+  },
+  "phaseAccounting": {
+    "thisRepairAuthorizesCompletionRequests": false,
+    "repairIssue": "GitHub issue #138",
+    "phases": [
+      {
+        "id": "capability-preflight",
+        "authority": "GitHub issue #138",
+        "maximumProviderCompletionRequests": 0,
+        "cost": "none",
+        "readOnlyEndpointCheck": true,
+        "stopsFlowOnFailure": true
+      },
+      {
+        "id": "compatibility-smoke",
+        "authority": "GitHub issue #136",
+        "maximumProviderCompletionRequests": 1,
+        "requiresPriorPhase": "capability-preflight",
+        "stopsFlowOnFailure": true
+      },
+      {
+        "id": "bounded-comparison",
+        "authority": "GitHub issue #136",
+        "maximumProviderCompletionRequests": 16,
+        "requiresPriorPhase": "compatibility-smoke",
+        "stopsFlowOnFailure": true
+      }
+    ]
+  },
+  "completionBoundary": {
+    "executionAuthorized": false,
+    "providerCallsExecuted": 0,
+    "liveExecutionOwner": "GitHub issue #136",
+    "issueClosureIsGo": false
+  }
+}

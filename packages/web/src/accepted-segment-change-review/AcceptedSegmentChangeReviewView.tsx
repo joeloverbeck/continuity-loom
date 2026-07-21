@@ -51,6 +51,7 @@ type ReviewState =
   | { status: "success"; result: ValidReview }
   | { status: "quarantined"; reasonCode: string; summary: string }
   | { status: "stale"; message: string }
+  | { status: "incompatibleModel"; message: string; recovery: string }
   | { status: "provider"; message: string }
   | { status: "oversize"; message: string }
   | { status: "local"; message: string };
@@ -144,6 +145,17 @@ export function AcceptedSegmentChangeReviewView({
       }
 
       if (isTransportFailure(result)) {
+        if (
+          result.category === "structured-output-incompatible-model" ||
+          result.category === "structured-output-capability-unknown"
+        ) {
+          setReviewState({
+            status: "incompatibleModel",
+            message: result.message,
+            recovery: result.recovery ?? presentOpenRouterFailure(result)
+          });
+          return;
+        }
         setReviewState({ status: "provider", message: presentOpenRouterFailure(result) });
         return;
       }
@@ -362,6 +374,9 @@ function ReviewPanel({
       ) : null}
       {state.status === "stale" ? (
         <Recovery title="Source changed" message={state.message} guidance="Refresh the source manually before another explicit Analyze. No retry is automatic." />
+      ) : null}
+      {state.status === "incompatibleModel" ? (
+        <Recovery title="Strict structured output unavailable" message={state.message} guidance={state.recovery} />
       ) : null}
       {state.status === "provider" ? (
         <Recovery title="OpenRouter request failed" message={state.message} guidance="No result was kept or written." />

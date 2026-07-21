@@ -33,7 +33,7 @@ export function evaluateComparison(corpus, comparisonRun, protocol) {
   const aggregate = aggregateScores(perRequest, protocolPlanComplete);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: comparisonRun.schemaVersion,
     protocolId: comparisonRun.protocolId,
     requests: perRequest,
     aggregate,
@@ -52,8 +52,8 @@ export function validateComparisonRun(comparisonRun, protocol) {
     ["schemaVersion", "protocolId", "issueClosureIsGo", "requests", "stewardReceipt"],
     "comparison run"
   );
-  if (comparisonRun.schemaVersion !== 1) {
-    throw new Error("Comparison run schemaVersion must be 1.");
+  if (comparisonRun.schemaVersion !== protocol.schemaVersion) {
+    throw new Error(`Comparison run schemaVersion must be ${protocol.schemaVersion} to match the pinned protocol.`);
   }
   requireString(comparisonRun.protocolId, "comparison protocol id");
   if (comparisonRun.protocolId !== protocol.protocolId) {
@@ -99,8 +99,8 @@ function validateRequestResult(result, protocol) {
     ],
     "request result"
   );
-  if (result.schemaVersion !== 1) {
-    throw new Error("Request result schemaVersion must be 1.");
+  if (result.schemaVersion !== protocol.schemaVersion) {
+    throw new Error(`Request result schemaVersion must be ${protocol.schemaVersion} to match the pinned protocol.`);
   }
   requireString(result.requestId, "request id");
   requireIntegerInRange(result.requestOrdinal, 1, 16, "request ordinal");

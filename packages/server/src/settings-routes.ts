@@ -8,7 +8,8 @@ const modelListEntrySchema = z
   .object({
     id: z.string().trim().min(1),
     name: z.string().trim().min(1),
-    contextLength: z.number().int().positive().optional()
+    contextLength: z.number().int().positive().optional(),
+    supportedParameters: z.array(z.string().trim().min(1)).optional()
   })
   .strict();
 
@@ -92,6 +93,10 @@ function toModelListEntry(model: z.infer<typeof modelListEntrySchema>): ModelLis
 
   if (model.contextLength !== undefined) {
     entry.contextLength = model.contextLength;
+  }
+
+  if (model.supportedParameters !== undefined) {
+    entry.supportedParameters = [...model.supportedParameters];
   }
 
   return entry;

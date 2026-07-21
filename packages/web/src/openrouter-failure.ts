@@ -35,6 +35,16 @@ function recoveryGuidance(failure: TransportFailure): string {
       return "Review the selected model and request settings before trying again. No retry is automatic.";
     case "structured-output-rejection":
       return "Choose a model that supports the requested structured output, then use the existing action to try again. No retry is automatic.";
+    case "structured-output-incompatible-model":
+      return (
+        failure.recovery ??
+        "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+      );
+    case "structured-output-capability-unknown":
+      return (
+        failure.recovery ??
+        "Refresh the OpenRouter model list and select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+      );
     case "moderation-refusal":
       return "Review the requested content and provider policy before trying again. No retry is automatic.";
     case "provider-unavailable":

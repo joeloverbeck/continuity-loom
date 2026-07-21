@@ -16,7 +16,14 @@ import {
   type AcceptedSegmentChangeReviewClient
 } from "./AcceptedSegmentChangeReviewView.js";
 
-type Scenario = "success" | "empty" | "quarantined" | "stale" | "provider" | "oversize";
+type Scenario =
+  | "success"
+  | "empty"
+  | "quarantined"
+  | "stale"
+  | "incompatible-model"
+  | "provider"
+  | "oversize";
 
 function Harness(): React.JSX.Element {
   const [scenario, setScenario] = useState<Scenario>("success");
@@ -38,6 +45,7 @@ function Harness(): React.JSX.Element {
             <option value="empty">Empty advisory</option>
             <option value="quarantined">Quarantined</option>
             <option value="stale">Stale</option>
+            <option value="incompatible-model">Incompatible model</option>
             <option value="provider">Provider error</option>
             <option value="oversize">Oversize</option>
           </select>
@@ -91,6 +99,15 @@ function compileResponse(): Extract<AcceptedSegmentChangeReviewCompileResponse, 
 function analyzeResponse(scenario: Scenario): AcceptedSegmentChangeReviewAnalyzeResponse {
   if (scenario === "stale") {
     return { ok: false, kind: "accepted-segment-change-review-source-changed", message: "Compile and inspect again before Analyze." };
+  }
+  if (scenario === "incompatible-model") {
+    return {
+      ok: false,
+      category: "structured-output-incompatible-model",
+      message: "The selected model does not support the strict structured-output request this workflow requires.",
+      recovery:
+        "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+    };
   }
   if (scenario === "provider") {
     return { ok: false, category: "provider-unavailable", message: "The synthetic provider is unavailable." };

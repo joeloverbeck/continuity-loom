@@ -8,7 +8,9 @@ import {
 } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
+import { admitStructuredOutputModel } from "./openrouter/capability.js";
 import { sendChatCompletion } from "./openrouter/client.js";
+import type { OpenRouterRequestOptions } from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
 import {
@@ -83,24 +85,31 @@ export function registerAcceptedSegmentChangeReviewRoutes(
     }
 
     const outputSchema = acceptedSegmentChangeReviewOutputJsonSchema();
+    const requestOptions: OpenRouterRequestOptions = {
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "accepted_segment_change_review",
+          strict: true,
+          schema: outputSchema
+        }
+      },
+      provider: { require_parameters: true, allow_fallbacks: false },
+      transforms: [],
+      plugins: [],
+      tools: [],
+      tool_choice: "none"
+    };
+
+    const admission = admitStructuredOutputModel({ settings, requestOptions });
+    if (!admission.ok) {
+      return admission;
+    }
+
     const transportResult = await sendChatCompletion({
       prompt: compiled.prompt,
       settings,
-      requestOptions: {
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "accepted_segment_change_review",
-            strict: true,
-            schema: outputSchema
-          }
-        },
-        provider: { require_parameters: true, allow_fallbacks: false },
-        transforms: [],
-        plugins: [],
-        tools: [],
-        tool_choice: "none"
-      }
+      requestOptions
     });
 
     if (!transportResult.ok) {

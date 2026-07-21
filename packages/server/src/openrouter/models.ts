@@ -101,6 +101,7 @@ function extractModels(body: unknown): ModelListEntry[] | undefined {
     const id = getUnknownProperty(model, "id");
     const name = getUnknownProperty(model, "name");
     const contextLength = getUnknownProperty(model, "context_length");
+    const supportedParameters = extractSupportedParameters(getUnknownProperty(model, "supported_parameters"));
 
     if (typeof id !== "string" || !id.trim()) {
       return [];
@@ -115,8 +116,21 @@ function extractModels(body: unknown): ModelListEntry[] | undefined {
       entry.contextLength = contextLength;
     }
 
+    if (supportedParameters !== undefined) {
+      entry.supportedParameters = supportedParameters;
+    }
+
     return [entry];
   });
+}
+
+function extractSupportedParameters(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const tokens = value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+  return tokens.length > 0 ? tokens : undefined;
 }
 
 function getUnknownProperty(value: unknown, key: string): unknown {

@@ -311,8 +311,8 @@ test("accepts RFC 3339 lowercase separators and leap-second timestamps", async (
 
 function comparisonRun(requests) {
   return {
-    schemaVersion: 1,
-    protocolId: "accepted-segment-change-review-comparison.v1",
+    schemaVersion: 2,
+    protocolId: "accepted-segment-change-review-comparison.v2",
     issueClosureIsGo: false,
     requests,
     stewardReceipt: {
@@ -327,14 +327,14 @@ function comparisonRun(requests) {
 
 function successfulResult(fixture, workflow, requestOrdinal, overrides = {}) {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     requestId: `request-${String(requestOrdinal).padStart(2, "0")}-${workflow}-${fixture.caseId}`,
     requestOrdinal,
     caseId: fixture.caseId,
     workflow,
     provenance: {
       contract: workflow === "old" ? "segment_reconciliation.v1" : "accepted_segment_change_review.v1",
-      model: "anthropic/claude-sonnet-4",
+      model: "anthropic/claude-sonnet-4.6",
       settings: { temperature: 0, maxOutputTokens: 4_096, topP: 1 },
       segmentSelection: "latest",
       recordScope: "active_working_set",

@@ -151,6 +151,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
 
   it("sends once only on Analyze, attaches trusted metadata after parsing, and performs zero writes", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    configureCompatibleModel();
     const candidate = app(true);
     await prepareProject(candidate);
     const before = await projectSurfaces(candidate);
@@ -192,8 +193,67 @@ describe("Accepted-Segment Change Review candidate routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("fails closed before transport when the selected model cannot produce strict structured output", async () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    writeOpenRouterSettings({
+      model: "anthropic/claude-sonnet-4",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      cachedModels: [
+        {
+          id: "anthropic/claude-sonnet-4",
+          name: "Sonnet 4",
+          supportedParameters: ["max_tokens", "temperature", "tool_choice", "tools", "top_p"]
+        }
+      ]
+    });
+    const candidate = app(true);
+    await prepareProject(candidate);
+    const compile = await compileReview(candidate);
+
+    const response = await candidate.inject({
+      method: "POST",
+      url: "/api/accepted-segment-change-review/analyze",
+      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+    });
+    const body = response.json() as { ok: false; category: string; recovery: string; message: string };
+
+    expect(body.ok).toBe(false);
+    expect(body.category).toBe("structured-output-incompatible-model");
+    expect(body.recovery).toMatch(/structured output/i);
+    expect(body.message.length).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain(acceptedText);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("fails closed before transport when capability metadata for the selected model is unavailable", async () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    writeOpenRouterSettings({
+      model: "vendor/uncached",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      cachedModels: [{ id: "vendor/uncached", name: "Uncached" }]
+    });
+    const candidate = app(true);
+    await prepareProject(candidate);
+    const compile = await compileReview(candidate);
+
+    const response = await candidate.inject({
+      method: "POST",
+      url: "/api/accepted-segment-change-review/analyze",
+      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+    });
+    const body = response.json() as { ok: false; category: string; recovery: string };
+
+    expect(body.ok).toBe(false);
+    expect(body.category).toBe("structured-output-capability-unknown");
+    expect(body.recovery).toMatch(/refresh/i);
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
   it("quarantines malformed provider output without returning raw source material", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    configureCompatibleModel();
     const candidate = app(true);
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
@@ -214,6 +274,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
 
   it("passes through the shared sanitized OpenRouter failure contract", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    configureCompatibleModel();
     const candidate = app(true);
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
@@ -288,6 +349,23 @@ function app(candidateEnabled: boolean): FastifyApp {
   const fastify = createServer({ acceptedSegmentChangeReviewCandidate: candidateEnabled });
   apps.push(fastify);
   return fastify;
+}
+
+// A selected model whose capability union covers the exact strict structured-output envelope, so the
+// pre-send capability admission passes and Analyze reaches the (mocked) transport.
+function configureCompatibleModel(): void {
+  writeOpenRouterSettings({
+    model: "test/structured-output-capable",
+    temperature: 0,
+    maxOutputTokens: 4096,
+    cachedModels: [
+      {
+        id: "test/structured-output-capable",
+        name: "Structured Output Capable",
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+      }
+    ]
+  });
 }
 
 async function prepareProject(fastify: FastifyApp): Promise<void> {

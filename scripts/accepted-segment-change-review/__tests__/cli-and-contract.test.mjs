@@ -138,23 +138,56 @@ test("result contract records per-request evidence, aggregates, and a separate s
   assert.match(protocolText, /no automatic retries, fallback requests, repair calls, or unapproved substitutions/i);
   assert.match(protocolText, /issue closure is not GO/i);
   assert.match(protocolText, /named steward/i);
+
+  // Version-2 repin (issue #138) and the three-phase staged operator flow owned by issue #136.
+  const protocolV2 = JSON.parse(await readFile(new URL("../protocol.v2.json", import.meta.url), "utf8"));
+  assert.equal(protocolV2.schemaVersion, 2);
+  assert.equal(protocolV2.protocolId, "accepted-segment-change-review-comparison.v2");
+  assert.equal(protocolV2.supersedes, "accepted-segment-change-review-comparison.v1");
+  assert.equal(protocolV2.sharedEnvelope.model, "anthropic/claude-sonnet-4.6");
+  assert.deepEqual(protocolV2.workflowContracts, {
+    old: "segment_reconciliation.v1",
+    new: "accepted_segment_change_review.v1"
+  });
+  assert.equal(protocolV2.routingEnvelope.strictJsonSchema, true);
+  assert.equal(protocolV2.routingEnvelope.capabilityProof.providerCompletionRequests, 0);
+  assert.deepEqual(
+    protocolV2.phaseAccounting.phases.map((phase) => [phase.id, phase.maximumProviderCompletionRequests]),
+    [
+      ["capability-preflight", 0],
+      ["compatibility-smoke", 1],
+      ["bounded-comparison", 16]
+    ]
+  );
+  assert.equal(protocolV2.phaseAccounting.thisRepairAuthorizesCompletionRequests, false);
+
+  // v1 protocol.json is preserved as historical evidence, distinct from v2.
+  assert.equal(protocol.protocolId, "accepted-segment-change-review-comparison.v1");
+  assert.equal(protocol.sharedEnvelope.model, "anthropic/claude-sonnet-4");
+
+  // The operator doc records the Sonnet 4.6 repin and the three named phases while authorizing none.
+  assert.match(protocolText, /anthropic\/claude-sonnet-4\.6/);
+  assert.match(protocolText, /capability preflight/i);
+  assert.match(protocolText, /compatibility smoke/i);
+  assert.match(protocolText, /bounded comparison/i);
+  assert.match(protocolText, /authorizes none/i);
 });
 
 function comparisonRun(fixture) {
   return {
-    schemaVersion: 1,
-    protocolId: "accepted-segment-change-review-comparison.v1",
+    schemaVersion: 2,
+    protocolId: "accepted-segment-change-review-comparison.v2",
     issueClosureIsGo: false,
     requests: [
       {
-        schemaVersion: 1,
+        schemaVersion: 2,
         requestId: `request-01-old-${fixture.caseId}`,
         requestOrdinal: 1,
         caseId: fixture.caseId,
         workflow: "old",
         provenance: {
           contract: "segment_reconciliation.v1",
-          model: "anthropic/claude-sonnet-4",
+          model: "anthropic/claude-sonnet-4.6",
           settings: { temperature: 0, maxOutputTokens: 4_096, topP: 1 },
           segmentSelection: "latest",
           recordScope: "active_working_set",

@@ -92,6 +92,34 @@ describe("OpenRouter settings boundary", () => {
     });
   });
 
+  it("round-trips cached model capability metadata through the config file", () => {
+    const written = writeOpenRouterSettings({
+      model: "anthropic/claude-sonnet-4.6",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      cachedModels: [
+        {
+          id: "anthropic/claude-sonnet-4.6",
+          name: "Sonnet 4.6",
+          contextLength: 1000000,
+          supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+        },
+        { id: "anthropic/claude-sonnet-4", name: "Sonnet 4", supportedParameters: ["temperature", "top_p"] }
+      ]
+    });
+
+    expect(written.cachedModels).toEqual([
+      {
+        id: "anthropic/claude-sonnet-4.6",
+        name: "Sonnet 4.6",
+        contextLength: 1000000,
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+      },
+      { id: "anthropic/claude-sonnet-4", name: "Sonnet 4", supportedParameters: ["temperature", "top_p"] }
+    ]);
+    expect(readOpenRouterSettings().cachedModels).toEqual(written.cachedModels);
+  });
+
   it("does not persist key-shaped fields or key-looking values", () => {
     writeOpenRouterSettings({
       model: "openai/gpt-4.1",

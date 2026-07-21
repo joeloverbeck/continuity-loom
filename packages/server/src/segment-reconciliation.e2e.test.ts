@@ -166,9 +166,26 @@ async function putSettings(fastify: FastifyApp): Promise<void> {
     method: "PUT",
     url: "/api/settings/openrouter",
     payload: {
-      model: "anthropic/claude-sonnet-4",
+      model: "anthropic/claude-sonnet-4.6",
       temperature: 0.4,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [
+        {
+          id: "anthropic/claude-sonnet-4.6",
+          name: "Anthropic: Claude Sonnet 4.6",
+          contextLength: 1000000,
+          supportedParameters: [
+            "response_format",
+            "structured_outputs",
+            "temperature",
+            "top_p",
+            "max_tokens",
+            "max_completion_tokens",
+            "tools",
+            "tool_choice"
+          ]
+        }
+      ]
     }
   });
 

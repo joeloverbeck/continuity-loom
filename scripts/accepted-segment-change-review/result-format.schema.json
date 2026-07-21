@@ -14,7 +14,7 @@
     "stewardReceipt"
   ],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "enum": [1, 2] },
     "protocolId": { "type": "string", "minLength": 1 },
     "issueClosureIsGo": { "const": false },
     "requests": {
@@ -74,7 +74,7 @@
         }
       ],
       "properties": {
-        "schemaVersion": { "const": 1 },
+        "schemaVersion": { "enum": [1, 2] },
         "requestId": { "type": "string", "minLength": 1 },
         "requestOrdinal": { "type": "integer", "minimum": 1, "maximum": 16 },
         "caseId": { "type": "string", "minLength": 1 },
