@@ -122,6 +122,11 @@ test("result contract records per-request evidence, aggregates, and a separate s
     old: "segment_reconciliation.v1",
     new: "accepted_segment_change_review.v1"
   });
+  assert.deepEqual(schema.$defs.coverageRow.properties.status.enum, [
+    "changes found",
+    "checked - no relevant change",
+    "uncertain"
+  ]);
   assert.deepEqual(schema.$defs.stewardReceipt.properties.decision.enum, ["GO", "NO-GO", null]);
   assert.match(protocolText, /node scripts\/accepted-segment-change-review\/cli\.mjs dry-run/);
   assert.match(protocolText, /at most 16 provider requests/i);

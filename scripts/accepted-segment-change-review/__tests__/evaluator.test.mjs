@@ -197,6 +197,45 @@ test("fails closed on duplicate finding ids before ratios can be inflated", asyn
   );
 });
 
+test("fails closed on a coverage status outside the three-value contract", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const result = successfulResult(death, "new", 1);
+  result.coverage[0].status = "garbage";
+
+  assert.throws(
+    () => evaluateComparison(corpus, comparisonRun([result]), protocol),
+    /coverage status/
+  );
+});
+
+test("rejects undeclared fields on every captured surface before cloning durable output", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const mutations = [
+    (run) => { run.rawPrompt = "must not survive"; },
+    (run) => { run.requests[0].rawResponse = "must not survive"; },
+    (run) => { run.requests[0].provenance.apiKey = "must not survive"; },
+    (run) => { run.requests[0].provenance.settings.seed = 42; },
+    (run) => { run.requests[0].sourceAccounting.privatePayload = "must not survive"; },
+    (run) => { run.requests[0].findings[0].rawModelItem = "must not survive"; },
+    (run) => { run.requests[0].coverage[0].rawReason = "must not survive"; },
+    (run) => { run.requests[0].requestPolicy.fallbackModel = "must not survive"; },
+    (run) => { run.requests[0].writes.detail = "must not survive"; },
+    (run) => { run.requests[0].measurements.prompt = "must not survive"; },
+    (run) => { run.stewardReceipt.privateNote = "must not survive"; }
+  ];
+
+  for (const mutate of mutations) {
+    const run = comparisonRun([successfulResult(death, "old", 1)]);
+    mutate(run);
+    assert.throws(
+      () => evaluateComparison(corpus, run, protocol),
+      /undeclared field/
+    );
+  }
+});
+
 function comparisonRun(requests) {
   return {
     schemaVersion: 1,

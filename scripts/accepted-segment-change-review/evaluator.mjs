@@ -2,6 +2,11 @@ import { CHANGE_REVIEW_COVERAGE_DIMENSIONS, GOLD_CASE_ORDER } from "./corpus.mjs
 import { validateProtocol } from "./protocol.mjs";
 
 const RESULT_STATUSES = new Set(["completed", "malformed", "failed"]);
+const COVERAGE_STATUSES = new Set([
+  "changes found",
+  "checked - no relevant change",
+  "uncertain"
+]);
 const FINDING_DISPOSITIONS = new Set(["found", "uncertain"]);
 const EPISTEMIC_STATUSES = new Set([
   "established change",
@@ -42,6 +47,11 @@ export function evaluateComparison(corpus, comparisonRun, protocol) {
 export function validateComparisonRun(comparisonRun, protocol) {
   validateProtocol(protocol);
   requireObject(comparisonRun, "comparison run");
+  requireExactKeys(
+    comparisonRun,
+    ["schemaVersion", "protocolId", "issueClosureIsGo", "requests", "stewardReceipt"],
+    "comparison run"
+  );
   if (comparisonRun.schemaVersion !== 1) {
     throw new Error("Comparison run schemaVersion must be 1.");
   }
@@ -69,6 +79,26 @@ export function validateComparisonRun(comparisonRun, protocol) {
 
 function validateRequestResult(result, protocol) {
   requireObject(result, "request result");
+  requireExactKeys(
+    result,
+    [
+      "schemaVersion",
+      "requestId",
+      "requestOrdinal",
+      "caseId",
+      "workflow",
+      "provenance",
+      "status",
+      "failure",
+      "sourceAccounting",
+      "findings",
+      "coverage",
+      "requestPolicy",
+      "writes",
+      "measurements"
+    ],
+    "request result"
+  );
   if (result.schemaVersion !== 1) {
     throw new Error("Request result schemaVersion must be 1.");
   }
@@ -84,6 +114,20 @@ function validateRequestResult(result, protocol) {
 
   validateProvenance(result.provenance, result.workflow, protocol);
   requireObject(result.sourceAccounting, `${result.requestId} source accounting`);
+  requireExactKeys(
+    result.sourceAccounting,
+    [
+      "acceptedSegmentId",
+      "acceptedSegmentSequence",
+      "generationBriefFieldCount",
+      "activeWorkingSetRecordIds",
+      "wholeProjectRecordIds",
+      "evidenceKeys",
+      "contrastKeys",
+      "secretRecordIds"
+    ],
+    `${result.requestId} source accounting`
+  );
   requireArray(result.findings, `${result.requestId} findings`);
   requireArray(result.coverage, `${result.requestId} coverage`);
   validateRequestPolicy(result.requestPolicy, result.requestId);
@@ -102,6 +146,7 @@ function validateRequestResult(result, protocol) {
     result.coverage.forEach((row) => validateCoverageRow(row, result.requestId));
   } else {
     requireObject(result.failure, `${result.requestId} failure`);
+    requireExactKeys(result.failure, ["kind", "message"], `${result.requestId} failure`);
     requireString(result.failure.kind, `${result.requestId} failure kind`);
     requireString(result.failure.message, `${result.requestId} failure message`);
   }
@@ -109,6 +154,21 @@ function validateRequestResult(result, protocol) {
 
 function validateProvenance(provenance, workflow, protocol) {
   requireObject(provenance, "request provenance");
+  requireExactKeys(
+    provenance,
+    [
+      "contract",
+      "model",
+      "settings",
+      "segmentSelection",
+      "recordScope",
+      "startedAt",
+      "completedAt",
+      "sourceFingerprint",
+      "promptSha256"
+    ],
+    "request provenance"
+  );
   requireString(provenance.contract, "provenance contract");
   if (provenance.contract !== protocol.workflowContracts[workflow]) {
     throw new Error("Provenance contract does not match the pinned workflow contract.");
@@ -118,6 +178,11 @@ function validateProvenance(provenance, workflow, protocol) {
     throw new Error("Provenance model does not match the pinned protocol model.");
   }
   requireObject(provenance.settings, "provenance settings");
+  requireExactKeys(
+    provenance.settings,
+    ["temperature", "maxOutputTokens", "topP"],
+    "provenance settings"
+  );
   requireFiniteNonnegative(provenance.settings.temperature, "provenance temperature");
   requireFiniteNonnegative(provenance.settings.maxOutputTokens, "provenance maxOutputTokens");
   requireFiniteNonnegative(provenance.settings.topP, "provenance topP");
@@ -140,6 +205,11 @@ function validateProvenance(provenance, workflow, protocol) {
 
 function validateRequestPolicy(policy, requestId) {
   requireObject(policy, `${requestId} request policy`);
+  requireExactKeys(
+    policy,
+    ["retryCount", "fallbackUsed", "repairCallUsed", "substitutionUsed"],
+    `${requestId} request policy`
+  );
   requireFiniteNonnegative(policy.retryCount, `${requestId} retryCount`);
   for (const field of ["fallbackUsed", "repairCallUsed", "substitutionUsed"]) {
     if (typeof policy[field] !== "boolean") {
@@ -150,12 +220,26 @@ function validateRequestPolicy(policy, requestId) {
 
 function validateWrites(writes, requestId) {
   requireObject(writes, `${requestId} writes`);
+  requireExactKeys(writes, ["automatic", "projectStore"], `${requestId} writes`);
   requireFiniteNonnegative(writes.automatic, `${requestId} automatic writes`);
   requireFiniteNonnegative(writes.projectStore, `${requestId} project-store writes`);
 }
 
 function validateMeasurements(measurements, requestId) {
   requireObject(measurements, `${requestId} measurements`);
+  requireExactKeys(
+    measurements,
+    [
+      "reviewTimeMs",
+      "promptCharacters",
+      "promptTokensEstimate",
+      "latencyMs",
+      "inputTokens",
+      "outputTokens",
+      "costUsd"
+    ],
+    `${requestId} measurements`
+  );
   for (const field of [
     "reviewTimeMs",
     "promptCharacters",
@@ -171,6 +255,19 @@ function validateMeasurements(measurements, requestId) {
 
 function validateFinding(finding, requestId) {
   requireObject(finding, `${requestId} finding`);
+  requireExactKeys(
+    finding,
+    [
+      "findingId",
+      "disposition",
+      "evidenceKeys",
+      "contrastKeys",
+      "epistemicStatus",
+      "retentionHorizon",
+      "invented"
+    ],
+    `${requestId} finding`
+  );
   requireString(finding.findingId, `${requestId} findingId`);
   if (!FINDING_DISPOSITIONS.has(finding.disposition)) {
     throw new Error(`${requestId}: finding disposition must be found or uncertain.`);
@@ -190,13 +287,22 @@ function validateFinding(finding, requestId) {
 
 function validateCoverageRow(row, requestId) {
   requireObject(row, `${requestId} coverage row`);
+  requireExactKeys(row, ["dimension", "status", "reason"], `${requestId} coverage row`);
   requireString(row.dimension, `${requestId} coverage dimension`);
   requireString(row.status, `${requestId} coverage status`);
+  if (!COVERAGE_STATUSES.has(row.status)) {
+    throw new Error(`${requestId}: coverage status is outside the three-value contract.`);
+  }
   requireString(row.reason, `${requestId} coverage reason`);
 }
 
 function validateStewardReceipt(receipt) {
   requireObject(receipt, "steward receipt");
+  requireExactKeys(
+    receipt,
+    ["status", "steward", "decision", "recordedAt", "rationale"],
+    "steward receipt"
+  );
   if (receipt.status === "not-recorded") {
     for (const field of ["steward", "decision", "recordedAt", "rationale"]) {
       if (receipt[field] !== null) {
@@ -455,6 +561,18 @@ function requireArray(value, label) {
     throw new Error(`${label} must be an array.`);
   }
   return value;
+}
+
+function requireExactKeys(value, expectedKeys, label) {
+  const actualKeys = Object.keys(value);
+  const undeclaredKeys = actualKeys.filter((key) => !expectedKeys.includes(key));
+  if (undeclaredKeys.length > 0) {
+    throw new Error(`${label} contains undeclared field(s): ${undeclaredKeys.join(", ")}.`);
+  }
+  const missingKeys = expectedKeys.filter((key) => !actualKeys.includes(key));
+  if (missingKeys.length > 0) {
+    throw new Error(`${label} is missing required field(s): ${missingKeys.join(", ")}.`);
+  }
 }
 
 function requireString(value, label) {

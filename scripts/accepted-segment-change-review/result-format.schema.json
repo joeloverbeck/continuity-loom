@@ -190,7 +190,9 @@
       "required": ["dimension", "status", "reason"],
       "properties": {
         "dimension": { "type": "string", "minLength": 1 },
-        "status": { "type": "string", "minLength": 1 },
+        "status": {
+          "enum": ["changes found", "checked - no relevant change", "uncertain"]
+        },
         "reason": { "type": "string", "minLength": 1 }
       }
     },
