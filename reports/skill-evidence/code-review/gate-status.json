@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T15:11:00.436Z",
+  "generated_at": "2026-07-21T20:02:02.349Z",
   "target_content_hash": "2967265361ebe8d7d3d27aed4f89d32e7489548b4441dd562d0bf2619ddab3c7",
-  "qualifying_uses_on_current_hash": 3,
+  "qualifying_uses_on_current_hash": 4,
   "open_incident_ids": [],
   "candidate_clusters": [],
   "state": "closed",
@@ -15,5 +15,5 @@
   "last_completed_review_id": "dec_4bdc2f7f-a55a-4ed3-8f36-5305480cd71e",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "d8df98ed-fbfb-49f3-a46b-48fc3463f2a1"
+  "derivation_session_id": "d9e04db1-9a41-4c43-a8cc-f206f62a77cb"
 }

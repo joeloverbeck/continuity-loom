@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T17:33:29.295Z",
+  "target_content_hash": "ff01a131ceabbe51741f8259b76bd52d8417696d7d8fd1450b29932ff6764ff8",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "skill-evolution",
+  "target_repo_relative_path": ".claude/skills/skill-evolution",
+  "derivation_session_id": null
+}

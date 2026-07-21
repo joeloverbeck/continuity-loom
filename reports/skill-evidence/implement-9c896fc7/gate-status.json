@@ -1,32 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T15:02:26.915Z",
+  "generated_at": "2026-07-21T19:58:10.062Z",
   "target_content_hash": "b4857a8635d28a746cbb42f33a3713462b846d0591a71398b8eeabe4129e2f59",
-  "qualifying_uses_on_current_hash": 10,
+  "qualifying_uses_on_current_hash": 13,
   "open_incident_ids": [
-    "evt_7948a98f-29db-4faa-9cdf-ca5c8d560724",
-    "evt_b264ca98-b23c-4b97-a29a-ad196c6973ce",
-    "evt_5697c186-7564-46ae-bfec-7f8b23dcdaad",
     "evt_edebe2f7-9eae-4e51-9b24-d5b98e6c2591",
-    "evt_682a6d4e-f11c-4266-bdd4-ac687768a00f"
+    "evt_8cf62d5c-acbd-40e4-aeba-4300f3d9f318",
+    "evt_682a6d4e-f11c-4266-bdd4-ac687768a00f",
+    "evt_76a94d94-c636-48c5-a4f4-220a69fdafb0"
   ],
   "candidate_clusters": [
     {
-      "symptom_key": "cost",
-      "open_event_ids": [
-        "evt_7948a98f-29db-4faa-9cdf-ca5c8d560724",
-        "evt_b264ca98-b23c-4b97-a29a-ad196c6973ce",
-        "evt_5697c186-7564-46ae-bfec-7f8b23dcdaad"
-      ],
-      "independent_incidents": 3,
-      "max_severity": "friction"
-    },
-    {
       "symptom_key": "tool-compatibility",
       "open_event_ids": [
-        "evt_edebe2f7-9eae-4e51-9b24-d5b98e6c2591"
+        "evt_edebe2f7-9eae-4e51-9b24-d5b98e6c2591",
+        "evt_8cf62d5c-acbd-40e4-aeba-4300f3d9f318"
       ],
-      "independent_incidents": 1,
+      "independent_incidents": 2,
       "max_severity": "friction"
     },
     {
@@ -36,21 +26,28 @@
       ],
       "independent_incidents": 1,
       "max_severity": "friction"
+    },
+    {
+      "symptom_key": "cost",
+      "open_event_ids": [
+        "evt_76a94d94-c636-48c5-a4f4-220a69fdafb0"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
     }
   ],
   "state": "eligible",
   "authorized_workflow": "skill-evolution",
-  "authorization_reason": "friction_recurrence:cost",
+  "authorization_reason": "ten_use_unresolved",
   "trigger_event_ids": [
-    "evt_7948a98f-29db-4faa-9cdf-ca5c8d560724",
-    "evt_b264ca98-b23c-4b97-a29a-ad196c6973ce",
-    "evt_5697c186-7564-46ae-bfec-7f8b23dcdaad"
+    "evt_edebe2f7-9eae-4e51-9b24-d5b98e6c2591",
+    "evt_682a6d4e-f11c-4266-bdd4-ac687768a00f"
   ],
-  "threshold_session_id": null,
-  "not_before": "2026-07-21T13:51:30.260Z",
+  "threshold_session_id": "d8df98ed-fbfb-49f3-a46b-48fc3463f2a1",
+  "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "dec_d8264f68-e04f-4f2a-9421-8e65cec23296",
+  "last_completed_review_id": "rev_6d02b15c-a0c7-4869-ae36-e9dc3ef8514e",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "d8df98ed-fbfb-49f3-a46b-48fc3463f2a1"
+  "derivation_session_id": "d9e04db1-9a41-4c43-a8cc-f206f62a77cb"
 }
