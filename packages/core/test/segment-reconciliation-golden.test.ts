@@ -42,7 +42,7 @@ describe("segment reconciliation golden prompt", () => {
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);
     expect(changed.metadata.fingerprint).not.toBe(first.metadata.fingerprint);
-    expect(first.metadata.versions).toEqual({ template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" });
+    expect(first.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.14.0" });
   });
 
   it("renders a slim request block with only orientation and selected segment identity", () => {

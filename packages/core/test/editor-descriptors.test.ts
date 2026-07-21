@@ -319,7 +319,9 @@ describe("record editor descriptors", () => {
         identity: { one_line: "Ane Arrieta, 18, a self-employed sex worker." }
       })
     ).toBe("Ane Arrieta, 18, a self-employed sex worker.");
-    expect(deriveDisplayLabel("CAST MEMBER", { entity_id: "entity-ane" })).toBe("entity-ane");
+    // PRD #129 Decision 4 (#125/#127): entity_id is no longer a CAST MEMBER label fallback, so a raw
+    // stored identifier never stands in for a name. With no one_line present, the generic type label is used.
+    expect(deriveDisplayLabel("CAST MEMBER", { entity_id: "entity-ane" })).toBe("Cast Member");
     expect(deriveDisplayLabel("FACT", { statement: "A very old promise controls the west gate." })).toBe(
       "A very old promise controls the west gate."
     );

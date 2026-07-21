@@ -1,18 +1,20 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-20T23:33:25.106Z",
+  "generated_at": "2026-07-21T17:52:09.855Z",
   "target_content_hash": "23d6d5a8e62c9b559bfc09200d555a9fe9dc49801d7e908cadfecb892ecb1003",
-  "qualifying_uses_on_current_hash": 2,
+  "qualifying_uses_on_current_hash": 3,
   "open_incident_ids": [
-    "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67"
+    "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67",
+    "evt_bdb7352e-680d-4568-bdc2-d3bbdd2470a7"
   ],
   "candidate_clusters": [
     {
       "symptom_key": "tool-compatibility",
       "open_event_ids": [
-        "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67"
+        "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67",
+        "evt_bdb7352e-680d-4568-bdc2-d3bbdd2470a7"
       ],
-      "independent_incidents": 1,
+      "independent_incidents": 2,
       "max_severity": "friction"
     }
   ],

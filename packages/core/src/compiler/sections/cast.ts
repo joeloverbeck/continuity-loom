@@ -1,5 +1,5 @@
 import { EMPTY_STATE_CONSTANTS } from "../empty-states.js";
-import { displayLabel } from "../labels.js";
+import { resolveRecordLabelStrict } from "../labels.js";
 import { orderCompilerRecords } from "../ordering.js";
 import type { PlaceholderName } from "../placeholder-map.js";
 import type { PlaceholderResolver } from "../types.js";
@@ -76,7 +76,8 @@ function renderActiveVoicePins(snapshot: ValidationSnapshot): string {
     .map((record) => {
       const payload = payloadOf(record);
       const parts = [
-        displayLabel(record),
+        resolveLinkedEntityName(snapshot, record),
+        nestedString(payload.identity, "one_line"),
         labelValue("local function", record.localFunction),
         labelValue("voice anchor", nestedString(payload.voice_anchor, "core_voice")),
         ...currentVoicePressureLines(snapshot.generationSession, record.id),
@@ -93,7 +94,7 @@ function renderActiveVoicePins(snapshot: ValidationSnapshot): string {
 
 function renderActiveDossiers(snapshot: ValidationSnapshot): string {
   const dossiers = activeCastRecords(snapshot)
-    .map((record) => renderDossier(record, snapshot.generationSession))
+    .map((record) => renderDossier(record, snapshot))
     .filter(Boolean);
 
   return dossiers.join("\n\n") || EMPTY_STATE_CONSTANTS.active_onstage_full_cast_dossiers;
@@ -113,6 +114,7 @@ function renderCompressedCastBand(
           ? currentVoicePressureLines(snapshot.generationSession, record.id)
           : [];
       return compactParts([
+        resolveLinkedEntityName(snapshot, record),
         nestedString(payload.identity, "one_line"),
         labelValue("voice", nestedString(payload.voice_anchor, "core_voice")),
         ...currentPressure,
@@ -134,18 +136,32 @@ function activeCastRecords(snapshot: ValidationSnapshot): readonly ValidationRec
   return orderCompilerRecords(snapshot.records).filter((record) => record.castBand === "active_onstage_cast_full");
 }
 
-function renderDossier(record: ValidationRecord, generationSession: GenerationSession): string {
+function renderDossier(record: ValidationRecord, snapshot: ValidationSnapshot): string {
   const payload = payloadOf(record);
   const renderedFields = activeDossierFieldOrder
     .map((field) => renderDossierField(field, payload[field]))
     .filter(Boolean);
-  const overrides = overrideLines(generationSession, record.id, "active_onstage_cast_full");
+  const overrides = overrideLines(snapshot.generationSession, record.id, "active_onstage_cast_full");
 
   if (overrides.length > 0) {
     renderedFields.push(["Current generation voice override:", ...overrides.map((line) => `  ${line}`)].join("\n"));
   }
 
-  return [`## ${displayLabel(record)}`, ...renderedFields].join("\n");
+  return [`## ${resolveLinkedEntityName(snapshot, record)}`, ...renderedFields].join("\n");
+}
+
+/**
+ * Resolve the primary display name of a CAST MEMBER's validated linked ENTITY, for use as the
+ * identity lead of every compiled cast lane (PRD #129; #125 pins, #127 dossiers/present/offstage).
+ *
+ * `CAST MEMBER.entity_id` is a required, validated reference in every cast band (#130): a compiled
+ * snapshot always resolves it to its selected ENTITY. Cast identity fails closed rather than fall
+ * back to a raw stored identifier (PRD #129 Decisions 4 & 6; compiler-contract §9 cast exception),
+ * so this delegates to the fail-closed {@link resolveRecordLabelStrict} — never a raw-id fallback —
+ * and the compiler never reads outside the snapshot.
+ */
+function resolveLinkedEntityName(snapshot: ValidationSnapshot, record: ValidationRecord): string {
+  return resolveRecordLabelStrict(snapshot, payloadOf(record).entity_id);
 }
 
 function renderDossierField(field: string, value: unknown): string {

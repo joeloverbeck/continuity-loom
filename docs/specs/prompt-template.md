@@ -8,6 +8,10 @@ Authority: domain authority for universal prompt template (see docs/ACTIVE-DOCS.
 Output expected from external LLM: prose only.
 Style: portable Markdown/XML hybrid.
 
+## Cast identity rendering
+
+Every cast lane — active voice-pressure pins (`{active_cast_voice_pressure_pins}`), active/onstage-full dossiers (`{active_onstage_full_cast_dossiers}`), present-minor notes (`{present_minor_cast_notes}`), and offstage-relevance notes (`{offstage_relevance_notes}`) — leads with the CAST MEMBER's validated linked ENTITY primary display name. The dossier heading is that name; the compressed and pin lanes lead with it. The CAST MEMBER's own `identity.one_line` is retained as descriptive content beside the name, never as the identity label, and no raw stored identifier is ever substituted for a name. See `docs/specs/compiler-contract.md` §9 and its cast-lane rows for the resolution and fail-closed reference rules. (PRD #129; #125, #127.)
+
 ## Template
 
 ```md

@@ -88,7 +88,7 @@ describe("segment reconciliation routes", () => {
     expect(response.statusCode).toBe(200);
     expect(body.prompt).toContain("# Segment Reconciliation Prompt");
     expect(body.prompt).toContain(acceptedText);
-    expect(body.prompt).toContain('catalog "segment_reconciliation.schema_catalog.v1" contract="1.13.0"');
+    expect(body.prompt).toContain('catalog "segment_reconciliation.schema_catalog.v1" contract="1.14.0"');
     expect(body.prompt).not.toContain("payloadJsonSchema");
     expect(body.prompt).not.toContain('"fields": [');
     expect(body.metadata.lengthEstimate).toBe(body.prompt.length);

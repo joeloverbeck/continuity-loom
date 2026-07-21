@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T13:03:06.529Z",
+  "generated_at": "2026-07-21T19:41:29.209Z",
   "target_content_hash": "2e3f9925f14eaa334e0e5f2633cd5e93d8a00ca5f9edfcf491a14b251067edaf",
-  "qualifying_uses_on_current_hash": 7,
+  "qualifying_uses_on_current_hash": 12,
   "open_incident_ids": [
     "evt_5b202a17-4df6-4bb2-84e4-3336e1e1aaff"
   ],
@@ -16,15 +16,17 @@
       "max_severity": "friction"
     }
   ],
-  "state": "collecting",
-  "authorized_workflow": null,
-  "authorization_reason": null,
-  "trigger_event_ids": [],
-  "threshold_session_id": null,
+  "state": "eligible_pending_cooldown",
+  "authorized_workflow": "skill-evolution",
+  "authorization_reason": "ten_use_unresolved",
+  "trigger_event_ids": [
+    "evt_5b202a17-4df6-4bb2-84e4-3336e1e1aaff"
+  ],
+  "threshold_session_id": "9b002914-eaf8-49aa-99db-83d4c2f49f7a",
   "not_before": null,
   "active_review_id": null,
   "last_completed_review_id": "dec_2d4305f8-ee96-4376-a267-061413c4fdd6",
   "target_name": "triage",
   "target_repo_relative_path": ".claude/skills/triage",
-  "derivation_session_id": "149b9396-a4e2-4f37-a5c8-aee9c384f0b8"
+  "derivation_session_id": null
 }

@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T19:35:38.064Z",
+  "target_content_hash": "dc79324a1e1bf8d27c7aa80fe2051cd6279b7ae72762e534aba2c57c2f8c49a6",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "writing-great-skills",
+  "target_repo_relative_path": ".claude/skills/writing-great-skills",
+  "derivation_session_id": null
+}

@@ -511,6 +511,7 @@ Core fields are required for materially involved active/onstage person-like cast
 Validation:
 
 - `entity_id` is a required reference for every selected CAST MEMBER, whether active/onstage-full, present-minor, or offstage-relevant. It must resolve to a selected ENTITY record. Dangling, mistyped, and unselected resolved targets block before compilation; the id remains validation-only and never falls back to a raw id in the prompt.
+- The compiled cast lanes lead with the linked ENTITY's primary `display_name`: it is the active/onstage dossier heading and the lead of every voice-pressure pin, present-minor note, and offstage-relevance note. `identity.one_line` is retained beside the name as descriptive content and is never the identity label; a stored record identifier is never substituted for a name. See `docs/specs/compiler-contract.md` §9 and its cast-lane rows.
 
 ### 5.2 Optional extended fields
 
