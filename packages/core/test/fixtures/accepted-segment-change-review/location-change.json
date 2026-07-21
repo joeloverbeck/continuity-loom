@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "location-change",
   "title": "Explicit movement changes current location",
   "syntheticData": true,
@@ -59,7 +59,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "location-change-1", "summary": "Nara moved from the east quay into the dye mill.", "evidenceKeys": ["[SEG-23-S001]"], "contrastKeys": ["[BRIEF:current_authoritative_state.current_location]", "[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "next-brief-only", "targetHints": ["CURRENT AUTHORITATIVE STATE", "ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: the segment explicitly places her inside and out of quay sight." }
+      { "findingId": "location-change-1", "summary": "Nara moved from the east quay into the dye mill.", "evidenceExcerpt": "She was inside the dye mill now", "evidenceKeys": ["[SEG-23-S001]"], "contrastKeys": ["[BRIEF:current_authoritative_state.current_location]", "[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "next-brief-only", "targetHints": ["CURRENT AUTHORITATIVE STATE", "ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: the segment explicitly places her inside and out of quay sight." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Nara moved into a different location and closed the door." },

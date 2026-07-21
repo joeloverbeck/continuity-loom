@@ -2,6 +2,34 @@
 
 This protocol makes the old-versus-new evidence comparison reproducible and bounded. The offline tooling authorizes no provider call, performs no product or project-store write, and is not the GO/NO-GO decision for a runtime change.
 
+> **Retired as activation authority (issue #147).** The old-versus-new comparison in this document — the `dry-run` and `evaluate` commands, `protocol.json` / `protocol.v2.json` / `protocol.v3.json`, and every captured run — remains historical evidence and keeps its identities, but it is **no longer the activation gate**. The activation floor is now the new-candidate-only readiness bar plus the separately authorized new-candidate-only live conformance smoke described immediately below. Neither of those compiles, sends, scores, or requires the old `segment_reconciliation` prompt.
+
+## New-candidate-only readiness bar (active activation floor)
+
+The deterministic offline readiness bar parses the eight adjudicated gold outputs through the repaired `accepted_segment_change_review.v2` parser and fails unless every fixture parses valid, every declared source is accounted for, every result has exactly six reasoned coverage rows, every seeded change is found or explicitly uncertain, no established item is invented, and zero automatic or project-store writes occur. It issues no provider request.
+
+```bash
+npm run change-review:readiness
+# or, once @loom/core is built:
+node scripts/accepted-segment-change-review/cli.mjs readiness
+```
+
+The command exits nonzero on any violation and never contacts a provider.
+
+## New-candidate-only live conformance smoke (prepared, not executed)
+
+`live-smoke.v1.json` (`accepted-segment-change-review-live-smoke.v1`) prepares exactly one new-candidate request per synthetic case under a fixed eight-request ceiling, with no retries, fallbacks, repairs, tools, substitutions, or old-prompt request. It stays `executionAuthorized: false` until fresh owner authorization; execution and the steward `GO`/`NO-GO` are owned by GitHub issue #148.
+
+```bash
+node scripts/accepted-segment-change-review/cli.mjs live-smoke
+```
+
+This prints the prepared non-executing plan; the plan builder cannot contact a provider.
+
+---
+
+The remainder of this document is retained as historical evidence of the retired old-versus-new comparison protocol. It no longer gates activation.
+
 ## Version history and identity
 
 - `accepted-segment-change-review-comparison.v1` (`protocol.json`, schema version 1) pinned `anthropic/claude-sonnet-4`. Its endpoints advertise no `response_format` or `structured_outputs` capability, so the strict-schema `require_parameters: true` envelope was excluded before generation. The authorized GitHub issue #136 run made 16 attempts and received 16 pre-generation endpoint rejections with zero model responses. **v1 and that failed run remain historical evidence and are not rewritten, erased, or reclassified as model-quality evidence.**

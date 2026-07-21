@@ -11,6 +11,25 @@ const PROTOCOL_V3_URL = new URL("./protocol.v3.json", import.meta.url);
 // owned by #136, so the active protocol deliberately remains v2.
 const ACTIVE_PROTOCOL_URL = PROTOCOL_V2_URL;
 
+// The old-versus-new comparison protocols (protocol.json / protocol.v2.json /
+// protocol.v3.json) and their captures remain historical evidence, but they are
+// retired as activation authority by issue #147: the deterministic offline
+// readiness bar and the separately authorized new-candidate-only live conformance
+// smoke replace them. Neither of those replacements compiles, sends, scores, or
+// requires the old `segment_reconciliation` prompt.
+export const COMPARISON_ACTIVATION_AUTHORITY = Object.freeze({
+  status: "retired-as-activation-authority",
+  retiredBy: "GitHub issue #147",
+  reason:
+    "The old-versus-new bounded comparison is retired as the activation gate for PRD #145; the offline readiness bar and the new-candidate-only live conformance smoke replace it.",
+  supersededBy: Object.freeze([
+    "accepted-segment-change-review-offline-readiness.v1",
+    "accepted-segment-change-review-live-smoke.v1"
+  ]),
+  historicalEvidenceOnly: true,
+  liveExecutionOwner: "GitHub issue #148"
+});
+
 const WORKFLOW_CONTRACTS = Object.freeze({
   old: "segment_reconciliation.v1",
   new: "accepted_segment_change_review.v1"

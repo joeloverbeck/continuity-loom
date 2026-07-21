@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "injury",
   "title": "Explicit injury changes bodily condition",
   "syntheticData": true,
@@ -57,7 +57,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "injury-1", "summary": "Toma has a bleeding left-palm injury that prevents him from gripping with that hand.", "evidenceKeys": ["[SEG-22-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS", "FACT"], "uncertaintyOrRivalReading": "The duration is uncertain, but the present injury and impairment are explicit." }
+      { "findingId": "injury-1", "summary": "Toma has a bleeding left-palm injury that prevents him from gripping with that hand.", "evidenceExcerpt": "Blood welled across the cut", "evidenceKeys": ["[SEG-22-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS", "FACT"], "uncertaintyOrRivalReading": "The duration is uncertain, but the present injury and impairment are explicit." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Toma's hand is cut and functionally impaired." },

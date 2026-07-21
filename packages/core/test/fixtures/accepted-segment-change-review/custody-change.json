@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "custody-change",
   "title": "Explicit handoff changes object custody",
   "syntheticData": true,
@@ -59,7 +59,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "custody-change-1", "summary": "Lio now carries the brass guild seal instead of Ari.", "evidenceKeys": ["[SEG-24-S001]"], "contrastKeys": ["[OBJECT-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBJECT"], "uncertaintyOrRivalReading": "Ownership transfer is not established, but physical custody is explicit." }
+      { "findingId": "custody-change-1", "summary": "Lio now carries the brass guild seal instead of Ari.", "evidenceExcerpt": "folded his fingers over it", "evidenceKeys": ["[SEG-24-S001]"], "contrastKeys": ["[OBJECT-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBJECT"], "uncertaintyOrRivalReading": "Ownership transfer is not established, but physical custody is explicit." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "The seal moved into Lio's custody and pocket." },

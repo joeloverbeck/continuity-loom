@@ -105,7 +105,7 @@ must still be mutation-gated:
 - changed source for a pre-activation pillar with no reviewed baseline and
   `thresholds.break: null` reports and defers that pillar's changed-source
   mutation to the scheduled/manual robustness workflow instead of failing the PR
-  inline; the accepted-segment assistance pillar, including Segment Reconciliation and the comparison-only Accepted-Segment Change Review candidate, is currently pre-activation;
+  inline; the accepted-segment assistance pillar, including Segment Reconciliation and the non-user-facing candidate Accepted-Segment Change Review candidate, is currently pre-activation;
 - Stryker, Vitest, TypeScript, package manifest, lockfile, robustness script, or
   test-support generator changes are full-campaign triggers, but the PR
   changed-file job reports and defers those full campaigns to the scheduled or
@@ -137,7 +137,7 @@ workflow exactly as described above; it must not invent an inline break floor.
 
 ### P3 Accepted-Segment Change Review Candidate Assurance
 
-Changes under `packages/core/src/compiler/change-review/` and the shared accepted-segment echo helper are P3 changed-source work. Candidate evidence must include the eight synthetic gold scenarios, strict shallow-envelope and six-dimension coverage mutations, whole-response quarantine cases, deterministic record-permutation properties, selected-only consumed-guidance properties, server reconstruction/freshness/zero-write tests, unmounted component state/action/a11y tests, and real-browser comparison-harness proof. Candidate tests do not activate production identity or establish a mutation-score baseline; P3 remains pre-activation and follows the same scheduled/manual deferral rule.
+Changes under `packages/core/src/compiler/change-review/` and the shared accepted-segment echo helper are P3 changed-source work. Candidate evidence must include the eight synthetic gold scenarios, strict shallow-envelope and six-dimension coverage mutations, whole-response quarantine cases, deterministic record-permutation properties, selected-only consumed-guidance properties, server reconstruction/freshness/zero-write tests, unmounted component state/action/a11y tests, and real-browser candidate-harness proof. Candidate tests do not activate production identity or establish a mutation-score baseline; P3 remains pre-activation and follows the same scheduled/manual deferral rule.
 
 ## Cadence
 

@@ -30,6 +30,7 @@ export type AcceptedSegmentChangeReviewQuarantineReason =
   | "unknown-citation"
   | "verbatim-source-echo"
   | "invalid-established-claim"
+  | "invalid-evidence-excerpt"
   | "future-possibility"
   | "invalid-enum";
 
@@ -62,7 +63,7 @@ export function parseAcceptedSegmentChangeReviewOutput(
     expectKeys(parsed, ["contract", "items", "coverage"]);
 
     if (parsed.contract !== ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT) {
-      throw reason("schema-mismatch", "The response contract is not accepted_segment_change_review.v1.");
+      throw reason("schema-mismatch", "The response contract is not accepted_segment_change_review.v2.");
     }
 
     if (!Array.isArray(parsed.items) || !Array.isArray(parsed.coverage)) {
@@ -72,7 +73,12 @@ export function parseAcceptedSegmentChangeReviewOutput(
     const items = parseItems(parsed.items, context);
     const coverage = parseCoverage(parsed.coverage);
 
-    if (containsMaterialAcceptedSegmentEcho({ items, coverage }, context.acceptedSegmentText)) {
+    // The bounded three-to-seven-word `evidence_excerpt` witness is a sanctioned
+    // verbatim excerpt, so it is blanked before the material-echo scan; the echo
+    // guard still protects `change_statement`, `uncertainty_or_rival_reading`,
+    // target hints, and coverage reasons.
+    const echoScannedItems = items.map((item) => ({ ...item, evidenceExcerpt: "" }));
+    if (containsMaterialAcceptedSegmentEcho({ items: echoScannedItems, coverage }, context.acceptedSegmentText)) {
       throw reason("verbatim-source-echo", "The response materially echoes accepted prose.");
     }
 
@@ -110,6 +116,7 @@ function parseItems(
     expectKeys(unknownItem, [
       "id",
       "change_statement",
+      "evidence_excerpt",
       "evidence",
       "contrast",
       "epistemic_status",
@@ -124,6 +131,10 @@ function parseItems(
     }
 
     const changeStatement = parseNonblankString(unknownItem.change_statement, "change_statement");
+    if (typeof unknownItem.evidence_excerpt !== "string") {
+      throw reason("schema-mismatch", "evidence_excerpt must be a string.");
+    }
+    const evidenceExcerpt = unknownItem.evidence_excerpt;
     const evidence = parseCitationList(unknownItem.evidence, evidenceKeys);
     const contrast = parseCitationList(unknownItem.contrast, contrastKeys);
     const targetHints = parseNonblankStringList(unknownItem.affected_target_hints, "affected_target_hints");
@@ -147,22 +158,25 @@ function parseItems(
       throw reason("future-possibility", "Future actions, opportunities, and predictions are not change-review items.");
     }
 
-    if (
-      epistemicStatus === "established change" &&
-      (
-        inventedOrUnstatedPattern.test(`${changeStatement} ${uncertainty}`) ||
-        !hasEstablishedSupportWitness(changeStatement, uncertainty, evidence, context.evidenceTextByKey)
-      )
-    ) {
+    if (epistemicStatus === "established change") {
+      if (inventedOrUnstatedPattern.test(`${changeStatement} ${uncertainty}`)) {
+        throw reason(
+          "invalid-established-claim",
+          "An invented or explicitly unstated implication cannot be labeled established change."
+        );
+      }
+      validateEstablishedEvidenceExcerpt(evidenceExcerpt, evidence, context.evidenceTextByKey);
+    } else if (evidenceExcerpt !== "") {
       throw reason(
-        "invalid-established-claim",
-        "An invented or explicitly unstated implication cannot be labeled established change."
+        "invalid-evidence-excerpt",
+        "An interpretation requiring author judgment item must carry an empty evidence_excerpt."
       );
     }
 
     return {
       id: expectedId,
       changeStatement,
+      evidenceExcerpt,
       evidence,
       contrast,
       epistemicStatus,
@@ -173,40 +187,34 @@ function parseItems(
   });
 }
 
-function hasEstablishedSupportWitness(
-  changeStatement: string,
-  uncertainty: string,
+function validateEstablishedEvidenceExcerpt(
+  evidenceExcerpt: string,
   evidence: readonly string[],
   evidenceTextByKey: Readonly<Record<string, string>>
-): boolean {
-  const match = uncertainty.match(/^Explicit source support:\s*"([^"]+)"\./);
-  const excerpt = match?.[1]?.trim();
-  if (!excerpt) {
-    return false;
+): void {
+  const normalizedExcerpt = normalizeWitnessText(evidenceExcerpt);
+  const wordCount = normalizedExcerpt ? normalizedExcerpt.split(/\s+/).length : 0;
+  if (wordCount < 3 || wordCount > 7) {
+    throw reason(
+      "invalid-evidence-excerpt",
+      "An established change evidence_excerpt must be an exact three-to-seven-word excerpt."
+    );
   }
 
-  const normalizedExcerpt = normalizeWitnessText(excerpt);
-  const wordCount = normalizedExcerpt.split(/\s+/).length;
-  if (
-    wordCount < 3 ||
-    wordCount > 7 ||
-    normalizeEstablishedStatement(changeStatement) !== normalizeEstablishedStatement(excerpt)
-  ) {
-    return false;
-  }
-
-  return evidence.some((key) => {
+  const occursInCitedSpan = evidence.some((key) => {
     const source = evidenceTextByKey[key];
     return source !== undefined && normalizeWitnessText(source).includes(normalizedExcerpt);
   });
+  if (!occursInCitedSpan) {
+    throw reason(
+      "invalid-evidence-excerpt",
+      "An established change evidence_excerpt must occur verbatim in one cited evidence span."
+    );
+  }
 }
 
 function normalizeWitnessText(value: string): string {
   return value.normalize("NFKC").toLocaleLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function normalizeEstablishedStatement(value: string): string {
-  return normalizeWitnessText(value).replace(/[\p{P}\p{S}]+$/u, "").trim();
 }
 
 function parseCoverage(value: readonly unknown[]): AcceptedSegmentChangeReviewCoverageRow[] {

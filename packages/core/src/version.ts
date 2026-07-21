@@ -31,7 +31,7 @@ export const versionInfo: VersionInfo = {
     status: "stable"
   },
   contract: {
-    version: "1.14.0",
+    version: "1.15.0",
     status: "stable"
   }
 };

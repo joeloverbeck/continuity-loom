@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "clock-threshold-crossing",
   "title": "Explicit bell crosses a clock threshold",
   "syntheticData": true,
@@ -57,7 +57,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "clock-threshold-crossing-1", "summary": "The sixth-bell amnesty threshold has passed.", "evidenceKeys": ["[SEG-25-S001]"], "contrastKeys": ["[CLOCK-1]", "[BRIEF:current_authoritative_state.available_time]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["CLOCK", "CONSEQUENCE"], "uncertaintyOrRivalReading": "The threshold is explicit; later legal handling remains a separate authored consequence." }
+      { "findingId": "clock-threshold-crossing-1", "summary": "The sixth-bell amnesty threshold has passed.", "evidenceExcerpt": "The amnesty window was over", "evidenceKeys": ["[SEG-25-S001]"], "contrastKeys": ["[CLOCK-1]", "[BRIEF:current_authoritative_state.available_time]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["CLOCK", "CONSEQUENCE"], "uncertaintyOrRivalReading": "The threshold is explicit; later legal handling remains a separate authored consequence." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "checked - no relevant change", "reason": "Mira remains on the archive stair." },

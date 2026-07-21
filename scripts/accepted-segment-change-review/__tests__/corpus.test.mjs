@@ -18,7 +18,7 @@ test("loads the exact eight adjudicated Accepted-Segment Change Review cases", a
   assert.equal(corpus.length, 8);
 
   for (const fixture of corpus) {
-    assert.equal(fixture.schemaVersion, 1);
+    assert.equal(fixture.schemaVersion, 2);
     assert.equal(fixture.syntheticData, true);
     assert.match(fixture.syntheticDataDisclosure, /synthetic/i);
     assert.equal(fixture.acceptedSegment.selection, "latest");
@@ -49,6 +49,17 @@ test("loads the exact eight adjudicated Accepted-Segment Change Review cases", a
           finding.retentionHorizon
         )
       );
+      assert.equal(typeof finding.evidenceExcerpt, "string", `${fixture.caseId}: evidence excerpt is a string`);
+      if (finding.epistemicStatus === "established change") {
+        const words = finding.evidenceExcerpt.trim().split(/\s+/).filter(Boolean);
+        assert.ok(words.length >= 3 && words.length <= 7, `${fixture.caseId}: evidence excerpt is three to seven words`);
+        assert.ok(
+          fixture.acceptedSegment.text.includes(finding.evidenceExcerpt),
+          `${fixture.caseId}: evidence excerpt occurs verbatim in the accepted segment`
+        );
+      } else {
+        assert.equal(finding.evidenceExcerpt, "", `${fixture.caseId}: interpretation excerpt is the empty string`);
+      }
     }
   }
 });

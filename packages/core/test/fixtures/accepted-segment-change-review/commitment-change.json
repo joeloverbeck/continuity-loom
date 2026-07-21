@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "commitment-change",
   "title": "Explicit promise creates a commitment",
   "syntheticData": true,
@@ -59,7 +59,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "commitment-change-1", "summary": "Kell made and secured a promise to return Osa's brother before sunrise.", "evidenceKeys": ["[SEG-26-S001]"], "contrastKeys": ["[OPEN-THREAD-1]", "[BRIEF:immediate_handoff.recent_causal_context]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBLIGATION", "OBJECT", "OPEN THREAD"], "uncertaintyOrRivalReading": "Success remains uncertain, but the promise and accepted surety are explicit." }
+      { "findingId": "commitment-change-1", "summary": "Kell made and secured a promise to return Osa's brother before sunrise.", "evidenceExcerpt": "offered his signet as surety", "evidenceKeys": ["[SEG-26-S001]"], "contrastKeys": ["[OPEN-THREAD-1]", "[BRIEF:immediate_handoff.recent_causal_context]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBLIGATION", "OBJECT", "OPEN THREAD"], "uncertaintyOrRivalReading": "Success remains uncertain, but the promise and accepted surety are explicit." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Osa now physically holds Kell's signet as surety." },
