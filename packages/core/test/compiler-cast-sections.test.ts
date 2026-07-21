@@ -11,6 +11,11 @@ const activeCastId = "019b0298-5c00-7000-8000-000000000301";
 const presentCastId = "019b0298-5c00-7000-8000-000000000302";
 const offstageCastId = "019b0298-5c00-7000-8000-000000000303";
 const entityId = "019b0298-5c00-7000-8000-000000000304";
+const presentEntityId = "019b0298-5c00-7000-8000-000000000305";
+const offstageEntityId = "019b0298-5c00-7000-8000-000000000306";
+const activeEntityName = "Mara Venn";
+const presentEntityName = "Jon Ureña";
+const offstageEntityName = "Bram Kettle";
 const longCastOneLine =
   "Jon Ureña is a wary witness at the archive door whose clipped silence hides fear, resentment, and a precise memory of the stolen ledger.";
 
@@ -118,7 +123,7 @@ function castPayload() {
   };
 }
 
-function input(records: ValidationRecord[] = castRecords()): BuildValidationSnapshotInput {
+function input(records: ValidationRecord[] = [...castRecords(), ...entityRecords()]): BuildValidationSnapshotInput {
   return {
     records,
     generationSession: {
@@ -183,6 +188,7 @@ function castRecords(): ValidationRecord[] {
       metadata: metadata(presentCastId, "Jon"),
       payload: {
         ...castPayload(),
+        entity_id: presentEntityId,
         identity: { one_line: "Jon is watching from the door." },
         voice_anchor: { core_voice: "Plainspoken and wary." }
       }
@@ -194,11 +200,41 @@ function castRecords(): ValidationRecord[] {
       metadata: metadata(offstageCastId, "Guard"),
       payload: {
         ...castPayload(),
+        entity_id: offstageEntityId,
         identity: { one_line: "The guard may return soon." },
         voice_anchor: { core_voice: "Brusque and suspicious." }
       }
     }
   ];
+}
+
+function entityRecords(): ValidationRecord[] {
+  return [
+    entityRecord(entityId, activeEntityName),
+    entityRecord(presentEntityId, presentEntityName),
+    entityRecord(offstageEntityId, offstageEntityName)
+  ];
+}
+
+function entityRecord(id: string, displayName: string): ValidationRecord {
+  return {
+    id,
+    type: "ENTITY",
+    metadata: {
+      id,
+      type: "ENTITY",
+      displayLabel: displayName,
+      createdAt: "2026-06-05T00:00:00.000Z",
+      updatedAt: "2026-06-05T00:00:00.000Z",
+      archived: false
+    },
+    payload: {
+      display_name: displayName,
+      entity_kind: "person",
+      roles_in_story: ["supporting"],
+      short_description: `${displayName} exists as a validated linked entity for cast attribution.`
+    }
+  };
 }
 
 function metadata(id: string, displayLabel: string): NonNullable<ValidationRecord["metadata"]> {
@@ -433,7 +469,7 @@ describe("compiler cast-section resolvers", () => {
             }
           : record
     );
-    const prompt = compilePrompt(buildValidationSnapshot(input(records))).prompt;
+    const prompt = compilePrompt(buildValidationSnapshot(input([...records, ...entityRecords()]))).prompt;
     const activeWorkingSet = sectionBody(prompt, "active_working_set");
     const presentMinor = sectionBody(prompt, "present_minor_cast");
 
@@ -442,6 +478,119 @@ describe("compiler cast-section resolvers", () => {
     expect(presentMinor).toContain(longCastOneLine);
     expect(presentMinor).not.toContain(`${longCastOneLine.slice(0, 77)}...`);
     expect(presentMinor.match(new RegExp(escapeRegExp(longCastOneLine), "g"))).toHaveLength(1);
+  });
+
+  // PRD #129 / #125: every active voice-pressure pin leads with the validated linked ENTITY name.
+  it("leads each active voice-pressure pin with the linked ENTITY name before the retained one-line identity", () => {
+    const activeWorkingSet = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "active_working_set");
+    const pinLine = activeWorkingSet
+      .split("\n")
+      .find((line) => line.includes("Mara is a precise archivist under pressure."));
+
+    expect(pinLine).toBeDefined();
+    // The linked ENTITY display name leads; the descriptive one-line is retained after it.
+    expect(pinLine).toContain(activeEntityName);
+    expect(pinLine!.indexOf(activeEntityName)).toBeLessThan(
+      pinLine!.indexOf("Mara is a precise archivist under pressure.")
+    );
+    // The pin never leads with the description as its identity handle.
+    expect(pinLine!.trimStart().startsWith("- Mara is a precise archivist")).toBe(false);
+    // Every currently rendered pressure/override is preserved after the name lead.
+    expect(activeWorkingSet).toContain("Make every answer sound carefully bounded.");
+    expect(activeWorkingSet).toContain("Current generation voice override");
+  });
+
+  // PRD #129 / #127: active dossier headings lead with the linked ENTITY name, one-line retained in identity body.
+  it("leads active dossier headings with the linked ENTITY name and retains identity.one_line in the body", () => {
+    const dossier = sectionBody(compilePrompt(buildValidationSnapshot(input())).prompt, "active_cast_full_dossiers");
+
+    expect(dossier).toContain(`## ${activeEntityName}`);
+    // one_line is retained as descriptive content inside the identity field, not as the heading.
+    expect(dossier).toContain("Mara is a precise archivist under pressure.");
+    expect(dossier).not.toContain("## Mara is a precise archivist under pressure.");
+    // Full dossier content is preserved.
+    expect(dossier).toContain("Measured, clipped, and evasive.");
+    expect(dossier).toContain("Underestimates emotional loyalty.");
+  });
+
+  // PRD #129 / #127: present-minor and offstage compressed entries lead with the linked ENTITY name.
+  it("leads present-minor and offstage compressed entries with the linked ENTITY name and retains their content", () => {
+    const prompt = compilePrompt(buildValidationSnapshot(input())).prompt;
+    const presentMinor = sectionBody(prompt, "present_minor_cast");
+    const offstageRelevance = sectionBody(prompt, "offstage_relevance");
+
+    const presentLine = presentMinor.split("\n").find((line) => line.includes("Jon is watching from the door."));
+    expect(presentLine).toBeDefined();
+    expect(presentLine!.indexOf(presentEntityName)).toBeGreaterThanOrEqual(0);
+    expect(presentLine!.indexOf(presentEntityName)).toBeLessThan(
+      presentLine!.indexOf("Jon is watching from the door.")
+    );
+    // Retained relevance/voice content.
+    expect(presentMinor).toContain("Let any speech sound reluctant and brief.");
+
+    const offstageLine = offstageRelevance.split("\n").find((line) => line.includes("The guard may return soon."));
+    expect(offstageLine).toBeDefined();
+    // The offstage entity name is present even though the one-line omits it entirely.
+    expect(offstageLine!.indexOf(offstageEntityName)).toBeGreaterThanOrEqual(0);
+    expect(offstageLine!.indexOf(offstageEntityName)).toBeLessThan(
+      offstageLine!.indexOf("The guard may return soon.")
+    );
+  });
+
+  // PRD #129 / #125+#127: similarly described cast records stay individually attributable by name in deterministic order.
+  it("keeps two similarly described active cast records individually attributable by linked ENTITY name", () => {
+    const twinCastId = "019b0298-5c00-7000-8000-0000000003a1";
+    const twinEntityId = "019b0298-5c00-7000-8000-0000000003a2";
+    const twinEntityName = "Silas Rourke";
+    const records: ValidationRecord[] = [
+      castRecords()[0]!,
+      {
+        id: twinCastId,
+        type: "CAST MEMBER",
+        castBand: "active_onstage_cast_full",
+        localFunction: "active_silent",
+        metadata: metadata(twinCastId, "Silas"),
+        // Deliberately similar one-line description; the name must disambiguate.
+        payload: { ...castPayload(), entity_id: twinEntityId, identity: { one_line: "A precise archivist working under pressure." } }
+      },
+      ...entityRecords(),
+      entityRecord(twinEntityId, twinEntityName)
+    ];
+    const snapshot = buildValidationSnapshot(input(records));
+    const prompt = compilePrompt(snapshot).prompt;
+    const dossier = sectionBody(prompt, "active_cast_full_dossiers");
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    // Both records are individually attributable despite near-identical descriptions.
+    expect(dossier).toContain(`## ${activeEntityName}`);
+    expect(dossier).toContain(`## ${twinEntityName}`);
+    // Naming does not reorder the cast: order still derives from the unchanged CAST MEMBER displayLabel
+    // (identity.one_line). "A precise archivist…" sorts before "Mara is a precise archivist…", so the
+    // twin leads in every lane — and the two lanes agree on that order.
+    expect(dossier.indexOf(`## ${twinEntityName}`)).toBeLessThan(dossier.indexOf(`## ${activeEntityName}`));
+    expect(activeWorkingSet.indexOf(twinEntityName)).toBeLessThan(activeWorkingSet.indexOf(activeEntityName));
+    // Deterministic: identical inputs produce identical bytes.
+    expect(compilePrompt(snapshot).prompt).toBe(prompt);
+  });
+
+  // PRD #129 / #125+#127 + Decision 4: no lane substitutes a raw stored identifier when the one-line is empty.
+  it("renders the linked ENTITY name with no raw identifier when the one-line identity is empty", () => {
+    const records: ValidationRecord[] = [
+      {
+        ...castRecords()[0]!,
+        payload: { ...castPayload(), identity: { one_line: "" } }
+      },
+      ...entityRecords()
+    ];
+    const prompt = compilePrompt(buildValidationSnapshot(input(records))).prompt;
+    const dossier = sectionBody(prompt, "active_cast_full_dossiers");
+    const activeWorkingSet = sectionBody(prompt, "active_working_set");
+
+    expect(dossier).toContain(`## ${activeEntityName}`);
+    expect(dossier).not.toContain(entityId);
+    expect(activeWorkingSet).not.toContain(entityId);
+    expect(activeWorkingSet).not.toContain(activeCastId);
+    expect(dossier).not.toMatch(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/u);
   });
 });
 

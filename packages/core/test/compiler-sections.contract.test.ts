@@ -165,18 +165,24 @@ describe("compiler section renderer contract", () => {
     const snapshot = populatedSnapshot();
     const castExpected: readonly [PlaceholderName, string][] = [
       [
+        // PRD #129 / #125: every active voice pin now leads with the validated linked ENTITY name
+        // ("guarding the ledger" is entity 804's display_name); identity.one_line is retained after it.
         "active_cast_voice_pressure_pins",
-        "- Mara guards the archive.; local function: active_speaker; voice anchor: Measured and clipped.; current generation voice pressure: Keep Mara clipped and procedural.; dialogue pressure: Use precise deflection.; POV narration pressure: Let narration stay close and guarded.; nonverbal/silence pressure: Use stillness before speech.; must preserve: precision; must avoid: warm banter; Current generation voice override; applies to: dialogue, silence; Make responses shorter than usual."
+        "- guarding the ledger; Mara guards the archive.; local function: active_speaker; voice anchor: Measured and clipped.; current generation voice pressure: Keep Mara clipped and procedural.; dialogue pressure: Use precise deflection.; POV narration pressure: Let narration stay close and guarded.; nonverbal/silence pressure: Use stillness before speech.; must preserve: precision; must avoid: warm banter; Current generation voice override; applies to: dialogue, silence; Make responses shorter than usual."
       ],
       [
+        // PRD #129 / #127: the active dossier heading now leads with the linked ENTITY name;
+        // identity.one_line is retained in the identity body.
         "active_onstage_full_cast_dossiers",
-        "## Mara guards the archive.\nidentity:\n  one_line: Mara guards the archive.\n  public_face: calm\n  private_pressure: afraid\nvoice_anchor:\n  core_voice: Measured and clipped.\n  rhythm_and_syntax: Short clauses.\n  register_and_diction: formal\npressure_behavior_core:\n  cornered: answers narrowly\nbody_presence_core:\n  physicality: still hands\nagency_core:\n  default_strategy: delay\nsample_utterances:\n  - Look at the index.; situation: deflection; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\n  - The key is logged.; situation: boundary; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\n  - Protocol decides this.; situation: refusal; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\nCurrent generation voice override:\n  Current generation voice override; applies to: dialogue, silence; Make responses shorter than usual."
+        "## guarding the ledger\nidentity:\n  one_line: Mara guards the archive.\n  public_face: calm\n  private_pressure: afraid\nvoice_anchor:\n  core_voice: Measured and clipped.\n  rhythm_and_syntax: Short clauses.\n  register_and_diction: formal\npressure_behavior_core:\n  cornered: answers narrowly\nbody_presence_core:\n  physicality: still hands\nagency_core:\n  default_strategy: delay\nsample_utterances:\n  - Look at the index.; situation: deflection; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\n  - The key is logged.; situation: boundary; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\n  - Protocol decides this.; situation: refusal; function: refusal; copy policy: never_copy_verbatim; pressure tags: control\nCurrent generation voice override:\n  Current generation voice override; applies to: dialogue, silence; Make responses shorter than usual."
       ],
       [
+        // PRD #129 / #127: present-minor entries now lead with the linked ENTITY name.
         "present_minor_cast_notes",
-        "- Jon watches from the stair.; voice: Plainspoken and wary.; current generation voice pressure: Keep Jon reluctant.; dialogue pressure: Only answer if addressed.; nonverbal/silence pressure: Prefer silence.; must avoid: exposition; Current generation voice override; applies to: dialogue; Keep him terse."
+        "- guarding the ledger; Jon watches from the stair.; voice: Plainspoken and wary.; current generation voice pressure: Keep Jon reluctant.; dialogue pressure: Only answer if addressed.; nonverbal/silence pressure: Prefer silence.; must avoid: exposition; Current generation voice override; applies to: dialogue; Keep him terse."
       ],
-      ["offstage_relevance_notes", "- The guard may return soon.; voice: Plainspoken and wary."]
+      // PRD #129 / #127: offstage-relevance entries now lead with the linked ENTITY name.
+      ["offstage_relevance_notes", "- guarding the ledger; The guard may return soon.; voice: Plainspoken and wary."]
     ];
     const pressureExpected: readonly [PlaceholderName, string][] = [
       ["relationship_emotion_pressure", "- Mara distrusts Jon; Trust is thin.; They speak around the ledger.\n- Mara is afraid; Her hands stay still."],
@@ -347,7 +353,8 @@ describe("compiler section renderer contract", () => {
     const present = sectionBody(prompt, "present_minor_cast");
     const offstage = sectionBody(prompt, "offstage_relevance");
 
-    expect(active).toContain("## Mara guards the archive.");
+    // Heading leads with the linked ENTITY name; the one-line stays in the identity body (PRD #129 / #127).
+    expect(active).toContain("## guarding the ledger");
     expect(active).toContain("identity:\n  one_line: Mara guards the archive.");
     expect(active).toContain("Current generation voice override:\n  Current generation voice override; applies to: dialogue, silence; Make responses shorter than usual.");
     expect(active).toContain("- Look at the index.; situation: deflection; function: refusal; copy policy: never_copy_verbatim; pressure tags: control");

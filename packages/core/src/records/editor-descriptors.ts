@@ -132,7 +132,10 @@ const referenceTargetsByRole: Readonly<Record<string, readonly string[]>> = Obje
 
 const labelFieldsByType: Readonly<Record<string, readonly string[]>> = Object.freeze({
   BELIEF: ["claim"],
-  "CAST MEMBER": ["identity.one_line", "entity_id"],
+  // A CAST MEMBER label derives from its own descriptive one-line only. `entity_id` is deliberately
+  // NOT a fallback: a stored record identifier must never stand in for a name (PRD #129 Decision 4;
+  // #125/#127). The linked ENTITY's display name is resolved for prompt cast lanes in the compiler.
+  "CAST MEMBER": ["identity.one_line"],
   CLOCK: ["title"],
   CONSEQUENCE: ["current_effect"],
   EMOTION: ["description"],

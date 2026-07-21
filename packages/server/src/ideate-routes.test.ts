@@ -72,7 +72,7 @@ describe("ideate routes", () => {
     expect(body.citations["[SECRET-1]"]).toBe("The loading-door key has been copied.");
     expect(body.metadata).toMatchObject({
       provider: "openrouter",
-      versions: { template: "1.10.0", compiler: "1.12.0", contract: "1.13.0" }
+      versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.14.0" }
     });
     const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
     expect(sentPrompt).toContain("# Grounded Ideation Prompt");
