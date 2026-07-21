@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "caseId": "custody-change",
+  "title": "Explicit handoff changes object custody",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-custody",
+    "sequence": 24,
+    "text": "Ari placed the brass seal in Lio's open palm and folded his fingers over it. Lio slipped the seal into his inner pocket.",
+    "evidenceSpans": [
+      { "key": "[SEG-24-S001]", "text": "Ari placed the brass seal in Lio's open palm and folded his fingers over it. Lio slipped the seal into his inner pocket." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Noon",
+    "current_authoritative_state.current_location": "019f7000-0004-7000-8000-000000000004",
+    "current_authoritative_state.onstage_entities": ["019f7000-0004-7000-8000-000000000001", "019f7000-0004-7000-8000-000000000002"],
+    "current_authoritative_state.immediate_situation_summary": "Ari still holds the guild seal while Lio waits.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Ari and Lio face each other beside the registry desk."],
+    "current_authoritative_state.possessions": ["Ari carries the brass guild seal."],
+    "current_authoritative_state.visible_conditions": ["Lio's hands are empty."],
+    "current_authoritative_state.environmental_conditions": [],
+    "current_authoritative_state.entity_statuses": [],
+    "current_authoritative_state.line_of_sight_and_visibility": "The handoff is visible to both people.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["The registry door opens to the court."],
+    "current_authoritative_state.available_time": "The clerk returns shortly.",
+    "current_authoritative_state.consent_or_force_conditions": "The transfer is voluntary.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "Ari agreed to entrust Lio with the seal.",
+    "immediate_handoff.last_visible_moment": "Ari drew the seal from her sleeve.",
+    "immediate_handoff.begin_after": "Begin with Ari offering the seal."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0004-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Ari Sen", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000001", "display_name": "Ari Sen", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "The current keeper of the guild seal." } },
+      { "id": "019f7000-0004-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Lio Marr", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000002", "display_name": "Lio Marr", "entity_kind": "person", "roles_in_story": ["allied_actor"], "short_description": "A courier waiting to receive the guild seal." } },
+      { "id": "019f7000-0004-7000-8000-000000000003", "type": "OBJECT", "displayLabel": "Brass guild seal", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000003", "status": "active", "label": "Brass guild seal", "description": "A palm-sized brass seal used on guild dispatches.", "owner": "019f7000-0004-7000-8000-000000000001", "carried_by": "019f7000-0004-7000-8000-000000000001", "current_location": "carried_by_holder", "visibility_to_pov": "visible", "usable_affordances": ["stamp a guild dispatch"], "constraints": ["must remain with an authorized courier"], "durability": "major" } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0004-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Ari Sen", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000001", "display_name": "Ari Sen", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "The current keeper of the guild seal." } },
+      { "id": "019f7000-0004-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Lio Marr", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000002", "display_name": "Lio Marr", "entity_kind": "person", "roles_in_story": ["allied_actor"], "short_description": "A courier waiting to receive the guild seal." } },
+      { "id": "019f7000-0004-7000-8000-000000000003", "type": "OBJECT", "displayLabel": "Brass guild seal", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000003", "status": "active", "label": "Brass guild seal", "description": "A palm-sized brass seal used on guild dispatches.", "owner": "019f7000-0004-7000-8000-000000000001", "carried_by": "019f7000-0004-7000-8000-000000000001", "current_location": "carried_by_holder", "visibility_to_pov": "visible", "usable_affordances": ["stamp a guild dispatch"], "constraints": ["must remain with an authorized courier"], "durability": "major" } },
+      { "id": "019f7000-0004-7000-8000-000000000004", "type": "LOCATION", "displayLabel": "Guild registry", "archived": false, "payload": { "id": "019f7000-0004-7000-8000-000000000004", "status": "active", "label": "Guild registry", "description": "A records room beside the guild court.", "layout_relevant_now": "One desk stands between the shelves and door.", "access_routes": ["court door"], "visibility_and_sound": "The room is private until the clerk returns.", "hazards_or_shelters": [], "social_rules": ["Only authorized couriers carry the seal."] } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-custody",
+    "acceptedSegmentSequence": 24,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0004-7000-8000-000000000001", "019f7000-0004-7000-8000-000000000002", "019f7000-0004-7000-8000-000000000003"],
+    "wholeProjectRecordIds": ["019f7000-0004-7000-8000-000000000001", "019f7000-0004-7000-8000-000000000002", "019f7000-0004-7000-8000-000000000003", "019f7000-0004-7000-8000-000000000004"],
+    "evidenceKeys": ["[SEG-24-S001]"],
+    "contrastKeys": ["[OBJECT-1]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "custody-change-1", "summary": "Lio now carries the brass guild seal instead of Ari.", "evidenceKeys": ["[SEG-24-S001]"], "contrastKeys": ["[OBJECT-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBJECT"], "uncertaintyOrRivalReading": "Ownership transfer is not established, but physical custody is explicit." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "The seal moved into Lio's custody and pocket." },
+      { "dimension": "time/clocks/ongoing processes", "status": "checked - no relevant change", "reason": "No time threshold changed." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "No separate knowledge change is established." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "checked - no relevant change", "reason": "The prior agreement is executed, not newly created here." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "The handoff alone does not establish a relationship change." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "Lio has the seal in his inner pocket when the clerk may return." }
+    ],
+    "prohibitedInventions": ["Do not claim legal ownership transferred to Lio.", "Do not claim the clerk witnessed the handoff."]
+  }
+}

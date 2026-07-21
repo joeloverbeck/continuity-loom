@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "caseId": "no-change",
+  "title": "Genuine no-change conversation",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-no-change",
+    "sequence": 28,
+    "text": "Pera counted the blue tiles twice, then asked whether Sen wanted tea. He said no. They remained at the map table while rain ticked against the same closed window.",
+    "evidenceSpans": [
+      { "key": "[SEG-28-S001]", "text": "Pera counted the blue tiles twice, then asked whether Sen wanted tea. He said no. They remained at the map table while rain ticked against the same closed window." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Rainy evening",
+    "current_authoritative_state.current_location": "019f7000-0008-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0008-7000-8000-000000000001", "019f7000-0008-7000-8000-000000000002"],
+    "current_authoritative_state.immediate_situation_summary": "Pera and Sen are quietly checking a tile map.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Pera and Sen stand at the map table."],
+    "current_authoritative_state.possessions": [],
+    "current_authoritative_state.visible_conditions": ["The window is closed."],
+    "current_authoritative_state.environmental_conditions": ["Rain taps the window."],
+    "current_authoritative_state.entity_statuses": [],
+    "current_authoritative_state.line_of_sight_and_visibility": "Both can see the tile map.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["The reading-room door opens to the hall."],
+    "current_authoritative_state.available_time": "No immediate deadline.",
+    "current_authoritative_state.consent_or_force_conditions": "No restraint is active.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "They began a second check of the tile map.",
+    "immediate_handoff.last_visible_moment": "Pera started counting the blue tiles again.",
+    "immediate_handoff.begin_after": "Begin with the second count."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0008-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Pera Lune", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000001", "display_name": "Pera Lune", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A surveyor checking a ceramic map." } },
+      { "id": "019f7000-0008-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Sen Vale", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000002", "display_name": "Sen Vale", "entity_kind": "person", "roles_in_story": ["allied_actor"], "short_description": "Pera's quiet assistant at the map table." } },
+      { "id": "019f7000-0008-7000-8000-000000000004", "type": "FACT", "displayLabel": "Tile map count", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000004", "fact_kind": "current_state", "statement": "The tile map contains twelve blue tiles.", "scope": "object", "known_by": ["019f7000-0008-7000-8000-000000000001", "019f7000-0008-7000-8000-000000000002"], "audience_visibility": "explicit", "salience": "medium" } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0008-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Pera Lune", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000001", "display_name": "Pera Lune", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A surveyor checking a ceramic map." } },
+      { "id": "019f7000-0008-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Sen Vale", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000002", "display_name": "Sen Vale", "entity_kind": "person", "roles_in_story": ["allied_actor"], "short_description": "Pera's quiet assistant at the map table." } },
+      { "id": "019f7000-0008-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "Map reading room", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000003", "status": "active", "label": "Map reading room", "description": "A quiet room containing a ceramic map table.", "layout_relevant_now": "The map table stands beside one closed window.", "access_routes": ["hall door"], "visibility_and_sound": "Rain is audible through the closed window.", "hazards_or_shelters": [], "social_rules": [] } },
+      { "id": "019f7000-0008-7000-8000-000000000004", "type": "FACT", "displayLabel": "Tile map count", "archived": false, "payload": { "id": "019f7000-0008-7000-8000-000000000004", "fact_kind": "current_state", "statement": "The tile map contains twelve blue tiles.", "scope": "object", "known_by": ["019f7000-0008-7000-8000-000000000001", "019f7000-0008-7000-8000-000000000002"], "audience_visibility": "explicit", "salience": "medium" } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-no-change",
+    "acceptedSegmentSequence": 28,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0008-7000-8000-000000000001", "019f7000-0008-7000-8000-000000000002", "019f7000-0008-7000-8000-000000000004"],
+    "wholeProjectRecordIds": ["019f7000-0008-7000-8000-000000000001", "019f7000-0008-7000-8000-000000000002", "019f7000-0008-7000-8000-000000000003", "019f7000-0008-7000-8000-000000000004"],
+    "evidenceKeys": ["[SEG-28-S001]"],
+    "contrastKeys": ["[FACT-1]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "checked - no relevant change", "reason": "Both people remain at the same table and the window remains closed." },
+      { "dimension": "time/clocks/ongoing processes", "status": "checked - no relevant change", "reason": "The brief interval creates no threshold or process change." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "The tile count is unchanged and no new knowledge is established." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "checked - no relevant change", "reason": "The tea refusal creates no durable commitment or plan." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "No emotional or relational shift is stated or strongly implied." },
+      { "dimension": "immediate next-segment handoff", "status": "checked - no relevant change", "reason": "They remain at the map table with the same task and conditions." }
+    ],
+    "prohibitedInventions": ["Do not interpret the tea refusal as hostility.", "Do not invent a discrepancy in the tile count."]
+  }
+}

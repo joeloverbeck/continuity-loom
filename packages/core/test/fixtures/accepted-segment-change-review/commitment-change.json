@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "caseId": "commitment-change",
+  "title": "Explicit promise creates a commitment",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-commitment",
+    "sequence": 26,
+    "text": "Kell met Osa's gaze. \"I will bring your brother back before sunrise,\" he said, and offered his signet as surety. Osa accepted it.",
+    "evidenceSpans": [
+      { "key": "[SEG-26-S001]", "text": "Kell met Osa's gaze. \"I will bring your brother back before sunrise,\" he said, and offered his signet as surety. Osa accepted it." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Nightfall",
+    "current_authoritative_state.current_location": "019f7000-0006-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0006-7000-8000-000000000001", "019f7000-0006-7000-8000-000000000002"],
+    "current_authoritative_state.immediate_situation_summary": "Osa asks Kell whether he will search for her missing brother.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Kell and Osa stand beneath the gate lantern."],
+    "current_authoritative_state.possessions": ["Kell wears his signet."],
+    "current_authoritative_state.visible_conditions": [],
+    "current_authoritative_state.environmental_conditions": ["The city gates close at full dark."],
+    "current_authoritative_state.entity_statuses": [],
+    "current_authoritative_state.line_of_sight_and_visibility": "They can see each other clearly.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["The north road leaves through the gate."],
+    "current_authoritative_state.available_time": "Until sunrise.",
+    "current_authoritative_state.consent_or_force_conditions": "The exchange is voluntary.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "Osa's brother failed to return from the north road.",
+    "immediate_handoff.last_visible_moment": "Osa asked Kell for a direct answer.",
+    "immediate_handoff.begin_after": "Begin with Kell answering Osa."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0006-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Kell Ar", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000001", "display_name": "Kell Ar", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "A scout deciding whether to search the north road." } },
+      { "id": "019f7000-0006-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Osa Nemm", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000002", "display_name": "Osa Nemm", "entity_kind": "person", "roles_in_story": ["allied_actor", "pressure_source"], "short_description": "A gatekeeper seeking help for her missing brother." } },
+      { "id": "019f7000-0006-7000-8000-000000000004", "type": "OPEN THREAD", "displayLabel": "Osa's missing brother", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000004", "type": "risk", "status": "active", "title": "Osa's missing brother", "summary": "Osa's brother has not returned from the north road.", "audience_visibility": "explicit", "urgency": "high", "current_relevance": "critical", "possible_pressure_now": "Someone must decide whether to search before dawn.", "answer_if_known": "none" } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0006-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Kell Ar", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000001", "display_name": "Kell Ar", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "A scout deciding whether to search the north road." } },
+      { "id": "019f7000-0006-7000-8000-000000000002", "type": "ENTITY", "displayLabel": "Osa Nemm", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000002", "display_name": "Osa Nemm", "entity_kind": "person", "roles_in_story": ["allied_actor", "pressure_source"], "short_description": "A gatekeeper seeking help for her missing brother." } },
+      { "id": "019f7000-0006-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "North gate", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000003", "status": "active", "label": "North gate", "description": "A city gate opening onto the north road.", "layout_relevant_now": "The gatehouse overlooks the road.", "access_routes": ["north road", "city lane"], "visibility_and_sound": "Lantern light covers the threshold.", "hazards_or_shelters": [], "social_rules": ["The gate closes at full dark."] } },
+      { "id": "019f7000-0006-7000-8000-000000000004", "type": "OPEN THREAD", "displayLabel": "Osa's missing brother", "archived": false, "payload": { "id": "019f7000-0006-7000-8000-000000000004", "type": "risk", "status": "active", "title": "Osa's missing brother", "summary": "Osa's brother has not returned from the north road.", "audience_visibility": "explicit", "urgency": "high", "current_relevance": "critical", "possible_pressure_now": "Someone must decide whether to search before dawn.", "answer_if_known": "none" } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-commitment",
+    "acceptedSegmentSequence": 26,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0006-7000-8000-000000000001", "019f7000-0006-7000-8000-000000000002", "019f7000-0006-7000-8000-000000000004"],
+    "wholeProjectRecordIds": ["019f7000-0006-7000-8000-000000000001", "019f7000-0006-7000-8000-000000000002", "019f7000-0006-7000-8000-000000000003", "019f7000-0006-7000-8000-000000000004"],
+    "evidenceKeys": ["[SEG-26-S001]"],
+    "contrastKeys": ["[OPEN-THREAD-1]", "[BRIEF:immediate_handoff.recent_causal_context]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "commitment-change-1", "summary": "Kell made and secured a promise to return Osa's brother before sunrise.", "evidenceKeys": ["[SEG-26-S001]"], "contrastKeys": ["[OPEN-THREAD-1]", "[BRIEF:immediate_handoff.recent_causal_context]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["OBLIGATION", "OBJECT", "OPEN THREAD"], "uncertaintyOrRivalReading": "Success remains uncertain, but the promise and accepted surety are explicit." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Osa now physically holds Kell's signet as surety." },
+      { "dimension": "time/clocks/ongoing processes", "status": "changes found", "reason": "The promise creates a before-sunrise deadline." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "No separate knowledge or secret change is established." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "changes found", "reason": "Kell makes an explicit promise accepted by Osa." },
+      { "dimension": "emotions/relationships", "status": "changes found", "reason": "The accepted surety changes the practical trust relation, though its emotional meaning needs judgment." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "Kell is committed to the search and Osa holds his signet." }
+    ],
+    "prohibitedInventions": ["Do not claim Kell knows where the brother is.", "Do not claim the promise has already been fulfilled."]
+  }
+}

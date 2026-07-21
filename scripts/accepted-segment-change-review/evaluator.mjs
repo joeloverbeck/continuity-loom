@@ -1,0 +1,450 @@
+import { CHANGE_REVIEW_COVERAGE_DIMENSIONS, GOLD_CASE_ORDER } from "./corpus.mjs";
+
+const RESULT_STATUSES = new Set(["completed", "malformed", "failed"]);
+const FINDING_DISPOSITIONS = new Set(["found", "uncertain"]);
+const EPISTEMIC_STATUSES = new Set([
+  "established change",
+  "interpretation requiring author judgment"
+]);
+const RETENTION_HORIZONS = new Set([
+  "durable record candidate",
+  "next-brief-only",
+  "no storage",
+  "author decision required"
+]);
+
+export function evaluateComparison(corpus, comparisonRun) {
+  validateComparisonRun(comparisonRun);
+  const fixturesById = new Map(corpus.map((fixture) => [fixture.caseId, fixture]));
+  const perRequest = comparisonRun.requests.map((result) => {
+    const fixture = fixturesById.get(result.caseId);
+    if (!fixture) {
+      throw new Error(`Unknown comparison case: ${String(result.caseId)}.`);
+    }
+    return scoreRequest(fixture, result, comparisonRun.requests.length);
+  });
+  const protocolPlanComplete = isProtocolPlanComplete(comparisonRun.requests);
+  const aggregate = aggregateScores(perRequest, protocolPlanComplete);
+
+  return {
+    schemaVersion: 1,
+    protocolId: comparisonRun.protocolId,
+    requests: perRequest,
+    aggregate,
+    deterministicFloorsPassed:
+      protocolPlanComplete && perRequest.every((request) => request.floors.passed),
+    stewardReceipt: globalThis.structuredClone(comparisonRun.stewardReceipt),
+    issueClosureIsGo: false
+  };
+}
+
+export function validateComparisonRun(comparisonRun) {
+  requireObject(comparisonRun, "comparison run");
+  if (comparisonRun.schemaVersion !== 1) {
+    throw new Error("Comparison run schemaVersion must be 1.");
+  }
+  requireString(comparisonRun.protocolId, "comparison protocol id");
+  if (comparisonRun.issueClosureIsGo !== false) {
+    throw new Error("issueClosureIsGo must remain false; closure is not a steward decision.");
+  }
+
+  const requests = requireArray(comparisonRun.requests, "comparison requests");
+  if (requests.length > 16) {
+    throw new Error("Comparison run exceeds the 16-request ceiling.");
+  }
+  const requestIds = [];
+  for (const result of requests) {
+    validateRequestResult(result);
+    requestIds.push(result.requestId);
+  }
+  requireUnique(requestIds, "comparison request ids");
+  validateStewardReceipt(comparisonRun.stewardReceipt);
+  return comparisonRun;
+}
+
+function validateRequestResult(result) {
+  requireObject(result, "request result");
+  if (result.schemaVersion !== 1) {
+    throw new Error("Request result schemaVersion must be 1.");
+  }
+  requireString(result.requestId, "request id");
+  requireIntegerInRange(result.requestOrdinal, 1, 16, "request ordinal");
+  requireString(result.caseId, "request caseId");
+  if (result.workflow !== "old" && result.workflow !== "new") {
+    throw new Error("Request workflow must be old or new.");
+  }
+  if (!RESULT_STATUSES.has(result.status)) {
+    throw new Error("Request status must be completed, malformed, or failed.");
+  }
+
+  validateProvenance(result.provenance);
+  requireObject(result.sourceAccounting, `${result.requestId} source accounting`);
+  requireArray(result.findings, `${result.requestId} findings`);
+  requireArray(result.coverage, `${result.requestId} coverage`);
+  validateRequestPolicy(result.requestPolicy, result.requestId);
+  validateWrites(result.writes, result.requestId);
+  validateMeasurements(result.measurements, result.requestId);
+
+  if (result.status === "completed") {
+    if (result.failure !== null) {
+      throw new Error(`${result.requestId}: a completed result must have failure null.`);
+    }
+    result.findings.forEach((finding) => validateFinding(finding, result.requestId));
+    result.coverage.forEach((row) => validateCoverageRow(row, result.requestId));
+  } else {
+    requireObject(result.failure, `${result.requestId} failure`);
+    requireString(result.failure.kind, `${result.requestId} failure kind`);
+    requireString(result.failure.message, `${result.requestId} failure message`);
+  }
+}
+
+function validateProvenance(provenance) {
+  requireObject(provenance, "request provenance");
+  requireString(provenance.model, "provenance model");
+  requireObject(provenance.settings, "provenance settings");
+  requireFiniteNonnegative(provenance.settings.temperature, "provenance temperature");
+  requireFiniteNonnegative(provenance.settings.maxOutputTokens, "provenance maxOutputTokens");
+  requireFiniteNonnegative(provenance.settings.topP, "provenance topP");
+  requireString(provenance.startedAt, "provenance startedAt");
+  requireString(provenance.completedAt, "provenance completedAt");
+  requireSha256(provenance.sourceFingerprint, "provenance sourceFingerprint");
+  requireSha256(provenance.promptSha256, "provenance promptSha256");
+}
+
+function validateRequestPolicy(policy, requestId) {
+  requireObject(policy, `${requestId} request policy`);
+  requireFiniteNonnegative(policy.retryCount, `${requestId} retryCount`);
+  for (const field of ["fallbackUsed", "repairCallUsed", "substitutionUsed"]) {
+    if (typeof policy[field] !== "boolean") {
+      throw new Error(`${requestId}: ${field} must be boolean.`);
+    }
+  }
+}
+
+function validateWrites(writes, requestId) {
+  requireObject(writes, `${requestId} writes`);
+  requireFiniteNonnegative(writes.automatic, `${requestId} automatic writes`);
+  requireFiniteNonnegative(writes.projectStore, `${requestId} project-store writes`);
+}
+
+function validateMeasurements(measurements, requestId) {
+  requireObject(measurements, `${requestId} measurements`);
+  for (const field of [
+    "reviewTimeMs",
+    "promptCharacters",
+    "promptTokensEstimate",
+    "latencyMs",
+    "inputTokens",
+    "outputTokens",
+    "costUsd"
+  ]) {
+    requireFiniteNonnegative(measurements[field], `${requestId} ${field}`);
+  }
+}
+
+function validateFinding(finding, requestId) {
+  requireObject(finding, `${requestId} finding`);
+  requireString(finding.findingId, `${requestId} findingId`);
+  if (!FINDING_DISPOSITIONS.has(finding.disposition)) {
+    throw new Error(`${requestId}: finding disposition must be found or uncertain.`);
+  }
+  requireStringArray(finding.evidenceKeys, `${requestId} finding evidenceKeys`);
+  requireStringArray(finding.contrastKeys, `${requestId} finding contrastKeys`);
+  if (!EPISTEMIC_STATUSES.has(finding.epistemicStatus)) {
+    throw new Error(`${requestId}: invalid finding epistemicStatus.`);
+  }
+  if (!RETENTION_HORIZONS.has(finding.retentionHorizon)) {
+    throw new Error(`${requestId}: invalid finding retentionHorizon.`);
+  }
+  if (typeof finding.invented !== "boolean") {
+    throw new Error(`${requestId}: finding invented must be boolean.`);
+  }
+}
+
+function validateCoverageRow(row, requestId) {
+  requireObject(row, `${requestId} coverage row`);
+  requireString(row.dimension, `${requestId} coverage dimension`);
+  requireString(row.status, `${requestId} coverage status`);
+  requireString(row.reason, `${requestId} coverage reason`);
+}
+
+function validateStewardReceipt(receipt) {
+  requireObject(receipt, "steward receipt");
+  if (receipt.status === "not-recorded") {
+    for (const field of ["steward", "decision", "recordedAt", "rationale"]) {
+      if (receipt[field] !== null) {
+        throw new Error(`Unrecorded steward receipt must keep ${field} null.`);
+      }
+    }
+    return;
+  }
+  if (receipt.status !== "recorded") {
+    throw new Error("Steward receipt status must be not-recorded or recorded.");
+  }
+  requireString(receipt.steward, "steward receipt steward");
+  if (receipt.decision !== "GO" && receipt.decision !== "NO-GO") {
+    throw new Error("Recorded steward decision must be GO or NO-GO.");
+  }
+  requireString(receipt.recordedAt, "steward receipt recordedAt");
+  requireString(receipt.rationale, "steward receipt rationale");
+}
+
+function scoreRequest(fixture, result, requestCount) {
+  const malformed = result.status === "malformed";
+  const completed = result.status === "completed";
+  const expectedFindings = new Map(
+    fixture.adjudication.findings.map((finding) => [finding.findingId, finding])
+  );
+  const reportedFindings = completed ? result.findings : [];
+  const accountedIds = new Set(
+    reportedFindings
+      .filter(
+        (finding) => expectedFindings.has(finding.findingId) && FINDING_DISPOSITIONS.has(finding.disposition)
+      )
+      .map((finding) => finding.findingId)
+  );
+  const inventedFindings = reportedFindings.filter(
+    (finding) => finding.invented || !expectedFindings.has(finding.findingId)
+  );
+  const retentionMatches = reportedFindings.filter((finding) => {
+    const expected = expectedFindings.get(finding.findingId);
+    return expected && expected.retentionHorizon === finding.retentionHorizon;
+  }).length;
+  const coverage = coverageMetrics(fixture, completed ? result.coverage : []);
+  const completeDeclaredSourceInclusion = deepEqual(
+    result.sourceAccounting,
+    fixture.expectedSourceAccounting
+  );
+  const sixUniqueCoverageRows =
+    completed &&
+    result.coverage.length === 6 &&
+    deepEqual(
+      result.coverage.map((row) => row.dimension),
+      CHANGE_REVIEW_COVERAGE_DIMENSIONS
+    );
+  const zeroInventedEstablishedItems = !inventedFindings.some(
+    (finding) => finding.epistemicStatus === "established change"
+  );
+  const allSeededChangesAccounted = accountedIds.size === expectedFindings.size;
+  const boundedRequestPolicy =
+    requestCount <= 16 &&
+    result.requestPolicy.retryCount === 0 &&
+    result.requestPolicy.fallbackUsed === false &&
+    result.requestPolicy.repairCallUsed === false &&
+    result.requestPolicy.substitutionUsed === false;
+  const floors = {
+    completeDeclaredSourceInclusion,
+    sixUniqueCoverageRows,
+    zeroAutomaticWrites: result.writes.automatic === 0,
+    zeroProjectStoreWrites: result.writes.projectStore === 0,
+    zeroInventedEstablishedItems,
+    allSeededChangesAccounted,
+    boundedRequestPolicy
+  };
+
+  return {
+    requestId: result.requestId,
+    requestOrdinal: result.requestOrdinal,
+    caseId: result.caseId,
+    workflow: result.workflow,
+    provenance: globalThis.structuredClone(result.provenance),
+    status: result.status,
+    failure: globalThis.structuredClone(result.failure),
+    sourceAccounting: globalThis.structuredClone(result.sourceAccounting),
+    findings: globalThis.structuredClone(result.findings),
+    coverage: globalThis.structuredClone(result.coverage),
+    requestPolicy: globalThis.structuredClone(result.requestPolicy),
+    writes: globalThis.structuredClone(result.writes),
+    measurements: globalThis.structuredClone(result.measurements),
+    metrics: {
+      recall: ratio(accountedIds.size, expectedFindings.size, expectedFindings.size === 0 ? 1 : 0),
+      precision: ratio(
+        reportedFindings.length - inventedFindings.length,
+        reportedFindings.length,
+        expectedFindings.size === 0 ? 1 : 0
+      ),
+      retentionClassification: ratio(
+        retentionMatches,
+        expectedFindings.size,
+        expectedFindings.size === 0 ? 1 : 0
+      ),
+      invention: {
+        count: inventedFindings.length,
+        rate: ratio(inventedFindings.length, reportedFindings.length, 0)
+      },
+      empty: completed && reportedFindings.length === 0,
+      malformed,
+      coverage,
+      reviewTimeMs: result.measurements.reviewTimeMs,
+      promptCharacters: result.measurements.promptCharacters,
+      promptTokensEstimate: result.measurements.promptTokensEstimate,
+      latencyMs: result.measurements.latencyMs,
+      costUsd: result.measurements.costUsd
+    },
+    floors: {
+      ...floors,
+      passed: Object.values(floors).every(Boolean)
+    }
+  };
+}
+
+function coverageMetrics(fixture, coverageRows) {
+  const rowsByDimension = new Map();
+  for (const row of coverageRows) {
+    if (!rowsByDimension.has(row.dimension)) {
+      rowsByDimension.set(row.dimension, row);
+    }
+  }
+  const expectedByDimension = new Map(
+    fixture.adjudication.coverage.map((row) => [row.dimension, row])
+  );
+  const recognizedDimensions = CHANGE_REVIEW_COVERAGE_DIMENSIONS.filter((dimension) =>
+    rowsByDimension.has(dimension)
+  );
+  const matchedOutcomes = recognizedDimensions.filter(
+    (dimension) => rowsByDimension.get(dimension).status === expectedByDimension.get(dimension).status
+  ).length;
+
+  return {
+    uniqueDimensions: rowsByDimension.size,
+    completeness: ratio(recognizedDimensions.length, 6, 0),
+    outcomeMatch: ratio(matchedOutcomes, 6, 0)
+  };
+}
+
+function aggregateScores(perRequest, protocolPlanComplete) {
+  const byWorkflow = {
+    old: workflowAggregate(perRequest, "old"),
+    new: workflowAggregate(perRequest, "new")
+  };
+
+  return {
+    protocolPlanComplete,
+    actualRequestCount: perRequest.length,
+    actualCostUsd: sum(perRequest.map((request) => request.metrics.costUsd)),
+    emptyFrequency: ratio(perRequest.filter((request) => request.metrics.empty).length, perRequest.length, 0),
+    malformedFrequency: ratio(
+      perRequest.filter((request) => request.metrics.malformed).length,
+      perRequest.length,
+      0
+    ),
+    averages: {
+      recall: average(perRequest.map((request) => request.metrics.recall)),
+      precision: average(perRequest.map((request) => request.metrics.precision)),
+      retentionClassification: average(
+        perRequest.map((request) => request.metrics.retentionClassification)
+      ),
+      inventionRate: average(perRequest.map((request) => request.metrics.invention.rate)),
+      coverageCompleteness: average(
+        perRequest.map((request) => request.metrics.coverage.completeness)
+      ),
+      coverageOutcomeMatch: average(
+        perRequest.map((request) => request.metrics.coverage.outcomeMatch)
+      ),
+      reviewTimeMs: average(perRequest.map((request) => request.metrics.reviewTimeMs)),
+      promptCharacters: average(perRequest.map((request) => request.metrics.promptCharacters)),
+      promptTokensEstimate: average(
+        perRequest.map((request) => request.metrics.promptTokensEstimate)
+      ),
+      latencyMs: average(perRequest.map((request) => request.metrics.latencyMs)),
+      costUsd: average(perRequest.map((request) => request.metrics.costUsd))
+    },
+    byWorkflow
+  };
+}
+
+function isProtocolPlanComplete(requests) {
+  const expected = GOLD_CASE_ORDER.flatMap((caseId) =>
+    ["old", "new"].map((workflow) => ({ caseId, workflow }))
+  );
+
+  return requests.length === expected.length && requests.every((request, index) => {
+    const requestOrdinal = index + 1;
+    const expectedRequest = expected[index];
+    return request.requestOrdinal === requestOrdinal &&
+      request.caseId === expectedRequest.caseId &&
+      request.workflow === expectedRequest.workflow &&
+      request.requestId ===
+        `request-${String(requestOrdinal).padStart(2, "0")}-${request.workflow}-${request.caseId}`;
+  });
+}
+
+function workflowAggregate(perRequest, workflow) {
+  const requests = perRequest.filter((request) => request.workflow === workflow);
+  return {
+    requestCount: requests.length,
+    totalCostUsd: sum(requests.map((request) => request.metrics.costUsd))
+  };
+}
+
+function ratio(numerator, denominator, emptyValue) {
+  return denominator === 0 ? emptyValue : round(numerator / denominator);
+}
+
+function average(values) {
+  return values.length === 0 ? 0 : round(sum(values) / values.length);
+}
+
+function sum(values) {
+  return round(values.reduce((total, value) => total + value, 0));
+}
+
+function round(value) {
+  return Math.round((value + Number.EPSILON) * 1_000_000) / 1_000_000;
+}
+
+function deepEqual(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function requireObject(value, label) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${label} must be an object.`);
+  }
+  return value;
+}
+
+function requireArray(value, label) {
+  if (!Array.isArray(value)) {
+    throw new Error(`${label} must be an array.`);
+  }
+  return value;
+}
+
+function requireString(value, label) {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    throw new Error(`${label} must be a nonblank string.`);
+  }
+  return value;
+}
+
+function requireStringArray(value, label) {
+  requireArray(value, label);
+  if (value.length === 0 || value.some((entry) => typeof entry !== "string" || entry.length === 0)) {
+    throw new Error(`${label} must contain nonblank strings.`);
+  }
+}
+
+function requireFiniteNonnegative(value, label) {
+  if (!Number.isFinite(value) || value < 0) {
+    throw new Error(`${label} must be a finite nonnegative number.`);
+  }
+}
+
+function requireIntegerInRange(value, minimum, maximum, label) {
+  if (!Number.isInteger(value) || value < minimum || value > maximum) {
+    throw new Error(`${label} must be an integer from ${minimum} through ${maximum}.`);
+  }
+}
+
+function requireSha256(value, label) {
+  if (typeof value !== "string" || !/^[a-f0-9]{64}$/i.test(value)) {
+    throw new Error(`${label} must be a 64-character hexadecimal SHA-256.`);
+  }
+}
+
+function requireUnique(values, label) {
+  if (new Set(values).size !== values.length) {
+    throw new Error(`${label} must be unique.`);
+  }
+}

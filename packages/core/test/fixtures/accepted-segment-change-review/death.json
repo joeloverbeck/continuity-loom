@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "caseId": "death",
+  "title": "Explicit death changes bodily state",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-death",
+    "sequence": 21,
+    "text": "Iven sagged against the observatory rail. Sera caught him, but his breath had stopped and no pulse answered beneath her fingers.",
+    "evidenceSpans": [
+      { "key": "[SEG-21-S001]", "text": "Iven sagged against the observatory rail. Sera caught him, but his breath had stopped and no pulse answered beneath her fingers." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Third watch",
+    "current_authoritative_state.current_location": "019f7000-0001-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0001-7000-8000-000000000001"],
+    "current_authoritative_state.immediate_situation_summary": "Iven and Sera are inspecting the damaged observatory rail.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Iven stands beside the western rail."],
+    "current_authoritative_state.possessions": [],
+    "current_authoritative_state.visible_conditions": ["Iven is pale but standing."],
+    "current_authoritative_state.environmental_conditions": ["Cold wind crosses the platform."],
+    "current_authoritative_state.entity_statuses": ["019f7000-0001-7000-8000-000000000002"],
+    "current_authoritative_state.line_of_sight_and_visibility": "Sera can see Iven clearly.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["A ladder descends to the chart room."],
+    "current_authoritative_state.available_time": "Minutes before the night guard arrives.",
+    "current_authoritative_state.consent_or_force_conditions": "No restraint is active.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "A failing support threw Iven against the rail.",
+    "immediate_handoff.last_visible_moment": "Sera reached for Iven as he lost balance.",
+    "immediate_handoff.begin_after": "Begin after Sera catches him."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      {
+        "id": "019f7000-0001-7000-8000-000000000001",
+        "type": "ENTITY",
+        "displayLabel": "Iven Ro",
+        "archived": false,
+        "payload": { "id": "019f7000-0001-7000-8000-000000000001", "display_name": "Iven Ro", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "An elderly astronomer repairing the observatory." }
+      },
+      {
+        "id": "019f7000-0001-7000-8000-000000000002",
+        "type": "ENTITY STATUS",
+        "displayLabel": "Iven alive at the observatory",
+        "archived": false,
+        "payload": { "entity_id": "019f7000-0001-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0001-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Inspecting the western rail." }
+      }
+    ],
+    "wholeProject": [
+      {
+        "id": "019f7000-0001-7000-8000-000000000001",
+        "type": "ENTITY",
+        "displayLabel": "Iven Ro",
+        "archived": false,
+        "payload": { "id": "019f7000-0001-7000-8000-000000000001", "display_name": "Iven Ro", "entity_kind": "person", "roles_in_story": ["primary_actor"], "short_description": "An elderly astronomer repairing the observatory." }
+      },
+      {
+        "id": "019f7000-0001-7000-8000-000000000002",
+        "type": "ENTITY STATUS",
+        "displayLabel": "Iven alive at the observatory",
+        "archived": false,
+        "payload": { "entity_id": "019f7000-0001-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0001-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Inspecting the western rail." }
+      },
+      {
+        "id": "019f7000-0001-7000-8000-000000000003",
+        "type": "LOCATION",
+        "displayLabel": "Hill observatory",
+        "archived": false,
+        "payload": { "id": "019f7000-0001-7000-8000-000000000003", "status": "active", "label": "Hill observatory", "description": "A stone observatory above the harbor.", "layout_relevant_now": "A narrow platform surrounds the dome.", "access_routes": ["chart-room ladder"], "visibility_and_sound": "The platform is exposed and quiet.", "hazards_or_shelters": ["damaged western rail"], "social_rules": [] }
+      }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-death",
+    "acceptedSegmentSequence": 21,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0001-7000-8000-000000000001", "019f7000-0001-7000-8000-000000000002"],
+    "wholeProjectRecordIds": ["019f7000-0001-7000-8000-000000000001", "019f7000-0001-7000-8000-000000000002", "019f7000-0001-7000-8000-000000000003"],
+    "evidenceKeys": ["[SEG-21-S001]"],
+    "contrastKeys": ["[ENTITY-STATUS-1]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "death-1", "summary": "Iven is explicitly dead rather than alive and active.", "evidenceKeys": ["[SEG-21-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: stopped breath and absent pulse are explicit." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Iven's life and bodily state changed." },
+      { "dimension": "time/clocks/ongoing processes", "status": "checked - no relevant change", "reason": "No time or clock threshold changed." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "No separate knowledge or secret change is established." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "checked - no relevant change", "reason": "No commitment change is stated." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "Sera's reaction does not establish a durable relationship change." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "The next segment begins with Sera holding Iven after his death." }
+    ],
+    "prohibitedInventions": ["Do not infer who caused the failing support.", "Do not state that Sera has medically certified the death."]
+  }
+}

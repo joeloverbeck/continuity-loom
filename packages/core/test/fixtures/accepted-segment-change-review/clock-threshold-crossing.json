@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "caseId": "clock-threshold-crossing",
+  "title": "Explicit bell crosses a clock threshold",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-clock",
+    "sequence": 25,
+    "text": "The sixth bell rang before Mira reached the archive stair. The amnesty window was over; any ledger surrendered now would be treated as evidence.",
+    "evidenceSpans": [
+      { "key": "[SEG-25-S001]", "text": "The sixth bell rang before Mira reached the archive stair. The amnesty window was over; any ledger surrendered now would be treated as evidence." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Moments before the sixth bell",
+    "current_authoritative_state.current_location": "019f7000-0005-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0005-7000-8000-000000000001"],
+    "current_authoritative_state.immediate_situation_summary": "Mira is hurrying toward the archive before amnesty expires.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Mira is one landing below the archive stair."],
+    "current_authoritative_state.possessions": ["Mira carries a disputed ledger."],
+    "current_authoritative_state.visible_conditions": [],
+    "current_authoritative_state.environmental_conditions": ["The bell tower is audible across the square."],
+    "current_authoritative_state.entity_statuses": [],
+    "current_authoritative_state.line_of_sight_and_visibility": "Mira can see the archive door.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["The stair leads directly to the archive."],
+    "current_authoritative_state.available_time": "Until the sixth bell.",
+    "current_authoritative_state.consent_or_force_conditions": "Mira is moving freely.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "The council offered amnesty for ledgers surrendered before the sixth bell.",
+    "immediate_handoff.last_visible_moment": "Mira reached the lower stair as the bell rope moved.",
+    "immediate_handoff.begin_after": "Begin as the sixth bell sounds."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0005-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Mira Doss", "archived": false, "payload": { "id": "019f7000-0005-7000-8000-000000000001", "display_name": "Mira Doss", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A clerk trying to surrender a disputed ledger under amnesty." } },
+      { "id": "019f7000-0005-7000-8000-000000000002", "type": "CLOCK", "displayLabel": "Ledger amnesty deadline", "archived": false, "payload": { "id": "019f7000-0005-7000-8000-000000000002", "status": "active", "title": "Ledger amnesty deadline", "clock_kind": "deadline", "salience": "critical", "visibility": "public", "current_pressure": "Mira must surrender the ledger before the sixth bell.", "tick_trigger": "The sixth bell rings.", "next_threshold": "Amnesty ends and later surrender becomes evidence.", "possible_effects": ["The ledger can be used in prosecution."], "tick_history": [] } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0005-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Mira Doss", "archived": false, "payload": { "id": "019f7000-0005-7000-8000-000000000001", "display_name": "Mira Doss", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A clerk trying to surrender a disputed ledger under amnesty." } },
+      { "id": "019f7000-0005-7000-8000-000000000002", "type": "CLOCK", "displayLabel": "Ledger amnesty deadline", "archived": false, "payload": { "id": "019f7000-0005-7000-8000-000000000002", "status": "active", "title": "Ledger amnesty deadline", "clock_kind": "deadline", "salience": "critical", "visibility": "public", "current_pressure": "Mira must surrender the ledger before the sixth bell.", "tick_trigger": "The sixth bell rings.", "next_threshold": "Amnesty ends and later surrender becomes evidence.", "possible_effects": ["The ledger can be used in prosecution."], "tick_history": [] } },
+      { "id": "019f7000-0005-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "Council archive stair", "archived": false, "payload": { "id": "019f7000-0005-7000-8000-000000000003", "status": "active", "label": "Council archive stair", "description": "A public stair leading into the council archive.", "layout_relevant_now": "The final landing ends at the archive door.", "access_routes": ["square", "archive door"], "visibility_and_sound": "The tower bell is audible from every landing.", "hazards_or_shelters": [], "social_rules": ["Ledgers are surrendered at the archive desk."] } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-clock",
+    "acceptedSegmentSequence": 25,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0005-7000-8000-000000000001", "019f7000-0005-7000-8000-000000000002"],
+    "wholeProjectRecordIds": ["019f7000-0005-7000-8000-000000000001", "019f7000-0005-7000-8000-000000000002", "019f7000-0005-7000-8000-000000000003"],
+    "evidenceKeys": ["[SEG-25-S001]"],
+    "contrastKeys": ["[CLOCK-1]", "[BRIEF:current_authoritative_state.available_time]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "clock-threshold-crossing-1", "summary": "The sixth-bell amnesty threshold has passed.", "evidenceKeys": ["[SEG-25-S001]"], "contrastKeys": ["[CLOCK-1]", "[BRIEF:current_authoritative_state.available_time]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["CLOCK", "CONSEQUENCE"], "uncertaintyOrRivalReading": "The threshold is explicit; later legal handling remains a separate authored consequence." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "checked - no relevant change", "reason": "Mira remains on the archive stair." },
+      { "dimension": "time/clocks/ongoing processes", "status": "changes found", "reason": "The sixth-bell threshold crossed and amnesty ended." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "The public rule was already known." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "changes found", "reason": "The deadline pressure transformed into exposure risk." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "No emotional or relationship change is established." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "Mira is outside the archive after the amnesty has ended." }
+    ],
+    "prohibitedInventions": ["Do not claim Mira is arrested.", "Do not claim the ledger has already been surrendered."]
+  }
+}

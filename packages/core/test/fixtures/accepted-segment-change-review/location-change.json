@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "caseId": "location-change",
+  "title": "Explicit movement changes current location",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-location",
+    "sequence": 23,
+    "text": "Nara crossed the iron footbridge and shut the mill door behind her. She was inside the dye mill now, out of sight of the quay.",
+    "evidenceSpans": [
+      { "key": "[SEG-23-S001]", "text": "Nara crossed the iron footbridge and shut the mill door behind her. She was inside the dye mill now, out of sight of the quay." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Rainy morning",
+    "current_authoritative_state.current_location": "019f7000-0003-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0003-7000-8000-000000000001"],
+    "current_authoritative_state.immediate_situation_summary": "Nara is standing on the east quay before the footbridge.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Nara stands at the quay end of the footbridge."],
+    "current_authoritative_state.possessions": [],
+    "current_authoritative_state.visible_conditions": ["The mill door is open across the bridge."],
+    "current_authoritative_state.environmental_conditions": ["Rain obscures the far bank."],
+    "current_authoritative_state.entity_statuses": ["019f7000-0003-7000-8000-000000000002"],
+    "current_authoritative_state.line_of_sight_and_visibility": "The quay can see the bridge but not inside the mill.",
+    "current_authoritative_state.pov_cannot_perceive_now": ["The mill interior."],
+    "current_authoritative_state.routes_and_exits": ["The footbridge leads to the dye mill."],
+    "current_authoritative_state.available_time": "Before the harbor bell.",
+    "current_authoritative_state.consent_or_force_conditions": "Nara is moving freely.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "Nara decided to leave the quay before she was recognized.",
+    "immediate_handoff.last_visible_moment": "Nara stepped onto the iron footbridge.",
+    "immediate_handoff.begin_after": "Begin with Nara crossing the bridge."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0003-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Nara Pell", "archived": false, "payload": { "id": "019f7000-0003-7000-8000-000000000001", "display_name": "Nara Pell", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A dyer trying to leave the quay unnoticed." } },
+      { "id": "019f7000-0003-7000-8000-000000000002", "type": "ENTITY STATUS", "displayLabel": "Nara on the east quay", "archived": false, "payload": { "entity_id": "019f7000-0003-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0003-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Leaving the east quay." } },
+      { "id": "019f7000-0003-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "East quay", "archived": false, "payload": { "id": "019f7000-0003-7000-8000-000000000003", "status": "active", "label": "East quay", "description": "A stone quay below the dye district.", "layout_relevant_now": "An iron footbridge connects it to the mill.", "access_routes": ["iron footbridge"], "visibility_and_sound": "Open to harbor sightlines.", "hazards_or_shelters": [], "social_rules": [] } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0003-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Nara Pell", "archived": false, "payload": { "id": "019f7000-0003-7000-8000-000000000001", "display_name": "Nara Pell", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A dyer trying to leave the quay unnoticed." } },
+      { "id": "019f7000-0003-7000-8000-000000000002", "type": "ENTITY STATUS", "displayLabel": "Nara on the east quay", "archived": false, "payload": { "entity_id": "019f7000-0003-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0003-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Leaving the east quay." } },
+      { "id": "019f7000-0003-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "East quay", "archived": false, "payload": { "id": "019f7000-0003-7000-8000-000000000003", "status": "active", "label": "East quay", "description": "A stone quay below the dye district.", "layout_relevant_now": "An iron footbridge connects it to the mill.", "access_routes": ["iron footbridge"], "visibility_and_sound": "Open to harbor sightlines.", "hazards_or_shelters": [], "social_rules": [] } },
+      { "id": "019f7000-0003-7000-8000-000000000004", "type": "LOCATION", "displayLabel": "Dye mill", "archived": false, "payload": { "id": "019f7000-0003-7000-8000-000000000004", "status": "active", "label": "Dye mill", "description": "A brick mill above the tidal channel.", "layout_relevant_now": "The bridge door opens into the vat room.", "access_routes": ["iron footbridge", "north lane"], "visibility_and_sound": "The closed door blocks quay sightlines.", "hazards_or_shelters": ["open dye vats"], "social_rules": [] } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-location",
+    "acceptedSegmentSequence": 23,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0003-7000-8000-000000000001", "019f7000-0003-7000-8000-000000000002", "019f7000-0003-7000-8000-000000000003"],
+    "wholeProjectRecordIds": ["019f7000-0003-7000-8000-000000000001", "019f7000-0003-7000-8000-000000000002", "019f7000-0003-7000-8000-000000000003", "019f7000-0003-7000-8000-000000000004"],
+    "evidenceKeys": ["[SEG-23-S001]"],
+    "contrastKeys": ["[BRIEF:current_authoritative_state.current_location]", "[ENTITY-STATUS-1]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "location-change-1", "summary": "Nara moved from the east quay into the dye mill.", "evidenceKeys": ["[SEG-23-S001]"], "contrastKeys": ["[BRIEF:current_authoritative_state.current_location]", "[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "next-brief-only", "targetHints": ["CURRENT AUTHORITATIVE STATE", "ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: the segment explicitly places her inside and out of quay sight." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Nara moved into a different location and closed the door." },
+      { "dimension": "time/clocks/ongoing processes", "status": "checked - no relevant change", "reason": "No clock threshold changed." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "No knowledge or secret changed." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "checked - no relevant change", "reason": "The move does not establish a new commitment." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "No durable emotional or relationship change is stated." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "The next segment begins inside the mill with quay sightlines blocked." }
+    ],
+    "prohibitedInventions": ["Do not claim anyone followed Nara.", "Do not infer why she shut the door beyond avoiding recognition."]
+  }
+}

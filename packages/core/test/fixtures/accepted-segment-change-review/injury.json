@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "caseId": "injury",
+  "title": "Explicit injury changes bodily condition",
+  "syntheticData": true,
+  "syntheticDataDisclosure": "Synthetic fixture only; invented prose and records, with no real user or SECRET payload.",
+  "acceptedSegment": {
+    "selection": "latest",
+    "id": "synthetic-segment-injury",
+    "sequence": 22,
+    "text": "The snapped cable lashed Toma's left palm. Blood welled across the cut, and he could no longer close that hand around the winch handle.",
+    "evidenceSpans": [
+      { "key": "[SEG-22-S001]", "text": "The snapped cable lashed Toma's left palm. Blood welled across the cut, and he could no longer close that hand around the winch handle." }
+    ]
+  },
+  "generationBriefProjection": {
+    "current_authoritative_state.current_time": "Late afternoon",
+    "current_authoritative_state.current_location": "019f7000-0002-7000-8000-000000000003",
+    "current_authoritative_state.onstage_entities": ["019f7000-0002-7000-8000-000000000001"],
+    "current_authoritative_state.immediate_situation_summary": "Toma is operating the ferry winch.",
+    "current_authoritative_state.offstage_pressuring_entities": [],
+    "current_authoritative_state.positions": ["Toma stands at the winch."],
+    "current_authoritative_state.possessions": [],
+    "current_authoritative_state.visible_conditions": ["Toma's hands are uninjured."],
+    "current_authoritative_state.environmental_conditions": ["The river current is strong."],
+    "current_authoritative_state.entity_statuses": ["019f7000-0002-7000-8000-000000000002"],
+    "current_authoritative_state.line_of_sight_and_visibility": "The winch and cable are visible.",
+    "current_authoritative_state.pov_cannot_perceive_now": [],
+    "current_authoritative_state.routes_and_exits": ["The deck leads to the cabin."],
+    "current_authoritative_state.available_time": "The ferry is mid-crossing.",
+    "current_authoritative_state.consent_or_force_conditions": "No restraint is active.",
+    "current_authoritative_state.current_locks": [],
+    "immediate_handoff.recent_causal_context": "The cable was fraying under load.",
+    "immediate_handoff.last_visible_moment": "Toma pulled the winch handle toward him.",
+    "immediate_handoff.begin_after": "Begin as the cable parts."
+  },
+  "recordInputs": {
+    "activeWorkingSet": [
+      { "id": "019f7000-0002-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Toma Vey", "archived": false, "payload": { "id": "019f7000-0002-7000-8000-000000000001", "display_name": "Toma Vey", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A ferry operator responsible for the river crossing." } },
+      { "id": "019f7000-0002-7000-8000-000000000002", "type": "ENTITY STATUS", "displayLabel": "Toma working without injury", "archived": false, "payload": { "entity_id": "019f7000-0002-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0002-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Operating the winch with both hands." } }
+    ],
+    "wholeProject": [
+      { "id": "019f7000-0002-7000-8000-000000000001", "type": "ENTITY", "displayLabel": "Toma Vey", "archived": false, "payload": { "id": "019f7000-0002-7000-8000-000000000001", "display_name": "Toma Vey", "entity_kind": "person", "roles_in_story": ["viewpoint", "primary_actor"], "short_description": "A ferry operator responsible for the river crossing." } },
+      { "id": "019f7000-0002-7000-8000-000000000002", "type": "ENTITY STATUS", "displayLabel": "Toma working without injury", "archived": false, "payload": { "entity_id": "019f7000-0002-7000-8000-000000000001", "life": "alive", "agency": "free", "location": "019f7000-0002-7000-8000-000000000003", "visibility_to_pov": "visible", "current_activity": "Operating the winch with both hands." } },
+      { "id": "019f7000-0002-7000-8000-000000000003", "type": "LOCATION", "displayLabel": "River ferry", "archived": false, "payload": { "id": "019f7000-0002-7000-8000-000000000003", "status": "active", "label": "River ferry", "description": "A cable ferry crossing a broad river.", "layout_relevant_now": "The winch stands on the open deck.", "access_routes": ["cabin door"], "visibility_and_sound": "The deck is visible over the cable's groan.", "hazards_or_shelters": ["loaded cable"], "social_rules": [] } }
+    ]
+  },
+  "expectedSourceAccounting": {
+    "acceptedSegmentId": "synthetic-segment-injury",
+    "acceptedSegmentSequence": 22,
+    "generationBriefFieldCount": 19,
+    "activeWorkingSetRecordIds": ["019f7000-0002-7000-8000-000000000001", "019f7000-0002-7000-8000-000000000002"],
+    "wholeProjectRecordIds": ["019f7000-0002-7000-8000-000000000001", "019f7000-0002-7000-8000-000000000002", "019f7000-0002-7000-8000-000000000003"],
+    "evidenceKeys": ["[SEG-22-S001]"],
+    "contrastKeys": ["[ENTITY-STATUS-1]"],
+    "secretRecordIds": []
+  },
+  "adjudication": {
+    "findings": [
+      { "findingId": "injury-1", "summary": "Toma has a bleeding left-palm injury that prevents him from gripping with that hand.", "evidenceKeys": ["[SEG-22-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS", "FACT"], "uncertaintyOrRivalReading": "The duration is uncertain, but the present injury and impairment are explicit." }
+    ],
+    "coverage": [
+      { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Toma's hand is cut and functionally impaired." },
+      { "dimension": "time/clocks/ongoing processes", "status": "checked - no relevant change", "reason": "No separate clock threshold is crossed." },
+      { "dimension": "facts/knowledge/beliefs/secrets", "status": "checked - no relevant change", "reason": "No knowledge or secret changes." },
+      { "dimension": "intentions/plans/commitments/promises/open pressures", "status": "checked - no relevant change", "reason": "No commitment changes." },
+      { "dimension": "emotions/relationships", "status": "checked - no relevant change", "reason": "No durable emotional or relationship change is stated." },
+      { "dimension": "immediate next-segment handoff", "status": "changes found", "reason": "The ferry remains mid-crossing while Toma cannot use the injured hand normally." }
+    ],
+    "prohibitedInventions": ["Do not diagnose tendon damage.", "Do not claim the ferry has broken free of the cable."]
+  }
+}

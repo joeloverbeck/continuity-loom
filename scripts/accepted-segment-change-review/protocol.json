@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "protocolId": "accepted-segment-change-review-comparison.v1",
+  "caseOrder": [
+    "death",
+    "injury",
+    "location-change",
+    "custody-change",
+    "clock-threshold-crossing",
+    "commitment-change",
+    "secret-disclosure",
+    "no-change"
+  ],
+  "workflows": ["old", "new"],
+  "sharedEnvelope": {
+    "model": "anthropic/claude-sonnet-4",
+    "settings": {
+      "temperature": 0,
+      "maxOutputTokens": 4096,
+      "topP": 1
+    },
+    "segmentSelection": "latest",
+    "recordScope": "active_working_set"
+  },
+  "requestPolicy": {
+    "maximumProviderRequests": 16,
+    "automaticRetries": 0,
+    "fallbackRequests": 0,
+    "repairCalls": 0,
+    "unapprovedSubstitutions": "prohibited"
+  },
+  "completionBoundary": {
+    "executionAuthorized": false,
+    "providerCallsExecuted": 0,
+    "liveExecutionOwner": "GitHub issue #136",
+    "issueClosureIsGo": false
+  }
+}
