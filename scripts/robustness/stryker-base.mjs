@@ -1,6 +1,7 @@
 export function createCoreMutationConfig({ name, mutate, thresholds }) {
   return {
     mutate,
+    ignorePatterns: ["/.agents", "/reports"],
     testRunner: "vitest",
     vitest: {
       configFile: "vitest.config.ts",

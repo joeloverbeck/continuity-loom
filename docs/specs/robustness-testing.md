@@ -219,6 +219,12 @@ Property and metamorphic tests must record replay information when they fail.
 
 ## Artifacts
 
+Core mutation sandboxes exclude the root `.agents/` and `reports/` trees.
+Those repository-workflow and evidence surfaces are not inputs to `@loom/core`
+tests and may contain directory symlinks that cannot be copied as ordinary
+files. This sandbox-copy boundary does not change enrolled mutation sources,
+test selection, thresholds, or mutation-report output.
+
 Committed artifacts:
 
 - focused tests and fixtures;
