@@ -64,11 +64,10 @@ const RETENTION_HORIZONS = new Set([
 ]);
 const CREDENTIAL_PATTERN = /sk-or-[A-Za-z0-9_-]+|OPENROUTER_API_KEY|Bearer\s+[A-Za-z0-9._-]+/i;
 
-export async function loadGoldCorpus(options = {}) {
-  const fixtureDirectory = options.fixtureDirectory ?? FIXTURE_DIRECTORY;
+export async function loadGoldCorpus() {
   const corpus = await Promise.all(
     GOLD_CASE_ORDER.map(async (caseId) => {
-      const fixtureUrl = new URL(`${caseId}.json`, fixtureDirectory);
+      const fixtureUrl = new URL(`${caseId}.json`, FIXTURE_DIRECTORY);
       let parsed;
 
       try {

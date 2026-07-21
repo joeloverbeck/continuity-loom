@@ -25,11 +25,12 @@ async function run(args) {
   }
 
   if (command === "evaluate" && args.length === 3 && args[1] === "--results") {
-    const [corpus, comparisonRun] = await Promise.all([
+    const [corpus, protocol, comparisonRun] = await Promise.all([
       loadGoldCorpus(),
+      loadProtocol(),
       readJson(args[2], "captured comparison run")
     ]);
-    return evaluateComparison(corpus, comparisonRun);
+    return evaluateComparison(corpus, comparisonRun, protocol);
   }
 
   throw new Error("Unsupported command. This offline tool only supports dry-run or evaluate.");

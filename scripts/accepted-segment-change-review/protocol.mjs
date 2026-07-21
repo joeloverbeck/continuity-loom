@@ -3,6 +3,10 @@ import { readFile } from "node:fs/promises";
 import { GOLD_CASE_ORDER } from "./corpus.mjs";
 
 const PROTOCOL_URL = new URL("./protocol.json", import.meta.url);
+const WORKFLOW_CONTRACTS = Object.freeze({
+  old: "segment_reconciliation.v1",
+  new: "accepted_segment_change_review.v1"
+});
 
 export async function loadProtocol() {
   let protocol;
@@ -22,6 +26,7 @@ export function validateProtocol(protocol) {
   requireString(protocol.protocolId, "protocolId");
   requireDeepEqual(protocol.caseOrder, GOLD_CASE_ORDER, "caseOrder");
   requireDeepEqual(protocol.workflows, ["old", "new"], "workflows");
+  requireDeepEqual(protocol.workflowContracts, WORKFLOW_CONTRACTS, "workflowContracts");
 
   const envelope = requireObject(protocol.sharedEnvelope, "sharedEnvelope");
   requireString(envelope.model, "sharedEnvelope.model");
@@ -76,6 +81,7 @@ export function buildDryRunPlan(corpus, protocol) {
     protocol.workflows.map((workflow) => ({
       caseId: fixture.caseId,
       workflow,
+      contract: protocol.workflowContracts[workflow],
       envelope: globalThis.structuredClone(protocol.sharedEnvelope),
       expectedSourceAccounting: globalThis.structuredClone(fixture.expectedSourceAccounting)
     }))

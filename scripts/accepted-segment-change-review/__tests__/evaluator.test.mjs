@@ -3,16 +3,17 @@ import test from "node:test";
 
 import { loadGoldCorpus } from "../corpus.mjs";
 import { evaluateComparison } from "../evaluator.mjs";
+import { loadProtocol } from "../protocol.mjs";
 
 test("scores every declared metric for a complete adjudicated result without provider access", async () => {
-  const corpus = await loadGoldCorpus();
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const death = corpus[0];
   const comparison = comparisonRun([
     successfulResult(death, "old", 1, { reviewTimeMs: 40_000, promptCharacters: 8_000, latencyMs: 1_200, costUsd: 0.02 }),
     successfulResult(death, "new", 2, { reviewTimeMs: 20_000, promptCharacters: 6_000, latencyMs: 900, costUsd: 0.04 })
   ]);
 
-  const evaluation = evaluateComparison(corpus, comparison);
+  const evaluation = evaluateComparison(corpus, comparison, protocol);
 
   assert.equal(evaluation.requests.length, 2);
   assert.deepEqual(evaluation.requests[0].metrics, {
@@ -69,19 +70,38 @@ test("scores every declared metric for a complete adjudicated result without pro
 });
 
 test("passes the overall deterministic gate only for the exact 16-entry protocol matrix", async () => {
-  const corpus = await loadGoldCorpus();
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const requests = corpus.flatMap((fixture) => ["old", "new"].map((workflow) => ({ fixture, workflow })))
     .map(({ fixture, workflow }, index) => successfulResult(fixture, workflow, index + 1));
 
-  const evaluation = evaluateComparison(corpus, comparisonRun(requests));
+  const evaluation = evaluateComparison(corpus, comparisonRun(requests), protocol);
 
   assert.equal(evaluation.requests.length, 16);
   assert.equal(evaluation.aggregate.protocolPlanComplete, true);
   assert.equal(evaluation.deterministicFloorsPassed, true);
 });
 
+test("rejects protocol identity, contract, model, settings, segment-selection, or scope drift", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const driftCases = [
+    ["protocolId", (run) => { run.protocolId = "drifted-protocol"; }],
+    ["contract", (run) => { run.requests[0].provenance.contract = "drifted-contract"; }],
+    ["model", (run) => { run.requests[0].provenance.model = "drifted-model"; }],
+    ["settings", (run) => { run.requests[0].provenance.settings.temperature = 0.5; }],
+    ["segmentSelection", (run) => { run.requests[0].provenance.segmentSelection = "older"; }],
+    ["recordScope", (run) => { run.requests[0].provenance.recordScope = "whole_project"; }]
+  ];
+
+  for (const [label, mutate] of driftCases) {
+    const run = comparisonRun([successfulResult(death, "old", 1)]);
+    mutate(run);
+    assert.throws(() => evaluateComparison(corpus, run, protocol), new RegExp(label));
+  }
+});
+
 test("fails seeded and invented-established floors without weakening other deterministic accounting", async () => {
-  const corpus = await loadGoldCorpus();
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const death = corpus[0];
   const result = successfulResult(death, "new", 1);
   result.findings = [
@@ -96,7 +116,7 @@ test("fails seeded and invented-established floors without weakening other deter
     }
   ];
 
-  const [scored] = evaluateComparison(corpus, comparisonRun([result])).requests;
+  const [scored] = evaluateComparison(corpus, comparisonRun([result]), protocol).requests;
 
   assert.equal(scored.metrics.recall, 0);
   assert.equal(scored.metrics.precision, 0);
@@ -108,7 +128,7 @@ test("fails seeded and invented-established floors without weakening other deter
 });
 
 test("distinguishes a valid empty no-change result from malformed output", async () => {
-  const corpus = await loadGoldCorpus();
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const noChange = corpus.at(-1);
   const death = corpus[0];
   const empty = successfulResult(noChange, "new", 1);
@@ -118,7 +138,7 @@ test("distinguishes a valid empty no-change result from malformed output", async
   malformed.findings = [];
   malformed.coverage = [];
 
-  const evaluation = evaluateComparison(corpus, comparisonRun([empty, malformed]));
+  const evaluation = evaluateComparison(corpus, comparisonRun([empty, malformed]), protocol);
 
   assert.equal(evaluation.requests[0].metrics.empty, true);
   assert.equal(evaluation.requests[0].metrics.malformed, false);
@@ -133,7 +153,7 @@ test("distinguishes a valid empty no-change result from malformed output", async
 });
 
 test("fails complete-source accounting when a declared record is omitted", async () => {
-  const corpus = await loadGoldCorpus();
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const death = corpus[0];
   const result = successfulResult(death, "old", 1);
   result.sourceAccounting = {
@@ -141,10 +161,40 @@ test("fails complete-source accounting when a declared record is omitted", async
     wholeProjectRecordIds: result.sourceAccounting.wholeProjectRecordIds.slice(0, -1)
   };
 
-  const [scored] = evaluateComparison(corpus, comparisonRun([result])).requests;
+  const [scored] = evaluateComparison(corpus, comparisonRun([result]), protocol).requests;
 
   assert.equal(scored.floors.completeDeclaredSourceInclusion, false);
   assert.equal(scored.floors.passed, false);
+});
+
+test("does not trust a seeded id or invented flag when citations leave the gold source boundary", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const result = successfulResult(death, "new", 1);
+  result.findings[0].evidenceKeys = ["[SEG-FABRICATED]"];
+  result.findings[0].contrastKeys = ["[ENTITY-STATUS-FABRICATED]"];
+  result.findings[0].invented = false;
+
+  const [scored] = evaluateComparison(corpus, comparisonRun([result]), protocol).requests;
+
+  assert.equal(scored.metrics.recall, 0);
+  assert.equal(scored.metrics.precision, 0);
+  assert.deepEqual(scored.metrics.invention, { count: 1, rate: 1 });
+  assert.equal(scored.floors.zeroInventedEstablishedItems, false);
+  assert.equal(scored.floors.allSeededChangesAccounted, false);
+  assert.equal(scored.floors.passed, false);
+});
+
+test("fails closed on duplicate finding ids before ratios can be inflated", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const result = successfulResult(death, "old", 1);
+  result.findings.push(globalThis.structuredClone(result.findings[0]));
+
+  assert.throws(
+    () => evaluateComparison(corpus, comparisonRun([result]), protocol),
+    /finding ids must be unique/
+  );
 });
 
 function comparisonRun(requests) {
@@ -171,8 +221,11 @@ function successfulResult(fixture, workflow, requestOrdinal, overrides = {}) {
     caseId: fixture.caseId,
     workflow,
     provenance: {
+      contract: workflow === "old" ? "segment_reconciliation.v1" : "accepted_segment_change_review.v1",
       model: "anthropic/claude-sonnet-4",
       settings: { temperature: 0, maxOutputTokens: 4_096, topP: 1 },
+      segmentSelection: "latest",
+      recordScope: "active_working_set",
       startedAt: "2026-07-21T10:00:00.000Z",
       completedAt: "2026-07-21T10:00:01.000Z",
       sourceFingerprint: "a".repeat(64),

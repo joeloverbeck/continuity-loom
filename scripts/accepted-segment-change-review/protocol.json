@@ -12,6 +12,10 @@
     "no-change"
   ],
   "workflows": ["old", "new"],
+  "workflowContracts": {
+    "old": "segment_reconciliation.v1",
+    "new": "accepted_segment_change_review.v1"
+  },
   "sharedEnvelope": {
     "model": "anthropic/claude-sonnet-4",
     "settings": {

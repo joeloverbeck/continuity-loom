@@ -21,7 +21,7 @@ The command exits nonzero if the corpus or protocol is incomplete. A successful 
 7. secret disclosure
 8. genuine no-change
 
-Every pair uses the same pinned model and settings envelope from `protocol.json`. The protocol permits at most 16 provider requests and requires no automatic retries, fallback requests, repair calls, or unapproved substitutions. The CLI deliberately has no execute command and cannot contact a provider.
+Every pair uses the same pinned model and settings envelope from `protocol.json`. The old and new roles also carry stable contract identities, `segment_reconciliation.v1` and `accepted_segment_change_review.v1`; the role labels never substitute for those identities in captured provenance. The protocol permits at most 16 provider requests and requires no automatic retries, fallback requests, repair calls, or unapproved substitutions. The CLI deliberately has no execute command and cannot contact a provider.
 
 ## Later comparison run owned by issue #136
 
@@ -31,7 +31,7 @@ Only a separately authorized run under GitHub issue #136 may execute the plan. I
 2. Execute each emitted entry exactly once, preserving request ordinal, case, workflow, model, settings, latest-segment selection, and record scope.
 3. Stop rather than retry, fall back, repair, or substitute when a request fails or returns malformed output.
 4. Capture each request as a JSON object with:
-   - model and settings, start/completion timestamps, source fingerprint, and prompt SHA-256;
+   - workflow contract, model and settings, latest-segment selection, record scope, start/completion timestamps, source fingerprint, and prompt SHA-256;
    - completed, malformed, or failed status plus a structured failure when applicable;
    - complete source accounting, findings, all six coverage rows, request-policy counters, and zero-write counters;
    - review time, prompt characters and token estimate, latency, input/output tokens, and actual USD cost.
@@ -57,7 +57,7 @@ node scripts/accepted-segment-change-review/cli.mjs evaluate --results path/to/c
 
 The command validates every input, calculates the per-request metrics and deterministic floors, and prints the durable format defined by `result-format.schema.json`. It also calculates whether the exact ordered 16-entry protocol matrix is complete, aggregate old/new request counts, actual request count and cost, empty and malformed frequencies, and metric averages. A partial capture remains scoreable for diagnosis but cannot pass the overall deterministic gate.
 
-Any unknown case, malformed request, duplicate request ID, request count above 16, missing provenance, incomplete measurements, or invalid receipt aborts evaluation. A completed request that omits declared source accounting or a coverage dimension remains evaluable but fails its deterministic floor. The result must be retained exactly as emitted so failures are visible rather than repaired away.
+Any unknown case, malformed request, duplicate request or finding ID, request count above 16, drift from the pinned protocol ID, workflow contract, model, settings, segment selection, or record scope, missing provenance, incomplete measurements, or invalid receipt aborts evaluation. A completed request that omits declared source accounting or a coverage dimension remains evaluable but fails its deterministic floor. Seeded IDs count only when their evidence keys, contrast keys, and epistemic status match the gold adjudication; citation drift cannot be hidden by setting `invented` false. The result must be retained exactly as emitted so failures are visible rather than repaired away.
 
 ## Steward decision boundary
 

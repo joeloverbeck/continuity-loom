@@ -1,4 +1,5 @@
 import { CHANGE_REVIEW_COVERAGE_DIMENSIONS, GOLD_CASE_ORDER } from "./corpus.mjs";
+import { validateProtocol } from "./protocol.mjs";
 
 const RESULT_STATUSES = new Set(["completed", "malformed", "failed"]);
 const FINDING_DISPOSITIONS = new Set(["found", "uncertain"]);
@@ -13,8 +14,8 @@ const RETENTION_HORIZONS = new Set([
   "author decision required"
 ]);
 
-export function evaluateComparison(corpus, comparisonRun) {
-  validateComparisonRun(comparisonRun);
+export function evaluateComparison(corpus, comparisonRun, protocol) {
+  validateComparisonRun(comparisonRun, protocol);
   const fixturesById = new Map(corpus.map((fixture) => [fixture.caseId, fixture]));
   const perRequest = comparisonRun.requests.map((result) => {
     const fixture = fixturesById.get(result.caseId);
@@ -38,12 +39,16 @@ export function evaluateComparison(corpus, comparisonRun) {
   };
 }
 
-export function validateComparisonRun(comparisonRun) {
+export function validateComparisonRun(comparisonRun, protocol) {
+  validateProtocol(protocol);
   requireObject(comparisonRun, "comparison run");
   if (comparisonRun.schemaVersion !== 1) {
     throw new Error("Comparison run schemaVersion must be 1.");
   }
   requireString(comparisonRun.protocolId, "comparison protocol id");
+  if (comparisonRun.protocolId !== protocol.protocolId) {
+    throw new Error("Comparison protocolId does not match the pinned protocol.");
+  }
   if (comparisonRun.issueClosureIsGo !== false) {
     throw new Error("issueClosureIsGo must remain false; closure is not a steward decision.");
   }
@@ -54,7 +59,7 @@ export function validateComparisonRun(comparisonRun) {
   }
   const requestIds = [];
   for (const result of requests) {
-    validateRequestResult(result);
+    validateRequestResult(result, protocol);
     requestIds.push(result.requestId);
   }
   requireUnique(requestIds, "comparison request ids");
@@ -62,7 +67,7 @@ export function validateComparisonRun(comparisonRun) {
   return comparisonRun;
 }
 
-function validateRequestResult(result) {
+function validateRequestResult(result, protocol) {
   requireObject(result, "request result");
   if (result.schemaVersion !== 1) {
     throw new Error("Request result schemaVersion must be 1.");
@@ -77,7 +82,7 @@ function validateRequestResult(result) {
     throw new Error("Request status must be completed, malformed, or failed.");
   }
 
-  validateProvenance(result.provenance);
+  validateProvenance(result.provenance, result.workflow, protocol);
   requireObject(result.sourceAccounting, `${result.requestId} source accounting`);
   requireArray(result.findings, `${result.requestId} findings`);
   requireArray(result.coverage, `${result.requestId} coverage`);
@@ -90,6 +95,10 @@ function validateRequestResult(result) {
       throw new Error(`${result.requestId}: a completed result must have failure null.`);
     }
     result.findings.forEach((finding) => validateFinding(finding, result.requestId));
+    requireUnique(
+      result.findings.map((finding) => finding.findingId),
+      `${result.requestId} finding ids`
+    );
     result.coverage.forEach((row) => validateCoverageRow(row, result.requestId));
   } else {
     requireObject(result.failure, `${result.requestId} failure`);
@@ -98,13 +107,31 @@ function validateRequestResult(result) {
   }
 }
 
-function validateProvenance(provenance) {
+function validateProvenance(provenance, workflow, protocol) {
   requireObject(provenance, "request provenance");
+  requireString(provenance.contract, "provenance contract");
+  if (provenance.contract !== protocol.workflowContracts[workflow]) {
+    throw new Error("Provenance contract does not match the pinned workflow contract.");
+  }
   requireString(provenance.model, "provenance model");
+  if (provenance.model !== protocol.sharedEnvelope.model) {
+    throw new Error("Provenance model does not match the pinned protocol model.");
+  }
   requireObject(provenance.settings, "provenance settings");
   requireFiniteNonnegative(provenance.settings.temperature, "provenance temperature");
   requireFiniteNonnegative(provenance.settings.maxOutputTokens, "provenance maxOutputTokens");
   requireFiniteNonnegative(provenance.settings.topP, "provenance topP");
+  if (!deepEqual(provenance.settings, protocol.sharedEnvelope.settings)) {
+    throw new Error("Provenance settings do not match the pinned protocol settings.");
+  }
+  requireString(provenance.segmentSelection, "provenance segmentSelection");
+  if (provenance.segmentSelection !== protocol.sharedEnvelope.segmentSelection) {
+    throw new Error("Provenance segmentSelection does not match the pinned protocol.");
+  }
+  requireString(provenance.recordScope, "provenance recordScope");
+  if (provenance.recordScope !== protocol.sharedEnvelope.recordScope) {
+    throw new Error("Provenance recordScope does not match the pinned protocol.");
+  }
   requireString(provenance.startedAt, "provenance startedAt");
   requireString(provenance.completedAt, "provenance completedAt");
   requireSha256(provenance.sourceFingerprint, "provenance sourceFingerprint");
@@ -196,19 +223,26 @@ function scoreRequest(fixture, result, requestCount) {
     fixture.adjudication.findings.map((finding) => [finding.findingId, finding])
   );
   const reportedFindings = completed ? result.findings : [];
+  const correctFindings = reportedFindings.filter((finding) => {
+    const expected = expectedFindings.get(finding.findingId);
+    return expected && findingMatchesSeed(finding, expected);
+  });
   const accountedIds = new Set(
-    reportedFindings
-      .filter(
-        (finding) => expectedFindings.has(finding.findingId) && FINDING_DISPOSITIONS.has(finding.disposition)
-      )
-      .map((finding) => finding.findingId)
+    correctFindings.map((finding) => finding.findingId)
   );
-  const inventedFindings = reportedFindings.filter(
-    (finding) => finding.invented || !expectedFindings.has(finding.findingId)
-  );
+  const inventedFindings = reportedFindings.filter((finding) => {
+    const expected = expectedFindings.get(finding.findingId);
+    return finding.invented ||
+      !expected ||
+      !citationsResolve(finding, fixture.expectedSourceAccounting) ||
+      (finding.epistemicStatus === "established change" &&
+        expected.epistemicStatus !== "established change");
+  });
   const retentionMatches = reportedFindings.filter((finding) => {
     const expected = expectedFindings.get(finding.findingId);
-    return expected && expected.retentionHorizon === finding.retentionHorizon;
+    return expected &&
+      findingMatchesSeed(finding, expected) &&
+      expected.retentionHorizon === finding.retentionHorizon;
   }).length;
   const coverage = coverageMetrics(fixture, completed ? result.coverage : []);
   const completeDeclaredSourceInclusion = deepEqual(
@@ -259,7 +293,7 @@ function scoreRequest(fixture, result, requestCount) {
     metrics: {
       recall: ratio(accountedIds.size, expectedFindings.size, expectedFindings.size === 0 ? 1 : 0),
       precision: ratio(
-        reportedFindings.length - inventedFindings.length,
+        correctFindings.length,
         reportedFindings.length,
         expectedFindings.size === 0 ? 1 : 0
       ),
@@ -286,6 +320,18 @@ function scoreRequest(fixture, result, requestCount) {
       passed: Object.values(floors).every(Boolean)
     }
   };
+}
+
+function findingMatchesSeed(finding, expected) {
+  return FINDING_DISPOSITIONS.has(finding.disposition) &&
+    deepEqual(finding.evidenceKeys, expected.evidenceKeys) &&
+    deepEqual(finding.contrastKeys, expected.contrastKeys) &&
+    finding.epistemicStatus === expected.epistemicStatus;
+}
+
+function citationsResolve(finding, sourceAccounting) {
+  return finding.evidenceKeys.every((key) => sourceAccounting.evidenceKeys.includes(key)) &&
+    finding.contrastKeys.every((key) => sourceAccounting.contrastKeys.includes(key));
 }
 
 function coverageMetrics(fixture, coverageRows) {

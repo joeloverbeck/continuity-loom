@@ -73,6 +73,7 @@ test("production tooling imports no network, product route, browser, store, or w
 
 test("result contract records per-request evidence, aggregates, and a separate steward receipt", async () => {
   const schema = JSON.parse(await readFile(new URL("../result-format.schema.json", import.meta.url), "utf8"));
+  const protocol = JSON.parse(await readFile(new URL("../protocol.json", import.meta.url), "utf8"));
   const protocolText = await readFile(new URL("../OPERATOR-PROTOCOL.md", import.meta.url), "utf8");
 
   assert.equal(schema.type, "object");
@@ -106,6 +107,21 @@ test("result contract records per-request evidence, aggregates, and a separate s
     "metrics",
     "floors"
   ]);
+  assert.deepEqual(schema.$defs.provenance.required, [
+    "contract",
+    "model",
+    "settings",
+    "segmentSelection",
+    "recordScope",
+    "startedAt",
+    "completedAt",
+    "sourceFingerprint",
+    "promptSha256"
+  ]);
+  assert.deepEqual(protocol.workflowContracts, {
+    old: "segment_reconciliation.v1",
+    new: "accepted_segment_change_review.v1"
+  });
   assert.deepEqual(schema.$defs.stewardReceipt.properties.decision.enum, ["GO", "NO-GO", null]);
   assert.match(protocolText, /node scripts\/accepted-segment-change-review\/cli\.mjs dry-run/);
   assert.match(protocolText, /at most 16 provider requests/i);
@@ -127,8 +143,11 @@ function comparisonRun(fixture) {
         caseId: fixture.caseId,
         workflow: "old",
         provenance: {
+          contract: "segment_reconciliation.v1",
           model: "anthropic/claude-sonnet-4",
           settings: { temperature: 0, maxOutputTokens: 4_096, topP: 1 },
+          segmentSelection: "latest",
+          recordScope: "active_working_set",
           startedAt: "2026-07-21T10:00:00.000Z",
           completedAt: "2026-07-21T10:00:01.000Z",
           sourceFingerprint: "a".repeat(64),

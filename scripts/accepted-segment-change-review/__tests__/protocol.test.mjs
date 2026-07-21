@@ -25,6 +25,10 @@ test("pins one old and one new request for every case under one shared envelope"
   assert.deepEqual(new Set(plan.requests.map((request) => JSON.stringify(request.envelope))), new Set([
     JSON.stringify(protocol.sharedEnvelope)
   ]));
+  assert.deepEqual(new Set(plan.requests.map((request) => request.contract)), new Set([
+    "segment_reconciliation.v1",
+    "accepted_segment_change_review.v1"
+  ]));
   assert.ok(plan.requests.every((request) => request.execution === "not-executed-dry-run"));
   assert.ok(plan.requests.every((request) => request.requestPolicy.retryCount === 0));
   assert.ok(plan.requests.every((request) => request.requestPolicy.fallbackUsed === false));
@@ -52,4 +56,11 @@ test("rejects retry, fallback, repair, substitution, or request-ceiling drift", 
   const ceiling = globalThis.structuredClone(protocol);
   ceiling.requestPolicy.maximumProviderRequests = 17;
   assert.throws(() => validateProtocol(ceiling), /maximumProviderRequests/);
+
+  const contract = globalThis.structuredClone(protocol);
+  contract.workflowContracts = {
+    old: "drifted-contract",
+    new: "accepted_segment_change_review.v1"
+  };
+  assert.throws(() => validateProtocol(contract), /workflowContracts/);
 });

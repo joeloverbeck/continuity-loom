@@ -89,14 +89,18 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
+        "contract",
         "model",
         "settings",
+        "segmentSelection",
+        "recordScope",
         "startedAt",
         "completedAt",
         "sourceFingerprint",
         "promptSha256"
       ],
       "properties": {
+        "contract": { "type": "string", "minLength": 1 },
         "model": { "type": "string", "minLength": 1 },
         "settings": {
           "type": "object",
@@ -108,6 +112,8 @@
             "topP": { "$ref": "#/$defs/nonnegativeNumber" }
           }
         },
+        "segmentSelection": { "const": "latest" },
+        "recordScope": { "enum": ["active_working_set", "whole_project"] },
         "startedAt": { "type": "string", "format": "date-time" },
         "completedAt": { "type": "string", "format": "date-time" },
         "sourceFingerprint": { "$ref": "#/$defs/sha256" },
