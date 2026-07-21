@@ -186,13 +186,19 @@ export function AcceptedSegmentsView(): React.JSX.Element {
       return;
     }
 
-    setExpandedById((current) => {
-      if (current[target.id] === true) {
-        return current;
-      }
+    // Only an explicit hash navigation forces a segment open (revealing the linked segment). The
+    // latest segment is expanded by default (see isSegmentExpanded), so relanding on it — on initial
+    // load, a refresh, or an unknown-hash fallback — must not write to expandedById, or it would
+    // silently undo a user's collapse (and race the first collapse toggle).
+    if (hashTarget) {
+      setExpandedById((current) => {
+        if (current[hashTarget.id] === true) {
+          return current;
+        }
 
-      return { ...current, [target.id]: true };
-    });
+        return { ...current, [hashTarget.id]: true };
+      });
+    }
     scrollAndFocusSegment(target.sequence);
   }, [locationHash, state]);
 

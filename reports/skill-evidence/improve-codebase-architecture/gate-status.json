@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T11:04:56.598Z",
+  "target_content_hash": "76ae338982455c854f5b35b6a6c76491c5e0364354bb95f3ae853783fb2c769c",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": "dec_e447a49e-4288-40de-b3ce-6f2c9ba0a148",
+  "target_name": "improve-codebase-architecture",
+  "target_repo_relative_path": ".claude/skills/improve-codebase-architecture",
+  "derivation_session_id": null
+}
