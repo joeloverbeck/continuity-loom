@@ -25,7 +25,10 @@ describe("accepted prose exclusion", () => {
     const prompt = compilePrompt(buildValidationSnapshot(input())).prompt;
 
     expect(prompt).not.toContain(acceptedSegmentCanary);
-    expect(compilerSourceText()).not.toMatch(/from\s+["'][^"']*(accepted|record-repository|record-tables)[^"']*["']/i);
+    expect(proseCompilerSourceText()).not.toMatch(/from\s+["'][^"']*(accepted|record-repository|record-tables)[^"']*["']/i);
+    expect(compilerSourceText()).not.toMatch(
+      /from\s+["'][^"']*(accepted-(?:routes|store|repository)|record-repository|record-tables)[^"']*["']/i
+    );
   });
 
   it.each(promptFacingHandoffFields)("blocks prompt-facing prose contamination in %s", (field) => {
@@ -89,6 +92,17 @@ function input(): BuildValidationSnapshotInput {
 
 function compilerSourceText(): string {
   return listTypeScriptFiles(new URL("../src/compiler", import.meta.url).pathname)
+    .map((file) => readFileSync(file, "utf8"))
+    .join("\n");
+}
+
+function proseCompilerSourceText(): string {
+  return listTypeScriptFiles(new URL("../src/compiler", import.meta.url).pathname)
+    .filter((file) =>
+      !file.includes("/compiler/reconciliation/") &&
+      !file.includes("/compiler/change-review/") &&
+      !file.endsWith("/compiler/accepted-segment-echo.ts")
+    )
     .map((file) => readFileSync(file, "utf8"))
     .join("\n");
 }

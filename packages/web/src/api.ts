@@ -1,6 +1,10 @@
 import type {
+  AcceptedSegmentChangeReviewDisclosure,
+  AcceptedSegmentChangeReviewParsedOutput,
+  AcceptedSegmentChangeReviewRequest,
   AcceptedSegmentProvenance,
   CompileResult,
+  ConsumedGenerationGuidanceEntry,
   GenerationContextCoherence,
   GenerationReadiness,
   IdeationRequest,
@@ -221,6 +225,46 @@ export type SegmentReconciliationAnalyzeResponse =
       summary: string;
       raw: string;
       metadata: GenerationMetadata & SegmentReconciliationCompileMetadata;
+    }
+  | ApiFailure
+  | TransportFailure;
+
+export type AcceptedSegmentChangeReviewCompileResponse =
+  | {
+      ok: true;
+      prompt: string;
+      disclosure: AcceptedSegmentChangeReviewDisclosure;
+      citations: Record<string, string>;
+      outputSchema: unknown;
+      consumedGuidance: readonly ConsumedGenerationGuidanceEntry[];
+    }
+  | ApiFailure;
+
+export interface AcceptedSegmentChangeReviewTrustedMetadata {
+  sourceProfile: "accepted-segment-change-review";
+  acceptedSegmentId: string;
+  acceptedSegmentSequence: number;
+  recordScope: AcceptedSegmentChangeReviewRequest["recordScope"];
+  versions: AcceptedSegmentChangeReviewDisclosure["versions"];
+  fingerprint: string;
+  model: string;
+  provider: "openrouter";
+}
+
+export type AcceptedSegmentChangeReviewAnalyzeResponse =
+  | {
+      ok: true;
+      review: AcceptedSegmentChangeReviewParsedOutput;
+      advisory: { verified: false; canonical: false };
+      metadata: AcceptedSegmentChangeReviewTrustedMetadata;
+    }
+  | {
+      ok: true;
+      quarantined: true;
+      reasonCode: string;
+      summary: string;
+      recovery: "inspect-source-and-response";
+      metadata: AcceptedSegmentChangeReviewTrustedMetadata;
     }
   | ApiFailure
   | TransportFailure;
@@ -678,6 +722,24 @@ export async function segmentReconciliationAnalyze(
   request: SegmentReconciliationRequest & { expectedPromptFingerprint: string }
 ): Promise<SegmentReconciliationAnalyzeResponse> {
   return requestOpenRouterJson<SegmentReconciliationAnalyzeResponse>("/api/segment-reconciliation/analyze", request);
+}
+
+export async function acceptedSegmentChangeReviewCompile(
+  request: AcceptedSegmentChangeReviewRequest
+): Promise<AcceptedSegmentChangeReviewCompileResponse> {
+  return postJson<AcceptedSegmentChangeReviewCompileResponse>(
+    "/api/accepted-segment-change-review/compile",
+    request
+  );
+}
+
+export async function acceptedSegmentChangeReviewAnalyze(
+  request: AcceptedSegmentChangeReviewRequest & { expectedPromptFingerprint: string }
+): Promise<AcceptedSegmentChangeReviewAnalyzeResponse> {
+  return requestOpenRouterJson<AcceptedSegmentChangeReviewAnalyzeResponse>(
+    "/api/accepted-segment-change-review/analyze",
+    request
+  );
 }
 
 export async function acceptCandidate(input: {

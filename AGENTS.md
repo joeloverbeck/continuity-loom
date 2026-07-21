@@ -60,5 +60,5 @@ Completed requirements sets and reports move under `archive/` according to `docs
 - Keep changes narrow and aligned with existing package boundaries.
 - Never adapt tests to match a bug; fix the code.
 - Do not introduce backwards-compatibility aliases, shims, or duplicate authority paths unless a published PRD explicitly justifies them.
-- Do not let accepted prose, rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context.
+- Do not let rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context. Accepted prose may appear only as bounded evidence in the exact one-segment assistance profiles sanctioned by `docs/FOUNDATIONS.md` §9.1; it never becomes canon or prose-prompt authority.
 - Do not weaken validation gates, deterministic compilation, API-key secrecy, localhost binding, or local-first project ownership.

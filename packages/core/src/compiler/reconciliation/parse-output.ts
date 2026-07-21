@@ -1,6 +1,16 @@
 import { ZodError } from "zod";
 
 import { parseRecordPayload } from "../../records/registry.js";
+import { containsMaterialAcceptedSegmentEcho } from "../accepted-segment-echo.js";
+import {
+  expectExactKeys,
+  isOutputReasonError,
+  isPlainObject,
+  outputReason,
+  parseCitationKeys,
+  parsePureJsonObject,
+  type OutputReasonError
+} from "../strict-output-primitives.js";
 import { allowedDeactivationDestinationsFor } from "./schema-catalog.js";
 import { SEGMENT_RECONCILIATION_OUTPUT_CONTRACT } from "./output-schema.js";
 import type {
@@ -109,7 +119,6 @@ export interface JsonPatchOperation {
 }
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const citationPattern = /^\[(?:SEG-\d+-S\d{3}|BRIEF:[^\]]+|(?:REF-)?[A-Z][A-Z -]*-\d+|RECORD-SCOPE)]$/;
 const recordTokenPattern = /^\$record:\[[^\]]+]$/;
 const newTokenPattern = /^\$new:NEW-\d{3}$/;
 
@@ -118,7 +127,11 @@ export function parseSegmentReconciliationOutput(
   context: SegmentReconciliationParseContext
 ): SegmentReconciliationParseResult {
   try {
-    const parsed = parsePureJsonObject(rawOutput);
+    const parsed = parsePureJsonObject(rawOutput, "not-pure-json", {
+      surroundingText: "Output must be one JSON object with no surrounding text.",
+      nonObject: "Output must be a JSON object.",
+      malformed: "Output is not parseable JSON."
+    });
     validateTopLevel(parsed);
     const source = parseSource(parsed.source);
     validateSource(source, context);
@@ -142,29 +155,6 @@ export function parseSegmentReconciliationOutput(
     };
   } catch (error) {
     return malformed(rawOutput, reasonFromError(error), error instanceof Error ? error.message : "Malformed output.");
-  }
-}
-
-function parsePureJsonObject(rawOutput: string): Record<string, unknown> {
-  const trimmed = rawOutput.trim();
-
-  if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) {
-    throw reason("not-pure-json", "Output must be one JSON object with no surrounding text.");
-  }
-
-  try {
-    const parsed: unknown = JSON.parse(trimmed);
-    if (!isPlainObject(parsed)) {
-      throw reason("not-pure-json", "Output must be a JSON object.");
-    }
-
-    return parsed;
-  } catch (error) {
-    if (isReasonError(error)) {
-      throw error;
-    }
-
-    throw reason("not-pure-json", "Output is not parseable JSON.");
   }
 }
 
@@ -640,78 +630,9 @@ function validateNoDuplicateTargets(
 }
 
 function validateEchoFirewall(output: unknown, acceptedSegmentText: string) {
-  const accepted = normalizeEchoText(acceptedSegmentText);
-  const acceptedTokens = tokensForEcho(accepted);
-
-  for (const text of collectStrings(output)) {
-    if (isEchoExempt(text)) {
-      continue;
-    }
-
-    const normalized = normalizeEchoText(text);
-    if (normalized.length >= 50 && accepted.includes(normalized)) {
-      throw reason("verbatim-source-echo", "Output contains a material accepted-segment substring.");
-    }
-
-    const tokens = tokensForEcho(normalized);
-    if (hasVerbatimTokenRun(tokens, acceptedTokens, 8)) {
-      throw reason("verbatim-source-echo", "Output contains a material accepted-segment token run.");
-    }
+  if (containsMaterialAcceptedSegmentEcho(output, acceptedSegmentText)) {
+    throw reason("verbatim-source-echo", "Output contains a material accepted-segment echo.");
   }
-}
-
-function collectStrings(value: unknown): string[] {
-  if (typeof value === "string") {
-    return [value];
-  }
-
-  if (Array.isArray(value)) {
-    return value.flatMap(collectStrings);
-  }
-
-  if (isPlainObject(value)) {
-    return Object.values(value).flatMap(collectStrings);
-  }
-
-  return [];
-}
-
-function normalizeEchoText(text: string): string {
-  return text.normalize("NFKC").toLocaleLowerCase().replace(/\s+/g, " ").trim();
-}
-
-function tokensForEcho(text: string): string[] {
-  return text.split(/\s+/).filter(Boolean);
-}
-
-function hasVerbatimTokenRun(tokens: readonly string[], acceptedTokens: readonly string[], runLength: number): boolean {
-  if (tokens.length < runLength) {
-    return false;
-  }
-
-  const acceptedRuns = new Set<string>();
-  for (let index = 0; index <= acceptedTokens.length - runLength; index += 1) {
-    acceptedRuns.add(acceptedTokens.slice(index, index + runLength).join(" "));
-  }
-
-  for (let index = 0; index <= tokens.length - runLength; index += 1) {
-    if (acceptedRuns.has(tokens.slice(index, index + runLength).join(" "))) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function isEchoExempt(text: string): boolean {
-  return (
-    citationPattern.test(text) ||
-    recordTokenPattern.test(text) ||
-    newTokenPattern.test(text) ||
-    /^(?:BRIEF|RECORD|NEW)-\d{3}$/.test(text) ||
-    /^(?:true|false|null|active|resolved|abandoned|hidden|open|pending|settled)$/i.test(text) ||
-    text.trim().split(/\s+/).length <= 3 && /^[\p{L}\p{N} .'-]+$/u.test(text)
-  );
 }
 
 interface CitationContext {
@@ -737,17 +658,10 @@ function buildCitationContext(context: SegmentReconciliationParseContext): Citat
 }
 
 function parseCitationList(value: unknown, allowed: ReadonlySet<string>): string[] {
-  if (!Array.isArray(value) || value.length === 0 || !value.every((item) => typeof item === "string")) {
-    throw reason("unknown-citation", "Citation lists must contain at least one string key.");
-  }
-
-  for (const item of value) {
-    if (!allowed.has(item)) {
-      throw reason("unknown-citation", `Unknown citation key: ${item}`);
-    }
-  }
-
-  return value;
+  return parseCitationKeys(value, allowed, {
+    invalidList: () => reason("unknown-citation", "Citation lists must contain at least one string key."),
+    unknown: (citation) => reason("unknown-citation", `Unknown citation key: ${citation}`)
+  }, { allowDuplicates: true });
 }
 
 function validateSequentialIds(value: readonly unknown[], prefix: "BRIEF" | "RECORD" | "NEW") {
@@ -773,12 +687,8 @@ function invertMap(map: ReadonlyMap<string, string>): ReadonlyMap<string, string
 }
 
 function expectKeys(value: Record<string, unknown>, expectedKeys: readonly string[]) {
-  const expected = new Set(expectedKeys);
   const actual = Object.keys(value);
-
-  if (actual.length !== expected.size || actual.some((key) => !expected.has(key))) {
-    throw reason("schema-mismatch", `Unexpected object keys: ${actual.join(", ")}`);
-  }
+  expectExactKeys(value, expectedKeys, () => reason("schema-mismatch", `Unexpected object keys: ${actual.join(", ")}`));
 }
 
 function isBlankValue(value: unknown): boolean {
@@ -793,22 +703,14 @@ function isRecordAction(value: unknown): value is ParsedRecordChangeProposal["ac
   return value === "UPDATE_FIELDS" || value === "DEACTIVATE";
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-interface ReasonError extends Error {
-  reasonCode: SegmentReconciliationMalformedReason;
-}
+type ReasonError = OutputReasonError<SegmentReconciliationMalformedReason>;
 
 function reason(reasonCode: SegmentReconciliationMalformedReason, message: string): ReasonError {
-  const error = new Error(message) as ReasonError;
-  error.reasonCode = reasonCode;
-  return error;
+  return outputReason(reasonCode, message);
 }
 
 function isReasonError(error: unknown): error is ReasonError {
-  return error instanceof Error && "reasonCode" in error;
+  return isOutputReasonError<SegmentReconciliationMalformedReason>(error);
 }
 
 function reasonFromError(error: unknown): SegmentReconciliationMalformedReason {

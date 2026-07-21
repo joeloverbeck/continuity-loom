@@ -52,6 +52,49 @@ export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
+export {
+  compileAcceptedSegmentChangeReviewPrompt
+} from "./compiler/change-review/compile-accepted-segment-change-review-prompt.js";
+export {
+  acceptedSegmentChangeReviewOutputJsonSchema
+} from "./compiler/change-review/output-schema.js";
+export {
+  parseAcceptedSegmentChangeReviewOutput
+} from "./compiler/change-review/parse-output.js";
+export type {
+  AcceptedSegmentChangeReviewParseContext,
+  AcceptedSegmentChangeReviewParseResult,
+  AcceptedSegmentChangeReviewQuarantineReason
+} from "./compiler/change-review/parse-output.js";
+export {
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_BRIEF_FIELD_PATHS,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_COVERAGE_DIMENSIONS,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_COVERAGE_STATUSES,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_EPISTEMIC_STATUSES,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_RETENTION_HORIZONS,
+  ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE,
+  acceptedSegmentChangeReviewVersionInfo
+} from "./compiler/change-review/types.js";
+export type {
+  AcceptedSegmentChangeReviewAcceptedSegment,
+  AcceptedSegmentChangeReviewBriefFieldPath,
+  AcceptedSegmentChangeReviewCompileResult,
+  AcceptedSegmentChangeReviewCoverageDimension,
+  AcceptedSegmentChangeReviewCoverageRow,
+  AcceptedSegmentChangeReviewCoverageStatus,
+  AcceptedSegmentChangeReviewDisclosure,
+  AcceptedSegmentChangeReviewEpistemicStatus,
+  AcceptedSegmentChangeReviewItem,
+  AcceptedSegmentChangeReviewParsedOutput,
+  AcceptedSegmentChangeReviewRecord,
+  AcceptedSegmentChangeReviewRecordScope,
+  AcceptedSegmentChangeReviewRequest,
+  AcceptedSegmentChangeReviewRetentionHorizon,
+  AcceptedSegmentChangeReviewSnapshot,
+  AcceptedSegmentChangeReviewSpan,
+  AcceptedSegmentChangeReviewVersions
+} from "./compiler/change-review/types.js";
 export { compileRecordHygienePrompt, orderHygieneRecords } from "./compiler/hygiene/compile-record-hygiene-prompt.js";
 export { hygieneCitationKeysFor } from "./compiler/hygiene/citation-keys.js";
 export {
@@ -210,6 +253,14 @@ export type {
 } from "./records/compile-destinations.js";
 export { resolveEffectivePov } from "./records/effective-pov.js";
 export type { EffectivePov } from "./records/effective-pov.js";
+export {
+  applyConsumedGenerationGuidanceRemoval,
+  listConsumedGenerationGuidance
+} from "./records/consumed-generation-guidance.js";
+export type {
+  ConsumedGenerationGuidanceEntry,
+  ConsumedGenerationGuidancePath
+} from "./records/consumed-generation-guidance.js";
 export {
   castMemberSchema,
   sampleUtteranceSchema

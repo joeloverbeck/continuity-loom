@@ -63,7 +63,78 @@ function renderView(): void {
   );
 }
 
+function renderViewWithConsumedGuidance(entryIds: readonly string[]): void {
+  render(
+    <MemoryRouter initialEntries={[{
+      pathname: "/generation-brief",
+      state: { acceptedSegmentChangeReviewConsumedGuidanceIds: entryIds }
+    }]}>
+      <GenerationBriefView />
+    </MemoryRouter>
+  );
+}
+
 describe("GenerationBriefView", () => {
+  it("applies selected change-review guidance only to the editable draft and waits for Save", async () => {
+    vi.mocked(getGenerationBrief).mockResolvedValue({
+      ok: true,
+      session: {
+        active_working_set: { selected_records: [] },
+        current_authoritative_state: {
+          current_time: "Third watch",
+          current_location: "North stair",
+          immediate_situation_summary: "The caller waits below."
+        },
+        immediate_handoff: {
+          recent_causal_context: "A bell rang once.",
+          begin_after: "Begin with the reply."
+        },
+        manual_moment_directive: {
+          must_render: ["Open the door.", "Keep the caller hidden."],
+          may_render_if_naturally_caused: ["Let the bell interrupt naturally."]
+        },
+        stop_guidance: { soft_unit_guidance: "Stop after the reply." }
+      },
+      generationContext: briefGenerationContext
+    });
+    vi.mocked(listStoryConfig).mockResolvedValue({ ok: true, configs: {} });
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({}));
+    vi.mocked(setGenerationBrief).mockResolvedValue({ ok: true, session: {} });
+
+    renderViewWithConsumedGuidance([
+      "manual_moment_directive.must_render[]:0",
+      "stop_guidance.soft_unit_guidance:0"
+    ]);
+
+    expect(await screen.findByText(/Selected guidance was removed from this editable draft/)).toBeTruthy();
+    expect(screen.getByLabelText(/must_render/)).toMatchObject({ value: "Keep the caller hidden." });
+    expect(screen.getByLabelText(/may_render_if_naturally_caused/)).toMatchObject({
+      value: "Let the bell interrupt naturally."
+    });
+    expect(screen.getByLabelText(/soft_unit_guidance/)).toMatchObject({ value: "" });
+    expect(setGenerationBrief).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Generation Brief" }));
+    await waitFor(() => expect(setGenerationBrief).toHaveBeenCalledTimes(1));
+    expect(vi.mocked(setGenerationBrief).mock.calls[0]?.[0]).toMatchObject({
+      active_working_set: { selected_records: [] },
+      current_authoritative_state: {
+        current_time: "Third watch",
+        current_location: "North stair",
+        immediate_situation_summary: "The caller waits below."
+      },
+      immediate_handoff: {
+        recent_causal_context: "A bell rang once.",
+        begin_after: "Begin with the reply."
+      },
+      manual_moment_directive: {
+        must_render: ["Keep the caller hidden."],
+        may_render_if_naturally_caused: ["Let the bell interrupt naturally."]
+      },
+      stop_guidance: { soft_unit_guidance: "" }
+    });
+  });
+
   it("selects and reopens current voice pressure by complete CAST MEMBER human labels while storing only the ID", async () => {
     const firstCastId = "019b0298-5c00-7000-8000-000000000201";
     const secondCastId = "019b0298-5c00-7000-8000-000000000202";

@@ -129,7 +129,14 @@ function pillarForSourcePath(path) {
     return "ideation";
   }
 
-  if (path.startsWith("packages/core/src/compiler/reconciliation/") && path.endsWith(".ts")) {
+  if (
+    (path.startsWith("packages/core/src/compiler/reconciliation/") ||
+      path.startsWith("packages/core/src/compiler/change-review/") ||
+      path === "packages/core/src/compiler/accepted-segment-echo.ts" ||
+      path === "packages/core/src/compiler/assistance-prompt-primitives.ts" ||
+      path === "packages/core/src/compiler/strict-output-primitives.ts") &&
+    path.endsWith(".ts")
+  ) {
     return "segment-reconciliation";
   }
 

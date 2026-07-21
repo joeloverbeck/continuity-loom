@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
 import { registerCompileRoutes } from "./compile-routes.js";
+import { registerAcceptedSegmentChangeReviewRoutes } from "./accepted-segment-change-review-routes.js";
 import { registerAcceptedRoutes } from "./accepted-routes.js";
 import { registerGenerateRoutes } from "./generate-routes.js";
 import { registerGenerationBriefRoutes } from "./generation-brief-routes.js";
@@ -25,6 +26,8 @@ export const LOOPBACK_HOST = "127.0.0.1";
 
 export interface ServerOptions {
   logger?: boolean;
+  /** Internal test/comparison-harness construction gate. Never read from runtime configuration. */
+  acceptedSegmentChangeReviewCandidate?: boolean;
 }
 
 export interface StartedServer {
@@ -95,6 +98,9 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerIdeateRoutes(app, projectStoreManager);
   registerRecordHygieneRoutes(app, projectStoreManager);
   registerSegmentReconciliationRoutes(app, projectStoreManager);
+  if (options.acceptedSegmentChangeReviewCandidate === true) {
+    registerAcceptedSegmentChangeReviewRoutes(app, projectStoreManager);
+  }
   registerAcceptedRoutes(app, projectStoreManager);
   registerReminderRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {

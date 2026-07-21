@@ -149,7 +149,7 @@ Use an ADR only for a durable architectural decision that should remain discover
 Future work must not violate these boundaries:
 
 - Records and user-authored generation-time fields are the continuity authority.
-- Accepted prose, rejected candidates, superseded candidates, and automatic prose-derived summaries are not prompt context.
+- Rejected candidates, superseded candidates, and automatic prose-derived summaries are not prompt context. Accepted prose is prompt context only as bounded evidence in the exact one-segment assistance profiles sanctioned by `FOUNDATIONS.md` §9.1; it never becomes canon or prose-prompt authority.
 - The compiler must be deterministic and must not query hidden state outside the validation snapshot.
 - Validation must fail closed. Blockers gate prompt preview and send; warnings do not become prompt instructions.
 - The active working set is explicit and user-controlled. The app must not silently add globally important records because they seem relevant.

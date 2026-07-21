@@ -79,6 +79,54 @@ test("defers changed segment-reconciliation source instead of routing it to pros
   );
 });
 
+test("defers accepted-segment change-review and shared echo source with the accepted-segment assistance pillar", () => {
+  const plan = classifyChangedPaths(
+    [
+      "packages/core/src/compiler/accepted-segment-echo.ts",
+      "packages/core/src/compiler/change-review/parse-output.ts"
+    ],
+    { cacheExists: cacheMiss }
+  );
+
+  assert.equal(plan.status, "in-scope");
+  assert.deepEqual(
+    plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
+    [
+      [
+        "segment-reconciliation",
+        true,
+        [
+          "packages/core/src/compiler/accepted-segment-echo.ts",
+          "packages/core/src/compiler/change-review/parse-output.ts"
+        ]
+      ]
+    ]
+  );
+});
+
+test("keeps shared accepted-segment assistance primitives in the accepted-segment assistance pillar", () => {
+  const plan = classifyChangedPaths(
+    [
+      "packages/core/src/compiler/assistance-prompt-primitives.ts",
+      "packages/core/src/compiler/strict-output-primitives.ts"
+    ],
+    { cacheExists: cacheMiss }
+  );
+
+  assert.equal(plan.status, "in-scope");
+  assert.deepEqual(
+    plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
+    [[
+      "segment-reconciliation",
+      true,
+      [
+        "packages/core/src/compiler/assistance-prompt-primitives.ts",
+        "packages/core/src/compiler/strict-output-primitives.ts"
+      ]
+    ]]
+  );
+});
+
 test("mixed prose and segment-reconciliation changes keep activated prose runnable", () => {
   const plan = classifyChangedPaths(
     [

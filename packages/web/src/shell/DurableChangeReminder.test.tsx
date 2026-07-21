@@ -71,6 +71,7 @@ describe("DurableChangeReminder", () => {
       "/records?create=CAST%20MEMBER"
     );
     expect(screen.getByRole("link", { name: "Reconcile latest segment" }).getAttribute("href")).toBe("/segment-reconciliation");
+    expect(screen.queryByRole("link", { name: /Accepted-Segment Change Review/i })).toBeNull();
     expect(screen.getByRole("link", { name: "Update Generation Brief" }).getAttribute("href")).toBe("/generation-brief");
     expect(screen.getAllByRole("link", { name: /^Create / })).toHaveLength(12);
   });

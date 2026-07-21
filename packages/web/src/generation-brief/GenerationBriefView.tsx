@@ -1,11 +1,12 @@
 import {
+  applyConsumedGenerationGuidanceRemoval,
   activeWorkingSetSchema,
   generationContextLabel,
   generationSessionDraftSchema,
   type GenerationContextCoherence
 } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { z } from "zod";
 
 import {
@@ -230,6 +231,9 @@ function BriefSection({
 
 export function GenerationBriefView(): React.JSX.Element {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const consumedGuidanceIdsRef = useRef(consumedGuidanceIdsFromState(location.state));
   const [session, setSession] = useState<GenerationSession>(() => parseSession({}));
   const [briefGenerationContext, setBriefGenerationContext] = useState<GenerationContextCoherence | null>(null);
   const [proseModePayload, setProseModePayload] = useState<Record<string, unknown> | null>(null);
@@ -256,9 +260,25 @@ export function GenerationBriefView(): React.JSX.Element {
         }
 
         if (briefResponse.ok) {
-          setSession(parseSession(briefResponse.session));
+          const loadedSession = parseSession(briefResponse.session);
+          const consumedGuidanceIds = consumedGuidanceIdsRef.current;
+          setSession(
+            consumedGuidanceIds.length > 0
+              ? applyConsumedGenerationGuidanceRemoval(loadedSession, consumedGuidanceIds)
+              : loadedSession
+          );
           setBriefGenerationContext(briefResponse.generationContext);
-          setHasUnsavedChanges(false);
+          setHasUnsavedChanges(consumedGuidanceIds.length > 0);
+          if (consumedGuidanceIds.length > 0) {
+            setNotice(
+              "Selected guidance was removed from this editable draft. Review the changes and use Save Generation Brief to persist them."
+            );
+            consumedGuidanceIdsRef.current = [];
+            void navigate(
+              { pathname: location.pathname, search: location.search },
+              { replace: true, state: null }
+            );
+          }
           setValidationKey((current) => current + 1);
         } else {
           setNotice(briefResponse.message);
@@ -292,7 +312,7 @@ export function GenerationBriefView(): React.JSX.Element {
     return () => {
       active = false;
     };
-  }, []);
+  }, [location.pathname, location.search, navigate]);
 
   const fieldParam = searchParams.get("field");
 
@@ -521,7 +541,7 @@ export function GenerationBriefView(): React.JSX.Element {
       </div>
 
       {notice ? (
-        <p className={notice.endsWith("saved.") ? "status statusSuccess" : "status statusError"} role="status">
+        <p className={noticeClassName(notice)} role="status">
           {notice}
         </p>
       ) : null}
@@ -945,4 +965,23 @@ export function GenerationBriefView(): React.JSX.Element {
       ) : null}
     </section>
   );
+}
+
+function consumedGuidanceIdsFromState(state: unknown): readonly string[] {
+  if (!state || typeof state !== "object") {
+    return [];
+  }
+  const ids = (state as { acceptedSegmentChangeReviewConsumedGuidanceIds?: unknown })
+    .acceptedSegmentChangeReviewConsumedGuidanceIds;
+  return Array.isArray(ids) && ids.every((id) => typeof id === "string") ? ids : [];
+}
+
+function noticeClassName(notice: string): string {
+  if (notice.endsWith("saved.")) {
+    return "status statusSuccess";
+  }
+  if (notice.startsWith("Selected guidance was removed")) {
+    return "status statusWarning";
+  }
+  return "status statusError";
 }

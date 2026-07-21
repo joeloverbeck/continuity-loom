@@ -6,7 +6,9 @@ export default createCoreMutationConfig({
     "packages/core/src/compiler/**/*.ts",
     "!packages/core/src/compiler/ideation/**/*.ts",
     "!packages/core/src/compiler/sections/ideation.ts",
-    "!packages/core/src/compiler/reconciliation/**/*.ts"
+    "!packages/core/src/compiler/reconciliation/**/*.ts",
+    "!packages/core/src/compiler/change-review/**/*.ts",
+    "!packages/core/src/compiler/accepted-segment-echo.ts"
   ],
   thresholds: {
     high: 95,

@@ -1,4 +1,5 @@
 import { extractRecordReferences, projectRecordStatus, recordTypes } from "../../records/registry.js";
+import { escapePromptAttribute } from "../assistance-prompt-primitives.js";
 import { escapeDataText } from "../escaping.js";
 import { reconciliationRecordCitationKeysFor, referenceStubCitationKeysFor } from "./citation-keys.js";
 import type { ReconciliationRecord, ReconciliationReferenceStub } from "./types.js";
@@ -37,7 +38,7 @@ export function renderReconciliationRecordSet(
 
 export function renderReconciliationRecord(record: ReconciliationRecord, key: string): string {
   return [
-    `<record key="${escapeAttribute(key)}" record_id="${escapeAttribute(record.id)}" type="${escapeAttribute(record.type)}">`,
+    `<record key="${escapePromptAttribute(key)}" record_id="${escapePromptAttribute(record.id)}" type="${escapePromptAttribute(record.type)}">`,
     `display_label: ${escapeDataText(record.displayLabel)}`,
     `projected_status: ${record.lifecycleStatus ?? projectRecordStatus(record.type, record.payload) ?? "none"}`,
     "payload_json:",
@@ -50,7 +51,7 @@ export function renderReconciliationRecord(record: ReconciliationRecord, key: st
 
 export function renderReferenceStub(stub: ReconciliationReferenceStub, key: string): string {
   return [
-    `<reference_stub key="${escapeAttribute(key)}" record_id="${escapeAttribute(stub.id)}" type="${escapeAttribute(stub.type)}">`,
+    `<reference_stub key="${escapePromptAttribute(key)}" record_id="${escapePromptAttribute(stub.id)}" type="${escapePromptAttribute(stub.type)}">`,
     `display_label: ${escapeDataText(stub.displayLabel)}`,
     "</reference_stub>"
   ].join("\n");
@@ -125,8 +126,4 @@ function sortJson(value: unknown): unknown {
   }
 
   return value;
-}
-
-function escapeAttribute(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

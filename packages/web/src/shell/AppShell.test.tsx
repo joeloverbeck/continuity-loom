@@ -143,6 +143,7 @@ describe("AppShell", () => {
       "Settings"
     ]);
     expect(sidebar.tabIndex).toBe(0);
+    expect(within(navigation).queryByRole("link", { name: "Accepted-Segment Change Review" })).toBeNull();
 
     sidebar.focus();
     expect(document.activeElement).toBe(sidebar);

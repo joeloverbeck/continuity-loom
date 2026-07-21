@@ -1,4 +1,10 @@
 import { versionInfo } from "../../version.js";
+import {
+  buildAssistanceCitationMap,
+  countRecordsByType,
+  escapePromptAttribute,
+  renderTaggedSection
+} from "../assistance-prompt-primitives.js";
 import { estimatePromptTokens, fingerprintPrompt } from "../fingerprint.js";
 import type { CompileResult } from "../types.js";
 import {
@@ -39,8 +45,14 @@ export function compileSegmentReconciliationPrompt(
       fingerprint: fingerprintPrompt(prompt),
       lengthEstimate: prompt.length,
       tokenEstimate: estimatePromptTokens(prompt),
-      countsByType: countsByType(snapshot.records),
-      citationMap: citationMapFor(snapshot, renderedRecords.recordKeys, renderedRecords.referenceStubKeys)
+      countsByType: countRecordsByType(snapshot.records),
+      citationMap: buildAssistanceCitationMap({
+        acceptedSegmentId: snapshot.acceptedSegment.id,
+        acceptedSegmentSpans: snapshot.acceptedSegmentSpans,
+        fieldEntries: snapshot.briefFields.map((field) => [field.citationKey, field.fieldPath]),
+        recordKeys: renderedRecords.recordKeys,
+        referenceStubKeys: renderedRecords.referenceStubKeys
+      })
     }
   };
 }
@@ -84,21 +96,21 @@ function renderSection(
 ): string {
   switch (sectionId) {
     case "segment_reconciliation_request":
-      return tag(sectionId, renderRequest(snapshot, request));
+      return renderTaggedSection(sectionId, renderRequest(snapshot, request));
     case "accepted_segment_evidence":
-      return tag(sectionId, renderAcceptedSegmentEvidence(snapshot.acceptedSegmentSpans));
+      return renderTaggedSection(sectionId, renderAcceptedSegmentEvidence(snapshot.acceptedSegmentSpans));
     case "current_reconciliation_fields":
-      return tag(sectionId, renderBriefFields(snapshot.briefFields));
+      return renderTaggedSection(sectionId, renderBriefFields(snapshot.briefFields));
     case "record_contrast_scope":
-      return tag(sectionId, renderRecordContrastScope(snapshot, request));
+      return renderTaggedSection(sectionId, renderRecordContrastScope(snapshot, request));
     case "record_contrast_records":
-      return tag(sectionId, renderRecordContrastRecords(renderedRecords));
+      return renderTaggedSection(sectionId, renderRecordContrastRecords(renderedRecords));
     case "record_creation_schema_catalog":
-      return tag(sectionId, renderSegmentReconciliationSchemaCatalog(schemaCatalog));
+      return renderTaggedSection(sectionId, renderSegmentReconciliationSchemaCatalog(schemaCatalog));
     case "segment_reconciliation_output_format":
-      return tag(sectionId, renderOutputFormat(snapshot, request));
+      return renderTaggedSection(sectionId, renderOutputFormat(snapshot, request));
     default:
-      return tag(sectionId, RECONCILIATION_STATIC_SECTIONS[sectionId]);
+      return renderTaggedSection(sectionId, RECONCILIATION_STATIC_SECTIONS[sectionId]);
   }
 }
 
@@ -122,7 +134,7 @@ function renderAcceptedSegmentEvidence(spans: readonly AcceptedSegmentSpan[]): s
   return spans
     .map((span) =>
       [
-        `<segment_span key="${escapeAttribute(span.key)}">`,
+        `<segment_span key="${escapePromptAttribute(span.key)}">`,
         canonicalBlock({ text: span.text }),
         "</segment_span>"
       ].join("\n")
@@ -136,7 +148,7 @@ function renderBriefFields(fields: readonly ReconciliationBriefField[]): string 
 
 function renderBriefField(field: ReconciliationBriefField): string {
   return [
-    `<brief_field key="${escapeAttribute(field.citationKey)}" path="${escapeAttribute(field.fieldPath)}">`,
+    `<brief_field key="${escapePromptAttribute(field.citationKey)}" path="${escapePromptAttribute(field.fieldPath)}">`,
     canonicalBlock({
       state: field.currentState,
       value: field.currentState === "present" ? field.currentValue : undefined
@@ -190,36 +202,6 @@ function renderOutputFormat(snapshot: SegmentReconciliationSnapshot, request: Se
   ].join("\n");
 }
 
-function countsByType(records: readonly { type: string }[]): Readonly<Record<string, number>> {
-  const counts: Record<string, number> = {};
-
-  for (const record of records) {
-    counts[record.type] = (counts[record.type] ?? 0) + 1;
-  }
-
-  return Object.fromEntries(Object.entries(counts).sort(([left], [right]) => left.localeCompare(right)));
-}
-
-function citationMapFor(
-  snapshot: SegmentReconciliationSnapshot,
-  recordKeys: ReadonlyMap<string, string>,
-  referenceStubKeys: ReadonlyMap<string, string>
-): Readonly<Record<string, string>> {
-  const entries: Array<[string, string]> = [
-    ...snapshot.acceptedSegmentSpans.map((span): [string, string] => [
-      span.key,
-      `${snapshot.acceptedSegment.id}:${span.startOffset}-${span.endOffset}`
-    ]),
-    ...snapshot.briefFields.map((field): [string, string] => [field.citationKey, field.fieldPath]),
-    ...[...recordKeys.entries()].map(([recordId, key]): [string, string] => [key, recordId]),
-    ...[...referenceStubKeys.entries()].map(([recordId, key]): [string, string] => [key, recordId])
-  ];
-
-  return Object.fromEntries(
-    entries.sort(([left], [right]) => left.localeCompare(right))
-  );
-}
-
 function canonicalBlock(value: unknown): string {
   return JSON.stringify(sortJson(value), null, 2).replace(/[<>&]/g, (character) => {
     if (character === "<") {
@@ -249,12 +231,4 @@ function sortJson(value: unknown): unknown {
   }
 
   return value;
-}
-
-function tag(sectionId: string, body: string): string {
-  return `<${sectionId}>\n${body}\n</${sectionId}>`;
-}
-
-function escapeAttribute(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
