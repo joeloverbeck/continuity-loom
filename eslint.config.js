@@ -16,7 +16,12 @@ export default tseslint.config(
       "dist/**",
       "coverage/**",
       "packages/*/dist/**",
-      "packages/*/coverage/**"
+      "packages/*/coverage/**",
+      // Skill-evidence and browser-evidence artifacts are preserved records, not maintained
+      // source. Keep them tracked but exclude them from linting (e.g. decontamination candidate
+      // copies of skill scripts).
+      "reports/skill-evidence/**",
+      "output/**"
     ]
   },
   {

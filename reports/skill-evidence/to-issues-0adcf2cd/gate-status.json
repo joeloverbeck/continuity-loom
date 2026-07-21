@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-20T20:53:59.225Z",
+  "generated_at": "2026-07-20T23:33:25.106Z",
   "target_content_hash": "23d6d5a8e62c9b559bfc09200d555a9fe9dc49801d7e908cadfecb892ecb1003",
-  "qualifying_uses_on_current_hash": 1,
+  "qualifying_uses_on_current_hash": 2,
   "open_incident_ids": [
     "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67"
   ],
@@ -26,5 +26,5 @@
   "last_completed_review_id": "dec_502bf8bb-b1c9-4e62-a783-8bd93c470cac",
   "target_name": "to-issues",
   "target_repo_relative_path": ".claude/skills/to-issues",
-  "derivation_session_id": "237ab214-b6f0-4493-b687-02a701227d90"
+  "derivation_session_id": null
 }

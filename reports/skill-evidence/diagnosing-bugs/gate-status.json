@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-20T21:40:21.390Z",
+  "target_content_hash": "60f1a598c437190a61630703db01d358fceaf806d5f587832452b265e808a8fc",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "diagnosing-bugs",
+  "target_repo_relative_path": ".claude/skills/diagnosing-bugs",
+  "derivation_session_id": null
+}

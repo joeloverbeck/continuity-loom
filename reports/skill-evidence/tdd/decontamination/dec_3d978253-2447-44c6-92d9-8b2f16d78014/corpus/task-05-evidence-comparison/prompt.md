@@ -1,0 +1,1 @@
+Assess how the supplied TDD skill applies to the historical task in `input.md`. Do not edit files or use the network. Produce an execution-ready response. If software red-green-refactor is not the right method, say so and preserve the task's controlled-comparison requirements rather than forcing code tests onto it.

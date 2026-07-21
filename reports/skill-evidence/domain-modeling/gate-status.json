@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-20T16:54:11.661Z",
+  "generated_at": "2026-07-20T21:39:24.277Z",
   "target_content_hash": "1073b9c05b88df68e028a4376e9ddf5d5d5ff4e794a5dd8b456d0fc1cd7da847",
-  "qualifying_uses_on_current_hash": 0,
+  "qualifying_uses_on_current_hash": 1,
   "open_incident_ids": [],
   "candidate_clusters": [],
   "state": "closed",

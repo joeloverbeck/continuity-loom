@@ -1,0 +1,1 @@
+Apply the supplied TDD skill to the historical bug in `input.md`. Do not edit files or use the network. Produce an execution-ready response: identify the first failing tests or assertions, the smallest production change that could make them pass, the refactor boundary, and verification. Make any uncertainty explicit.
