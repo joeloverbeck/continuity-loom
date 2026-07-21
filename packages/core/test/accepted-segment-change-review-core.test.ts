@@ -264,11 +264,6 @@ describe("Accepted-Segment Change Review core contract", () => {
       epistemic_status: "interpretation requiring author judgment",
       evidence_excerpt: ""
     }), "verbatim-source-echo"],
-    ["established claim flagged by an invention marker", (output: Record<string, unknown>) => mutateFirstItem(output, {
-      epistemic_status: "established change",
-      change_statement: "Iven's ownership of the observatory is inferred but not stated.",
-      uncertainty_or_rival_reading: "No rival reading is apparent."
-    }), "invalid-established-claim"],
     ["established evidence_excerpt missing from the schema keys", (output: Record<string, unknown>) => omitFirstItemKey(output, "evidence_excerpt"), "schema-mismatch"],
     ["established evidence_excerpt is the empty string", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "" }), "invalid-evidence-excerpt"],
     ["established evidence_excerpt shorter than three words", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "his breath" }), "invalid-evidence-excerpt"],
@@ -280,9 +275,6 @@ describe("Accepted-Segment Change Review core contract", () => {
       evidence_excerpt: "his breath had stopped"
     }), "invalid-evidence-excerpt"],
     ["evidence citation with appended prose", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence: ["[SEG-21-S001] the rail"] }), "unknown-citation"],
-    ["future possibility", (output: Record<string, unknown>) => mutateFirstItem(output, {
-      change_statement: "Sera might investigate who damaged the rail tomorrow."
-    }), "future-possibility"],
     ["unknown enum", (output: Record<string, unknown>) => mutateFirstItem(output, {
       retention_horizon: "keep forever"
     }), "invalid-enum"],
@@ -322,6 +314,38 @@ describe("Accepted-Segment Change Review core contract", () => {
 
     expect(parsed).toMatchObject({ status: "quarantined", reasonCode: "not-pure-json" });
     expect(parsed).not.toHaveProperty("rawOutput");
+  });
+
+  // Regression: brittle keyword heuristics used to false-positive on legitimate advisory
+  // prose. Anti-invention is enforced structurally by the evidence_excerpt witness, not by
+  // scanning free text for words like "not stated" or modal verbs like "may".
+  it("accepts an established change whose rival reading mentions what is not stated", () => {
+    const fixture = loadFixture("death");
+    const parsed = parseAcceptedSegmentChangeReviewOutput(
+      JSON.stringify(mutateFirstItem(goldOutput(fixture), {
+        epistemic_status: "established change",
+        uncertainty_or_rival_reading:
+          "Sera's subjective interpretation of what she feels is not stated; the physical facts she perceived are explicit."
+      })),
+      parseContext(fixture)
+    );
+
+    expect(parsed).toMatchObject({ status: "valid" });
+  });
+
+  it("accepts an interpretation item whose change_statement uses an advisory modal verb", () => {
+    const fixture = loadFixture("death");
+    const parsed = parseAcceptedSegmentChangeReviewOutput(
+      JSON.stringify(mutateFirstItem(goldOutput(fixture), {
+        epistemic_status: "interpretation requiring author judgment",
+        evidence_excerpt: "",
+        change_statement:
+          "The onstage_entities list may require reassessment now that Iven is no longer an active agent."
+      })),
+      parseContext(fixture)
+    );
+
+    expect(parsed).toMatchObject({ status: "valid" });
   });
 });
 

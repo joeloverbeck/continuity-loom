@@ -13,7 +13,7 @@ import { CHANGE_REVIEW_COVERAGE_DIMENSIONS, GOLD_CASE_ORDER, loadGoldCorpus } fr
 // old-versus-new comparison, never compiles or requests the old Segment
 // Reconciliation prompt, and never issues a provider request or a project-store write.
 const READINESS_BAR_ID = "accepted-segment-change-review-offline-readiness.v1";
-const CANDIDATE_VERSIONS = Object.freeze({ template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" });
+const CANDIDATE_VERSIONS = Object.freeze({ template: "2.0.0", compiler: "2.0.0", contract: "2.1.0" });
 const READINESS_ACCEPTED_AT = "2026-07-21T00:00:00.000Z";
 
 export async function runReadiness(corpusInput) {

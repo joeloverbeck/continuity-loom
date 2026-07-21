@@ -5,7 +5,7 @@ export const ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT = "accepted_segment_
 export const acceptedSegmentChangeReviewVersionInfo = Object.freeze({
   template: "2.0.0",
   compiler: "2.0.0",
-  contract: "2.0.0"
+  contract: "2.1.0"
 });
 
 export const ACCEPTED_SEGMENT_CHANGE_REVIEW_BRIEF_FIELD_PATHS = Object.freeze([

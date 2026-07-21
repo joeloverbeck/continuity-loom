@@ -29,9 +29,7 @@ export type AcceptedSegmentChangeReviewQuarantineReason =
   | "coverage-incomplete"
   | "unknown-citation"
   | "verbatim-source-echo"
-  | "invalid-established-claim"
   | "invalid-evidence-excerpt"
-  | "future-possibility"
   | "invalid-enum";
 
 export interface AcceptedSegmentChangeReviewParseContext {
@@ -154,17 +152,14 @@ function parseItems(
     const epistemicStatus = unknownItem.epistemic_status as AcceptedSegmentChangeReviewEpistemicStatus;
     const retentionHorizon = unknownItem.retention_horizon as AcceptedSegmentChangeReviewRetentionHorizon;
 
-    if (futurePossibilityPattern.test(changeStatement)) {
-      throw reason("future-possibility", "Future actions, opportunities, and predictions are not change-review items.");
-    }
-
+    // Anti-invention is enforced structurally, not by scanning free prose for keywords: an
+    // `established change` must be grounded by a verbatim `evidence_excerpt` occurring in one
+    // cited span, so an invented or explicitly unstated implication — which has no such excerpt
+    // — cannot be labeled established and must use `interpretation requiring author judgment`.
+    // Future-possibility discipline is prompt-led and observed through playtest. Earlier keyword
+    // heuristics false-positived on ordinary advisory modal verbs and on epistemic hedging in
+    // `uncertainty_or_rival_reading`, quarantining well-grounded findings.
     if (epistemicStatus === "established change") {
-      if (inventedOrUnstatedPattern.test(`${changeStatement} ${uncertainty}`)) {
-        throw reason(
-          "invalid-established-claim",
-          "An invented or explicitly unstated implication cannot be labeled established change."
-        );
-      }
       validateEstablishedEvidenceExcerpt(evidenceExcerpt, evidence, context.evidenceTextByKey);
     } else if (evidenceExcerpt !== "") {
       throw reason(
@@ -293,9 +288,6 @@ function expectKeys(value: Record<string, unknown>, expectedKeys: readonly strin
     () => reason("schema-mismatch", "The response contains missing or undeclared fields.")
   );
 }
-
-const futurePossibilityPattern = /\b(?:will|would|may|might|could|likely to|expected to|opportunity to|chance to)\b/i;
-const inventedOrUnstatedPattern = /\b(?:invented|fabricated|not stated|not shown|unstated|inferred|implied)\b/i;
 
 type ReasonError = OutputReasonError<AcceptedSegmentChangeReviewQuarantineReason>;
 
