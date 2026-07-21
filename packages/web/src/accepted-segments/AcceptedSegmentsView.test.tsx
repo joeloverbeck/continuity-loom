@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deleteAcceptedSegment, listAcceptedSegments, type AcceptedSegment } from "../api.js";
@@ -400,6 +400,36 @@ describe("AcceptedSegmentsView", () => {
 
     expect(screen.getByRole("button", { name: /Segment 3/ }).getAttribute("aria-expanded")).toBe("false");
     expect(getRenderedProse(container)).toEqual([]);
+  });
+
+  it("does not re-expand a user-collapsed latest segment when the landing effect runs again", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Opening cloth." }),
+        segment({ id: 2, sequence: 2, text: "Middle cloth." }),
+        segment({ id: 3, sequence: 3, text: "Latest cloth." })
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    const latestToggle = await screen.findByRole("button", { name: /Segment 3/ });
+    await waitFor(() => expect(document.activeElement).toBe(latestToggle));
+    fireEvent.click(latestToggle);
+    expect(latestToggle.getAttribute("aria-expanded")).toBe("false");
+    const scrollCallsBeforeRelanding = scrollMock.mock.calls.length;
+
+    // An unknown segment hash falls back to landing on the latest segment and re-runs the landing
+    // effect. Scrolling to the latest is fine, but it must not silently undo the user's collapse.
+    await act(async () => {
+      window.history.replaceState(null, "", "/accepted-segments#segment-999");
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+      await Promise.resolve();
+    });
+
+    expect(scrollMock.mock.calls.length).toBeGreaterThan(scrollCallsBeforeRelanding);
+    expect(screen.getByRole("button", { name: /Segment 3/ }).getAttribute("aria-expanded")).toBe("false");
   });
 
   it("exports the full archive in sequence order independent of the active filter", async () => {
