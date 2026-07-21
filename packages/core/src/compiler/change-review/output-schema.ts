@@ -15,9 +15,12 @@ import {
  * structured-output implementation rejects pre-generation — `pattern`
  * (`^ITEM-[0-9]{3}$`, non-blank `\S`), `minItems`/`uniqueItems` (non-empty
  * unique citation arrays), `minItems`/`maxItems` (exactly six coverage rows),
- * and `const` (the contract literal) — are intentionally absent. Each is
- * re-enforced with equal strength by `parseAcceptedSegmentChangeReviewOutput`,
- * which quarantines any violating output. See GitHub issue #142.
+ * and `const` (the contract literal) — are intentionally absent. The stronger
+ * semantic constraints on the item shape, including the `evidence_excerpt`
+ * three-to-seven-word bounded-witness rule, are likewise not expressible in
+ * provider-safe keywords. Each is re-enforced with equal strength by
+ * `parseAcceptedSegmentChangeReviewOutput`, which quarantines any violating
+ * output. See GitHub issues #142 and #147.
  */
 export function acceptedSegmentChangeReviewOutputJsonSchema(): unknown {
   return strictObject({
@@ -27,6 +30,7 @@ export function acceptedSegmentChangeReviewOutputJsonSchema(): unknown {
       items: strictObject({
         id: string(),
         change_statement: string(),
+        evidence_excerpt: string(),
         evidence: stringArray(),
         contrast: stringArray(),
         epistemic_status: { enum: ACCEPTED_SEGMENT_CHANGE_REVIEW_EPISTEMIC_STATUSES },

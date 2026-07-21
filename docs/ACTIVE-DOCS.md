@@ -174,6 +174,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; after adding bounded Author focus to grounded Ideation, template is `1.10.0`, compiler is `1.12.0`, and compiler contract is `1.13.0`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; template is `1.11.0`, compiler is `1.13.0`, and compiler contract is `1.15.0`. The non-user-facing `accepted-segment-change-review` candidate declares its own separate template, compiler, and contract versions `2.0.0` and the output identity `accepted_segment_change_review.v2` under `packages/core/src/compiler/change-review/`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, start with a focused release/versioning PRD; any resulting standing contract belongs under `docs/specs/`.

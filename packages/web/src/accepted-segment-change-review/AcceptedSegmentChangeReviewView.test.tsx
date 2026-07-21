@@ -45,7 +45,7 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(screen.getByText("2 records")).toBeTruthy();
     expect(screen.getByText(/SECRET records are included/)).toBeTruthy();
     expect(screen.getByText("fnv1a32:12345678")).toBeTruthy();
-    expect(screen.getByText("1.0.0 / 1.0.0 / 1.0.0")).toBeTruthy();
+    expect(screen.getByText("2.0.0 / 2.0.0 / 2.0.0")).toBeTruthy();
     expect(screen.getByText("Complete prompt source for comparison.")).toBeTruthy();
     expect(analyzeMock).not.toHaveBeenCalled();
 
@@ -62,6 +62,26 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(await screen.findByRole("heading", { name: "Possible change ITEM-001" })).toBeTruthy();
     expect(screen.getAllByRole("row")).toHaveLength(7);
     expect(screen.getAllByText(/Unverified, noncanonical advice/)).toHaveLength(2);
+  });
+
+  it("shows the readable statement and the separate bounded evidence excerpt for an established item", async () => {
+    renderView();
+    await analyze();
+
+    expect(await screen.findByText("Mara now carries the brass key on her person.")).toBeTruthy();
+    expect(screen.getByText("found the brass key")).toBeTruthy();
+    expect(screen.getByText(/Established evidence excerpt/i)).toBeTruthy();
+    expect(screen.getByText(/bounded accepted-segment\s+evidence, not canon and not prose-prompt authority/i)).toBeTruthy();
+  });
+
+  it("keeps an interpretation item excerpt-free", async () => {
+    analyzeMock.mockResolvedValue(interpretationResponse());
+    renderView();
+    await analyze();
+
+    expect(await screen.findByRole("heading", { name: "Possible change ITEM-001" })).toBeTruthy();
+    expect(screen.getByText(/no extractive excerpt; author judgment required/i)).toBeTruthy();
+    expect(screen.queryByText(/Established evidence excerpt/i)).toBeNull();
   });
 
   it("keeps all card actions in component memory and provides navigation instead of mutation", async () => {
@@ -218,7 +238,7 @@ function compileResponse(): CompileSuccess {
       includesSecrets: true,
       promptLength: 38,
       tokenEstimate: 10,
-      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" },
+      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" },
       fingerprint: "fnv1a32:12345678",
       citationMap: {
         "[SEG-7-S001]": "7:0-38",
@@ -243,10 +263,11 @@ function successResponse(): AnalyzeSuccess {
   return {
     ok: true as const,
     review: {
-      contract: "accepted_segment_change_review.v1" as const,
+      contract: "accepted_segment_change_review.v2" as const,
       items: [{
         id: "ITEM-001",
-        changeStatement: "Mara found the brass key.",
+        changeStatement: "Mara now carries the brass key on her person.",
+        evidenceExcerpt: "found the brass key",
         evidence: ["[SEG-7-S001]"],
         contrast: ["[FACT-1]", "[BRIEF:current_authoritative_state.current_location]"],
         epistemicStatus: "established change" as const,
@@ -262,7 +283,7 @@ function successResponse(): AnalyzeSuccess {
       acceptedSegmentId: "7",
       acceptedSegmentSequence: 7,
       recordScope: "active_working_set" as const,
-      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" },
+      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" },
       fingerprint: "fnv1a32:12345678",
       model: "test/model",
       provider: "openrouter" as const
@@ -272,6 +293,22 @@ function successResponse(): AnalyzeSuccess {
 
 function emptyResponse(): AnalyzeSuccess {
   return { ...successResponse(), review: { ...successResponse().review, items: [] } };
+}
+
+function interpretationResponse(): AnalyzeSuccess {
+  const base = successResponse();
+  return {
+    ...base,
+    review: {
+      ...base.review,
+      items: [{
+        ...base.review.items[0]!,
+        changeStatement: "Mara treats the brass key as personally significant.",
+        evidenceExcerpt: "",
+        epistemicStatus: "interpretation requiring author judgment" as const
+      }]
+    }
+  };
 }
 
 function quarantineResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {

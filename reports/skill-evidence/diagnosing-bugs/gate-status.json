@@ -1,11 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-20T21:40:21.390Z",
+  "generated_at": "2026-07-21T20:40:47.155Z",
   "target_content_hash": "60f1a598c437190a61630703db01d358fceaf806d5f587832452b265e808a8fc",
-  "qualifying_uses_on_current_hash": 1,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
+  "qualifying_uses_on_current_hash": 2,
+  "open_incident_ids": [
+    "evt_8877d558-7418-49c7-94eb-549d543907fb"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "execution",
+      "open_event_ids": [
+        "evt_8877d558-7418-49c7-94eb-549d543907fb"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "material_failure"
+    }
+  ],
+  "state": "collecting",
   "authorized_workflow": null,
   "authorization_reason": null,
   "trigger_event_ids": [],

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "protocolId": "accepted-segment-change-review-live-smoke.v1",
+  "candidate": "new-candidate-only",
+  "purpose": "Prepared, non-executing new-candidate-only conformance smoke. Execution and the steward decision are owned by GitHub issue #148; this protocol authorizes no provider request.",
+  "caseOrder": [
+    "death",
+    "injury",
+    "location-change",
+    "custody-change",
+    "clock-threshold-crossing",
+    "commitment-change",
+    "secret-disclosure",
+    "no-change"
+  ],
+  "workflowContract": "accepted_segment_change_review.v2",
+  "sharedEnvelope": {
+    "model": "anthropic/claude-sonnet-4.6",
+    "settings": { "temperature": 0, "maxOutputTokens": 4096, "topP": 1 },
+    "segmentSelection": "latest",
+    "recordScope": "active_working_set"
+  },
+  "routingEnvelope": {
+    "responseFormat": "json_schema",
+    "strictJsonSchema": true,
+    "requireParameters": true,
+    "allowFallbacks": false,
+    "toolChoice": "none",
+    "requiredCapabilities": [
+      "response_format",
+      "structured_outputs",
+      "temperature",
+      "top_p",
+      "max_tokens|max_completion_tokens"
+    ]
+  },
+  "requestPolicy": {
+    "maximumProviderRequests": 8,
+    "requestsPerCase": 1,
+    "automaticRetries": 0,
+    "fallbackRequests": 0,
+    "repairCalls": 0,
+    "toolCalls": 0,
+    "unapprovedSubstitutions": "prohibited",
+    "oldPromptRequests": 0
+  },
+  "completionBoundary": {
+    "executionAuthorized": false,
+    "providerCallsExecuted": 0,
+    "issueClosureIsGo": false,
+    "liveExecutionOwner": "GitHub issue #148"
+  }
+}

@@ -36,8 +36,8 @@ function Harness(): React.JSX.Element {
   return (
     <main>
       <section className="surface configPanel" aria-labelledby="comparison-harness-title">
-        <p className="eyebrow">Non-production comparison surface</p>
-        <h1 id="comparison-harness-title">Accepted-Segment Change Review Comparison Harness</h1>
+        <p className="eyebrow">Non-production candidate surface</p>
+        <h1 id="comparison-harness-title">Accepted-Segment Change Review Candidate Harness</h1>
         <label>
           Harness scenario
           <select aria-label="Harness scenario" value={scenario} onChange={(event) => setScenario(event.target.value as Scenario)}>
@@ -75,7 +75,7 @@ function compileResponse(): Extract<AcceptedSegmentChangeReviewCompileResponse, 
       includesSecrets: true,
       promptLength: 86,
       tokenEstimate: 22,
-      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" },
+      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" },
       fingerprint: "fnv1a32:13500007",
       citationMap: {
         "[SEG-7-S001]": "synthetic-segment-7:0-86",
@@ -128,16 +128,17 @@ function analyzeResponse(scenario: Scenario): AcceptedSegmentChangeReviewAnalyze
   return {
     ok: true,
     review: {
-      contract: "accepted_segment_change_review.v1",
+      contract: "accepted_segment_change_review.v2",
       items: scenario === "empty" ? [] : [{
         id: "ITEM-001",
-        changeStatement: "Mara found the brass key.",
+        changeStatement: "Mara now carries the brass key on her person.",
+        evidenceExcerpt: "found the brass key",
         evidence: ["[SEG-7-S001]"],
         contrast: ["[FACT-1]", "[BRIEF:current_authoritative_state.current_location]"],
         epistemicStatus: "established change",
         retentionHorizon: "durable record candidate",
         affectedTargetHints: ["FACT", "OBJECT"],
-        uncertaintyOrRivalReading: "Explicit source support: \"Mara found the brass key\". Possession is explicit; ownership remains undecided."
+        uncertaintyOrRivalReading: "Possession is explicit; ownership remains undecided."
       }],
       coverage: coverageRows()
     },

@@ -57,6 +57,7 @@ interface GoldFixture {
   readonly adjudication: {
     readonly findings: readonly {
       readonly summary: string;
+      readonly evidenceExcerpt: string;
       readonly evidenceKeys: readonly string[];
       readonly contrastKeys: readonly string[];
       readonly epistemicStatus: string;
@@ -94,14 +95,14 @@ describe("Accepted-Segment Change Review core contract", () => {
       records: fixture.recordInputs.activeWorkingSet,
       referenceStubs: [],
       versions: {
-        template: "1.0.0",
-        compiler: "1.0.0",
-        contract: "1.0.0"
+        template: "2.0.0",
+        compiler: "2.0.0",
+        contract: "2.0.0"
       }
     });
 
     expect(ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE).toBe("accepted-segment-change-review");
-    expect(ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT).toBe("accepted_segment_change_review.v1");
+    expect(ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT).toBe("accepted_segment_change_review.v2");
     expect(ACCEPTED_SEGMENT_CHANGE_REVIEW_BRIEF_FIELD_PATHS).toHaveLength(
       fixture.expectedSourceAccounting.generationBriefFieldCount
     );
@@ -118,14 +119,14 @@ describe("Accepted-Segment Change Review core contract", () => {
       includesSecrets: false,
       promptLength: result.prompt.length,
       versions: {
-        template: "1.0.0",
-        compiler: "1.0.0",
-        contract: "1.0.0"
+        template: "2.0.0",
+        compiler: "2.0.0",
+        contract: "2.0.0"
       }
     });
     expect(result.disclosure.fingerprint).toMatch(/^fnv1a32:[0-9a-f]{8}$/);
     expect(result.prompt).toContain("accepted-segment-change-review");
-    expect(result.prompt).toContain("accepted_segment_change_review.v1");
+    expect(result.prompt).toContain("accepted_segment_change_review.v2");
     expect(result.prompt).toContain(fixture.acceptedSegment.text);
     expect(result.prompt).toContain("2026-07-21T00:00:00.000Z");
     expect(result.prompt).not.toContain("record_creation_schema_catalog");
@@ -206,7 +207,7 @@ describe("Accepted-Segment Change Review core contract", () => {
       generationBriefProjection: fixture.generationBriefProjection,
       records: fixture.recordInputs.activeWorkingSet,
       referenceStubs: [],
-      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" }
     })).toThrow(/evidence is unrepresentable/i);
   });
 
@@ -260,18 +261,25 @@ describe("Accepted-Segment Change Review core contract", () => {
     ["unknown citation", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence: ["[SEG-999-S999]"] }), "unknown-citation"],
     ["material accepted-prose echo", (output: Record<string, unknown>) => mutateFirstItem(output, {
       change_statement: "Iven sagged against the observatory rail. Sera caught him, but his breath had stopped and no pulse answered beneath her fingers.",
-      epistemic_status: "interpretation requiring author judgment"
+      epistemic_status: "interpretation requiring author judgment",
+      evidence_excerpt: ""
     }), "verbatim-source-echo"],
-    ["invented established claim", (output: Record<string, unknown>) => mutateFirstItem(output, {
+    ["established claim flagged by an invention marker", (output: Record<string, unknown>) => mutateFirstItem(output, {
       epistemic_status: "established change",
-      change_statement: "Iven inherited ownership of the observatory.",
+      change_statement: "Iven's ownership of the observatory is inferred but not stated.",
       uncertainty_or_rival_reading: "No rival reading is apparent."
     }), "invalid-established-claim"],
-    ["invented established claim with an unrelated source excerpt", (output: Record<string, unknown>) => mutateFirstItem(output, {
-      epistemic_status: "established change",
-      change_statement: "Iven inherited ownership of the observatory.",
-      uncertainty_or_rival_reading: "Explicit source support: \"Iven sagged against\". No rival reading is apparent."
-    }), "invalid-established-claim"],
+    ["established evidence_excerpt missing from the schema keys", (output: Record<string, unknown>) => omitFirstItemKey(output, "evidence_excerpt"), "schema-mismatch"],
+    ["established evidence_excerpt is the empty string", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "" }), "invalid-evidence-excerpt"],
+    ["established evidence_excerpt shorter than three words", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "his breath" }), "invalid-evidence-excerpt"],
+    ["established evidence_excerpt longer than seven words", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "his breath had stopped and no pulse answered beneath" }), "invalid-evidence-excerpt"],
+    ["established evidence_excerpt absent from every cited span", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: "the moon rose over the harbor" }), "invalid-evidence-excerpt"],
+    ["established evidence_excerpt is not a string", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence_excerpt: 4 }), "schema-mismatch"],
+    ["interpretation carrying a non-empty evidence_excerpt", (output: Record<string, unknown>) => mutateFirstItem(output, {
+      epistemic_status: "interpretation requiring author judgment",
+      evidence_excerpt: "his breath had stopped"
+    }), "invalid-evidence-excerpt"],
+    ["evidence citation with appended prose", (output: Record<string, unknown>) => mutateFirstItem(output, { evidence: ["[SEG-21-S001] the rail"] }), "unknown-citation"],
     ["future possibility", (output: Record<string, unknown>) => mutateFirstItem(output, {
       change_statement: "Sera might investigate who damaged the rail tomorrow."
     }), "future-possibility"],
@@ -329,7 +337,7 @@ function candidateSnapshot(
     generationBriefProjection: fixture.generationBriefProjection,
     records,
     referenceStubs: [],
-    versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" }
   };
 }
 
@@ -343,41 +351,17 @@ function goldOutput(fixture: GoldFixture): Record<string, unknown> {
     contract: ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT,
     items: fixture.adjudication.findings.map((finding, index) => ({
       id: `ITEM-${String(index + 1).padStart(3, "0")}`,
-      change_statement: finding.epistemicStatus === "established change"
-        ? establishedSupportExcerpt(fixture.caseId)
-        : finding.summary,
+      change_statement: finding.summary,
+      evidence_excerpt: finding.evidenceExcerpt,
       evidence: finding.evidenceKeys,
       contrast: finding.contrastKeys,
       epistemic_status: finding.epistemicStatus,
       retention_horizon: finding.retentionHorizon,
       affected_target_hints: finding.targetHints,
-      uncertainty_or_rival_reading: finding.epistemicStatus === "established change"
-        ? `${establishedSupportWitness(fixture)} ${finding.uncertaintyOrRivalReading}`
-        : finding.uncertaintyOrRivalReading
+      uncertainty_or_rival_reading: finding.uncertaintyOrRivalReading
     })),
     coverage: fixture.adjudication.coverage
   };
-}
-
-function establishedSupportWitness(fixture: GoldFixture): string {
-  return `Explicit source support: "${establishedSupportExcerpt(fixture.caseId)}".`;
-}
-
-function establishedSupportExcerpt(caseId: GoldFixture["caseId"]): string {
-  const byCase: Readonly<Record<string, string>> = {
-    death: "his breath had stopped",
-    injury: "Blood welled across the cut",
-    "location-change": "She was inside the dye mill now",
-    "custody-change": "folded his fingers over it",
-    "clock-threshold-crossing": "The amnesty window was over",
-    "commitment-change": "offered his signet as surety",
-    "secret-disclosure": "she told Jorn"
-  };
-  const excerpt = byCase[caseId];
-  if (!excerpt) {
-    throw new Error(`No established support excerpt for ${caseId}.`);
-  }
-  return excerpt;
 }
 
 function parseContext(fixture: GoldFixture) {
@@ -406,6 +390,13 @@ function mutateFirstItem(output: Record<string, unknown>, replacement: Record<st
     ...output,
     items: [{ ...items[0], ...replacement }, ...items.slice(1)]
   };
+}
+
+function omitFirstItemKey(output: Record<string, unknown>, key: string): Record<string, unknown> {
+  const items = output.items as readonly Record<string, unknown>[];
+  const first = { ...items[0] };
+  delete first[key];
+  return { ...output, items: [first, ...items.slice(1)] };
 }
 
 function mutateFirstCoverage(

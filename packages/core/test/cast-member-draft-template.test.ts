@@ -62,7 +62,7 @@ describe("Cast Member draft prompt template", () => {
 
     expect(versionInfo.templates.version).toBe("1.11.0");
     expect(versionInfo.compiler.version).toBe("1.13.0");
-    expect(versionInfo.contract.version).toBe("1.14.0");
+    expect(versionInfo.contract.version).toBe("1.15.0");
   });
 
   it("covers every registered CAST MEMBER schema field and detects a missing leaf", () => {

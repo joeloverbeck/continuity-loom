@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "caseId": "death",
   "title": "Explicit death changes bodily state",
   "syntheticData": true,
@@ -87,7 +87,7 @@
   },
   "adjudication": {
     "findings": [
-      { "findingId": "death-1", "summary": "Iven is explicitly dead rather than alive and active.", "evidenceKeys": ["[SEG-21-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: stopped breath and absent pulse are explicit." }
+      { "findingId": "death-1", "summary": "Iven is explicitly dead rather than alive and active.", "evidenceExcerpt": "his breath had stopped", "evidenceKeys": ["[SEG-21-S001]"], "contrastKeys": ["[ENTITY-STATUS-1]"], "epistemicStatus": "established change", "retentionHorizon": "durable record candidate", "targetHints": ["ENTITY STATUS"], "uncertaintyOrRivalReading": "No rival reading: stopped breath and absent pulse are explicit." }
     ],
     "coverage": [
       { "dimension": "spatial/material/bodily state", "status": "changes found", "reason": "Iven's life and bodily state changed." },

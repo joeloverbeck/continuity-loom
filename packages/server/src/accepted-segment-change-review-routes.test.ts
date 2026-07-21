@@ -78,7 +78,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
       fullRecordCount: 1,
       includesSecrets: false,
       promptLength: response.prompt.length,
-      versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" }
     });
     expect(response.disclosure.countsByType).toEqual({ FACT: 1 });
     expect(response.disclosure.fingerprint).toMatch(/^fnv1a32:/);
@@ -171,7 +171,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
     expect(body).toMatchObject({
       ok: true,
       advisory: { verified: false, canonical: false },
-      review: { contract: "accepted_segment_change_review.v1", items: { length: 1 }, coverage: { length: 6 } },
+      review: { contract: "accepted_segment_change_review.v2", items: { length: 1 }, coverage: { length: 6 } },
       metadata: {
         sourceProfile: "accepted-segment-change-review",
         acceptedSegmentId: "1",
@@ -488,16 +488,17 @@ function validOutput(): string {
     "immediate next-segment handoff"
   ];
   return JSON.stringify({
-    contract: "accepted_segment_change_review.v1",
+    contract: "accepted_segment_change_review.v2",
     items: [{
       id: "ITEM-001",
-      change_statement: "Mara found the brass key.",
+      change_statement: "Mara now carries the brass key on her person.",
+      evidence_excerpt: "found the brass key",
       evidence: ["[SEG-1-S001]"],
       contrast: ["[FACT-1]"],
       epistemic_status: "established change",
       retention_horizon: "durable record candidate",
       affected_target_hints: ["FACT", "OBJECT"],
-      uncertainty_or_rival_reading: "Explicit source support: \"Mara found the brass key\". Possession is explicit; ownership remains undecided."
+      uncertainty_or_rival_reading: "Possession is explicit; ownership remains undecided."
     }],
     coverage: dimensions.map((dimension, index) => ({
       dimension,

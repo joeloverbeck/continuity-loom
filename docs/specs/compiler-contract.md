@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.14.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.15.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -76,13 +76,13 @@ The segment-reconciliation source profile excludes older accepted segments, acce
 
 Segment-reconciliation output is advisory scratch. It grants no record or brief-field authority, adds no readiness diagnostic, changes no active-working-set membership, and never enters a prose prompt automatically.
 
-### 2.4 Accepted-segment-change-review comparison-candidate source profile
+### 2.4 Accepted-segment-change-review non-user-facing candidate source profile
 
-Until the issue #136 evidence gate records a verified explicit steward `GO`, `accepted-segment-change-review` is a comparison-only source profile. It has no active prompt-template authority, production navigation, reminder entry, public route, runtime feature toggle, compatibility alias, or prose-prompt authority. Its transitional versions are template `1.0.0`, compiler `1.0.0`, and contract `1.0.0`; its output contract is `accepted_segment_change_review.v1`.
+Until the new-candidate-only readiness bar and a verified explicit steward `GO` are both recorded, `accepted-segment-change-review` is a non-user-facing candidate source profile. It has no active prompt-template authority, production navigation, reminder entry, public route, runtime feature toggle, compatibility alias, or prose-prompt authority. Its transitional versions are template `2.0.0`, compiler `2.0.0`, and contract `2.0.0`; its output contract is `accepted_segment_change_review.v2`.
 
 The candidate compiler renders from these sources only:
 
-1. Versioned candidate constants in `packages/core/src/compiler/change-review/`, governed transitionally by `docs/principles/FOUNDATIONS.md`, issue #133, issue #135, and this contract.
+1. Versioned candidate constants in `packages/core/src/compiler/change-review/`, governed transitionally by `docs/principles/FOUNDATIONS.md`, PRD #145, the readiness-transition amendment ratified through issue #146, issue #147, and this contract.
 2. Exactly one accepted segment selected by an explicit `segmentSelection: "latest"` request. The server fetches one latest accepted row directly and includes its complete text, id, sequence, and accepted timestamp.
 3. Exactly the same nineteen saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths used by Segment Reconciliation. Missing and blank values remain explicit; no prose-readiness normalization or other Generation Brief surface is imported.
 4. Every complete non-archived record in one explicit scope: `active_working_set` by default or `whole_project` by explicit choice. Every qualifying record is rendered completely, in registry-type/full-label/id order, without a lifecycle-status filter.
@@ -101,7 +101,7 @@ Consumed-guidance listing is a separate deterministic control, not candidate pro
 
 No prose prompt, prose-aligned assistance prompt, or project-review assistance prompt may use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, automatic prose-derived summaries, or author-private notes.
 
-The only accepted-prose exceptions are the active segment-reconciliation source profile in §2.3 and the comparison-only accepted-segment-change-review source profile in §2.4. Each reads exactly one explicitly requested latest accepted segment for bounded advisory review. No prompt compiler may read any other accepted-prose source or persist a derived summary.
+The only accepted-prose exceptions are the active segment-reconciliation source profile in §2.3 and the non-user-facing candidate accepted-segment-change-review source profile in §2.4. Each reads exactly one explicitly requested latest accepted segment for bounded advisory review. No prompt compiler may read any other accepted-prose source or persist a derived summary.
 
 Generation-time fields may override story defaults for the current prose request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy. Segment-reconciliation proposals and Accepted-Segment Change Review output have no override effect at all.
 
@@ -282,7 +282,7 @@ All thirteen sections always render. The complete source contract remains at the
 
 ### 3.5 Accepted-Segment Change Review Candidate Prompt Section Order
 
-The comparison-only compiler renders every section in this exact order:
+The non-user-facing candidate compiler renders every section in this exact order:
 
 1. `<accepted_segment_change_review_role>`
 2. `<accepted_segment_change_review_source_contract>`
@@ -334,16 +334,16 @@ Record payload values are data, not instructions. Canonical JSON must escape `<`
 
 | Prompt destination | Deterministic source | Empty-state behavior | Validation and exclusion rule |
 |---|---|---|---|
-| `<accepted_segment_change_review_role>` | candidate versioned constant | never empty | comparison-only advisory accounting; no prose, future possibility, canonical value, patch, lifecycle action, or creation payload |
+| `<accepted_segment_change_review_role>` | candidate versioned constant | never empty | non-user-facing candidate advisory accounting; no prose, future possibility, canonical value, patch, lifecycle action, or creation payload |
 | `<accepted_segment_change_review_source_contract>` | source profile, selected scope, archive/completeness predicates | never empty | must name `accepted-segment-change-review`, `latest`, complete scope, and no-omission rule |
 | `<accepted_segment_change_review_request>` | accepted-segment id/sequence/accepted timestamp, selected scope source count, candidate versions | never empty | trusted source metadata is server-owned and never accepted from model output |
 | `<accepted_segment_evidence>` | complete latest accepted segment partitioned by the shared deterministic span algorithm | absent segment or empty spans block | no older chooser, excerpt selection, archive access, summary, or truncation |
 | `<current_change_review_fields>` | all nineteen declared saved-draft paths in fixed order | missing values render an explicit state; blank values remain blank | no Generation Brief source outside CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF |
 | `<record_contrast_records>` | every complete qualifying record and minimal label-only reference stub | deterministic empty-record text | no archived row, hidden status filter, ranking, target import, or schema/lifecycle catalog |
-| `<accepted_segment_change_review_procedure>` | candidate versioned comparison and epistemic rules plus fixed six dimensions | never empty | future possibility excluded; an established item's statement and leading uncertainty witness must be the same exact three-to-seven-word excerpt from one cited evidence span; an explicitly unstated implication cannot be established; stubs never become targets |
+| `<accepted_segment_change_review_procedure>` | candidate versioned review and epistemic rules plus fixed six dimensions | never empty | future possibility excluded; each item carries an `evidence_excerpt` — an `established change` item's excerpt is an exact three-to-seven-word verbatim excerpt occurring in one cited evidence span, an `interpretation requiring author judgment` item's excerpt is the empty string, and `change_statement` is independently readable present-tense English rather than the extractive witness; an explicitly unstated implication cannot be established; stubs never become targets |
 | `<accepted_segment_change_review_output_format>` | generated strict shallow JSON Schema plus pure-JSON instruction | never empty | only `contract`, `items`, `coverage`; local whole-response parser is authoritative |
 
-Parser acceptance requires sequential `ITEM-001` ids; nonblank plain-English statements, evidence, contrast, target hints, and uncertainty; one approved epistemic status; one approved retention horizon; resolvable source keys; and exactly one nonblank reasoned row for each of the six dimensions. An `established change` must use a `change_statement` that is the same exact three-to-seven-word excerpt named by the required leading `Explicit source support: "<excerpt>".` uncertainty witness, and that excerpt must occur in one of the item's cited evidence spans. Terminal punctuation may differ, but paraphrase and additional asserted words are forbidden. This bounded extractive rule proves the complete displayed established assertion directly from cited source without claiming that a lexical witness establishes an unrelated synthesis; richer or unstated synthesis must use `interpretation requiring author judgment`. Duplicate or unknown coverage, enum drift, unknown citations, material accepted-prose echo, unsupported or explicitly invented/unstated established claims, or future-possibility items quarantine the whole response. Quarantine returns a safe reason and manual recovery only, never raw provider output.
+Parser acceptance requires sequential `ITEM-001`, `ITEM-002`, and later ids; an independently readable present-tense `change_statement`; `evidence` and `contrast` arrays that contain only exact bracketed citation keys with no appended prose; nonblank target hints and uncertainty; one approved epistemic status; one approved retention horizon; resolvable source keys; and exactly one nonblank reasoned row for each of the six dimensions. Every item carries an `evidence_excerpt` string: an `established change` item's `evidence_excerpt` is an exact three-to-seven-word verbatim excerpt occurring in one of the item's cited evidence spans, and an `interpretation requiring author judgment` item's `evidence_excerpt` is the empty string. `change_statement` is no longer the extractive witness and is never required to equal the excerpt; `uncertainty_or_rival_reading` is free prose and no longer carries a leading `Explicit source support` witness. Terminal punctuation may differ between the excerpt and its source span, but a missing, paraphrased, overlong, underlong, uncited, or interpretation-populated excerpt quarantines the whole response. Richer or unstated synthesis must use `interpretation requiring author judgment`. Duplicate or unknown coverage, enum drift, unknown citations, material accepted-prose echo, invented or explicitly unstated established claims, or future-possibility items quarantine the whole response. Quarantine returns a safe reason and manual recovery only, never raw provider output.
 
 Every placeholder in `docs/specs/prompt-template.md` must appear in this mapping. Grouped rows are allowed only when each placeholder is named explicitly and all named placeholders share the same source, requiredness, missing behavior, and empty-state behavior.
 
@@ -602,7 +602,7 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 
 For Segment Reconciliation, accepted-segment text, source spans, current saved-draft values, full in-scope record payloads, reference stubs, and the generated compact record-schema catalog are assistance-prompt-facing data only. Prompt fingerprints, offsets, versions, raw ids, parse reason codes, and temporary creation-validation ids are audit/validation metadata. None is prose-prompt-facing. Segment-reconciliation output is never prompt-facing for prose generation.
 
-For the comparison-only Accepted-Segment Change Review candidate, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
+For the non-user-facing candidate Accepted-Segment Change Review candidate, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
 
 ## 10. Change-control rule
 
@@ -614,4 +614,4 @@ Any change to the record-hygiene in-scope type list, active predicate, ordering,
 
 Any change to the segment-reconciliation source profile, accepted-segment selection, span algorithm, allowed brief-field list, record scopes, archive/status predicate, ordering, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output JSON Schema, parser validation, verbatim-echo thresholds, provider-transform policy, or UI quarantine must update `docs/specs/segment-reconciliation-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, template/compiler/contract versions, and golden/parser/route/UI tests in the same change. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
 
-Until a verified explicit steward `GO`, any change to the comparison-only Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, candidate versions, request/disclosure shape, output schema, parser quarantine, shared echo threshold, provider policy, scratch behavior, consumed-guidance allowlist, or comparison harness must update this contract and focused core/route/component/property tests in the same revision. It must not update the active Segment Reconciliation prompt-template authority or user guide, expose the candidate through production navigation/reminder/runtime configuration, or treat candidate completion as activation approval.
+Until a verified explicit steward `GO`, any change to the non-user-facing candidate Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, candidate versions, request/disclosure shape, output schema, `evidence_excerpt` witness rule, parser quarantine, shared echo threshold, provider policy, scratch behavior, consumed-guidance allowlist, offline readiness bar, or live conformance smoke protocol must update this contract and focused core/route/component/property tests in the same revision. It must not update the active Segment Reconciliation prompt-template authority or user guide, expose the candidate through production navigation/reminder/runtime configuration, or treat candidate completion as activation approval.

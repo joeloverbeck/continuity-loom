@@ -207,7 +207,7 @@ export function AcceptedSegmentChangeReviewView({
     <section className="surface previewSurface" aria-labelledby="accepted-segment-change-review-title">
       <div className="projectHeader">
         <div>
-          <p className="eyebrow">Comparison candidate</p>
+          <p className="eyebrow">Non-user-facing candidate</p>
           <h2 id="accepted-segment-change-review-title">Accepted-Segment Change Review</h2>
         </div>
       </div>
@@ -220,7 +220,7 @@ export function AcceptedSegmentChangeReviewView({
         <section aria-labelledby="change-review-local-compile-error">
           <h3 id="change-review-local-compile-error">Local request failed</h3>
           <p className="status statusError" role="alert">{compileState.message}</p>
-          <p>No provider call was made. Change scope or reopen the comparison harness to retry manually.</p>
+          <p>No provider call was made. Change scope or reopen the review harness to retry manually.</p>
         </section>
       ) : null}
 
@@ -450,6 +450,16 @@ function ChangeCard({
     <article className="candidateCard" aria-labelledby={`change-review-item-${item.id}`}>
       <h4 id={`change-review-item-${item.id}`}>Possible change {item.id}</h4>
       <p>{item.changeStatement}</p>
+      {item.epistemicStatus === "established change" ? (
+        <p className="changeReviewExcerpt">
+          <span>Established evidence excerpt</span>: <q>{item.evidenceExcerpt}</q> — bounded accepted-segment
+          evidence, not canon and not prose-prompt authority.
+        </p>
+      ) : (
+        <p className="changeReviewExcerpt">
+          Interpretation requiring author judgment — no extractive excerpt; author judgment required.
+        </p>
+      )}
       <dl>
         <dt>Epistemic status</dt><dd>{item.epistemicStatus}</dd>
         <dt>Retention horizon</dt><dd>{item.retentionHorizon}</dd>
@@ -570,6 +580,9 @@ function citationTarget(
 function formatItemForCopy(item: AcceptedSegmentChangeReviewItem): string {
   return [
     item.changeStatement,
+    item.epistemicStatus === "established change"
+      ? `Evidence excerpt: ${item.evidenceExcerpt}`
+      : "Evidence excerpt: none (interpretation requiring author judgment)",
     `Epistemic status: ${item.epistemicStatus}`,
     `Retention horizon: ${item.retentionHorizon}`,
     `Evidence: ${item.evidence.join(", ")}`,

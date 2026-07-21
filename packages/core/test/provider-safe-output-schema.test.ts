@@ -36,7 +36,7 @@ describe("provider-safe strict output schemas", () => {
     const reconciliation = segmentReconciliationOutputJsonSchema() as SchemaObject;
 
     expect((changeReview.properties as SchemaObject).contract).toEqual({
-      enum: ["accepted_segment_change_review.v1"]
+      enum: ["accepted_segment_change_review.v2"]
     });
     const reconciliationProps = reconciliation.properties as SchemaObject;
     expect(reconciliationProps.contract).toEqual({ enum: ["segment_reconciliation.v1"] });

@@ -102,8 +102,8 @@ export function validateGoldCorpus(corpus) {
 
 function validateFixture(fixture) {
   const caseId = requireString(fixture.caseId, "case id");
-  if (fixture.schemaVersion !== 1) {
-    throw new Error(`${caseId}: schemaVersion must be 1.`);
+  if (fixture.schemaVersion !== 2) {
+    throw new Error(`${caseId}: schemaVersion must be 2.`);
   }
   if (fixture.syntheticData !== true) {
     throw new Error(`${caseId}: syntheticData must be true.`);
@@ -219,6 +219,7 @@ function validateAdjudication(fixture, caseId) {
     const findingId = requireString(finding?.findingId, `${caseId} finding id`);
     findingIds.push(findingId);
     requireString(finding.summary, `${caseId} finding summary`);
+    validateEvidenceExcerpt(finding, fixture.acceptedSegment.text, caseId, findingId);
     validateKnownKeys(finding.evidenceKeys, evidenceKeys, `${caseId} finding ${findingId} evidence`);
     validateKnownKeys(finding.contrastKeys, contrastKeys, `${caseId} finding ${findingId} contrast`);
     if (!EPISTEMIC_STATUSES.has(finding.epistemicStatus)) {
@@ -249,6 +250,24 @@ function validateAdjudication(fixture, caseId) {
     !/synthetic.*SECRET|SECRET.*synthetic/i.test(fixture.syntheticDataDisclosure)
   ) {
     throw new Error(`${caseId}: synthetic SECRET data must be visibly disclosed.`);
+  }
+}
+
+function validateEvidenceExcerpt(finding, acceptedSegmentText, caseId, findingId) {
+  const excerpt = finding.evidenceExcerpt;
+  if (typeof excerpt !== "string") {
+    throw new Error(`${caseId}: finding ${findingId} evidenceExcerpt must be a string.`);
+  }
+  if (finding.epistemicStatus === "established change") {
+    const words = excerpt.trim().split(/\s+/).filter(Boolean);
+    if (words.length < 3 || words.length > 7) {
+      throw new Error(`${caseId}: finding ${findingId} evidenceExcerpt must be a three-to-seven-word excerpt.`);
+    }
+    if (!acceptedSegmentText.includes(excerpt)) {
+      throw new Error(`${caseId}: finding ${findingId} evidenceExcerpt must occur verbatim in the accepted segment.`);
+    }
+  } else if (excerpt !== "") {
+    throw new Error(`${caseId}: finding ${findingId} interpretation evidenceExcerpt must be the empty string.`);
   }
 }
 

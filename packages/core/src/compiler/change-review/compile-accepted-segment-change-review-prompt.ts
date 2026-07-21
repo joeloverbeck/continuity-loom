@@ -144,9 +144,11 @@ function renderPrompt(
     ].join("\n")),
     renderTaggedSection("accepted_segment_change_review_procedure", [
       "Compare the complete segment evidence with every declared brief field and complete in-scope record.",
-      "Every item must cite evidence and current contrast keys. Reference stubs may be cited as labels but are never change targets.",
-      "Use established change only for explicit present change; otherwise use interpretation requiring author judgment.",
-      "For established change, change_statement must be the same exact three-to-seven-word excerpt from one cited segment span used at the start of uncertainty_or_rival_reading as Explicit source support: \"<same excerpt>\". Do not paraphrase or add a claim. The local parser rejects established claims that are not this bounded extractive evidence.",
+      "Number items sequentially as ITEM-001, ITEM-002, and so on, in the order you report them.",
+      "Every item must cite evidence and current contrast keys. The evidence and contrast arrays contain only exact bracketed citation keys, for example [SEG-21-S001] or [ENTITY-STATUS-1], with no appended prose. Reference stubs may be cited as labels but are never change targets.",
+      "Write change_statement as an independently readable, present-tense statement of the change. Do not copy accepted prose into it.",
+      "Every item carries an evidence_excerpt string. For an established change, evidence_excerpt is an exact three-to-seven-word verbatim excerpt copied from one of the item's cited segment spans; change_statement stays free readable prose and need not equal the excerpt. For an interpretation requiring author judgment, evidence_excerpt is the empty string \"\".",
+      "Use established change only for an explicit present change grounded by its evidence_excerpt; otherwise use interpretation requiring author judgment. The local parser rejects an established item whose evidence_excerpt is missing, is not a three-to-seven-word verbatim excerpt, or does not occur in one cited span, and rejects an interpretation whose evidence_excerpt is not empty.",
       `Account for exactly these dimensions: ${ACCEPTED_SEGMENT_CHANGE_REVIEW_COVERAGE_DIMENSIONS.join(" | ")}.`,
       "An empty items list remains unverified advisory output and is valid only with all six reasoned coverage rows."
     ].join("\n")),

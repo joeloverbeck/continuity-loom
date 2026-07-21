@@ -17,6 +17,7 @@
     "lint": "npm run build --workspace @loom/core && eslint . && node scripts/run-workspaces-if-present.mjs lint",
     "test": "npm run build --workspace @loom/core && vitest run",
     "test:coverage:core": "npm run build --workspace @loom/core && vitest run --coverage packages/core",
+    "change-review:readiness": "npm run build --workspace @loom/core && node scripts/accepted-segment-change-review/cli.mjs readiness",
     "mutation:prose": "stryker run stryker.prose.config.mjs",
     "mutation:ideation": "stryker run stryker.ideation.config.mjs",
     "mutation:segment-reconciliation": "stryker run stryker.segment-reconciliation.config.mjs",

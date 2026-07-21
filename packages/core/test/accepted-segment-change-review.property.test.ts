@@ -116,6 +116,6 @@ function compile(records: readonly AcceptedSegmentChangeReviewRecord[], fixture:
     generationBriefProjection: fixture.generationBriefProjection,
     records,
     referenceStubs: [],
-    versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+    versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.0.0" }
   });
 }
