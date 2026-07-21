@@ -292,6 +292,23 @@ test("rejects captured values that violate the durable result schema", async () 
   }
 });
 
+test("accepts RFC 3339 lowercase separators and leap-second timestamps", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const result = successfulResult(corpus[0], "old", 1);
+  result.provenance.startedAt = "2026-06-30t23:59:60z";
+  result.provenance.completedAt = "2026-07-01T00:00:00Z";
+  const run = comparisonRun([result]);
+  run.stewardReceipt = {
+    status: "recorded",
+    steward: "comparison steward",
+    decision: "NO-GO",
+    recordedAt: "2026-07-01t00:01:00z",
+    rationale: "The comparison remains non-decisional."
+  };
+
+  assert.doesNotThrow(() => evaluateComparison(corpus, run, protocol));
+});
+
 function comparisonRun(requests) {
   return {
     schemaVersion: 1,
