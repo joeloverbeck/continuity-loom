@@ -254,6 +254,44 @@ test("rejects undeclared fields on every captured surface before cloning durable
   }
 });
 
+test("rejects captured values that violate the durable result schema", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+  const mutations = [
+    (run) => { run.requests[0].provenance.startedAt = "not-a-date"; },
+    (run) => { run.requests[0].provenance.completedAt = "also-not-a-date"; },
+    (run) => { run.requests[0].provenance.startedAt = "2026-02-31T10:00:00.000Z"; },
+    (run) => { run.requests[0].sourceAccounting.acceptedSegmentId = ""; },
+    (run) => { run.requests[0].sourceAccounting.acceptedSegmentSequence = "not-an-integer"; },
+    (run) => { run.requests[0].sourceAccounting.generationBriefFieldCount = 18; },
+    ...[
+      "activeWorkingSetRecordIds",
+      "wholeProjectRecordIds",
+      "evidenceKeys",
+      "contrastKeys",
+      "secretRecordIds"
+    ].map((field) => (run) => { run.requests[0].sourceAccounting[field] = [1]; }),
+    (run) => {
+      run.stewardReceipt = {
+        status: "recorded",
+        steward: "comparison steward",
+        decision: "NO-GO",
+        recordedAt: "not-a-date",
+        rationale: "Schema validation must fail first."
+      };
+    }
+  ];
+
+  for (const mutate of mutations) {
+    const run = comparisonRun([successfulResult(death, "old", 1)]);
+    mutate(run);
+    assert.throws(
+      () => evaluateComparison(corpus, run, protocol),
+      /date-time|source accounting|must be a nonblank string|must contain only nonblank strings/
+    );
+  }
+});
+
 function comparisonRun(requests) {
   return {
     schemaVersion: 1,

@@ -113,21 +113,7 @@ function validateRequestResult(result, protocol) {
   }
 
   validateProvenance(result.provenance, result.workflow, protocol);
-  requireObject(result.sourceAccounting, `${result.requestId} source accounting`);
-  requireExactKeys(
-    result.sourceAccounting,
-    [
-      "acceptedSegmentId",
-      "acceptedSegmentSequence",
-      "generationBriefFieldCount",
-      "activeWorkingSetRecordIds",
-      "wholeProjectRecordIds",
-      "evidenceKeys",
-      "contrastKeys",
-      "secretRecordIds"
-    ],
-    `${result.requestId} source accounting`
-  );
+  validateSourceAccounting(result.sourceAccounting, result.requestId);
   requireArray(result.findings, `${result.requestId} findings`);
   requireArray(result.coverage, `${result.requestId} coverage`);
   validateRequestPolicy(result.requestPolicy, result.requestId);
@@ -202,10 +188,46 @@ function validateProvenance(provenance, workflow, protocol) {
   if (provenance.recordScope !== protocol.sharedEnvelope.recordScope) {
     throw new Error("Provenance recordScope does not match the pinned protocol.");
   }
-  requireString(provenance.startedAt, "provenance startedAt");
-  requireString(provenance.completedAt, "provenance completedAt");
+  requireDateTime(provenance.startedAt, "provenance startedAt");
+  requireDateTime(provenance.completedAt, "provenance completedAt");
   requireSha256(provenance.sourceFingerprint, "provenance sourceFingerprint");
   requireSha256(provenance.promptSha256, "provenance promptSha256");
+}
+
+function validateSourceAccounting(sourceAccounting, requestId) {
+  const label = `${requestId} source accounting`;
+  requireObject(sourceAccounting, label);
+  requireExactKeys(
+    sourceAccounting,
+    [
+      "acceptedSegmentId",
+      "acceptedSegmentSequence",
+      "generationBriefFieldCount",
+      "activeWorkingSetRecordIds",
+      "wholeProjectRecordIds",
+      "evidenceKeys",
+      "contrastKeys",
+      "secretRecordIds"
+    ],
+    label
+  );
+  requireString(sourceAccounting.acceptedSegmentId, `${label} acceptedSegmentId`);
+  requireNonnegativeInteger(
+    sourceAccounting.acceptedSegmentSequence,
+    `${label} acceptedSegmentSequence`
+  );
+  if (sourceAccounting.generationBriefFieldCount !== 19) {
+    throw new Error(`${label} generationBriefFieldCount must be 19.`);
+  }
+  for (const field of [
+    "activeWorkingSetRecordIds",
+    "wholeProjectRecordIds",
+    "evidenceKeys",
+    "contrastKeys",
+    "secretRecordIds"
+  ]) {
+    requireSchemaStringArray(sourceAccounting[field], `${label} ${field}`);
+  }
 }
 
 function validateRequestPolicy(policy, requestId) {
@@ -323,7 +345,7 @@ function validateStewardReceipt(receipt) {
   if (receipt.decision !== "GO" && receipt.decision !== "NO-GO") {
     throw new Error("Recorded steward decision must be GO or NO-GO.");
   }
-  requireString(receipt.recordedAt, "steward receipt recordedAt");
+  requireDateTime(receipt.recordedAt, "steward receipt recordedAt");
   requireString(receipt.rationale, "steward receipt rationale");
 }
 
@@ -587,10 +609,36 @@ function requireString(value, label) {
   return value;
 }
 
+function requireDateTime(value, label) {
+  requireString(value, label);
+  const match = /^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.exec(value);
+  const year = Number(match?.[1]);
+  const month = Number(match?.[2]);
+  const day = Number(match?.[3]);
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  if (!match || day > daysInMonth[month - 1]) {
+    throw new Error(`${label} must be an RFC 3339 date-time.`);
+  }
+}
+
+function requireNonnegativeInteger(value, label) {
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`${label} must be a nonnegative integer.`);
+  }
+}
+
 function requireStringArray(value, label) {
   requireArray(value, label);
   if (value.length === 0 || value.some((entry) => typeof entry !== "string" || entry.length === 0)) {
     throw new Error(`${label} must contain nonblank strings.`);
+  }
+}
+
+function requireSchemaStringArray(value, label) {
+  requireArray(value, label);
+  if (value.some((entry) => typeof entry !== "string" || entry.length === 0)) {
+    throw new Error(`${label} must contain only nonblank strings.`);
   }
 }
 
