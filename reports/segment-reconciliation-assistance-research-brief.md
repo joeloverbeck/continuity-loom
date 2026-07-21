@@ -16,7 +16,7 @@ process serves a React UI and a localhost-only API that tracks story records, co
 into a deterministic prose-generation prompt, and handles segment acceptance. It is an
 npm-workspaces ESM monorepo (Node ≥ 24, strict TypeScript) with three packages: `@loom/core`
 (pure continuity/compiler logic, framework- and platform-free), `@loom/server`, `@loom/web`.
-Governing docs: `docs/FOUNDATIONS.md` is the constitution (its §29 is the alignment/hard-fail
+Governing docs: `docs/principles/FOUNDATIONS.md` is the constitution (its §29 is the alignment/hard-fail
 checklist); `docs/ACTIVE-DOCS.md` maps the active authority hierarchy. **Fetch every file from
 commit `c04bcf9` (`c04bcf9afe4881c5940574a6ab9fa31633d5c0bd`)** — the manifest reflects that
 exact tree. No referenced report cites a divergent "commit of record"; if you encounter one,
@@ -28,12 +28,12 @@ surface in a family of two already-shipped siblings, and it must be modeled on t
 - **Grounded ideation** (`prose-aligned` source profile) — shipped via
   `archive/specs/SPEC-021-grounded-ideation-prompt.md` and
   `archive/specs/SPEC-022-ideation-native-prompt-template.md`; documented in
-  `docs/ideation-prompt-template.md`. Closest **structural** model (request shape, section
+  `docs/specs/ideation-prompt-template.md`. Closest **structural** model (request shape, section
   order, citation keys, output contract, UI quarantine).
 - **Record hygiene** (`project-review` source profile, with a working-set/whole-project dual
   scope) — shipped via `archive/specs/SPEC-027-record-hygiene-assistance-prompt.md` and
   `archive/specs/SPEC-030-record-hygiene-working-set-scope.md`; documented in
-  `docs/story-record-hygiene-prompt-template.md`. Model for **dual scope, action/relation
+  `docs/specs/story-record-hygiene-prompt-template.md`. Model for **dual scope, action/relation
   taxonomy, output contract, UI quarantine, and same-change synchronization rules**.
 
 It also **upgrades, without replacing,** the existing post-acceptance **durable-change reminder**
@@ -66,30 +66,30 @@ Read these completely before producing. Order follows Loom's authority hierarchy
 docs/ACTIVE-DOCS.md
   — the authority map: which doc governs which surface, the active-vs-archive boundary, and the
     rule that any new docs/ file must be registered here in the same change.
-docs/FOUNDATIONS.md
+docs/principles/FOUNDATIONS.md
   — the constitution. Load-bearing sections for this target: §9.1 (assistance prompt class — the
     TWO existing source profiles and why neither reads accepted prose), §10 + §28.1–§28.2 (no
     accepted prose in prompts; no archive dumping), §26 + §26.1 (sanctioned LLM assistance and
     the shared assistance-output quarantine rules), §20–§21 (durable change + post-acceptance
     reminder), §29 (the hard-fail checklist this proposal must clear AND amend). §1.1 is the
     amendment procedure you must follow when authoring the amendment block.
-docs/compiler-contract.md
+docs/specs/compiler-contract.md
   — deterministic placeholder mapping, section order, empty-state rules, assistance source-profile
     registration, and the version/same-change drift rules. The new source profile and prompt must
     be registered here; the amendment cascade lands here.
-docs/ideation-prompt-template.md
+docs/specs/ideation-prompt-template.md
   — the `prose-aligned` assistance sibling and your closest structural template: request shape,
     deterministic section order, citation-key scheme, output contract, and UI quarantine list.
-docs/story-record-hygiene-prompt-template.md
+docs/specs/story-record-hygiene-prompt-template.md
   — the `project-review` assistance sibling: dual user-selected scope, source contract, relation
     + action taxonomy, hard distinction guards, output contract, UI quarantine, and the
     same-change synchronization rule across template/schema/contract/golden tests.
-docs/story-record-schema.md
+docs/specs/story-record-schema.md
   — the record-type catalog with every enum vocabulary (the creation surface's source of truth),
     plus the generation-time brief field shapes (CURRENT AUTHORITATIVE STATE, IMMEDIATE HANDOFF,
     MANUAL MOMENT DIRECTIVE, STOP GUIDANCE, voice pressure/overrides) used by the §3 in/out-of-scope
     split, and the §3.3 rule that handoff fields must never contain verbatim accepted prose.
-docs/validation-rule-inventory.md
+docs/specs/validation-rule-inventory.md
   — implemented diagnostic inventory + same-change drift rule; confirms this surface adds no
     readiness blockers and must honor §29.5 (a diagnostic assistance prompt must not block on the
     condition it exists to inspect).
@@ -114,11 +114,11 @@ reports/private-notes-usability-change-proposal.md           — second change-p
 **Boundary-awareness (read to bound scope — NOT conformance targets; do not audit or "correct" them):**
 
 ```
-docs/prompt-template.md, docs/prompt-template-rationale.md
+docs/specs/prompt-template.md, docs/prompt-template-rationale.md
   — the UNIVERSAL PROSE prompt + its rationale. Read only to confirm the new surface is an
     ASSISTANCE prompt, NOT a prose prompt, and to reuse shared-section framing the way ideation
     does. Do not extend the prose template.
-docs/stress-suite.md, docs/stress-coverage-matrix.md
+docs/specs/stress-suite.md, docs/specs/stress-coverage-matrix.md
   — the regression/golden coverage model, to say where new coverage lands. Not a behavior spec for this surface.
 docs/archival-workflow.md, tickets/README.md, tickets/_TEMPLATE.md
   — the downstream spec→ticket pipeline your change-proposal feeds. Read to shape the hand-off, not to author tickets.
@@ -183,8 +183,8 @@ These decisions were resolved with the repo owner. Treat them as fixed requireme
      so the checklist still rejects misuse (e.g. accepted prose entering a prose prompt, multi-segment
      dumping, auto-write of output);
    - the **cascade** edits required in the same change: register the new profile/prompt in
-     `docs/compiler-contract.md`, and add the projection + field-scope rules to
-     `docs/story-record-schema.md`. Show proposed wording for these too.
+     `docs/specs/compiler-contract.md`, and add the projection + field-scope rules to
+     `docs/specs/story-record-schema.md`. Show proposed wording for these too.
 
    Present the amendment as a proposal for the owner's sign-off (per §1.1 step 2), not as an
    accomplished edit.
@@ -224,11 +224,11 @@ These decisions were resolved with the repo owner. Treat them as fixed requireme
 
 6. **Record-creation output contract — delegated to you, with locked hard requirements.** The
    owner's sharpest pain is that **record creation is troublesome** (17 record types, each with many
-   constrained enum vocabularies — see `docs/story-record-schema.md`). Research how comparable
+   constrained enum vocabularies — see `docs/specs/story-record-schema.md`). Research how comparable
    systems do **schema-guided / structured extraction** and propose a concrete output contract.
    These requirements are **non-negotiable** regardless of the contract you choose:
    - every creation proposal names a **valid record type** from the schema taxonomy;
-   - every enum-valued field uses **only real enum values** drawn from `docs/story-record-schema.md`
+   - every enum-valued field uses **only real enum values** drawn from `docs/specs/story-record-schema.md`
      (the contract must make the enum vocabularies available to the model so proposals are
      well-formed);
    - every proposal (field update, record change, deactivation, creation) carries **provenance** —
@@ -279,7 +279,7 @@ wherever it sharpens the deliverable. Especially valuable here:
   grammar-constrained decoding, taxonomy-guided extraction);
 - **LLM-assisted state / memory updating** in agent and interactive-fiction systems (how durable
   "world state" or "memory" deltas are proposed from new events and reviewed before commit);
-- how comparable creative-writing / worldbuilding tools (e.g. those named in `docs/FOUNDATIONS.md`
+- how comparable creative-writing / worldbuilding tools (e.g. those named in `docs/principles/FOUNDATIONS.md`
   §30) handle "update your story bible after a scene" — and how they fail (state laundering,
   prose-as-canon drift), which Loom explicitly rejects.
 
@@ -291,7 +291,7 @@ Cite sources for any external claim that shapes a decision.
 
 Honor these; a proposal that conflicts with a higher authority is wrong, not the authority.
 
-- **`docs/FOUNDATIONS.md` is the constitution.** Every product-behavior decision must satisfy it
+- **`docs/principles/FOUNDATIONS.md` is the constitution.** Every product-behavior decision must satisfy it
   and clear its §29 hard-fail checklist. The one sanctioned divergence here — reading the latest
   accepted segment into an assistance prompt — must be handled by the **amendment in §3.2**
   (amend first, per §1.1; never design against the constitution silently).
@@ -324,7 +324,7 @@ Honor these; a proposal that conflicts with a higher authority is wrong, not the
   - **Author-private notes** (§6.6, §29.12) are never a source for this surface.
   - **Same-change synchronization** (§8 / schema §10 / compiler-contract): adding the new prompt,
     placeholders, source predicate, section order, or output parser requires updating the relevant
-    domain doc(s), `docs/compiler-contract.md`, the template/compiler/contract versions in
+    domain doc(s), `docs/specs/compiler-contract.md`, the template/compiler/contract versions in
     `packages/core/src/version.ts`, and golden tests in the same change. The change-proposal must
     enumerate this cascade.
   - **No branches / no plot-rail machinery / local-prose-only** (§12, §4.6): the surface reconciles
@@ -356,7 +356,7 @@ The document must contain, at minimum:
    determinism/inspectability/quarantine rules. Include the **recommended record-contrast scope
    model** (§3.4) with justification.
 3. **Request shape & deterministic section order** for the compiled prompt (model on
-   `docs/ideation-prompt-template.md` and `docs/story-record-hygiene-prompt-template.md`).
+   `docs/specs/ideation-prompt-template.md` and `docs/specs/story-record-hygiene-prompt-template.md`).
 4. **Output contract** for all three advisory parts: (a) brief-field update/fill proposals over the
    §3.5 in-scope fields with provenance; (b) record change/deactivation proposals with a valid
    lifecycle destination + provenance; (c) **record-creation proposals** meeting every §3.6 hard
@@ -369,8 +369,8 @@ The document must contain, at minimum:
 6. **The FOUNDATIONS amendment block** — clearly labeled, with **exact proposed wording** for the
    new §9.1 source profile, the §10/§28 reconciliation, and the §29.4 (and any other) hard-fail
    additions, following the §1.1 amendment procedure and presented for owner sign-off.
-7. **The cascade** — exact proposed additions to `docs/compiler-contract.md` and
-   `docs/story-record-schema.md`, the `docs/ACTIVE-DOCS.md` registry note if any new `docs/` file is
+7. **The cascade** — exact proposed additions to `docs/specs/compiler-contract.md` and
+   `docs/specs/story-record-schema.md`, the `docs/ACTIVE-DOCS.md` registry note if any new `docs/` file is
    introduced, the version bumps in `packages/core/src/version.ts`, and the golden/stress coverage
    to add. Enumerate the same-change synchronization set.
 8. **Risks & rejected alternatives** — name the field's failure modes (state laundering,

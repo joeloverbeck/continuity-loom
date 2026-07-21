@@ -5,7 +5,7 @@ Authority: support (see docs/ACTIVE-DOCS.md)
 
 This document captures research-grounded candidates for future deterministic validation work. It is not a backlog, not a validation authority, and not permission to implement any candidate below.
 
-Promoting any candidate requires its own spec that clears `docs/FOUNDATIONS.md` §29. Semantic prose-quality judgments, model interpretation, and inferred story meaning are out of scope for deterministic blockers under FOUNDATIONS §11.
+Promoting any candidate requires a published PRD that clears `docs/principles/FOUNDATIONS.md` §29. Semantic prose-quality judgments, model interpretation, and inferred story meaning are out of scope for deterministic blockers under `docs/principles/FOUNDATIONS.md` §11.
 
 ## Candidate List
 
@@ -26,7 +26,7 @@ Promoting any candidate requires its own spec that clears `docs/FOUNDATIONS.md` 
 
 ## Known Deferred Item
 
-`EVENT.sequence_order` prompt-wiring remains deferred. The 2026-06-09 open-thread-fields triage item O5 states that `sequence_order` is authoring metadata, is not used in prompt generation, and would require a published PRD before any compiled output or ordering behavior changed. `docs/story-record-schema.md` currently matches that decision: `sequence_order` is not sent to the prose prompt and does not control compiled event ordering.
+`EVENT.sequence_order` prompt-wiring remains deferred. The 2026-06-09 open-thread-fields triage item O5 states that `sequence_order` is authoring metadata, is not used in prompt generation, and would require a published PRD before any compiled output or ordering behavior changed. `docs/specs/story-record-schema.md` currently matches that decision: `sequence_order` is not sent to the prose prompt and does not control compiled event ordering.
 
 This roadmap does not re-propose `EVENT.sequence_order` wiring.
 

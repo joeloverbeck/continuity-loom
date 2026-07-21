@@ -19,7 +19,7 @@ logic — framework- and platform-free; no `fastify`, `react`, `vite`, or `node:
 **`@loom/server`** (Fastify localhost API + static UI host), and **`@loom/web`** (React + Vite
 front end).
 
-Governing docs: **`docs/FOUNDATIONS.md` is the constitution** (its §29 is the alignment / hard-fail
+Governing docs: **`docs/principles/FOUNDATIONS.md` is the constitution** (its §29 is the alignment / hard-fail
 checklist every spec must clear; §1.1 is the amendment procedure and precedence rule);
 **`docs/ACTIVE-DOCS.md`** maps the active authority hierarchy and the active-vs-archive boundary.
 
@@ -72,9 +72,9 @@ Read these before producing. Order follows Loom's authority hierarchy (`docs/ACT
 **Primary (load-bearing for this target):**
 
 - `docs/ACTIVE-DOCS.md` — the authority map: which doc governs which surface, the active-vs-archive
-  boundary, the rule that **every active `docs/*.md` must be registered here**, and the
+  boundary, the rule that **every active Markdown document under `docs/` must be registered here**, and the
   spec-vs-ticket intake rules. Any new doc or registry impact of this redesign must respect it.
-- `docs/FOUNDATIONS.md` — the constitution. Load-bearing sections (all grep-confirmed at `90d17f8`):
+- `docs/principles/FOUNDATIONS.md` — the constitution. Load-bearing sections (all grep-confirmed at `90d17f8`):
   **§2** (app identity — what the app is *not*); **§6.6 "Author-private story notes"** — the exact
   wall this redesign must not breach (notes never enter validation snapshots, readiness, compiler
   inputs, prose/ideation/assistance prompts, OpenRouter bodies, active-working-set membership,
@@ -94,7 +94,7 @@ Read these before producing. Order follows Loom's authority hierarchy (`docs/ACT
 - `archive/reports/author-private-story-notes-research-brief.md` — the predecessor brief; the
   research already commissioned and the locked constraints, so you do not re-commission completed
   work or re-litigate settled boundaries.
-- `docs/story-record-schema.md` — *boundary-awareness*: read to **prove** notes remain not a record
+- `docs/specs/story-record-schema.md` — *boundary-awareness*: read to **prove** notes remain not a record
   type, not a generation-time field, and off every prompt-facing/validation path. Nothing in this
   redesign should add a record/brief entry.
 - `docs/user-guide.md` — the user-facing local loop and the existing app surfaces the Notes view
@@ -102,7 +102,7 @@ Read these before producing. Order follows Loom's authority hierarchy (`docs/ACT
 
 **Boundary-awareness (read to bound scope — *not* a conformance target):**
 
-- `docs/compiler-contract.md` — read only to **confirm Notes introduce no new prompt placeholder,
+- `docs/specs/compiler-contract.md` — read only to **confirm Notes introduce no new prompt placeholder,
   no compiler input, and no section-order/empty-state entry**. This is a negative constraint:
   nothing in this redesign should appear here.
 - `docs/archival-workflow.md`, `tickets/README.md`, `tickets/_TEMPLATE.md` — the process and ticket
@@ -302,13 +302,13 @@ The deep research is **your** job; this brief commissions it, it does not pre-pe
 
 Honor these (the parts of the constitution this feature engages):
 
-- **`docs/FOUNDATIONS.md` is the constitution.** Every product-behavior decision must satisfy it and
+- **`docs/principles/FOUNDATIONS.md` is the constitution.** Every product-behavior decision must satisfy it and
   clear its **§29** hard-fail checklist (especially **§29.12**, the author-private-notes hard
   fails). A genuine divergence requires **amending FOUNDATIONS first** (per §1.1) — never design
   silently against it.
 - **Authority order** per `docs/ACTIVE-DOCS.md`: constitution > domain docs > implementation
   convenience. If a proposal conflicts with a higher authority, the proposal is wrong, not the
-  authority. Every new active `docs/*.md` must be registered in `docs/ACTIVE-DOCS.md` in the same
+  authority. Every new active Markdown document under `docs/` must be registered in `docs/ACTIVE-DOCS.md` in the same
   change.
 - **No backwards-compatibility shims, aliases, or duplicate authority paths** in new work unless the
   change explicitly justifies them. (A schema *migration* that preserves existing notes is **not** a

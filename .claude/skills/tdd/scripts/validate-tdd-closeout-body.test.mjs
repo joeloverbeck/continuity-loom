@@ -275,7 +275,7 @@ test("accepts explicit aligned and approved-amendment authority dispositions", (
     []
   );
 
-  const amended = "approved amendment recorded in docs/FOUNDATIONS.md §26.2";
+  const amended = "approved amendment recorded in docs/principles/FOUNDATIONS.md §26.2";
   assert.deepEqual(
     validateTddCloseoutBody(
       bodyWith({

@@ -15,7 +15,7 @@ Read this file in full before drafting each intended PRD in Step 3 of
 - Testing Decisions describe external behavior, name tested modules/surfaces and
   descriptive prior art rather than test-file paths, and contain the literal
   `Seam confirmation:` marker.
-- Principles names `docs/FOUNDATIONS.md`, relevant active domain authorities and
+- Principles names `docs/principles/FOUNDATIONS.md`, relevant active domain authorities and
   ADRs, applies Section 29, and flags any deliberate exception before work starts.
 - Further Notes also contains `Seam confirmation:` with the answered seams or
   timeout/open-to-veto disposition.

@@ -118,14 +118,14 @@ test("ignores an unformatted slash compound that is not a source citation", () =
 
 test("extracts extension-bearing and explicitly formatted source paths", () => {
   const result = extractSources(
-    "Use docs/FOUNDATIONS.md, reports/playtest.md, archive/specs/SPEC.md, and `archive/draft`.",
+    "Use docs/principles/FOUNDATIONS.md, reports/playtest.md, archive/specs/SPEC.md, and `archive/draft`.",
   );
 
   assert.equal(result.status, 0, result.stderr);
   assert.deepEqual(result.report.localSourcePaths, [
     "archive/draft",
     "archive/specs/SPEC.md",
-    "docs/FOUNDATIONS.md",
+    "docs/principles/FOUNDATIONS.md",
     "reports/playtest.md",
   ]);
 });

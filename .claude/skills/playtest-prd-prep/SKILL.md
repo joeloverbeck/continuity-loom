@@ -42,7 +42,7 @@ pointer and prior prep state, current same-stem prep state, branch, HEAD, and ba
 1. Retain exact `git status --short --untracked-files=all`,
    `git branch --show-current`, and `git rev-parse HEAD` output. Pre-existing dirt remains
    unowned unless this run explicitly adopts it.
-2. Read `AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`, affected active authorities,
+2. Read `AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/principles/FOUNDATIONS.md`, affected active authorities,
    `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md`, and `tickets/README.md`.
    Use `archive/**` only when explicitly routed as historical evidence.
 3. Read the complete report and use its Cumulative Finding Ledger as the frontier. Follow only its

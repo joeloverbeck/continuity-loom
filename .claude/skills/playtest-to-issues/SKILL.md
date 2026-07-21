@@ -30,7 +30,7 @@ future versions, and non-compatibility failures. Both block custody. Never repai
 reinterpret the producer artifact here; only `$playtest-prd-prep` migrates the same-stem artifact.
 
 Capture `git status --short --untracked-files=all`, branch, HEAD, and the publication ref. Read
-`AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`,
+`AGENTS.md`, `docs/ACTIVE-DOCS.md`, `docs/principles/FOUNDATIONS.md`,
 `docs/agents/issue-tracker.md`, and `docs/agents/triage-labels.md`, plus the active authorities for
 the affected surfaces. Enumerate every repo-relative evidence asset linked from the source report,
 including screenshot and image links. Classify the source report, each linked evidence dependency,

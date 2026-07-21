@@ -70,12 +70,12 @@ Run mode is `new_story`; the source declares no prior report. The launch commit,
 
 | Candidate or follow-up | Governing authority | Code/test impact | Doc/skill impact | Required artifact type |
 | ---------------------- | ------------------- | ---------------- | ---------------- | ---------------------- |
-| Local Project Path Guidance | `docs/FOUNDATIONS.md` §§24 and 27; `docs/user-guide.md` Project Ownership | Project Picker author copy and accessible-description seam; existing create/open and error-recovery component/browser tests | Update user guidance only if the new explanation adds an operating instruction; no skill change | ticket |
-| Author-Facing Story Configuration Labels | `docs/FOUNDATIONS.md` §§6.3, 13, and 27; `docs/story-record-schema.md` §§2-3 | Story Configuration descriptor and shared field-label presentation; component accessibility and unchanged-payload tests | No authority amendment; user-guide wording only if needed for exact labels; no skill change | ticket |
-| Offstage CAST MEMBER Cost Verification | `docs/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/story-record-schema.md` §§5 and 5.5 | Read-only comparison across CAST MEMBER storage completeness, editor effort, offstage selection, readiness, and compressed compiler output | Record a new playtest report; no product/doc/skill mutation during verification | coverage |
-| Working Set Cast Identity | `docs/FOUNDATIONS.md` §§7, 17, and 27; `docs/story-record-schema.md` §§3.1 and 5.5 | Existing record-list browse identity consumed by Active Working Set rows, accessible control names, and compile-family preview; component/browser regression | No authority or schema change; no skill change | ticket |
-| Manual Candidate Escape-Hatch Visibility | `docs/FOUNDATIONS.md` §§2, 3, 23, and 27; `docs/user-guide.md` Candidate Lifecycle | Generate readiness/checklist and manual-entry presentation; provider-ready/provider-blocked, keyboard, focus, zero-send, and first-viewport tests | Coordinate user-guide wording if the visible recovery instruction changes; no skill change | ticket |
-| F006 completed reconciliation guard | `docs/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/segment-reconciliation-prompt-template.md`; `docs/compiler-contract.md` | Existing strict parser, server route, all-empty result state, and result-view tests | No change owed; closed #100 remains the tracker owner | none - covered by closed work |
+| Local Project Path Guidance | `docs/principles/FOUNDATIONS.md` §§24 and 27; `docs/user-guide.md` Project Ownership | Project Picker author copy and accessible-description seam; existing create/open and error-recovery component/browser tests | Update user guidance only if the new explanation adds an operating instruction; no skill change | ticket |
+| Author-Facing Story Configuration Labels | `docs/principles/FOUNDATIONS.md` §§6.3, 13, and 27; `docs/specs/story-record-schema.md` §§2-3 | Story Configuration descriptor and shared field-label presentation; component accessibility and unchanged-payload tests | No authority amendment; user-guide wording only if needed for exact labels; no skill change | ticket |
+| Offstage CAST MEMBER Cost Verification | `docs/principles/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/specs/story-record-schema.md` §§5 and 5.5 | Read-only comparison across CAST MEMBER storage completeness, editor effort, offstage selection, readiness, and compressed compiler output | Record a new playtest report; no product/doc/skill mutation during verification | coverage |
+| Working Set Cast Identity | `docs/principles/FOUNDATIONS.md` §§7, 17, and 27; `docs/specs/story-record-schema.md` §§3.1 and 5.5 | Existing record-list browse identity consumed by Active Working Set rows, accessible control names, and compile-family preview; component/browser regression | No authority or schema change; no skill change | ticket |
+| Manual Candidate Escape-Hatch Visibility | `docs/principles/FOUNDATIONS.md` §§2, 3, 23, and 27; `docs/user-guide.md` Candidate Lifecycle | Generate readiness/checklist and manual-entry presentation; provider-ready/provider-blocked, keyboard, focus, zero-send, and first-viewport tests | Coordinate user-guide wording if the visible recovery instruction changes; no skill change | ticket |
+| F006 completed reconciliation guard | `docs/principles/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/specs/segment-reconciliation-prompt-template.md`; `docs/specs/compiler-contract.md` | Existing strict parser, server route, all-empty result state, and result-view tests | No change owed; closed #100 remains the tracker owner | none - covered by closed work |
 
 ## Recommended PRD Package
 
@@ -165,10 +165,10 @@ Final worktree rows: 28
 | `reports/playtest-the-winter-letter-2026-07-19T022000Z-prd-prep.md` | no | no | no | N/A - no publication-ref blob | new local artifact |
 | `AGENTS.md` | yes | yes | yes | yes | durable authority |
 | `docs/ACTIVE-DOCS.md` | yes | yes | yes | yes | durable authority |
-| `docs/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
-| `docs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
-| `docs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
-| `docs/segment-reconciliation-prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/principles/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/segment-reconciliation-prompt-template.md` | yes | yes | yes | yes | durable authority |
 | `docs/user-guide.md` | yes | yes | yes | yes | durable support source |
 | `docs/agents/issue-tracker.md` | yes | yes | yes | yes | durable tracker authority |
 | `docs/agents/triage-labels.md` | yes | yes | yes | yes | durable label authority |

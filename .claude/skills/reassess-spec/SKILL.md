@@ -1,6 +1,6 @@
 ---
 name: reassess-spec
-description: "Use when preparing a Continuity Loom spec for ticket decomposition. Reassesses a spec at specs/SPEC-NNN-<slug>.md against the codebase (docs/, .claude/skills/, existing specs) and docs/FOUNDATIONS.md; identifies issues/improvements/additions, presents findings for approval, then writes the updated spec. Produces: findings report + updated spec file. Mutates: the target spec file on user approval."
+description: "Use when preparing a Continuity Loom spec for ticket decomposition. Reassesses a spec at specs/SPEC-NNN-<slug>.md against the codebase (docs/, .claude/skills/, existing specs) and docs/principles/FOUNDATIONS.md; identifies issues/improvements/additions, presents findings for approval, then writes the updated spec. Produces: findings report + updated spec file. Mutates: the target spec file on user approval."
 user-invocable: true
 arguments:
   - name: spec_path
@@ -10,7 +10,7 @@ arguments:
 
 # Reassess Spec
 
-Reassess a Continuity Loom spec against the codebase and `docs/FOUNDATIONS.md`. Validates assumptions, identifies issues / improvements / additions, presents findings for approval, then writes the updated spec.
+Reassess a Continuity Loom spec against the codebase and `docs/principles/FOUNDATIONS.md`. Validates assumptions, identifies issues / improvements / additions, presents findings for approval, then writes the updated spec.
 
 <HARD-GATE>
 Do NOT Write or Edit the spec file until:
@@ -39,7 +39,7 @@ This gate holds under auto mode and any autonomous-execution context. Auto-mode 
 Pre-Process: classify the spec (a / b / c / d) + hybrid detection
        |
        v
-Step 1: mandatory reads (spec file + docs/FOUNDATIONS.md)
+Step 1: mandatory reads (spec file + docs/principles/FOUNDATIONS.md)
        |
        v
 Step 2: extract references (file paths, types, schema fields, functions, deps, source docs)
@@ -88,7 +88,7 @@ Load each before the corresponding work begins. Loading all of them in one paral
 Before acting, this skill MUST read:
 
 - `<spec_path>` — the target spec, entire contents.
-- `docs/FOUNDATIONS.md` — the constitution. Skip only if read earlier this session and unmodified.
+- `docs/principles/FOUNDATIONS.md` — the constitution. Skip only if read earlier this session and unmodified.
 - Every file path, skill directory, and sibling-spec reference extracted at Step 2 — read as part of Step 3.
 
 Reading scope: anything under `specs/`, `.claude/skills/`, `docs/`, `reports/`. This skill does not author story-record data — it reasons about specs that describe app behavior.
@@ -114,7 +114,7 @@ Classify the spec into exactly one of four classes. Classification drives which 
 
 **Reversal / supersession specs**: when a spec deliberately *reverses* a completed predecessor ticket/spec's settled decision — not a drift correction but an overturn (e.g. replacing a predecessor's chosen mechanism with a different one) — classify by the spec's own shape ((a)/(b)/hybrid) and add a reversal-soundness check (see `references/codebase-validation.md` §3.7 **Reversal of a completed predecessor**). A botched reversal silently regresses the predecessor's original fix, so this is load-bearing for decomposition. Distinct from a Correction spec, which fixes an implementation that *drifted* from intent rather than overturning the intent itself.
 
-**Documentation / amendment specs**: a spec whose deliverables are edits to existing docs (a doc-amendment spec, often amending `docs/FOUNDATIONS.md` and synchronizing sibling docs) classifies as **(b)**. Treat each file's amendment plan as a deliverable (per Step 1's non-numbered-deliverables rule). Map the Step 3 substeps to doc surfaces: 3.1 → doc/section existence; 3.2 → section-heading, prompt-placeholder, and schema-field existence **plus** the spec's quoted *current text* matching the live doc verbatim (a stale quote is an Issue) **plus** edit-instruction fidelity — for each prescribed edit, verify the replace-target exists, a block replacement preserves still-accurate content it does not intend to change, an inserted artifact (table row, list item, code block) matches the destination's shape and key/format, and an amendment changing a recurring term/count updates every occurrence in the target doc, not just the headline edit (see `references/codebase-validation.md` §3.2 **Doc-amendment edit-instruction fidelity**); 3.6/3.7 → sibling docs/specs carrying the same doctrine; 3.10 → when the spec declares it *supplies the documentation content of* predecessor specs, verify the amendment plan covers each predecessor's established contracts (see `references/codebase-validation.md` §3.10 **Content-supplying predecessor specs**). When the spec amends FOUNDATIONS, also apply the constitutional-amendment carve-out in Guardrails — relaxing a rule is then the intended deliverable, not an auto-CRITICAL violation.
+**Documentation / amendment specs**: a spec whose deliverables are edits to existing docs (a doc-amendment spec, often amending `docs/principles/FOUNDATIONS.md` and synchronizing sibling docs) classifies as **(b)**. Treat each file's amendment plan as a deliverable (per Step 1's non-numbered-deliverables rule). Map the Step 3 substeps to doc surfaces: 3.1 → doc/section existence; 3.2 → section-heading, prompt-placeholder, and schema-field existence **plus** the spec's quoted *current text* matching the live doc verbatim (a stale quote is an Issue) **plus** edit-instruction fidelity — for each prescribed edit, verify the replace-target exists, a block replacement preserves still-accurate content it does not intend to change, an inserted artifact (table row, list item, code block) matches the destination's shape and key/format, and an amendment changing a recurring term/count updates every occurrence in the target doc, not just the headline edit (see `references/codebase-validation.md` §3.2 **Doc-amendment edit-instruction fidelity**); 3.6/3.7 → sibling docs/specs carrying the same doctrine; 3.10 → when the spec declares it *supplies the documentation content of* predecessor specs, verify the amendment plan covers each predecessor's established contracts (see `references/codebase-validation.md` §3.10 **Content-supplying predecessor specs**). When the spec amends FOUNDATIONS, also apply the constitutional-amendment carve-out in Guardrails — relaxing a rule is then the intended deliverable, not an auto-CRITICAL violation.
 
 **Hybrid specs**: apply the union of applicable substeps, using the most rigorous classification's checklist for shared substeps.
 
@@ -125,7 +125,7 @@ Classify the spec into exactly one of four classes. Classification drives which 
 Read both before any analysis:
 
 1. **The spec file** (entire).
-2. **`docs/FOUNDATIONS.md`** — skip only if read earlier this session and unmodified.
+2. **`docs/principles/FOUNDATIONS.md`** — skip only if read earlier this session and unmodified.
 
 Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` / `Related:`) and its sections (Problem Statement, Approach, Deliverables, FOUNDATIONS Alignment, Verification, Out of Scope, Risks & Open Questions, and any deliverable sections).
 
@@ -135,7 +135,7 @@ Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` /
 
 Extract every concrete codebase reference from the spec:
 
-- **File paths** — both existing (`docs/FOUNDATIONS.md`, `docs/compiler-contract.md`) and proposed.
+- **File paths** — both existing (`docs/principles/FOUNDATIONS.md`, `docs/specs/compiler-contract.md`) and proposed.
 - **Type / interface / schema field names** — story-record fields, generation-time-brief fields, prompt-section names, validation-rule codes.
 - **Function / command / surface names**.
 - **Skill / module names**.
@@ -189,10 +189,10 @@ Do NOT commit. Leave the file for user review.
 ## Guardrails
 
 - **FOUNDATIONS is authoritative**: never approve a spec change that violates a FOUNDATIONS principle or trips a §29 hard-fail, even if requested — flag it as a CRITICAL Issue instead.
-- **Constitutional-amendment specs are the exception**: when the spec's declared purpose is amending `docs/FOUNDATIONS.md` itself (FOUNDATIONS §1 permits deliberate amendment — "the feature is wrong unless this document is deliberately amended first"), relaxing or removing a rule is the intended deliverable and is NOT auto-CRITICAL. Audit the amendment instead for (1) internal coherence — every restated rule across the doc set moves together, with no orphaned bullet left contradicting the new doctrine; (2) preservation of each §29 hard-fail's *intent* — deterministic compilation with no LLM intermediary, no accepted prose in prompts, the secret firewall, warnings never gating, human gatekeeping; (3) cross-doc synchronization. Flag CRITICAL only when the amendment is internally incoherent or breaks a §29 hard-fail in spirit — not merely because it loosens a rule. See `references/foundations-alignment.md` §4.4 and `references/codebase-validation.md` §3.8. **Dependent specs**: when a *non*-amendment spec relies on a relaxation that a sanctioned sibling spec (or an `IMPLEMENTATION-ORDER` phase) amends into FOUNDATIONS, the §29 hard-fail is **not** CRITICAL for the dependent spec — classify it a HIGH dependency Issue requiring the target to declare the coupling and its sequencing.
+- **Constitutional-amendment specs are the exception**: when the spec's declared purpose is amending `docs/principles/FOUNDATIONS.md` itself (FOUNDATIONS §1 permits deliberate amendment — "the feature is wrong unless this document is deliberately amended first"), relaxing or removing a rule is the intended deliverable and is NOT auto-CRITICAL. Audit the amendment instead for (1) internal coherence — every restated rule across the doc set moves together, with no orphaned bullet left contradicting the new doctrine; (2) preservation of each §29 hard-fail's *intent* — deterministic compilation with no LLM intermediary, no accepted prose in prompts, the secret firewall, warnings never gating, human gatekeeping; (3) cross-doc synchronization. Flag CRITICAL only when the amendment is internally incoherent or breaks a §29 hard-fail in spirit — not merely because it loosens a rule. See `references/foundations-alignment.md` §4.4 and `references/codebase-validation.md` §3.8. **Dependent specs**: when a *non*-amendment spec relies on a relaxation that a sanctioned sibling spec (or an `IMPLEMENTATION-ORDER` phase) amends into FOUNDATIONS, the §29 hard-fail is **not** CRITICAL for the dependent spec — classify it a HIGH dependency Issue requiring the target to declare the coupling and its sequencing.
 - **Codebase truth**: every reference in the updated spec must be validated. Never propagate stale paths, renamed types, or removed functions through Step 7.
 - **No scope creep**: the deliverable is the updated spec file. Do not write design docs, create tickets, start implementation, or edit sibling spec files — unless a Step 6 question response explicitly authorizes a named sibling-spec edit (record it in Step 8 under a "Cross-spec scope extension" line).
-- **No greenfield approach proposals**: validate and refine the existing design, not alternatives — except when the approach violates a FOUNDATIONS principle or conflicts with an established contract (`docs/compiler-contract.md`, the universal prompt contract, the story-record schema), where a minimum-viable alternative is part of the Issue finding.
+- **No greenfield approach proposals**: validate and refine the existing design, not alternatives — except when the approach violates a FOUNDATIONS principle or conflicts with an established contract (`docs/specs/compiler-contract.md`, the universal prompt contract, the story-record schema), where a minimum-viable alternative is part of the Issue finding.
 - **Substantial redesign flag**: if reassessment changes >50% of deliverables' approach, flag at Step 6.
 - **Worktree discipline**: inside a worktree, all paths resolve from the worktree root.
 - **Plan-mode discipline**: load `references/plan-mode.md`, write the plan file, call ExitPlanMode, then execute Steps 7–8 after approval.
@@ -202,7 +202,7 @@ Do NOT commit. Leave the file for user review.
 
 | Principle | Step | Mechanism |
 |-----------|------|-----------|
-| §4 Non-negotiable principles | Step 1 (mandatory read), Step 4 | FOUNDATIONS.md is a required read; every finding is checked against the §4 principles and §29 hard-fail checklist. |
+| §4 Non-negotiable principles | Step 1 (mandatory read), Step 4 | `docs/principles/FOUNDATIONS.md` is a required read; every finding is checked against the §4 principles and §29 hard-fail checklist. |
 | §11 Validation and hard fails | Steps 3.8, 4 | Specs proposing validation rules must distinguish warnings from blockers and keep validation deterministic and blocking; deviations are flagged. |
 | §4.4 / §8 Deterministic compilation | Step 4 (§4.3 determinism sub-check) | Specs claiming determinism or reproducibility are checked for nondeterministic inputs (wall-clock, unordered collections, LLM intermediaries in compilation). |
 | §15 POV, knowledge, secrets | Step 3.8 | Specs touching POV/secret handling must preserve the secret firewall (no leakage the deterministic records forbid); violations are CRITICAL. |
@@ -211,4 +211,4 @@ Do NOT commit. Leave the file for user review.
 
 ## Final Rule
 
-A reassessment is not complete until every reference in the updated spec is validated against the current codebase and `docs/FOUNDATIONS.md`, every approved finding has a pre-apply verification row proving the fix landed, and every eliminated or renamed reference has a post-apply grep-proof that it is gone.
+A reassessment is not complete until every reference in the updated spec is validated against the current codebase and `docs/principles/FOUNDATIONS.md`, every approved finding has a pre-apply verification row proving the fix landed, and every eliminated or renamed reference has a post-apply grep-proof that it is gone.

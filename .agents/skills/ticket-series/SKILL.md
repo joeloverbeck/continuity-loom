@@ -27,7 +27,7 @@ multiple targets plausibly match.
 1. Read the repository guidance and authority map:
    - `AGENTS.md`
    - `docs/ACTIVE-DOCS.md`
-   - `docs/FOUNDATIONS.md`
+   - `docs/principles/FOUNDATIONS.md`
    - `tickets/README.md`
    - `docs/archival-workflow.md`
 2. Resolve the ticket and spec selectors to concrete paths.
@@ -40,11 +40,11 @@ multiple targets plausibly match.
    reference closeout.
 4. Select the active domain docs from `docs/ACTIVE-DOCS.md` for the touched
    surface. Common anchors:
-   - prompt/compiler changes: `docs/compiler-contract.md`,
-     `docs/prompt-template.md`, `docs/prompt-template-rationale.md`
-   - story record or generation brief data: `docs/story-record-schema.md`
-   - validation or hard-fail behavior: `docs/stress-suite.md`,
-     `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`
+   - prompt/compiler changes: `docs/specs/compiler-contract.md`,
+     `docs/specs/prompt-template.md`, `docs/prompt-template-rationale.md`
+   - story record or generation brief data: `docs/specs/story-record-schema.md`
+   - validation or hard-fail behavior: `docs/specs/stress-suite.md`,
+     `docs/specs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`
    - user-facing behavior: `docs/user-guide.md`
 5. Determine dependency order from explicit dependencies, numbering, ticket
    prose, spec sequencing, and current code.
@@ -52,7 +52,7 @@ multiple targets plausibly match.
 
 ## Alignment Rules
 
-- `docs/FOUNDATIONS.md` is the design gate. Reassess any ticket that touches
+- `docs/principles/FOUNDATIONS.md` is the design gate. Reassess any ticket that touches
   runtime behavior, stored data, prompt compilation, validation, generation,
   accepted segments, OpenRouter, local-first ownership, or LLM-assistance
   surfaces against the relevant FOUNDATIONS sections before implementation.
@@ -63,7 +63,7 @@ multiple targets plausibly match.
   the correction is material.
 - Do not add compatibility aliases, duplicate authority paths, or shims unless
   an active spec deliberately requires them.
-- When a ticket or spec amends `docs/FOUNDATIONS.md`, confirm the exact
+- When a ticket or spec amends `docs/principles/FOUNDATIONS.md`, confirm the exact
   amendment wording has explicit owner sign-off before editing. Record the
   sign-off source, such as the user prompt or PR description, in the relevant
   ticket or spec `Outcome`.
@@ -78,7 +78,7 @@ that names every coupled ticket.
 
 For each ticket:
 
-1. Reassess assumptions against current code, `FOUNDATIONS.md`, selected domain
+1. Reassess assumptions against current code, `docs/principles/FOUNDATIONS.md`, selected domain
    docs, and package ownership.
 2. Identify the narrow implementation surface and exact acceptance criteria.
 3. Make the minimal code, doc, and test changes that satisfy the ticket while
@@ -281,7 +281,7 @@ npm run build
    - registry completeness for active docs, when `docs/ACTIVE-DOCS.md` is in
      scope;
    - stale active-path or snapshot-claim greps named by the spec;
-   - active `docs/*.md` cross-reference resolution for touched entry docs;
+   - active Markdown-under-`docs/` cross-reference resolution for touched entry docs;
    - old active ticket/spec path absence after archive moves;
    - matrix, ledger, or implementation-order completeness loops named by the
      spec.
@@ -289,7 +289,7 @@ npm run build
    Example patterns, adapted to the family:
 
    ```sh
-   for f in docs/*.md; do base=$(basename "$f"); grep -q "docs/$base" docs/ACTIVE-DOCS.md || echo "MISSING docs/$base"; done
+   find docs -type f -name "*.md" -print | while IFS= read -r f; do grep -Fq "$f" docs/ACTIVE-DOCS.md || echo "MISSING $f"; done
    for ref in $(rg -o "docs/[A-Za-z0-9._/-]+\\.md" docs AGENTS.md CLAUDE.md README.md | sed 's/^.*docs\\//docs\\//' | sort -u); do test -f "$ref" || echo "MISSING $ref"; done
    rg -n "specs/SPEC-ID|SPEC-ID|TICKET-PREFIX" docs specs tickets AGENTS.md CLAUDE.md README.md
    test ! -f specs/SPEC-ID.md && test -f archive/specs/SPEC-ID.md

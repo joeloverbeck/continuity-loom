@@ -8,7 +8,7 @@ Before checking FOUNDATIONS, scan for contradictions between the spec's Problem 
 
 If the spec has a FOUNDATIONS Alignment section, verify each entry:
 
-- Principle names must match `docs/FOUNDATIONS.md` (e.g. `§8 Deterministic prompt compilation`, `§11 Validation and hard fails`, `§15 POV, knowledge, secrets`, a `§29.N` hard-fail group).
+- Principle names must match `docs/principles/FOUNDATIONS.md` (e.g. `§8 Deterministic prompt compilation`, `§11 Validation and hard fails`, `§15 POV, knowledge, secrets`, a `§29.N` hard-fail group).
 - Each alignment statement must be specific — a bare "aligned" without a named mechanism is a MEDIUM Improvement finding.
 - For deliverables touching validation, compilation, record authority, or POV/secrets, the statement must name the mechanism (e.g. "compilation stays deterministic because record selection is the user's explicit active working set, never an LLM ranking").
 
@@ -38,7 +38,7 @@ Flag determinism violations as HIGH Issues citing §8 / §29.4.
 
 ## 4.4 §29 Hard-Fail Check
 
-`docs/FOUNDATIONS.md §29` is an alignment checklist of hard-fail questions grouped by surface:
+`docs/principles/FOUNDATIONS.md §29` is an alignment checklist of hard-fail questions grouped by surface:
 
 - §29.1 Identity — autonomous story generation, plot-deciding, branching/timelines/canon-tree, plot-rail machinery, accepted prose as canon.
 - §29.2 Continuity authority — LLM making authoritative record changes, inferring canon from prose, mutating records without user acceptance, hiding continuity changes.
@@ -54,7 +54,7 @@ Flag determinism violations as HIGH Issues citing §8 / §29.4.
 
 For each §29 group the deliverable engages, answer its questions against the spec. **Any hard-fail question answered "yes" is a CRITICAL Issue** — the proposal violates the foundation and must be rejected or redesigned (per FOUNDATIONS §29's own gate). The §29.11 checks, when failed, are Improvement findings rather than Issues.
 
-**Constitutional-amendment carve-out**: when the spec's declared purpose is amending `docs/FOUNDATIONS.md` itself (FOUNDATIONS §1 permits deliberate amendment), evaluate each engaged §29 question against the hard-fail's *intent as it will read post-amendment*, not against the pre-amendment letter. An amendment that relaxes a specific rule — e.g. dropping a single mandatory-field blocker because a universal template section already covers it — does not trip §29 so long as it keeps the hard-fail's spirit intact: deterministic compilation with no LLM intermediary, no accepted prose in prompts, the secret firewall, warnings never gating, human gatekeeping. Flag CRITICAL only when the amendment breaks that intent or leaves the doc set internally contradictory (e.g. a relaxed rule with an orphaned hard-fail bullet still asserting the old gate). See the SKILL.md Guardrails carve-out and `codebase-validation.md` §3.8.
+**Constitutional-amendment carve-out**: when the spec's declared purpose is amending `docs/principles/FOUNDATIONS.md` itself (FOUNDATIONS §1 permits deliberate amendment), evaluate each engaged §29 question against the hard-fail's *intent as it will read post-amendment*, not against the pre-amendment letter. An amendment that relaxes a specific rule — e.g. dropping a single mandatory-field blocker because a universal template section already covers it — does not trip §29 so long as it keeps the hard-fail's spirit intact: deterministic compilation with no LLM intermediary, no accepted prose in prompts, the secret firewall, warnings never gating, human gatekeeping. Flag CRITICAL only when the amendment breaks that intent or leaves the doc set internally contradictory (e.g. a relaxed rule with an orphaned hard-fail bullet still asserting the old gate). See the SKILL.md Guardrails carve-out and `codebase-validation.md` §3.8.
 
 **Dependent-spec variant**: a spec is frequently *not* the amendment itself but **depends on** a sanctioned sibling amendment (an active sibling spec, or a phase in an ordering/sequencing spec) that relaxes the rule it relies on. Do **not** auto-CRITICAL the dependent spec for retiring a still-mandated blocker: the relaxation is sanctioned elsewhere. Classify it a **HIGH dependency Issue** — the target must declare the coupling (a `Depends on:` reference) and its sequencing, so decomposition does not produce code that violates the un-amended constitution in the window before the amendment lands. Reserve CRITICAL for relaxations with **no** sanctioning amendment anywhere.
 

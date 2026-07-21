@@ -5,7 +5,7 @@ Authority: support (see docs/ACTIVE-DOCS.md)
 
 Use this as the canonical archival policy for completed, rejected, deferred, or superseded repository work products.
 
-This policy covers tickets, specs, completed requirements sets, brainstorming docs, and reports. It does not authorize archiving active canonical docs such as `docs/ACTIVE-DOCS.md`, `docs/FOUNDATIONS.md`, `docs/archival-workflow.md`, `docs/compiler-contract.md`, `docs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/story-record-schema.md`, `docs/validation-rule-inventory.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md`, `docs/user-guide.md`, `README.md`, `AGENTS.md`, or `CLAUDE.md` unless a later transition audit or replacement PRD explicitly says so. `docs/narrative-theory-blocker-roadmap.md` is non-binding support material and may be archived if superseded.
+This policy covers tickets, historical implementation specs, completed requirements sets, brainstorming docs, and reports. It does not authorize archiving the active principle and living-specification sets under `docs/principles/` and `docs/specs/`, or active support documents such as `docs/ACTIVE-DOCS.md`, `docs/archival-workflow.md`, `docs/prompt-template-rationale.md`, `docs/demo-blocker-recipes.md`, `docs/user-guide.md`, `README.md`, `AGENTS.md`, or `CLAUDE.md`, unless a later transition audit or replacement PRD explicitly says so. `docs/narrative-theory-blocker-roadmap.md` is non-binding support material and may be archived if superseded.
 
 ## Archive destinations
 

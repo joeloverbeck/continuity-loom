@@ -76,7 +76,7 @@ describe("accepted prose exclusion", () => {
     ).toThrow();
     expect(Object.keys(validHandoff).sort()).toEqual(expectedFields);
 
-    const schemaDoc = readFileSync(new URL("../../../docs/story-record-schema.md", import.meta.url), "utf8");
+    const schemaDoc = readFileSync(new URL("../../../docs/specs/story-record-schema.md", import.meta.url), "utf8");
     expect(schemaDoc).not.toMatch(/automatic_prose_summary/i);
   });
 });

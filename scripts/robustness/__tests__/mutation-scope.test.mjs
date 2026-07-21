@@ -17,7 +17,7 @@ test("maps changed pillar source files to forced mutate targets", () => {
       "packages/core/src/compiler/reconciliation/compile-segment-reconciliation-prompt.ts",
       "packages/core/src/compiler/sections/ideation.ts",
       "packages/core/src/validation/engine.ts",
-      "docs/FOUNDATIONS.md"
+      "docs/principles/FOUNDATIONS.md"
     ],
     { cacheExists: cacheHit }
   );

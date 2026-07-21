@@ -188,8 +188,8 @@ If the parent PRD itself is in scope and child rows own the runnable seams, incl
 Several closeout fields are enforced by exact-token regexes in `scripts/tdd-evidence-contract.mjs` and `scripts/validate-tdd-closeout-body.mjs`; the requirement descriptions above do not always map to the literal tokens the regex needs (the validator error messages now also quote a short passing form). When a validator rejects a field that already looks filled, match one of these copy-paste passing forms, then re-run the validator:
 
 - **ADRs/principles/docs status** needs a resolved authority disposition, not a presence claim. Use one of these forms in the preflight, every compact row, and the gate line:
-  > aligned because `docs/FOUNDATIONS.md` §26.2 and ADR-0004 authorize the seam
-  > approved amendment recorded in `docs/FOUNDATIONS.md` §26.2 and issue #117
+  > aligned because `docs/principles/FOUNDATIONS.md` §26.2 and ADR-0004 authorize the seam
+  > approved amendment recorded in `docs/principles/FOUNDATIONS.md` §26.2 and issue #117
   > N/A because this documentation-only seam has no governing product authority
 - **Backend process currentness** needs the literal tokens `server command`, `watch/reload mode`, `process/port ownership`, `restart proof` (or `reload proof`), and an `expected ... API ... probe`:
   > server command npm start (build then node ...launch.js), no watch/reload mode; process/port ownership pid <n> on 127.0.0.1:<port>; restart proof: proof server restarted on the post-fix build; expected API behavior probe POST /api/<route> returned <field>; N/A because no stateful fixture was copied

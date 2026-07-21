@@ -20,8 +20,10 @@ npm ci
 
 - [User guide](docs/user-guide.md) — the local-first story loop, prompt preview, OpenRouter settings, candidate lifecycle, accepted segments, backup, and FAQ.
 - [Active docs map](docs/ACTIVE-DOCS.md) — where future coding agents should start after v1.
-- [Foundations](docs/FOUNDATIONS.md) — the constitutional design contract for continuity authority, deterministic compilation, validation, accepted-prose boundaries, local-first data, and future work.
-- [Validation rule inventory](docs/validation-rule-inventory.md) — the implemented validation diagnostic codes and severity drift check.
+- [Foundational principles](docs/principles/README.md) — the constitution layer, conformance rule, and authority order.
+- [Foundations](docs/principles/FOUNDATIONS.md) — the constitutional design contract for continuity authority, deterministic compilation, validation, accepted-prose boundaries, local-first data, and future work.
+- [Living specifications](docs/specs/README.md) — the current prompt, compiler, schema, validation, stress, and assurance contracts consumed by PRDs and implementation issues.
+- [Validation rule inventory](docs/specs/validation-rule-inventory.md) — the implemented validation diagnostic codes and severity drift check.
 - [Narrative-theory blocker roadmap](docs/narrative-theory-blocker-roadmap.md) — non-binding research candidates, not validation authority or backlog.
 
 ## Run in development (hot reload)

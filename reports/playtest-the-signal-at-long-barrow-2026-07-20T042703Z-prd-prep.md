@@ -71,9 +71,9 @@ Current focused verification passed 5 files and 52 tests across the Cast Member 
 
 | Candidate or follow-up | Governing authority | Code/test impact | Doc/skill impact | Required artifact type |
 | ---------------------- | ------------------- | ---------------- | ---------------- | ---------------------- |
-| #114 sole imported item to zero verification/reopen | docs/FOUNDATIONS.md §§4, 17, 27, and 29; docs/story-record-schema.md CAST MEMBER list requiredness; closed #114 acceptance | Existing generic list-control and Cast editor component seam, capped by imported-many-to-zero save/reload browser proof | No schema, validation, prompt, skill, or authority change owed unless reproduction exposes a documented contradiction | verification-reopen |
-| Bounded Cast Draft Contract Comparison | docs/FOUNDATIONS.md §§17, 26, 27, and 29; docs/story-record-schema.md; docs/cast-member-draft-prompt-template.md; closed #117 | Read-only comparison of current full-dossier prompt against a controlled required-core-plus-explicit-optional counterfactual, measuring structural compliance, correction decisions, truthful readiness, and later-promotion utility | Produce one canonical privacy-safe coverage report; no product, authority, or skill mutation during the comparison | coverage |
-| Name Cast Dossiers and Relevance by Linked ENTITY | docs/FOUNDATIONS.md §§7, 10.1, 13, 17, 21, 27, and 29; docs/compiler-contract.md; docs/prompt-template.md and rationale; docs/story-record-schema.md; open #125 | Existing pure compiler Cast-section/golden seam, linked-reference failure cases, multi-Cast attribution cases, and Prompt Inspector browser regression | Coordinate the active spec and compiler/prompt authority version histories with #125; no schema, migration, assistance-template, or skill change | ticket plus active-spec/compiler change-control posture |
+| #114 sole imported item to zero verification/reopen | docs/principles/FOUNDATIONS.md §§4, 17, 27, and 29; docs/specs/story-record-schema.md CAST MEMBER list requiredness; closed #114 acceptance | Existing generic list-control and Cast editor component seam, capped by imported-many-to-zero save/reload browser proof | No schema, validation, prompt, skill, or authority change owed unless reproduction exposes a documented contradiction | verification-reopen |
+| Bounded Cast Draft Contract Comparison | docs/principles/FOUNDATIONS.md §§17, 26, 27, and 29; docs/specs/story-record-schema.md; docs/specs/cast-member-draft-prompt-template.md; closed #117 | Read-only comparison of current full-dossier prompt against a controlled required-core-plus-explicit-optional counterfactual, measuring structural compliance, correction decisions, truthful readiness, and later-promotion utility | Produce one canonical privacy-safe coverage report; no product, authority, or skill mutation during the comparison | coverage |
+| Name Cast Dossiers and Relevance by Linked ENTITY | docs/principles/FOUNDATIONS.md §§7, 10.1, 13, 17, 21, 27, and 29; docs/specs/compiler-contract.md; docs/specs/prompt-template.md and rationale; docs/specs/story-record-schema.md; open #125 | Existing pure compiler Cast-section/golden seam, linked-reference failure cases, multi-Cast attribution cases, and Prompt Inspector browser regression | Coordinate the active spec and compiler/prompt authority version histories with #125; no schema, migration, assistance-template, or skill change | ticket plus active-spec/compiler change-control posture |
 
 ## Recommended PRD Package
 
@@ -470,12 +470,12 @@ Final worktree rows: 305
 | `reports/playtest-the-signal-at-long-barrow-2026-07-20T042703Z-prd-prep.md` | no | no | no | N/A - no publication-ref blob | new local artifact |
 | `AGENTS.md` | yes | yes | yes | yes | durable authority |
 | `docs/ACTIVE-DOCS.md` | no | yes | yes | no | current registry content pending local publication |
-| `docs/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
-| `docs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
-| `docs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
-| `docs/prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/principles/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/prompt-template.md` | yes | yes | yes | yes | durable authority |
 | `docs/prompt-template-rationale.md` | yes | yes | yes | yes | durable authority |
-| `docs/cast-member-draft-prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/cast-member-draft-prompt-template.md` | yes | yes | yes | yes | durable authority |
 | `docs/user-guide.md` | yes | yes | yes | yes | durable authority |
 | `docs/adr/0001-version-playtest-prep-contracts.md` | yes | yes | yes | yes | durable prep-contract decision |
 | `docs/agents/issue-tracker.md` | yes | yes | yes | yes | durable tracker authority |

@@ -8,7 +8,7 @@ To keep architecture clean, robust, and extensible, every new ticket must be cre
 
 1. No backwards-compatibility shims or alias paths in new work.
 2. If current code and ticket assumptions diverge, update the ticket first before implementation.
-3. `docs/FOUNDATIONS.md` is the non-negotiable design contract. Tickets must align with its §4 non-negotiable principles, §8 deterministic compilation, §9 universal prompt contract, §11 validation and hard fails, §13–§14 record philosophy, §15 POV/knowledge/secrets, §20 durable change and human gatekeeping, and §29 alignment checklist.
+3. `docs/principles/FOUNDATIONS.md` is the non-negotiable design contract. Tickets must align with its §4 non-negotiable principles, §8 deterministic compilation, §9 universal prompt contract, §11 validation and hard fails, §13–§14 record philosophy, §15 POV/knowledge/secrets, §20 durable change and human gatekeeping, and §29 alignment checklist.
 
 ## Required Ticket Sections
 
@@ -27,7 +27,7 @@ To keep architecture clean, robust, and extensible, every new ticket must be cre
    - Map each important invariant to the exact verification surface that proves it.
    - Use one line per invariant. Valid verification surfaces for Continuity Loom tickets:
      - codebase grep-proof (symbol existence, rename/removal confirmation, schema field presence)
-     - schema validation (story-record / generation-time-brief conformance against `docs/story-record-schema.md`; prompt-section conformance against `docs/compiler-contract.md`)
+     - schema validation (story-record / generation-time-brief conformance against `docs/specs/story-record-schema.md`; prompt-section conformance against `docs/specs/compiler-contract.md`)
      - skill dry-run (skill invoked with a representative input; deliverable inspected without commit)
      - FOUNDATIONS alignment check (principle, rule, or schema cited by section)
      - manual review (prose quality, secret-firewall audit, deterministic-compilation check)

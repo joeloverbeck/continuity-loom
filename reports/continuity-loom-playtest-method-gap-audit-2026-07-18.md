@@ -717,7 +717,7 @@ All internal sources below were read at the exact immutable commit unless marked
 | ID | Source | Claim supported | Verification status |
 | --- | --- | --- | --- |
 | I1 | Target `SKILL.md` | Intended outcomes, blind-first, visible UI, one segment, no paid calls, human authority | Verified, immutable public text |
-| I2 | `docs/FOUNDATIONS.md` and repository authority files | Local-first, prompt transparency, assistance quarantine, constitutional boundaries | Verified, immutable public text |
+| I2 | `docs/principles/FOUNDATIONS.md` and repository authority files | Local-first, prompt transparency, assistance quarantine, constitutional boundaries | Verified, immutable public text |
 | I3 | `references/observation-log.md` | Fact/interpretation/correction and finding schema | Verified, immutable public text |
 | I4 | `references/run-setup.md` | Pre-use intent, custody, one-segment boundary | Verified, immutable public text |
 | I5 | `references/author-journey.md` | Natural author loop, acceptance, assistance use | Verified, immutable public text |
@@ -900,7 +900,7 @@ Coverage note uses only `unobserved`, `single-witness`, `repeated-similar`, or `
 ### Internal packet and repository sources
 
 - **[I1]** Continuity Loom, `.claude/skills/playtest/SKILL.md`, commit `a3d6b4371f6f583f1964f414a4b34f76a12c22d1`.
-- **[I2]** Continuity Loom, `AGENTS.md`, `CLAUDE.md`, `docs/ACTIVE-DOCS.md`, and `docs/FOUNDATIONS.md`, same commit.
+- **[I2]** Continuity Loom, `AGENTS.md`, `CLAUDE.md`, `docs/ACTIVE-DOCS.md`, and `docs/principles/FOUNDATIONS.md`, same commit.
 - **[I3]** Continuity Loom, `.claude/skills/playtest/references/observation-log.md`, same commit.
 - **[I4]** Continuity Loom, `.claude/skills/playtest/references/run-setup.md`, same commit.
 - **[I5]** Continuity Loom, `.claude/skills/playtest/references/author-journey.md`, same commit.

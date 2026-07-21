@@ -1,0 +1,617 @@
+# Compiler Contract — Continuity Loom
+
+Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
+Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
+Contract version: `1.13.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+
+---
+
+## 1. Purpose
+
+`docs/specs/compiler-contract.md` exists to prevent drift between `docs/principles/FOUNDATIONS.md`, `docs/specs/prompt-template.md`, `docs/prompt-template-rationale.md`, `docs/specs/story-record-schema.md`, stress examples, and generated prompt surfaces.
+
+Non-scope: code, SQL, API design, migrations, UI mockups, tickets, tests.
+
+The compiler is a deterministic renderer. Given the same declared prompt source profile, source records and fields, request input, template version, compiler version, and compiler-contract version, it must produce the same prompt.
+
+The compiler must not use an LLM to select, rank, summarize, repair, rewrite, compress, or prioritize records.
+
+This contract is not an appendix. It is the authoritative bridge between conceptual records and the generated prose prompt.
+
+## 2. Source hierarchy
+
+Each prompt class has one explicit source profile. No compiler may read a source merely because it is available in the project store.
+
+### 2.1 Prose and prose-aligned ideation source profile
+
+The prose and ideation compilers render from these sources only:
+
+1. Template constants from `docs/specs/prompt-template.md`.
+2. Story configuration records: STORY CONTRACT, UNIVERSAL CONTENT POLICY, and story-level defaults.
+3. `GenerationSessionReadyInput`, produced by deterministic normalization from saved draft state, story configuration, active working set, accepted-segment count, selected records, provider configuration where relevant, and deterministic empty-state/default rules.
+4. Generation-time brief fields inside that ready input: current authoritative state, immediate handoff, manual directive, prose mode, stop guidance, validation focus tags, current cast voice pressure, and cast voice overrides.
+5. User-selected active working set records.
+6. User-selected cast inclusion bands: active/onstage full, present-minor compressed, offstage relevance.
+7. For ideation only, the parsed request fields `mode`, `count`, `dormantSlot`, `avoidList`, and optional Author `focus`. Focus is explicit non-canonical request context; it is never imported, linked, inferred, or derived from another source.
+8. Deterministic empty-state constants defined in this contract.
+
+These compilers consume `GenerationSessionReadyInput`, not UI-only defaults. Normalization derives the required generation context from accepted-segment count: zero requires `first_segment`; one or more requires `continuation_after_accepted_segment`. A missing saved value may use that deterministic default. A contradictory saved value is preserved in storage, surfaced as `generation-context-accepted-segment-mismatch`, and replaced by the required value only in the validation snapshot; Preview, user-supplied candidate intake, Generate, and provider transport remain blocked until the author explicitly saves the required value. Normalization must not invent story facts, handoff prose, routes, positions, current situation, voice pressure, or manual directive content.
+
+Every prompt-facing record label in these profiles is the complete label derived from the record payload. The stored repository `displayLabel` is browse-only and does not enter prompt text, record ordering, citation assignment, or prompt fingerprints. Records retain the existing family-specific semantic, authored-order, and priority dimensions; once those dimensions are tied, this complete payload-derived label precedes id.
+
+### 2.2 Project-review record-hygiene source profile
+
+The record-hygiene compiler renders from these sources only:
+
+1. Template constants from `docs/specs/story-record-hygiene-prompt-template.md`.
+2. A `StoryRecordHygieneSnapshot` containing every non-archived record of an in-scope atomic type whose projected status satisfies the exact per-type hygiene-active predicate in that template and `docs/specs/story-record-schema.md`, already restricted to the user-selected scope when the request uses working-set scope.
+3. Deterministic full labels, projected statuses, citation keys, outgoing-reference summaries, and incoming-reference summaries derived locally from those records and the project reference graph.
+4. The `RecordHygieneRequest` input, with mode `full_active_atomic_review` or `active_working_set_atomic_review`.
+5. Deterministic empty-state constants defined in this contract.
+
+Whole-project mode is the default. Working-set mode reads `active_working_set.selected_records` in the server snapshot builder only to form the selected scope; the compiler does not read, filter, or mutate the working set.
+
+The record-hygiene source profile excludes story configuration, generation-time brief fields, active-working-set membership as a prose-prompt source, cast bands, accepted prose, candidates, prompt archives, CAST MEMBER payloads, ENTITY payloads, author-private notes, archived records, timestamps, user-order values, and provider settings. Generation-session data may be read only for the explicit working-set scope input in `active_working_set_atomic_review` mode.
+
+Every record label and reference-summary label in this profile is the complete label derived from the relevant record payload. The stored repository `displayLabel` is browse-only and does not enter the snapshot, prompt text, ordering, or citation assignment. ENTITY and CAST MEMBER references may resolve only to that complete payload-derived label; their other payload fields do not enter `StoryRecordHygieneSnapshot` or the prompt.
+
+The record-hygiene compiler must render the complete declared source set. It must not filter, rank, summarize, batch, or evict records by similarity, salience, urgency, keyword, model judgment, context budget, timestamps, or hidden UI state.
+
+### 2.3 Segment-reconciliation source profile
+
+The segment-reconciliation compiler renders from these sources only:
+
+1. Template constants from `docs/specs/segment-reconciliation-prompt-template.md`.
+2. A `SegmentReconciliationSnapshot` containing exactly one accepted segment selected by the request. The only v1 selection is `latest`; the server fetches one latest accepted row directly and includes its complete text, sequence, id, and accepted timestamp.
+3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/specs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
+4. Every complete non-archived story record in the explicit user-selected record scope: `active_working_set` by default or `whole_project`. All registered record types and lifecycle states are included. The active-working-set scope reads `active_working_set.selected_records` only to form the selected contrast set; neither mode changes working-set membership or prose authority.
+5. Deterministic reference stubs containing only id, type, and the complete payload-derived label when an in-scope source references a non-rendered record. The stored repository `displayLabel` does not enter full-record or stub serialization, ordering, or citation assignment. Reference stubs are not record-change targets and do not import any other out-of-scope payload field.
+6. One deterministic `segment_reconciliation.schema_catalog.v1` line grammar derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/specs/story-record-schema.md`. It is the only prompt-facing record-creation representation; parallel JSON Schema, field-descriptor payloads, compatibility aliases, and handwritten type/enum vocabularies are forbidden.
+7. A strict `SegmentReconciliationRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and the expected prompt fingerprint for analyze/send.
+8. Deterministic empty-state, span-partition, citation-key, output-schema, and verbatim-echo constants defined by this contract and the domain authority.
+
+The compiler generates accepted-segment span keys locally and renders the complete selected segment in source order. It must not select excerpts, retrieve by similarity or keyword, summarize, rank, batch, compress, or evict segment text or qualifying records. Provider context overflow is a reconciliation send failure, not permission to truncate.
+
+The segment-reconciliation source profile excludes older accepted segments, accepted-segment ranges, candidates and regenerations, automatic prose-derived summaries, author-private notes, story configuration, prompt archives, prior assistance output, provider memory, hidden UI state, archived records, and every generation-time field not explicitly registered for reconciliation.
+
+Segment-reconciliation output is advisory scratch. It grants no record or brief-field authority, adds no readiness diagnostic, changes no active-working-set membership, and never enters a prose prompt automatically.
+
+### 2.4 Accepted-segment-change-review comparison-candidate source profile
+
+Until the issue #136 evidence gate records a verified explicit steward `GO`, `accepted-segment-change-review` is a comparison-only source profile. It has no active prompt-template authority, production navigation, reminder entry, public route, runtime feature toggle, compatibility alias, or prose-prompt authority. Its transitional versions are template `1.0.0`, compiler `1.0.0`, and contract `1.0.0`; its output contract is `accepted_segment_change_review.v1`.
+
+The candidate compiler renders from these sources only:
+
+1. Versioned candidate constants in `packages/core/src/compiler/change-review/`, governed transitionally by `docs/principles/FOUNDATIONS.md`, issue #133, issue #135, and this contract.
+2. Exactly one accepted segment selected by an explicit `segmentSelection: "latest"` request. The server fetches one latest accepted row directly and includes its complete text, id, sequence, and accepted timestamp.
+3. Exactly the same nineteen saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths used by Segment Reconciliation. Missing and blank values remain explicit; no prose-readiness normalization or other Generation Brief surface is imported.
+4. Every complete non-archived record in one explicit scope: `active_working_set` by default or `whole_project` by explicit choice. Every qualifying record is rendered completely, in registry-type/full-label/id order, without a lifecycle-status filter.
+5. Minimal deterministic reference stubs containing only id, type, and complete payload-derived label when an in-scope record references a non-rendered record. Stubs support citation labels only; they are not target hints or change targets and import no payload authority.
+6. Deterministic accepted-segment spans, brief/record citation keys, disclosure counts, prompt length and token estimate, candidate versions, and prompt fingerprint.
+7. A strict `AcceptedSegmentChangeReviewRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and, for Analyze only, the inspected expected fingerprint.
+8. A strict shallow model-output schema whose only top-level keys are `contract`, `items`, and `coverage`.
+
+The compiler renders the complete selected segment and every qualifying record. It must not retrieve, rank, semantically filter, summarize, batch, trim, compress, or token-budget-evict source. An unrepresentable or oversize source fails visibly. Analyze rebuilds the source and fingerprint on the server, rejects stale input before provider transport, and sends only after explicit inspection and confirmation.
+
+The candidate excludes every older accepted segment, segment range, candidate, regeneration, automatic prose-derived summary, author-private note, story configuration value, prompt archive, prior assistance output, provider memory, hidden UI state, archived record, schema catalog, lifecycle catalog, JSON Patch vocabulary, creation payload, full proposed canonical value, and model-selected destination.
+
+Consumed-guidance listing is a separate deterministic control, not candidate prompt source or model output. It may list only the exact nonblank families named in `docs/principles/FOUNDATIONS.md` §9.1, preselects nothing, and removes only explicitly selected entries from an editable Generation Brief clone. Existing Generation Brief Save remains the sole project-store mutation.
+
+### 2.5 Universal exclusions
+
+No prose prompt, prose-aligned assistance prompt, or project-review assistance prompt may use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, automatic prose-derived summaries, or author-private notes.
+
+The only accepted-prose exceptions are the active segment-reconciliation source profile in §2.3 and the comparison-only accepted-segment-change-review source profile in §2.4. Each reads exactly one explicitly requested latest accepted segment for bounded advisory review. No prompt compiler may read any other accepted-prose source or persist a derived summary.
+
+Generation-time fields may override story defaults for the current prose request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy. Segment-reconciliation proposals and Accepted-Segment Change Review output have no override effect at all.
+
+## 3. Prompt Section Orders
+
+### 3.1 Prose Prompt Section Order
+
+The compiler renders sections in this order:
+
+1. `<role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<prose_mode>`
+6. `<hard_canon>` when at least one hard-canon FACT is selected
+7. `<current_authoritative_state>`
+8. `<immediate_handoff>`
+9. `<manual_directive>`
+10. `<pov_knowledge_constraints>`
+11. `<audience_knowledge>`
+12. `<secrets_and_reveal_constraints>`
+13. `<active_working_set>`
+14. `<active_plans_and_intentions>`
+15. `<active_clocks>`
+16. `<active_obligations_and_consequences>`
+17. `<active_open_threads>`
+18. `<active_cast_full_dossiers>`
+19. `<present_minor_cast>` when at least one present-minor cast record is selected
+20. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+21. `<relevant_facts_beliefs_events>`
+22. `<locations_objects_affordances>`
+23. `<physical_continuity>`
+24. `<invention_permissions>`
+25. `<contradiction_prohibitions>`
+26. `<prose_craft>`
+27. `<stop_rule>`
+28. `<final_output_instruction>`
+
+Rationale: hard state and launch state appear early; compact active pressure and voice pins appear before long cast dossiers; final stop/output instructions remain at the final edge.
+
+Active working-set lines are pressure summaries, not archive copies. A record may appear both in a pressure summary and in a later detail section only when the pressure rendering performs a different prompt function: current causal force, behavior/interiority pressure, physical constraint, reveal safety, or voice salience.
+
+### 3.2 Ideation Prompt Section Order
+
+The ideation prompt is the sanctioned §9.1 assistance prompt class. It reuses the same deterministic source hierarchy and shared renderers as the prose prompt where the sections describe authority, current state, knowledge, and selected records. It replaces prose-only launch/output sections with ideation-specific sections, renders an ideation-specific continuity-only contradiction-prohibitions body inside the shared `<contradiction_prohibitions>` tag, and uses ideation-only render variants where the assistance task needs less duplicated context.
+
+The compiler renders ideation sections in this order:
+
+1. `<ideation_role>`
+2. `<authority_hierarchy>`
+3. `<content_policy>`
+4. `<story_contract>`
+5. `<hard_canon>` when at least one hard-canon FACT is selected
+6. `<current_authoritative_state>`
+7. `<immediate_handoff>`
+8. `<manual_directive>` when at least one manual directive field is supplied
+9. `<pov_knowledge_constraints>`
+10. `<audience_knowledge>`
+11. `<secrets_and_reveal_constraints>`
+12. `<active_plans_and_intentions>`
+13. `<active_clocks>`
+14. `<active_obligations_and_consequences>`
+15. `<active_open_threads>`
+16. `<relationship_and_emotion_pressure>`
+17. `<active_cast_full_dossiers>`
+18. `<present_minor_cast>` when at least one present-minor cast record is selected
+19. `<offstage_relevance>` when at least one offstage cast record is selected or offstage pressure/interruption is active
+20. `<relevant_facts_beliefs_events>`
+21. `<locations_objects_affordances>`
+22. `<physical_continuity>`
+23. `<contradiction_prohibitions>` from the ideation-specific continuity-only template
+24. `<ideation_slots>`
+25. `<ideation_quality>`
+26. `<ideation_output_format>`
+
+Ideation prompts do not render `<role>`, `<prose_mode>`, `<active_working_set>`, `<invention_permissions>`, `<prose_craft>`, `<stop_rule>`, or `<final_output_instruction>`. Those are prose-prompt sections. The ideation prompt instead renders:
+
+- `<ideation_role>` from a template constant that frames the model as a story-development consultant, forbids prose/dialogue/scene text/branches/outlines, and labels output as non-canonical scratch.
+- `<authority_hierarchy>` from an ideation-specific static template: item 2 says "premise-level ideas or questions only, no prose, no record updates"; the manual directive is framed as authored compatibility context; voice-pin and prose-craft references are omitted; the closing line says not to mention the hierarchy in the output.
+- `<content_policy>` from an ideation-specific placeholder-resolved template whose policy trailer says not to inject assistant disclaimers, warnings, analysis, or safety moralizing into the output.
+- `<immediate_handoff>` with ideation labels: `begin_after` renders as "The next prose segment will begin after this point", and the trailer says to use the handoff only as user-authored continuity context, continue ideas from that point, and not treat archived prose as canon.
+- `<manual_directive>` with an ideation label for `must_render`: "The author's directive for the next segment (binding context: ideas must be compatible with it)".
+- `<relationship_and_emotion_pressure>` from the same deterministic `relationship_emotion_pressure` placeholder used by the prose working-set summary, so RELATIONSHIP and EMOTION records still render after the ideation prompt drops `<active_working_set>`.
+- `<ideation_slots>` from deterministic `assignSlots(snapshot.records, ideationRequest)`, including operator name, operator id, definition, slate shrink status, slot citation keys, and any dormant-record modifier instruction.
+- `<ideation_quality>` from a template constant containing the eventfulness, surprise-without-contradiction, reveal-discipline, skip-if-unsupported, and mutual-distinctness rules. The distinctness rule says each idea must execute its assigned operator and produce one dominant local state transition; no two ideas may use the same operator or end in the same dominant change target; wording, actors, and citation keys alone do not prove distinctness; and who acts or which pressure fires are secondary preferences.
+- `<ideation_output_format>` from a template constant defining the flat idea/question block format and malformed-output discard rule.
+- `<contradiction_prohibitions>` from an ideation-specific template constant containing continuity, canon, knowledge, reveal, future-consequence, and no-global-structure prohibitions without prose-craft-only lines.
+
+For ideation prompts only, the `locations` and `objects` sub-blocks of `<locations_objects_affordances>` render every selected LOCATION and OBJECT record regardless of status, with status shown as a label. The prose prompt keeps the active/available status gate. For ideation prompts only, `<physical_continuity>` renders current-state physical lines plus status-only ENTITY STATUS, LOCATION, OBJECT, and VISIBLE AFFORDANCE lines; it does not re-render LOCATION/OBJECT descriptions already carried by `<locations_objects_affordances>`.
+
+The ideation request is deterministic input. The fields are `mode` (`ideas` or `questions`, default `ideas`), `count` (3-6, default 5), `dormantSlot` (default true), `avoidList` (default empty), and `focus` (default blank). The shared core request contract trims only leading and trailing whitespace from focus, counts Unicode code points in that normalized value, accepts at most 500, and rejects 501 or more with `Author focus must be 500 Unicode code points or fewer.` Missing, empty, and whitespace-only focus all normalize to the same blank value. No Unicode normalization, internal-whitespace collapse, grapheme count, or UTF-16-unit count is allowed.
+
+Blank normalized focus adds no prompt bytes. Nonblank focus renders exactly once inside the existing `<ideation_slots>` header, immediately after the mode line and before the slate disclosure, escaped with the shared data-text escaper:
+
+```md
+Author focus (non-canonical request context): <escaped normalized focus>
+Use Author focus only to shape responses within assigned slots. It is not story fact, continuity authority, a new source, or permission to contradict compiled records.
+```
+
+Focus may shape only the model's response within assigned slots. It cannot change operator eligibility, slot selection, grounding bundles, citation assignment, record ordering, dormant selection, or intentional slate shrinkage. Missing, empty, and whitespace-only focus therefore preserve the prior prompt bytes, fingerprint, and assignment; nonblank focus changes prompt bytes and fingerprint but not assignment.
+
+Ideation preview parses the complete request locally and returns prompt bytes plus fingerprint only when the existing ideation readiness gate and focus validation pass. Ideation send requires a nonblank `expectedPromptFingerprint`; the server reparses the complete request, rebuilds current snapshot/readiness and prompt, compares fingerprints, and only then reads provider settings and invokes OpenRouter once. Missing, malformed, over-limit, or stale requests fail before provider transport; a valid mismatch returns `409 stale-ideation-prompt`. Client-supplied prompt text is never accepted.
+
+The Ideate browser owns focus only for the current mounted view. Every edit synchronously invalidates the prior preview, valid edits start a local compile with monotonic attempt ownership, and only the latest response may restore inspection or send eligibility. Focus remains mounted across mode, count, dormant-slot, full-slate, per-slot, and Clear-all actions; it resets blank on remount. Focus and prompt text are excluded from project storage, browser storage, keepers, backup, migration, export, accepted provenance, logs, and every prose prompt.
+
+The prompt compiler must not read wall-clock time or accepted prose to assign slots. Citation keys are deterministic per compile and use `[<TYPE>-<n>]`, where `<n>` is the record's 1-based ordinal among records of that type under the compiler's deterministic full-label sort. Ordinals are stable for identical selected records and are not promised to be stable across selection or record edits.
+
+Ideation operators are evaluated in this fixed order: `reveal`, `plan_meets_friction`, `emotion_becomes_action`, `shift_option_set`, `falsify_belief`, `clock_advances`, `debt_comes_due`, `relationship_turns`, `commit_at_a_cost`. Slot eligibility is fail-closed and current-state-aware: `SECRET` must be hidden or partially revealed, with Reveal also requiring an authored surface cue, an available clue carrier, `clue_only`, or `natural_reveal_allowed`; `BELIEF` active; `FACT` always active as evidence; `EVENT` not abandoned with `current_relevance` other than `none`; `PLAN.plan_status` active, blocked, or suspended; `INTENTION` active or blocked; `CLOCK` active; `OBLIGATION` open, escalated, or transferred; `CONSEQUENCE` pending, active, or escalated; `OPEN THREAD` active or escalated; `RELATIONSHIP` active; `EMOTION` active, suppressed, transformed, or dissociated; and `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, and `ENTITY STATUS` current by record purpose.
+
+Each assigned operator receives the minimum deterministic grounding bundle: one record for single-source operators, one `BELIEF` plus one `FACT` or active `EVENT` for `falsify_belief`, and exactly two active records from different pressure families for `commit_at_a_cost`. Bundle selection prefers an all-unused bundle, then the fewest reused records, then deterministic citation-key order. This selects slot grounds only; it never evicts selected records from their authoritative rendered sections.
+
+`commit_at_a_cost` pressure families are pursuit (`PLAN`, `INTENTION`), time (`CLOCK`), duty/effect (`OBLIGATION`, `CONSEQUENCE`), unresolved pressure (`OPEN THREAD`), relationship (`RELATIONSHIP`), affect (`EMOTION`), information/interpretation (`SECRET`, `BELIEF`), material/agency (`VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION`, `ENTITY STATUS`), and causal event (`EVENT`). `FACT` is support-only and excluded. The operator must require one commitment with one cost, not alternatives, branches, or future-beat packages.
+
+When `dormantSlot` is true, dormancy reserves the final slot as a deterministic modifier rather than a pseudo-operator. Dormant candidates are operator-active selected pressure/material records except `FACT`, sorted by stored `updatedAt` and then id. The compiler selects the oldest candidate that can participate in a valid bundle for an otherwise unused real operator, marks that candidate's citation key in the slot body, and shrinks the slate if no candidate is viable.
+
+Ideation citation keys render inline at exactly one authoritative site per operator-eligible record:
+
+| Record type | Ideation inline key render site |
+|---|---|
+| `SECRET` | `<secrets_and_reveal_constraints>` / writer-visible hidden truths |
+| `BELIEF` | `<relevant_facts_beliefs_events>` belief sub-blocks |
+| `FACT` | `<relevant_facts_beliefs_events>` fact sub-blocks |
+| `EVENT` | `<relevant_facts_beliefs_events>` event sub-blocks |
+| `CLOCK` | `<active_clocks>` |
+| `PLAN` | `<active_plans_and_intentions>` / Plans |
+| `INTENTION` | `<active_plans_and_intentions>` / Intentions |
+| `OBLIGATION` | `<active_obligations_and_consequences>` / Obligations |
+| `CONSEQUENCE` | `<active_obligations_and_consequences>` / Consequences |
+| `RELATIONSHIP` | `<relationship_and_emotion_pressure>` |
+| `EMOTION` | `<relationship_and_emotion_pressure>` |
+| `OPEN THREAD` | `<active_open_threads>` |
+| `VISIBLE AFFORDANCE` | `<locations_objects_affordances>` / Visible affordances |
+| `OBJECT` | `<locations_objects_affordances>` / Objects |
+| `LOCATION` | `<locations_objects_affordances>` / Locations |
+| `ENTITY STATUS` | `<physical_continuity>` / status lines |
+
+The prose prompt never renders ideation citation keys.
+
+### 3.3 Record-Hygiene Prompt Section Order
+
+The record-hygiene prompt is the project-review assistance source profile. It renders every section in this order:
+
+1. `<record_hygiene_role>`
+2. `<record_hygiene_source_contract>`
+3. `<record_hygiene_active_predicate>`
+4. `<record_hygiene_relation_taxonomy>`
+5. `<record_hygiene_action_taxonomy>`
+6. `<record_hygiene_global_guards>`
+7. `<record_hygiene_type_rules>`
+8. `<record_hygiene_records>`
+9. `<record_hygiene_cross_type_rules>`
+10. `<record_hygiene_review_procedure>`
+11. `<record_hygiene_output_format>`
+
+All sections render deterministically. When no records satisfy the source predicate, `<record_hygiene_records>` renders `No non-archived hygiene-active atomic records exist in this project.` The remaining sections still render so the prompt remains inspectable, but the UI disables OpenRouter send because there is nothing to review.
+
+No prose or ideation section renders in the record-hygiene prompt.
+
+### 3.4 Segment-Reconciliation Prompt Section Order
+
+The compiler renders every section in this exact order:
+
+1. `<segment_reconciliation_role>`
+2. `<segment_reconciliation_source_contract>`
+3. `<segment_reconciliation_request>`
+4. `<accepted_segment_evidence>`
+5. `<current_reconciliation_fields>`
+6. `<record_contrast_scope>`
+7. `<record_contrast_records>`
+8. `<segment_reconciliation_field_rules>`
+9. `<segment_reconciliation_record_rules>`
+10. `<record_creation_schema_catalog>`
+11. `<segment_reconciliation_provenance_and_paraphrase_rules>`
+12. `<segment_reconciliation_review_procedure>`
+13. `<segment_reconciliation_output_format>`
+
+All thirteen sections always render. The complete source contract remains at the front edge and the complete strict JSON output contract remains at the final edge. Optional source values use deterministic explicit empty states; source sections are never omitted because their collections are empty.
+
+### 3.5 Accepted-Segment Change Review Candidate Prompt Section Order
+
+The comparison-only compiler renders every section in this exact order:
+
+1. `<accepted_segment_change_review_role>`
+2. `<accepted_segment_change_review_source_contract>`
+3. `<accepted_segment_change_review_request>`
+4. `<accepted_segment_evidence>`
+5. `<current_change_review_fields>`
+6. `<record_contrast_records>`
+7. `<accepted_segment_change_review_procedure>`
+8. `<accepted_segment_change_review_output_format>`
+
+All eight sections always render. No Segment Reconciliation formal-mutation section or schema catalog is reused. Complete source stays before review instructions; the strict shallow output contract remains at the final edge.
+
+## 4. Exhaustive placeholder mapping
+
+### 4.1 Record-hygiene source mapping
+
+The record-hygiene prompt has no generation placeholders. Its dynamic mapping is:
+
+| Rendered value | Deterministic source | Required | Failure behavior |
+|---|---|---:|---|
+| `{hygiene_record_count}` | Length of `StoryRecordHygieneSnapshot.records` | Yes | Render `0` |
+| `{hygiene_counts_by_type}` | Fixed-type-order counts from the snapshot | Yes | Render every type with `0` when absent |
+| `{hygiene_records}` | Every snapshot record in fixed type/full-label/id order, with key, id, label, status, escaped canonical payload JSON, and reference summaries | Yes when count > 0 | Structural snapshot failure blocks; no silent omission |
+| `{hygiene_citation_map}` | Deterministic `[TYPE-n]` map over the same order | Yes when count > 0 | Block on duplicate/missing key |
+| `{hygiene_request_mode}` | `RecordHygieneRequest.mode`: `full_active_atomic_review` or `active_working_set_atomic_review` | Yes | Invalid request blocks |
+| `{hygiene_scope}` | `whole_project` for `full_active_atomic_review`; `active_working_set` for `active_working_set_atomic_review` | Yes | Invalid request blocks |
+
+Record payload values are data, not instructions. Canonical JSON must escape `<`, `>`, and `&`. Timestamps, archive flags, user-order values, excluded record payloads, story config, generation-session fields, accepted prose, candidates, notes, and provider settings never render.
+
+### 4.2 Segment-reconciliation source mapping
+
+| Prompt destination | Deterministic source | Empty-state behavior | Validation and exclusion rule |
+|---|---|---|---|
+| `<segment_reconciliation_role>` | versioned template constant | never empty | block if absent |
+| `<segment_reconciliation_source_contract>` | versioned template constant plus fixed source-profile literals | never empty | must name one segment, nineteen fields, selected record scope, schema catalog, all exclusions, and no-eviction rule |
+| `<segment_reconciliation_request>` | parsed request, source profile, explicit selected record scope, selected accepted-segment id and sequence | never empty | only `segmentSelection: latest`; scope must be explicit |
+| `<accepted_segment_evidence>` | complete selected accepted-segment text partitioned by the registered deterministic span algorithm | block with `no-accepted-segment` when absent | no excerpt selection, archive access, summary, or truncation |
+| `<current_reconciliation_fields>` | exact saved-draft paths registered in `docs/specs/story-record-schema.md` | every path renders `missing`, `blank`, or canonical present value | no readiness normalization and no other generation fields |
+| `<record_contrast_scope>` | explicit request scope plus deterministic source counts/predicates | never empty | archive excluded; every lifecycle state included; no ranking or status filter |
+| `<record_contrast_records>` | every full qualifying record plus declared reference stubs | `No non-archived records exist in the selected reconciliation scope.` | malformed qualifying row blocks; stubs are not change targets |
+| `<segment_reconciliation_field_rules>` | versioned template constant plus generated allowed-path/type table | never empty | manual directive, stop guidance, voice controls, working-set curation, validation focus, generation context, and story configuration excluded |
+| `<segment_reconciliation_record_rules>` | versioned update/deactivate/reference-token contract plus generated lifecycle map | never empty | only UPDATE_FIELDS and DEACTIVATE; no archive/delete/merge/remove |
+| `<record_creation_schema_catalog>` | the single compact line grammar defined by this contract and `docs/specs/segment-reconciliation-prompt-template.md`, generated from the registry, payload validators, and lifecycle/reference metadata | block if any registered type, field path, presence/default, scalar/list/object/union/literal/enum shape, reference marker, lifecycle marker, or managed/forbidden field cannot be represented | registry order, depth-first field order, canonical JSON tokens, one field row per path, shared UUID pattern once; reference cardinality `one`, `many`, or `one_or_many`; complete section baseline `136328`, maximum `68164`, named current ceiling `18696` UTF-16 code units |
+| `<segment_reconciliation_provenance_and_paraphrase_rules>` | versioned template constant plus generated citation grammar and echo thresholds | never empty | every proposal cites segment evidence; no quote field; material echo quarantines full output |
+| `<segment_reconciliation_review_procedure>` | versioned template constant | never empty | fixed compare-before-create procedure |
+| `<segment_reconciliation_output_format>` | generated strict output JSON Schema plus fixed pure-JSON instruction | never empty | no Markdown/preamble; local full-response validation remains authoritative |
+
+### 4.3 Accepted-Segment Change Review candidate source mapping
+
+| Prompt destination | Deterministic source | Empty-state behavior | Validation and exclusion rule |
+|---|---|---|---|
+| `<accepted_segment_change_review_role>` | candidate versioned constant | never empty | comparison-only advisory accounting; no prose, future possibility, canonical value, patch, lifecycle action, or creation payload |
+| `<accepted_segment_change_review_source_contract>` | source profile, selected scope, archive/completeness predicates | never empty | must name `accepted-segment-change-review`, `latest`, complete scope, and no-omission rule |
+| `<accepted_segment_change_review_request>` | accepted-segment id/sequence/accepted timestamp, selected scope source count, candidate versions | never empty | trusted source metadata is server-owned and never accepted from model output |
+| `<accepted_segment_evidence>` | complete latest accepted segment partitioned by the shared deterministic span algorithm | absent segment or empty spans block | no older chooser, excerpt selection, archive access, summary, or truncation |
+| `<current_change_review_fields>` | all nineteen declared saved-draft paths in fixed order | missing values render an explicit state; blank values remain blank | no Generation Brief source outside CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF |
+| `<record_contrast_records>` | every complete qualifying record and minimal label-only reference stub | deterministic empty-record text | no archived row, hidden status filter, ranking, target import, or schema/lifecycle catalog |
+| `<accepted_segment_change_review_procedure>` | candidate versioned comparison and epistemic rules plus fixed six dimensions | never empty | future possibility excluded; an established item's statement and leading uncertainty witness must be the same exact three-to-seven-word excerpt from one cited evidence span; an explicitly unstated implication cannot be established; stubs never become targets |
+| `<accepted_segment_change_review_output_format>` | generated strict shallow JSON Schema plus pure-JSON instruction | never empty | only `contract`, `items`, `coverage`; local whole-response parser is authoritative |
+
+Parser acceptance requires sequential `ITEM-001` ids; nonblank plain-English statements, evidence, contrast, target hints, and uncertainty; one approved epistemic status; one approved retention horizon; resolvable source keys; and exactly one nonblank reasoned row for each of the six dimensions. An `established change` must use a `change_statement` that is the same exact three-to-seven-word excerpt named by the required leading `Explicit source support: "<excerpt>".` uncertainty witness, and that excerpt must occur in one of the item's cited evidence spans. Terminal punctuation may differ, but paraphrase and additional asserted words are forbidden. This bounded extractive rule proves the complete displayed established assertion directly from cited source without claiming that a lexical witness establishes an unrelated synthesis; richer or unstated synthesis must use `interpretation requiring author judgment`. Duplicate or unknown coverage, enum drift, unknown citations, material accepted-prose echo, unsupported or explicitly invented/unstated established claims, or future-possibility items quarantine the whole response. Quarantine returns a safe reason and manual recovery only, never raw provider output.
+
+Every placeholder in `docs/specs/prompt-template.md` must appear in this mapping. Grouped rows are allowed only when each placeholder is named explicitly and all named placeholders share the same source, requiredness, missing behavior, and empty-state behavior.
+
+Requiredness terms:
+
+- Draft-save required: necessary for storing a structurally valid draft.
+- Readiness required: blocks prompt preview, compilation, and generation when missing after normalization.
+- Context-gated required: readiness-required only when explicit focus tags, selected records, story configuration, or manual directive make the state structurally necessary.
+- Optional prompt preference: may compile if supplied; blank or missing state has a truthful deterministic omission or empty state.
+
+| Prompt section / placeholder(s) | Deterministic source | Required? | Missing behavior | Empty-state rendering | Notes |
+|---|---|---:|---|---|---|
+| `<role>` | Template constant | Yes | Block if missing or edited to permit non-prose output | N/A | Must not invite planning, validation, record updates, or commentary. |
+| `<authority_hierarchy>` | Template constant aligned with `docs/principles/FOUNDATIONS.md` | Yes | Block if missing or incompatible | N/A | Manual directive remains below state/POV/reveal/physical continuity. |
+| `{rating_label}` | UNIVERSAL CONTENT POLICY.rating_label | Yes | Block | N/A | Must not render `NO RESTRICTIONS`. |
+| `{allowed_content_scope}` | UNIVERSAL CONTENT POLICY.allowed_content_scope | Yes | Block if blank or incompatible with story/active cast constraints | N/A | Story maturity envelope, not provider-policy override. |
+| `{tonal_handling}` | UNIVERSAL CONTENT POLICY.tonal_handling | Yes | Block if blank | N/A | Describes how mature material should be handled in prose. |
+| `{character_bias_handling}` | UNIVERSAL CONTENT POLICY.character_bias_handling | Yes | Block if blank in stories involving prejudice/bias; otherwise warn | N/A | Keeps character-held perception separate from narrator-certified fact. |
+| `{title}` | STORY CONTRACT.title | Yes | Block | N/A | Stable story identity. |
+| `{premise}` | STORY CONTRACT.premise | Yes | Block if blank | N/A | Durable premise, not current recap. |
+| `{genre_mode}`, `{tone}`, `{content_intensity}`, `{explicitness}`, `{language_register}`, `{setting_baseline}` | STORY CONTRACT fields | Yes for genre/tone/content/language; setting may warn if truly irrelevant | Block or warn as applicable | `None specified` only for optional subfields | Does not override current state/canon. |
+| `{pov_character}` | Effective POV from PROSE MODE `pov_character` and generation `selected_pov`, resolved to the referenced selected record's human display label | Yes | Block if blank, unresolved, mistyped, not selected, variable without selection, or conflicting | N/A | `omniscient` renders as a literal; `variable` never renders in a ready prompt. Non-omniscient POV requires knowledge profile. A referenced entity or cast member must resolve to a selected record before compilation. |
+| `{person}`, `{tense}`, `{psychic_distance}`, `{interiority_mode}`, `{dialogue_density}`, `{paragraphing}`, `{language_output}`, `{special_style_constraints}` | PROSE MODE generation-time field | Yes | Block if unresolved or internally contradictory | `None specified` only for optional special constraints | Describes person, tense, interiority, rhythm, and style constraints for the current generated segment. |
+| `{hard_canon_bullets}` | Selected FACT records with `fact_kind=hard_canon` plus selected immutable story locks | Yes if relevant hard canon exists | Warn if none; block if needed for active age/status/identity/provider boundary | Omit whole `<hard_canon>` section when empty | Do not silently include unselected facts except story configuration constants. |
+| `{current_time}` | CURRENT AUTHORITATIVE STATE.current_time | Readiness required | Block if blank | N/A | Approximate prose time is acceptable. |
+| `{current_location}` | CURRENT AUTHORITATIVE STATE.current_location + selected LOCATION label if present | Readiness required | Block if blank | N/A | Scene-space/prose label is acceptable where no LOCATION record exists yet; must not contradict ENTITY STATUS/LOCATION records. |
+| `{onstage_entities}` | CURRENT AUTHORITATIVE STATE.onstage_entities + ENTITY/CAST selected active or present-minor | Readiness required for material prose | Block if directive requires an entity but none selected/onstage | `None onstage` only for abstract/nonphysical prose | Person-like material entities require cast handling. |
+| `{immediate_situation_summary}` | CURRENT AUTHORITATIVE STATE.immediate_situation_summary user-authored generation-time field | Readiness required | Block if blank | `None currently specified` only during deterministic backfill or empty prompt inspection | Prose-neutral summary of the immediate local situation. Must not be inferred from accepted prose or generated automatically. |
+| `{offstage_pressuring_entities}` | CURRENT AUTHORITATIVE STATE.offstage_pressuring_entities + offstage selected records | Context-gated required | Block if offstage interruption lacks source | Omit line when empty | Required when offstage pressure/interruption is active. Offstage relevance section may expand. |
+| `{positions}` | CURRENT AUTHORITATIVE STATE.positions + ENTITY STATUS + LOCATION/OBJECT state | Context-gated required | Block if relevant and absent | Omit line when empty | Required for physical interaction, gaze, object transfer, intimacy, violence, movement, blocking, turn-taking, or audibility. |
+| `{entity_statuses}` | CURRENT AUTHORITATIVE STATE.entity_statuses + ENTITY STATUS records | Context-gated required | Block if relevant and absent or contradictory | Omit line when empty | Required for materially involved entities whose agency/status matters. |
+| `{possessions}` | CURRENT AUTHORITATIVE STATE.possessions + OBJECT.owner/carried_by/current_location | Context-gated required | Block if object use/transfer/search/concealment can matter and absent | Omit line when empty | Two holders for one object block. |
+| `{visible_conditions}` | CURRENT AUTHORITATIVE STATE.visible_conditions + ENTITY STATUS/CONSEQUENCE where visible | Context-gated required | Block if visible condition is structurally necessary and absent; otherwise warn | Omit line when empty | Includes visible injury, exhaustion, restraint, disguise. |
+| `{environmental_conditions}` | CURRENT AUTHORITATIVE STATE.environmental_conditions + LOCATION | Context-gated required | Block if environment constrains local action/perception and absent; otherwise warn | Omit line when empty | Texture and physical constraint. |
+| `{line_of_sight_and_visibility}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS.visibility_to_pov + LOCATION.visibility_and_sound | Context-gated required | Block if relevant and absent | Omit line when empty | Required for perception, secrecy, violence, intimacy, interruption, ambiguous perception, or who-can-see/hear-whom. |
+| `{routes_and_exits}` | CURRENT AUTHORITATIVE STATE + LOCATION.access_routes + AFFORDANCE | Context-gated required | Block if route matters and absent | Omit line when empty | Required for movement, pursuit, escape, interruption, entrance, location change, or containment. Include impossible routes when omission invites errors. |
+| `{available_time}` | CURRENT AUTHORITATIVE STATE + CLOCK + handoff | Context-gated required | Block if directive requires action without enough time state | Omit line when empty | "Enough time to speak" can be sufficient. |
+| `{consent_or_force_conditions}` | CURRENT AUTHORITATIVE STATE + ENTITY STATUS + RELATIONSHIP/OBLIGATION/AFFORDANCE | Context-gated required | Block if relevant and absent | Omit line when empty; literal `none` is empty | Required for intimacy, restraint, coercion, object seizure, rescue movement, captivity, violence, or constrained agency. |
+| `{current_locks}` | CURRENT AUTHORITATIVE STATE.current_locks + hard current locks from selected records | Context-gated required | Block if directive contradicts a lock | Omit line when empty | Required when locks/constraints exist or directive could contradict them. |
+| `{recent_causal_context}` | IMMEDIATE HANDOFF.recent_causal_context + selected EVENT immediate/recent | Context-gated required | Block if continuation handoff is blank or not self-sufficient | `None; first local unit begins from current state` | First segment: optional deterministic empty state. Continuation: user-authored handoff required. Writer-visible; not automatically POV knowledge. No accepted prose. |
+| `{last_visible_moment}` | IMMEDIATE HANDOFF.last_visible_moment | Context-gated required | Block if continuation lacks last visible moment or begin-after | Omit line when empty | First segment: optional. Continuation requires this or `{begin_after}`. |
+| `{begin_after}` | IMMEDIATE HANDOFF.begin_after | Context-gated required | Block if continuation lacks begin-after or last visible moment; block if contradicts state/handoff | Omit line when empty | Exact start instruction. |
+| `{manual_must_render}` | MANUAL DIRECTIVE.must_render | Readiness required | Block if blank after normalization | N/A | May be one instruction. Draft may save blank. |
+| `{manual_may_render_if_naturally_caused}` | MANUAL DIRECTIVE.may_render_if_naturally_caused | No | No block | Omit line when empty | Invention corridor. |
+| `{manual_do_not_force}` | MANUAL DIRECTIVE.do_not_force | Recommended | Warn if blank in risky scenes | Omit line when empty | Guardrail against overreach. |
+| `{pov_knows}` | POV KNOWLEDGE PROFILE.pov_knows from PROSE MODE/FACT/BELIEF/SECRET/EVENT/ENTITY STATUS | Required for non-omniscient POV | Block if absent or contradictory | Omit line when empty | Labels do not grant knowledge. |
+| `{pov_believes_suspects_misreads}` | POV KNOWLEDGE PROFILE.pov_believes_suspects_misreads | Required for close introspection; otherwise optional | Block if introspection expected and absent | Omit line when empty | Must distinguish from fact. |
+| `{pov_does_not_know}` | POV KNOWLEDGE PROFILE.pov_does_not_know + SECRET non-holder lanes | Required when hidden truth exists or POV limit matters | Block if active secret lacks POV non-knowledge relation | Omit line when empty | Prevents leakage. |
+| `{pov_cannot_perceive_now}` | CURRENT AUTHORITATIVE STATE.pov_cannot_perceive_now user-authored generation-time field | Required when perception limits matter | Block if ambiguous perception or hidden plan depends on it and absent | Omit line when empty | Prevents impossible perception. Does not read `{line_of_sight_and_visibility}` automatically. |
+| `{audience_knows}` | AUDIENCE KNOWLEDGE PROFILE.audience_knows | Required when audience differs from POV or hidden truth is writer/audience-visible | Block if active secret lacks audience relation | `No audience knowledge distinct from POV specified` | Dramatic irony without leakage. |
+| `{audience_does_not_know}` | AUDIENCE KNOWLEDGE PROFILE.audience_does_not_know | No unless audience ignorance matters | No block | `None specified` | Avoids overrevealing. |
+| `{dramatic_irony_permissions}` | AUDIENCE KNOWLEDGE PROFILE.dramatic_irony_permissions | Required when audience knows more than POV | Block if absent in heavy irony scene | `None specified` | Does not grant POV knowledge. |
+| `{audience_perception_ambiguous}` | AUDIENCE KNOWLEDGE PROFILE from active `SECRET` where `audience_visibility === "ambiguous"` | No unless active ambiguous secret exists | No block | Omit line when empty | Audience grasp deliberately unresolved; does not assert audience knowledge or grant POV knowledge. |
+| `{writer_visible_hidden_truths}` | Selected SECRET.secret_claim prefixed with deterministic `Secret N` and SECRET.secret_kind, plus writer-visible hidden facts | Required when any active secret matters | Block if absent but secret tag set | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Writer-facing only; kind prefix is a deterministic category label, not extra knowledge. `N` equals the SECRET citation-key ordinal under the deterministic `(type, label, id)` sort. In ideation, `[SECRET-n]` is the writer-visible legend and `Secret N` is not duplicated on this lane. |
+| `{secret_holders}` | SECRET.holders resolved to referenced records' display labels | Required for active secret | Block if blank | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Raw-id fallback only when a referenced record is absent from the selected snapshot; holder list may be all/unknown only if explicit. Prefix each rendered line with `Secret N:` where `N` equals the SECRET citation-key ordinal. Do not restate the full `secret_claim` in this lane. |
+| `{secret_non_holders_to_protect}` | SECRET.non_holders_to_protect resolved to referenced records' display labels | Required for active secret | Block if blank | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | Defines protected ignorance. Raw-id fallback only when a referenced record is absent from the selected snapshot; `all_except_holders` and `none` render as deterministic phrases. Prefix each rendered line with `Secret N:` where `N` equals the SECRET citation-key ordinal. Do not restate the full `secret_claim` in this lane. |
+| `{allowed_clues_and_surface_cues}` | SECRET.allowed_surface_cues + `clue_carriers` entries with `status: "available"` | Required for clue pressure; optional otherwise | Block if clue pressure tag set and absent | Omit line when empty; underlying empty constant remains `None specified` | Surface cues without reveal; clue carriers surface only `clue_text`, not `discovered_by` ids or audience metadata. Prefix each rendered line with `Secret N:` where `N` equals the SECRET citation-key ordinal. Do not restate the full `secret_claim` in this lane. |
+| `{forbidden_reveals}` | SECRET.forbidden_reveals | Required for active secret | Block if blank | Omit line when empty; active secrets may use the affirmative `none` sentinel, which renders as `No reveals are forbidden beyond the stated reveal permission.` | Prevents narrator leakage. Prefix each rendered line with `Secret N:` where `N` equals the SECRET citation-key ordinal. Do not restate the full `secret_claim` in this lane. |
+| `{reveal_permissions}` | SECRET.reveal_permission + reveal_triggers | Required for active secret | Block if blank or contradictory | Omit line when empty; underlying empty constant remains `No active secrets or reveal locks selected` | `locked` cannot be overridden by directive. Prefix each rendered line with `Secret N:` where `N` equals the SECRET citation-key ordinal. Do not restate the full `secret_claim` in this lane. |
+| `{active_action_pressure}` | User-authored pressure summary + selected INTENTION/PLAN/AFFORDANCE/CONSEQUENCE/OPEN THREAD grouped deterministically | Yes | Warn if empty; block if directive lacks enough context | `None beyond detailed records below` | Not an LLM summary. INTENTION and PLAN lines prefix the holder's resolved display label with raw-id fallback; holder-less action-pressure records render without a name prefix. CONSEQUENCE lines render `possible_next_effect` as their summary text. Unlike the detailed `<active_*>` sections, this summary retains non-active action-pressure records with a deterministic display-label annotation: INTENTION/PLAN/OPEN THREAD/CONSEQUENCE statuses other than `active`, and VISIBLE AFFORDANCE statuses other than `available`, render as `[<type> <status>]` so blocked, suspended, answered, resolved, or unavailable pressure is not mistaken for active pressure. VISIBLE AFFORDANCE action text belongs here as current action possibility; do not duplicate the same action text in `{material_pressure}`. |
+| `{active_knowledge_pressure}` | User-authored pressure summary + selected SECRET/BELIEF/FACT/EVENT lanes, narrowed by pressure predicates | Yes when knowledge/secrecy matters | Warn/block as applicable | `None beyond detailed records below` | Keeps information pressure salient without copying the archive. BELIEF pressure leads with `behavioral_effect` when present, followed by a compact belief identifier/claim. This behavioral-effect-first ordering applies to all beliefs in the pressure summary by design — the pressure line conveys current behavioral/interiority force, not the dossier — and intentionally differs from the `{pov_relevant_beliefs}` detail row, which leads POV beliefs with truth relation; the difference is a deliberate dual-frame, not a drift bug. SECRET pressure may state the hidden truth only when reveal constraints still govern its use. FACT pressure renders only when `fact_kind=hard_canon`, `fact_kind=current_state`, `scope=current_segment`, or `salience=high|critical`; FACT active truth is implicit and no FACT payload status is rendered or consulted. Ordinary low/medium setting/discovered facts remain in the detail sections. EVENT pressure renders `immediate_previous` and `recent_causal` events with `current_relevance` other than `none`; `offstage` events render here only when `current_relevance=high|critical`; `relevant_backstory` and `withheld` events do not render here unless separately represented by a SECRET/reveal lane. If the projected pressure text equals the display label, render it once. EVENT knowledge pressure renders the description claim without appending the relevance enum. |
+| `{relationship_emotion_pressure}` | Selected RELATIONSHIP/EMOTION records rendered as the description label plus pressure text and, for RELATIONSHIP, current expression | No unless local pressure depends on it | Warn if expected but absent | `None beyond detailed records below` | Avoid raw axes alone. |
+| `{material_pressure}` | Selected LOCATION/OBJECT/ENTITY STATUS pressure summary + selected non-person ENTITY kind/description | Required for physical/object-heavy moments | Block if physical tag set and absent | `None beyond detailed records below` | Current physical/material pressure. Non-person ENTITY records render as material/institutional pressure; person ENTITY records do not duplicate CAST MEMBER authority here. VISIBLE AFFORDANCE action text does not render here; affordances are carried by `{active_action_pressure}`, `{visible_affordances}`, and `{physical_continuity}`. If a future implementation needs a blocked/unavailable affordance warning here, it must render status-only, not repeat the affordance `prompt_text`. |
+| `{active_cast_voice_pressure_pins}` | CAST MEMBER.voice_anchor + CURRENT CAST VOICE PRESSURE + CAST VOICE OVERRIDES + active working-set local_function | Optional prompt preference | Warn if absent when durable anchors are sufficient; block only if supplied pressure contradicts authority or required voice/body authority has no durable/compressed/current source | Omit or `None` if no active person-like cast | Salience duplicate; includes dialogue/narration/nonverbal/silence scopes. Present-minor current pressure renders in `{present_minor_cast_notes}` for prose prompts. |
+| `{active_intentions}` | Selected INTENTION records | No | Warn if directive implies goal but none selected/authored | `None active` | Holder ids resolve to selected records' display labels with raw-id fallback. Free-text intent and behavioral pressure render verbatim. Weaker than plans. |
+| `{active_plans}` | Selected PLAN records | No unless directive depends on plan | Block if a selected active plan's holder cannot plausibly act | `None active` | Holder ids resolve to selected records' display labels with raw-id fallback. Free-text objective/current step/resources/blockers render verbatim. Selected active plans drive tactics. |
+| `{active_clocks}` | Selected CLOCK records | No | Block if contradicts current state; warn stale | `None active` | Human updates after acceptance. |
+| `{active_obligations}` | Selected OBLIGATION records | No | Block if assumes contradicted state | `None active` | `owed_by` and record-id `owed_to` values resolve to selected records' display labels with raw-id fallback; sentinel `public`/`institution`/`self`/`unknown` values render literally. Free-text terms and consequence text render verbatim. Durable-change support. |
+| `{active_consequences}` | Selected CONSEQUENCE records | No | Block if assumes contradicted state | `None active` | `holder_or_target` and record-id `cause` values resolve to selected records' display labels with raw-id fallback; sentinel `public`/`unknown` values and free-text `cause` render literally. Free-text effects render verbatim. Durable-change support. |
+| `{active_open_threads}` | Selected OPEN THREAD records | No | Warn if too many high-urgency threads | `None active` | Never commands closure. |
+| `{active_onstage_full_cast_dossiers}` | CAST MEMBER selected active/onstage full, including all populated prompt-facing fields | Required for active person-like cast materially involved | Block if required core missing or `entity_id` does not resolve to a selected ENTITY | N/A if no active person-like cast | Include all populated fields except record-reference IDs such as `entity_id`, which remain validation-only per §9. Every selected dossier requires its linked ENTITY to be selected; the id never renders and has no raw-id fallback. Render structured fields core-first: identity, voice_anchor plus voice_extended/speech-pattern fields, pressure_behavior_core, body_presence_core, agency_core, remaining optional extended fields, selected samples last. No silent compression. |
+| `Current generation voice override` line | CAST VOICE OVERRIDES targeting active/onstage cast | No | No block unless contradictory | Omit when absent | Temporary, current-generation-only, and not durable. Renders `applies_to` and `override_text`; `reason` is author-only and is not sent to the writer. For present-minor targets, render inside `{present_minor_cast_notes}` only. |
+| sample utterances inside dossiers | CAST MEMBER.sample_utterances selected by user or deterministic metadata | No | No block | Omit; optional explicit `No selected sample utterances` allowed in examples | At most three; default zero; one short line each, normally <=40 words; `may_reuse_cadence_not_text`, not `may_echo_lightly`. |
+| `{present_minor_cast_notes}` | ENTITY/CAST MEMBER selected present-minor + current status + compressed voice note + prose-only current voice pressure + temporary voice override when present | No | Block if a CAST MEMBER `entity_id` does not resolve to a selected ENTITY; otherwise block only if present-minor speech is required and deliverable speech guidance is absent | Omit whole `<present_minor_cast>` section when the band is empty | Compressed notes only. Every selected CAST MEMBER requires its linked ENTITY to be selected; the id never renders and has no raw-id fallback. Current voice pressure is prose-only and omitted from the ideation prompt. Temporary overrides remain current-generation only. |
+| `{offstage_relevance_notes}` | ENTITY/CAST selected offstage + offstage pressure records | Required if offstage interruption/pressure active | Block if a CAST MEMBER `entity_id` does not resolve to a selected ENTITY, or if interruption lacks route/timing/communication | Omit whole `<offstage_relevance>` section when the band is empty and no offstage pressure/interruption is active. If offstage pressure/interruption is active with no offstage cast slice, render: `Offstage pressure or interruption is active, but no offstage cast slice has been authored. Establish why the offstage party matters now, whether and how it can interrupt (entrance, communication, timing, or route), and what must not be revealed or assumed.` | No full offstage dossier unless active. Every selected CAST MEMBER requires its linked ENTITY to be selected; the id never renders and has no raw-id fallback. If offstage pressure/interruption is active, the section remains present even when validation will block missing route/timing/communication. Rendering offstage pressure records as body content is deferred and not implemented in the current compiler. |
+| `{pov_accessible_facts}` | Selected FACT known to POV/public | No except when directive depends on them | Block if required fact missing | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Prevents generic fact leakage. |
+| `{writer_visible_or_non_pov_facts}` | Selected FACT not POV-accessible; SECRET/EVENT-derived writer-visible truth | No | Block if hidden fact lacks reveal constraints | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Not narrator knowledge. |
+| `{pov_relevant_beliefs}` | BELIEF held by POV | No | Warn if POV-heavy scene lacks interpretive pressure | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Mark truth relation first; render claim in full plus belief mode, truth relation, confidence, access route, behavioral effect, and visibility. This detail row remains the full authority record. Any prior active knowledge pressure line is a current-pressure cue, not a substitute for these fields. |
+| `{non_pov_behavior_shaping_beliefs}` | BELIEF held by non-POV cast | No | Block if used as direct interiority in forbidden prose mode | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Render through behavior first; render claim in full plus behavioral effect, belief mode, truth relation, confidence, access route, and visibility. This detail row remains the full authority record. Any prior active knowledge pressure line is a current-pressure cue, not a substitute for these fields. |
+| `{recent_events}` | Selected EVENT with event_kind immediate_previous/recent_causal | No except when needed | Warn if too many; block if contradictory | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | No flat archive dump. |
+| `{relevant_backstory}` | Selected EVENT relevant_backstory and selected backstory facts with current relevance | No | Warn if too many/stale | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Only current-relevant backstory. |
+| `{offstage_or_withheld_events}` | Selected EVENT offstage/withheld grouped by visibility | No except when offstage/withheld pressure matters | Block if withheld event leaks into POV | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Writer-visible does not mean POV-visible. |
+| `{locations}` | Selected LOCATION + current location | Required for physical/location-focused generation | Block if underspecified | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Renders description, layout, routes, visibility/sound, hazards/shelters, and social rules. Current first. |
+| `{objects}` | Selected OBJECT + current possessions | Required for object use/transfer or salient object presence | Block if underspecified | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Owner/carried_by/current_location ids resolve to selected records' display labels, with raw-id fallback when absent. Visibility must align. |
+| `{visible_affordances}` | Selected VISIBLE AFFORDANCE records + current state | Required for physical interaction/action choices | Block if directive requires action without affordance | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Possible actions. `available_to` ids resolve to selected records' display labels, with raw-id fallback when absent; `group` and `any_onstage` render as literals. Affordance `durability` renders as a deterministic labeled clause alongside actions, requires, and risk. |
+| `{unavailable_or_impossible_actions}` | CURRENT STATE locks + AFFORDANCE unavailable/blocked + validation-derived impossibilities | Required when omission would invite errors | Block if physical scene risky and absent | Omit sub-block when empty; section-level `None specified` only when all sibling sub-blocks empty | Must not be invented by an LLM. |
+| `{physical_continuity}` | CURRENT STATE + ENTITY STATUS + LOCATION/OBJECT/AFFORDANCE | Yes for active physical interaction | Block if missing required physical fields | N/A only for nonphysical abstract prose | Concrete and current. |
+| `<invention_permissions>` | Template constant | Yes | Block if absent | N/A | Human gatekeeping. Dynamic durable-change pressure renders in its own records and placeholders, not as a second render site here. |
+| `<contradiction_prohibitions>` | Template constant | Yes | Block if absent | N/A | Cannot be weakened by directive. Selected current locks render in `{current_locks}` and physical-continuity placeholders. |
+| `<prose_craft>` | Template constant | Yes | Warn if style conflicts with prose mode | N/A | Craft cannot alter continuity. Story/prose preferences and cast voice fields render in their own placeholders. |
+| `{soft_unit_guidance}` | STOP GUIDANCE.soft_unit_guidance generation-time field | Optional prompt preference | Block only if supplied text is non-local or contradictory with manual directive; blank does not block | Supplied text renders once as `Soft unit: <text>`; blank omits the line | Replaces beat count; must describe the next local unit, not a chapter/arc/future summary. Blank guidance means no additional user narrowing beyond the universal local stop rule. |
+| `<final_output_instruction>` | Template constant | Yes | Block if absent | N/A | Final prompt edge. |
+| `validation_focus_tags` | GENERATION VALIDATION FOCUS | Readiness required, validation-only | Exactly one generation context after normalization; draft value may default by accepted-segment count | Not prompt-facing | Activates matrix rows only. |
+
+## 5. Universal minimum prompt completeness
+
+Generation blocks unless these are satisfied:
+
+1. Constitutional template sections always compile: role/output contract, authority hierarchy, content policy, story contract, prose mode, stop rule, and final output instruction.
+2. Story configuration is populated enough to avoid a generic story prompt and to satisfy provider/content boundaries.
+3. Current authoritative state has the universal floor: time/temporal position, location/scene-space, onstage/material entities, and immediate situation summary.
+4. Manual directive `must_render` is present and local.
+5. Generation context is resolved by normalization.
+6. First segment can compile without continuation handoff. Continuation requires user-authored handoff.
+7. Blank stop guidance is allowed; supplied stop guidance must be local and noncontradictory.
+8. Non-omniscient POV requires a populated POV knowledge profile when a POV entity is involved.
+9. Active secrets/reveal constraints require deterministic holder/non-holder/reveal-permission data when selected or relevant.
+10. Context-gated physical, knowledge, cast, object, movement, violence, intimacy, institutional, clock, and obligation requirements apply only when explicit tags, records, story configuration, or directive make them structurally necessary.
+11. Accepted prose text, rejected candidate text, superseded regeneration text, automatic prose-derived summaries, and prose-mined continuity never appear in prompt-facing fields.
+
+## 6. Generation validation matrix
+
+Before applying the focus-tag rows below, the snapshot builder compares the saved generation context with the value required by accepted-segment count. A contradiction produces `generation-context-accepted-segment-mismatch` on `generationSession.generation_validation_focus.validation_focus_tags.generation_context`. The diagnostic reports the saved value, required value, accepted count, and explicit Generation Brief repair. Other validation checks evaluate the required value, so a contradiction cannot suppress continuation requirements or create a false `focus-tag-count-invalid` diagnostic.
+
+| Validation focus tag | Context-dependent blockers |
+|---|---|
+| `first_segment` | No continuation handoff is required. Launch state must be self-sufficient; handoff fields must not use continuation phrases such as "as above." |
+| `continuation_after_accepted_segment` | Handoff must be user-authored; accepted prose/rejected candidate/auto summary blocks; deterministically identifiable durable changes in handoff must be represented in selected records or current state. |
+| `dialogue_expected` | Active speakers require core CAST MEMBER dossier, durable voice anchor or compressed present-minor voice note, language/register state, POV knowledge boundaries, and relationship/status context. Current voice pressure warns when absent unless no durable/compressed voice authority exists. |
+| `ensemble_dialogue_expected` | Three or more likely speakers require current speaker functions, relationship/status pressure among speakers, and physical/auditory state showing who can hear or interrupt whom. Distinct current voice pins usually warn unless durable voice anchors are missing or too generic for required material speech. |
+| `introspection_expected` | Requires POV beliefs/suspicions/misreads, relevant emotion/interior pressure, psychic distance/interiority mode, and non-POV interiority restrictions. |
+| `physical_interaction_expected` | Requires location, onstage entities, positions/distance, visibility, possessions where relevant, routes/exits, available time, and impossible/unavailable actions when omission invites error. |
+| `active_silent_presence_expected` | Active silent character needs core dossier, body_presence_core, current position/visibility, allowed actions, and POV access limits when the silent presence materially affects prose. Current silence pressure is recommended, not universal. |
+| `present_minor_speech_possible` | Present-minor speaker needs compressed voice note sufficient for material speech or must be promoted to active/onstage; otherwise block material speech. No block when no material speech is expected. |
+| `ambiguous_perception_expected` | Requires line-of-sight/sound state, obstruction or uncertainty source, what the POV can and cannot perceive, possible misreads, and whether audience/writer knows more. |
+| `offstage_interruption_possible` | Requires offstage entity location or uncertainty state, awareness mechanism, communication/entrance/timing route, and interruption type: physical, audible, digital, institutional, or environmental. |
+| `nonhuman_or_institutional_pressure_expected` | Requires ENTITY kind/description, operating rules or authority relation, current location/reach, mechanism for pressure, and limits on interiority/agency if non-person. |
+| `secret_or_clue_pressure` | Requires secret claim, holders, protected non-holders, POV access, audience visibility, allowed clues, forbidden reveals, reveal permission, and reveal triggers if any. |
+| `non_pov_hidden_plan_behavior` | Requires plan holder status/location/means, current step, visibility_to_pov, behavioral surface cues, and close-POV non-interiority restrictions. |
+| `object_use_possible` | Requires object owner/carried_by/current_location/visibility, usable affordance, constraints, user/accessibility, and consequence of use if durable. |
+| `object_transfer_possible` | Requires object owner/carried_by/current_location/visibility, transfer affordance, body positions, consent/force if relevant, and resulting holder state. |
+| `location_change_possible` | Requires source location, destination or reachable route, exits, available time, movement constraints, transport if relevant, and arrival consequences if relevant. |
+| `restraint_or_coercion_possible` | Requires agency/status, consent/force conditions, body positions, exits, power relationship, available time, and physical/social constraints. |
+| `intimacy_or_sex_possible` | Requires active cast ages/statuses, content envelope consistency, consent/force conditions, body positions, privacy/publicness, relationship/emotion pressure, and physical affordances. |
+| `violence_or_injury_possible` | Requires agency/status, positions, weapons/body affordances, force conditions, injury consequences, visibility, time, and location constraints. |
+| `institutional_involvement_possible` | Requires institution/entity record or explicit current-state route, communication/access mechanism, jurisdiction or authority relation if relevant, and current opportunity for contact. |
+| `clock_tick_possible` | Requires active clock, current pressure, tick trigger, next threshold, possible effects, and concrete event that could visibly cause tick. |
+| `obligation_breach_possible` | Requires obligation terms, owed_by, owed_to, visibility, consequence_if_broken, and current opportunity/pressure to breach or fulfill. |
+
+Reference severity lanes:
+
+| Lane | Dangling or mistyped reference | Existing but unselected reference |
+|---|---|---|
+| Readiness-required brief lanes (`selected_pov`, onstage entities, current location, required offstage pressure, required entity-status records) | Block | Block |
+| Optional brief lanes (optional offstage pressure, optional entity-status records) | Block | Warn |
+| Cast-band and voice attachment lanes | Block when missing or mistyped; duplicate cast-band membership blocks | Warn when a voice-pressure attachment targets an existing cast member outside rendered bands |
+| Required record-internal lanes (every selected `CAST MEMBER.entity_id` in all three cast bands; active secret holders/protected non-holders; plan holder when prose-driving or hidden-plan focus applies) | Block | Block |
+| Optional record-internal lanes (relationship endpoints, object owner/carrier/location, event participants/known-by/location/record links, affordance availability, belief/emotion/intention holders, obligation/consequence targets) | Block when dangling or mistyped by lane; broad record links may accept any record type | Warn |
+| Structural coherence lanes (onstage/offstage overlap, onstage status/location, object holder/location, relationship endpoints) | N/A | Block on deterministic enum/id contradiction |
+
+Implemented reference and structural blocker codes:
+
+- `selected-pov-reference-invalid`, `onstage-entity-reference-invalid`, `offstage-entity-reference-invalid`, `entity-statuses-reference-invalid`, and `current-location-reference-invalid`;
+- `cast-band-duplicate-membership`, `cast-band-reference-invalid`, `onstage-cast-band-missing`, and `voice-pressure-attachment-invalid`;
+- `record-reference-dangling`, `record-reference-type-mismatch`, and `record-reference-unselected-required`;
+- `onstage-offstage-entity-overlap`, `onstage-entity-status-contradiction`, `object-location-holder-incoherence`, and `relationship-self-reference`.
+
+Implemented reference warning codes:
+
+- `offstage-entity-reference-unselected-optional`, `entity-statuses-reference-unselected-optional`, `voice-pressure-orphaned-attachment`, and `record-reference-unselected-optional`.
+
+Universal blockers not tied to a single validation focus tag:
+
+- a saved generation context that contradicts accepted-segment count; the saved draft remains unchanged and draft Save remains available, while Preview, candidate intake, Generate, and provider transport fail closed until explicit repair;
+- manual directive or stop guidance requesting a whole chapter, global outline, alternate options, downstream consequence summary, plot beat/act/chapter package, or multiple response points instead of one local prose segment;
+- manual directive and stop guidance contradicting each other about the local unit or stop boundary;
+- dangling, mistyped, duplicated, or required-but-unselected references in readiness-required brief, cast-band, voice attachment, or record-internal lanes;
+- deterministic structural contradictions: the same entity both onstage and offstage-pressuring, an onstage entity status placing it offstage/concealed or at a different record-id location, an object whose location is `carried_by_holder` while `carried_by` is `none`, or a relationship whose endpoints are the same id;
+- template, schema, or compiler-contract version mismatch that leaves a prompt placeholder without a deterministic source.
+
+Warnings that must not block:
+
+- prompt length or lost-in-the-middle risk;
+- too many high-salience records selected;
+- no sample utterances selected;
+- no active clock where directive is otherwise sufficient;
+- sparse setting texture;
+- low-drama scene may need stronger prose-craft pressure;
+- long active dossier may need stronger current voice/body pressure pin;
+- active/onstage extended dossier is sparse but required core is sufficient;
+- existing but unselected references in optional brief or record-internal lanes;
+- voice pressure targets an existing cast member outside the rendered cast bands.
+
+## 7. Blocker/warning rendering
+
+Blockers are shown to the user before compilation. They prevent prompt generation and OpenRouter sending.
+
+Warnings are shown to the user but do not compile into the prose prompt. The compiler must not render unresolved warnings as `<compiler_warning>` or similar prompt text.
+
+A validation message should identify the conflicting records or fields, explain the conflict in plain language, and indicate possible user actions: revise, remove, deselect, add current state, add route, add knowledge constraint, add reveal permission, promote cast, add voice/body pressure, or change directive.
+
+Author-facing readiness items must not lead with raw technical codes. Blockers and warnings should include these fields where relevant:
+
+- Title.
+- What may degrade.
+- Why this is not blocking.
+- When it would become blocking.
+- Fastest fix.
+- Ignoring is reasonable when.
+- Affected labels.
+- Technical code in details.
+
+Repeated warnings should deduplicate by affected field/record group and present grouped salience warnings instead of one warning per long dossier, missing optional pin, or sparse optional nuance.
+
+## 8. Empty-state rendering rules
+
+- Constitutional sections are never omitted.
+- Optional list sections render `None`, `None active`, `None selected`, or `None specified` using the exact phrase defined in the mapping row.
+- Empty states must not imply missing canon is safe when a validation tag requires it. Required-but-missing state blocks before rendering.
+- Empty states are deterministic constants, not model-authored paraphrases.
+- A pressure summary may be empty even when later detail sections contain records, if no selected record satisfies that pressure summary's deterministic predicate. Use the existing empty state (`None beyond detailed records below`) and do not synthesize a filler summary.
+- Empty-state rendering must not be used to hide a structurally unusable prompt.
+- Optional prompt-preference fields may be omitted entirely when blank if the surrounding universal instruction remains structurally complete.
+- Empty-state rendering is required only when omission would make the prompt ambiguous or structurally malformed.
+- `<current_authoritative_state>` always renders the section tag and the four readiness-required lines: time, location, onstage entities, and immediate situation. The eleven context-gated lines omit both label and value when empty; `consent_or_force_conditions: "none"` is treated as empty.
+- `<immediate_handoff>` always renders the section tag, `recent_causal_context`, and the accepted-prose firewall instruction text. `last_visible_moment` and `begin_after` omit both label and value when empty.
+- `<manual_directive priority="high">` always renders the section tag and `must_render`. `may_render_if_naturally_caused` and `do_not_force` omit both label and value when empty.
+- `<pov_knowledge_constraints>` always renders the section tag and the static prompt-label and non-POV interiority rules. `pov_knows`, `pov_believes_suspects_misreads`, `pov_does_not_know`, and `pov_cannot_perceive_now` omit both label and value when empty.
+- `<secrets_and_reveal_constraints>` always renders the section tag and the static reveal-permission rule. `writer_visible_hidden_truths`, `secret_holders`, `secret_non_holders_to_protect`, `allowed_clues_and_surface_cues`, `forbidden_reveals`, and `reveal_permissions` omit both label and value when empty. Each rendered secret value-line carries its `Secret N` label, where `N` equals the SECRET citation-key ordinal; omitted value-lines carry no label. The affirmative `forbidden_reveals: "none"` sentinel is content, not empty state, and still renders its deterministic sentence with its `Secret N:` prefix.
+- `<hard_canon>`, `<present_minor_cast>`, and `<offstage_relevance>` are the designated optional universal-prompt sections. `<hard_canon>` omits the entire section when no hard-canon FACT is selected and no immutable story lock is active. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
+- Optional list sub-blocks inside `<relevant_facts_beliefs_events>` and `<locations_objects_affordances>` omit both the sub-block header and value when empty. If all sibling sub-blocks in one of those composite sections are empty, the section tag remains and renders the single deterministic section-level empty state `None specified`.
+- Segment Reconciliation always renders all nineteen allowed brief fields. A missing value renders the literal state `missing`; a present empty string/list renders `blank`; neither is silently omitted.
+- Accepted-Segment Change Review always renders all nineteen candidate review paths. Missing values render an explicit missing state and blank values remain explicit; neither is omitted. An empty candidate `items` list is valid only with all six unique reasoned coverage rows and remains visibly unverified advice.
+- `<record_contrast_records>` renders `No non-archived records exist in the selected reconciliation scope.` when no full records qualify. Reference stubs, if any, render in their declared sub-block. Empty records do not disable send because brief and creation proposals may still be useful.
+- An absent accepted segment is not an empty state. It blocks reconciliation with `no-accepted-segment`.
+- Schema-catalog generation failure, malformed in-scope source, or source that cannot fit without omission is not an empty state. It blocks the operation.
+
+## 9. Prompt-facing vs validation-only fields
+
+Validation-only by default:
+
+- `validation_focus_tags`;
+- generation-context coherence metadata: saved value, required value, accepted-segment count, and coherent/mismatch status;
+- validation diagnostics;
+- blocker/warning severity;
+- record IDs unless deliberately exposed for debugging outside the generated prompt;
+- project record index and selected/unselected/dangling reference classifications;
+- source provenance metadata;
+- prompt/template/compiler version metadata unless the user chooses a debug prompt view.
+
+The `{pov_character}`, `{current_location}`, `{onstage_entities}`, `{offstage_pressuring_entities}`, `{entity_statuses}`, `{secret_holders}`, `{secret_non_holders_to_protect}`, `{active_intentions}`, `{active_plans}`, `{active_obligations}`, `{active_consequences}`, `{objects}`, and `{visible_affordances}` placeholders include prompt-facing id-derived values: entity, entity-status array entries, current-location records, object-holder, object-location, affordance availability, plan/intention holder, obligation owed-by/owed-to, and consequence target/cause ids are resolved to selected records' human display labels before rendering. `{pov_character}` renders the effective POV and may render `omniscient` as a literal; `variable` is never rendered. `{current_location}` prose values pass through verbatim when they do not match a project record. `{entity_statuses}` resolves only the record-id array branch; prose values pass through verbatim. `{secret_non_holders_to_protect}` renders `all_except_holders` and `none` as deterministic phrases. `{active_obligations}` renders `public`, `institution`, `self`, and `unknown` as deterministic literals. `{active_consequences}` renders `public` and `unknown` as deterministic literals, and free-text `cause` values pass through verbatim. `{visible_affordances}` renders `group` and `any_onstage` as deterministic literals. Required unresolved references block before compilation. Optional unselected references warn; optional raw-id fallback is permitted only where the lane is explicitly optional and the warning is surfaced. `CAST MEMBER.entity_id` is the cast-specific exception: every selected CAST MEMBER in active/onstage-full, present-minor, or offstage-relevant requires a selected ENTITY target. A dangling, mistyped, or unselected target blocks, and neither the id nor a raw-id fallback enters the prompt.
+
+Retained but not literal prompt content:
+
+- `CAST MEMBER.entity_id`, record ids, source provenance, timestamps, and diagnostic severity are validation/linkage metadata. The CAST MEMBER link is required in every cast band even though its id remains validation-only.
+- `ENTITY.roles_in_story`, `OBJECT.durability`, `EVENT.sequence_order`, `PLAN.fallback_steps`, `CLOCK.tick_history.*`, and `OPEN THREAD.answer_if_known` are authoring, classification, or continuity-history metadata. If one of these facts matters to the next generated prose, represent it through current state, selected event/consequence/clock pressure, current step, or another prompt-facing field.
+- `RELATIONSHIP.axis`, `direction_kind`, `value`, `valence`, and `visibility` are relationship-classification metadata. The prompt-facing relationship surface is `description`, `pressure_text`, and `current_expression`.
+
+Prompt-facing when selected or compiled:
+
+- user-authored current state, handoff, directive, pressure text, record prose fields, cast dossiers, voice anchors, current voice pressure pins, secrets/reveal lanes, affordances, stop guidance, and temporary cast voice overrides.
+
+Prompt-facing only as deterministic labels when useful for rendering/validation clarity:
+
+- active cast local function labels such as active speaker, active silent, POV narrator, or present-minor speaker.
+
+For Segment Reconciliation, accepted-segment text, source spans, current saved-draft values, full in-scope record payloads, reference stubs, and the generated compact record-schema catalog are assistance-prompt-facing data only. Prompt fingerprints, offsets, versions, raw ids, parse reason codes, and temporary creation-validation ids are audit/validation metadata. None is prose-prompt-facing. Segment-reconciliation output is never prompt-facing for prose generation.
+
+For the comparison-only Accepted-Segment Change Review candidate, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
+
+## 10. Change-control rule
+
+Any change to a prompt placeholder, template section, schema field used for compilation, requiredness rule, empty-state rendering rule, validation focus tag, blocker/warning row, Red Bunny generated prompt surface, or stress-suite assumption must update this compiler contract in the same document revision.
+
+Changes to pressure-predicate inclusion, pressure-summary field precedence, or VISIBLE AFFORDANCE placement must update compiler tests, the golden prompt baseline, `docs/specs/prompt-template.md`, and `docs/prompt-template-rationale.md` in the same revision.
+
+Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/specs/story-record-hygiene-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, compiler/template versions, and golden tests in the same change.
+
+Any change to the segment-reconciliation source profile, accepted-segment selection, span algorithm, allowed brief-field list, record scopes, archive/status predicate, ordering, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output JSON Schema, parser validation, verbatim-echo thresholds, provider-transform policy, or UI quarantine must update `docs/specs/segment-reconciliation-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, template/compiler/contract versions, and golden/parser/route/UI tests in the same change. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
+
+Until a verified explicit steward `GO`, any change to the comparison-only Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, candidate versions, request/disclosure shape, output schema, parser quarantine, shared echo threshold, provider policy, scratch behavior, consumed-guidance allowlist, or comparison harness must update this contract and focused core/route/component/property tests in the same revision. It must not update the active Segment Reconciliation prompt-template authority or user guide, expose the candidate through production navigation/reminder/runtime configuration, or treat candidate completion as activation approval.

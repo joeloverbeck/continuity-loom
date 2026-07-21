@@ -2,7 +2,7 @@
 
 Date: 2026-06-10
 Status: brainstorm — not a spec, not a backlog commitment
-Provenance: user request ("what new features could elevate the app without violating the foundations, or pushing them a bit"), full read of `docs/FOUNDATIONS.md` + `docs/ACTIVE-DOCS.md`, codebase capability survey, and two external research passes (competing tools 2025–2026; narrative theory + human-AI co-creativity research). Source links inline.
+Provenance: user request ("what new features could elevate the app without violating the foundations, or pushing them a bit"), full read of `docs/principles/FOUNDATIONS.md` + `docs/ACTIVE-DOCS.md`, codebase capability survey, and two external research passes (competing tools 2025–2026; narrative theory + human-AI co-creativity research). Source links inline.
 
 ## How to read this
 

@@ -61,7 +61,7 @@ describe("record hygiene end-to-end conformance", () => {
 
     expect(tableNames(databasePath).filter((name) => /hygiene|suggestion|similarity|embedding|review/i.test(name))).toEqual([]);
     expect(Object.values(DIAGNOSTIC_CODES).filter((code) => /hygiene/i.test(code))).toEqual([]);
-    expect(readFileSync("docs/validation-rule-inventory.md", "utf8").match(/hygiene/gi)).toHaveLength(1);
+    expect(readFileSync("docs/specs/validation-rule-inventory.md", "utf8").match(/hygiene/gi)).toHaveLength(1);
 
     const before = await persistedSurfaces(fastify, databasePath);
     const proseBefore = await compileProse(fastify);

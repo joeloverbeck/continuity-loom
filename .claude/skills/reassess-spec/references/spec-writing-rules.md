@@ -11,7 +11,7 @@ Example:
 | Finding | Check | Result |
 |---------|-------|--------|
 | I1 | `grep -n "deterministic" specs/SPEC-001-prompt-compiler.md` | 2 matches in §Approach — confirms compilation scope |
-| I2 | `test -f docs/compiler-contract.md` | file exists — dependency path valid |
+| I2 | `test -f docs/specs/compiler-contract.md` | file exists — dependency path valid |
 | M3 | Judgment — §11 warnings-vs-blockers reasoning; Q2 delegated | selected (a): missing-field check is a blocker, not a warning, per §11 |
 
 **Row shapes**:

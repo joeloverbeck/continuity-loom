@@ -46,11 +46,11 @@ Glob/Grep to confirm each path exists. If moved, renamed, or deleted, record the
 
 Grep for each type, interface, or schema field. Confirm existence and current shape. Check:
 
-- **Field existence and naming** — flag fields the spec assumes but that don't exist or have different names/types. The schema-authoritative sources for Continuity Loom records are `docs/story-record-schema.md` (story records, generation-time brief) and `docs/compiler-contract.md` (prompt sections, compilation inputs); when the spec validates/emits/compiles a record, verify field names against these, not against FOUNDATIONS prose (prose describes *intent*; the schema docs carry the *actual* field names, and the two can drift).
+- **Field existence and naming** — flag fields the spec assumes but that don't exist or have different names/types. The schema-authoritative sources for Continuity Loom records are `docs/specs/story-record-schema.md` (story records, generation-time brief) and `docs/specs/compiler-contract.md` (prompt sections, compilation inputs); when the spec validates/emits/compiles a record, verify field names against these, not against FOUNDATIONS prose (prose describes *intent*; the schema docs carry the *actual* field names, and the two can drift).
 - **Type accuracy** — verify assumed types match actual types.
 - **Field-choice drift** — when a record class offers multiple semantically-distinct fields and the spec's algorithm picks one, verify it picked the semantically-correct one (both fields exist, so a name-drift check passes silently); a wrong choice with correctness consequences is HIGH or CRITICAL.
 - **Enum / table exhaustiveness** — if the spec includes a lookup keyed by a string enum (e.g. validation focus tag → check), verify it covers all current values.
-- **Schema fidelity** — if the spec proposes a JSON/YAML schema, verify against `docs/story-record-schema.md` and any existing schema file.
+- **Schema fidelity** — if the spec proposes a JSON/YAML schema, verify against `docs/specs/story-record-schema.md` and any existing schema file.
 - **Exclusion / negative references** — symbols a spec names only to *forbid* (the new feature "must not appear in / must not touch / must not be registered in X") still must resolve to real symbols, because they typically seed exclusion/isolation tests. Grep each exactly as for positive references and correct stale names; a stale exclusion symbol is at least MEDIUM (a test would reference a nonexistent artifact). Verify the *current* name even when the spec's intent (keep the feature out of X) is sound — a sound intent expressed through a dead symbol still breaks decomposition.
 
 **Doc-amendment edit-instruction fidelity** (doc-amendment specs — see SKILL.md Pre-Process "Documentation / amendment specs"): a doc-amendment spec prescribes *edits* (replace this row, append this note, add this table row), not just quoted current text. A stale quote is one failure mode; these four are the others, each easy to miss because the spec reads internally coherent while the target doc tells a different story. For every prescribed edit, read the target region and check:
@@ -68,7 +68,7 @@ Grep for each function or command; confirm signature, location, and export statu
 - **Reuse opportunities** — for each new function the spec proposes, grep for an existing one serving the same purpose; a duplicate is an Issue (prefer reuse) or Improvement (note the alternative).
 - **Code-example fidelity** — Before/After snippets must match the actual control-flow structure.
 - **Pseudocode dependency completeness** — each call/constructor in spec pseudocode must either exist or be defined as a deliverable elsewhere in the spec; neither = an incomplete deliverable Issue.
-- **Surface-convention fidelity** — proposed commands, flags, or APIs should match existing Continuity Loom conventions and `docs/compiler-contract.md`; flag deviations.
+- **Surface-convention fidelity** — proposed commands, flags, or APIs should match existing Continuity Loom conventions and `docs/specs/compiler-contract.md`; flag deviations.
 
 ## 3.4 Dependencies (specs / skills)
 
@@ -90,7 +90,7 @@ Match the conventions of the repo's existing skills (`brainstorm`, `skill-audit`
 
 ## 3.6 Downstream Consumers
 
-For types, interfaces, or functions the spec modifies, grep all import sites and usage points across `.claude/skills/*`, `docs/*`, and any code tree. Record blast radius.
+For types, interfaces, or functions the spec modifies, grep all import sites and usage points across `.claude/skills/*`, all subdirectories of `docs/`, and any code tree. Record blast radius.
 
 **Shared-function second-surface trace**: when a deliverable modifies a shared renderer, serializer, or helper, trace its callers to determine whether it feeds more than one compiled artifact or output surface (e.g. a prose prompt *and* a parallel assistance/ideation prompt that reuse the same resolver). A change the spec frames as touching one surface but that propagates through a shared function into a second surface the spec leaves out of scope is a HIGH coverage gap — name the second surface, its renderer, and the docs/tests that must move with it.
 
@@ -118,7 +118,7 @@ Grep specs in `specs/` for references to this spec's deliverables; note affected
 
 For deliverables that touch FOUNDATIONS-governed semantics — deterministic prompt compilation (§8), the universal prompt contract (§9), validation and hard-fails (§11), record authority and human gatekeeping (§13/§14/§20), POV/knowledge/secrets (§15), physical continuity (§16), the accepted-segment archive (§21), prompt inspection and secrets (§22/§23):
 
-- **No principle weakening**: read the relevant FOUNDATIONS sections. For each principle the deliverable touches, verify the proposal enforces it at least as strictly as the constitution requires. A proposal that weakens a principle is a CRITICAL Issue. **Exception — constitutional-amendment specs**: when the spec's declared purpose is amending `docs/FOUNDATIONS.md` itself, relaxing a rule is the intended deliverable, not a violation. Do not auto-CRITICAL it; instead verify the amendment is internally coherent, preserves each engaged §29 hard-fail's intent, and synchronizes sibling docs (see the constitutional-amendment carve-out in SKILL.md Guardrails and `foundations-alignment.md` §4.4). **Dependent-spec variant**: a non-amendment spec that *relies on* a sanctioned sibling amendment to weaken a rule is likewise not auto-CRITICAL — it is a HIGH dependency Issue (declare the coupling). See `foundations-alignment.md` §4.4.
+- **No principle weakening**: read the relevant FOUNDATIONS sections. For each principle the deliverable touches, verify the proposal enforces it at least as strictly as the constitution requires. A proposal that weakens a principle is a CRITICAL Issue. **Exception — constitutional-amendment specs**: when the spec's declared purpose is amending `docs/principles/FOUNDATIONS.md` itself, relaxing a rule is the intended deliverable, not a violation. Do not auto-CRITICAL it; instead verify the amendment is internally coherent, preserves each engaged §29 hard-fail's intent, and synchronizes sibling docs (see the constitutional-amendment carve-out in SKILL.md Guardrails and `foundations-alignment.md` §4.4). **Dependent-spec variant**: a non-amendment spec that *relies on* a sanctioned sibling amendment to weaken a rule is likewise not auto-CRITICAL — it is a HIGH dependency Issue (declare the coupling). See `foundations-alignment.md` §4.4.
 - **Secret-firewall preservation**: for deliverables affecting POV/secret handling or prompt compilation, verify no path lets a secret leak into a narrator/mind the deterministic records forbid (§15, §29.6). Missing firewall is CRITICAL.
 - **Deterministic-compilation preservation**: for deliverables touching prompt compilation, verify no LLM intermediary selects/ranks/summarizes/rewrites records during compilation and that identical inputs+versions produce identical output (§4.4, §8, §29.4). Violations are CRITICAL.
 - **Validation discipline**: for deliverables proposing validation rules, verify they stay deterministic and blocking, distinguish warnings from blockers, and name what failing means (block generation? warn?) (§11). Unaddressed second-order effects are Improvement findings at minimum.
@@ -126,7 +126,7 @@ For deliverables that touch FOUNDATIONS-governed semantics — deterministic pro
 
 ## 3.9 New-Deliverable Consumer Verification
 
-For each proposed new deliverable (new command, new validator, new skill output, new public type, new reference-file section), verify at least one identifiable consumer exists or is explicitly planned. Grep for references to it by name across `.claude/skills/*`, `specs/*`, `tickets/*`, and `docs/*`, and inspect the spec's own Problem Statement/Approach for a concrete consumer-side workflow.
+For each proposed new deliverable (new command, new validator, new skill output, new public type, new reference-file section), verify at least one identifiable consumer exists or is explicitly planned. Grep for references to it by name across `.claude/skills/*`, `specs/*`, `tickets/*`, and all subdirectories of `docs/`, and inspect the spec's own Problem Statement/Approach for a concrete consumer-side workflow.
 
 **Outcome**:
 - **≥1 consumer found**: deliverable justified — record the consumers in Step 6 for audit-trail visibility.

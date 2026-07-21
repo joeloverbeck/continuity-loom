@@ -10,7 +10,7 @@ import {
 } from "../src/index.js";
 
 const authorityDoc = readFileSync(
-  new URL("../../../docs/cast-member-draft-prompt-template.md", import.meta.url),
+  new URL("../../../docs/specs/cast-member-draft-prompt-template.md", import.meta.url),
   "utf8"
 );
 

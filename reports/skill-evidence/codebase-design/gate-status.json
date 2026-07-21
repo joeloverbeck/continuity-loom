@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-21T11:42:17.141Z",
+  "target_content_hash": "c826562ae9f3bb1f986925d45c3c321331ff3eff5050e4e9997c303cfc6f7e0b",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": "dec_b016b072-8ce1-41d0-a1f4-ce16ea6d66b6",
+  "target_name": "codebase-design",
+  "target_repo_relative_path": ".claude/skills/codebase-design",
+  "derivation_session_id": null
+}

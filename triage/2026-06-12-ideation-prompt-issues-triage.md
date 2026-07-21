@@ -2,7 +2,7 @@
 
 Source: user diagnostic request (no formal report). Six symptoms observed in a compiled production ideation prompt (`red-bunny` project); request was to follow the lifecycle of each, check whether the original prose pipeline shares the failure, align with `docs/**`, and create tickets.
 
-Classification: product-behavior (deterministic prompt compilation, `@loom/core`). Post-exploration confidence ~92%; root causes pinned statically from the compiler code, the brief schema, `docs/ideation-prompt-template.md`, `docs/compiler-contract.md`, **and the real `red-bunny` SQLite DB** (read-only). Confirmatory golden/unit repro skipped per the deterministic-`@loom/core` static-root-cause rule — the stored data + code are the evidence.
+Classification: product-behavior (deterministic prompt compilation, `@loom/core`). Post-exploration confidence ~92%; root causes pinned statically from the compiler code, the brief schema, `docs/specs/ideation-prompt-template.md`, `docs/specs/compiler-contract.md`, **and the real `red-bunny` SQLite DB** (read-only). Confirmatory golden/unit repro skipped per the deterministic-`@loom/core` static-root-cause rule — the stored data + code are the evidence.
 
 Delta vs prior triage `2026-06-09-prompt-generation-issues-triage.md`: that pass covered four **different** prose-pipeline findings (`HARDCANONOMIT`/`ONSTAGEJOIN`/`POVEMPTYLINE`/`POVPERCEIVE`, all archived). No overlap; this is a fresh ideation-surface pass. SECRETLINE-001 extends the `POVEMPTYLINE-001` empty-value-line pattern to the secrets section.
 
@@ -21,7 +21,7 @@ User decisions (AskUserQuestion, 2026-06-12): O1 → add the secrets empty-line 
 - Disposition: **ACTION — `tickets/IDEAPROMPT-001.md`** (derive keys from full label; docs + golden lockstep).
 
 ### O3 — `<contradiction_prohibitions>` is the prose-writer block reused verbatim in ideation
-- Shared constant `template-constants.ts:348-363`, in both `SECTION_ORDER:26` and `IDEATION_SECTION_ORDER:56`; `docs/ideation-prompt-template.md:49` sanctions the full block. ~Half its lines are prose-craft-only (voice/catchphrases/exposition-dialogue/resolve-tension/concrete-vs-abstract); others duplicate `<ideation_role>`/`<ideation_quality>`.
+- Shared constant `template-constants.ts:348-363`, in both `SECTION_ORDER:26` and `IDEATION_SECTION_ORDER:56`; `docs/specs/ideation-prompt-template.md:49` sanctions the full block. ~Half its lines are prose-craft-only (voice/catchphrases/exposition-dialogue/resolve-tension/concrete-vs-abstract); others duplicate `<ideation_role>`/`<ideation_quality>`.
 - User chose **trim** (not drop/keep). New ideation-specific `ideation_contradiction_prohibitions` section; prose block untouched; docs amended in lockstep.
 - Disposition: **ACTION — `tickets/IDEAPROMPT-002.md`**.
 
@@ -49,4 +49,4 @@ User decisions (AskUserQuestion, 2026-06-12): O1 → add the secrets empty-line 
 
 ## Named assumptions
 - Deliverable class is tickets (user directive). Namespace: `IDEAPROMPT-NNN` family for the ideation-prompt fixes (O2/O3 share that surface); separate `SECRETLINE-001` for O1 since `<secrets_and_reveal_constraints>` is shared by both prose and ideation prompts.
-- Each compiler change carries its in-same-revision `docs/compiler-contract.md` (+ template doc) update and golden refresh.
+- Each compiler change carries its in-same-revision `docs/specs/compiler-contract.md` (+ template doc) update and golden refresh.

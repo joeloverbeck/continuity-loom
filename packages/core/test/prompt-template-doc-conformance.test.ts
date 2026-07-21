@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SECTION_TEMPLATES } from "../src/compiler/template-constants.js";
 
-// docs/prompt-template.md is the named authority for the universal prompt
+// docs/specs/prompt-template.md is the named authority for the universal prompt
 // template text. The static SECTION_TEMPLATES constants render verbatim into the
-// compiled prose prompt, so the two must stay in lockstep (compiler-contract.md
+// compiled prose prompt, so the two must stay in lockstep (docs/specs/compiler-contract.md
 // §1/§10). This guards the drift class where the doc's <authority_hierarchy> and
 // <prose_craft> wording was amended (SPECFOUDOCAME-004) without updating the
 // constants or the golden baseline.
-const templateDoc = readFileSync(new URL("../../../docs/prompt-template.md", import.meta.url), "utf8");
+const templateDoc = readFileSync(new URL("../../../docs/specs/prompt-template.md", import.meta.url), "utf8");
 
 type StaticSection = keyof typeof SECTION_TEMPLATES;
 

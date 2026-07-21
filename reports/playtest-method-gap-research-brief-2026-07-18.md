@@ -167,7 +167,7 @@ Read the following at that exact commit:
 - AGENTS.md — repository safety, package, localhost, authority, and completion rules.
 - CLAUDE.md — repository entrypoint and skill/tracker conventions.
 - docs/ACTIVE-DOCS.md — active authority registry and archive boundary.
-- docs/FOUNDATIONS.md — constitutional boundaries relevant to prompt transparency, human
+- docs/principles/FOUNDATIONS.md — constitutional boundaries relevant to prompt transparency, human
   authority, local-first custody, assistance quarantine, accepted prose, and secrets.
 - .claude/skills/playtest/SKILL.md — target outcomes, non-negotiables, process, and completion.
 - Every file under .claude/skills/playtest/references and

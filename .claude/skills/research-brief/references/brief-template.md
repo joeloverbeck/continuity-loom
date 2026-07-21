@@ -25,7 +25,7 @@ contains the §2 read-list):
 > prose-generation prompt, and handles segment acceptance. It is an npm-workspaces ESM
 > monorepo (Node ≥ 24, strict TypeScript) with three packages: `@loom/core` (pure
 > continuity/compiler logic, framework- and platform-free), `@loom/server`, `@loom/web`.
-> Governing docs: `docs/FOUNDATIONS.md` is the constitution (its §29 is the alignment/hard-fail
+> Governing docs: `docs/principles/FOUNDATIONS.md` is the constitution (its §29 is the alignment/hard-fail
 > checklist); `docs/ACTIVE-DOCS.md` maps the active authority hierarchy. Fetch every file from
 > commit `<HEAD>` — the manifest reflects that tree. (If a referenced report cites a different
 > "commit of record," note the divergence here and use the verified HEAD, not the report's string.)
@@ -55,11 +55,11 @@ Order strictly by Loom's authority hierarchy (`docs/ACTIVE-DOCS.md`). Example sh
 Read these in full, in this order:
 
 docs/ACTIVE-DOCS.md — the authority map: which doc governs which surface, and the active-vs-archive boundary.
-docs/FOUNDATIONS.md — the project constitution; §29 is the hard-fail checklist every deliverable must clear.
-docs/compiler-contract.md — the deterministic prompt-compiler contract <if the target touches compilation>.
-docs/prompt-template.md / docs/prompt-template-rationale.md — the universal prompt template + its rationale <if relevant>.
-docs/story-record-schema.md — record + generation-time-brief shapes <if the target touches data>.
-docs/stress-suite.md / docs/stress-coverage-matrix.md / docs/demo-blocker-recipes.md — validation/stress/demo behavior <if relevant>.
+docs/principles/FOUNDATIONS.md — the project constitution; §29 is the hard-fail checklist every deliverable must clear.
+docs/specs/compiler-contract.md — the deterministic prompt-compiler contract <if the target touches compilation>.
+docs/specs/prompt-template.md / docs/prompt-template-rationale.md — the universal prompt template + its rationale <if relevant>.
+docs/specs/story-record-schema.md — record + generation-time-brief shapes <if the target touches data>.
+docs/specs/stress-suite.md / docs/specs/stress-coverage-matrix.md / docs/demo-blocker-recipes.md — validation/stress/demo behavior <if relevant>.
 reports/<report> — <prior finding-set this target builds on>.
 archive/specs/<spec> — <completed work that established the current state>.
 ```
@@ -106,7 +106,7 @@ Authorize depth explicitly:
 
 Pointers Session 2 must honor:
 
-- `docs/FOUNDATIONS.md` is the constitution — every product-behavior decision must satisfy it,
+- `docs/principles/FOUNDATIONS.md` is the constitution — every product-behavior decision must satisfy it,
   and must clear its §29 hard-fail checklist; a genuine divergence requires amending
   FOUNDATIONS first, never designing against it silently.
 - Authority order per `docs/ACTIVE-DOCS.md`: if a proposal conflicts with a higher authority
@@ -195,12 +195,12 @@ cited at the wrong section, and the locked brief gives Session 2 no way to chall
 ## B. Target-type → load-bearing reads
 
 A starting map for §2; always refine against Step 2 exploration. `docs/ACTIVE-DOCS.md`
-and `docs/FOUNDATIONS.md` are load-bearing for every type.
+and `docs/principles/FOUNDATIONS.md` are load-bearing for every type.
 
 | Target type | Load-bearing docs / files (beyond the two universal) |
 |---|---|
-| **new-spec** | the domain authority for the touched surface (e.g. `docs/compiler-contract.md`, `docs/prompt-template.md`, `docs/story-record-schema.md`); sibling specs in `specs/` + `archive/specs/`; the relevant code seams in `packages/core`/`server`/`web`; `tickets/README.md` + `tickets/_TEMPLATE.md` if decomposition follows. |
-| **thorny-fix** | the domain authority doc for the affected surface; the relevant code seams; any `reports/**` or `archive/reports/**` audit touching the defect; `docs/stress-suite.md` if a validation/stress gate is in play. |
-| **hardening / anti-contamination** | `docs/FOUNDATIONS.md` (esp. accepted-prose exclusion, deterministic compilation, fail-closed validation); `docs/compiler-contract.md` + `docs/prompt-template.md` for prompt-context boundaries; `docs/stress-suite.md` / `docs/stress-coverage-matrix.md` / `docs/demo-blocker-recipes.md` for regression coverage; prior hardening specs in `archive/specs/**` (e.g. SPEC-014). |
-| **foundational / doc-overhaul** | the doc being overhauled plus `docs/FOUNDATIONS.md` and `docs/ACTIVE-DOCS.md` (authority flows downward from the constitution and the map); any `reports/**` staleness/downstream audit; cross-references in lower-authority docs that the overhaul will invalidate. |
+| **new-spec** | the domain authority for the touched surface (e.g. `docs/specs/compiler-contract.md`, `docs/specs/prompt-template.md`, `docs/specs/story-record-schema.md`); sibling specs in `specs/` + `archive/specs/`; the relevant code seams in `packages/core`/`server`/`web`; `tickets/README.md` + `tickets/_TEMPLATE.md` if decomposition follows. |
+| **thorny-fix** | the domain authority doc for the affected surface; the relevant code seams; any `reports/**` or `archive/reports/**` audit touching the defect; `docs/specs/stress-suite.md` if a validation/stress gate is in play. |
+| **hardening / anti-contamination** | `docs/principles/FOUNDATIONS.md` (esp. accepted-prose exclusion, deterministic compilation, fail-closed validation); `docs/specs/compiler-contract.md` + `docs/specs/prompt-template.md` for prompt-context boundaries; `docs/specs/stress-suite.md` / `docs/specs/stress-coverage-matrix.md` / `docs/demo-blocker-recipes.md` for regression coverage; prior hardening specs in `archive/specs/**` (e.g. SPEC-014). |
+| **foundational / doc-overhaul** | the doc being overhauled plus `docs/principles/FOUNDATIONS.md` and `docs/ACTIVE-DOCS.md` (authority flows downward from the constitution and the map); any `reports/**` staleness/downstream audit; cross-references in lower-authority docs that the overhaul will invalidate. |
 | **other** | derive entirely from exploration; default to the universal two plus whatever the target names. |

@@ -4,9 +4,9 @@ Continuity Loom is a **local-first story-state operating system**: a Node proces
 
 ## Start Here
 
-Read `docs/ACTIVE-DOCS.md` before changing code or docs. It is the post-v1 map of active authorities, archived material, and change-intake rules.
+Read `docs/principles/README.md` for the conformance rule, then `docs/ACTIVE-DOCS.md` for active-authority routing, archived-material boundaries, and change-intake rules before changing code or docs.
 
-Read `docs/FOUNDATIONS.md` before any change to runtime behavior, stored data, prompt compilation, validation rules, generation behavior, accepted-segment behavior, OpenRouter behavior, or LLM-assistance surfaces. A feature that conflicts with `FOUNDATIONS.md` is wrong unless `FOUNDATIONS.md` is deliberately amended first.
+Read `docs/principles/FOUNDATIONS.md` before any change to runtime behavior, stored data, prompt compilation, validation rules, generation behavior, accepted-segment behavior, OpenRouter behavior, or LLM-assistance surfaces. A feature that conflicts with `docs/principles/FOUNDATIONS.md` is wrong unless `docs/principles/FOUNDATIONS.md` is deliberately amended first.
 
 Treat `archive/**` as historical evidence, not active implementation guidance, unless an active issue or doc explicitly points to a specific archived file.
 
@@ -35,22 +35,22 @@ The first four also gate CI on every push to `main` and every PR. Run the releva
 
 ## Governing docs
 
-**`docs/FOUNDATIONS.md` is the project constitution.** Section 29 is the alignment checklist every PRD and implementation issue must clear.
+**`docs/principles/FOUNDATIONS.md` is the project constitution.** Section 29 is the alignment checklist every PRD and implementation issue must clear.
 
-Use `docs/ACTIVE-DOCS.md` to choose the right active doc before touching a domain:
+Use `docs/specs/README.md` and `docs/ACTIVE-DOCS.md` to choose the right living specification before touching a domain:
 
 | Touching… | Read |
 |---|---|
-| The deterministic prompt compiler | `docs/compiler-contract.md` |
-| The universal prompt template / its rationale | `docs/prompt-template.md`, `docs/prompt-template-rationale.md` |
-| Story record shape and fields | `docs/story-record-schema.md` |
-| Validation, stress behavior, hard-fail edge cases, or demo blockers | `docs/validation-rule-inventory.md`, `docs/stress-suite.md`, `docs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md` |
+| The deterministic prompt compiler | `docs/specs/compiler-contract.md` |
+| The universal prompt template / its rationale | `docs/specs/prompt-template.md`, `docs/prompt-template-rationale.md` |
+| Story record shape and fields | `docs/specs/story-record-schema.md` |
+| Validation, stress behavior, hard-fail edge cases, or demo blockers | `docs/specs/validation-rule-inventory.md`, `docs/specs/stress-suite.md`, `docs/specs/stress-coverage-matrix.md`, `docs/demo-blocker-recipes.md` |
 | Non-binding validation research candidates | `docs/narrative-theory-blocker-roadmap.md` |
 | User-facing local loop and project ownership | `docs/user-guide.md` |
 
 ## Change intake and archive
 
-All change intake goes through GitHub. Broad or risky behavior changes — compiler, validation, storage, schema, accepted-prose boundaries, OpenRouter/security, local-first data, or anything that could violate `FOUNDATIONS.md` — start as a **PRD** published to GitHub Issues. Narrow, already-scoped implementation work starts as a **GitHub issue**. See `docs/agents/issue-tracker.md`.
+All change intake goes through GitHub. Broad or risky behavior changes — compiler, validation, storage, schema, accepted-prose boundaries, OpenRouter/security, local-first data, or anything that could violate `docs/principles/FOUNDATIONS.md` — start as a **PRD** published to GitHub Issues. Narrow, already-scoped implementation work starts as a **GitHub issue**. See `docs/agents/issue-tracker.md`.
 
 The repository-native `specs/` and `tickets/` workflow is retired. Do not open new local specs or tickets, and do not treat the absence of a local spec as a gate on published work. `tickets/README.md` and `tickets/_TEMPLATE.md` survive only as historical format references.
 
@@ -76,5 +76,5 @@ This is a single-context repository. Read the root `CONTEXT.md` and `docs/adr/` 
 - Keep changes narrow and aligned with package boundaries.
 - Never adapt tests to match a bug — fix the code.
 - Do not introduce backwards-compatibility aliases, shims, or duplicate authority paths unless a published PRD explicitly justifies them.
-- Do not let rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context. Accepted prose may appear only as bounded evidence in the exact one-segment assistance profiles sanctioned by `docs/FOUNDATIONS.md` §9.1; it never becomes canon or prose-prompt authority.
+- Do not let rejected candidates, superseded candidates, or automatic prose-derived summaries become prompt context. Accepted prose may appear only as bounded evidence in the exact one-segment assistance profiles sanctioned by `docs/principles/FOUNDATIONS.md` §9.1; it never becomes canon or prose-prompt authority.
 - Do not weaken validation gates, deterministic compilation, API-key secrecy, localhost binding, or local-first project ownership.

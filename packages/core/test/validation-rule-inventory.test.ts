@@ -34,7 +34,7 @@ describe("validation rule inventory", () => {
 });
 
 function parseInventoryRows(): InventoryRow[] {
-  const inventory = readFileSync(new URL("../../../docs/validation-rule-inventory.md", import.meta.url), "utf8");
+  const inventory = readFileSync(new URL("../../../docs/specs/validation-rule-inventory.md", import.meta.url), "utf8");
 
   return inventory
     .split("\n")

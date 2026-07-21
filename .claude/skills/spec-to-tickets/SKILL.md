@@ -1,6 +1,6 @@
 ---
 name: spec-to-tickets
-description: "Use when decomposing a Continuity Loom spec into actionable implementation tickets aligned with docs/FOUNDATIONS.md. Reads the spec, validates its assumptions against the codebase, then writes one ticket per reviewable diff to tickets/<PREFIX>-NNN.md. Produces: ticket files. Mutates: only tickets/ (never specs/, docs/, or .claude/skills/)."
+description: "Use when decomposing a Continuity Loom spec into actionable implementation tickets aligned with docs/principles/FOUNDATIONS.md. Reads the spec, validates its assumptions against the codebase, then writes one ticket per reviewable diff to tickets/<PREFIX>-NNN.md. Produces: ticket files. Mutates: only tickets/ (never specs/, docs/, or .claude/skills/)."
 user-invocable: true
 arguments:
   - name: spec_path
@@ -13,12 +13,12 @@ arguments:
 
 # Spec to Tickets
 
-Break a Continuity Loom spec into small, actionable implementation tickets a reviewer can merge one at a time, each validated against the current codebase and aligned with `docs/FOUNDATIONS.md`.
+Break a Continuity Loom spec into small, actionable implementation tickets a reviewer can merge one at a time, each validated against the current codebase and aligned with `docs/principles/FOUNDATIONS.md`.
 
 <HARD-GATE>
 Do NOT Write any ticket file at `tickets/<PREFIX>-<NNN>.md` until ALL of the following hold:
 
-(a) Pre-flight has verified `docs/FOUNDATIONS.md`, `tickets/_TEMPLATE.md`, `tickets/README.md`, and `<spec_path>` are all readable; if any is missing the skill aborts before Step 1.
+(a) Pre-flight has verified `docs/principles/FOUNDATIONS.md`, `tickets/_TEMPLATE.md`, `tickets/README.md`, and `<spec_path>` are all readable; if any is missing the skill aborts before Step 1.
 
 (b) Step 2 (codebase validation) has completed, and every surfaced Issue has an explicit user disposition — one of: fix-before-decomposition, defer-to-follow-up-ticket (named dependency), reject-with-rationale (route back to `/reassess-spec`), expand-scope-in-place (decompose against the wider surface the codebase requires; the spec text is not edited), or drop-as-moot (named target doesn't exist AND intent is covered by sibling deliverables or is a structural no-op).
 
@@ -35,7 +35,7 @@ This gate is authoritative under auto mode and any autonomous-execution context.
 Pre-flight: verify required files readable; derive + confirm <namespace> if omitted
        |
        v
-Step 1: mandatory reads (spec, tickets/_TEMPLATE.md, tickets/README.md, docs/FOUNDATIONS.md)
+Step 1: mandatory reads (spec, tickets/_TEMPLATE.md, tickets/README.md, docs/principles/FOUNDATIONS.md)
        |
        v
 Step 2: codebase validation (load references/codebase-validation.md); surface Issues; await per-Issue disposition
@@ -73,7 +73,7 @@ Before acting, this skill MUST read:
 - `<spec_path>` — the target spec, entire contents (Step 1).
 - `tickets/_TEMPLATE.md` — the canonical ticket structure; every ticket must follow it exactly (Step 1).
 - `tickets/README.md` — the ticket authoring contract (Step 1).
-- `docs/FOUNDATIONS.md` — the non-negotiable design contract. Skip only if read earlier this session and unmodified (Step 1).
+- `docs/principles/FOUNDATIONS.md` — the non-negotiable design contract. Skip only if read earlier this session and unmodified (Step 1).
 - Every file path, skill directory, type, schema field, and spec reference extracted from the spec — read on demand at Step 2.
 
 Reading scope: anything under `specs/`, `archive/specs/`, `.claude/skills/`, `docs/`, `reports/`, and `tickets/`. This skill does not author story-record data and does not read story-record files.
@@ -92,7 +92,7 @@ Inside a git worktree, ALL paths (reads, writes, globs, greps) resolve from the 
 ## Pre-flight Check
 
 Before Step 1, verify:
-1. `docs/FOUNDATIONS.md` exists and is readable.
+1. `docs/principles/FOUNDATIONS.md` exists and is readable.
 2. `tickets/_TEMPLATE.md` exists and is readable.
 3. `tickets/README.md` exists and is readable.
 4. `<spec_path>` exists and is readable. If it is a glob (e.g. `specs/SPEC-01*`), resolve first: exactly one match → use it (note the resolution); zero or many → abort or ask to disambiguate.
@@ -102,7 +102,7 @@ If any of checks 1–4 fails, abort with a clear missing-file error. If check 5'
 
 ## Step 1: Mandatory Reads
 
-Read ALL of: the spec file (entire), `tickets/_TEMPLATE.md`, `tickets/README.md`, and `docs/FOUNDATIONS.md` (skip the last only if read earlier this session and unmodified).
+Read ALL of: the spec file (entire), `tickets/_TEMPLATE.md`, `tickets/README.md`, and `docs/principles/FOUNDATIONS.md` (skip the last only if read earlier this session and unmodified).
 
 Parse the spec's metadata (Status, `Depends on:` / `Predecessors:` / `Blocks:` / `Related:`) and its sections (Problem Statement, Approach, Deliverables, FOUNDATIONS Alignment, Verification — or its equivalently-named carrier: Testing / Acceptance / Acceptance Criteria / Coverage rules / Definition of Done, Out of Scope, Risks & Open Questions, and any deliverable sections).
 
@@ -181,7 +181,7 @@ Do NOT commit. Leave files for user review.
 
 | Principle | Step | Mechanism |
 |-----------|------|-----------|
-| §4 Non-negotiable principles | Pre-flight + Step 1 | FOUNDATIONS.md, _TEMPLATE.md, README.md, and the spec are required reads; the skill refuses to decompose without them. |
+| §4 Non-negotiable principles | Pre-flight + Step 1 | `docs/principles/FOUNDATIONS.md`, _TEMPLATE.md, README.md, and the spec are required reads; the skill refuses to decompose without them. |
 | §8 Deterministic prompt compilation | Step 2 | Deliverables touching compilation are flagged if they introduce a nondeterministic input or an LLM intermediary in the compilation path. |
 | §11 Validation and hard fails | Step 2 | Deliverables proposing validation rules must stay deterministic and blocking and distinguish warnings from blockers; deviations are flagged. |
 | §15 POV, knowledge, secrets | Step 2 | Deliverables touching POV/secret handling that would weaken the secret firewall trigger a CRITICAL Issue. |
@@ -190,4 +190,4 @@ Do NOT commit. Leave files for user review.
 
 ## Final Rule
 
-A decomposition is not complete until every spec deliverable maps to a ticket OR to an explicit non-goal OR to a documented exempt category, every `Deps` resolves to a real target, every ticket's Files to Touch matches the current codebase, and every FOUNDATIONS-impacting deliverable has been validated against `docs/FOUNDATIONS.md` before its ticket was written.
+A decomposition is not complete until every spec deliverable maps to a ticket OR to an explicit non-goal OR to a documented exempt category, every `Deps` resolves to a real target, every ticket's Files to Touch matches the current codebase, and every FOUNDATIONS-impacting deliverable has been validated against `docs/principles/FOUNDATIONS.md` before its ticket was written.

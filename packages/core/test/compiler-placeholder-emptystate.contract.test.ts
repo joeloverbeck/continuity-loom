@@ -15,7 +15,7 @@ import {
 } from "./support/arbitraries/empty-categories.js";
 import { describe, expect, it } from "vitest";
 
-const templateDoc = readFileSync(new URL("../../../docs/prompt-template.md", import.meta.url), "utf8");
+const templateDoc = readFileSync(new URL("../../../docs/specs/prompt-template.md", import.meta.url), "utf8");
 const sectionTemplates = SECTION_TEMPLATES as Readonly<Record<string, string>>;
 
 const promptSectionOrder = [

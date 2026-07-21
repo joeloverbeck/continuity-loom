@@ -89,11 +89,11 @@ The run continued the named prior report at launch HEAD 7e8a545860c0d70f25be429d
 
 | Candidate or follow-up | Governing authority | Code/test impact | Doc/skill impact | Required artifact type |
 | ---------------------- | ------------------- | ---------------- | ---------------- | ---------------------- |
-| Author Focus Operator-Bound Guidance | `docs/FOUNDATIONS.md` §§17, 21, 27, and 29; `docs/ideation-prompt-template.md`; `docs/user-guide.md` | Ideate visible guidance/accessibility seam, existing focus-to-preview behavior, and assignment-invariance regression | Align user guidance only if the visible-language change makes the active explanation incomplete; no skill change | ticket |
-| Name Active Cast Voice-Pressure Pins | `docs/FOUNDATIONS.md` §§10.1, 17, 21, 27, and 29; `docs/compiler-contract.md`; `docs/prompt-template.md`; `docs/story-record-schema.md` | Core cast pin rendering, deterministic compiler goldens/contracts, multi-cast attribution, validation, and prompt-preview regression | Compiler/prompt authority, version history, rationale, and user guidance require coordinated review; no skill change | spec-backed ticket |
-| Clipboard-Assisted Offstage Cast Cost Verification | `docs/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/story-record-schema.md`; `docs/cast-member-draft-prompt-template.md` | Read-only journey across ENTITY prerequisite, draft copy/import, validation, explicit Save, working-set selection, readiness, and prompt rendering | Produce one canonical playtest report; no product, authority, tracker, or skill mutation during verification | coverage |
-| F006 completed all-empty reconciliation guard | `docs/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/segment-reconciliation-prompt-template.md`; `docs/compiler-contract.md` | Existing parser, route, end-to-end, and result-view seams already cover valid empty output and explicit retry | No output-schema or authority change owed; closed #100 remains owner | no new artifact - covered |
-| F015 completed save-state copy | `docs/FOUNDATIONS.md` §§6.6, 27, and 29; `docs/user-guide.md` | Existing NoteEditor state and persistence seams now use failure-only retry copy | No schema, API, prompt, or skill change owed; closed #123 remains owner | no new artifact - covered |
+| Author Focus Operator-Bound Guidance | `docs/principles/FOUNDATIONS.md` §§17, 21, 27, and 29; `docs/specs/ideation-prompt-template.md`; `docs/user-guide.md` | Ideate visible guidance/accessibility seam, existing focus-to-preview behavior, and assignment-invariance regression | Align user guidance only if the visible-language change makes the active explanation incomplete; no skill change | ticket |
+| Name Active Cast Voice-Pressure Pins | `docs/principles/FOUNDATIONS.md` §§10.1, 17, 21, 27, and 29; `docs/specs/compiler-contract.md`; `docs/specs/prompt-template.md`; `docs/specs/story-record-schema.md` | Core cast pin rendering, deterministic compiler goldens/contracts, multi-cast attribution, validation, and prompt-preview regression | Compiler/prompt authority, version history, rationale, and user guidance require coordinated review; no skill change | spec-backed ticket |
+| Clipboard-Assisted Offstage Cast Cost Verification | `docs/principles/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/specs/story-record-schema.md`; `docs/specs/cast-member-draft-prompt-template.md` | Read-only journey across ENTITY prerequisite, draft copy/import, validation, explicit Save, working-set selection, readiness, and prompt rendering | Produce one canonical playtest report; no product, authority, tracker, or skill mutation during verification | coverage |
+| F006 completed all-empty reconciliation guard | `docs/principles/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/specs/segment-reconciliation-prompt-template.md`; `docs/specs/compiler-contract.md` | Existing parser, route, end-to-end, and result-view seams already cover valid empty output and explicit retry | No output-schema or authority change owed; closed #100 remains owner | no new artifact - covered |
+| F015 completed save-state copy | `docs/principles/FOUNDATIONS.md` §§6.6, 27, and 29; `docs/user-guide.md` | Existing NoteEditor state and persistence seams now use failure-only retry copy | No schema, API, prompt, or skill change owed; closed #123 remains owner | no new artifact - covered |
 
 ## Recommended PRD Package
 
@@ -374,11 +374,11 @@ Final worktree rows: 155
 | `reports/playtest-the-winter-letter-2026-07-19T022000Z.md` | yes | yes | yes | yes | durable historical observation |
 | `AGENTS.md` | yes | yes | yes | yes | durable authority |
 | `docs/ACTIVE-DOCS.md` | yes | yes | yes | yes | durable authority |
-| `docs/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
-| `docs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
-| `docs/ideation-prompt-template.md` | yes | yes | yes | yes | durable authority |
-| `docs/prompt-template.md` | yes | yes | yes | yes | durable authority |
-| `docs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
+| `docs/principles/FOUNDATIONS.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/ideation-prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
 | `docs/user-guide.md` | yes | yes | yes | yes | durable authority |
 | `docs/agents/issue-tracker.md` | yes | yes | yes | yes | durable tracker authority |
 | `docs/agents/triage-labels.md` | yes | yes | yes | yes | durable label authority |

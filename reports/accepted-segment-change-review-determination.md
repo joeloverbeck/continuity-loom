@@ -40,7 +40,7 @@ The user ratified the following decisions on 21 July 2026. PRD #132 and bug #131
 | Provider-error dependency | The bug does not block PRD drafting or publication | It blocks the real-provider comparison and final removal of the old workflow. A PRD published while it remains open stays `needs-triage`. |
 | Replacement gate | Do not ratify the audit's 100%, 90%, and 85% figures as product truth | Enforce deterministic hard floors, run a bounded old-versus-new field comparison, and require an explicit steward go/no-go receipt before removal. |
 | Contract identity | Replace Segment Reconciliation completely with Accepted-Segment Change Review | Rename the active authority, UI workflow, source profile, output contract, routes, and implementation identifiers atomically; provide no alias or permanent compatibility mode. |
-| Domain documentation | No glossary entry and no ADR | The workflow name is not a domain concept; the PRD and deliberate `FOUNDATIONS.md` amendment own the trade-off. |
+| Domain documentation | No glossary entry and no ADR | The workflow name is not a domain concept; the PRD and deliberate `docs/principles/FOUNDATIONS.md` amendment own the trade-off. |
 
 No ratified design choice remains open in this determination. The `to-prd` testing seam was confirmed and PRD #132 was published; the later field comparison still owes its evidence-based steward decision.
 
@@ -98,11 +98,11 @@ The source playtests were sampled at their cited reconciliation findings, includ
 
 Current implementation and authority checks covered:
 
-- `docs/FOUNDATIONS.md`
+- `docs/principles/FOUNDATIONS.md`
 - `docs/ACTIVE-DOCS.md`
-- `docs/segment-reconciliation-prompt-template.md`
-- `docs/story-record-schema.md`
-- `docs/compiler-contract.md`
+- `docs/specs/segment-reconciliation-prompt-template.md`
+- `docs/specs/story-record-schema.md`
+- `docs/specs/compiler-contract.md`
 - `docs/user-guide.md`
 - the core reconciliation compiler, output schema, and parser
 - the server snapshot, route, provider-error normalization, and route tests
@@ -112,7 +112,7 @@ Tracker overlap was checked across all issue states and refreshed after the repo
 
 ## Authority Findings
 
-Published PRD #132 aligns with the core records-only canon and human gatekeeping principles, but it cannot be implemented as a routine prompt edit. `docs/FOUNDATIONS.md` currently specifies Segment Reconciliation's source and structured proposal contract in Section 9.1 and related Section 29 checks. #132 requires exact constitutional amendment wording for the readable change-review contract to receive explicit sign-off before implementation.
+Published PRD #132 aligns with the core records-only canon and human gatekeeping principles, but it cannot be implemented as a routine prompt edit. `docs/principles/FOUNDATIONS.md` currently specifies Segment Reconciliation's source and structured proposal contract in Section 9.1 and related Section 29 checks. #132 requires exact constitutional amendment wording for the readable change-review contract to receive explicit sign-off before implementation.
 
 The proposal must continue to satisfy these constitutional rules:
 
@@ -126,10 +126,10 @@ The proposal must continue to satisfy these constitutional rules:
 
 PRD #132 requires the affected authority family to update in one coordinated implementation change:
 
-- `docs/FOUNDATIONS.md`, including Section 29 if the hard-fail wording changes;
-- add `docs/accepted-segment-change-review-prompt-template.md` as the replacement domain authority and remove `docs/segment-reconciliation-prompt-template.md`;
-- `docs/compiler-contract.md`;
-- `docs/story-record-schema.md` where the assistance projection or field descriptions change;
+- `docs/principles/FOUNDATIONS.md`, including Section 29 if the hard-fail wording changes;
+- add `docs/specs/accepted-segment-change-review-prompt-template.md` as the replacement domain authority and remove `docs/specs/segment-reconciliation-prompt-template.md`;
+- `docs/specs/compiler-contract.md`;
+- `docs/specs/story-record-schema.md` where the assistance projection or field descriptions change;
 - `docs/user-guide.md`;
 - `docs/ACTIVE-DOCS.md` for the authority replacement;
 - template, compiler, and compiler-contract versions plus golden, parser, route, component, and browser evidence.

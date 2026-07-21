@@ -273,7 +273,7 @@ This rule makes the categorical axes primary. “Who acts” and “which pressu
 
 ### 2.7 Proposed replacement text for the active domain authority
 
-The downstream spec should replace `docs/ideation-prompt-template.md`'s current `## Operator Taxonomy` and `## Slot Assignment` bodies with wording materially equivalent to the following. `docs/compiler-contract.md` §3.2 must mirror it.
+The downstream spec should replace `docs/specs/ideation-prompt-template.md`'s current `## Operator Taxonomy` and `## Slot Assignment` bodies with wording materially equivalent to the following. `docs/specs/compiler-contract.md` §3.2 must mirror it.
 
 ```md
 ## Operator Taxonomy
@@ -334,8 +334,8 @@ The downstream spec must treat these four authority locations as one lockstep ch
 | Authority location | Required update |
 |---|---|
 | **1. Code authority** — `packages/core/src/compiler/ideation/operators.ts` | Replace `IDEATION_OPERATORS`, definitions, order, feeding types, minimum bundles, and required groups. Remove `REINCORPORATE_DORMANT_OPERATOR`. Directly coupled implementation changes belong in `slot-assignment.ts`, `types.ts`, `citation-keys.ts`, `sections/ideation.ts`, and `template-constants.ts` as needed; these are implementation consequences of the same code-authority change, not separate authorities. |
-| **2. Domain authority** — `docs/ideation-prompt-template.md` | Replace `## Operator Taxonomy` and `## Slot Assignment`; replace the `<ideation_quality>` distinctness rule; update `## Citation Keys` for `EMOTION` and `ENTITY STATUS`. Preserve request shape, output format, and section order. |
-| **3. Compiler co-authority** — `docs/compiler-contract.md` §3.2 | Mirror the revised taxonomy, active predicates, minimum bundles, dormancy modifier, distinctness rule, and new key render sites. Keep the assistance source profile and section order unchanged. |
+| **2. Domain authority** — `docs/specs/ideation-prompt-template.md` | Replace `## Operator Taxonomy` and `## Slot Assignment`; replace the `<ideation_quality>` distinctness rule; update `## Citation Keys` for `EMOTION` and `ENTITY STATUS`. Preserve request shape, output format, and section order. |
+| **3. Compiler co-authority** — `docs/specs/compiler-contract.md` §3.2 | Mirror the revised taxonomy, active predicates, minimum bundles, dormancy modifier, distinctness rule, and new key render sites. Keep the assistance source profile and section order unchanged. |
 | **4. Tests and golden contract** — `packages/core/test/ideation-operator-eligibility.test.ts` plus golden ideation baseline | Replace the operator truth table; add status/reveal/family eligibility cases; update `ideation-slot-assignment.test.ts` for minimum bundles, unused-first selection, dormant-as-modifier, and shrink behavior; regenerate `golden-ideation.prompt.txt` through `compiler-ideation-golden.test.ts`. |
 
 Minimum regression properties for the downstream spec:
@@ -353,7 +353,7 @@ Minimum regression properties for the downstream spec:
 
 ## 4. Foundational-amendment flag
 
-**No `docs/FOUNDATIONS.md` amendment is required for these recommendations.**
+**No `docs/principles/FOUNDATIONS.md` amendment is required for these recommendations.**
 
 They align with the existing constitution:
 
@@ -408,13 +408,13 @@ Substantive analysis began only after all 20 required unique files were verified
 ### Successful primary raw-file requests
 
 1. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/ACTIVE-DOCS.md
-2. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/FOUNDATIONS.md
-3. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/ideation-prompt-template.md
-4. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/compiler-contract.md
-5. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/story-record-schema.md
+2. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/principles/FOUNDATIONS.md
+3. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/ideation-prompt-template.md
+4. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/compiler-contract.md
+5. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/story-record-schema.md
 6. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/archive/specs/SPEC-021-grounded-ideation-prompt.md
 7. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/archive/specs/SPEC-022-ideation-native-prompt-template.md
-8. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/prompt-template.md
+8. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/prompt-template.md
 9. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/prompt-template-rationale.md
 10. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/docs/narrative-theory-blocker-roadmap.md
 11. https://raw.githubusercontent.com/joeloverbeck/continuity-loom/c10355e21563645930506eae0d039ad7c761ee2e/packages/core/src/compiler/ideation/operators.ts
@@ -459,10 +459,10 @@ These requests repeat URLs already listed under the successful primary raw-file 
 All repository references below are pinned to the target commit.
 
 - **[R1]** [`docs/ACTIVE-DOCS.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/ACTIVE-DOCS.md)
-- **[R2]** [`docs/FOUNDATIONS.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/FOUNDATIONS.md)
-- **[R3]** [`docs/ideation-prompt-template.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/ideation-prompt-template.md)
-- **[R4]** [`docs/compiler-contract.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/compiler-contract.md)
-- **[R5]** [`docs/story-record-schema.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/story-record-schema.md)
+- **[R2]** [`docs/principles/FOUNDATIONS.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/principles/FOUNDATIONS.md)
+- **[R3]** [`docs/specs/ideation-prompt-template.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/ideation-prompt-template.md)
+- **[R4]** [`docs/specs/compiler-contract.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/compiler-contract.md)
+- **[R5]** [`docs/specs/story-record-schema.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/story-record-schema.md)
 - **[R6]** [`archive/specs/SPEC-021-grounded-ideation-prompt.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/archive/specs/SPEC-021-grounded-ideation-prompt.md)
 - **[R7]** [`archive/specs/SPEC-022-ideation-native-prompt-template.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/archive/specs/SPEC-022-ideation-native-prompt-template.md)
 - **[R8]** [`packages/core/src/compiler/ideation/operators.ts`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/packages/core/src/compiler/ideation/operators.ts)
@@ -475,7 +475,7 @@ All repository references below are pinned to the target commit.
 - **[R15]** [`packages/core/test/ideation-slot-assignment.test.ts`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/packages/core/test/ideation-slot-assignment.test.ts)
 - **[R16]** [`packages/core/test/golden-ideation.prompt.txt`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/packages/core/test/golden-ideation.prompt.txt)
 - **[R17]** [`packages/core/test/compiler-ideation-golden.test.ts`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/packages/core/test/compiler-ideation-golden.test.ts)
-- **[R18]** [`docs/prompt-template.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/prompt-template.md)
+- **[R18]** [`docs/specs/prompt-template.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/specs/prompt-template.md)
 - **[R19]** [`docs/prompt-template-rationale.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/prompt-template-rationale.md)
 - **[R20]** [`docs/narrative-theory-blocker-roadmap.md`](https://github.com/joeloverbeck/continuity-loom/blob/c10355e21563645930506eae0d039ad7c761ee2e/docs/narrative-theory-blocker-roadmap.md)
 

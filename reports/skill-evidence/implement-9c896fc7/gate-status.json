@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T08:04:33.349Z",
+  "generated_at": "2026-07-21T15:02:26.915Z",
   "target_content_hash": "b4857a8635d28a746cbb42f33a3713462b846d0591a71398b8eeabe4129e2f59",
-  "qualifying_uses_on_current_hash": 7,
+  "qualifying_uses_on_current_hash": 10,
   "open_incident_ids": [
     "evt_7948a98f-29db-4faa-9cdf-ca5c8d560724",
     "evt_b264ca98-b23c-4b97-a29a-ad196c6973ce",
@@ -38,7 +38,7 @@
       "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
+  "state": "eligible",
   "authorized_workflow": "skill-evolution",
   "authorization_reason": "friction_recurrence:cost",
   "trigger_event_ids": [
@@ -52,5 +52,5 @@
   "last_completed_review_id": "dec_d8264f68-e04f-4f2a-9421-8e65cec23296",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": null
+  "derivation_session_id": "d8df98ed-fbfb-49f3-a46b-48fc3463f2a1"
 }

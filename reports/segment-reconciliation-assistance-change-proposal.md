@@ -109,7 +109,7 @@ This change does not:
 
 ### 2.1 Authority order
 
-At the target commit, `docs/FOUNDATIONS.md` is the constitution; `docs/ACTIVE-DOCS.md` names domain authorities and requires every new active `docs/` authority to be registered in the same change. `docs/compiler-contract.md` governs deterministic prompt mapping and synchronization. The ideation and hygiene template documents govern the two current assistance prompt classes. `docs/story-record-schema.md` governs field shapes and enum vocabularies.[R1][R2][R3][R4][R5][R6]
+At the target commit, `docs/principles/FOUNDATIONS.md` is the constitution; `docs/ACTIVE-DOCS.md` names domain authorities and requires every new active `docs/` authority to be registered in the same change. `docs/specs/compiler-contract.md` governs deterministic prompt mapping and synchronization. The ideation and hygiene template documents govern the two current assistance prompt classes. `docs/specs/story-record-schema.md` governs field shapes and enum vocabularies.[R1][R2][R3][R4][R5][R6]
 
 The implementation already has the necessary architectural seams:
 
@@ -1236,7 +1236,7 @@ The amendment should replace or add the following complete text.
 
 > The prompt compiler is a deterministic renderer, not an intelligence layer.
 >
-> Every prompt class must have one explicit source contract. Assistance prompts declare their source profile under §9.1; every prompt class must also document its sources in the applicable domain authority and `docs/compiler-contract.md`. The compiler must not read a source merely because it is available in the project store.
+> Every prompt class must have one explicit source contract. Assistance prompts declare their source profile under §9.1; every prompt class must also document its sources in the applicable domain authority and `docs/specs/compiler-contract.md`. The compiler must not read a source merely because it is available in the project store.
 >
 > It must:
 >
@@ -1273,7 +1273,7 @@ All other §8 paragraphs remain unchanged.
 >
 > An assistance prompt is a deterministic, inspectable prompt whose declared source profile is explicitly sanctioned for its assistance purpose and whose output is never story text or continuity authority.
 >
-> Every assistance prompt must declare exactly one source profile in the applicable domain authority and in `docs/compiler-contract.md`:
+> Every assistance prompt must declare exactly one source profile in the applicable domain authority and in `docs/specs/compiler-contract.md`:
 >
 > - **prose-aligned:** the same authority sources as the prose prompt: story configuration, the active working set, and only the generation-time fields needed by the assistance purpose;
 > - **project-review:** a deterministic records-only projection of explicitly named story-record types, drawn from an explicit, user-selected, disclosed scope — the whole project by default, or a narrower scope the user has explicitly chosen — with explicit archive and per-type status predicates applied identically to every record within that scope; or
@@ -1473,18 +1473,18 @@ The constitutional amendment is necessary but insufficient. The following docume
 Create:
 
 ```text
-docs/segment-reconciliation-prompt-template.md
+docs/specs/segment-reconciliation-prompt-template.md
 ```
 
 It should be the domain authority for the profile, source predicate, field boundary, section order, schema catalog, lifecycle destinations, output schema, provenance spans, echo guard, and UI quarantine. Its normative substance should be the rules in §§3–8 of this proposal, converted to active-document form without research discussion or open alternatives.
 
 Add this exact row to the active-doc registry table in `docs/ACTIVE-DOCS.md`:
 
-> | `docs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | reference | domain authority for the segment-reconciliation assistance prompt template |
+> | `docs/specs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | reference | domain authority for the segment-reconciliation assistance prompt template |
 
 Also add the file to any active prompt/compiler synchronization list in `docs/ACTIVE-DOCS.md`. Do not register this change proposal itself; it is a hand-off artifact, not a repository authority.
 
-### 11.2 Exact proposed `docs/compiler-contract.md` changes
+### 11.2 Exact proposed `docs/specs/compiler-contract.md` changes
 
 #### Header version pin
 
@@ -1498,12 +1498,12 @@ Replace the contract pin with:
 >
 > The segment-reconciliation compiler renders from these sources only:
 >
-> 1. Template constants from `docs/segment-reconciliation-prompt-template.md`.
+> 1. Template constants from `docs/specs/segment-reconciliation-prompt-template.md`.
 > 2. A `SegmentReconciliationSnapshot` containing exactly one accepted segment selected by the request. The only v1 selection is `latest`; the server fetches one latest accepted row directly and includes its complete text, sequence, id, and accepted timestamp.
-> 3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
+> 3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/specs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
 > 4. Every complete non-archived story record in the explicit user-selected record scope: `active_working_set` by default or `whole_project`. All registered record types and lifecycle states are included. The active-working-set scope reads `active_working_set.selected_records` only to form the selected contrast set; neither mode changes working-set membership or prose authority.
 > 5. Deterministic reference stubs containing only id, type, and stored display label when an in-scope source references a non-rendered record. Reference stubs are not record-change targets and do not import out-of-scope payloads.
-> 6. A deterministic record-creation schema catalog derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/story-record-schema.md`.
+> 6. A deterministic record-creation schema catalog derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/specs/story-record-schema.md`.
 > 7. A strict `SegmentReconciliationRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and the expected prompt fingerprint for analyze/send.
 > 8. Deterministic empty-state, span-partition, citation-key, output-schema, and verbatim-echo constants defined by this contract and the domain authority.
 >
@@ -1553,7 +1553,7 @@ Replace the contract pin with:
 > | `<segment_reconciliation_source_contract>` | versioned template constant plus fixed source-profile literals | never empty | must name one segment, nineteen fields, selected record scope, schema catalog, all exclusions, and no-eviction rule |
 > | `<segment_reconciliation_request>` | parsed request, selected segment metadata, source counts, pinned versions, prompt fingerprint | never empty | only `segmentSelection: latest`; scope must be explicit |
 > | `<accepted_segment_evidence>` | complete selected accepted-segment text partitioned by the registered deterministic span algorithm | block with `no-accepted-segment` when absent | no excerpt selection, archive access, summary, or truncation |
-> | `<current_reconciliation_fields>` | exact saved-draft paths registered in `docs/story-record-schema.md` | every path renders `missing`, `blank`, or canonical present value | no readiness normalization and no other generation fields |
+> | `<current_reconciliation_fields>` | exact saved-draft paths registered in `docs/specs/story-record-schema.md` | every path renders `missing`, `blank`, or canonical present value | no readiness normalization and no other generation fields |
 > | `<record_contrast_scope>` | explicit request scope plus deterministic source counts/predicates | never empty | archive excluded; every lifecycle state included; no ranking or status filter |
 > | `<record_contrast_records>` | every full qualifying record plus declared reference stubs | `No non-archived records exist in the selected reconciliation scope.` | malformed qualifying row blocks; stubs are not change targets |
 > | `<segment_reconciliation_field_rules>` | versioned template constant plus generated allowed-path/type table | never empty | manual directive, stop guidance, voice controls, working-set curation, validation focus, generation context, and story configuration excluded |
@@ -1576,9 +1576,9 @@ Replace the contract pin with:
 
 #### Append this exact paragraph to §10, Change-control rule
 
-> Any change to the segment-reconciliation source profile, accepted-segment selection, span algorithm, allowed brief-field list, record scopes, archive/status predicate, ordering, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output JSON Schema, parser validation, verbatim-echo thresholds, provider-transform policy, or UI quarantine must update `docs/segment-reconciliation-prompt-template.md`, `docs/story-record-schema.md` where applicable, this contract, template/compiler/contract versions, and golden/parser/route/UI tests in the same change. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
+> Any change to the segment-reconciliation source profile, accepted-segment selection, span algorithm, allowed brief-field list, record scopes, archive/status predicate, ordering, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output JSON Schema, parser validation, verbatim-echo thresholds, provider-transform policy, or UI quarantine must update `docs/specs/segment-reconciliation-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, template/compiler/contract versions, and golden/parser/route/UI tests in the same change. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
 
-### 11.3 Exact proposed `docs/story-record-schema.md` changes
+### 11.3 Exact proposed `docs/specs/story-record-schema.md` changes
 
 #### Append this text to §3.3 IMMEDIATE HANDOFF
 
@@ -1654,7 +1654,7 @@ Replace the contract pin with:
 
 #### Append this synchronization bullet to schema §10
 
-> - Any change to the Segment Reconciliation accepted-segment source, allowed generation-field projection, record scope, registered schema catalog, lifecycle destinations, reference-token rules, proposal shapes, or parser validation must update `docs/segment-reconciliation-prompt-template.md`, this schema, `docs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
+> - Any change to the Segment Reconciliation accepted-segment source, allowed generation-field projection, record scope, registered schema catalog, lifecycle destinations, reference-token rules, proposal shapes, or parser validation must update `docs/specs/segment-reconciliation-prompt-template.md`, this schema, `docs/specs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
 
 ### 11.4 User guide and reminder docs
 
@@ -1705,12 +1705,12 @@ No new project-store table, column, event, or schema version is warranted. The f
 At minimum, the implementation revision should touch:
 
 ```text
-docs/FOUNDATIONS.md
+docs/principles/FOUNDATIONS.md
 docs/ACTIVE-DOCS.md
-docs/compiler-contract.md
-docs/story-record-schema.md
+docs/specs/compiler-contract.md
+docs/specs/story-record-schema.md
 docs/user-guide.md
-docs/segment-reconciliation-prompt-template.md
+docs/specs/segment-reconciliation-prompt-template.md
 packages/core/src/version.ts
 packages/core/src/compiler/template-constants.ts
 packages/core/src/compiler/reconciliation/*
@@ -1839,7 +1839,7 @@ Test:
 
 ### 12.6 Stress-suite additions
 
-Register cases in `docs/stress-suite.md` and `docs/stress-coverage-matrix.md` for:
+Register cases in `docs/specs/stress-suite.md` and `docs/specs/stress-coverage-matrix.md` for:
 
 - a long accepted segment containing prompt-injection instructions;
 - a single segment near provider context limits;
@@ -2043,12 +2043,12 @@ No other design question is left open by this proposal.
 All repository URLs below identify the exact target owner, repository, commit, and path.
 
 - **[R1]** `docs/ACTIVE-DOCS.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/ACTIVE-DOCS.md>
-- **[R2]** `docs/FOUNDATIONS.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/FOUNDATIONS.md>
-- **[R3]** `docs/compiler-contract.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/compiler-contract.md>
-- **[R4]** `docs/ideation-prompt-template.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/ideation-prompt-template.md>
-- **[R5]** `docs/story-record-hygiene-prompt-template.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/story-record-hygiene-prompt-template.md>
-- **[R6]** `docs/story-record-schema.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/story-record-schema.md>
-- **[R7]** `docs/validation-rule-inventory.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/validation-rule-inventory.md>
+- **[R2]** `docs/principles/FOUNDATIONS.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/principles/FOUNDATIONS.md>
+- **[R3]** `docs/specs/compiler-contract.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/compiler-contract.md>
+- **[R4]** `docs/specs/ideation-prompt-template.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/ideation-prompt-template.md>
+- **[R5]** `docs/specs/story-record-hygiene-prompt-template.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/story-record-hygiene-prompt-template.md>
+- **[R6]** `docs/specs/story-record-schema.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/story-record-schema.md>
+- **[R7]** `docs/specs/validation-rule-inventory.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/validation-rule-inventory.md>
 - **[R8]** `docs/user-guide.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/user-guide.md>
 - **[R9]** `archive/specs/SPEC-012-durable-change-reminder-workflow.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/archive/specs/SPEC-012-durable-change-reminder-workflow.md>
 - **[R10]** `archive/specs/SPEC-020-accepted-segment-browser-latest-access-and-disclosure.md` — <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/archive/specs/SPEC-020-accepted-segment-browser-latest-access-and-disclosure.md>
@@ -2104,12 +2104,12 @@ Requested file count: 77
 Successfully verified file count: 77
 Fetched repository files:
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/ACTIVE-DOCS.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/FOUNDATIONS.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/compiler-contract.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/ideation-prompt-template.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/story-record-hygiene-prompt-template.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/story-record-schema.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/validation-rule-inventory.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/principles/FOUNDATIONS.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/compiler-contract.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/ideation-prompt-template.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/story-record-hygiene-prompt-template.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/story-record-schema.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/validation-rule-inventory.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/user-guide.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/archive/specs/SPEC-012-durable-change-reminder-workflow.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/archive/specs/SPEC-020-accepted-segment-browser-latest-access-and-disclosure.md
@@ -2120,10 +2120,10 @@ Fetched repository files:
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/reports/ideation-operator-taxonomy-change-proposal.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/reports/ideation-operator-taxonomy-research-brief.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/reports/private-notes-usability-change-proposal.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/prompt-template.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/prompt-template.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/prompt-template-rationale.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/stress-suite.md
-- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/stress-coverage-matrix.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/stress-suite.md
+- https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/specs/stress-coverage-matrix.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/docs/archival-workflow.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/tickets/README.md
 - https://raw.githubusercontent.com/joeloverbeck/continuity-loom/5375d9c4aa87333656be15bc7c434338bb9094fb/tickets/_TEMPLATE.md

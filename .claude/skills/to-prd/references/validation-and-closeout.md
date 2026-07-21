@@ -11,7 +11,7 @@ published validation:
 ```json
 {
   "expectChecklist": true,
-  "approvedSources": ["docs/FOUNDATIONS.md"],
+  "approvedSources": ["docs/principles/FOUNDATIONS.md"],
   "disallowedSources": ["reports/example-local-prep.md"]
 }
 ```

@@ -95,7 +95,7 @@ This change does not make notes canonical, generated, validated, record-like, sc
 
 ### 2.1 Authority and boundaries
 
-`docs/FOUNDATIONS.md` is the constitutional authority, and `docs/ACTIVE-DOCS.md` defines the active-document hierarchy and archive boundary. [R1] [R2] The load-bearing rules for this change are:
+`docs/principles/FOUNDATIONS.md` is the constitutional authority, and `docs/ACTIVE-DOCS.md` defines the active-document hierarchy and archive boundary. [R1] [R2] The load-bearing rules for this change are:
 
 - notes are the sixth, author-private surface, not one of the five continuity surfaces;
 - neither notes nor anything derived from notes may enter validation snapshots, readiness, compiler inputs, any prose/ideation/assistance prompt, OpenRouter bodies, the Active Working Set, record references, or prompt inspection;
@@ -103,7 +103,7 @@ This change does not make notes canonical, generated, validated, record-like, sc
 - the UI must make their inert scratch status obvious;
 - local ownership and loopback-only operation remain intact.
 
-`docs/story-record-schema.md` confirms that notes are not a record type or generation-time field, while `docs/compiler-contract.md` gives the negative boundary: there is no note placeholder, section, empty state, or compiler input to extend. [R5] [R7]
+`docs/specs/story-record-schema.md` confirms that notes are not a record type or generation-time field, while `docs/specs/compiler-contract.md` gives the negative boundary: there is no note placeholder, section, empty state, or compiler input to extend. [R5] [R7]
 
 ### 2.2 Current domain and persistence
 
@@ -926,11 +926,11 @@ Because there is no amendment, there is no §1.1 amendment text to draft.
 - Do not alter archived SPEC-023; it remains the historical implementation baseline.
 - The downstream coding agent should create a new active draft spec through Loom’s normal intake process, then decompose it into tickets.
 - Update `docs/user-guide.md` in the implementation change to explain Scene Prep, local search, snapshot behavior, and hard-delete consequences.
-- `docs/user-guide.md` is already an active registered document, so editing it does not create a new `docs/*.md` registry entry.
-- Do not add note fields to `docs/story-record-schema.md`.
-- Do not add anything to `docs/compiler-contract.md`.
+- `docs/user-guide.md` is already an active registered document, so editing it does not create a new active-document registry entry.
+- Do not add note fields to `docs/specs/story-record-schema.md`.
+- Do not add anything to `docs/specs/compiler-contract.md`.
 - Do not change prompt/template/contract versions.
-- This hand-off artifact is not a repository document and creates no `docs/ACTIVE-DOCS.md` registration requirement. If the downstream implementation creates any additional active `docs/*.md`, it must register that file in the same change. [R1]
+- This hand-off artifact is not a repository document and creates no `docs/ACTIVE-DOCS.md` registration requirement. If the downstream implementation creates any additional active Markdown document under `docs/`, it must register that file in the same change. [R1]
 
 ---
 
@@ -1038,12 +1038,12 @@ The later spec should preserve this bounded shape. Expanding it into a general P
 ### Repository evidence — exact target commit
 
 - **[R1]** [`docs/ACTIVE-DOCS.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/ACTIVE-DOCS.md)
-- **[R2]** [`docs/FOUNDATIONS.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/FOUNDATIONS.md)
+- **[R2]** [`docs/principles/FOUNDATIONS.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/principles/FOUNDATIONS.md)
 - **[R3]** [`archive/specs/SPEC-023-author-private-story-notes.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/archive/specs/SPEC-023-author-private-story-notes.md)
 - **[R4]** [`archive/reports/author-private-story-notes-research-brief.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/archive/reports/author-private-story-notes-research-brief.md)
-- **[R5]** [`docs/story-record-schema.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/story-record-schema.md)
+- **[R5]** [`docs/specs/story-record-schema.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/specs/story-record-schema.md)
 - **[R6]** [`docs/user-guide.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/user-guide.md)
-- **[R7]** [`docs/compiler-contract.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/compiler-contract.md)
+- **[R7]** [`docs/specs/compiler-contract.md`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/docs/specs/compiler-contract.md)
 - **[R8]** [`packages/core/src/story-notes.ts`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/packages/core/src/story-notes.ts)
 - **[R9]** [`packages/core/src/project-storage.ts`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/packages/core/src/project-storage.ts)
 - **[R10]** [`packages/server/src/record-tables.ts`](https://github.com/joeloverbeck/continuity-loom/blob/90d17f8b2e868b90b2f536316e06438e994098cf/packages/server/src/record-tables.ts)
@@ -1108,12 +1108,12 @@ External research lane: separate from repository evidence
 ### Requested exact URLs, in append-only request order
 
 1. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/ACTIVE-DOCS.md>
-2. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/FOUNDATIONS.md>
+2. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/principles/FOUNDATIONS.md>
 3. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/archive/specs/SPEC-023-author-private-story-notes.md>
 4. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/archive/reports/author-private-story-notes-research-brief.md>
-5. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/story-record-schema.md>
+5. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/specs/story-record-schema.md>
 6. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/user-guide.md>
-7. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/compiler-contract.md>
+7. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/specs/compiler-contract.md>
 8. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/docs/archival-workflow.md>
 9. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/tickets/README.md>
 10. <https://raw.githubusercontent.com/joeloverbeck/continuity-loom/90d17f8b2e868b90b2f536316e06438e994098cf/tickets/_TEMPLATE.md>

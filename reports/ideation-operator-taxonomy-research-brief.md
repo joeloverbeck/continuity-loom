@@ -17,7 +17,7 @@ with three packages: `@loom/core` (pure continuity/compiler logic, framework- an
 no `fastify`/`react`/`vite`/`node:*`), `@loom/server` (serves the built UI + localhost API), and
 `@loom/web` (React + Vite front end).
 
-Governing docs: **`docs/FOUNDATIONS.md` is the constitution** (its §29 is the alignment/hard-fail
+Governing docs: **`docs/principles/FOUNDATIONS.md` is the constitution** (its §29 is the alignment/hard-fail
 checklist every change must clear); **`docs/ACTIVE-DOCS.md`** maps the active authority hierarchy
 and the active-vs-archive boundary. **Fetch every file from commit `c10355e`** — the uploaded
 manifest reflects exactly that tree (`git ls-tree -r --name-only c10355e`). No earlier "commit of
@@ -28,7 +28,7 @@ operator taxonomy. The current 9-operator taxonomy was established by two now-ar
 `archive/specs/SPEC-021-grounded-ideation-prompt.md` (the grounded ideation prompt and its operator
 set) and `archive/specs/SPEC-022-ideation-native-prompt-template.md` (the ideation-native template
 variants). Read them for provenance — *why* the current operators exist — but treat the **shipped
-behavior** in `docs/ideation-prompt-template.md` and the code as the authoritative present state;
+behavior** in `docs/specs/ideation-prompt-template.md` and the code as the authoritative present state;
 where an archived spec and the live doc disagree, the live doc wins.
 
 Several sibling research briefs exist in `reports/` (schema audits, prompt-duplication, record
@@ -44,20 +44,20 @@ Read these before producing. Order is Loom's authority hierarchy.
 
 - `docs/ACTIVE-DOCS.md` — the authority map: which doc governs which surface, and the
   active-vs-archive boundary. Read first so you cite the right authority for every proposed change.
-- `docs/FOUNDATIONS.md` — the project constitution. §4.7 (causality over structure), §9.1
+- `docs/principles/FOUNDATIONS.md` — the project constitution. §4.7 (causality over structure), §9.1
   (assistance prompt class — the ideation prompt is the sanctioned `prose-aligned` assistance
   prompt), §12 (no branches / plot-rail machinery), §18 (causal pressure records), §28.4
   (narrative-planning research informs causality, not plot machinery), and §29.4 (prompt-compilation
   hard fails) together bound what *any* operator-taxonomy change is allowed to do. A change that
   trips a §29 hard fail is wrong unless FOUNDATIONS is amended first.
-- `docs/ideation-prompt-template.md` — **the domain authority** for the ideation prompt. Its
+- `docs/specs/ideation-prompt-template.md` — **the domain authority** for the ideation prompt. Its
   `## Operator Taxonomy` section (the 9 operators), `## Slot Assignment`, the `<ideation_quality>`
   section (the **mutual-distinctness rule**), `## Citation Keys`, and the request shape are the
   exact surface under audit.
-- `docs/compiler-contract.md` — §3.2 (Ideation Prompt Section Order) is the co-authority: it
+- `docs/specs/compiler-contract.md` — §3.2 (Ideation Prompt Section Order) is the co-authority: it
   re-states operator eligibility, dormancy reservation, the distinctness rule, and citation-key
   render sites. Any taxonomy change must land here too.
-- `docs/story-record-schema.md` — the conceptual record taxonomy and causal-pressure record types
+- `docs/specs/story-record-schema.md` — the conceptual record taxonomy and causal-pressure record types
   the operators feed from. This is the substrate for the **internal-coverage** benchmark (does every
   causal-pressure record type feed at least one distinct lens?).
 - `archive/specs/SPEC-021-grounded-ideation-prompt.md` — provenance: the rationale that produced the
@@ -67,7 +67,7 @@ Read these before producing. Order is Loom's authority hierarchy.
 
 **Boundary-awareness (read to bound scope — NOT a redesign target):**
 
-- `docs/prompt-template.md` and `docs/prompt-template-rationale.md` — the universal **prose** prompt
+- `docs/specs/prompt-template.md` and `docs/prompt-template-rationale.md` — the universal **prose** prompt
   and its rationale. Read only to keep the ideation/prose boundary sharp: the ideation prompt must
   never drift into prose machinery, branches, outlines, or beat packages. Do not propose changes to
   the prose prompt.
@@ -140,7 +140,7 @@ code quality):
    overlap is real, and justify each against both the internal and external benchmarks.
 
 6. **Foundational amendments are FLAGGED, not authored.** If any recommended change collides with
-   `FOUNDATIONS.md` doctrine (notably §4.7 causality-over-structure, §9.1 assistance-class source
+   `docs/principles/FOUNDATIONS.md` doctrine (notably §4.7 causality-over-structure, §9.1 assistance-class source
    profile and output quarantine, §12 no plot-rail machinery, §18 causal-pressure-records intent,
    and the §29.4 prompt-compilation hard fails), state the collision explicitly, name the section,
    and describe what amendment would be required — but do **not** draft FOUNDATIONS edits in this
@@ -151,9 +151,9 @@ code quality):
    **four** authority locations in lockstep; the change-proposal must list them so the downstream
    spec inherits a complete change-surface:
    (a) code — `packages/core/src/compiler/ideation/operators.ts` (`IDEATION_OPERATORS`);
-   (b) domain doc — `docs/ideation-prompt-template.md` `## Operator Taxonomy` (and the
+   (b) domain doc — `docs/specs/ideation-prompt-template.md` `## Operator Taxonomy` (and the
    `<ideation_quality>` distinctness rule if that moves);
-   (c) compiler contract — `docs/compiler-contract.md` §3.2;
+   (c) compiler contract — `docs/specs/compiler-contract.md` §3.2;
    (d) tests — `packages/core/test/ideation-operator-eligibility.test.ts` (operator truth-table) and
    the golden ideation prompt baseline, which regenerates when operator definitions/order change.
 
@@ -184,7 +184,7 @@ external claim that shapes a decision.** The deep research is yours to run; do n
 
 Honor these; a proposal that violates one is wrong, not the authority.
 
-- `docs/FOUNDATIONS.md` is the constitution — every recommendation must satisfy it and clear its §29
+- `docs/principles/FOUNDATIONS.md` is the constitution — every recommendation must satisfy it and clear its §29
   hard-fail checklist (esp. §29.4). A genuine divergence requires *flagging* a FOUNDATIONS amendment
   (per Settled Intention 6), never designing against the constitution silently.
 - Authority order per `docs/ACTIVE-DOCS.md`: constitution above domain docs above implementation
@@ -230,7 +230,7 @@ Produce **one downloadable markdown document**:
   3. **Authority-sync map** — the four lockstep change locations from Settled Intention 7, so the
      downstream spec inherits a complete change-surface.
   4. **Foundational-amendment flag** — per Settled Intention 6: whether any recommendation requires a
-     `FOUNDATIONS.md` amendment, which section, and why — or an explicit statement that none does.
+     `docs/principles/FOUNDATIONS.md` amendment, which section, and why — or an explicit statement that none does.
   5. **Open questions / risks** — anything the downstream spec author must still resolve.
 - The document must be **self-justifying with citations** for every external narrative-theory claim,
   and must align each recommendation to the `docs/**` authority it touches.
@@ -255,7 +255,7 @@ Produce **one downloadable markdown document**:
 - [ ] No recommendation weakens the §9.1 assistance quarantine, determinism, fail-closed validation,
       causality-over-structure, or the no-plot-machinery invariant; none trips a §29.4 hard fail.
 - [ ] The **four-location authority-sync map** is present and complete.
-- [ ] Any required `FOUNDATIONS.md` amendment is **flagged** (section named, reason given), not
+- [ ] Any required `docs/principles/FOUNDATIONS.md` amendment is **flagged** (section named, reason given), not
       drafted; or it is explicitly stated that none is required.
 - [ ] The deliverable is a **precursor change-proposal**, not a `SPEC-NNN` and not in spec form.
 - [ ] The deliverable set matches §7 exactly (one document, the named filename).

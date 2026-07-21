@@ -84,9 +84,9 @@ The run is a continuation from the named prior report. The launch and current HE
 
 | Candidate or follow-up | Governing authority | Code/test impact | Doc/skill impact | Required artifact type |
 | ---------------------- | ------------------- | ---------------- | ---------------- | ---------------------- |
-| Clipboard-Assisted Offstage Cast Cost Verification | `docs/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/story-record-schema.md` CAST MEMBER completeness and compiler-role rules; `docs/cast-member-draft-prompt-template.md` | Read-only author journey across ENTITY prerequisite, draft-copy/import, validation, explicit Save, offstage selection, readiness, and compressed prompt rendering | Produce one new canonical playtest report; no product, authority, or skill mutation during verification | coverage |
-| Private Note Save-State Copy | `docs/FOUNDATIONS.md` §§6.6, 27, and 29; `docs/user-guide.md` Private Notes behavior | Existing note-editor visible-state/action seam, component state matrix, and integrated persistence regression | No authority, schema, API, prompt, or skill change; update user guidance only if it currently names the affected action | ticket |
-| F006 completed all-empty reconciliation guard | `docs/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/segment-reconciliation-prompt-template.md`; `docs/compiler-contract.md` | Existing parser, route, end-to-end, and result-view seams already cover valid empty output and explicit retry | No output-schema or authority change owed; closed #100 remains owner | no new artifact - covered |
+| Clipboard-Assisted Offstage Cast Cost Verification | `docs/principles/FOUNDATIONS.md` §§13, 17, 27, and 29; `docs/specs/story-record-schema.md` CAST MEMBER completeness and compiler-role rules; `docs/specs/cast-member-draft-prompt-template.md` | Read-only author journey across ENTITY prerequisite, draft-copy/import, validation, explicit Save, offstage selection, readiness, and compressed prompt rendering | Produce one new canonical playtest report; no product, authority, or skill mutation during verification | coverage |
+| Private Note Save-State Copy | `docs/principles/FOUNDATIONS.md` §§6.6, 27, and 29; `docs/user-guide.md` Private Notes behavior | Existing note-editor visible-state/action seam, component state matrix, and integrated persistence regression | No authority, schema, API, prompt, or skill change; update user guidance only if it currently names the affected action | ticket |
+| F006 completed all-empty reconciliation guard | `docs/principles/FOUNDATIONS.md` §§9.1, 21, 22, and 26.1; `docs/specs/segment-reconciliation-prompt-template.md`; `docs/specs/compiler-contract.md` | Existing parser, route, end-to-end, and result-view seams already cover valid empty output and explicit retry | No output-schema or authority change owed; closed #100 remains owner | no new artifact - covered |
 
 ## Recommended PRD Package
 
@@ -214,12 +214,12 @@ Final worktree rows: 37
 | `reports/playtest-the-winter-letter-2026-07-19T022000Z-prd-prep.md` | yes | yes | yes | yes | durable historical recommendation input |
 | `AGENTS.md` | yes | yes | yes | yes | durable authority |
 | `docs/ACTIVE-DOCS.md` | yes | yes | yes | no | pending local publication at tested HEAD |
-| `docs/FOUNDATIONS.md` | yes | yes | yes | no | pending local publication at tested HEAD |
-| `docs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
-| `docs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
-| `docs/segment-reconciliation-prompt-template.md` | yes | yes | yes | yes | durable authority |
+| `docs/principles/FOUNDATIONS.md` | yes | yes | yes | no | pending local publication at tested HEAD |
+| `docs/specs/story-record-schema.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/compiler-contract.md` | yes | yes | yes | yes | durable authority |
+| `docs/specs/segment-reconciliation-prompt-template.md` | yes | yes | yes | yes | durable authority |
 | `docs/user-guide.md` | yes | yes | yes | no | pending local publication at tested HEAD |
-| `docs/cast-member-draft-prompt-template.md` | yes | yes | no | N/A - no publication-ref blob | pending local publication at tested HEAD |
+| `docs/specs/cast-member-draft-prompt-template.md` | yes | yes | no | N/A - no publication-ref blob | pending local publication at tested HEAD |
 | `docs/adr/0001-version-playtest-prep-contracts.md` | yes | yes | yes | yes | durable prep-contract decision |
 | `docs/agents/issue-tracker.md` | yes | yes | yes | yes | durable tracker authority |
 | `docs/agents/triage-labels.md` | yes | yes | yes | yes | durable label authority |
