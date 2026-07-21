@@ -152,6 +152,24 @@ test("distinguishes a valid empty no-change result from malformed output", async
   assert.equal(evaluation.deterministicFloorsPassed, false);
 });
 
+test("quarantines findings and coverage from malformed or failed requests", async () => {
+  const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
+  const death = corpus[0];
+
+  for (const status of ["malformed", "failed"]) {
+    const result = successfulResult(death, "old", 1);
+    result.status = status;
+    result.failure = { kind: `${status}-output`, message: "The response was quarantined." };
+    result.findings[0].rawPrompt = "must not survive";
+    result.coverage[0].status = "garbage";
+
+    assert.throws(
+      () => evaluateComparison(corpus, comparisonRun([result]), protocol),
+      /must not retain findings or coverage/
+    );
+  }
+});
+
 test("fails complete-source accounting when a declared record is omitted", async () => {
   const [corpus, protocol] = await Promise.all([loadGoldCorpus(), loadProtocol()]);
   const death = corpus[0];

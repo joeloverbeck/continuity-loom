@@ -127,6 +127,11 @@ test("result contract records per-request evidence, aggregates, and a separate s
     "checked - no relevant change",
     "uncertain"
   ]);
+  const requestStatusContract = schema.$defs.requestResult.allOf[0];
+  assert.equal(requestStatusContract.if.properties.status.const, "completed");
+  assert.equal(requestStatusContract.then.properties.failure.type, "null");
+  assert.equal(requestStatusContract.else.properties.findings.maxItems, 0);
+  assert.equal(requestStatusContract.else.properties.coverage.maxItems, 0);
   assert.deepEqual(schema.$defs.stewardReceipt.properties.decision.enum, ["GO", "NO-GO", null]);
   assert.match(protocolText, /node scripts\/accepted-segment-change-review\/cli\.mjs dry-run/);
   assert.match(protocolText, /at most 16 provider requests/i);

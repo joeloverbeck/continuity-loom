@@ -145,6 +145,11 @@ function validateRequestResult(result, protocol) {
     );
     result.coverage.forEach((row) => validateCoverageRow(row, result.requestId));
   } else {
+    if (result.findings.length > 0 || result.coverage.length > 0) {
+      throw new Error(
+        `${result.requestId}: malformed or failed results must not retain findings or coverage.`
+      );
+    }
     requireObject(result.failure, `${result.requestId} failure`);
     requireExactKeys(result.failure, ["kind", "message"], `${result.requestId} failure`);
     requireString(result.failure.kind, `${result.requestId} failure kind`);
