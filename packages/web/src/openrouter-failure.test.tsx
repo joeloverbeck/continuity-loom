@@ -9,6 +9,8 @@ const genericMessages: Record<TransportErrorCategory, string> = {
   "insufficient-credits": "OpenRouter credits are insufficient.",
   "invalid-request": "OpenRouter rejected the request.",
   "structured-output-rejection": "OpenRouter rejected the structured-output request.",
+  "structured-output-incompatible-model": "The selected model does not support strict structured output.",
+  "structured-output-capability-unknown": "Capability data for the selected model is missing or unusable.",
   "provider-unavailable": "The selected model or provider is unavailable.",
   "rate-limit": "OpenRouter rate limit reached.",
   timeout: "OpenRouter request timed out.",
@@ -57,6 +59,30 @@ describe("OpenRouter failure presentation", () => {
     expect(presentThrownOpenRouterFailure(failure, "Generation request failed.")).toContain(
       "Provider reason: Model is warming up."
     );
+  });
+
+  it("prefers a server-provided capability recovery instruction when present", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      message: "The selected model does not support strict structured output.",
+      recovery: "Select a model that advertises strict structured output. No request was sent. No retry is automatic."
+    });
+
+    expect(presented).toContain("Select a model that advertises strict structured output.");
+    expect(presented).toContain("No request was sent.");
+    expect(presented).toContain("No retry is automatic.");
+  });
+
+  it("falls back to category guidance for a capability rejection without a recovery field", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "structured-output-capability-unknown",
+      message: "Capability data for the selected model is missing or unusable."
+    });
+
+    expect(presented).toMatch(/refresh the openrouter model list/i);
+    expect(presented).toContain("No retry is automatic.");
   });
 
   it("uses the caller fallback for untyped thrown failures", () => {

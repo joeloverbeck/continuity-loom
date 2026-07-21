@@ -4,6 +4,8 @@ export type TransportErrorCategory =
   | "insufficient-credits"
   | "invalid-request"
   | "structured-output-rejection"
+  | "structured-output-incompatible-model"
+  | "structured-output-capability-unknown"
   | "provider-unavailable"
   | "rate-limit"
   | "timeout"
@@ -19,6 +21,9 @@ export type TransportFailure = {
   providerStatus?: number;
   providerReason?: string;
   retryAfter?: number;
+  // Present on pre-send capability-admission rejections: an actionable recovery instruction.
+  recovery?: string;
+  missingCapabilities?: string[];
 };
 
 const transportCategories = new Set<TransportErrorCategory>([
@@ -27,6 +32,8 @@ const transportCategories = new Set<TransportErrorCategory>([
   "insufficient-credits",
   "invalid-request",
   "structured-output-rejection",
+  "structured-output-incompatible-model",
+  "structured-output-capability-unknown",
   "provider-unavailable",
   "rate-limit",
   "timeout",

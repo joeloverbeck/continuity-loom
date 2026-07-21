@@ -44,7 +44,7 @@ describe("refreshModelList", () => {
     await expect(refreshModelList()).resolves.toEqual({
       ok: true,
       models: [
-        { id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 },
+        { id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000, supportedParameters: ["temperature"] },
         { id: "anthropic/claude-sonnet-4", name: "anthropic/claude-sonnet-4" }
       ]
     });
@@ -55,6 +55,41 @@ describe("refreshModelList", () => {
         headers: expect.objectContaining({ Authorization: "Bearer sk-or-test" })
       })
     );
+  });
+
+  it("keeps only nonblank string capability tokens and drops malformed supported_parameters", async () => {
+    const fetchSpy = vi.fn(() =>
+      Promise.resolve(
+        jsonResponse({
+          data: [
+            {
+              id: "anthropic/claude-sonnet-4.6",
+              name: "Sonnet 4.6",
+              supported_parameters: ["response_format", "structured_outputs", 42, "", "max_tokens"]
+            },
+            {
+              id: "vendor/malformed-caps",
+              name: "Malformed",
+              supported_parameters: "temperature"
+            }
+          ]
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+    process.env.OPENROUTER_API_KEY = "sk-or-test";
+
+    await expect(refreshModelList()).resolves.toEqual({
+      ok: true,
+      models: [
+        {
+          id: "anthropic/claude-sonnet-4.6",
+          name: "Sonnet 4.6",
+          supportedParameters: ["response_format", "structured_outputs", "max_tokens"]
+        },
+        { id: "vendor/malformed-caps", name: "Malformed" }
+      ]
+    });
   });
 
   it("returns missing-key before any network request when the key is absent", async () => {

@@ -8,6 +8,13 @@ export interface ModelListEntry {
   id: string;
   name: string;
   contextLength?: number;
+  /**
+   * OpenRouter's per-model union of the parameters its endpoints support (`supported_parameters`
+   * from `/api/v1/models`). Secret-free routing-capability tokens (e.g. `response_format`,
+   * `structured_outputs`, `max_tokens`). Consumed by the strict structured-output capability
+   * admission; a missing token proves no endpoint advertises it.
+   */
+  supportedParameters?: string[];
 }
 
 export interface OpenRouterSettings {
@@ -27,7 +34,8 @@ const keyFieldPattern = /openRouterApiKey|OPENROUTER_API_KEY|apiKey|api_key/i;
 const modelListEntrySchema = z.strictObject({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1),
-  contextLength: z.number().int().positive().optional()
+  contextLength: z.number().int().positive().optional(),
+  supportedParameters: z.array(z.string().trim().min(1)).optional()
 });
 
 const openRouterSettingsSchema = z.strictObject({
@@ -133,6 +141,10 @@ function normalizeSettings(value: unknown): OpenRouterSettings {
 
       if (model.contextLength !== undefined) {
         entry.contextLength = model.contextLength;
+      }
+
+      if (model.supportedParameters !== undefined) {
+        entry.supportedParameters = [...model.supportedParameters];
       }
 
       return entry;

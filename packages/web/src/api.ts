@@ -89,6 +89,9 @@ export interface OpenRouterModelListEntry {
   id: string;
   name: string;
   contextLength?: number;
+  // OpenRouter's per-model union of endpoint-supported parameters; carried through the settings
+  // round-trip so strict structured-output capability data is not stripped client-side.
+  supportedParameters?: string[];
 }
 
 export interface OpenRouterSettings {
