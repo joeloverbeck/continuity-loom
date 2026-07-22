@@ -59,7 +59,7 @@ The record-hygiene compiler must render the complete declared source set. It mus
 
 ### 2.3 Accepted-segment-change-review source profile
 
-`accepted-segment-change-review` is the sole user-facing post-acceptance assistance source profile. Its active prompt-template domain authority is `docs/specs/accepted-segment-change-review-prompt-template.md`, registered in `docs/ACTIVE-DOCS.md`. Its versions are template `2.0.0`, compiler `2.0.0`, and contract `2.1.0`; its output contract is `accepted_segment_change_review.v2`. Contract `2.1.0` enforces anti-invention through the `evidence_excerpt` witness (see §9.1 parser acceptance below), not through keyword heuristics; future-possibility discipline is prompt-led and playtest-observed.
+`accepted-segment-change-review` is the sole user-facing post-acceptance assistance source profile. Its active prompt-template domain authority is `docs/specs/accepted-segment-change-review-prompt-template.md`, registered in `docs/ACTIVE-DOCS.md`. Its versions are template `2.1.0`, compiler `2.0.0`, and contract `2.1.0`; its output contract is `accepted_segment_change_review.v2`. Contract `2.1.0` enforces anti-invention through the `evidence_excerpt` witness (see §9.1 parser acceptance below), not through keyword heuristics; future-possibility discipline is prompt-led and playtest-observed.
 
 The compiler renders from these sources only:
 

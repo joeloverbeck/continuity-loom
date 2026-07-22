@@ -3,7 +3,7 @@ import type { ReconciliationReferenceStub } from "../reconciliation/types.js";
 export const ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE = "accepted-segment-change-review";
 export const ACCEPTED_SEGMENT_CHANGE_REVIEW_OUTPUT_CONTRACT = "accepted_segment_change_review.v2";
 export const acceptedSegmentChangeReviewVersionInfo = Object.freeze({
-  template: "2.0.0",
+  template: "2.1.0",
   compiler: "2.0.0",
   contract: "2.1.0"
 });

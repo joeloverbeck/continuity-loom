@@ -109,7 +109,8 @@ function renderPrompt(
     renderTaggedSection("accepted_segment_change_review_role", [
       "You are reviewing possible continuity changes in one accepted prose segment.",
       "Return advisory, non-canonical accounting only. Do not draft canonical values, story prose, future possibilities, patches, lifecycle operations, or creation payloads.",
-      "A strongly caused but unstated present implication may appear only as interpretation requiring author judgment."
+      "A strongly caused but unstated present implication may appear only as interpretation requiring author judgment.",
+      "Drift in the reverse direction also matters: an inherited Generation Brief current-state or immediate-handoff field can presuppose a beat the latest accepted segment does not render. Because such drift rests on the segment's absence of that beat, it may appear only as interpretation requiring author judgment with an empty evidence_excerpt and can never be an established change."
     ].join("\n")),
     renderTaggedSection("accepted_segment_change_review_source_contract", canonicalEscapedJson({
       source_profile: ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE,
@@ -144,6 +145,7 @@ function renderPrompt(
     ].join("\n")),
     renderTaggedSection("accepted_segment_change_review_procedure", [
       "Compare the complete segment evidence with every declared brief field and complete in-scope record.",
+      "When an inherited brief current-state or immediate-handoff field presupposes a beat the latest accepted segment does not render, report it as interpretation requiring author judgment: name the drifted brief field through its contrast key, cite the accepted-segment span where the segment actually ends as evidence, and leave evidence_excerpt empty. Never upgrade such absence-grounded drift to an established change.",
       "Number items sequentially as ITEM-001, ITEM-002, and so on, in the order you report them.",
       "Every item must cite evidence and current contrast keys. The evidence and contrast arrays contain only exact bracketed citation keys, for example [SEG-21-S001] or [ENTITY-STATUS-1], with no appended prose. Reference stubs may be cited as labels but are never change targets.",
       "Write change_statement as an independently readable, present-tense statement of the change. Do not copy accepted prose into it.",
