@@ -185,6 +185,10 @@ describe("NotesView", () => {
 
     render(<NotesView />);
 
+    // Let the initial auto-select fully settle on the first note before clicking, so the
+    // click's getNote("note-2") is strictly the last call rather than racing the passive
+    // auto-select effect's getNote("note-1"). Matches the settle-wait the sibling New Note test uses.
+    await screen.findByRole("heading", { name: "Pinned reminder" });
     fireEvent.click(await screen.findByRole("button", { name: /Research scrap/ }));
 
     await waitFor(() => expect(getNote).toHaveBeenLastCalledWith("note-2"));
