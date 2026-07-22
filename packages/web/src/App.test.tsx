@@ -74,8 +74,8 @@ function runtimeFetch(url: string): Promise<Response> {
     return Promise.resolve(jsonResponse({ ok: false, kind: "no-open-project", message: "No open project." }));
   }
 
-  if (url === "/api/segment-reconciliation/compile") {
-    return Promise.resolve(jsonResponse({ ok: false, kind: "no-accepted-segment", message: "No accepted segment exists to reconcile." }));
+  if (url === "/api/accepted-segment-change-review/compile") {
+    return Promise.resolve(jsonResponse({ ok: false, kind: "no-accepted-segment", message: "No accepted segment exists to review." }));
   }
 
   if (url === "/api/settings/openrouter") {
@@ -167,9 +167,9 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("link", { name: "Generate / Candidate" }));
     expect(await screen.findByRole("heading", { name: "Generate / Candidate" })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("link", { name: "Segment Reconciliation" }));
-    expect(await screen.findByRole("heading", { name: "Segment Reconciliation" })).toBeTruthy();
-    expect(await screen.findByText("Accept a segment before reconciling.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("link", { name: "Change Review" }));
+    expect(await screen.findByRole("heading", { name: "Accepted-Segment Change Review" })).toBeTruthy();
+    expect(await screen.findByText("No accepted segment exists to review.")).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "Accepted Segments" }));
     expect(await screen.findByRole("heading", { name: "Accepted Segments" })).toBeTruthy();

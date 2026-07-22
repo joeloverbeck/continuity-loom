@@ -12,7 +12,7 @@ import type { ModelListEntry, OpenRouterSettings } from "./settings.js";
 const strictRequestOptions: OpenRouterRequestOptions = {
   response_format: {
     type: "json_schema",
-    json_schema: { name: "segment_reconciliation", strict: true, schema: { type: "object" } }
+    json_schema: { name: "accepted_segment_change_review", strict: true, schema: { type: "object" } }
   },
   provider: { require_parameters: true, allow_fallbacks: false },
   transforms: [],

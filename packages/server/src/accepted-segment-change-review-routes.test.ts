@@ -21,7 +21,7 @@ const projectParents: string[] = [];
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const acceptedText = "Mara found the brass key beside the cellar door and slipped it into her coat.";
 
-describe("Accepted-Segment Change Review candidate routes", () => {
+describe("Accepted-Segment Change Review routes", () => {
   let configDir: string;
   let originalConfigDir: string | undefined;
   let originalApiKey: string | undefined;
@@ -45,20 +45,19 @@ describe("Accepted-Segment Change Review candidate routes", () => {
     }
   });
 
-  it("is absent from the default production server and present only under the internal candidate option", async () => {
-    const production = app(false);
-    const candidate = app(true);
+  it("is registered on the default production server as the sole post-acceptance workflow", async () => {
+    const production = app();
 
-    const absent = await production.inject({ method: "POST", url: "/api/accepted-segment-change-review/compile" });
-    const present = await candidate.inject({ method: "POST", url: "/api/accepted-segment-change-review/compile" });
+    const present = await production.inject({ method: "POST", url: "/api/accepted-segment-change-review/compile" });
+    const reconciliationAbsent = await production.inject({ method: "POST", url: "/api/segment-reconciliation/compile" });
 
-    expect(absent.statusCode).toBe(404);
     expect(present.statusCode).toBe(409);
     expect(present.json()).toEqual({ ok: false, kind: "no-open-project", message: "No project is open." });
+    expect(reconciliationAbsent.statusCode).toBe(404);
   });
 
   it("rebuilds the complete source and discloses it without sending or writing", async () => {
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const before = await projectSurfaces(candidate);
 
@@ -90,7 +89,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   });
 
   it("uses Active Working Set by default and discloses every complete Whole Project record and SECRET explicitly", async () => {
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     await createRecord(candidate, {
       type: "SECRET",
@@ -130,7 +129,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
 
   it("rejects a stale fingerprint before provider transport", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
     await addAcceptedSegment(candidate, "A newer segment changes the source.");
@@ -152,7 +151,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   it("sends once only on Analyze, attaches trusted metadata after parsing, and performs zero writes", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
     configureCompatibleModel();
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const before = await projectSurfaces(candidate);
     const compile = await compileReview(candidate);
@@ -207,7 +206,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
         }
       ]
     });
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
 
@@ -234,7 +233,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
       maxOutputTokens: 4096,
       cachedModels: [{ id: "vendor/uncached", name: "Uncached" }]
     });
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
 
@@ -254,7 +253,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   it("quarantines malformed provider output without returning raw source material", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
     configureCompatibleModel();
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: acceptedText } });
@@ -275,7 +274,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   it("passes through the shared sanitized OpenRouter failure contract", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
     configureCompatibleModel();
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
     const failure = {
@@ -305,7 +304,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
       maxOutputTokens: 1024,
       cachedModels: [{ id: "tiny/context", name: "Tiny Context", contextLength: 16 }]
     });
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
 
@@ -326,7 +325,7 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   });
 
   it("rejects undeclared local request fields before source or provider work", async () => {
-    const candidate = app(true);
+    const candidate = app();
     await prepareProject(candidate);
 
     const response = await candidate.inject({
@@ -345,8 +344,8 @@ describe("Accepted-Segment Change Review candidate routes", () => {
   });
 });
 
-function app(candidateEnabled: boolean): FastifyApp {
-  const fastify = createServer({ acceptedSegmentChangeReviewCandidate: candidateEnabled });
+function app(): FastifyApp {
+  const fastify = createServer({});
   apps.push(fastify);
   return fastify;
 }

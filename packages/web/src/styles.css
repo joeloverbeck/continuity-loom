@@ -282,19 +282,6 @@ h1 {
   background: #fff8e7;
 }
 
-.reconciliationEmptyWarning {
-  margin-bottom: 16px;
-}
-
-.reconciliationEmptyWarning h4 {
-  margin: 0 0 8px;
-}
-
-.reconciliationEmptyWarning p {
-  margin: 6px 0 0;
-  font-weight: 400;
-}
-
 .runtimeGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

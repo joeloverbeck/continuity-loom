@@ -3,7 +3,7 @@ import { spawnSync, execFileSync } from "node:child_process";
 import { readMutationReport, summarizeMutationReport } from "./mutation-gate.mjs";
 
 const ADVERSE_STATUSES = Object.freeze(["Survived", "NoCoverage", "Timeout", "RuntimeError", "Pending"]);
-const PRE_ACTIVATION_PILLARS = Object.freeze(new Set(["segment-reconciliation"]));
+const PRE_ACTIVATION_PILLARS = Object.freeze(new Set(["change-review"]));
 
 export const PILLARS = Object.freeze({
   prose: {
@@ -16,10 +16,10 @@ export const PILLARS = Object.freeze({
     report: "reports/mutation/ideation/mutation.json",
     cache: ".cache/stryker/ideation.json"
   },
-  "segment-reconciliation": {
-    config: "stryker.segment-reconciliation.config.mjs",
-    report: "reports/mutation/segment-reconciliation/mutation.json",
-    cache: ".cache/stryker/segment-reconciliation.json"
+  "change-review": {
+    config: "stryker.change-review.config.mjs",
+    report: "reports/mutation/change-review/mutation.json",
+    cache: ".cache/stryker/change-review.json"
   },
   validation: {
     config: "stryker.validation.config.mjs",
@@ -110,7 +110,7 @@ function isFullCampaignTrigger(path) {
     path === "tsconfig.json" ||
     path === "stryker.prose.config.mjs" ||
     path === "stryker.ideation.config.mjs" ||
-    path === "stryker.segment-reconciliation.config.mjs" ||
+    path === "stryker.change-review.config.mjs" ||
     path === "stryker.validation.config.mjs" ||
     path.startsWith("scripts/robustness/") ||
     path.startsWith("packages/core/test/support/");
@@ -137,7 +137,7 @@ function pillarForSourcePath(path) {
       path === "packages/core/src/compiler/strict-output-primitives.ts") &&
     path.endsWith(".ts")
   ) {
-    return "segment-reconciliation";
+    return "change-review";
   }
 
   if (path.startsWith("packages/core/src/compiler/") && path.endsWith(".ts")) {

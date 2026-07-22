@@ -125,9 +125,6 @@ export type {
 export { EMPTY_HYGIENE_RECORDS_STATE, RECORD_HYGIENE_SECTION_ORDER } from "./compiler/hygiene/template.js";
 export type { RecordHygieneSectionId } from "./compiler/hygiene/template.js";
 export {
-  compileSegmentReconciliationPrompt
-} from "./compiler/reconciliation/compile-segment-reconciliation-prompt.js";
-export {
   RECORD_SCOPE_CITATION_KEY,
   briefFieldCitationKey,
   reconciliationRecordCitationKeysFor,
@@ -140,37 +137,9 @@ export {
   renderReconciliationRecordSet
 } from "./compiler/reconciliation/record-renderer.js";
 export {
-  SEGMENT_RECONCILIATION_CATALOG_SECTION_CEILING_UTF16,
-  allowedDeactivationDestinationsFor,
-  buildSegmentReconciliationSchemaCatalog,
-  renderSegmentReconciliationSchemaCatalog
-} from "./compiler/reconciliation/schema-catalog.js";
-export {
-  SEGMENT_RECONCILIATION_OUTPUT_CONTRACT,
-  segmentReconciliationOutputJsonSchema
-} from "./compiler/reconciliation/output-schema.js";
-export {
-  parseSegmentReconciliationOutput
-} from "./compiler/reconciliation/parse-output.js";
-export type {
-  JsonPatchOperation,
-  ParsedBriefProposal,
-  ParsedRecordChangeProposal,
-  ParsedRecordCreationProposal,
-  SegmentReconciliationMalformedReason,
-  SegmentReconciliationParseContext,
-  SegmentReconciliationParseResult,
-  SegmentReconciliationParsedOutput,
-  SegmentReconciliationSourceEcho
-} from "./compiler/reconciliation/parse-output.js";
-export {
   normalizeAcceptedSegmentText,
   partitionAcceptedSegmentSpans
 } from "./compiler/reconciliation/segment-spans.js";
-export {
-  RECONCILIATION_STATIC_SECTIONS
-} from "./compiler/reconciliation/template.js";
-export type { ReconciliationSectionId } from "./compiler/reconciliation/template.js";
 export {
   RECONCILIATION_BRIEF_FIELD_PATHS
 } from "./compiler/reconciliation/types.js";
@@ -210,7 +179,7 @@ export type {
   PromptKind
 } from "./compiler/ideation/types.js";
 export { PLACEHOLDER_MAP } from "./compiler/placeholder-map.js";
-export { IDEATION_SECTION_ORDER, RECONCILIATION_SECTION_ORDER } from "./compiler/template-constants.js";
+export { IDEATION_SECTION_ORDER } from "./compiler/template-constants.js";
 export type {
   CompileMetadata,
   CompileResult,
