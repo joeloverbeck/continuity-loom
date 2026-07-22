@@ -271,29 +271,20 @@ the host exposes it (otherwise `unknown`), exposure boolean, UTC timestamp, and 
 prompt or packet fingerprint. Never infer hidden model details or claim executor independence that
 the host does not expose.
 
-### Cold First-View Witness
+### Cold First-View Witness (retired — historical only)
 
-When `cold_first_view_witnesses` is `1`, place this table inside
-`## Story Intent and Expectations` after the main operator's sealed expectations:
-
-```markdown
-### Cold First-View Witness
-
-| Packet fingerprint | Timestamp | Executor host | Executor model                   | Model identity exposed | First-action summary | Expectation mismatch | Unclear terms count | Clarity                    | Main-operator comparison | Privacy check |
-| ------------------ | --------- | ------------- | -------------------------------- | ---------------------- | -------------------- | -------------------- | ------------------: | -------------------------- | ------------------------ | ------------- |
-| <sha256>           | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | ...                  | ...                  |                   0 | clear/partly-clear/unclear | ...                      | passed        |
-```
-
-Report only first-screen comprehension. Do not generalize the witness to human transfer,
-uninstructed discoverability, or the later author journey.
+The Cold First-View Witness is retired (owner disposition 2026-07-22) and never runs in a new
+report, so `cold_first_view_witnesses` is always `0` and no witness subsection is authored. The
+validator still accepts historical schema-v2/v3 reports that carry a `1` count with the witness
+table that previously sat inside `## Story Intent and Expectations`; do not add or rewrite that
+table in new work.
 
 ### Independent Claim Challenges
 
 After drafting the report but before final validation, select at most three claims that are blockers
 or major findings, drive the executive assessment, make a likely-layer/causal inference intended to
 drive product work, or preserve a strength that constrains change. Put all eligible claims into one
-privacy-safe packet and send it either to the Phase-A witness after its first-view response is frozen
-or to one new fresh context. For each claim include the ID and exact proposed wording, observed
+privacy-safe packet and send it to one new fresh context. For each claim include the ID and exact proposed wording, observed
 visible fact, expected versus actual, reproduction, cited artifact identity or sanitized crop, and
 the operator interpretation and confidence. Exclude remedies and all raw story, prompt, response,
 candidate, and accepted-prose material. Require one rival explanation and one observable
@@ -314,8 +305,9 @@ When `independent_claim_challenges` is nonzero, place this table inside
 Status is exactly `supported`, `narrowed`, `contradicted`, or `insufficient`, and the row must carry
 the matching `independent-*` evidence tag. All rows share the one challenge packet's fingerprint,
 timestamp, host, model, and exposure value. Reconcile the challenged claim and its Prioritized
-Finding evidence basis before validation. The pilot stops after its first two qualifying reports for
-an explicit `keep`, `revise`, or `retire` decision.
+Finding evidence basis before validation. This check was KEPT as a standing method (owner
+disposition 2026-07-22): apply it to every report that contains eligible decision-driving claims; it
+is no longer a sunset-bounded pilot.
 
 ### Paired-Draw Check (retired — schema-v2 historical only)
 
@@ -396,26 +388,17 @@ Fix errors until it passes, using the scratchpad and temporary exchange only as 
 the exchange directory and scratchpad, rerun validation, and compare worktree status with the
 baseline.
 
-Only after that final report pass, open `reports/playtest-method-register.md`. If its pilot remains
-active, append one privacy-safe Natural-Run Coverage row, update or add Method Signal rows only for
-method-level evidence that actually arose, and update the three-row decision checkpoint. Do not
-record story substance, prompts, responses, product findings, or generated prose; do not use the
-register to auto-adopt an instrument or claim saturation. The register exists only to test whether a
-compact cross-run inventory changes a later method decision. When the third row is present, mark the
-register disposition as awaiting the owner, stop extending the pilot, finish cleanup, and request an
-explicit `keep`, `revise`, or `retire` decision. Record that disposition only after the owner gives
-it; do not infer it from the run.
+The method register (`reports/playtest-method-register.md`) and all bounded pilots are RETIRED as of
+2026-07-22, so an ordinary playtest run no longer opens the register, appends a Natural-Run Coverage
+row, or advances any Completed/State cell in `SKILL.md`'s Authoritative pilot state. The Independent
+Claim Challenge is a KEPT standing method: record its per-report use only through the
+`independent_claim_challenges` frontmatter counter and its report subsection, never by editing the
+pilot-state table. Recording a new owner disposition — or adding a future bounded pilot — is a
+deliberate skill-maintenance action, not a playtest-run edit, so a playtest invocation makes no edits
+under `.claude/skills/`.
 
-Finally, use the validated schema-v2 counters to advance only the Completed and State cells in
-`SKILL.md`'s Authoritative pilot state. Increment the claim-challenge pilot once per qualifying
-report, not once per challenged claim, and increment the method-register counter only when its row
-was successfully appended. When a Completed value reaches its Sunset, set State to
-`awaiting-disposition`; do not infer an owner decision. This exact table update is the sole permitted
-playtest-time edit under `.claude/skills/`.
-
-Re-run `git status --short` after the register and state updates. Compare it with the baseline and
-allow only this run's report/evidence, the register update, and exact Authoritative pilot-state cell
-changes. Any other run-caused delta is a custody defect.
+Re-run `git status --short` at close. Compare it with the baseline and allow only this run's report
+and evidence directory. Any other run-caused delta is a custody defect.
 
 After those durable updates, remove the remaining exact run root printed by `prepare-run.mjs`,
 including isolated settings and browser/app scratch. First verify that the resolved target is a
@@ -426,6 +409,5 @@ return its path so evidence is not destroyed during diagnosis.
 **Completion criterion:** all frontmatter and sections are present; current findings are
 actionable; every prior observation remains represented in the cumulative ledger; prompt and field
 verdicts are complete; continuation can locate the still-existing `/tmp` project; privacy rules
-hold; evidence links resolve; the validator passes after cleanup; and any permitted method-register
-and pilot-state updates happened only afterward; the successful run root is gone; and the separate
-story project remains available for continuation.
+hold; evidence links resolve; the validator passes after cleanup; the successful run root is gone;
+and the separate story project remains available for continuation.

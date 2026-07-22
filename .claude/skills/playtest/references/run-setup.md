@@ -45,9 +45,7 @@ user-owned; do not inspect them merely because they are dirty, adopt them, clean
 them.
 
 At close, compare `git status --short` with the baseline. The only permitted repository changes
-are this run's report and evidence directory plus the post-validation method-register update when
-its pilot is active and exact counter/state-cell changes in `SKILL.md`'s Authoritative pilot state.
-Build output ignored by git is acceptable. Any other delta caused by the run is an
+are this run's report and evidence directory. Build output ignored by git is acceptable. Any other delta caused by the run is an
 observational-contract defect and must be reported.
 
 ## Record pre-use intent
@@ -67,10 +65,10 @@ Before launching, complete these scratchpad fields:
 Do not pre-judge that a named field or surface is useful. State the author need first; later record
 whether the product made the right representation discoverable and worthwhile.
 
-Do not read `reports/playtest-method-register.md` during setup or the author journey. Its pilot is
-post-validation bookkeeping, not priming material. Do not search unrelated reports to decide
-whether another pilot instrument should trigger; use only the Authoritative pilot state in
-`SKILL.md` and record a natural non-trigger as pending. Never guess or reconstruct a count.
+Do not read `reports/playtest-method-register.md` (a retired, historical file) during setup or the
+author journey; it is not priming material. Do not search unrelated reports to decide whether an
+instrument should trigger; use only the Authoritative pilot state in `SKILL.md` and record a natural
+non-trigger as pending. Never guess or reconstruct a count.
 
 ## Quantitative coverage
 

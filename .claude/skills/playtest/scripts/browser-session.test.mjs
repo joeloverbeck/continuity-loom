@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildLaunchOptions,
   getBrowserSessionTermination,
   isAllowedAppRequest,
-  isGuardedProviderRequest
+  isGuardedProviderRequest,
+  runScreenshotSelfCheck
 } from "./browser-session.mjs";
 
 const guardedPaths = [
@@ -52,6 +54,46 @@ test("allows only the app origin and its same-host websocket", () => {
   assert.equal(isAllowedAppRequest(base, "http://127.0.0.1:4174/"), false);
   assert.equal(isAllowedAppRequest(base, "https://example.com/"), false);
   assert.equal(isAllowedAppRequest(base, "wss://example.com/events"), false);
+});
+
+test("builds launch options that suppress animation for the motion-stability gate", () => {
+  const options = buildLaunchOptions({ cdpPort: 9321, headless: true });
+  assert.equal(options.headless, true);
+  assert.equal(options.reducedMotion, "reduce");
+  assert.deepEqual(options.viewport, { width: 1440, height: 900 });
+  assert.equal(options.deviceScaleFactor, 1);
+  assert.deepEqual(options.args, [
+    "--remote-debugging-port=9321",
+    "--remote-debugging-address=127.0.0.1"
+  ]);
+});
+
+test("passes the requested headless flag through to launch options", () => {
+  assert.equal(buildLaunchOptions({ cdpPort: 1, headless: false }).headless, false);
+});
+
+test("screenshot self-check reports capability and byte size on success", async () => {
+  const result = await runScreenshotSelfCheck({
+    async screenshot() {
+      return Buffer.from("fake-png-bytes");
+    }
+  });
+  assert.equal(result.screenshotCapable, true);
+  assert.equal(result.screenshotProbeBytes, "fake-png-bytes".length);
+  assert.equal(typeof result.screenshotProbeMs, "number");
+  assert.equal(result.screenshotProbeError, undefined);
+});
+
+test("screenshot self-check fails soft and records the reason on error", async () => {
+  const result = await runScreenshotSelfCheck({
+    async screenshot() {
+      throw new Error("Timeout 8000ms exceeded.\nCall log: waiting for frame");
+    }
+  });
+  assert.equal(result.screenshotCapable, false);
+  assert.equal(result.screenshotProbeError, "Timeout 8000ms exceeded.");
+  assert.equal(result.screenshotProbeBytes, undefined);
+  assert.equal(typeof result.screenshotProbeMs, "number");
 });
 
 test("treats only shutdown.request as an expected browser-session termination", () => {

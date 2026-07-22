@@ -143,6 +143,48 @@ export function getBrowserSessionTermination(trigger) {
   throw new Error(`Unknown browser-session termination trigger: ${trigger}`);
 }
 
+// Launch with reducedMotion: "reduce" so CSS animations that honor
+// prefers-reduced-motion cannot keep a click target perpetually in motion.
+// Playwright's actionability "stable" gate polls a target's bounding box across
+// animation frames; a forever-animating element never stabilizes and the click
+// times out at the motion-stability gate. This is an animation × actionability
+// interaction, not an environment limitation; the documented fallback for a
+// target that still will not stabilize (an animation without a reduced-motion
+// guard) is keyboard activation via focus + press, which needs no motion
+// stability. Screenshots do not depend on the stability gate and work here.
+export function buildLaunchOptions({ cdpPort, headless }) {
+  return {
+    headless,
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 1,
+    reducedMotion: "reduce",
+    args: [`--remote-debugging-port=${cdpPort}`, "--remote-debugging-address=127.0.0.1"]
+  };
+}
+
+// Per-run capability probe: capture one throwaway screenshot of the initial
+// page so a run knows from session.json whether raster evidence is available
+// instead of assuming it is not. Fail-soft — a failed probe records
+// screenshotCapable: false and never aborts the run (the journey can proceed
+// through text/tree snapshots).
+export async function runScreenshotSelfCheck(page, { timeout = 8_000 } = {}) {
+  const startedAt = Date.now();
+  try {
+    const buffer = await page.screenshot({ timeout });
+    return {
+      screenshotCapable: true,
+      screenshotProbeMs: Date.now() - startedAt,
+      screenshotProbeBytes: buffer.length
+    };
+  } catch (error) {
+    return {
+      screenshotCapable: false,
+      screenshotProbeMs: Date.now() - startedAt,
+      screenshotProbeError: String(error?.message ?? error).split("\n")[0]
+    };
+  }
+}
+
 function isGuardedRequest(request) {
   return isGuardedProviderRequest(request.method(), request.url());
 }
@@ -202,12 +244,7 @@ async function main() {
 
   const cdpPort = args.port === 0 ? await availableLoopbackPort() : args.port;
   const profileDir = mkdtempSync(join(scratchDir, "profile-"));
-  const launchOptions = {
-    headless: args.headless,
-    viewport: { width: 1440, height: 900 },
-    deviceScaleFactor: 1,
-    args: [`--remote-debugging-port=${cdpPort}`, "--remote-debugging-address=127.0.0.1"]
-  };
+  const launchOptions = buildLaunchOptions({ cdpPort, headless: args.headless });
 
   let context;
   let channel;
@@ -284,6 +321,9 @@ async function main() {
   context.pages().forEach(attach);
   context.on("page", attach);
 
+  const probePage = context.pages()[0] ?? (await context.newPage());
+  const screenshotSelfCheck = await runScreenshotSelfCheck(probePage);
+
   let shuttingDown = false;
   let poller = null;
   const shutdown = async (trigger) => {
@@ -318,15 +358,23 @@ async function main() {
     allowedOrigin,
     headless: args.headless,
     viewport: "1440x900",
+    reducedMotion: "reduce",
     channel,
     browserVersion: context.browser()?.version() ?? "unknown",
     providerGuardReady: true,
     guardedPostPaths: [...GUARDED_POST_PATHS],
-    guardInstalledAt: new Date().toISOString()
+    guardInstalledAt: new Date().toISOString(),
+    ...screenshotSelfCheck
   };
   writeFileSync(sessionPath, `${JSON.stringify(session, null, 2)}\n`, "utf8");
   process.stdout.write(
-    `${JSON.stringify({ ready: true, cdpPort, pid: process.pid, evidenceDir })}\n`
+    `${JSON.stringify({
+      ready: true,
+      cdpPort,
+      pid: process.pid,
+      evidenceDir,
+      screenshotCapable: screenshotSelfCheck.screenshotCapable
+    })}\n`
   );
 
   poller = globalThis.setInterval(() => {

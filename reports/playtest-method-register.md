@@ -4,7 +4,7 @@ Status: pilot
 Owner: repository maintainer  
 Last updated: 2026-07-19  
 Natural-run rows: 3 of 3  
-Disposition: awaiting owner
+Disposition: RETIRED (owner decision 2026-07-22) — this register is closed and no longer updated after a run; it survives as historical method evidence only.
 
 ## Boundary
 
@@ -79,5 +79,9 @@ review. If it does neither, this register should be retired.
 - Concrete decision effect: the register prevents treating the current method signals as evidence
   across lower-complexity brief bands; that cross-run limitation is not visible from the current
   report alone.
-- Owner disposition: awaiting an explicit `keep`, `revise`, or `retire` decision. Do not append a
-  fourth natural-run row while this remains pending.
+- Owner disposition: **RETIRED (2026-07-22).** The third-row forward value (a single brief-field
+  coverage-band caveat) was thin against a per-run update cost, and the register's routing purpose —
+  promoting the adopted first-view/challenge and paired-draw method changes — is already realized
+  (the paired-draw check it helped adopt has itself since been retired). No fourth natural-run row is
+  appended; the file is retained as historical method evidence and the playtest skill no longer
+  carries a register-update obligation.

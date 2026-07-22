@@ -53,6 +53,22 @@ accepted-segment storage, hidden prompt data, `.env`, or source code during a ru
 trace. A report may cite a short relevant console/network excerpt only when it contains no prompt,
 record payload, candidate, accepted prose, or secret.
 
+## Screenshots and the motion-stability gate
+
+Screenshots work in this harness; the startup self-check records `screenshotCapable` in
+`session.json` (see [Browser driver](browser-driver.md#start-the-guarded-browser-before-navigation)).
+Treat a `false` result as this run's real capability, not an assumption — earlier reports that
+called headless screenshot capture unavailable were mistaken; the capability was never exercised to
+failure.
+
+A `click` that times out at Playwright's motion-stability gate (commonly ~5000 ms) means the
+target is perpetually animating, so its bounding box never settles. This is an animation ×
+actionability interaction that any environment hits, not a WSL2 or product defect. It is **not** a
+blocker on its own: the context runs with `reducedMotion: "reduce"`, and any control that still
+will not stabilize is activated with `focus <selector>` then a global `press Enter`/`Space`.
+Escalate to a blocker only when keyboard activation also cannot operate a required control after
+bounded recovery.
+
 ## Provider-safety failure
 
 If `provider-request-blocks.jsonl` gains an entry or the UI's provider send control was clicked:

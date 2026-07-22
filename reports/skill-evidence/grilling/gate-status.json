@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-22T15:58:43.644Z",
+  "generated_at": "2026-07-22T18:54:17.612Z",
   "target_content_hash": "314a80595a7bea1d80679e2bc73a17ab3ef492729e8750bb31ee73877063dfc8",
-  "qualifying_uses_on_current_hash": 10,
+  "qualifying_uses_on_current_hash": 11,
   "open_incident_ids": [
     "evt_37651b29-7ada-4390-94bd-cf439d03af16"
   ],
@@ -16,7 +16,7 @@
       "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
+  "state": "eligible",
   "authorized_workflow": "skill-evolution",
   "authorization_reason": "ten_use_unresolved",
   "trigger_event_ids": [
@@ -28,5 +28,5 @@
   "last_completed_review_id": "dec_b548511a-fdbc-46c4-94b2-6247ed5f5791",
   "target_name": "grilling",
   "target_repo_relative_path": ".claude/skills/grilling",
-  "derivation_session_id": "b7980904-89c1-4833-bdfb-4061937a9b77"
+  "derivation_session_id": "39aed6d0-3c14-40d4-bf67-168c586514c6"
 }

@@ -56,9 +56,8 @@ earlier misunderstandings and append corrections rather than rewriting history.
 
 ## Method pilot plan
 
-- Cold First-View Witness: <authoritative state>; eligible | not-eligible | pending-unavailable
-- Independent Claim Challenges: <authoritative state>; eligible-after-draft | no-decision-driving-claims | pending-unavailable
-- Change Review delta comparison (standing method, not a pilot): triggers-on-continuity-planning | not-triggered | pending-unavailable; at most two per run
+- Independent Claim Challenges (standing check): eligible-after-draft | no-decision-driving-claims | pending-unavailable
+- Change Review delta comparison (standing method): triggers-on-continuity-planning | not-triggered | pending-unavailable; at most two per run
 ```
 
 ## Observation entry
@@ -137,14 +136,6 @@ never rewrite the observed count to make it look minimal.
 Keep these blocks in the scratchpad only when the instrument naturally triggers. Do not copy story
 substance, full prompts, raw responses, candidate prose, or accepted prose into them.
 
-### Cold First-View Witness
-
-```markdown
-| Packet fingerprint | Timestamp | Executor host | Executor model                   | Model identity exposed | First-action summary | Expectation mismatch | Unclear terms count | Clarity                    | Main-operator comparison | Privacy check |
-| ------------------ | --------- | ------------- | -------------------------------- | ---------------------- | -------------------- | -------------------- | ------------------: | -------------------------- | ------------------------ | ------------- |
-| <sha256>           | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | ...                  | ...                  |                   0 | clear/partly-clear/unclear | ...                      | passed        |
-```
-
 ### Change Review Delta Comparison
 
 Seal the independent canonical-update baseline before compiling the Accepted-Segment Change Review
@@ -170,8 +161,7 @@ at most two comparisons.
 Challenge no more than three claims that are blockers or major findings, drive the executive
 assessment, make a likely-layer/causal inference intended to drive product work, or preserve a
 strength that constrains change. Put all eligible claims for this report into one privacy-safe
-packet. Send it either to the Phase-A witness after its first-view response is frozen or to one new
-fresh context. For each claim include the ID and exact proposed wording, observed visible fact,
+packet. Send it to one new fresh context. For each claim include the ID and exact proposed wording, observed visible fact,
 expected versus actual, reproduction, cited artifact identity or sanitized crop, and the operator
 interpretation and confidence. Exclude remedies and all raw story, prompt, response, candidate, and
 accepted-prose material. Require one rival explanation and one observable discriminator per claim.

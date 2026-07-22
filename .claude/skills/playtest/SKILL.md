@@ -14,8 +14,7 @@ exhausted. Always produce a report. Observe and report; never fix the app during
 - **Instructed, source-and-doc-blind.** Follow this workflow, but learn the product itself through
   visible UI and field help—not source, tests, app docs, APIs, SQLite, or hidden state. For a new
   story, seal the intended story, expectations, and initial mental model before opening the app.
-  This method does not establish uninstructed human discoverability. A Cold First-View Witness
-  measures only first-screen comprehension and never human transfer or a full unaided journey.
+  This method does not establish uninstructed human discoverability or a fully unaided journey.
 - **Returning author on continuation.** Read only the report the user supplied, reopen its
   `/tmp` project through the UI, and verify the latest accepted segment in Accepted Segments.
   Do not search for or read unrelated earlier reports.
@@ -44,24 +43,31 @@ exhausted. Always produce a report. Observe and report; never fix the app during
 - **Privacy-safe reports.** Never put full prompts, full record payloads, candidate prose,
   accepted prose, API keys, or raw assistance responses in `reports/`. Retain fingerprints,
   counts, short necessary excerpts, assessments, and carefully selected screenshots only.
-- **Custody.** The run may add its report and evidence directory, update the method register's
-  privacy-safe coverage and method-signal rows after final report validation, advance only the
-  bounded-pilot state table below at that same post-validation point, and create `/tmp` data. It
+- **Custody.** The run may add its report and evidence directory and create `/tmp` data. It
   must not edit any other source, tests, docs, dependencies, configuration, existing reports, or
   unrelated worktree changes. Never overwrite an earlier report or evidence directory.
 
 ## Bounded method pilots
 
-These instruments are temporary pilots, not permanent coverage claims:
+All three original bounded pilots reached their sunsets and received explicit owner dispositions on
+2026-07-22:
 
-- On the next naturally occurring new-story run, capture at most one sealed Cold First-View
-  Witness before the main operator inspects the first screen, then stop for an explicit `keep`,
-  `revise`, or `retire` decision.
-- Before finalizing each of the first two reports that contain decision-driving claims, challenge
-  at most three such claims independently and resolve them as `supported`, `narrowed`,
-  `contradicted`, or `insufficient`.
-- The privacy-safe method register stops after its third natural-run row for an explicit `keep`,
-  `revise`, or `retire` decision. Never read it before or during the author journey.
+- **Independent Claim Challenge — KEPT as a standing method.** It is no longer a sunset-bounded
+  pilot: apply it to every future report that contains decision-driving claims. Before finalizing
+  such a report, challenge at most three of those claims independently and resolve each as
+  `supported`, `narrowed`, `contradicted`, or `insufficient`. Across its two trial reports it
+  narrowed two over-broad claims and supported four; the check earns its place as standing
+  report-calibration rigor. Its frozen Completed/Sunset counts below are historical pilot totals
+  only and no longer gate whether it runs.
+- **Cold First-View Witness — RETIRED.** It no longer runs. Its single trial was mostly concordant
+  with the operator's own required doc-blind first-view assessment; its scope is explicitly narrow
+  (first-screen comprehension only, never human transfer or uninstructed discoverability); and it
+  fires only on rare new-story runs. The sealed-packet and perception-order protocol was not worth
+  the marginal independent signal.
+- **Method register — RETIRED.** It is no longer opened or updated after a run. It served its
+  routing purpose (it promoted the adopted first-view/challenge and paired-draw method changes) and
+  its own third-row checkpoint returned only thin forward value against a per-run update cost.
+  `reports/playtest-method-register.md` survives as historical method evidence only.
 
 The retired Segment Reconciliation Paired-Draw Check no longer runs. The
 [Change Review delta comparison](references/prompt-evaluation.md#change-review-delta-comparison) is
@@ -81,28 +87,25 @@ reports to reconstruct counts.
 
 | Instrument                         | State  | Completed | Sunset |
 | ---------------------------------- | ------ | --------: | -----: |
-| Cold First-View Witness            | awaiting-disposition |         1 |      1 |
+| Cold First-View Witness            | retired |         1 |      1 |
 | Paired-Draw Check                  | retired |         2 |      2 |
-| Independent Claim Challenge report | awaiting-disposition |         2 |      2 |
-| Method-register natural-run row    | awaiting-disposition |         3 |      3 |
+| Independent Claim Challenge report | kept (standing) |         2 |      2 |
+| Method-register natural-run row    | retired |         3 |      3 |
 
-Only after the final report validation passes:
+All bounded pilots are now resolved, so a playtest run no longer advances any Completed/Sunset
+count. The Cold First-View Witness, Paired-Draw Check, and Method-register rows are `retired` and
+never run. The Independent Claim Challenge is a `kept (standing)` method whose per-report use is
+recorded only through the `independent_claim_challenges` frontmatter counter and its report
+subsection, not through this table. The Change Review delta comparison remains a standing method
+with no row here.
 
-1. increment Cold First-View when `cold_first_view_witnesses` is `1`;
-2. increment Independent Claim Challenge report once when
-   `independent_claim_challenges` is greater than `0`;
-3. increment the method-register row only after that row is appended; and
-4. change any instrument reaching its sunset from `active` to `awaiting-disposition`.
-
-The Paired-Draw Check is `retired`; it never runs again and no run increments it. The Change Review
-delta comparison is not a pilot and has no row here.
-
-No historical run increments the three prospective witness pilots. An `awaiting-disposition`,
-`kept`, `revised`, or `retired` instrument does not run again unless its explicit owner disposition
-changes this table and, when needed, its sunset. Apart from those cells, a playtest invocation must
-not edit this skill. Reaching a sunset does not interrupt report validation or cleanup: mark the
-state `awaiting-disposition`, finish custody, and request the owner's `keep`, `revise`, or `retire`
-decision in the final response.
+The Independent Claim Challenge is `kept (standing)`: it runs on every future report with
+decision-driving claims, regardless of its frozen historical counts. A `retired` or
+`awaiting-disposition` instrument does not run again unless an explicit owner disposition changes
+this table and, when needed, its sunset. Apart from recording such an owner disposition, a playtest
+invocation must not edit this skill. Should a future bounded pilot be added and reach its sunset,
+do not claim saturation or method validity: mark its state `awaiting-disposition`, finish custody,
+and request the owner's `keep`, `revise`, or `retire` decision in the final response.
 
 ## Process
 
@@ -119,14 +122,12 @@ run paths exist, the baseline is recorded, and the pre-use expectations are comp
 Read [Browser driver](references/browser-driver.md). Build the app, start `safe-app-session.mjs`,
 then start `browser-session.mjs` before the first navigation. Do not reuse an existing server or
 browser. Done when the app holder reports its loopback URL, the 1440x900 browser session reports
-its safety state, and provider-request capture began before navigation. For a pending new-story
-first-view witness, defer all parent-context screen inspection until Step 3.
+its safety state, and provider-request capture began before navigation.
 
 ### 3. Enter as a new or returning author
 
-Read [Author journey](references/author-journey.md). On a new run, capture the sealed first-view
-witness when its authoritative state is `active`, then independently assess the unopened project screen before
-creating the planned `/tmp` project. On a continuation, open the supplied project,
+Read [Author journey](references/author-journey.md). On a new run, independently assess the
+unopened project screen before creating the planned `/tmp` project. On a continuation, open the supplied project,
 visit Accepted Segments, and establish the latest accepted sequence without copying accepted
 prose into prompt-facing fields. Done when the scratchpad records what the UI confirmed,
 corrected, or left unclear about the initial mental model and continuation state.
@@ -175,14 +176,13 @@ contemporaneous observations, product findings, or evidence tags.
 Read [Blockers and diagnostics](references/blockers-and-diagnostics.md) when any probable blocker
 or visible defect appears, then read [Report format](references/report-format.md). Consolidate the
 scratchpad into a new schema-v3 cumulative report. Before publication, independently challenge up
-to three eligible decision-driving claims when that pilot state is `active`, and let the main
-operator retain resolution authority.
+to three eligible decision-driving claims (a standing check on every report that has them), and let
+the main operator retain resolution authority.
 Close browser and app sessions, remove session plumbing and uncited evidence, then validate with
 `scripts/validate-report.mjs`. Keep the scratchpad and temporary exchange files until the report
 passes; then delete them, rerun the validator, and compare final worktree status with the baseline.
-Only after that final pass, open and update `reports/playtest-method-register.md` when its pilot is
-still active, then advance the report-derived authoritative pilot-state cells above. Advance the
-method-register counter only when its row was successfully appended. Compare final worktree status
+The method register and all bounded pilots are retired, so this run updates neither the register nor
+the pilot-state table. Compare final worktree status
 with the baseline again, allowing only the declared custody deltas. On successful close, remove the
 exact run root created under
 `/tmp/continuity-loom-playtest/` but preserve the separate `/tmp` story project. Done only when the

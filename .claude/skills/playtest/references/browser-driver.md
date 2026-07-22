@@ -68,6 +68,18 @@ unavailable, request permission to run `npx playwright install chromium`, retry 
 a blocked report if no browser launches. Do not switch to a different automation framework
 mid-run.
 
+The context launches with `reducedMotion: "reduce"` so animations that honor
+`prefers-reduced-motion` cannot keep a click target perpetually in motion (see
+[Act through visible UI](#act-through-visible-ui)). It also runs a one-shot **screenshot
+self-check** at startup and records `screenshotCapable` (plus `screenshotProbeMs` and either
+`screenshotProbeBytes` or `screenshotProbeError`) in `session.json` and in the ready line. Read
+`screenshotCapable` before relying on raster evidence: `true` means routine and finding
+screenshots are available this run; `false` means fall back to text/tree snapshots and note the
+probe error. The self-check is fail-soft and never aborts the run. The default headless build is
+the lightweight `chromium_headless_shell`; a run needing higher raster fidelity or a
+human-equivalent window may launch `--headed` (uses the WSLg display when present) or the full
+Chromium channel, but neither is required for screenshots.
+
 ## Recover host loopback permission failures
 
 If a run-owned helper or `browser-act.mjs` command fails because the host sandbox denies binding
@@ -124,6 +136,14 @@ does not expose a stable semantic locator. Never use source-derived test ids, im
 classes, hidden elements, `evaluate`, `run-code`, or app-internal selectors to figure out what to
 do.
 
+If a `click` times out at Playwright's motion-stability gate, the target is animating — its
+bounding box never settles — not broken, and this is not an environment failure. The context
+already runs `reducedMotion: "reduce"`; when an animation ignores that (no `prefers-reduced-motion`
+guard), activate the control with `focus <selector>` then a global `press Enter` (or `Space`):
+keyboard activation needs no motion stability. Do not resort to forced clicks that skip the
+visibility, enabled, and hit-testing checks. Navigate SPA routes with `goto` rather than clicking
+nav links.
+
 `text-file` may read only a prompt that is visibly open in the prompt inspector. Record its
 fingerprint and visible metadata before extracting it. `fill-file` is the required path for raw
 subagent prose so the content is not exposed in shell arguments or command output.
@@ -139,16 +159,18 @@ After every consequential action, wait for the UI to settle and inspect a fresh 
 visible-text/snapshot result before acting again. Routine shots stay under `/tmp`; do not turn the
 report evidence directory into a click-by-click screen recording.
 
-The sole perception-order exception is an `active` new-story Cold First-View Witness. Navigate with
-`goto <base-url> --shot <temporary-path>` and give the sealed screenshot packet to the witness
-without opening the image or requesting page text/tree/HTML in the parent context. After the witness
-answer is saved, the main operator inspects that same initial state independently before reading the
-answer. Resume the normal inspect-after-action rule immediately afterward.
-
 Promote only evidence that supports a report finding or important strength. Prefer
 `elementshot` or a tightly scoped viewport state that avoids exposing full record payloads,
 prompts, candidate prose, or accepted prose. Never retain a browser trace: it may contain the
 entire story and prompt.
+
+When `screenshotCapable` is true, capture a tightly scoped `elementshot` for any UI or
+information-architecture finding you annotate — a control's label, state, focus ring, or layout —
+because a raster is the clearest evidence for those, and annotating the UI is a primary reason the
+playtest exists. Keep the privacy rules above: no full prompt, record-payload, candidate, or
+accepted-prose raster. When `screenshotCapable` is false, record the finding from `tree`/`text`
+and state that raster evidence was unavailable this run. The report validator does not require
+images, so a genuinely capability-limited run still validates.
 
 Use `tree`, `box`, or `html` only after a visible accessibility/layout/defect concern is recorded,
 or for a light accessibility check at a safe point. Diagnostics explain visible behavior; they
