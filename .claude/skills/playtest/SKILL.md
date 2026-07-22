@@ -1,6 +1,6 @@
 ---
 name: playtest
-description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates the prose prompt and any naturally invoked Ideate, Record Hygiene, or Segment Reconciliation prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
+description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates the prose prompt and any naturally invoked Ideate, Record Hygiene, or Accepted-Segment Change Review prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
 ---
 
 # Continuity Loom Author Playtest
@@ -36,8 +36,8 @@ exhausted. Always produce a report. Observe and report; never fix the app during
   candidate**, visibly editing it, and accepting it. Never treat assistance output or accepted
   prose as automatic continuity authority.
 - **Naturalistic coverage.** Fill fields and use Private Notes, Ideate, Record Hygiene, and
-  Segment Reconciliation when a sincere author would. Do not manufacture irrelevant data merely
-  to tick a feature box; record every skipped surface and why it was not naturally needed.
+  Accepted-Segment Change Review when a sincere author would. Do not manufacture irrelevant data
+  merely to tick a feature box; record every skipped surface and why it was not naturally needed.
 - **Transient story data.** New projects, prompts, raw subagent responses, candidate prose,
   routine screenshots, settings, and the structured scratchpad stay under `/tmp`. Continuation
   works only while the project path named by the supplied report still exists.
@@ -57,14 +57,18 @@ These instruments are temporary pilots, not permanent coverage claims:
 - On the next naturally occurring new-story run, capture at most one sealed Cold First-View
   Witness before the main operator inspects the first screen, then stop for an explicit `keep`,
   `revise`, or `retire` decision.
-- On at most one naturally qualifying assistance prompt per run, collect two byte-identical fresh
-  draws. The initial eligible kind is Segment Reconciliation. The pilot stops for an explicit
-  `keep`, `revise`, or `retire` decision after two qualifying pairs.
 - Before finalizing each of the first two reports that contain decision-driving claims, challenge
   at most three such claims independently and resolve them as `supported`, `narrowed`,
   `contradicted`, or `insufficient`.
 - The privacy-safe method register stops after its third natural-run row for an explicit `keep`,
   `revise`, or `retire` decision. Never read it before or during the author journey.
+
+The retired Segment Reconciliation Paired-Draw Check no longer runs. The
+[Change Review delta comparison](references/prompt-evaluation.md#change-review-delta-comparison) is
+its replacement, but it is a standing part of the post-acceptance method rather than a sunset-bounded
+pilot: it does not reuse the paired-draw counter, evidence tags, or bounded-pilot machinery, and its
+per-comparison work is recorded through `change_review_comparisons` and the schema-v3 report
+disclosure.
 
 If a pilot does not trigger naturally, record it as pending rather than manufacturing eligibility.
 At a pilot's sunset, do not claim saturation, reliability, or method validity; route the explicit
@@ -78,18 +82,20 @@ reports to reconstruct counts.
 | Instrument                         | State  | Completed | Sunset |
 | ---------------------------------- | ------ | --------: | -----: |
 | Cold First-View Witness            | awaiting-disposition |         1 |      1 |
-| Paired-Draw Check                  | awaiting-disposition |         2 |      2 |
+| Paired-Draw Check                  | retired |         2 |      2 |
 | Independent Claim Challenge report | awaiting-disposition |         2 |      2 |
 | Method-register natural-run row    | awaiting-disposition |         3 |      3 |
 
 Only after the final report validation passes:
 
 1. increment Cold First-View when `cold_first_view_witnesses` is `1`;
-2. increment Paired-Draw when `paired_draw_checks` is `1`;
-3. increment Independent Claim Challenge report once when
+2. increment Independent Claim Challenge report once when
    `independent_claim_challenges` is greater than `0`;
-4. increment the method-register row only after that row is appended; and
-5. change any instrument reaching its sunset from `active` to `awaiting-disposition`.
+3. increment the method-register row only after that row is appended; and
+4. change any instrument reaching its sunset from `active` to `awaiting-disposition`.
+
+The Paired-Draw Check is `retired`; it never runs again and no run increments it. The Change Review
+delta comparison is not a pilot and has no row here.
 
 No historical run increments the three prospective witness pilots. An `awaiting-disposition`,
 `kept`, `revised`, or `retired` instrument does not run again unless its explicit owner disposition
@@ -138,22 +144,26 @@ run.
 
 Read [Cold prompt evaluation](references/prompt-evaluation.md). Extract the visible prose prompt
 to `/tmp`, dispatch one fresh cold subagent, assess its untouched response, and allow at most one
-fresh retry. When a naturally qualifying assistance prompt reaches the active paired-draw pilot,
-predeclare the useful output classes and collect exactly two fresh byte-identical draws regardless
-of Draw A's result; assess them separately and do not take a third draw. Use one targeted
-counterfactual probe only when it can clarify a high-impact ignored field; never use that
-diagnostic response in the app. Evaluate Ideate, Record Hygiene, and Segment Reconciliation the
-same way when naturally invoked. Done when every invoked prompt has a structured usefulness
-verdict and every populated Generation Brief field has an influence verdict or `not assessable`.
+fresh prose retry. Use one targeted counterfactual probe only when it can clarify a high-impact
+ignored field; never use that diagnostic response in the app. Evaluate Ideate, Record Hygiene, and
+Accepted-Segment Change Review the same way when naturally invoked. Unlike the prose prompt, the
+Accepted-Segment Change Review draw is single-draw: run its exact visible prompt once in one fresh
+cold context and take no quality retry for weak, empty, malformed, or misleading output. Done when
+every invoked prompt has a structured usefulness verdict and every populated Generation Brief field
+has an influence verdict or `not assessable`.
 
-### 6. Accept one segment and reconcile continuity
+### 6. Accept one segment and review accepted-segment changes
 
 Paste the chosen raw prose through **Write or paste candidate**, make ordinary author edits in
 the visible editor, and record the intervention burden before accepting exactly one segment.
-Inspect the durable-change reminder. Use Segment Reconciliation and Record Hygiene when the
-accepted segment or record set makes them useful; re-author adopted suggestions manually. Done
-when the accepted sequence is visibly confirmed and records, Generation Brief, and working set
-represent the author's chosen continuity for a later run, or a post-acceptance blocker is logged.
+Inspect the durable-change reminder. When the accepted segment or record set makes Accepted-Segment
+Change Review useful, seal an independent canonical-update baseline under the run's scratch directory
+**before** compiling the Change Review prompt or making any segment-derived canonical edit, then run
+the [Change Review delta comparison](references/prompt-evaluation.md#change-review-delta-comparison).
+Use Record Hygiene when the record set makes it useful; re-author adopted suggestions manually and
+save every canonical change independently through the visible editors. Done when the accepted
+sequence is visibly confirmed and records, Generation Brief, and working set represent the author's
+chosen continuity for a later run, or a post-acceptance blocker is logged.
 
 ### 7. Report and close
 
@@ -164,7 +174,7 @@ contemporaneous observations, product findings, or evidence tags.
 
 Read [Blockers and diagnostics](references/blockers-and-diagnostics.md) when any probable blocker
 or visible defect appears, then read [Report format](references/report-format.md). Consolidate the
-scratchpad into a new schema-v2 cumulative report. Before publication, independently challenge up
+scratchpad into a new schema-v3 cumulative report. Before publication, independently challenge up
 to three eligible decision-driving claims when that pilot state is `active`, and let the main
 operator retain resolution authority.
 Close browser and app sessions, remove session plumbing and uncited evidence, then validate with

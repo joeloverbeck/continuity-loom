@@ -18,7 +18,9 @@ A blocker prevents the sincere author journey or its one-segment boundary after 
 
 Confusing terminology, excessive work, a poor response, or an avoidable workaround is not
 automatically a blocker when the author can still proceed sincerely. Report severity by actual
-impact.
+impact. A weak, empty, malformed, or misleading Accepted-Segment Change Review cold draw is not a
+blocker and receives no quality retry; only a genuinely absent substantive response permits one
+bounded harness re-dispatch under [Bounded recovery](#bounded-recovery).
 
 ## Bounded recovery
 

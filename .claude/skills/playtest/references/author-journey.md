@@ -111,8 +111,13 @@ Use assistance only when the author need arises, and log why each surface was in
 - **Record Hygiene:** when records plausibly overlap, restate one another, feel stale, or create
   uncertainty about what should be edited. Whole-project scope is appropriate for general
   cleanup; active-working-set scope is appropriate for immediate authoring focus.
-- **Segment Reconciliation:** after acceptance when the latest segment plausibly changed durable
-  state, or at continuation entry when the prior run left reconciliation unfinished.
+- **Accepted-Segment Change Review:** after acceptance when the latest accepted segment plausibly
+  changed durable state, or at continuation entry when the prior run left change review unfinished.
+  Whenever it drives story-continuity work, seal an independent canonical-update baseline under the
+  run's scratch directory **before** compiling the Change Review prompt or making any segment-derived
+  canonical edit, then follow
+  [Change Review delta comparison](prompt-evaluation.md#change-review-delta-comparison). A run
+  contains at most two comparisons.
 
 Compile and inspect each assistance prompt in the UI, but do not press its OpenRouter control.
 Evaluate the cold response according to [Cold prompt evaluation](prompt-evaluation.md). Re-author
@@ -138,8 +143,10 @@ cold attempts can be made acceptable without a replacement-level rewrite, stop w
 quality blocker rather than fabricating completion.
 
 After acceptance, verify the new sequence in **Accepted Segments**, inspect the durable-change
-reminder, and perform any chosen reconciliation/record updates. Do not acknowledge completion of
-durable-change work until canonical surfaces actually represent the chosen continuity.
+reminder, and perform any chosen change-review/record updates. Seal the delta-comparison baseline
+before those edits, and independently author and explicitly save each canonical change through the
+visible editors. Do not acknowledge completion of durable-change work until canonical surfaces
+actually represent the chosen continuity.
 
 ## Light accessibility and layout pass
 

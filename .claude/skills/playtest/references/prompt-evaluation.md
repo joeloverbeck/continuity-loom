@@ -4,7 +4,7 @@
 
 - [Exchange protocol](#exchange-protocol)
 - [Universal usefulness verdict](#universal-usefulness-verdict)
-- [Paired-draw pilot](#paired-draw-pilot)
+- [Change Review delta comparison](#change-review-delta-comparison)
 - [Prose prompt](#prose-prompt)
 - [Generation Brief field-influence ledger](#generation-brief-field-influence-ledger)
 - [Targeted counterfactual](#targeted-counterfactual)
@@ -78,44 +78,80 @@ Separate **prompt-contract mismatch** from **model-output failure**. If the prom
 for a low-value class of output and the model supplies it, the prompt—not model compliance—is the
 primary issue.
 
-## Paired-draw pilot
+## Change Review delta comparison
 
-Use this instrument only while its Authoritative pilot state is `active`, and for at most one
-naturally qualifying assistance prompt in a run. During the initial pilot, only Segment
-Reconciliation is eligible, and only when a legally valid no-change answer versus a substantive
-proposal would materially alter the author's durable-continuity work. Do not force acceptance,
-create extra records, or invoke reconciliation solely to obtain a pair.
+Run this whenever the latest accepted segment causes the playtester to plan story-continuity work.
+It replaces the retired Segment Reconciliation paired-draw pilot and is a standing part of the
+method, not a bounded pilot: it does not reuse the paired-draw counter, evidence tags, or pilot
+machinery. A run contains at most two comparisons — unfinished inherited work at continuation entry
+and new work after accepting the run's new segment. Mechanical housekeeping alone, such as changing
+`generation_context`, does not trigger a comparison, and a sincere no-change assessment keeps the
+existing naturalistic skip.
 
-Before either draw:
+### Seal the baseline first
 
-1. Save one exact visible prompt and its lowercase SHA-256 fingerprint.
-2. State why the prompt qualifies and predeclare informative structural classes. For Segment
-   Reconciliation, begin with `substantive-change`, `reasoned-no-change`, `empty-no-change`,
-   `malformed`, and `blocked`; refine only before dispatch.
-3. Prepare two identical cold-context tasks using the same prompt bytes and delivery instruction.
+Before compiling the Accepted-Segment Change Review prompt and before any segment-derived canonical
+edit, inspect the latest segment and current canonical surfaces through the visible UI, then seal an
+independent canonical-update baseline as a temporary file under the run's `/tmp/.../exchange/`
+directory. The baseline is a frozen comparator authored from the playtester's own reading, never
+ground truth: a later review-only item may be a real discovery the playtester first missed.
 
-Launch Draws A and B in separate fresh contexts before inspecting either response. If the host
-cannot launch them concurrently, seal both tasks first, launch B regardless of Draw A's outcome,
-and never tell B about A. Do not take a third draw. Both draws increment
-`cold_assistance_attempts`; the pair is neither a retry nor a counterfactual.
+Include every segment-derived intended change in the baseline and classify each as:
 
-Assess each untouched response separately against the universal usefulness verdict before choosing
-whether to re-author anything. Then classify the pair as one of:
+- **in-profile** — a semantic record delta within the chosen disclosed record scope, or one of Change
+  Review's nineteen CURRENT AUTHORITATIVE STATE / IMMEDIATE HANDOFF paths; or
+- **out-of-profile** — an exact create, deactivate, or archive operation, an Active Working Set
+  membership change, an unsupported Generation Brief field, a full proposed canonical value, or other
+  work the active Change Review contract cannot produce.
 
-- `concordant-substantive`
-- `concordant-no-change`
-- `discordant`
-- `both-poor-or-malformed`
-- `blocked`
+Independently disposition each of Change Review's six coverage dimensions as `change expected`,
+`no change expected`, or `uncertain`:
 
-For each draw record timestamp, executor host family, exact model identifier only when exposed by
-the host (otherwise `unknown`), model-identity exposure boolean, and the shared prompt fingerprint.
-Record what this exact pair supports, what it cannot establish, and how it changes likely-layer
-attribution. Two draws can reveal local concordance or discordance; they cannot establish a rate,
-stability, model independence, or the cause of variation.
+1. spatial, material, and bodily state;
+2. time, clocks, and ongoing processes;
+3. facts, knowledge, beliefs, and secrets;
+4. intentions, plans, commitments, promises, and open pressures;
+5. emotions and relationships;
+6. immediate next-segment handoff.
 
-The pilot stops after two naturally qualifying pairs for an explicit `keep`, `revise`, or `retire`
-decision. A run with no qualifying prompt records the pilot as pending and makes no pair.
+### Freeze the scope, then draw once
+
+Freeze the smallest explicit record scope that makes the comparison fair: `active_working_set` only
+when every implicated existing record is already inside it, otherwise `whole_project`. Never widen
+the scope after viewing output.
+
+Extract the exact visibly inspected Change Review prompt with `text-file` and run it once in one
+genuinely fresh cold context under the [exchange protocol](#exchange-protocol). Do not press the
+app's Analyze control, make no OpenRouter request, and take no quality retry for weak, empty,
+malformed, or misleading output. Bounded harness recovery is available only when no substantive
+response was produced at all. The single draw increments `cold_assistance_attempts` once.
+
+Never intercept, mock, inject, or import a cold Change Review response into the app's provider-result
+scratch surface. This path evaluates the compiled prompt and its response; it does not exercise
+provider response parsing or the result cards.
+
+### Adjudicate correspondence and coverage
+
+Keep the baseline unchanged, then adjudicate item correspondence between the baseline and the
+untouched response as one of `matched`, `baseline-only`, `review-only accepted`,
+`review-only rejected`, `partial`, or `unscorable`. Compare the six returned coverage rows separately
+against the sealed six-dimension disposition and count the dimensions that disagree.
+
+Record one episode-level substitution verdict: `discovery-complete for this episode`,
+`materially reduced discovery work`, `independent audit still required`, `unsafe or misleading`, or
+`not assessable`.
+
+Treat a discrepancy as a finding when it could omit or misdirect canonical work, force the author to
+repeat the independent audit, falsely reassure through coverage, or make the workflow unusable.
+Preserve the existing likely-layer distinctions among prompt contract, model execution,
+source/scope, UI workflow, and not assessable. Every material discrepancy must map to a Cumulative
+Finding Ledger ID; use `none - <reason>` only when all observed differences are genuinely
+nonmaterial.
+
+Only after the comparison, independently author and explicitly save any chosen canonical changes
+through the visible editors. Exact story-bearing baseline text and the raw response stay temporary;
+the report retains only privacy-safe counts, verdicts, fingerprints, and the minimum evidence a
+material finding needs.
 
 ## Prose prompt
 
@@ -198,18 +234,26 @@ The desired product value is not the largest valid finding set. It is a trustwor
 answer to "what should I actually change?" while preserving necessary caution against unsafe
 merges and removals.
 
-## Segment Reconciliation
+## Accepted-Segment Change Review
 
-Assess whether proposals identify real durable changes from the latest segment, contrast them
-against current records/brief, remain paraphrased, cite evidence, use valid targets and shapes,
-avoid inventing canon, and tell the author what genuinely needs manual work. Count proposals
-adopted, rejected, redundant with existing state, over-specific, missing, or malformed.
+Assess whether the returned `items` identify real durable changes the latest accepted segment
+introduces, contrast them against current records and the nineteen CURRENT AUTHORITATIVE STATE and
+IMMEDIATE HANDOFF review paths, stay paraphrased rather than echoing accepted prose, carry a valid
+`evidence_excerpt` witness for each `established change`, cite resolvable evidence and contrast keys,
+use valid epistemic-status and retention-horizon values, avoid inventing canon or drafting future
+possibilities, and tell the author what genuinely needs manual work. Confirm each of the six
+`coverage` rows is reasoned. Count items adopted, rejected, redundant with existing state,
+over-specific, missing, or malformed. When the accepted segment drove continuity planning, adjudicate
+the response against the sealed baseline under
+[Change Review delta comparison](#change-review-delta-comparison).
 
 ## Temporary artifact cleanup
 
-Keep exact prompts and raw responses only until the final report is validated. Then delete the
-exchange directory. The report retains fingerprints, structured verdicts, counts, adoption and
-editing burden, and only the shortest excerpt necessary to make a finding intelligible.
+Keep exact prompts, raw responses, and sealed Change Review baselines only until the final report is
+validated. Then delete the exchange directory. The report retains fingerprints, structured verdicts,
+counts, correspondence and coverage tallies, adoption and editing burden, and only the shortest
+excerpt necessary to make a finding intelligible. Exact story-bearing baseline text never enters a
+durable report.
 
 **Completion criterion:** every invoked prompt has a raw-response verdict and adoption ledger;
 every intentionally populated prompt-facing Generation Brief field is accounted for; retry and

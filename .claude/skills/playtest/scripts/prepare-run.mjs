@@ -214,6 +214,18 @@ export function prepareRun({
 ## Candidate and acceptance ledger
 
 ## Post-acceptance continuity ledger
+
+## Change Review delta-comparison ledger
+
+- Status: inactive - activate only when the latest accepted segment drives story-continuity work
+- Comparisons this run (0-2):
+
+Seal each independent canonical-update baseline under the run exchange directory before compiling the
+Accepted-Segment Change Review prompt or making any segment-derived canonical edit. Record only the
+privacy-safe adjudication here; keep exact story-bearing baseline text in the temporary exchange.
+
+| Comparison | Segment sequence | Record scope | Prompt fingerprint | Baseline in-profile | Baseline out-of-profile | Correspondence counts | Coverage disagreements | Substitution verdict | Related finding IDs |
+| ---------- | ---------------- | ------------ | ------------------ | ------------------: | ----------------------: | --------------------- | ---------------------: | -------------------- | ------------------- |
 `,
     "utf8"
   );
