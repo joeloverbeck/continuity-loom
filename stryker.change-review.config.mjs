@@ -1,7 +1,7 @@
 import { createCoreMutationConfig } from "./scripts/robustness/stryker-base.mjs";
 
 export default createCoreMutationConfig({
-  name: "segment-reconciliation",
+  name: "change-review",
   mutate: [
     "packages/core/src/compiler/reconciliation/**/*.ts",
     "packages/core/src/compiler/change-review/**/*.ts",

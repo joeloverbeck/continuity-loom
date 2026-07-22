@@ -1,8 +1,8 @@
 import {
   buildValidationSnapshot,
+  compileAcceptedSegmentChangeReviewPrompt,
   compilePrompt,
   compileRecordHygienePrompt,
-  compileSegmentReconciliationPrompt,
   demoGenerationSession,
   demoRecords,
   demoStoryConfig,
@@ -16,12 +16,12 @@ import {
 } from "./record-hygiene-snapshot-builder.js";
 import type { IncomingRecordReference, RecordRepositoryRecord, RecordReadResult } from "./record-repository.js";
 import {
-  buildSegmentReconciliationSnapshot,
-  type SegmentReconciliationRepository
-} from "./segment-reconciliation-snapshot-builder.js";
+  buildAcceptedSegmentChangeReviewSnapshot,
+  type AcceptedSegmentChangeReviewRepository
+} from "./accepted-segment-change-review-snapshot-builder.js";
 
 describe("prompt-facing full-label cross-pillar contract", () => {
-  it("ignores conflicting stored browse labels in Prose, Ideate, Hygiene, and Reconciliation", () => {
+  it("ignores conflicting stored browse labels in Prose, Ideate, Hygiene, and Change Review", () => {
     const records = structuredClone(demoRecords);
     const beliefs = records.filter((record) => record.type === "BELIEF").sort((left, right) => left.id.localeCompare(right.id));
     expect(beliefs).toHaveLength(2);
@@ -55,26 +55,26 @@ describe("prompt-facing full-label cross-pillar contract", () => {
     const repositoryRecords = records.map(repositoryRecord);
     const repository = repositoryFor(repositoryRecords, [laterIdRecord.id, earlierIdRecord.id]);
     const hygieneSnapshot = buildStoryRecordHygieneSnapshot(repository, { mode: "full_active_atomic_review" });
-    const reconciliationSnapshot = buildSegmentReconciliationSnapshot(repository, {
+    const reviewSnapshot = buildAcceptedSegmentChangeReviewSnapshot(repository, {
       segmentSelection: "latest",
       recordScope: "active_working_set"
     });
 
     expect(hygieneSnapshot.ok).toBe(true);
-    expect(reconciliationSnapshot.ok).toBe(true);
-    if (!hygieneSnapshot.ok || !reconciliationSnapshot.ok) {
+    expect(reviewSnapshot.ok).toBe(true);
+    if (!hygieneSnapshot.ok || !reviewSnapshot.ok) {
       return;
     }
 
     const hygiene = compileRecordHygienePrompt(hygieneSnapshot.snapshot);
-    const reconciliation = compileSegmentReconciliationPrompt(reconciliationSnapshot.snapshot);
+    const review = compileAcceptedSegmentChangeReviewPrompt(reviewSnapshot.snapshot);
 
     for (const prompt of [prose.prompt, ideate.prompt]) {
       expect(prompt).toContain(earlierLabel);
       expect(prompt).toContain(laterLabel);
       expect(prompt).not.toContain(browseLabel);
     }
-    for (const prompt of [hygiene.prompt, reconciliation.prompt]) {
+    for (const prompt of [hygiene.prompt, review.prompt]) {
       expect(prompt).toContain(escapeDataText(earlierLabel));
       expect(prompt).toContain(escapeDataText(laterLabel));
       expect(prompt).not.toContain(browseLabel);
@@ -83,7 +83,7 @@ describe("prompt-facing full-label cross-pillar contract", () => {
     expect(proseFacts.indexOf(`- ${earlierLabel}`)).toBeLessThan(proseFacts.indexOf(`- ${laterLabel}`));
     expect(ideate.prompt).toMatch(new RegExp(`\\[BELIEF-1\\][^\\n]*${escapeRegExp(earlierLabel)}`));
     expect(hygiene.metadata.citationMap?.["[BELIEF-1]"]).toBe(laterIdRecord.id);
-    expect(reconciliation.metadata.citationMap?.["[BELIEF-1]"]).toBe(laterIdRecord.id);
+    expect(review.disclosure.citationMap["[BELIEF-1]"]).toBe(laterIdRecord.id);
   });
 });
 
@@ -134,7 +134,7 @@ function repositoryRecord(record: (typeof demoRecords)[number]): RecordRepositor
 function repositoryFor(
   records: readonly RecordRepositoryRecord[],
   selectedRecords: readonly string[]
-): RecordHygieneRepository & SegmentReconciliationRepository {
+): RecordHygieneRepository & AcceptedSegmentChangeReviewRepository {
   const byId = new Map(records.map((record) => [record.id, record]));
   const results: RecordReadResult[] = records.map((record) => ({ ok: true, record }));
 

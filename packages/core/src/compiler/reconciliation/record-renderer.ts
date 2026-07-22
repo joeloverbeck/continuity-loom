@@ -4,7 +4,7 @@ import { escapeDataText } from "../escaping.js";
 import { reconciliationRecordCitationKeysFor, referenceStubCitationKeysFor } from "./citation-keys.js";
 import type { ReconciliationRecord, ReconciliationReferenceStub } from "./types.js";
 
-export const EMPTY_RECONCILIATION_RECORDS_TEXT = "No non-archived records exist in the selected reconciliation scope.";
+export const EMPTY_RECONCILIATION_RECORDS_TEXT = "No non-archived records exist in the selected record scope.";
 
 export interface RenderedReconciliationRecords {
   recordsText: string;

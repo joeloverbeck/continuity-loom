@@ -25,7 +25,9 @@ const generationBriefMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../api.js", () => ({
-  getProject: vi.fn()
+  getProject: vi.fn(),
+  acceptedSegmentChangeReviewCompile: vi.fn(),
+  acceptedSegmentChangeReviewAnalyze: vi.fn()
 }));
 
 vi.mock("../ProjectPicker.js", () => ({
@@ -137,13 +139,13 @@ describe("AppShell", () => {
       "Generate / Candidate",
       "Ideate",
       "Record Hygiene",
-      "Segment Reconciliation",
+      "Change Review",
       "Accepted Segments",
       "Story Configuration",
       "Settings"
     ]);
     expect(sidebar.tabIndex).toBe(0);
-    expect(within(navigation).queryByRole("link", { name: "Accepted-Segment Change Review" })).toBeNull();
+    expect(within(navigation).getByRole("link", { name: "Change Review" })).toBeTruthy();
 
     sidebar.focus();
     expect(document.activeElement).toBe(sidebar);

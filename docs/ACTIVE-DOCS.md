@@ -42,7 +42,7 @@ Every active Markdown document under `docs/` must appear in the registry below. 
 | `docs/specs/cast-member-draft-prompt-template.md` | Static record-free Cast Member dossier drafting prompt, per-field semantics, invention rules, and external-output contract. | specification | domain authority for Cast Member draft prompt template |
 | `docs/specs/ideation-prompt-template.md` | Grounded ideation prompt template text, request shape, slot rules, and output contract. | specification | domain authority for ideation prompt template |
 | `docs/specs/story-record-hygiene-prompt-template.md` | Whole-project-default atomic-record hygiene assistance prompt with optional working-set scope, source predicate, type-aware overlap/action rules, and output contract. | specification | domain authority for story-record hygiene prompt template |
-| `docs/specs/segment-reconciliation-prompt-template.md` | Single-segment accepted-prose reconciliation assistance prompt, source profile, record scope, generation-field boundary, schema catalog, structured output contract, provenance, paraphrase firewall, and UI quarantine. | specification | domain authority for the segment-reconciliation assistance prompt template |
+| `docs/specs/accepted-segment-change-review-prompt-template.md` | Single-segment accepted-prose change-review assistance prompt, source profile, nineteen-path field boundary, record scope, structured output contract, `evidence_excerpt` anti-invention witness, six coverage dimensions, paraphrase firewall, and UI quarantine. | specification | domain authority for the accepted-segment-change-review assistance prompt template |
 | `docs/prompt-template-rationale.md` | Rationale for prompt-template design choices and section ordering. | explanation | support |
 | `docs/specs/story-record-schema.md` | Conceptual story-record schema, generation-time brief schema, prompt-compilation behavior, validation requirements, and record taxonomy. | specification | domain authority for story record and generation-time brief schema |
 | `docs/specs/validation-rule-inventory.md` | Implemented validation diagnostic code inventory, severity audit, and same-change drift rule. | specification | domain authority for implemented validation-rule inventory |
@@ -81,7 +81,7 @@ These explain how the implemented local app is installed, run, verified, and use
 - `docs/specs/cast-member-draft-prompt-template.md`
 - `docs/specs/ideation-prompt-template.md`
 - `docs/specs/story-record-hygiene-prompt-template.md`
-- `docs/specs/segment-reconciliation-prompt-template.md`
+- `docs/specs/accepted-segment-change-review-prompt-template.md`
 - `docs/prompt-template-rationale.md`
 - `docs/specs/story-record-schema.md`
 - `docs/specs/validation-rule-inventory.md`
@@ -174,6 +174,6 @@ Future work must not violate these boundaries:
 
 ## Version note
 
-The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; template is `1.11.0`, compiler is `1.13.0`, and compiler contract is `1.15.0`. The non-user-facing `accepted-segment-change-review` candidate declares its own separate template, compiler, and contract versions `2.0.0` and the output identity `accepted_segment_change_review.v2` under `packages/core/src/compiler/change-review/`.
+The root and workspace package versions are private-package metadata and may remain `0.0.0`. The implemented prompt template, compiler, and compiler-contract versions are separate contract versions whose source of truth is `packages/core/src/version.ts`; template is `1.11.0`, compiler is `1.13.0`, and compiler contract is `1.16.0`. The active `accepted-segment-change-review` post-acceptance assistance workflow declares its own template and compiler versions `2.0.0`, contract version `2.1.0`, and the output identity `accepted_segment_change_review.v2` under `packages/core/src/compiler/change-review/`.
 
 Do not change app/package version semantics casually. If public release metadata becomes necessary, start with a focused release/versioning PRD; any resulting standing contract belongs under `docs/specs/`.

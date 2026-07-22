@@ -70,18 +70,17 @@ describe("DurableChangeReminder", () => {
     expect(screen.getByRole("link", { name: "Create CAST MEMBER" }).getAttribute("href")).toBe(
       "/records?create=CAST%20MEMBER"
     );
-    expect(screen.getByRole("link", { name: "Reconcile latest segment" }).getAttribute("href")).toBe("/segment-reconciliation");
-    expect(screen.queryByRole("link", { name: /Accepted-Segment Change Review/i })).toBeNull();
+    expect(screen.getByRole("link", { name: "Review latest segment" }).getAttribute("href")).toBe("/accepted-segment-change-review");
     expect(screen.getByRole("link", { name: "Update Generation Brief" }).getAttribute("href")).toBe("/generation-brief");
     expect(screen.getAllByRole("link", { name: /^Create / })).toHaveLength(12);
   });
 
-  it("navigates to segment reconciliation without acknowledging or snoozing", async () => {
+  it("navigates to accepted-segment change review without acknowledging or snoozing", async () => {
     mockProjectOpen(true);
     vi.mocked(getDurableChangeReminder).mockResolvedValue(activeReminder);
 
     renderReminder();
-    fireEvent.click(await screen.findByRole("link", { name: "Reconcile latest segment" }));
+    fireEvent.click(await screen.findByRole("link", { name: "Review latest segment" }));
 
     expect(acknowledgeDurableChangeReminder).not.toHaveBeenCalled();
     expect(screen.getByRole("heading", { name: "Segment 3 was accepted" })).toBeTruthy();

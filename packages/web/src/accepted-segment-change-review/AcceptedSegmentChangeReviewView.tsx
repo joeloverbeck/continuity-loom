@@ -207,7 +207,7 @@ export function AcceptedSegmentChangeReviewView({
     <section className="surface previewSurface" aria-labelledby="accepted-segment-change-review-title">
       <div className="projectHeader">
         <div>
-          <p className="eyebrow">Non-user-facing candidate</p>
+          <p className="eyebrow">Post-acceptance assistance</p>
           <h2 id="accepted-segment-change-review-title">Accepted-Segment Change Review</h2>
         </div>
       </div>
@@ -220,7 +220,7 @@ export function AcceptedSegmentChangeReviewView({
         <section aria-labelledby="change-review-local-compile-error">
           <h3 id="change-review-local-compile-error">Local request failed</h3>
           <p className="status statusError" role="alert">{compileState.message}</p>
-          <p>No provider call was made. Change scope or reopen the review harness to retry manually.</p>
+          <p>No provider call was made. Change scope or reopen the review to retry manually.</p>
         </section>
       ) : null}
 

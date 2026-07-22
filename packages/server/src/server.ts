@@ -14,7 +14,6 @@ import { registerRecordHygieneRoutes } from "./record-hygiene-routes.js";
 import { createProjectStoreManager } from "./project-store.js";
 import { registerRecordRoutes } from "./record-routes.js";
 import { registerReminderRoutes } from "./reminder-routes.js";
-import { registerSegmentReconciliationRoutes } from "./segment-reconciliation-routes.js";
 import { registerSettingsRoutes } from "./settings-routes.js";
 import { registerStoryNoteRoutes } from "./story-note-routes.js";
 import { registerStoryConfigRoutes } from "./story-config-routes.js";
@@ -26,8 +25,6 @@ export const LOOPBACK_HOST = "127.0.0.1";
 
 export interface ServerOptions {
   logger?: boolean;
-  /** Internal test/comparison-harness construction gate. Never read from runtime configuration. */
-  acceptedSegmentChangeReviewCandidate?: boolean;
 }
 
 export interface StartedServer {
@@ -97,10 +94,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerGenerateRoutes(app, projectStoreManager);
   registerIdeateRoutes(app, projectStoreManager);
   registerRecordHygieneRoutes(app, projectStoreManager);
-  registerSegmentReconciliationRoutes(app, projectStoreManager);
-  if (options.acceptedSegmentChangeReviewCandidate === true) {
-    registerAcceptedSegmentChangeReviewRoutes(app, projectStoreManager);
-  }
+  registerAcceptedSegmentChangeReviewRoutes(app, projectStoreManager);
   registerAcceptedRoutes(app, projectStoreManager);
   registerReminderRoutes(app, projectStoreManager);
   app.addHook("onClose", async () => {

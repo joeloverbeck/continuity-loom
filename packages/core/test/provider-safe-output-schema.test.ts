@@ -4,13 +4,11 @@ import {
   PROVIDER_SAFE_OUTPUT_SCHEMA_KEYWORDS,
   PROVIDER_UNSAFE_OUTPUT_SCHEMA_KEYWORDS,
   acceptedSegmentChangeReviewOutputJsonSchema,
-  collectDisallowedOutputSchemaKeywords,
-  segmentReconciliationOutputJsonSchema
+  collectDisallowedOutputSchemaKeywords
 } from "../src/index.js";
 
 const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
-  ["change-review", acceptedSegmentChangeReviewOutputJsonSchema()],
-  ["reconciliation", segmentReconciliationOutputJsonSchema()]
+  ["change-review", acceptedSegmentChangeReviewOutputJsonSchema()]
 ];
 
 describe("provider-safe strict output schemas", () => {
@@ -33,15 +31,9 @@ describe("provider-safe strict output schemas", () => {
 
   it("preserves the single-value contract literal as an enum, not a const", () => {
     const changeReview = acceptedSegmentChangeReviewOutputJsonSchema() as SchemaObject;
-    const reconciliation = segmentReconciliationOutputJsonSchema() as SchemaObject;
 
     expect((changeReview.properties as SchemaObject).contract).toEqual({
       enum: ["accepted_segment_change_review.v2"]
-    });
-    const reconciliationProps = reconciliation.properties as SchemaObject;
-    expect(reconciliationProps.contract).toEqual({ enum: ["segment_reconciliation.v1"] });
-    expect((reconciliationProps.source as SchemaObject).properties).toMatchObject({
-      profile: { enum: ["segment-reconciliation"] }
     });
   });
 

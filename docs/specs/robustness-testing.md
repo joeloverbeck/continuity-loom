@@ -31,7 +31,6 @@ P2 ideation compiler:
 
 P3 accepted-segment assistance compilers and parsers:
 
-- `packages/core/src/compiler/reconciliation/**/*.ts`
 - `packages/core/src/compiler/change-review/**/*.ts`
 - `packages/core/src/compiler/accepted-segment-echo.ts`
 
@@ -58,7 +57,7 @@ Commands:
 - `npm run test:coverage:core` runs scoped V8 coverage for compiler and validation sources.
 - `npm run mutation:prose` runs the P1 Stryker config.
 - `npm run mutation:ideation` runs the P2 Stryker config.
-- `npm run mutation:segment-reconciliation` runs the P3 Stryker config.
+- `npm run mutation:change-review` runs the P3 Stryker config.
 - `npm run mutation:validation` runs the P4 Stryker config.
 - `npm run mutation:core` runs the four pillar mutation configs sequentially.
 - `npm run mutation:gate -- <mutation.json> [floor|null]` summarizes Stryker JSON into compact counts and gate decisions.
@@ -105,7 +104,7 @@ must still be mutation-gated:
 - changed source for a pre-activation pillar with no reviewed baseline and
   `thresholds.break: null` reports and defers that pillar's changed-source
   mutation to the scheduled/manual robustness workflow instead of failing the PR
-  inline; the accepted-segment assistance pillar, including Segment Reconciliation and the non-user-facing candidate Accepted-Segment Change Review candidate, is currently pre-activation;
+  inline; the accepted-segment assistance pillar (Accepted-Segment Change Review) is currently pre-activation;
 - Stryker, Vitest, TypeScript, package manifest, lockfile, robustness script, or
   test-support generator changes are full-campaign triggers, but the PR
   changed-file job reports and defers those full campaigns to the scheduled or
@@ -114,30 +113,9 @@ must still be mutation-gated:
   status;
 - out-of-scope changes report an explicit no-op status.
 
-### P3 Compact Catalog Assurance
+### P3 Accepted-Segment Change Review Assurance
 
-Changes to `packages/core/src/compiler/reconciliation/schema-catalog.ts` remain
-P3 changed-source work. The compact Segment Reconciliation catalog has two
-locked regression dimensions:
-
-- semantic coverage compares registry order and every compact field path,
-  required/optional/default state, schema shape, reference marker, lifecycle
-  marker, and repository-managed/forbidden marker, with synthetic boolean,
-  number, literal, union, nested-object, default, escaping, and unsupported-
-  constraint probes; and
-- size coverage compiles the reproducible zero-record fixture, measures the
-  complete catalog section in UTF-16 code units, enforces the `136328` baseline
-  maximum of `68164`, and locks the current measured ceiling at `18696`.
-
-The local payload parsers remain the behavior authority after reference-token
-resolution. Catalog coverage does not replace parser, golden, route, or
-component regressions. While P3 remains pre-activation, the changed-source
-mutation command reports and defers this source to the scheduled/manual
-workflow exactly as described above; it must not invent an inline break floor.
-
-### P3 Accepted-Segment Change Review Candidate Assurance
-
-Changes under `packages/core/src/compiler/change-review/` and the shared accepted-segment echo helper are P3 changed-source work. Candidate evidence must include the eight synthetic gold scenarios, strict shallow-envelope and six-dimension coverage mutations, whole-response quarantine cases, deterministic record-permutation properties, selected-only consumed-guidance properties, server reconstruction/freshness/zero-write tests, unmounted component state/action/a11y tests, and real-browser candidate-harness proof. Candidate tests do not activate production identity or establish a mutation-score baseline; P3 remains pre-activation and follows the same scheduled/manual deferral rule.
+Changes under `packages/core/src/compiler/change-review/` and the shared accepted-segment echo helper are P3 changed-source work. Evidence must include the eight synthetic gold scenarios, strict shallow-envelope and six-dimension coverage mutations, whole-response quarantine cases, deterministic record-permutation properties, selected-only consumed-guidance properties, server reconstruction/freshness/zero-write tests, unmounted component state/action/a11y tests, and real-browser harness proof. These tests do not establish a mutation-score baseline; P3 remains pre-activation and follows the same scheduled/manual deferral rule.
 
 ## Cadence
 

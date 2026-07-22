@@ -1,7 +1,6 @@
 # Segment Reconciliation Prompt Template
 
-Status: active reference — domain authority for the segment-reconciliation assistance prompt template
-Authority: domain authority for the segment-reconciliation assistance prompt template (see `docs/ACTIVE-DOCS.md`)
+**Status**: COMPLETED — the Segment Reconciliation workflow shipped in v1 and was retired by PRD #145, issue #149 (`ASCR-FND-B-FINAL-ACTIVATION`). Superseded as the active post-acceptance assistance prompt-template authority by `docs/specs/accepted-segment-change-review-prompt-template.md`. Retained as historical evidence only; this is no longer active authority.
 Profile id: `segment-reconciliation`
 Template version: `1.10.0`
 Compiler version: `1.12.0`
@@ -172,3 +171,10 @@ Keepers are session-scoped scratch keyed by project and prompt fingerprint. Clea
 ## Change Control
 
 Any change to accepted-segment source, selection, span algorithm, field boundary, record scope, archive/status predicate, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output schema, parser validation, echo thresholds, provider-transform policy, or UI quarantine must update this document, `docs/specs/compiler-contract.md`, `docs/specs/story-record-schema.md` where applicable, template/compiler/contract versions, and golden/parser/route/UI tests in the same change.
+
+## Outcome
+
+- **Completion date**: 2026-07-22.
+- **What changed**: The Segment Reconciliation post-acceptance assistance workflow was fully removed and replaced by Accepted-Segment Change Review (PRD #145, issue #149; constitutional amendment `ASCR-FND-B-FINAL-ACTIVATION`). This document is retired from active authority and preserved here as historical evidence of the retired workflow's prompt-template contract.
+- **Deviations**: none. The replacement's active prompt-template authority is `docs/specs/accepted-segment-change-review-prompt-template.md`.
+- **Verification**: see issue #149 closeout — `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build` all pass with Segment Reconciliation removed and Accepted-Segment Change Review mounted as the sole production post-acceptance workflow.

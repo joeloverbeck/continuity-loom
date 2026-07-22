@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.15.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.16.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -57,53 +57,34 @@ Every record label and reference-summary label in this profile is the complete l
 
 The record-hygiene compiler must render the complete declared source set. It must not filter, rank, summarize, batch, or evict records by similarity, salience, urgency, keyword, model judgment, context budget, timestamps, or hidden UI state.
 
-### 2.3 Segment-reconciliation source profile
+### 2.3 Accepted-segment-change-review source profile
 
-The segment-reconciliation compiler renders from these sources only:
+`accepted-segment-change-review` is the sole user-facing post-acceptance assistance source profile. Its active prompt-template domain authority is `docs/specs/accepted-segment-change-review-prompt-template.md`, registered in `docs/ACTIVE-DOCS.md`. Its versions are template `2.0.0`, compiler `2.0.0`, and contract `2.1.0`; its output contract is `accepted_segment_change_review.v2`. Contract `2.1.0` enforces anti-invention through the `evidence_excerpt` witness (see §9.1 parser acceptance below), not through keyword heuristics; future-possibility discipline is prompt-led and playtest-observed.
 
-1. Template constants from `docs/specs/segment-reconciliation-prompt-template.md`.
-2. A `SegmentReconciliationSnapshot` containing exactly one accepted segment selected by the request. The only v1 selection is `latest`; the server fetches one latest accepted row directly and includes its complete text, sequence, id, and accepted timestamp.
-3. A purpose-limited saved-draft generation-field projection containing exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/specs/story-record-schema.md`. Missing and blank values remain explicit. The compiler does not consume `GenerationSessionReadyInput` and does not apply prose-readiness defaults.
-4. Every complete non-archived story record in the explicit user-selected record scope: `active_working_set` by default or `whole_project`. All registered record types and lifecycle states are included. The active-working-set scope reads `active_working_set.selected_records` only to form the selected contrast set; neither mode changes working-set membership or prose authority.
-5. Deterministic reference stubs containing only id, type, and the complete payload-derived label when an in-scope source references a non-rendered record. The stored repository `displayLabel` does not enter full-record or stub serialization, ordering, or citation assignment. Reference stubs are not record-change targets and do not import any other out-of-scope payload field.
-6. One deterministic `segment_reconciliation.schema_catalog.v1` line grammar derived from `recordTypeRegistry`, registered payload validators, and the lifecycle/reference metadata declared by `docs/specs/story-record-schema.md`. It is the only prompt-facing record-creation representation; parallel JSON Schema, field-descriptor payloads, compatibility aliases, and handwritten type/enum vocabularies are forbidden.
-7. A strict `SegmentReconciliationRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and the expected prompt fingerprint for analyze/send.
-8. Deterministic empty-state, span-partition, citation-key, output-schema, and verbatim-echo constants defined by this contract and the domain authority.
+The compiler renders from these sources only:
 
-The compiler generates accepted-segment span keys locally and renders the complete selected segment in source order. It must not select excerpts, retrieve by similarity or keyword, summarize, rank, batch, compress, or evict segment text or qualifying records. Provider context overflow is a reconciliation send failure, not permission to truncate.
-
-The segment-reconciliation source profile excludes older accepted segments, accepted-segment ranges, candidates and regenerations, automatic prose-derived summaries, author-private notes, story configuration, prompt archives, prior assistance output, provider memory, hidden UI state, archived records, and every generation-time field not explicitly registered for reconciliation.
-
-Segment-reconciliation output is advisory scratch. It grants no record or brief-field authority, adds no readiness diagnostic, changes no active-working-set membership, and never enters a prose prompt automatically.
-
-### 2.4 Accepted-segment-change-review non-user-facing candidate source profile
-
-Until the new-candidate-only readiness bar and a verified explicit steward `GO` are both recorded, `accepted-segment-change-review` is a non-user-facing candidate source profile. It has no active prompt-template authority, production navigation, reminder entry, public route, runtime feature toggle, compatibility alias, or prose-prompt authority. Its transitional versions are template `2.0.0`, compiler `2.0.0`, and contract `2.1.0`; its output contract is `accepted_segment_change_review.v2`. Candidate contract `2.1.0` retires the brittle keyword-heuristic parser quarantines (see §9.1 parser acceptance below): anti-invention is enforced by the `evidence_excerpt` witness, and future-possibility discipline is prompt-led and playtest-observed.
-
-The candidate compiler renders from these sources only:
-
-1. Versioned candidate constants in `packages/core/src/compiler/change-review/`, governed transitionally by `docs/principles/FOUNDATIONS.md`, PRD #145, the readiness-transition amendment ratified through issue #146, issue #147, and this contract.
+1. Versioned constants in `packages/core/src/compiler/change-review/`, governed by `docs/principles/FOUNDATIONS.md`, PRD #145, the final-activation amendment ratified through issue #146, issue #149, and this contract.
 2. Exactly one accepted segment selected by an explicit `segmentSelection: "latest"` request. The server fetches one latest accepted row directly and includes its complete text, id, sequence, and accepted timestamp.
-3. Exactly the same nineteen saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths used by Segment Reconciliation. Missing and blank values remain explicit; no prose-readiness normalization or other Generation Brief surface is imported.
+3. Exactly the nineteen saved-draft CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths registered in `docs/specs/story-record-schema.md`. Missing and blank values remain explicit; no prose-readiness normalization or other Generation Brief surface is imported.
 4. Every complete non-archived record in one explicit scope: `active_working_set` by default or `whole_project` by explicit choice. Every qualifying record is rendered completely, in registry-type/full-label/id order, without a lifecycle-status filter.
 5. Minimal deterministic reference stubs containing only id, type, and complete payload-derived label when an in-scope record references a non-rendered record. Stubs support citation labels only; they are not target hints or change targets and import no payload authority.
-6. Deterministic accepted-segment spans, brief/record citation keys, disclosure counts, prompt length and token estimate, candidate versions, and prompt fingerprint.
+6. Deterministic accepted-segment spans, brief/record citation keys, disclosure counts, prompt length and token estimate, versions, and prompt fingerprint.
 7. A strict `AcceptedSegmentChangeReviewRequest` containing `segmentSelection: "latest"`, `recordScope: "active_working_set" | "whole_project"`, and, for Analyze only, the inspected expected fingerprint.
 8. A strict shallow model-output schema whose only top-level keys are `contract`, `items`, and `coverage`.
 
 The compiler renders the complete selected segment and every qualifying record. It must not retrieve, rank, semantically filter, summarize, batch, trim, compress, or token-budget-evict source. An unrepresentable or oversize source fails visibly. Analyze rebuilds the source and fingerprint on the server, rejects stale input before provider transport, and sends only after explicit inspection and confirmation.
 
-The candidate excludes every older accepted segment, segment range, candidate, regeneration, automatic prose-derived summary, author-private note, story configuration value, prompt archive, prior assistance output, provider memory, hidden UI state, archived record, schema catalog, lifecycle catalog, JSON Patch vocabulary, creation payload, full proposed canonical value, and model-selected destination.
+This profile excludes every older accepted segment, segment range, candidate, regeneration, automatic prose-derived summary, author-private note, story configuration value, prompt archive, prior assistance output, provider memory, hidden UI state, archived record, schema catalog, lifecycle catalog, JSON Patch vocabulary, creation payload, full proposed canonical value, and model-selected destination.
 
-Consumed-guidance listing is a separate deterministic control, not candidate prompt source or model output. It may list only the exact nonblank families named in `docs/principles/FOUNDATIONS.md` §9.1, preselects nothing, and removes only explicitly selected entries from an editable Generation Brief clone. Existing Generation Brief Save remains the sole project-store mutation.
+Consumed-guidance listing is a separate deterministic control, not a prompt source or model output. It may list only the exact nonblank families named in `docs/principles/FOUNDATIONS.md` §9.1, preselects nothing, and removes only explicitly selected entries from an editable Generation Brief clone. Existing Generation Brief Save remains the sole project-store mutation.
 
-### 2.5 Universal exclusions
+### 2.4 Universal exclusions
 
 No prose prompt, prose-aligned assistance prompt, or project-review assistance prompt may use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, automatic prose-derived summaries, or author-private notes.
 
-The only accepted-prose exceptions are the active segment-reconciliation source profile in §2.3 and the non-user-facing candidate accepted-segment-change-review source profile in §2.4. Each reads exactly one explicitly requested latest accepted segment for bounded advisory review. No prompt compiler may read any other accepted-prose source or persist a derived summary.
+The only accepted-prose exception is the active accepted-segment-change-review source profile in §2.3. It reads exactly one explicitly requested latest accepted segment for bounded advisory review. No prompt compiler may read any other accepted-prose source or persist a derived summary.
 
-Generation-time fields may override story defaults for the current prose request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy. Segment-reconciliation proposals and Accepted-Segment Change Review output have no override effect at all.
+Generation-time fields may override story defaults for the current prose request, but they do not override hard canon, current authoritative state, physical continuity, POV/reveal locks, or governing provider/platform policy. Accepted-Segment Change Review output has no override effect at all.
 
 ## 3. Prompt Section Orders
 
@@ -260,29 +241,9 @@ All sections render deterministically. When no records satisfy the source predic
 
 No prose or ideation section renders in the record-hygiene prompt.
 
-### 3.4 Segment-Reconciliation Prompt Section Order
+### 3.4 Accepted-Segment Change Review Prompt Section Order
 
 The compiler renders every section in this exact order:
-
-1. `<segment_reconciliation_role>`
-2. `<segment_reconciliation_source_contract>`
-3. `<segment_reconciliation_request>`
-4. `<accepted_segment_evidence>`
-5. `<current_reconciliation_fields>`
-6. `<record_contrast_scope>`
-7. `<record_contrast_records>`
-8. `<segment_reconciliation_field_rules>`
-9. `<segment_reconciliation_record_rules>`
-10. `<record_creation_schema_catalog>`
-11. `<segment_reconciliation_provenance_and_paraphrase_rules>`
-12. `<segment_reconciliation_review_procedure>`
-13. `<segment_reconciliation_output_format>`
-
-All thirteen sections always render. The complete source contract remains at the front edge and the complete strict JSON output contract remains at the final edge. Optional source values use deterministic explicit empty states; source sections are never omitted because their collections are empty.
-
-### 3.5 Accepted-Segment Change Review Candidate Prompt Section Order
-
-The non-user-facing candidate compiler renders every section in this exact order:
 
 1. `<accepted_segment_change_review_role>`
 2. `<accepted_segment_change_review_source_contract>`
@@ -293,7 +254,7 @@ The non-user-facing candidate compiler renders every section in this exact order
 7. `<accepted_segment_change_review_procedure>`
 8. `<accepted_segment_change_review_output_format>`
 
-All eight sections always render. No Segment Reconciliation formal-mutation section or schema catalog is reused. Complete source stays before review instructions; the strict shallow output contract remains at the final edge.
+All eight sections always render. No formal-mutation section or schema catalog is present. Complete source stays before review instructions; the strict shallow output contract remains at the final edge.
 
 ## 4. Exhaustive placeholder mapping
 
@@ -312,35 +273,17 @@ The record-hygiene prompt has no generation placeholders. Its dynamic mapping is
 
 Record payload values are data, not instructions. Canonical JSON must escape `<`, `>`, and `&`. Timestamps, archive flags, user-order values, excluded record payloads, story config, generation-session fields, accepted prose, candidates, notes, and provider settings never render.
 
-### 4.2 Segment-reconciliation source mapping
+### 4.2 Accepted-Segment Change Review source mapping
 
 | Prompt destination | Deterministic source | Empty-state behavior | Validation and exclusion rule |
 |---|---|---|---|
-| `<segment_reconciliation_role>` | versioned template constant | never empty | block if absent |
-| `<segment_reconciliation_source_contract>` | versioned template constant plus fixed source-profile literals | never empty | must name one segment, nineteen fields, selected record scope, schema catalog, all exclusions, and no-eviction rule |
-| `<segment_reconciliation_request>` | parsed request, source profile, explicit selected record scope, selected accepted-segment id and sequence | never empty | only `segmentSelection: latest`; scope must be explicit |
-| `<accepted_segment_evidence>` | complete selected accepted-segment text partitioned by the registered deterministic span algorithm | block with `no-accepted-segment` when absent | no excerpt selection, archive access, summary, or truncation |
-| `<current_reconciliation_fields>` | exact saved-draft paths registered in `docs/specs/story-record-schema.md` | every path renders `missing`, `blank`, or canonical present value | no readiness normalization and no other generation fields |
-| `<record_contrast_scope>` | explicit request scope plus deterministic source counts/predicates | never empty | archive excluded; every lifecycle state included; no ranking or status filter |
-| `<record_contrast_records>` | every full qualifying record plus declared reference stubs | `No non-archived records exist in the selected reconciliation scope.` | malformed qualifying row blocks; stubs are not change targets |
-| `<segment_reconciliation_field_rules>` | versioned template constant plus generated allowed-path/type table | never empty | manual directive, stop guidance, voice controls, working-set curation, validation focus, generation context, and story configuration excluded |
-| `<segment_reconciliation_record_rules>` | versioned update/deactivate/reference-token contract plus generated lifecycle map | never empty | only UPDATE_FIELDS and DEACTIVATE; no archive/delete/merge/remove |
-| `<record_creation_schema_catalog>` | the single compact line grammar defined by this contract and `docs/specs/segment-reconciliation-prompt-template.md`, generated from the registry, payload validators, and lifecycle/reference metadata | block if any registered type, field path, presence/default, scalar/list/object/union/literal/enum shape, reference marker, lifecycle marker, or managed/forbidden field cannot be represented | registry order, depth-first field order, canonical JSON tokens, one field row per path, shared UUID pattern once; reference cardinality `one`, `many`, or `one_or_many`; complete section baseline `136328`, maximum `68164`, named current ceiling `18696` UTF-16 code units |
-| `<segment_reconciliation_provenance_and_paraphrase_rules>` | versioned template constant plus generated citation grammar and echo thresholds | never empty | every proposal cites segment evidence; no quote field; material echo quarantines full output |
-| `<segment_reconciliation_review_procedure>` | versioned template constant | never empty | fixed compare-before-create procedure |
-| `<segment_reconciliation_output_format>` | generated strict output JSON Schema plus fixed pure-JSON instruction | never empty | no Markdown/preamble; local full-response validation remains authoritative |
-
-### 4.3 Accepted-Segment Change Review candidate source mapping
-
-| Prompt destination | Deterministic source | Empty-state behavior | Validation and exclusion rule |
-|---|---|---|---|
-| `<accepted_segment_change_review_role>` | candidate versioned constant | never empty | non-user-facing candidate advisory accounting; no prose, future possibility, canonical value, patch, lifecycle action, or creation payload |
+| `<accepted_segment_change_review_role>` | versioned constant | never empty | advisory accounting; no prose, future possibility, canonical value, patch, lifecycle action, or creation payload |
 | `<accepted_segment_change_review_source_contract>` | source profile, selected scope, archive/completeness predicates | never empty | must name `accepted-segment-change-review`, `latest`, complete scope, and no-omission rule |
-| `<accepted_segment_change_review_request>` | accepted-segment id/sequence/accepted timestamp, selected scope source count, candidate versions | never empty | trusted source metadata is server-owned and never accepted from model output |
+| `<accepted_segment_change_review_request>` | accepted-segment id/sequence/accepted timestamp, selected scope source count, versions | never empty | trusted source metadata is server-owned and never accepted from model output |
 | `<accepted_segment_evidence>` | complete latest accepted segment partitioned by the shared deterministic span algorithm | absent segment or empty spans block | no older chooser, excerpt selection, archive access, summary, or truncation |
 | `<current_change_review_fields>` | all nineteen declared saved-draft paths in fixed order | missing values render an explicit state; blank values remain blank | no Generation Brief source outside CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF |
 | `<record_contrast_records>` | every complete qualifying record and minimal label-only reference stub | deterministic empty-record text | no archived row, hidden status filter, ranking, target import, or schema/lifecycle catalog |
-| `<accepted_segment_change_review_procedure>` | candidate versioned review and epistemic rules plus fixed six dimensions | never empty | future possibility excluded; each item carries an `evidence_excerpt` — an `established change` item's excerpt is an exact three-to-seven-word verbatim excerpt occurring in one cited evidence span, an `interpretation requiring author judgment` item's excerpt is the empty string, and `change_statement` is independently readable present-tense English rather than the extractive witness; an explicitly unstated implication cannot be established; stubs never become targets |
+| `<accepted_segment_change_review_procedure>` | versioned review and epistemic rules plus fixed six dimensions | never empty | future possibility excluded; each item carries an `evidence_excerpt` — an `established change` item's excerpt is an exact three-to-seven-word verbatim excerpt occurring in one cited evidence span, an `interpretation requiring author judgment` item's excerpt is the empty string, and `change_statement` is independently readable present-tense English rather than the extractive witness; an explicitly unstated implication cannot be established; stubs never become targets |
 | `<accepted_segment_change_review_output_format>` | generated strict shallow JSON Schema plus pure-JSON instruction | never empty | only `contract`, `items`, `coverage`; local whole-response parser is authoritative |
 
 Parser acceptance requires sequential `ITEM-001`, `ITEM-002`, and later ids; an independently readable present-tense `change_statement`; `evidence` and `contrast` arrays that contain only exact bracketed citation keys with no appended prose; nonblank target hints and uncertainty; one approved epistemic status; one approved retention horizon; resolvable source keys; and exactly one nonblank reasoned row for each of the six dimensions. Every item carries an `evidence_excerpt` string: an `established change` item's `evidence_excerpt` is an exact three-to-seven-word verbatim excerpt occurring in one of the item's cited evidence spans, and an `interpretation requiring author judgment` item's `evidence_excerpt` is the empty string. `change_statement` is no longer the extractive witness and is never required to equal the excerpt; `uncertainty_or_rival_reading` is free prose and no longer carries a leading `Explicit source support` witness. Terminal punctuation may differ between the excerpt and its source span, but a missing, paraphrased, overlong, underlong, uncited, or interpretation-populated excerpt quarantines the whole response. Richer or unstated synthesis must use `interpretation requiring author judgment`. Duplicate or unknown coverage, enum drift, unknown citations, or material accepted-prose echo quarantine the whole response. Anti-invention is enforced structurally by the `evidence_excerpt` witness above: an invented or explicitly unstated implication has no qualifying verbatim excerpt in a cited span, so it cannot be labeled `established change` and must use `interpretation requiring author judgment`. Future-possibility discipline is prompt-led — the role prompt directs the model not to draft future possibilities — and is observed through playtest, not enforced by parser keyword heuristics (which false-positive on ordinary advisory modal verbs and on epistemic hedging in `uncertainty_or_rival_reading`). Quarantine returns a safe reason and manual recovery only, never raw provider output.
@@ -565,10 +508,9 @@ Repeated warnings should deduplicate by affected field/record group and present 
 - `<secrets_and_reveal_constraints>` always renders the section tag and the static reveal-permission rule. `writer_visible_hidden_truths`, `secret_holders`, `secret_non_holders_to_protect`, `allowed_clues_and_surface_cues`, `forbidden_reveals`, and `reveal_permissions` omit both label and value when empty. Each rendered secret value-line carries its `Secret N` label, where `N` equals the SECRET citation-key ordinal; omitted value-lines carry no label. The affirmative `forbidden_reveals: "none"` sentinel is content, not empty state, and still renders its deterministic sentence with its `Secret N:` prefix.
 - `<hard_canon>`, `<present_minor_cast>`, and `<offstage_relevance>` are the designated optional universal-prompt sections. `<hard_canon>` omits the entire section when no hard-canon FACT is selected and no immutable story lock is active. `<present_minor_cast>` omits the entire section when no present-minor cast record is selected. `<offstage_relevance>` omits the entire section only when no offstage cast record is selected and no offstage pressure or interruption is active.
 - Optional list sub-blocks inside `<relevant_facts_beliefs_events>` and `<locations_objects_affordances>` omit both the sub-block header and value when empty. If all sibling sub-blocks in one of those composite sections are empty, the section tag remains and renders the single deterministic section-level empty state `None specified`.
-- Segment Reconciliation always renders all nineteen allowed brief fields. A missing value renders the literal state `missing`; a present empty string/list renders `blank`; neither is silently omitted.
-- Accepted-Segment Change Review always renders all nineteen candidate review paths. Missing values render an explicit missing state and blank values remain explicit; neither is omitted. An empty candidate `items` list is valid only with all six unique reasoned coverage rows and remains visibly unverified advice.
-- `<record_contrast_records>` renders `No non-archived records exist in the selected reconciliation scope.` when no full records qualify. Reference stubs, if any, render in their declared sub-block. Empty records do not disable send because brief and creation proposals may still be useful.
-- An absent accepted segment is not an empty state. It blocks reconciliation with `no-accepted-segment`.
+- Accepted-Segment Change Review always renders all nineteen review paths. Missing values render an explicit missing state and blank values remain explicit; neither is omitted. An empty `items` list is valid only with all six unique reasoned coverage rows and remains visibly unverified advice.
+- `<record_contrast_records>` renders `No non-archived records exist in the selected record scope.` when no full records qualify. Reference stubs, if any, render in their declared sub-block. Empty records do not disable send because change-review items and coverage may still be useful.
+- An absent accepted segment is not an empty state. It blocks the operation with `no-accepted-segment`.
 - Schema-catalog generation failure, malformed in-scope source, or source that cannot fit without omission is not an empty state. It blocks the operation.
 
 ## 9. Prompt-facing vs validation-only fields
@@ -600,9 +542,7 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 
 - active cast local function labels such as active speaker, active silent, POV narrator, or present-minor speaker.
 
-For Segment Reconciliation, accepted-segment text, source spans, current saved-draft values, full in-scope record payloads, reference stubs, and the generated compact record-schema catalog are assistance-prompt-facing data only. Prompt fingerprints, offsets, versions, raw ids, parse reason codes, and temporary creation-validation ids are audit/validation metadata. None is prose-prompt-facing. Segment-reconciliation output is never prompt-facing for prose generation.
-
-For the non-user-facing candidate Accepted-Segment Change Review candidate, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
+For Accepted-Segment Change Review, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
 
 ## 10. Change-control rule
 
@@ -612,6 +552,4 @@ Changes to pressure-predicate inclusion, pressure-summary field precedence, or V
 
 Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/specs/story-record-hygiene-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, compiler/template versions, and golden tests in the same change.
 
-Any change to the segment-reconciliation source profile, accepted-segment selection, span algorithm, allowed brief-field list, record scopes, archive/status predicate, ordering, record/reference serialization, schema-catalog generation, lifecycle destinations, reference-token grammar, section order, request shape, output JSON Schema, parser validation, verbatim-echo thresholds, provider-transform policy, or UI quarantine must update `docs/specs/segment-reconciliation-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, template/compiler/contract versions, and golden/parser/route/UI tests in the same change. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
-
-Until a verified explicit steward `GO`, any change to the non-user-facing candidate Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, candidate versions, request/disclosure shape, output schema, `evidence_excerpt` witness rule, parser quarantine, shared echo threshold, provider policy, scratch behavior, consumed-guidance allowlist, offline readiness bar, or live conformance smoke protocol must update this contract and focused core/route/component/property tests in the same revision. It must not update the active Segment Reconciliation prompt-template authority or user guide, expose the candidate through production navigation/reminder/runtime configuration, or treat candidate completion as activation approval.
+Any change to the Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, versions, request/disclosure shape, output schema, `evidence_excerpt` witness rule, parser quarantine, shared echo threshold, provider policy, scratch behavior, or consumed-guidance allowlist must update `docs/specs/accepted-segment-change-review-prompt-template.md`, this contract, `docs/specs/story-record-schema.md` and `docs/user-guide.md` where applicable, template/compiler/contract versions, and focused core/route/component/property tests in the same revision. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.

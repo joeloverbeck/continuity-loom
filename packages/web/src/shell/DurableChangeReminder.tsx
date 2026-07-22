@@ -114,7 +114,7 @@ export function DurableChangeReminder(): React.JSX.Element | null {
       </ul>
 
       <div className="durableReminderLinks" aria-label="Record creation quick links">
-        {reminder.latestSegment ? <Link to="/segment-reconciliation">Reconcile latest segment</Link> : null}
+        {reminder.latestSegment ? <Link to="/accepted-segment-change-review">Review latest segment</Link> : null}
         {quickLinkTypes.map((recordType) => (
           <Link key={recordType} to={createRecordPath(recordType)}>
             Create {recordType}

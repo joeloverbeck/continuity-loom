@@ -3,7 +3,7 @@ import { spawn } from "node:child_process";
 const configs = [
   "stryker.prose.config.mjs",
   "stryker.ideation.config.mjs",
-  "stryker.segment-reconciliation.config.mjs",
+  "stryker.change-review.config.mjs",
   "stryker.validation.config.mjs"
 ];
 

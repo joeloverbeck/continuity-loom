@@ -22,7 +22,7 @@ Completed historical implementation specs remain under `archive/specs/`.
 | [`cast-member-draft-prompt-template.md`](./cast-member-draft-prompt-template.md) | Static record-free Cast Member dossier drafting prompt and output contract. |
 | [`ideation-prompt-template.md`](./ideation-prompt-template.md) | Grounded ideation request, slot, and output contract. |
 | [`story-record-hygiene-prompt-template.md`](./story-record-hygiene-prompt-template.md) | Story-record hygiene source, comparison, and output contract. |
-| [`segment-reconciliation-prompt-template.md`](./segment-reconciliation-prompt-template.md) | Segment Reconciliation source profile, output contract, and quarantine rules. |
+| [`accepted-segment-change-review-prompt-template.md`](./accepted-segment-change-review-prompt-template.md) | Accepted-Segment Change Review source profile, nineteen-path field boundary, output contract, evidence_excerpt witness, coverage dimensions, and quarantine rules. |
 | [`story-record-schema.md`](./story-record-schema.md) | Story-record and generation-time brief schemas and record taxonomy. |
 | [`validation-rule-inventory.md`](./validation-rule-inventory.md) | Implemented validation diagnostic namespace and severities. |
 | [`stress-suite.md`](./stress-suite.md) | Canonical compiler, validation, prompt, and assistance stress cases. |

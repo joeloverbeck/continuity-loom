@@ -84,25 +84,6 @@ Record Hygiene coverage is advisory-assistance coverage, not validation coverage
 | RH-24 | Selected archived or terminal record excluded | Predicate preservation within scope | Server snapshot-builder tests cover selected archived/terminal exclusion. |
 | RH-25 | Whole-project scope unchanged | Default mode regression | Server snapshot-builder tests prove whole-project mode ignores working-set membership; Record Hygiene view tests and browser smoke keep default whole-project disclosure visible. |
 
-## Segment Reconciliation Assistance Coverage
-
-Segment Reconciliation coverage is advisory-assistance coverage, not validation coverage. These rows must stay complete with the SR-01-SR-12 cases in `docs/specs/stress-suite.md`: every SR case needs a row here, and every row must name the proof surface that keeps latest-segment evidence bounded, scoped, quarantined, citation-grounded, and non-mutating.
-
-| # | Stress case | Risk area | Required proof surface |
-|---|---|---|---|
-| SR-01 | Long injection segment | Accepted evidence escaping; prompt-injection containment | Core golden prompt asserts escaped accepted evidence and one output-format section. |
-| SR-02 | Near-context-limit segment | No compression or context transform | Route prompt-too-large test blocks send when prompt plus output budget exceeds context. |
-| SR-03 | Oversize whole project | No record eviction or fallback scope | Route tests assert `segment-reconciliation-prompt-too-large` with no transport call. |
-| SR-04 | No selected records | Truthful empty active-working-set scope | Core golden and route compile tests cover empty record rendering with accepted segment present. |
-| SR-05 | Secret reveal | Secret disclosure and non-mutating output | Web view tests assert SECRET disclosure and suggestion-only controls. |
-| SR-06 | Object transfer | Existing-record patch review | Parser and UI card tests cover JSON patch proposals with copy/navigation/keeper controls only. |
-| SR-07 | Entrance, exit, and line-of-sight change | Brief field allowlist | Parser field-path tests and web grouped-card rendering cover brief proposals. |
-| SR-08 | PLAN/CLOCK/OBLIGATION/CONSEQUENCE transitions | Lifecycle and pressure-record changes | Parser lifecycle-destination validation and route typed-output tests cover record-change proposals. |
-| SR-09 | New ENTITY plus CAST MEMBER dependency | Creation dependency graph | Parser creation-dependency tests and web card tests cover new-record suggestions without apply/create controls. |
-| SR-10 | Invented enum response | Registry enum enforcement | Parser `invalid-enum` tests quarantine the full response. |
-| SR-11 | Accepted-handoff quote response | Accepted-prose echo firewall | Parser echo-guard tests reject long accepted-prose substrings and token runs. |
-| SR-12 | Post-inspection new acceptance | Fingerprint drift rejection | Route and web stale-prompt tests cover `reconciliation-source-changed` before transport. |
-
 ## Readiness and draftability coverage
 
 The numbered table above maps each stress case to implemented behavior. This readiness table cuts across Cases 27-31 by shared product surface so draftability, normalization, warning behavior, and provider separation stay visible without duplicating every case row.

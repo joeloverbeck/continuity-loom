@@ -169,7 +169,7 @@ describe("generate routes", () => {
         temperature: 0.4,
         maxOutputTokens: 2200,
         topP: 0.9,
-          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.15.0" }
+          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
       }
     });
     expect(Object.keys(body.metadata).some((key) => /apiKey|api_key|key|prompt|candidate/i.test(key))).toBe(false);
@@ -205,7 +205,7 @@ describe("generate routes", () => {
       provider: "openrouter",
       temperature: 0.7,
       maxOutputTokens: 1800,
-          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.15.0" }
+          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
     });
     expect(body.metadata).not.toHaveProperty("topP");
   });

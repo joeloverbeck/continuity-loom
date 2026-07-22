@@ -26,9 +26,9 @@ jobs:
           - pillar: ideation
             label: P2 ideation mutation
             script: mutation:ideation
-          - pillar: segment-reconciliation
-            label: P3 segment-reconciliation mutation
-            script: mutation:segment-reconciliation
+          - pillar: change-review
+            label: P3 change-review mutation
+            script: mutation:change-review
           - pillar: validation
             label: P4 validation mutation
             script: mutation:validation

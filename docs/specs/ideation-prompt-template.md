@@ -120,7 +120,7 @@ Focus remains mounted across Ideas/Questions, Count, Dormant slot, Get ideas/Get
 
 ## Canon, Prose, And Persistence Boundaries
 
-Author focus is never story state or continuity authority. It is not imported, linked, prefilled, inferred, or derived from records, Generation Brief fields, Private Notes, candidates, accepted prose, rejected or superseded output, prior prompts, keepers, reconciliation or hygiene output, or other scratch. It never changes active-working-set membership and never enters a prose prompt automatically.
+Author focus is never story state or continuity authority. It is not imported, linked, prefilled, inferred, or derived from records, Generation Brief fields, Private Notes, candidates, accepted prose, rejected or superseded output, prior prompts, keepers, change-review or hygiene output, or other scratch. It never changes active-working-set membership and never enters a prose prompt automatically.
 
 Focused ideas and malformed output retain the existing quarantine with no apply, insert, accept, or use-as-prose action. Focus and prompt text are excluded from project and browser storage, keeper payloads, backup, migration, export, accepted-segment provenance, analytics, telemetry, and process logs. This feature adds no schema migration, background send, retry, provider fallback, or second provider call.
 

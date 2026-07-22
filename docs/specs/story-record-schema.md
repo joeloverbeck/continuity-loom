@@ -216,7 +216,7 @@ Rules:
 - For `first_segment`, all handoff prose fields are optional. The compiler renders a deterministic first-segment empty state when no recent causal context exists.
 - For `continuation_after_accepted_segment`, a user-authored handoff is required. The required continuation handoff must include a recent causal bridge and either a last visible moment or a begin-after point.
 - Durable changes from accepted prose must be represented in selected records or current state before the next prompt.
-- Segment Reconciliation may inspect the saved-draft values of `recent_causal_context`, `last_visible_moment`, and `begin_after` alongside exactly one latest accepted segment and may return paraphrased advisory replacements or fills. Those suggestions are not user-authored generation-time fields, do not satisfy readiness, and must not be inserted automatically. No proposal may contain a material verbatim passage from accepted prose; provenance uses accepted-segment span keys instead of quotations. The user must independently author any accepted handoff value in the Generation Brief editor.
+- Accepted-Segment Change Review may inspect the saved-draft values of `recent_causal_context`, `last_visible_moment`, and `begin_after` alongside exactly one latest accepted segment and may surface advisory change statements that name these handoff fields as likely destinations. Those items are not user-authored generation-time fields, do not satisfy readiness, and must not be inserted automatically. No item may contain a material verbatim passage from accepted prose; provenance uses accepted-segment evidence keys instead of quotations. The user must independently author any accepted handoff value in the Generation Brief editor.
 
 ### 3.4 MANUAL MOMENT DIRECTIVE
 
@@ -1042,9 +1042,9 @@ Each included record renders its full payload as escaped canonical JSON plus one
 
 Hygiene findings are advisory assistance output. They do not mutate lifecycle, do not satisfy validation, do not add validation diagnostics, and do not change prose compilation or active-working-set membership.
 
-### 9.4 Segment-reconciliation assistance projection
+### 9.4 Accepted-Segment Change Review assistance projection
 
-Segment Reconciliation is a `segment-reconciliation` assistance surface, not a prose-prompt source, not a validation authority, and not a mutation surface. It adds no stored schema fields.
+Accepted-Segment Change Review is an `accepted-segment-change-review` assistance surface, not a prose-prompt source, not a validation authority, and not a mutation surface. It adds no stored schema fields.
 
 Its accepted-prose source is exactly one accepted segment selected by the explicit request. The only v1 selection is the latest accepted segment. No accepted-segment range, archive, candidate, regeneration, or automatic prose-derived summary is part of the projection.
 
@@ -1082,33 +1082,7 @@ The record projection uses one explicit user-selected scope:
 
 `active_working_set` is the v1 default. Neither scope applies a semantic-active predicate. Every qualifying record renders its full payload and one complete payload-derived label in deterministic registry/type-label-id order. The stored browse label does not enter the projection, ordering, or citation assignment. Archived records are excluded. Minimal id/type/complete-label reference stubs may render for non-scope targets referenced by included source data; deriving that label does not import any other target payload field, and stubs do not become record-change targets or grant prose authority.
 
-The record-creation schema catalog is generated deterministically from the registered record payload validators as the single compact `segment_reconciliation.schema_catalog.v1` line grammar defined by `docs/specs/compiler-contract.md` and `docs/specs/segment-reconciliation-prompt-template.md`. It includes every registered record type; every nested field path and validator-input required or optional state; defaults; text/prose, boolean, number, literal, union, list, and closed-object shapes; every enum vocabulary; repository-managed and forbidden-output id rules; reference cardinality (`one`, `many`, or `one_or_many`), role, and target types; lifecycle fields or projected lifecycle values; legal lifecycle values; and deactivation destinations. A payload id renders as its one owning field marker; types whose repository id is outside the payload render one repository-envelope marker instead. Runtime code must not maintain a second handwritten copy or parallel prompt encoding of type, path, enum, reference, or lifecycle vocabularies.
-
-Record blocks follow registry order. Field rows use depth-first validator declaration order and each path appears once. Canonical JSON tokens preserve declared value/default order and escape `<`, `>`, and `&`; the shared registered UUID pattern appears once. Catalog generation fails closed on any unrepresentable registry type, schema keyword or shape, field path, presence/default, reference marker, lifecycle marker, or repository-managed/forbidden field. The current zero-record section baseline is `136328` UTF-16 code units, the 50-percent maximum is `68164`, and the named measured compact ceiling is `18696`.
-
-The registered type set at adoption is ENTITY, ENTITY STATUS, CAST MEMBER, FACT, BELIEF, SECRET, LOCATION, OBJECT, VISIBLE AFFORDANCE, EVENT, INTENTION, PLAN, CLOCK, OBLIGATION, CONSEQUENCE, OPEN THREAD, RELATIONSHIP, and EMOTION. Tests compare the generated catalog to the registry so the catalog follows future same-change schema amendments.
-
-Legal Segment Reconciliation deactivation destinations are:
-
-- ENTITY, ENTITY STATUS, CAST MEMBER, FACT: none;
-- BELIEF: `resolved`, `abandoned`;
-- SECRET: `disproven`, `abandoned`;
-- LOCATION: `inactive`, `destroyed`, `inaccessible`;
-- OBJECT: `lost`, `destroyed`, `transferred`, `inactive`;
-- VISIBLE AFFORDANCE: `unavailable`;
-- EVENT: `resolved`, `background`, `abandoned`;
-- INTENTION: `satisfied`, `abandoned`;
-- PLAN: `fulfilled`, `failed`, `abandoned`, `revised` through `plan_status`;
-- CLOCK: `resolved`, `abandoned`;
-- OBLIGATION: `closed`, `abandoned`, `transferred`;
-- CONSEQUENCE: `resolved`, `abandoned`;
-- OPEN THREAD: `answered`, `resolved`, `abandoned`, `superseded`;
-- RELATIONSHIP: `resolved`, `abandoned`;
-- EMOTION: `settled`.
-
-A deactivation proposal names one destination above and may include additional non-lifecycle field updates. It never means archive, delete, remove, or merge.
-
-Every advisory proposal carries one or more deterministic accepted-segment span keys plus current field/record contrast keys. Creation proposals must name a registered type, use only schema-valid fields and enum values, and pass the same payload parser after temporary reference-token resolution. Output never mutates records, generation-time fields, lifecycle, validation, prose compilation, or active-working-set membership.
+Every advisory item carries one or more deterministic accepted-segment evidence keys plus current field/record contrast keys. Output never mutates records, generation-time fields, lifecycle, validation, prose compilation, or active-working-set membership.
 
 ## 10. Compiler contract and minimum prompt completeness
 
@@ -1122,7 +1096,7 @@ Schema/template synchronization rules:
 - Every validation-only field must be explicitly marked not prompt-facing by default.
 - Adding, renaming, or deleting a prompt placeholder requires a compiler-contract update in the same change.
 - Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/specs/story-record-hygiene-prompt-template.md`, this schema where applicable, `docs/specs/compiler-contract.md`, compiler/template versions, and golden tests in the same change.
-- Any change to the Segment Reconciliation accepted-segment source, allowed generation-field projection, record scope, registered schema catalog, lifecycle destinations, reference-token rules, proposal shapes, or parser validation must update `docs/specs/segment-reconciliation-prompt-template.md`, this schema, `docs/specs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
+- Any change to the Accepted-Segment Change Review accepted-segment source, allowed generation-field projection, record scope, reference-token rules, output schema, `evidence_excerpt` witness rule, or parser validation must update `docs/specs/accepted-segment-change-review-prompt-template.md`, this schema, `docs/specs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
 
 Minimum prompt completeness for v1:
 

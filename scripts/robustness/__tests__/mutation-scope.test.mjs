@@ -14,7 +14,7 @@ test("maps changed pillar source files to forced mutate targets", () => {
     [
       "packages/core/src/compiler/compile-prompt.ts",
       "packages/core/src/compiler/ideation/operators.ts",
-      "packages/core/src/compiler/reconciliation/compile-segment-reconciliation-prompt.ts",
+      "packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts",
       "packages/core/src/compiler/sections/ideation.ts",
       "packages/core/src/validation/engine.ts",
       "docs/principles/FOUNDATIONS.md"
@@ -26,14 +26,14 @@ test("maps changed pillar source files to forced mutate targets", () => {
   assert.deepEqual(
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.mutate]),
     [
+      ["change-review", ["packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts"]],
       ["ideation", ["packages/core/src/compiler/ideation/operators.ts", "packages/core/src/compiler/sections/ideation.ts"]],
       ["prose", ["packages/core/src/compiler/compile-prompt.ts"]],
-      ["segment-reconciliation", ["packages/core/src/compiler/reconciliation/compile-segment-reconciliation-prompt.ts"]],
       ["validation", ["packages/core/src/validation/engine.ts"]]
     ]
   );
 
-  assert.equal(plan.campaigns.find((campaign) => campaign.pillar === "segment-reconciliation").deferred, true);
+  assert.equal(plan.campaigns.find((campaign) => campaign.pillar === "change-review").deferred, true);
   assert.equal(plan.campaigns.find((campaign) => campaign.pillar === "prose").deferred, false);
 });
 
@@ -54,15 +54,15 @@ test("defers full campaigns for robustness infrastructure changes in changed-fil
     [
       ["prose", []],
       ["ideation", []],
-      ["segment-reconciliation", []],
+      ["change-review", []],
       ["validation", []]
     ]
   );
 });
 
-test("defers changed segment-reconciliation source instead of routing it to prose", () => {
+test("defers changed change-review source instead of routing it to prose", () => {
   const plan = classifyChangedPaths(
-    ["packages/core/src/compiler/reconciliation/compile-segment-reconciliation-prompt.ts"],
+    ["packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts"],
     { cacheExists: cacheMiss }
   );
 
@@ -71,9 +71,9 @@ test("defers changed segment-reconciliation source instead of routing it to pros
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
     [
       [
-        "segment-reconciliation",
+        "change-review",
         true,
-        ["packages/core/src/compiler/reconciliation/compile-segment-reconciliation-prompt.ts"]
+        ["packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts"]
       ]
     ]
   );
@@ -93,7 +93,7 @@ test("defers accepted-segment change-review and shared echo source with the acce
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
     [
       [
-        "segment-reconciliation",
+        "change-review",
         true,
         [
           "packages/core/src/compiler/accepted-segment-echo.ts",
@@ -117,7 +117,7 @@ test("keeps shared accepted-segment assistance primitives in the accepted-segmen
   assert.deepEqual(
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
     [[
-      "segment-reconciliation",
+      "change-review",
       true,
       [
         "packages/core/src/compiler/assistance-prompt-primitives.ts",
@@ -127,11 +127,11 @@ test("keeps shared accepted-segment assistance primitives in the accepted-segmen
   );
 });
 
-test("mixed prose and segment-reconciliation changes keep activated prose runnable", () => {
+test("mixed prose and change-review changes keep activated prose runnable", () => {
   const plan = classifyChangedPaths(
     [
       "packages/core/src/compiler/compile-prompt.ts",
-      "packages/core/src/compiler/reconciliation/parse-segment-reconciliation-response.ts"
+      "packages/core/src/compiler/reconciliation/parse-change-review-response.ts"
     ],
     { cacheExists: cacheHit }
   );
@@ -140,12 +140,12 @@ test("mixed prose and segment-reconciliation changes keep activated prose runnab
   assert.deepEqual(
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.deferred, campaign.mutate]),
     [
-      ["prose", false, ["packages/core/src/compiler/compile-prompt.ts"]],
       [
-        "segment-reconciliation",
+        "change-review",
         true,
-        ["packages/core/src/compiler/reconciliation/parse-segment-reconciliation-response.ts"]
-      ]
+        ["packages/core/src/compiler/reconciliation/parse-change-review-response.ts"]
+      ],
+      ["prose", false, ["packages/core/src/compiler/compile-prompt.ts"]]
     ]
   );
 });
@@ -166,13 +166,13 @@ test("prose-only changed source builds prose mutate args without reconciliation 
   ]);
 });
 
-test("segment-reconciliation config is a full-campaign trigger", () => {
-  const plan = classifyChangedPaths(["stryker.segment-reconciliation.config.mjs"], { cacheExists: cacheHit });
+test("change-review config is a full-campaign trigger", () => {
+  const plan = classifyChangedPaths(["stryker.change-review.config.mjs"], { cacheExists: cacheHit });
 
   assert.equal(plan.status, "full-campaign-deferred");
   assert.deepEqual(
     plan.campaigns.map((campaign) => campaign.pillar),
-    ["prose", "ideation", "segment-reconciliation", "validation"]
+    ["prose", "ideation", "change-review", "validation"]
   );
 });
 
