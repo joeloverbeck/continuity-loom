@@ -1,11 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-22T11:04:20.659Z",
+  "generated_at": "2026-07-22T19:16:27.856Z",
   "target_content_hash": "8c343219e557f1d0cb02d98304c12531aa43fcde0c71966ce811bc206bf0814a",
-  "qualifying_uses_on_current_hash": 1,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
+  "qualifying_uses_on_current_hash": 2,
+  "open_incident_ids": [
+    "evt_dfd2f5ce-2ae7-4c7e-b19e-8b8f85fee4b1"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "output",
+      "open_event_ids": [
+        "evt_dfd2f5ce-2ae7-4c7e-b19e-8b8f85fee4b1"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "collecting",
   "authorized_workflow": null,
   "authorization_reason": null,
   "trigger_event_ids": [],
@@ -15,5 +26,5 @@
   "last_completed_review_id": "dec_19a21bd7-5ca2-4cb8-a7cb-d2aa701824f4",
   "target_name": "playtest-prd-prep",
   "target_repo_relative_path": ".claude/skills/playtest-prd-prep",
-  "derivation_session_id": "94f4a697-68ed-4f4d-8e0e-580e30889703"
+  "derivation_session_id": "1d6eec38-479f-4efc-9d83-8adf5ac18517"
 }
