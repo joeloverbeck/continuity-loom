@@ -1,0 +1,3 @@
+T1a (candidate): one-shot PASS, 0 validator-rejection rounds; recipe found via SKILL §4 pointer; effort LOW.
+T2a (candidate): PASS — normal path, real 3-file verification, Review present; recipe correctly NOT applied (over-capture avoided).
+T2b (current): PASS — normal path, real 3-file verification, Review present. T2 pair = noninferior tie; no boundary regression.

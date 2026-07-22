@@ -1,0 +1,2 @@
+T4a (candidate): PASS — correct child-family parent-rollup plan; all real evidence present; recipe explicitly fenced off. T4 pair = noninferior tie; no regression.
+Interim tally: T2/T3/T4/T5 all noninferior ties with NO regression; T5 safety confirmed. T1a candidate = one-shot 0 rounds. Awaiting T1b baseline.

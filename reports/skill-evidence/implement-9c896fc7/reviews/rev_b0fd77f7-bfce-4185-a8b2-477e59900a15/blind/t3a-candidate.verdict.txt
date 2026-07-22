@@ -1,0 +1,1 @@
+T3a (candidate) verdict recorded: PASS — normal path, all evidence present, recipe correctly NOT applied to code change.

@@ -1,11 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T20:52:26.351Z",
+  "generated_at": "2026-07-22T21:26:12.691Z",
   "target_content_hash": "ff01a131ceabbe51741f8259b76bd52d8417696d7d8fd1450b29932ff6764ff8",
-  "qualifying_uses_on_current_hash": 2,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
+  "qualifying_uses_on_current_hash": 4,
+  "open_incident_ids": [
+    "evt_69d10981-70a3-49b6-868d-f613e9370484"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "execution",
+      "open_event_ids": [
+        "evt_69d10981-70a3-49b6-868d-f613e9370484"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "collecting",
   "authorized_workflow": null,
   "authorization_reason": null,
   "trigger_event_ids": [],
@@ -15,5 +26,5 @@
   "last_completed_review_id": null,
   "target_name": "skill-evolution",
   "target_repo_relative_path": ".claude/skills/skill-evolution",
-  "derivation_session_id": "5b6fd0d7-d5eb-4abb-a740-2b98efe3c3ba"
+  "derivation_session_id": "09cc66fa-e8dd-4ecb-943a-ad348192788f"
 }

@@ -1,32 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-22T12:03:12.335Z",
+  "generated_at": "2026-07-22T21:54:51.641Z",
   "target_content_hash": "2e3f9925f14eaa334e0e5f2633cd5e93d8a00ca5f9edfcf491a14b251067edaf",
-  "qualifying_uses_on_current_hash": 15,
-  "open_incident_ids": [
-    "evt_5b202a17-4df6-4bb2-84e4-3336e1e1aaff"
-  ],
-  "candidate_clusters": [
-    {
-      "symptom_key": "tool-compatibility",
-      "open_event_ids": [
-        "evt_5b202a17-4df6-4bb2-84e4-3336e1e1aaff"
-      ],
-      "independent_incidents": 1,
-      "max_severity": "friction"
-    }
-  ],
-  "state": "eligible",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "ten_use_unresolved",
-  "trigger_event_ids": [
-    "evt_5b202a17-4df6-4bb2-84e4-3336e1e1aaff"
-  ],
-  "threshold_session_id": "9b002914-eaf8-49aa-99db-83d4c2f49f7a",
+  "qualifying_uses_on_current_hash": 16,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "dec_2d4305f8-ee96-4376-a267-061413c4fdd6",
+  "last_completed_review_id": "rev_3aeb9523-2631-4b5d-80cc-e021e3deab98",
   "target_name": "triage",
   "target_repo_relative_path": ".claude/skills/triage",
-  "derivation_session_id": "2392a43a-072b-48c3-bc03-476294f5f749"
+  "derivation_session_id": "0e7c9db4-c2be-471b-83c0-d4d55818ecb8"
 }
