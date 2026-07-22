@@ -1,0 +1,1 @@
+T3b (current) verdict: PASS — normal path, all evidence present. T3 pair = noninferior tie; candidate no regression on code path.

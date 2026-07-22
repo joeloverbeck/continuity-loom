@@ -58,6 +58,14 @@ The active working set is the set of records selected for the next prompt. Recor
 
 The app may warn or block unsafe selections, but it does not silently add records because it thinks they matter.
 
+## Concealing A Premise From The Reader
+
+A FACT's **Audience visibility** field is author metadata about how openly you treat that fact. It is not a reader-concealment control: setting a FACT to `hidden` does not hide it from the reader. A FACT renders only among the point-of-view character's accessible facts, so its audience-visibility value never reaches the compiled prompt's audience-knowledge block and adds no concealment instruction — a `hidden` fact compiles the same as an `explicit` one.
+
+To keep the reader in the dark about a premise the point-of-view character already knows — dramatic irony — model it as a **SECRET**, not a FACT. Give the SECRET `pov_access: knows` (the POV keeps its knowledge) and `audience_visibility: hidden` (the reader does not know yet). A hidden SECRET is what fills the compiled "Audience does not know" line, and the SECRET record also carries holders, characters who must not know, allowed surface cues, forbidden reveals, and reveal permission. The SECRET record is the only mechanism that instructs reader-concealment.
+
+If you set a hard-canon or critical FACT to `hidden`, the app shows a non-blocking advisory warning that points you to the SECRET model. It never blocks Preview or Generate; you clear it by modeling the premise as a SECRET or by changing the FACT's audience visibility.
+
 ## Linking A Person ENTITY To A CAST MEMBER
 
 An ENTITY owns a durable identity; a CAST MEMBER is a separate rich dossier that links to it for voice and behavior. When you open a person ENTITY that has no current linked dossier, its detail offers **Create linked CAST MEMBER**, which opens the CAST MEMBER editor with that ENTITY relationship already selected. Nothing is written until you use Create Record, and if that save fails your authored values and the linked relationship are kept for retry. If a current linked dossier already exists, the detail offers **Open linked CAST MEMBER** instead of inviting a duplicate; an archived link explains itself so you can restore it or create a new dossier deliberately.

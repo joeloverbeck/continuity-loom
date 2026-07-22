@@ -67,11 +67,17 @@ const specificGuidance = new Map<string, Partial<FieldGuidance>>([
   ["FACT.audience_visibility", {
     promptFacing: "conditional",
     promptDestinations: ["facts_beliefs_events"],
-    short: "Whether the audience is allowed to know this fact.",
-    continuityRole: "Keeps audience knowledge distinct from POV knowledge and writer-visible truth.",
+    short: "Author metadata about how openly this fact is treated. It is not a reader-concealment control and does not conceal the fact from the reader.",
+    continuityRole:
+      "Records how openly this POV-accessible truth is handled; it does not conceal the fact from the reader and never reaches the compiled audience-knowledge block. To hide a POV-known premise from the reader, model it as a SECRET (pov_access: knows, audience_visibility: hidden) — the SECRET record is the sole reader-concealment (dramatic-irony) authority.",
+    authoringAdvice:
+      "If you need the reader kept unaware of a premise the POV knows, do not rely on this field. Create a SECRET with pov_access: knows and audience_visibility: hidden; a hidden SECRET is what populates the compiled \"Audience does not know\" line.",
     enumValues: {
-      hidden: { short: "Do not expose this fact to the audience yet." },
-      implied: { short: "Allow implication without direct statement." },
+      hidden: {
+        short:
+          "Author note that you would rather this fact stay in the background. It does not conceal the fact from the reader; to conceal a POV-known premise, model it as a SECRET (pov_access: knows, audience_visibility: hidden)."
+      },
+      implied: { short: "Author note to favor implication over direct statement; it does not enforce concealment in the compiled prompt." },
       explicit: { short: "The audience may know it directly." },
       not_applicable: { short: "Audience visibility is not meaningful for this fact." }
     }

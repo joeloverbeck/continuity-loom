@@ -1,0 +1,2 @@
+T4b (current): PASS — correct everything-active parent-rollup plan; all evidence present; no shortcut pressure.
+Pending: T1b (a99bbbbb, current reproduction), T4a (a2789d1b, candidate parent-rollup).

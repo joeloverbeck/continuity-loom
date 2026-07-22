@@ -207,7 +207,21 @@ const COPY_TABLE: Readonly<Record<string, DiagnosticCopy>> = Object.freeze({
     "recommended-for-stronger-output",
     "A resolved or superseded record is selected and may distract from the current unit.",
     "Deselect it unless it remains relevant to this generation."
-  )
+  ),
+  [DIAGNOSTIC_CODES.factHiddenAudienceVisibilityNotConcealment]: {
+    code: "fact-hidden-audience-visibility-not-concealment",
+    title: "Hidden FACT is not concealed from the reader",
+    group: "recommended-for-stronger-output",
+    summary:
+      "A hard-canon or critical FACT is set to audience_visibility: hidden, but that field is not a reader-concealment control, so the compiled prompt will not hide this premise from the reader.",
+    whyItMatters:
+      "The prompt renders a hidden FACT identically to an explicit one; reader-concealment of a POV-known truth lives only in the SECRET record.",
+    whyThisIsNotBlocking: "The compiler still produces a deterministic, valid prompt; this is an advisory nudge, not a structural error.",
+    // The displayed recovery text comes from the diagnostic's repairInstruction (mapDiagnostic prefers
+    // it over copy.fastestFix). This concise variant is the stable dedupe token and fallback copy.
+    fastestFix: "Model the premise as a SECRET, or change this FACT's audience_visibility.",
+    ignoringIsReasonableWhen: "You did not intend to conceal this fact from the reader."
+  }
 });
 
 export function deriveReadiness(

@@ -27,7 +27,8 @@ export const warningRules: readonly ValidationRule[] = Object.freeze([
   warnEnsembleVoiceDistinctionRisk,
   warnCastSalienceRisk,
   warnLowDramaScenePressure,
-  warnStaleSelectedRecord
+  warnStaleSelectedRecord,
+  warnHiddenCriticalFactNotConcealed
 ]);
 
 function warnOffstageEntityReferenceUnselectedOptional(snapshot: ValidationSnapshot): readonly Diagnostic[] {
@@ -270,6 +271,37 @@ function warnStaleSelectedRecord(snapshot: ValidationSnapshot): readonly Diagnos
     return status === "resolved" || status === "abandoned" || status === "superseded"
       ? [warning(DIAGNOSTIC_CODES.staleSelectedRecord, "Selected record is old or resolved but may still be relevant.", `record:${record.id}`)]
       : [];
+  });
+}
+
+function warnHiddenCriticalFactNotConcealed(snapshot: ValidationSnapshot): readonly Diagnostic[] {
+  return snapshot.records.flatMap((record) => {
+    if (record.type !== "FACT") {
+      return [];
+    }
+
+    const payload = objectPayload(record);
+    const salience = record.metadata?.salience ?? payload.salience;
+    const isHardCanonOrCritical = payload.fact_kind === "hard_canon" || salience === "critical";
+
+    if (payload.audience_visibility !== "hidden" || !isHardCanonOrCritical) {
+      return [];
+    }
+
+    return [
+      {
+        severity: "warning",
+        code: DIAGNOSTIC_CODES.factHiddenAudienceVisibilityNotConcealment,
+        message:
+          "This FACT is set to audience_visibility: hidden, but FACT.audience_visibility is not a reader-concealment control, so the compiled prompt will not hide this premise from the reader.",
+        affected: [{ recordId: record.id, field: "FACT.audience_visibility" }],
+        whyItMatters:
+          "A hard-canon or critical premise marked hidden reads as protected, yet it renders identically to an explicit fact; reader-concealment lives only in the SECRET record.",
+        repairInstruction:
+          "To hide this POV-known premise from the reader, model it as a SECRET (pov_access: knows, audience_visibility: hidden), or change this FACT's audience_visibility.",
+        suggestedActions: ["revise"]
+      }
+    ];
   });
 }
 

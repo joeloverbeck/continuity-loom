@@ -146,7 +146,8 @@ export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.sparseSettingTexture,
   DIAGNOSTIC_CODES.staleSelectedRecord,
   DIAGNOSTIC_CODES.voicePressureAttachmentInvalid,
-  DIAGNOSTIC_CODES.voicePressureOrphanedAttachment
+  DIAGNOSTIC_CODES.voicePressureOrphanedAttachment,
+  DIAGNOSTIC_CODES.factHiddenAudienceVisibilityNotConcealment
 ] as const;
 
 const coveredContracts = [
@@ -1040,6 +1041,25 @@ const coveredContracts = [
       input.records = [...input.records, relationshipRecord({ from: auxIds.unselectedEntity, to: validationIds.entity })];
     },
     expectedAffected: [{ field: "RELATIONSHIP.from" }]
+  }),
+  covered({
+    code: DIAGNOSTIC_CODES.factHiddenAudienceVisibilityNotConcealment,
+    severity: "warning",
+    promptKinds: "applies",
+    introduceMinimalDefect: (input) => {
+      input.records = [
+        ...input.records,
+        simpleRecord(auxIds.fact, "FACT", {
+          fact_kind: "hard_canon",
+          statement: "The point-of-view character is secretly immortal.",
+          scope: "global",
+          known_by: "public",
+          audience_visibility: "hidden",
+          salience: "critical"
+        })
+      ];
+    },
+    expectedAffected: [{ recordId: auxIds.fact, field: "FACT.audience_visibility" }]
   })
 ] as const satisfies readonly RunnableDiagnosticContract[];
 
