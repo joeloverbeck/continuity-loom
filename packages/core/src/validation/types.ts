@@ -110,6 +110,7 @@ export const DIAGNOSTIC_CODES = Object.freeze({
   castSalienceRisk: "cast-salience-risk",
   sparseSettingTexture: "sparse-setting-texture",
   staleSelectedRecord: "stale-selected-record",
+  factHiddenAudienceVisibilityNotConcealment: "fact-hidden-audience-visibility-not-concealment",
   objectCurrentHolderContradiction: "object-current-holder-contradiction",
   offstageInterruptionMissingRoute: "offstage-interruption-missing-route"
 });

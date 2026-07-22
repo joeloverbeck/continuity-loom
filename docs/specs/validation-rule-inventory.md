@@ -140,3 +140,4 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `cast-salience-risk` | warning | applies | Long active cast dossiers may need stronger local salience pins. | Warning; §11 warnings never gate | Cases 31, 32 |
 | `low-drama-scene-pressure` | warning | applies | Low-drama scene may need sharper prose-craft pressure. | Warning; §11 warnings never gate | — |
 | `stale-selected-record` | warning | applies | Selected record is old or resolved but may still be relevant. | Warning; §11 warnings never gate | — |
+| `fact-hidden-audience-visibility-not-concealment` | warning | applies | A `hard_canon` or `critical` FACT is set to `audience_visibility: hidden`, but that field is not a reader-concealment control; recovery routes to the SECRET model. | Warning; §11 warnings never gate; SECRET is the sole reader-concealment authority (ADR 0004) | — |
