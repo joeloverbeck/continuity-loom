@@ -43,7 +43,7 @@ function recoveryGuidance(failure: TransportFailure): string {
     case "structured-output-capability-unknown":
       return (
         failure.recovery ??
-        "Refresh the OpenRouter model list and select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+        "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and Analyze again. No request was sent. No retry is automatic."
       );
     case "moderation-refusal":
       return "Review the requested content and provider policy before trying again. No retry is automatic.";

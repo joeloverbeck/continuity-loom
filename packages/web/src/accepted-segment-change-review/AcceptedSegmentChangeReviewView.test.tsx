@@ -16,13 +16,19 @@ import {
 
 const compileMock = vi.fn<AcceptedSegmentChangeReviewClient["compile"]>();
 const analyzeMock = vi.fn<AcceptedSegmentChangeReviewClient["analyze"]>();
+const refreshModelsMock = vi.fn<AcceptedSegmentChangeReviewClient["refreshModels"]>();
 const navigateMock = vi.fn();
 const writeTextMock = vi.fn().mockResolvedValue(undefined);
-const client: AcceptedSegmentChangeReviewClient = { compile: compileMock, analyze: analyzeMock };
+const client: AcceptedSegmentChangeReviewClient = {
+  compile: compileMock,
+  analyze: analyzeMock,
+  refreshModels: refreshModelsMock
+};
 
 beforeEach(() => {
   compileMock.mockResolvedValue(compileResponse());
   analyzeMock.mockResolvedValue(successResponse());
+  refreshModelsMock.mockResolvedValue({ ok: true, models: [] });
   navigateMock.mockReset();
   writeTextMock.mockClear();
   Object.assign(navigator, { clipboard: { writeText: writeTextMock } });
@@ -45,7 +51,8 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(screen.getByText("2 records")).toBeTruthy();
     expect(screen.getByText(/SECRET records are included/)).toBeTruthy();
     expect(screen.getByText("fnv1a32:12345678")).toBeTruthy();
-    expect(screen.getByText("2.0.0 / 2.0.0 / 2.0.0")).toBeTruthy();
+    // Template / compiler / contract now surface as separate metadata rows in the prompt inspector.
+    expect(screen.getAllByText("2.0.0")).toHaveLength(3);
     expect(screen.getByText("Complete prompt source for comparison.")).toBeTruthy();
     expect(analyzeMock).not.toHaveBeenCalled();
 
@@ -245,6 +252,61 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(screen.queryByRole("heading", { name: "Possible change ITEM-001" })).toBeNull();
     expect(analyzeMock).toHaveBeenCalledTimes(1);
   });
+
+  it("copies the complete compiled prompt from a source-panel button", async () => {
+    renderView();
+    await screen.findByRole("heading", { name: "Accepted-Segment Change Review" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt" }));
+
+    expect(writeTextMock).toHaveBeenCalledTimes(1);
+    expect(writeTextMock).toHaveBeenCalledWith("Complete prompt source for comparison.");
+  });
+
+  it("treats stale capability data as refreshable in place, distinct from an incompatible model, and never auto-resends", async () => {
+    analyzeMock.mockResolvedValue(capabilityUnknownResponse());
+    refreshModelsMock.mockResolvedValue({
+      ok: true,
+      models: [{
+        id: "anthropic/claude-sonnet-5",
+        name: "Claude Sonnet 5",
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+      }]
+    });
+    renderView();
+    await analyze();
+
+    // Distinct recovery from the incompatible-model case: the cause is named as a stale cache,
+    // not a wrong model choice.
+    expect(await screen.findByRole("heading", { name: "Model capability data needs a refresh" })).toBeTruthy();
+    expect(screen.getByText(/predates capability checks and is stale/i)).toBeTruthy();
+    expect(screen.queryByRole("heading", { name: "Strict structured output unavailable" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh model list" }));
+
+    await waitFor(() => expect(refreshModelsMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/Refreshed 1 models with capability data/i)).toBeTruthy();
+    // The refresh is read-only recovery; Analyze stays a separate explicit action.
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("surfaces a failed in-place refresh without clearing the stale-capability recovery", async () => {
+    analyzeMock.mockResolvedValue(capabilityUnknownResponse());
+    refreshModelsMock.mockResolvedValue({
+      ok: false,
+      category: "rate-limit",
+      message: "OpenRouter rate limit reached."
+    });
+    renderView();
+    await analyze();
+
+    await screen.findByRole("heading", { name: "Model capability data needs a refresh" });
+    fireEvent.click(screen.getByRole("button", { name: "Refresh model list" }));
+
+    await waitFor(() => expect(refreshModelsMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText(/OpenRouter rate limit reached/i)).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Model capability data needs a refresh" })).toBeTruthy();
+  });
 });
 
 function renderView() {
@@ -410,6 +472,20 @@ function incompatibleModelResponse(): AcceptedSegmentChangeReviewAnalyzeResponse
     message: "The selected model does not support the strict structured-output request this workflow requires.",
     recovery:
       "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+  };
+}
+
+function capabilityUnknownResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {
+  return {
+    ok: false as const,
+    category: "structured-output-capability-unknown" as const,
+    message:
+      "The selected model has no cached capability data, so strict structured-output support cannot be confirmed. " +
+      "This usually means the cached model list predates capability checks and is stale, not that the model is unsupported.",
+    recovery:
+      "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and " +
+      "Analyze again. No request was sent; no retry is automatic. If it still fails after a refresh, the selected model " +
+      "may not support strict structured output — choose one that does."
   };
 }
 
