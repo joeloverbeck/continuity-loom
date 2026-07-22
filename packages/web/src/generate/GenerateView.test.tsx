@@ -641,7 +641,7 @@ describe("GenerateView", () => {
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(true);
 
     const manualEntry = screen.getByRole<HTMLButtonElement>("button", { name: "Write or paste candidate" });
-    const recovery = screen.getByRole<HTMLButtonElement>("button", { name: "Go to Write or paste candidate" });
+    const recovery = screen.getByRole<HTMLButtonElement>("button", { name: "Jump to candidate entry" });
     expect(recovery.disabled).toBe(false);
 
     // Discoverable near the top of the READINESS panel, ahead of the (potentially long)
@@ -661,6 +661,51 @@ describe("GenerateView", () => {
     expect(readiness).toHaveBeenCalledTimes(1);
   });
 
+  it("gives the two candidate-entry controls distinct accessible names and opens the editor from the editor-mount control by keyboard", async () => {
+    vi.mocked(readiness).mockResolvedValue(readinessFixture({
+      providerConfigured: false,
+      providerBlockers: [readinessDiagnostic({
+        severity: "blocker",
+        code: "provider-configuration-missing",
+        legacyCode: "provider-configuration-missing",
+        title: "Configure OpenRouter before generating",
+        group: "required-before-prompt-generation"
+      })]
+    }));
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+
+    // Both candidate-entry controls are present in the provider-blocked recovery state, but
+    // only the editor-mount control opens the editor. Their accessible names must be distinct
+    // so a keyboard/assistive-technology user targeting "candidate" cannot land on the
+    // scroll-only anchor first and see nothing happen.
+    const editorMount = screen.getByRole<HTMLButtonElement>("button", { name: "Write or paste candidate" });
+    const jumpAnchor = screen.getByRole<HTMLButtonElement>("button", { name: "Jump to candidate entry" });
+    expect(jumpAnchor).not.toBe(editorMount);
+    expect(jumpAnchor.textContent).not.toContain("Write or paste candidate");
+
+    // The disabled provider control stays beside the manual intake path, and no editor is
+    // mounted until a candidate-entry control is activated.
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(true);
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+
+    // Keyboard activation of the editor-mount control. The keyboard-specific proof is the
+    // focus step: the control is reachable and focusable by the keyboard. The native
+    // <button> then activates on Enter/Space; jsdom does not synthesize that click from a
+    // keydown, and the onClick handler does not branch on event.detail, so we dispatch the
+    // activation directly with detail 0 (the DOM signature of a keyboard-initiated click).
+    editorMount.focus();
+    expect(document.activeElement).toBe(editorMount);
+    fireEvent.click(editorMount, { detail: 0 });
+
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" })).toBeTruthy();
+    expect(generate).not.toHaveBeenCalled();
+    expect(acceptCandidate).not.toHaveBeenCalled();
+  });
+
   it("shows no manual-entry recovery action when there is no provider-only blocker", async () => {
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
 
@@ -668,7 +713,7 @@ describe("GenerateView", () => {
 
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(false);
-    expect(screen.queryByRole("button", { name: "Go to Write or paste candidate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Jump to candidate entry" })).toBeNull();
   });
 
   it("does not offer the manual-entry recovery action when prompt blockers prevent preview", async () => {
@@ -690,7 +735,7 @@ describe("GenerateView", () => {
     renderGenerate();
 
     expect(await screen.findByText("Generate is blocked.")).toBeTruthy();
-    expect(screen.queryByRole("button", { name: "Go to Write or paste candidate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Jump to candidate entry" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Write or paste candidate" })).toBeNull();
   });
 });
