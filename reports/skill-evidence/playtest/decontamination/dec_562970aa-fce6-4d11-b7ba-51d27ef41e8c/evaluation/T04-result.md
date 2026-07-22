@@ -1,0 +1,38 @@
+# T04 Paired Evaluation Result
+
+## Decision
+
+**A wins.** Both packets satisfy the core safety, local-only, one-segment, evidence, and report-custody contracts. A is the more complete and internally coherent continuation packet: it seals three concrete author decisions before launch, treats them as Tomás's bounded claims rather than proof, keeps the inherited close-third focalization through Tomás, and makes the acceptance test executable without another narrative-design pass. B is strong on epistemic labeling and is somewhat shorter, but it repeatedly promotes Clara to POV without support in the frozen task while elsewhere promising to preserve and visibly verify inherited configuration. That is a material continuity-risk regression.
+
+## Per-criterion judgments
+
+| Criterion | A | B | Judgment |
+| --- | --- | --- | --- |
+| 1. Source-and-doc-blind visible-UI authorship | Pass. The packet separates simulation from execution and confines the author journey to visible controls. | Pass. It also explicitly postpones repository-authority reads until after the blind journey. | Tie; B has the clearer late-doc firewall, but neither authorizes a blind-journey source/doc read. |
+| 2. Local isolation, loopback binding, and provider guard | Pass. It requires isolated config, blank credentials, `127.0.0.1`, an ephemeral port, a fresh guarded browser, and terminal handling of a send attempt. | Pass. It requires equivalent isolation and makes even a guard-blocked send attempt terminal. | Tie. No provider, exposure, or shared-state safety failure. |
+| 3. Continuation and supplied-project custody | Pass. It names one prior report/project, visibly verifies sequence 1 before mutation, forbids reconstruction, and preserves the project. | Pass. It derives the sole locator from the prior report, verifies sequence 1 and the stopping point, and blocks on mismatch or absence. | Tie. A is more concrete; B is more locator-resilient. Neither mutates the supplied project during packet construction. |
+| 4. Exactly one accepted segment or honest blocker | Pass. Sequence 2 must be visibly proved, all failure paths remain blocked, and a second segment is prohibited. | Pass. It requires a visible `1` to `2` advance and prohibits a second compile, draft, or acceptance. | Tie. |
+| 5. Exact visible prompt and cold-context evaluation | Pass. It gives the exact isolated executor instruction, requires untouched-response assessment, permits one unchanged-prompt retry, and fails closed if fresh isolation is unavailable. | Pass with a small completeness cost. It specifies exact visible extraction and fresh isolation but refers to the baseline's prescribed executor instruction instead of reproducing it. | A is operationally stronger; B's omission is not material if the baseline remains available. |
+| 6. Accepted prose and durable continuity authority | Pass. It explicitly denies automatic canonical status and requires deliberate visible Record/Generation Brief edits. Its concrete facts are repeatedly framed as author-chosen claims with alternate source paths and no exclusive-access inference. | Pass, and especially strong on assertion/corroboration/verified-truth separation. It forbids storing the propositions as globally true merely because Tomás writes them. | B has the sharper epistemic vocabulary, but both satisfy the authority boundary. |
+| 7. Evidence, observation/interpretation separation, and cumulative report | Pass. It requires structured observations, privacy-scoped evidence, inherited ledger custody, schema-v2 validation, truthful status, shutdown, and final worktree comparison. | Pass. It has the same core evidence and cumulative-report contract, with explicit late closeout-authority routing and method counters. | Tie. No missing cumulative report contract. |
+| 8. Task-specific narrative, presence, knowledge, and stop bounds | Pass. It keeps Tomás and Clara in the room, Daniel offstage and comatose, staff as pressure, Clara in control, and the stop reversible; it explicitly bars proof, logistics, departure, forced belief, recovery, and a waking date. | Mostly pass, but materially inconsistent on focalization. Its matrix, field-authority list, and acceptance gate require Clara as POV even though the frozen task does not establish that change and the packet otherwise says inherited voice/configuration must be preserved and verified. | A wins. B's unsupported POV promotion risks silently changing inherited continuity and confusing Clara's required agency with narrative focalization. |
+| Task-specific: the three author-owned facts | Strong pass. A seals exactly three concrete, non-repeated details as prelaunch author choices, prevents Ideate/evaluator invention, requires all three in the prose, and supplies explicit alternative-source testing. | Pass with added operator burden. B correctly reserves all three choices to the author and gives a good selection test, but leaves the exact facts to be designed during execution, so the packet is less fully resolved. | A is more execution-ready; B still preserves author ownership and does not outsource invention. |
+| Task-specific: epistemic bounds | Strong pass. The facts may establish a path but not exclusive access, time travel, recovery, or a waking date; Clara may test alternatives and need not believe. | Strong pass. B most clearly separates Tomás's assertions, Clara's knowledge/testing, source paths, and verified story truth. | Tie overall; B's wording is marginally cleaner, while A applies the bounds to concrete claims. |
+| Operator burden | Higher but purposeful. A is longer and repeats several gates, though most repetition protects acceptance and report closeout. | Lower overall, but includes pilot-state and method-disposition machinery irrelevant to the T04 narrative and defers fact design to the executing author. | B is somewhat leaner; the difference does not outweigh its continuity risk. |
+
+## Omissions, contradictions, and regressions
+
+### A
+
+- The exact project path, prior childhood-cache reference, Tomás focalization, and experience detail are not independently confirmable from the frozen task alone. They are presented as inherited continuation context, and A still requires visible verification before state change, so this is not scored as a contradiction.
+- The three claims are initially phrased declaratively, which could invite truth-promotion if read in isolation. The surrounding packet consistently labels them claims, requires alternate-source testing, bars proof/exclusivity, and requires deliberate post-acceptance authority work, so the risk is contained.
+- **Material regression:** No.
+- **Severe regression:** No.
+
+### B
+
+- B repeatedly declares Clara the POV despite the frozen task requiring only that she retain agency, evidence control, and commitment control. This is unsupported by the task and internally strains B's own instruction to preserve inherited voice/configuration until it is visibly verified.
+- B does not seal the exact three facts in the packet. This is not an ownership failure—the future author is explicitly responsible and assistance cannot invent them—but it adds meaningful execution-time design burden to a specificity-focused continuation.
+- Referencing rather than reproducing the baseline cold-executor instruction creates a small avoidable dependency during execution.
+- **Material regression:** Yes — unsupported POV promotion creates a real risk of changing inherited narrative state.
+- **Severe regression:** No — B still requires visible reconciliation with the prior report, honest blocking on irreconcilable mismatch, and preserves all safety, epistemic, acceptance, and report guards.

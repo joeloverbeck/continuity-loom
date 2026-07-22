@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T17:07:14.866Z",
+  "generated_at": "2026-07-22T01:53:03.987Z",
   "target_content_hash": "20a458b487908362bc7bd7d14305d40c5dbacb9c8afede36e8e5c36d7016648c",
-  "qualifying_uses_on_current_hash": 11,
+  "qualifying_uses_on_current_hash": 12,
   "open_incident_ids": [
     "evt_6460a315-7f9f-4c31-adbd-a8cca8218161",
     "evt_32c12af0-3984-484a-99a1-06d1b84984c3",
@@ -36,7 +36,7 @@
       "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
+  "state": "eligible",
   "authorized_workflow": "skill-evolution",
   "authorization_reason": "ten_use_unresolved",
   "trigger_event_ids": [

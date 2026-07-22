@@ -1,0 +1,1042 @@
+#!/usr/bin/env node
+
+import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import { pathToFileURL } from "node:url";
+
+const FILENAME_PATTERN = /^playtest-([a-z0-9]+(?:-[a-z0-9]+)*)-(\d{4}-\d{2}-\d{2}T\d{6}Z)\.md$/;
+
+const REQUIRED_KEYS = [
+  "report_type",
+  "schema_version",
+  "run_id",
+  "report_stem",
+  "story_title",
+  "story_slug",
+  "run_mode",
+  "prior_report",
+  "project_path",
+  "project_exists_at_close",
+  "started_at",
+  "completed_at",
+  "status",
+  "completion_reason",
+  "accepted_segment_sequence",
+  "base_url",
+  "browser",
+  "viewport",
+  "openrouter_send_controls_clicked",
+  "provider_request_attempts",
+  "provider_requests_blocked",
+  "cold_prose_attempts",
+  "cold_assistance_attempts",
+  "counterfactual_probes",
+  "candidate_intervention"
+];
+
+const COUNT_KEYS = [
+  "openrouter_send_controls_clicked",
+  "provider_request_attempts",
+  "provider_requests_blocked",
+  "cold_prose_attempts",
+  "cold_assistance_attempts",
+  "counterfactual_probes"
+];
+
+const V2_COUNT_KEYS = [
+  "cold_first_view_witnesses",
+  "independent_claim_challenges",
+  "paired_draw_checks"
+];
+
+const INTERVENTIONS = new Set(["none", "light", "substantial", "rewrite", "not-reached"]);
+const EVIDENCE_BASIS_TAGS = new Set([
+  "direct-visible",
+  "reproduced",
+  "source-confirmed",
+  "independent-supported",
+  "independent-narrowed",
+  "independent-contradicted",
+  "independent-insufficient",
+  "paired-concordant",
+  "paired-discordant",
+  "cross-run-recurrent",
+  "counterfactual-suggestive",
+  "single-observer-inference"
+]);
+const CHALLENGE_STATUSES = new Set(["supported", "narrowed", "contradicted", "insufficient"]);
+const PAIR_CLASSES = new Set([
+  "concordant-substantive",
+  "concordant-no-change",
+  "discordant",
+  "both-poor-or-malformed",
+  "blocked"
+]);
+const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
+const FINGERPRINT_PATTERN = /^[a-f0-9]{64}$/;
+const FINDING_ID_PATTERN = /^F\d{3,}$/;
+
+export const REQUIRED_SECTION_HEADINGS = [
+  "## Run Status",
+  "## Executive Assessment",
+  "## Story Intent and Expectations",
+  "## Run Configuration and Continuation Contract",
+  "## Condensed Author Journey",
+  "## What Worked",
+  "## Prioritized Findings",
+  "## Surface-by-Surface Experience",
+  "## Prompt Usefulness",
+  "## Generation Brief Field Influence",
+  "## Assistance Evaluation",
+  "## Candidate and Accepted Segment",
+  "## Cumulative Finding Ledger",
+  "## Continuation Handoff",
+  "## Diagnostics and Evidence",
+  "## Coverage Limitations"
+];
+
+const V1_FINDINGS_HEADER =
+  "| ID | Severity | Classification | Category | Summary | Confidence | Status |";
+const V2_FINDINGS_HEADER =
+  "| ID | Severity | Classification | Category | Summary | Confidence | Status | Evidence basis |";
+const CUMULATIVE_FINDINGS_HEADER =
+  "| ID | First seen | Classification | Summary | Current status | Latest evidence |";
+
+const COMMON_REQUIRED_TABLE_HEADERS = [
+  "| Prompt | Author need | Contract compliance | Actionable outputs | No-change / low-value outputs | Adopted | Verdict | Confidence |",
+  "| Field | Author need | Intended observable influence | Visible prompt evidence | Response evidence | Verdict | Confidence |",
+  "| Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |",
+  CUMULATIVE_FINDINGS_HEADER
+];
+
+function usage() {
+  return `Usage:
+  node .claude/skills/playtest/scripts/validate-report.mjs --report <path>`;
+}
+
+export function parseFrontmatter(markdown) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(markdown);
+  if (!match) return null;
+  const values = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const pair = /^([A-Za-z0-9_]+):\s*(.*?)\s*$/.exec(line);
+    if (!pair) continue;
+    const raw = pair[2];
+    values[pair[1]] =
+      (raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))
+        ? raw.slice(1, -1)
+        : raw;
+  }
+  return values;
+}
+
+export function stripFrontmatter(markdown) {
+  return markdown.replace(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/, "");
+}
+
+export function validateSectionOrder(markdown) {
+  const body = stripFrontmatter(markdown);
+  const lines = body.split(/\r?\n/);
+  const errors = [];
+  if (!lines.some((line) => line.startsWith("# Continuity Loom Author Playtest Report: "))) {
+    errors.push("Missing report title: # Continuity Loom Author Playtest Report: <Story title>");
+  }
+
+  const positions = REQUIRED_SECTION_HEADINGS.map((heading) =>
+    lines.findIndex((line) => line === heading)
+  );
+  for (let index = 0; index < positions.length; index += 1) {
+    if (positions[index] < 0) {
+      errors.push(`Missing required report heading: ${REQUIRED_SECTION_HEADINGS[index]}`);
+    }
+  }
+
+  let priorPosition = -1;
+  for (let index = 0; index < positions.length; index += 1) {
+    const position = positions[index];
+    if (position < 0) continue;
+    if (position <= priorPosition) {
+      errors.push(`Required report heading is out of order: ${REQUIRED_SECTION_HEADINGS[index]}`);
+    }
+    priorPosition = Math.max(priorPosition, position);
+  }
+  return errors;
+}
+
+function reportSection(markdown, heading) {
+  const lines = stripFrontmatter(markdown).split(/\r?\n/);
+  const start = lines.findIndex((line) => line === heading);
+  if (start < 0) return null;
+  const headingLevel = /^(#+) /.exec(heading)?.[1].length;
+  if (!headingLevel) return null;
+  let end = lines.length;
+  for (let index = start + 1; index < lines.length; index += 1) {
+    const candidateLevel = /^(#+) /.exec(lines[index])?.[1].length;
+    if (candidateLevel && candidateLevel <= headingLevel) {
+      end = index;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end).join("\n");
+}
+
+function disclosureValue(section, label) {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`^- ${escapedLabel}:\\s*(.+?)\\s*$`, "m").exec(section)?.[1]?.trim() ?? null;
+}
+
+function tableCells(line) {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) return null;
+  return trimmed
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function sameCells(left, right) {
+  return left?.length === right?.length && left.every((cell, index) => cell === right[index]);
+}
+
+function hasTableHeader(section, header) {
+  const expected = tableCells(header);
+  return section.split(/\r?\n/).some((line) => sameCells(tableCells(line), expected));
+}
+
+function tableRows(section, header) {
+  const lines = section.split(/\r?\n/);
+  const expected = tableCells(header);
+  const headerIndex = lines.findIndex((line) => sameCells(tableCells(line), expected));
+  if (headerIndex < 0) return null;
+  const separator = lines[headerIndex + 1]?.trim() ?? "";
+  if (!/^\|(?:\s*:?-{3,}:?\s*\|)+$/.test(separator)) return null;
+
+  const rows = [];
+  for (let index = headerIndex + 2; index < lines.length; index += 1) {
+    const line = lines[index].trim();
+    if (!line.startsWith("|") || !line.endsWith("|")) break;
+    rows.push(tableCells(line));
+  }
+  return rows;
+}
+
+function stableIds(rows, tableName, errors) {
+  const ids = [];
+  for (const row of rows) {
+    const id = row?.[0]?.trim() ?? "";
+    if (!FINDING_ID_PATTERN.test(id)) {
+      errors.push(`${tableName} has invalid stable ID: ${id || "<blank>"}`);
+      continue;
+    }
+    ids.push(id);
+  }
+  for (const id of new Set(ids)) {
+    if (ids.filter((candidate) => candidate === id).length > 1) {
+      errors.push(`${tableName} contains duplicate stable ID: ${id}`);
+    }
+  }
+  return ids;
+}
+
+function findingLedgerErrors(markdown, schemaVersion) {
+  const errors = [];
+  const prioritizedHeader = schemaVersion === "2" ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER;
+  const prioritizedRows = tableRows(
+    reportSection(markdown, "## Prioritized Findings") ?? "",
+    prioritizedHeader
+  );
+  const cumulativeRows = tableRows(
+    reportSection(markdown, "## Cumulative Finding Ledger") ?? "",
+    CUMULATIVE_FINDINGS_HEADER
+  );
+  if (prioritizedRows === null) {
+    errors.push("Prioritized Findings table is missing or has a malformed divider.");
+  }
+  if (cumulativeRows === null) {
+    errors.push("Cumulative Finding Ledger table is missing or has a malformed divider.");
+  }
+  if (prioritizedRows === null || cumulativeRows === null) return errors;
+
+  const prioritizedIds = stableIds(prioritizedRows, "Prioritized Findings", errors);
+  const cumulativeIds = stableIds(cumulativeRows, "Cumulative Finding Ledger", errors);
+  const cumulativeSet = new Set(cumulativeIds);
+  for (const id of prioritizedIds) {
+    if (!cumulativeSet.has(id)) {
+      errors.push(`Prioritized finding ${id} is absent from the Cumulative Finding Ledger.`);
+    }
+  }
+  return errors;
+}
+
+function evidenceBasisErrors(value, context) {
+  if (!value?.trim()) return [`${context} requires at least one evidence-basis tag.`];
+  const errors = [];
+  const tags = value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+  for (const tag of tags) {
+    if (!EVIDENCE_BASIS_TAGS.has(tag)) {
+      errors.push(`${context} has unsupported evidence-basis tag: ${tag}`);
+    }
+  }
+  return errors;
+}
+
+function provenanceErrors({ timestamp, host, model, exposed, fingerprint }, context) {
+  const errors = [];
+  if (!ISO_TIMESTAMP_PATTERN.test(timestamp ?? "")) {
+    errors.push(`${context} requires an ISO-8601 UTC timestamp.`);
+  }
+  if (!host?.trim()) errors.push(`${context} requires a non-empty executor host.`);
+  if (!model?.trim()) errors.push(`${context} requires a non-empty executor model.`);
+  if (!new Set(["true", "false"]).has(exposed)) {
+    errors.push(`${context} model identity exposure must be true or false.`);
+  } else if (exposed === "false" && model !== "unknown") {
+    errors.push(`${context} with unexposed identity requires model "unknown".`);
+  } else if (exposed === "true" && model === "unknown") {
+    errors.push(`${context} with exposed identity requires the exact model identifier.`);
+  }
+  if (!FINGERPRINT_PATTERN.test(fingerprint ?? "")) {
+    errors.push(`${context} requires a lowercase 64-character fingerprint.`);
+  }
+  return errors;
+}
+
+function conditionalSubsection(markdown, parentHeading, subsectionHeading, count, counterName) {
+  const errors = [];
+  const parent = reportSection(markdown, parentHeading) ?? "";
+  const subsection = reportSection(parent, subsectionHeading);
+  if (count === 0 && subsection !== null) {
+    errors.push(`${counterName} must be greater than 0 when ${subsectionHeading} is present.`);
+  }
+  if (count > 0 && subsection === null) {
+    errors.push(`${counterName}: ${count} requires ${subsectionHeading} in ${parentHeading}.`);
+  }
+  return { errors, subsection };
+}
+
+function v2MethodEvidenceErrors(markdown, counts) {
+  const errors = [];
+
+  const findings = reportSection(markdown, "## Prioritized Findings") ?? "";
+  const findingRows = tableRows(findings, V2_FINDINGS_HEADER);
+  if (findingRows) {
+    for (const [index, row] of findingRows.entries()) {
+      if (row.length !== 8) {
+        errors.push(`Prioritized finding row ${index + 1} must contain 8 columns.`);
+        continue;
+      }
+      errors.push(...evidenceBasisErrors(row[7], `Prioritized finding ${row[0] || index + 1}`));
+    }
+  }
+
+  const witnessResult = conditionalSubsection(
+    markdown,
+    "## Story Intent and Expectations",
+    "### Cold First-View Witness",
+    counts.cold_first_view_witnesses,
+    "cold_first_view_witnesses"
+  );
+  errors.push(...witnessResult.errors);
+  if (witnessResult.subsection !== null) {
+    const header =
+      "| Packet fingerprint | Timestamp | Executor host | Executor model | Model identity exposed | First-action summary | Expectation mismatch | Unclear terms count | Clarity | Main-operator comparison | Privacy check |";
+    const rows = tableRows(witnessResult.subsection, header);
+    if (!rows) {
+      errors.push(`Cold First-View Witness requires this table header: ${header}`);
+    } else {
+      if (rows.length !== counts.cold_first_view_witnesses) {
+        errors.push(
+          `cold_first_view_witnesses is ${counts.cold_first_view_witnesses}, but the witness table has ${rows.length} row(s).`
+        );
+      }
+      for (const [index, row] of rows.entries()) {
+        if (row.length !== 11) {
+          errors.push(`Cold First-View Witness row ${index + 1} must contain 11 columns.`);
+          continue;
+        }
+        errors.push(
+          ...provenanceErrors(
+            {
+              timestamp: row[1],
+              host: row[2],
+              model: row[3],
+              exposed: row[4],
+              fingerprint: row[0]
+            },
+            `Cold First-View Witness row ${index + 1}`
+          )
+        );
+        if (!/^\d+$/.test(row[7])) {
+          errors.push(
+            `Cold First-View Witness row ${index + 1} requires an integer unclear-terms count.`
+          );
+        }
+        if (!new Set(["clear", "partly-clear", "unclear"]).has(row[8])) {
+          errors.push(`Cold First-View Witness row ${index + 1} has an unsupported clarity value.`);
+        }
+        for (const [column, label] of [
+          [5, "First-action summary"],
+          [6, "Expectation mismatch"],
+          [9, "Main-operator comparison"]
+        ]) {
+          if (!row[column]) {
+            errors.push(`Cold First-View Witness row ${index + 1} requires non-empty ${label}.`);
+          }
+        }
+        if (row[10] !== "passed") {
+          errors.push(`Cold First-View Witness row ${index + 1} privacy check must be passed.`);
+        }
+      }
+    }
+  }
+
+  const challengeResult = conditionalSubsection(
+    markdown,
+    "## Prioritized Findings",
+    "### Independent Claim Challenges",
+    counts.independent_claim_challenges,
+    "independent_claim_challenges"
+  );
+  errors.push(...challengeResult.errors);
+  if (challengeResult.subsection !== null) {
+    const header =
+      "| Claim ID | Eligibility reason | Timestamp | Executor host | Executor model | Model identity exposed | Packet fingerprint | Status | Rival explanation | Observable discriminator | Operator resolution | Evidence basis |";
+    const rows = tableRows(challengeResult.subsection, header);
+    if (!rows) {
+      errors.push(`Independent Claim Challenges requires this table header: ${header}`);
+    } else {
+      if (rows.length !== counts.independent_claim_challenges) {
+        errors.push(
+          `independent_claim_challenges is ${counts.independent_claim_challenges}, but the challenge table has ${rows.length} row(s).`
+        );
+      }
+      if (
+        rows.length > 1 &&
+        rows.some((row) => [2, 3, 4, 5, 6].some((column) => row[column] !== rows[0][column]))
+      ) {
+        errors.push(
+          "Independent Claim Challenges rows must share one witness provenance and packet fingerprint."
+        );
+      }
+      for (const [index, row] of rows.entries()) {
+        if (row.length !== 12) {
+          errors.push(`Independent Claim Challenge row ${index + 1} must contain 12 columns.`);
+          continue;
+        }
+        errors.push(
+          ...provenanceErrors(
+            {
+              timestamp: row[2],
+              host: row[3],
+              model: row[4],
+              exposed: row[5],
+              fingerprint: row[6]
+            },
+            `Independent Claim Challenge ${row[0] || index + 1}`
+          )
+        );
+        if (!CHALLENGE_STATUSES.has(row[7])) {
+          errors.push(
+            `Independent Claim Challenge ${row[0] || index + 1} has unsupported status: ${row[7]}`
+          );
+        }
+        for (const [column, label] of [
+          [0, "Claim ID"],
+          [1, "Eligibility reason"],
+          [8, "Rival explanation"],
+          [9, "Observable discriminator"],
+          [10, "Operator resolution"]
+        ]) {
+          if (!row[column]) {
+            errors.push(
+              `Independent Claim Challenge ${row[0] || index + 1} requires non-empty ${label}.`
+            );
+          }
+        }
+        errors.push(
+          ...evidenceBasisErrors(row[11], `Independent Claim Challenge ${row[0] || index + 1}`)
+        );
+        const requiredTag = `independent-${row[7]}`;
+        if (
+          CHALLENGE_STATUSES.has(row[7]) &&
+          !row[11]
+            .split(",")
+            .map((tag) => tag.trim())
+            .includes(requiredTag)
+        ) {
+          errors.push(
+            `Independent Claim Challenge ${row[0] || index + 1} status ${row[7]} requires evidence-basis tag ${requiredTag}.`
+          );
+        }
+      }
+    }
+  }
+
+  const pairResult = conditionalSubsection(
+    markdown,
+    "## Prompt Usefulness",
+    "### Paired-Draw Check",
+    counts.paired_draw_checks,
+    "paired_draw_checks"
+  );
+  errors.push(...pairResult.errors);
+  if (pairResult.subsection !== null) {
+    const pairFingerprint = disclosureValue(pairResult.subsection, "Prompt fingerprint");
+    if (!FINGERPRINT_PATTERN.test(pairFingerprint ?? "")) {
+      errors.push("Paired-Draw Check requires a lowercase 64-character prompt fingerprint.");
+    }
+    for (const label of [
+      "Prompt kind",
+      "Eligibility reason",
+      "Informative output classes",
+      "What the pair supports",
+      "What the pair cannot establish",
+      "Effect on likely-layer attribution"
+    ]) {
+      if (!disclosureValue(pairResult.subsection, label)) {
+        errors.push(`Paired-Draw Check requires a non-empty "${label}" disclosure.`);
+      }
+    }
+    const pairClass = disclosureValue(pairResult.subsection, "Pair class");
+    if (!PAIR_CLASSES.has(pairClass)) {
+      errors.push(`Paired-Draw Check has unsupported Pair class: ${pairClass ?? "missing"}`);
+    }
+    if (
+      !new Set(["yes", "no"]).has(disclosureValue(pairResult.subsection, "Counterfactual used"))
+    ) {
+      errors.push('Paired-Draw Check requires "Counterfactual used" to be yes or no.');
+    }
+
+    const header =
+      "| Draw | Timestamp | Executor host | Executor model | Model identity exposed | Prompt fingerprint | Structural class | Usefulness verdict | Author adoption | Burden |";
+    const rows = tableRows(pairResult.subsection, header);
+    if (!rows) {
+      errors.push(`Paired-Draw Check requires this table header: ${header}`);
+    } else {
+      if (rows.length !== 2 || rows[0]?.[0] !== "A" || rows[1]?.[0] !== "B") {
+        errors.push("Paired-Draw Check requires exactly two ordered rows, A and B.");
+      }
+      for (const [index, row] of rows.entries()) {
+        if (row.length !== 10) {
+          errors.push(`Paired-Draw Check row ${index + 1} must contain 10 columns.`);
+          continue;
+        }
+        errors.push(
+          ...provenanceErrors(
+            {
+              timestamp: row[1],
+              host: row[2],
+              model: row[3],
+              exposed: row[4],
+              fingerprint: row[5]
+            },
+            `Paired-Draw Check row ${row[0] || index + 1}`
+          )
+        );
+        if (FINGERPRINT_PATTERN.test(pairFingerprint ?? "") && row[5] !== pairFingerprint) {
+          errors.push("Paired-Draw Check rows require the same byte-identical prompt fingerprint.");
+        }
+        for (const [column, label] of [
+          [6, "Structural class"],
+          [7, "Usefulness verdict"],
+          [8, "Author adoption"],
+          [9, "Burden"]
+        ]) {
+          if (!row[column]) {
+            errors.push(
+              `Paired-Draw Check row ${row[0] || index + 1} requires non-empty ${label}.`
+            );
+          }
+        }
+      }
+    }
+  }
+
+  return errors;
+}
+
+function counterfactualDisclosureErrors(markdown, probeCount) {
+  const errors = [];
+  const promptUsefulness = reportSection(markdown, "## Prompt Usefulness") ?? "";
+  const disclosure = reportSection(promptUsefulness, "### Targeted Counterfactual");
+  const hasDisclosure = disclosure !== null;
+
+  if (probeCount === 0) {
+    if (hasDisclosure) {
+      errors.push(
+        "counterfactual_probes must be 1 when a ### Targeted Counterfactual disclosure is present."
+      );
+    }
+    return errors;
+  }
+  if (probeCount !== 1) return errors;
+  if (!hasDisclosure) {
+    errors.push(
+      "counterfactual_probes: 1 requires a ### Targeted Counterfactual disclosure in ## Prompt Usefulness."
+    );
+    return errors;
+  }
+
+  const baseFingerprint = disclosureValue(disclosure, "Base prompt fingerprint");
+  const counterfactualFingerprint = disclosureValue(
+    disclosure,
+    "Counterfactual prompt fingerprint"
+  );
+  if (!FINGERPRINT_PATTERN.test(baseFingerprint ?? "")) {
+    errors.push("Targeted Counterfactual requires a lowercase 64-character base fingerprint.");
+  }
+  if (!FINGERPRINT_PATTERN.test(counterfactualFingerprint ?? "")) {
+    errors.push(
+      "Targeted Counterfactual requires a lowercase 64-character counterfactual fingerprint."
+    );
+  }
+  if (
+    FINGERPRINT_PATTERN.test(baseFingerprint ?? "") &&
+    baseFingerprint === counterfactualFingerprint
+  ) {
+    errors.push(
+      "Targeted Counterfactual base and counterfactual fingerprints must differ; an unchanged prompt is a retry."
+    );
+  }
+
+  for (const label of ["Changed field", "One-variable change", "Result"]) {
+    if (!disclosureValue(disclosure, label)) {
+      errors.push(`Targeted Counterfactual requires a non-empty "${label}" disclosure.`);
+    }
+  }
+  if (disclosureValue(disclosure, "App use") !== "diagnostic only; response not used in app") {
+    errors.push(
+      'Targeted Counterfactual requires "App use: diagnostic only; response not used in app".'
+    );
+  }
+  return errors;
+}
+
+export function relativeLinks(markdown) {
+  const links = [];
+  for (const match of stripFrontmatter(markdown).matchAll(
+    /!?\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g
+  )) {
+    const target = match[1];
+    if (/^(?:https?:|mailto:|data:|#)/.test(target)) continue;
+    links.push(target);
+  }
+  return links;
+}
+
+function toPosix(filePath) {
+  return filePath.split(sep).join("/");
+}
+
+export function listEvidenceArtifacts(evidenceDir) {
+  if (!existsSync(evidenceDir)) return [];
+  const artifacts = [];
+  const walk = (directory) => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const absolutePath = join(directory, entry.name);
+      if (entry.isDirectory()) walk(absolutePath);
+      else artifacts.push(toPosix(relative(evidenceDir, absolutePath)));
+    }
+  };
+  walk(evidenceDir);
+  return artifacts.sort();
+}
+
+function isChildPath(parent, candidate) {
+  const fromParent = relative(resolve(parent), resolve(candidate));
+  return (
+    fromParent !== "" &&
+    fromParent !== ".." &&
+    !fromParent.startsWith(`..${sep}`) &&
+    !isAbsolute(fromParent)
+  );
+}
+
+function isNull(value) {
+  return value === undefined || value === "null";
+}
+
+function integer(value) {
+  return /^\d+$/.test(value ?? "") ? Number(value) : null;
+}
+
+function evidenceIndexLinks(markdown) {
+  const body = stripFrontmatter(markdown);
+  const marker = "### Evidence Index";
+  const markerIndex = body.indexOf(marker);
+  if (markerIndex < 0) return [];
+  const afterMarker = body.slice(markerIndex + marker.length);
+  const nextSection = afterMarker.search(/\n## /);
+  return relativeLinks(nextSection < 0 ? afterMarker : afterMarker.slice(0, nextSection));
+}
+
+function privacyErrors(markdown, links) {
+  const errors = [];
+  const secretPatterns = [
+    /sk-or-v1-[A-Za-z0-9_-]{12,}/i,
+    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/,
+    /(?:OPENROUTER_API_KEY|api[_ -]?key)\s*[:=]\s*(?!blank\b|none\b|null\b|missing\b|redacted\b)\S{8,}/i
+  ];
+  if (secretPatterns.some((pattern) => pattern.test(markdown))) {
+    errors.push("Report appears to contain an API key or key-like secret.");
+  }
+
+  const forbiddenBodyHeadings = [
+    /^#{1,6}\s+(?:Full|Exact|Compiled) Prompt\b/im,
+    /^#{1,6}\s+Raw (?:Assistance )?Response\b/im,
+    /^#{1,6}\s+(?:Candidate|Accepted) Prose\b/im
+  ];
+  if (forbiddenBodyHeadings.some((pattern) => pattern.test(markdown))) {
+    errors.push(
+      "Report contains a forbidden full-prompt, raw-response, candidate-prose, or accepted-prose section."
+    );
+  }
+
+  for (const match of markdown.matchAll(/```[^\n]*\n([\s\S]*?)```/g)) {
+    if (match[1].length > 1_000) {
+      errors.push("Report contains an oversized fenced block that may be a raw prompt or payload.");
+      break;
+    }
+  }
+
+  for (const link of links) {
+    if (/\.(?:sqlite3?|db)(?:-(?:wal|shm))?$/i.test(link)) {
+      errors.push(`Project database files must not be retained as evidence: ${link}`);
+    }
+  }
+  return errors;
+}
+
+function forbiddenEvidenceReason(artifact, evidenceDir) {
+  const fileName = basename(artifact);
+  if (/\.(?:sqlite3?|db)(?:-(?:wal|shm))?$/i.test(fileName)) {
+    return "project database";
+  }
+  if (/^trace(?:-\d+)?\.zip$/i.test(fileName)) return "browser trace";
+  if (
+    [
+      "session.json",
+      "app-session.json",
+      "shutdown.request",
+      "save-trace.request",
+      "save-trace.done",
+      "server-stdout.log",
+      "server-stderr.log"
+    ].includes(fileName)
+  ) {
+    return "run plumbing";
+  }
+  if (artifact.split("/").some((segment) => segment.startsWith("profile-"))) {
+    return "browser profile";
+  }
+  if (
+    [
+      "console-log.jsonl",
+      "network-failures.jsonl",
+      "provider-request-blocks.jsonl",
+      "external-request-blocks.jsonl"
+    ].includes(fileName) &&
+    lstatSync(join(evidenceDir, artifact)).size === 0
+  ) {
+    return "empty diagnostic stream";
+  }
+  return null;
+}
+
+export function validateReport(reportPath) {
+  const errors = [];
+  const warnings = [];
+  const absoluteReport = resolve(reportPath);
+  const fileName = basename(absoluteReport);
+  const reportDir = dirname(absoluteReport);
+  const nameMatch = FILENAME_PATTERN.exec(fileName);
+
+  if (basename(reportDir) !== "reports") {
+    errors.push("Report must be a direct child of reports/.");
+  }
+  if (!nameMatch) {
+    errors.push(
+      `Filename "${fileName}" does not match playtest-<story-slug>-<YYYY-MM-DDTHHMMSSZ>.md.`
+    );
+  }
+
+  let markdown;
+  try {
+    markdown = readFileSync(absoluteReport, "utf8");
+  } catch {
+    return { errors: [`Cannot read report: ${absoluteReport}`], warnings };
+  }
+
+  const frontmatter = parseFrontmatter(markdown);
+  if (!frontmatter) {
+    return { errors: [...errors, "Missing or unclosed YAML frontmatter block."], warnings };
+  }
+  errors.push(...validateSectionOrder(markdown));
+  for (const key of REQUIRED_KEYS) {
+    if (!(key in frontmatter) || frontmatter[key] === "") {
+      errors.push(`Missing required frontmatter key: ${key}`);
+    }
+  }
+  if (frontmatter.schema_version === "2") {
+    for (const key of V2_COUNT_KEYS) {
+      if (!(key in frontmatter) || frontmatter[key] === "") {
+        errors.push(`Missing required frontmatter key: ${key}`);
+      }
+    }
+  }
+
+  if (frontmatter.report_type !== "continuity-loom-author-playtest") {
+    errors.push('report_type must be "continuity-loom-author-playtest".');
+  }
+  if (!new Set(["1", "2"]).has(frontmatter.schema_version)) {
+    errors.push('schema_version must be "1" or "2".');
+  }
+  if (!isNull(frontmatter.viewport) && frontmatter.viewport !== "1440x900") {
+    errors.push('viewport must be "1440x900" or null.');
+  }
+  if (!isNull(frontmatter.browser) && !["chromium", "chrome"].includes(frontmatter.browser)) {
+    errors.push('browser must be "chromium", "chrome", or null.');
+  }
+  if (!["new_story", "continuation"].includes(frontmatter.run_mode)) {
+    errors.push('run_mode must be "new_story" or "continuation".');
+  }
+  if (!["completed", "blocked"].includes(frontmatter.status)) {
+    errors.push('status must be "completed" or "blocked".');
+  }
+  if (!INTERVENTIONS.has(frontmatter.candidate_intervention)) {
+    errors.push("candidate_intervention has an unsupported value.");
+  }
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(frontmatter.completion_reason ?? "")) {
+    errors.push("completion_reason must be a short kebab-case value.");
+  }
+  if (
+    !isNull(frontmatter.base_url) &&
+    !/^http:\/\/127\.0\.0\.1:\d+$/.test(frontmatter.base_url ?? "")
+  ) {
+    errors.push("base_url must be null or an http://127.0.0.1 URL with an explicit port.");
+  }
+
+  const stem = fileName.replace(/\.md$/, "");
+  if (frontmatter.run_id !== stem) errors.push("run_id must match the report filename stem.");
+  if (frontmatter.report_stem !== stem) {
+    errors.push("report_stem must match the report filename stem.");
+  }
+  if (nameMatch && frontmatter.story_slug !== nameMatch[1]) {
+    errors.push("story_slug must match the story slug in the report filename.");
+  }
+
+  if (!isNull(frontmatter.prior_report)) {
+    const prior = frontmatter.prior_report;
+    if (
+      isAbsolute(prior) ||
+      (!prior.startsWith("reports/") && !prior.startsWith("reports\\")) ||
+      resolve(dirname(reportDir), prior) === absoluteReport ||
+      !isChildPath(reportDir, resolve(dirname(reportDir), prior))
+    ) {
+      errors.push("prior_report must be null or a different repository-relative reports/ path.");
+    }
+  }
+  if (frontmatter.run_mode === "new_story" && !isNull(frontmatter.prior_report)) {
+    errors.push("new_story runs require prior_report: null.");
+  }
+  if (frontmatter.run_mode === "continuation" && isNull(frontmatter.prior_report)) {
+    errors.push("continuation runs require a repository-relative prior_report.");
+  }
+
+  if (!frontmatter.story_title?.trim()) errors.push("story_title must not be blank.");
+  if (!ISO_TIMESTAMP_PATTERN.test(frontmatter.started_at ?? "")) {
+    errors.push("started_at must be an ISO-8601 UTC timestamp.");
+  }
+  if (!ISO_TIMESTAMP_PATTERN.test(frontmatter.completed_at ?? "")) {
+    errors.push("completed_at must be an ISO-8601 UTC timestamp.");
+  }
+
+  if (!isNull(frontmatter.project_path)) {
+    const projectPath = frontmatter.project_path;
+    if (!isAbsolute(projectPath) || !isChildPath("/tmp", projectPath)) {
+      errors.push("project_path must be null or an absolute child path under /tmp.");
+    }
+  }
+  if (!["true", "false"].includes(frontmatter.project_exists_at_close)) {
+    errors.push("project_exists_at_close must be true or false.");
+  }
+
+  const counts = {};
+  const countKeys =
+    frontmatter.schema_version === "2" ? [...COUNT_KEYS, ...V2_COUNT_KEYS] : COUNT_KEYS;
+  for (const key of countKeys) {
+    counts[key] = integer(frontmatter[key]);
+    if (counts[key] === null) errors.push(`${key} must be a non-negative integer.`);
+  }
+  const acceptedSequence = isNull(frontmatter.accepted_segment_sequence)
+    ? null
+    : integer(frontmatter.accepted_segment_sequence);
+  if (
+    !isNull(frontmatter.accepted_segment_sequence) &&
+    (acceptedSequence === null || acceptedSequence < 1)
+  ) {
+    errors.push("accepted_segment_sequence must be null or a positive integer.");
+  }
+
+  if ((counts.cold_prose_attempts ?? 0) > 2) {
+    errors.push("cold_prose_attempts must not exceed 2.");
+  }
+  if ((counts.counterfactual_probes ?? 0) > 1) {
+    errors.push("counterfactual_probes must not exceed 1.");
+  }
+  if (counts.counterfactual_probes !== null) {
+    const promptUsefulness = reportSection(markdown, "## Prompt Usefulness") ?? "";
+    const hasCounterfactualDisclosure =
+      reportSection(promptUsefulness, "### Targeted Counterfactual") !== null;
+    if (
+      frontmatter.schema_version === "1" &&
+      counts.counterfactual_probes === 1 &&
+      !hasCounterfactualDisclosure
+    ) {
+      warnings.push(
+        "Historical schema v1 report declares one counterfactual probe without the later disclosure block; compatibility mode cannot reconstruct it."
+      );
+    } else {
+      errors.push(...counterfactualDisclosureErrors(markdown, counts.counterfactual_probes));
+    }
+  }
+
+  if (frontmatter.schema_version === "2") {
+    if ((counts.cold_first_view_witnesses ?? 0) > 1) {
+      errors.push("cold_first_view_witnesses must not exceed 1.");
+    }
+    if ((counts.independent_claim_challenges ?? 0) > 3) {
+      errors.push("independent_claim_challenges must not exceed 3.");
+    }
+    if ((counts.paired_draw_checks ?? 0) > 1) {
+      errors.push("paired_draw_checks must not exceed 1.");
+    }
+    errors.push(...v2MethodEvidenceErrors(markdown, counts));
+  }
+
+  const providerAttempts = counts.provider_request_attempts ?? 0;
+  const providerBlocks = counts.provider_requests_blocked ?? 0;
+  const sendClicks = counts.openrouter_send_controls_clicked ?? 0;
+  if (providerAttempts > 0 || providerBlocks > 0 || sendClicks > 0) {
+    if (frontmatter.status !== "blocked") {
+      errors.push("Any provider-send interaction requires status: blocked.");
+    }
+    if (frontmatter.completion_reason !== "provider-request-attempt") {
+      errors.push(
+        "Any provider-send interaction requires completion_reason: provider-request-attempt."
+      );
+    }
+    if (providerAttempts < 1 || providerBlocks < providerAttempts) {
+      errors.push("Provider attempts must be nonzero and no greater than provider guard blocks.");
+    }
+  }
+
+  if (frontmatter.status === "completed") {
+    if (frontmatter.completion_reason !== "accepted-one-segment") {
+      errors.push("Completed runs require completion_reason: accepted-one-segment.");
+    }
+    if (acceptedSequence === null || acceptedSequence < 1) {
+      errors.push("Completed runs require a positive accepted_segment_sequence.");
+    }
+    if (frontmatter.project_exists_at_close !== "true" || isNull(frontmatter.project_path)) {
+      errors.push("Completed runs require an existing-at-close /tmp project path.");
+    }
+    if (
+      isNull(frontmatter.base_url) ||
+      isNull(frontmatter.browser) ||
+      isNull(frontmatter.viewport)
+    ) {
+      errors.push("Completed runs require base_url, browser, and viewport values.");
+    }
+    if (![1, 2].includes(counts.cold_prose_attempts)) {
+      errors.push("Completed runs require one or two cold prose attempts.");
+    }
+    if (frontmatter.candidate_intervention === "not-reached") {
+      errors.push("Completed runs must record the candidate intervention burden.");
+    }
+    if (providerAttempts !== 0 || providerBlocks !== 0 || sendClicks !== 0) {
+      errors.push("Completed runs require zero provider sends, attempts, and guard blocks.");
+    }
+  }
+
+  const requiredTableHeaders = [
+    frontmatter.schema_version === "2" ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER,
+    ...COMMON_REQUIRED_TABLE_HEADERS
+  ];
+  for (const header of requiredTableHeaders) {
+    if (!hasTableHeader(markdown, header)) {
+      errors.push(`Missing required report table header: ${header}`);
+    }
+  }
+  errors.push(...findingLedgerErrors(markdown, frontmatter.schema_version));
+  if (!markdown.includes("### Evidence Index")) {
+    errors.push("Missing required subsection: ### Evidence Index");
+  }
+
+  const links = relativeLinks(markdown);
+  errors.push(...privacyErrors(markdown, links));
+  const evidencePrefix = `assets/${stem}/`;
+  const evidenceDir = join(reportDir, "assets", stem);
+  for (const link of links) {
+    if (isAbsolute(link)) {
+      errors.push(`Evidence link must be relative to the report: ${link}`);
+      continue;
+    }
+    if (!link.startsWith(evidencePrefix)) {
+      errors.push(`Evidence link outside ${evidencePrefix}: ${link}`);
+      continue;
+    }
+    const target = resolve(reportDir, link);
+    if (!isChildPath(evidenceDir, target)) {
+      errors.push(`Evidence link escapes ${evidencePrefix}: ${link}`);
+      continue;
+    }
+    if (!existsSync(target)) {
+      errors.push(`Evidence link target does not exist: ${link}`);
+    } else if (lstatSync(target).isSymbolicLink()) {
+      errors.push(`Evidence links must not target symbolic links: ${link}`);
+    }
+  }
+
+  const indexedLinks = new Set(evidenceIndexLinks(markdown));
+  for (const artifact of listEvidenceArtifacts(evidenceDir)) {
+    const reportRelative = `${evidencePrefix}${artifact}`;
+    const forbiddenReason = forbiddenEvidenceReason(artifact, evidenceDir);
+    if (forbiddenReason) {
+      errors.push(`Forbidden ${forbiddenReason} retained in evidence: ${reportRelative}`);
+    }
+    if (!indexedLinks.has(reportRelative)) {
+      errors.push(`Evidence artifact is not listed in Evidence Index: ${reportRelative}`);
+    }
+  }
+
+  return { errors, warnings };
+}
+
+function main() {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(`${usage()}\n`);
+    return 0;
+  }
+  const reportIndex = argv.indexOf("--report");
+  const reportPath = reportIndex >= 0 ? argv[reportIndex + 1] : null;
+  if (!reportPath) {
+    process.stderr.write(`${usage()}\n`);
+    return 1;
+  }
+  const { errors, warnings } = validateReport(reportPath);
+  for (const warning of warnings) process.stdout.write(`WARN: ${warning}\n`);
+  if (errors.length > 0) {
+    for (const error of errors) process.stdout.write(`FAIL: ${error}\n`);
+    return 1;
+  }
+  process.stdout.write(`PASS: ${reportPath}\n`);
+  return 0;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  process.exitCode = main();
+}
