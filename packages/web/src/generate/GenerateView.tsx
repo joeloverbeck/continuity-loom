@@ -445,7 +445,7 @@ function ReadyGenerate({
             <div className="providerRecovery">
               <p className="muted">Manual candidate intake is still available without a configured provider.</p>
               <button type="button" className="secondaryButton" onClick={focusManualEntry}>
-                Go to Write or paste candidate
+                Jump to candidate entry
               </button>
             </div>
           ) : null}
