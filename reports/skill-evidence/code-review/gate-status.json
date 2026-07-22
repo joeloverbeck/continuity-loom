@@ -1,11 +1,22 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-21T22:16:59.097Z",
+  "generated_at": "2026-07-22T09:00:49.771Z",
   "target_content_hash": "2967265361ebe8d7d3d27aed4f89d32e7489548b4441dd562d0bf2619ddab3c7",
-  "qualifying_uses_on_current_hash": 5,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
+  "qualifying_uses_on_current_hash": 8,
+  "open_incident_ids": [
+    "evt_543ac1c9-760f-4216-a626-a4921bd1be0f"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "output",
+      "open_event_ids": [
+        "evt_543ac1c9-760f-4216-a626-a4921bd1be0f"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "collecting",
   "authorized_workflow": null,
   "authorization_reason": null,
   "trigger_event_ids": [],
@@ -15,5 +26,5 @@
   "last_completed_review_id": "dec_4bdc2f7f-a55a-4ed3-8f36-5305480cd71e",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "fe99147a-c11c-4244-8f9c-0c250dbf8395"
+  "derivation_session_id": "16b5e37b-01c1-463b-bdd5-825717018cd9"
 }

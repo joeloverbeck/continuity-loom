@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-22T01:51:04.307Z",
+  "target_content_hash": "6db004c3cbb635d4fbe601cd54554b894c6a3a4d83fef1f105834e73877c4b37",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": "dec_562970aa-fce6-4d11-b7ba-51d27ef41e8c",
+  "target_name": "playtest",
+  "target_repo_relative_path": ".claude/skills/playtest",
+  "derivation_session_id": null
+}
