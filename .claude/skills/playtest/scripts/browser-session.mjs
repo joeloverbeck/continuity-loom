@@ -18,7 +18,7 @@ const GUARDED_POST_PATHS = new Set([
   "/api/generate",
   "/api/ideate",
   "/api/record-hygiene/analyze",
-  "/api/segment-reconciliation/analyze",
+  "/api/accepted-segment-change-review/analyze",
   "/api/settings/openrouter/models"
 ]);
 

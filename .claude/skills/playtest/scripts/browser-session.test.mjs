@@ -11,7 +11,7 @@ const guardedPaths = [
   "/api/generate",
   "/api/ideate",
   "/api/record-hygiene/analyze",
-  "/api/segment-reconciliation/analyze",
+  "/api/accepted-segment-change-review/analyze",
   "/api/settings/openrouter/models"
 ];
 
@@ -19,6 +19,13 @@ test("blocks every local provider-send POST endpoint", () => {
   for (const path of guardedPaths) {
     assert.equal(isGuardedProviderRequest("POST", `http://127.0.0.1:4173${path}`), true);
   }
+});
+
+test("no longer guards the retired Segment Reconciliation provider endpoint", () => {
+  assert.equal(
+    isGuardedProviderRequest("POST", "http://127.0.0.1:4173/api/segment-reconciliation/analyze"),
+    false
+  );
 });
 
 test("does not block safe methods or unrelated local endpoints", () => {

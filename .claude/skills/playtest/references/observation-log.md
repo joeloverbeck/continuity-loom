@@ -57,8 +57,8 @@ earlier misunderstandings and append corrections rather than rewriting history.
 ## Method pilot plan
 
 - Cold First-View Witness: <authoritative state>; eligible | not-eligible | pending-unavailable
-- Paired-Draw Check: <authoritative state>; eligible-if-natural | not-eligible | pending-unavailable
 - Independent Claim Challenges: <authoritative state>; eligible-after-draft | no-decision-driving-claims | pending-unavailable
+- Change Review delta comparison (standing method, not a pilot): triggers-on-continuity-planning | not-triggered | pending-unavailable; at most two per run
 ```
 
 ## Observation entry
@@ -145,26 +145,24 @@ substance, full prompts, raw responses, candidate prose, or accepted prose into 
 | <sha256>           | <UTC>     | <host family> | <exact exposed model or unknown> | true/false             | ...                  | ...                  |                   0 | clear/partly-clear/unclear | ...                      | passed        |
 ```
 
-### Paired-Draw Check
+### Change Review Delta Comparison
 
-Record the predeclared eligibility and output classes before either draw. Preserve separate raw
-assessments and adoption decisions.
+Seal the independent canonical-update baseline before compiling the Accepted-Segment Change Review
+prompt and before any segment-derived canonical edit. Record the privacy-safe adjudication only; keep
+exact story-bearing baseline text and raw responses in the temporary exchange directory. A run holds
+at most two comparisons.
 
 ```markdown
-- Prompt kind:
+- Segment sequence:
+- Record scope: active_working_set | whole_project
 - Prompt fingerprint:
-- Eligibility reason:
-- Informative output classes:
-- Pair class: concordant-substantive | concordant-no-change | discordant | both-poor-or-malformed | blocked
-- What the pair supports:
-- What the pair cannot establish:
-- Effect on likely-layer attribution:
-- Counterfactual used: yes | no
-
-| Draw | Timestamp | Executor host | Executor model | Model identity exposed | Prompt fingerprint | Structural class | Usefulness verdict | Author adoption | Burden |
-| ---- | --------- | ------------- | -------------- | ---------------------- | ------------------ | ---------------- | ------------------ | --------------- | ------ |
-| A    | ...       | ...           | ...            | true/false             | ...                | ...              | ...                | ...             | ...    |
-| B    | ...       | ...           | ...            | true/false             | ...                | ...              | ...                | ...             | ...    |
+- Baseline in-profile count:
+- Baseline out-of-profile count:
+- Six-dimension disposition: <per dimension: change expected | no change expected | uncertain>
+- Correspondence counts: matched=<n>; baseline-only=<n>; review-only-accepted=<n>; review-only-rejected=<n>; partial=<n>; unscorable=<n>
+- Coverage disagreements (0-6):
+- Substitution verdict: discovery-complete for this episode | materially reduced discovery work | independent audit still required | unsafe or misleading | not assessable
+- Related finding IDs: <F-ids for every material discrepancy, or none - reason>
 ```
 
 ### Independent Claim Challenges
@@ -194,8 +192,8 @@ challenger to validate product semantics.
 
 ## Evidence-basis vocabulary
 
-Tag each schema-v2 Prioritized Finding and each challenged claim with one or more comma-separated
-values from this fixed vocabulary:
+Tag each schema-v2 or schema-v3 Prioritized Finding and each challenged claim with one or more
+comma-separated values from this fixed vocabulary:
 
 - `direct-visible`
 - `reproduced`
@@ -211,7 +209,9 @@ values from this fixed vocabulary:
 - `single-observer-inference`
 
 Tags describe the evidence actually obtained; they are not scores or confidence upgrades. Do not
-tag routine observations that never become decision-driving claims.
+tag routine observations that never become decision-driving claims. The `paired-concordant` and
+`paired-discordant` tags belong only to historical Paired-Draw Check evidence; do not reuse them for
+the Change Review delta comparison, which records its own correspondence and coverage tallies.
 
 ## Classification vocabulary
 
@@ -230,7 +230,7 @@ Use one primary classification:
 Use one primary category where applicable: onboarding, project-setup, information-architecture,
 story-configuration, records, private-notes, active-working-set, generation-brief, readiness,
 prompt-inspection, prose-prompt, candidate, acceptance, accepted-segments, ideate,
-record-hygiene, segment-reconciliation, continuation, persistence, accessibility, layout,
+record-hygiene, accepted-segment-change-review, continuation, persistence, accessibility, layout,
 performance, diagnostics, privacy, or provider-safety.
 
 ## Severity

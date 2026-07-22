@@ -48,7 +48,7 @@ endpoints before they reach the local server:
 - `POST /api/generate`
 - `POST /api/ideate`
 - `POST /api/record-hygiene/analyze`
-- `POST /api/segment-reconciliation/analyze`
+- `POST /api/accepted-segment-change-review/analyze`
 - `POST /api/settings/openrouter/models`
 
 Any guard event is recorded in `provider-request-blocks.jsonl` and is a run defect. The guard is

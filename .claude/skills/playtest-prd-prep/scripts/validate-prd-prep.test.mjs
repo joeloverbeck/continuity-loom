@@ -43,10 +43,23 @@ function createSourceFixture(t, options = {}) {
     ? "reports/playtest-fixture-2026-07-16T120000Z.md"
     : "null";
   const schemaVersion = options.schemaVersion ?? "1";
+  const evidenceBasisSchema = ["2", "3"].includes(schemaVersion);
   const prioritizedRows = (options.prioritizedRows ?? DEFAULT_PRIORITIZED).map((row) =>
-    schemaVersion === "2" && row.length === 7 ? [...row, "direct-visible"] : row
+    evidenceBasisSchema && row.length === 7 ? [...row, "direct-visible"] : row
   );
   const cumulativeRows = options.cumulativeRows ?? DEFAULT_CUMULATIVE;
+  const changeReviewComparisons =
+    schemaVersion === "3" && options.changeReviewComparison ? 1 : 0;
+  const changeReviewSection =
+    changeReviewComparisons === 1
+      ? `
+### Change Review Delta Comparison
+
+| Segment sequence | Record scope | Prompt fingerprint | Baseline in-profile | Baseline out-of-profile | Correspondence counts | Coverage disagreements | Substitution verdict | Related finding IDs |
+| --- | --- | --- | ---: | ---: | --- | ---: | --- | --- |
+| 1 | active_working_set | ${"e".repeat(64)} | 3 | 1 | matched=2; baseline-only=1; review-only-accepted=0; review-only-rejected=0; partial=1; unscorable=0 | 1 | independent audit still required | F001 |
+`
+      : "";
 
   const markdown = `---
 report_type: continuity-loom-author-playtest
@@ -79,7 +92,12 @@ ${
 independent_claim_challenges: 0
 paired_draw_checks: 0
 `
-    : ""
+    : schemaVersion === "3"
+      ? `cold_first_view_witnesses: 0
+independent_claim_challenges: 0
+change_review_comparisons: ${changeReviewComparisons}
+`
+      : ""
 }candidate_intervention: light
 ---
 
@@ -111,8 +129,8 @@ Fixture journey.
 
 ## Prioritized Findings
 
-| ID | Severity | Classification | Category | Summary | Confidence | Status${schemaVersion === "2" ? " | Evidence basis" : ""} |
-| --- | --- | --- | --- | --- | --- | ---${schemaVersion === "2" ? " | ---" : ""} |
+| ID | Severity | Classification | Category | Summary | Confidence | Status${evidenceBasisSchema ? " | Evidence basis" : ""} |
+| --- | --- | --- | --- | --- | --- | ---${evidenceBasisSchema ? " | ---" : ""} |
 ${markdownRows(prioritizedRows)}
 
 ## Surface-by-Surface Experience
@@ -138,7 +156,7 @@ ${markdownRows(prioritizedRows)}
 | Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
 | Ideate | Not needed | skipped | none | none | none | intentional |
-
+${changeReviewSection}
 ## Candidate and Accepted Segment
 
 One fixture candidate was accepted after a light edit.
@@ -512,6 +530,32 @@ test("accepts a schema v2 report as the inventory frontier", (t) => {
 
   assert.deepEqual(result.errors, []);
   assert.equal(result.counts.prioritizedFindings, 1);
+});
+
+test("accepts a schema v3 report as the inventory frontier", (t) => {
+  const fixture = createSourceFixture(t, { schemaVersion: "3" });
+  const result = inspectSourceReport(fixture.reportPath);
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.counts.prioritizedFindings, 1);
+  assert.deepEqual(result.cumulativeIds, ["F001", "F002"]);
+});
+
+test("dispositions a schema v3 change-review comparison finding through the frontier", (t) => {
+  const fixture = createSourceFixture(t, {
+    schemaVersion: "3",
+    changeReviewComparison: true
+  });
+  const source = inspectSourceReport(fixture.reportPath);
+
+  assert.deepEqual(source.errors, []);
+  assert.ok(source.cumulativeIds.includes("F001"));
+
+  const prepPath = createPrepFixture(t, fixture);
+  const result = validatePrepArtifact(fixture.reportPath, prepPath);
+
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.prep.dispositionRows, 2);
 });
 
 test("inspects the derived prior-report prep when it exists", (t) => {

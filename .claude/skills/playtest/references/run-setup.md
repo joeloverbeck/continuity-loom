@@ -60,7 +60,7 @@ Before launching, complete these scratchpad fields:
 - expected continuity, physical, knowledge, reveal, voice, and content constraints;
 - expected useful records and private notes;
 - expected Generation Brief work;
-- expected help from Ideate, Record Hygiene, or Segment Reconciliation;
+- expected help from Ideate, Record Hygiene, or Accepted-Segment Change Review;
 - the sealed mental model of how a first-time author expects the app to support the work;
 - explicit non-goals and material that must not be forced.
 

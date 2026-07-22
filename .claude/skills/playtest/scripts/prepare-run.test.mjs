@@ -46,6 +46,8 @@ test("prepares a new-story run without creating the project folder", () => {
       /\| ID \| Timestamp \| Phase \| Visible action \| Kind \| Field label \/ instance \| Distinct field\? \| Successful write \/ selection\? \| Counted\? \| Exclusion reason \|/
     );
     assert.match(scratchpad, /### Quantitative boundary snapshots/);
+    assert.match(scratchpad, /## Change Review delta-comparison ledger/);
+    assert.match(scratchpad, /- Comparisons this run \(0-2\):/);
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
     rmSync(

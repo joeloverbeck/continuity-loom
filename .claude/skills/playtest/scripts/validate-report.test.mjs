@@ -233,6 +233,57 @@ function withCounterfactualDisclosure(
   );
 }
 
+const CHANGE_REVIEW_PROMPT_FINGERPRINT = "e".repeat(64);
+
+function v3Frontmatter(overrides = {}) {
+  return frontmatter({
+    schema_version: "3",
+    cold_first_view_witnesses: "0",
+    independent_claim_challenges: "0",
+    change_review_comparisons: "1",
+    ...overrides
+  });
+}
+
+function changeReviewComparisonRow(overrides = {}) {
+  const cells = {
+    sequence: "1",
+    scope: "active_working_set",
+    fingerprint: CHANGE_REVIEW_PROMPT_FINGERPRINT,
+    inProfile: "3",
+    outProfile: "1",
+    correspondence:
+      "matched=2; baseline-only=1; review-only-accepted=0; review-only-rejected=0; partial=1; unscorable=0",
+    coverageDisagreements: "1",
+    verdict: "independent audit still required",
+    findingRefs: "F001",
+    ...overrides
+  };
+  return `| ${cells.sequence} | ${cells.scope} | ${cells.fingerprint} | ${cells.inProfile} | ${cells.outProfile} | ${cells.correspondence} | ${cells.coverageDisagreements} | ${cells.verdict} | ${cells.findingRefs} |`;
+}
+
+function changeReviewComparisonDisclosure(rows = [changeReviewComparisonRow()]) {
+  return `### Change Review Delta Comparison
+
+| Segment sequence | Record scope | Prompt fingerprint | Baseline in-profile | Baseline out-of-profile | Correspondence counts | Coverage disagreements | Substitution verdict | Related finding IDs |
+|---|---|---|---:|---:|---|---:|---|---|
+${rows.join("\n")}`;
+}
+
+function v3Body({ rows = [changeReviewComparisonRow()], includeDisclosure = true } = {}) {
+  const withEvidenceBasis = BODY.replace(
+    `| ID | Severity | Classification | Category | Summary | Confidence | Status |\n|---|---|---|---|---|---|---|\n| F001 | moderate | friction | brief | Optional field cost | medium | new |`,
+    `| ID | Severity | Classification | Category | Summary | Confidence | Status | Evidence basis |\n|---|---|---|---|---|---|---|---|\n| F001 | moderate | friction | brief | Optional field cost | medium | new | direct-visible, single-observer-inference |`
+  );
+  if (!includeDisclosure) return withEvidenceBasis;
+  return withEvidenceBasis.replace(
+    "## Candidate and Accepted Segment",
+    `${changeReviewComparisonDisclosure(rows)}
+
+## Candidate and Accepted Segment`
+  );
+}
+
 let caseNumber = 0;
 function fixture(fm = frontmatter(), body = BODY) {
   caseNumber += 1;
@@ -333,6 +384,160 @@ test("accepts formatter-aligned schema v2 method table headers", () => {
   const { errors, warnings } = validateReport(fixture(v2Frontmatter(), formattedBody));
   assert.deepEqual(errors, []);
   assert.deepEqual(warnings, []);
+});
+
+test("accepts a complete schema v3 report with a Change Review delta comparison", () => {
+  const { errors, warnings } = validateReport(fixture(v3Frontmatter(), v3Body()));
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("accepts a schema v3 report with zero comparisons and no disclosure", () => {
+  const report = fixture(
+    v3Frontmatter({ change_review_comparisons: "0" }),
+    v3Body({ includeDisclosure: false })
+  );
+  const { errors, warnings } = validateReport(report);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("accepts two schema v3 comparisons with a nonmaterial none-reason reference", () => {
+  const rows = [
+    changeReviewComparisonRow({ scope: "whole_project" }),
+    changeReviewComparisonRow({
+      sequence: "2",
+      findingRefs: "none - every observed difference was nonmaterial phrasing"
+    })
+  ];
+  const report = fixture(v3Frontmatter({ change_review_comparisons: "2" }), v3Body({ rows }));
+  const { errors, warnings } = validateReport(report);
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("rejects a schema v3 report missing the change-review comparison counter", () => {
+  const report = fixture(v3Frontmatter({ change_review_comparisons: undefined }), v3Body());
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("change_review_comparisons")));
+});
+
+test("rejects a schema v3 comparison count that does not match the disclosure rows", () => {
+  const report = fixture(v3Frontmatter({ change_review_comparisons: "2" }), v3Body());
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("Change Review Delta Comparison table has 1 row"))
+  );
+});
+
+test("rejects a schema v3 comparison count above two", () => {
+  const report = fixture(v3Frontmatter({ change_review_comparisons: "3" }), v3Body());
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("change_review_comparisons must not exceed 2.")));
+});
+
+test("rejects a nonzero comparison counter without its disclosure", () => {
+  const report = fixture(v3Frontmatter(), v3Body({ includeDisclosure: false }));
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("### Change Review Delta Comparison in ## Assistance Evaluation"))
+  );
+});
+
+test("rejects a Change Review comparison disclosure when the counter is zero", () => {
+  const report = fixture(v3Frontmatter({ change_review_comparisons: "0" }), v3Body());
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) =>
+      error.includes("change_review_comparisons must be greater than 0 when ### Change Review Delta Comparison is present.")
+    )
+  );
+});
+
+test("rejects an unsupported schema v3 record scope", () => {
+  const rows = [changeReviewComparisonRow({ scope: "selected_records" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("unsupported record scope: selected_records")));
+});
+
+test("rejects a malformed schema v3 comparison prompt fingerprint", () => {
+  const rows = [changeReviewComparisonRow({ fingerprint: "abc123" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("requires a lowercase 64-character prompt fingerprint"))
+  );
+});
+
+test("rejects an unsupported schema v3 substitution verdict", () => {
+  const rows = [changeReviewComparisonRow({ verdict: "totally reliable" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("unsupported substitution verdict: totally reliable")));
+});
+
+test("rejects schema v3 correspondence counts that omit a required class", () => {
+  const rows = [
+    changeReviewComparisonRow({
+      correspondence: "matched=2; baseline-only=1; review-only-accepted=0; partial=1; unscorable=0"
+    })
+  ];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("correspondence counts must include review-only-rejected"))
+  );
+});
+
+test("rejects a schema v3 coverage-disagreement count above six", () => {
+  const rows = [changeReviewComparisonRow({ coverageDisagreements: "7" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("coverage-disagreement count from 0 to 6"))
+  );
+});
+
+test("rejects a schema v3 material discrepancy that references an unknown finding", () => {
+  const rows = [changeReviewComparisonRow({ findingRefs: "F404" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(
+    errors.some((error) => error.includes("references finding F404 that is absent from the Cumulative Finding Ledger"))
+  );
+});
+
+test("rejects a schema v3 bare none without a nonmaterial reason", () => {
+  const rows = [changeReviewComparisonRow({ findingRefs: "none" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes('related finding IDs must use "none - <reason>"')));
+});
+
+test("rejects a schema v3 none-prefixed cell that hides a real finding ID", () => {
+  const rows = [changeReviewComparisonRow({ findingRefs: "none-material F001" })];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes('related finding IDs must use "none - <reason>"')));
+});
+
+test("rejects schema v3 correspondence counts that repeat a class", () => {
+  const rows = [
+    changeReviewComparisonRow({
+      correspondence:
+        "matched=2; matched=1; baseline-only=1; review-only-accepted=0; review-only-rejected=0; partial=1; unscorable=0"
+    })
+  ];
+  const report = fixture(v3Frontmatter(), v3Body({ rows }));
+  const { errors } = validateReport(report);
+  assert.ok(errors.some((error) => error.includes("correspondence counts repeat class matched")));
+});
+
+test("historical schema v2 paired-draw reports remain valid alongside schema v3", () => {
+  const v2 = validateReport(fixture(v2Frontmatter(), v2Body()));
+  assert.deepEqual(v2.errors, []);
+  assert.deepEqual(v2.warnings, []);
 });
 
 test("accepts a historical schema v1 counterfactual without the later disclosure as a warning", () => {

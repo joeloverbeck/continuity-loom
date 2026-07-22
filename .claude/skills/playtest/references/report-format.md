@@ -21,7 +21,7 @@ Use scalar YAML values:
 ```yaml
 ---
 report_type: continuity-loom-author-playtest
-schema_version: 2
+schema_version: 3
 run_id: playtest-example-2026-07-17T120000Z
 report_stem: playtest-example-2026-07-17T120000Z
 story_title: Example Story
@@ -46,7 +46,7 @@ cold_assistance_attempts: 2
 counterfactual_probes: 0
 cold_first_view_witnesses: 0
 independent_claim_challenges: 0
-paired_draw_checks: 0
+change_review_comparisons: 0
 candidate_intervention: light
 ---
 ```
@@ -64,9 +64,10 @@ Allowed alternatives:
 - unreachable scalar values: `null`;
 - `candidate_intervention`: `none`, `light`, `substantial`, `rewrite`, or `not-reached`.
 
-All newly authored reports use schema `2`. Existing schema-v1 reports remain historical artifacts;
-do not rewrite them. The validator accepts them through a compatibility path and warns, rather than
-fails, when a v1 report declares one counterfactual but predates the disclosure block.
+All newly authored reports use schema `3`. Existing schema-v1 and schema-v2 reports remain historical
+artifacts; do not rewrite them. The validator accepts them through isolated compatibility paths —
+including the retired schema-v2 Paired-Draw Check — and warns, rather than fails, when a v1 report
+declares one counterfactual but predates the disclosure block.
 
 Count unchanged-prompt cold attempts separately from diagnostic counterfactuals:
 
@@ -85,11 +86,13 @@ Method-evidence counters describe only structurally disclosed instruments:
 
 - `cold_first_view_witnesses`: `0` or `1`;
 - `independent_claim_challenges`: `0` through `3`; and
-- `paired_draw_checks`: `0` or `1`.
+- `change_review_comparisons`: `0`, `1`, or `2`.
 
-Both paired draws also count as unchanged-prompt `cold_assistance_attempts`. A missing, unavailable,
-or naturally ineligible pilot remains `0` and is explained under Coverage Limitations; never create
-eligibility merely to increment a counter.
+Each Change Review delta comparison's single cold draw also counts as one unchanged-prompt
+`cold_assistance_attempts`. A missing, unavailable, or naturally ineligible instrument remains `0`
+and is explained under Coverage Limitations; never create eligibility merely to increment a counter.
+The retired `paired_draw_checks` counter is not authored in new reports; it survives only for
+historical schema-v2 validation.
 
 If a provider request was attempted, the browser guard should have blocked it. Record the real
 nonzero counts, set `status: blocked`, and use `provider-request-attempt`. Never falsify a zero to
@@ -161,6 +164,9 @@ tags from this fixed vocabulary:
 - `cross-run-recurrent`, `counterfactual-suggestive`, `single-observer-inference`.
 
 Tags state the basis actually obtained. They are not scores, rates, or substitutes for uncertainty.
+The `paired-concordant` and `paired-discordant` tags apply only to historical Paired-Draw Check
+evidence; the Change Review delta comparison records its own correspondence and coverage tallies and
+never reuses them.
 
 ### Prompt usefulness
 
@@ -208,6 +214,37 @@ author-only fields whose purpose was unclear; do not label them ignored prose co
 
 For skipped surfaces, give the naturalistic reason. State that provider response parsing/result
 cards were not exercised on the cold path.
+
+When `change_review_comparisons` is `1` or `2`, add this privacy-safe disclosure inside
+`## Assistance Evaluation` with exactly one row per comparison:
+
+```markdown
+### Change Review Delta Comparison
+
+| Segment sequence | Record scope | Prompt fingerprint | Baseline in-profile | Baseline out-of-profile | Correspondence counts | Coverage disagreements | Substitution verdict | Related finding IDs |
+| ---------------- | ------------ | ------------------ | ------------------: | ----------------------: | --------------------- | ---------------------: | -------------------- | ------------------- |
+| 1 | active_working_set | <64-character SHA-256> | 3 | 1 | matched=2; baseline-only=1; review-only-accepted=0; review-only-rejected=0; partial=1; unscorable=0 | 1 | independent audit still required | F001 |
+```
+
+- `Segment sequence` is the accepted-segment sequence the comparison covers; `Record scope` is
+  exactly `active_working_set` or `whole_project`; `Prompt fingerprint` is the lowercase 64-character
+  SHA-256 of the exact inspected Change Review prompt.
+- `Baseline in-profile` and `Baseline out-of-profile` are the non-negative counts of sealed baseline
+  items in each class.
+- `Correspondence counts` lists all six classes as `class=<integer>` entries separated by `; `:
+  `matched`, `baseline-only`, `review-only-accepted`, `review-only-rejected`, `partial`, and
+  `unscorable`.
+- `Coverage disagreements` is the count, `0` through `6`, of dimensions whose sealed disposition
+  differed from the returned coverage row.
+- `Substitution verdict` is exactly one of `discovery-complete for this episode`,
+  `materially reduced discovery work`, `independent audit still required`, `unsafe or misleading`, or
+  `not assessable`.
+- `Related finding IDs` lists the Cumulative Finding Ledger IDs for every material discrepancy, or
+  `none - <specific reason>` only when all observed differences are genuinely nonmaterial; every
+  listed ID must exist in the Cumulative Finding Ledger.
+
+Omit the subsection entirely when `change_review_comparisons` is `0`. Never place full prompts, raw
+responses, or exact story-bearing baseline text in this disclosure.
 
 ### Cumulative finding ledger
 
@@ -280,10 +317,13 @@ timestamp, host, model, and exposure value. Reconcile the challenged claim and i
 Finding evidence basis before validation. The pilot stops after its first two qualifying reports for
 an explicit `keep`, `revise`, or `retire` decision.
 
-### Paired-Draw Check
+### Paired-Draw Check (retired — schema-v2 historical only)
 
-When `paired_draw_checks` is `1`, place this disclosure in `## Prompt Usefulness` after the main
-prompt table. The two rows must share the exact prompt fingerprint:
+The Segment Reconciliation Paired-Draw Check is retired and is never authored in a new schema-v3
+report; the [Change Review delta comparison](#assistance-evaluation) replaces it. This spec remains
+only so the validator still accepts historical schema-v2 reports that already carry paired-draw
+evidence. When a historical `paired_draw_checks` is `1`, the disclosure sat in `## Prompt Usefulness`
+after the main prompt table, and the two rows shared the exact prompt fingerprint:
 
 ```markdown
 ### Paired-Draw Check
@@ -318,7 +358,7 @@ Record without reproducing accepted prose or full payloads:
 - story intent and the next unresolved response point;
 - intended POV, cast participation, and current local pressure for the next run;
 - canonical record/brief work completed after acceptance;
-- outstanding author decisions or reconciliation work;
+- outstanding author decisions or change-review work;
 - surfaces and field-influence concerns worth retesting;
 - the exact path of this report to supply to the next invocation.
 

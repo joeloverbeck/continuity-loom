@@ -49,6 +49,15 @@ const V2_COUNT_KEYS = [
   "paired_draw_checks"
 ];
 
+// Schema v3 retires the Segment Reconciliation paired-draw pilot and adds the
+// Accepted-Segment Change Review delta comparison. The witness and challenge
+// method instruments carry forward unchanged.
+const V3_COUNT_KEYS = [
+  "cold_first_view_witnesses",
+  "independent_claim_challenges",
+  "change_review_comparisons"
+];
+
 const INTERVENTIONS = new Set(["none", "light", "substantial", "rewrite", "not-reached"]);
 const EVIDENCE_BASIS_TAGS = new Set([
   "direct-visible",
@@ -72,6 +81,22 @@ const PAIR_CLASSES = new Set([
   "both-poor-or-malformed",
   "blocked"
 ]);
+const RECORD_SCOPES = new Set(["active_working_set", "whole_project"]);
+const SUBSTITUTION_VERDICTS = new Set([
+  "discovery-complete for this episode",
+  "materially reduced discovery work",
+  "independent audit still required",
+  "unsafe or misleading",
+  "not assessable"
+]);
+const CORRESPONDENCE_CLASSES = [
+  "matched",
+  "baseline-only",
+  "review-only-accepted",
+  "review-only-rejected",
+  "partial",
+  "unscorable"
+];
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
 const FINGERPRINT_PATTERN = /^[a-f0-9]{64}$/;
 const FINDING_ID_PATTERN = /^F\d{3,}$/;
@@ -240,7 +265,9 @@ function stableIds(rows, tableName, errors) {
 
 function findingLedgerErrors(markdown, schemaVersion) {
   const errors = [];
-  const prioritizedHeader = schemaVersion === "2" ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER;
+  const prioritizedHeader = ["2", "3"].includes(schemaVersion)
+    ? V2_FINDINGS_HEADER
+    : V1_FINDINGS_HEADER;
   const prioritizedRows = tableRows(
     reportSection(markdown, "## Prioritized Findings") ?? "",
     prioritizedHeader
@@ -316,7 +343,7 @@ function conditionalSubsection(markdown, parentHeading, subsectionHeading, count
   return { errors, subsection };
 }
 
-function v2MethodEvidenceErrors(markdown, counts) {
+function sharedMethodEvidenceErrors(markdown, counts) {
   const errors = [];
 
   const findings = reportSection(markdown, "## Prioritized Findings") ?? "";
@@ -474,6 +501,14 @@ function v2MethodEvidenceErrors(markdown, counts) {
     }
   }
 
+  return errors;
+}
+
+// Historical schema-v2 compatibility path. Never reached for schema v3, which
+// retired the paired-draw pilot; the counter and evidence tags are not reused.
+function v2MethodEvidenceErrors(markdown, counts) {
+  const errors = [...sharedMethodEvidenceErrors(markdown, counts)];
+
   const pairResult = conditionalSubsection(
     markdown,
     "## Prompt Usefulness",
@@ -554,6 +589,156 @@ function v2MethodEvidenceErrors(markdown, counts) {
     }
   }
 
+  return errors;
+}
+
+function cumulativeLedgerIdSet(markdown) {
+  const rows = tableRows(
+    reportSection(markdown, "## Cumulative Finding Ledger") ?? "",
+    CUMULATIVE_FINDINGS_HEADER
+  );
+  const ids = new Set();
+  if (!rows) return ids;
+  for (const row of rows) {
+    const id = row?.[0]?.trim() ?? "";
+    if (FINDING_ID_PATTERN.test(id)) ids.add(id);
+  }
+  return ids;
+}
+
+function correspondenceCountErrors(value, context) {
+  const errors = [];
+  const seen = new Set();
+  for (const part of (value ?? "")
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)) {
+    const match = /^([a-z][a-z-]*)\s*=\s*(\d+)$/.exec(part);
+    if (!match) {
+      errors.push(`${context} has a malformed correspondence entry: ${part}`);
+      continue;
+    }
+    if (!CORRESPONDENCE_CLASSES.includes(match[1])) {
+      errors.push(`${context} correspondence counts include an unsupported class: ${match[1]}`);
+      continue;
+    }
+    if (seen.has(match[1])) {
+      errors.push(`${context} correspondence counts repeat class ${match[1]}.`);
+      continue;
+    }
+    seen.add(match[1]);
+  }
+  for (const className of CORRESPONDENCE_CLASSES) {
+    if (!seen.has(className)) {
+      errors.push(`${context} correspondence counts must include ${className}=<integer>.`);
+    }
+  }
+  return errors;
+}
+
+function findingReferenceErrors(value, cumulativeIds, context) {
+  const trimmed = (value ?? "").trim();
+  // Only the exact documented "none - <reason>" form (whitespace around the dash and a nonempty
+  // reason) is a nonmaterial justification; any other none-prefixed cell fails closed rather than
+  // silently swallowing a finding ID such as "none-material F001".
+  if (/^none\s+-\s+\S/i.test(trimmed)) return [];
+  if (/^none\b/i.test(trimmed)) {
+    return [`${context} related finding IDs must use "none - <reason>" when no material discrepancy exists.`];
+  }
+  const errors = [];
+  const ids = trimmed
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (ids.length === 0) {
+    errors.push(`${context} requires related finding IDs or a "none - <reason>" justification.`);
+    return errors;
+  }
+  for (const id of ids) {
+    if (!FINDING_ID_PATTERN.test(id)) {
+      errors.push(`${context} has an invalid related finding ID: ${id}`);
+    } else if (!cumulativeIds.has(id)) {
+      errors.push(`${context} references finding ${id} that is absent from the Cumulative Finding Ledger.`);
+    }
+  }
+  return errors;
+}
+
+function changeReviewComparisonErrors(markdown, comparisonCount, cumulativeIds) {
+  const { errors, subsection } = conditionalSubsection(
+    markdown,
+    "## Assistance Evaluation",
+    "### Change Review Delta Comparison",
+    comparisonCount,
+    "change_review_comparisons"
+  );
+  if (subsection === null) return errors;
+
+  const header =
+    "| Segment sequence | Record scope | Prompt fingerprint | Baseline in-profile | Baseline out-of-profile | Correspondence counts | Coverage disagreements | Substitution verdict | Related finding IDs |";
+  const rows = tableRows(subsection, header);
+  if (!rows) {
+    errors.push(`Change Review Delta Comparison requires this table header: ${header}`);
+    return errors;
+  }
+  if (rows.length !== comparisonCount) {
+    errors.push(
+      `change_review_comparisons is ${comparisonCount}, but the Change Review Delta Comparison table has ${rows.length} row(s).`
+    );
+  }
+  for (const [index, row] of rows.entries()) {
+    const context = `Change Review Delta Comparison row ${index + 1}`;
+    if (row.length !== 9) {
+      errors.push(`${context} must contain 9 columns.`);
+      continue;
+    }
+    const [
+      sequence,
+      scope,
+      fingerprint,
+      inProfile,
+      outProfile,
+      correspondence,
+      coverageDisagreements,
+      verdict,
+      findingRefs
+    ] = row;
+    if (!/^\d+$/.test(sequence) || Number(sequence) < 1) {
+      errors.push(`${context} requires a positive integer segment sequence.`);
+    }
+    if (!RECORD_SCOPES.has(scope)) {
+      errors.push(`${context} has unsupported record scope: ${scope || "<blank>"}`);
+    }
+    if (!FINGERPRINT_PATTERN.test(fingerprint ?? "")) {
+      errors.push(`${context} requires a lowercase 64-character prompt fingerprint.`);
+    }
+    if (!/^\d+$/.test(inProfile)) {
+      errors.push(`${context} requires a non-negative integer baseline in-profile count.`);
+    }
+    if (!/^\d+$/.test(outProfile)) {
+      errors.push(`${context} requires a non-negative integer baseline out-of-profile count.`);
+    }
+    errors.push(...correspondenceCountErrors(correspondence, context));
+    if (!/^\d+$/.test(coverageDisagreements) || Number(coverageDisagreements) > 6) {
+      errors.push(`${context} requires an integer coverage-disagreement count from 0 to 6.`);
+    }
+    if (!SUBSTITUTION_VERDICTS.has(verdict)) {
+      errors.push(`${context} has unsupported substitution verdict: ${verdict || "<blank>"}`);
+    }
+    errors.push(...findingReferenceErrors(findingRefs, cumulativeIds, context));
+  }
+  return errors;
+}
+
+function v3MethodEvidenceErrors(markdown, counts) {
+  const errors = [...sharedMethodEvidenceErrors(markdown, counts)];
+  errors.push(
+    ...changeReviewComparisonErrors(
+      markdown,
+      counts.change_review_comparisons,
+      cumulativeLedgerIdSet(markdown)
+    )
+  );
   return errors;
 }
 
@@ -779,19 +964,23 @@ export function validateReport(reportPath) {
       errors.push(`Missing required frontmatter key: ${key}`);
     }
   }
-  if (frontmatter.schema_version === "2") {
-    for (const key of V2_COUNT_KEYS) {
-      if (!(key in frontmatter) || frontmatter[key] === "") {
-        errors.push(`Missing required frontmatter key: ${key}`);
-      }
+  const versionCountKeys =
+    frontmatter.schema_version === "2"
+      ? V2_COUNT_KEYS
+      : frontmatter.schema_version === "3"
+        ? V3_COUNT_KEYS
+        : [];
+  for (const key of versionCountKeys) {
+    if (!(key in frontmatter) || frontmatter[key] === "") {
+      errors.push(`Missing required frontmatter key: ${key}`);
     }
   }
 
   if (frontmatter.report_type !== "continuity-loom-author-playtest") {
     errors.push('report_type must be "continuity-loom-author-playtest".');
   }
-  if (!new Set(["1", "2"]).has(frontmatter.schema_version)) {
-    errors.push('schema_version must be "1" or "2".');
+  if (!new Set(["1", "2", "3"]).has(frontmatter.schema_version)) {
+    errors.push('schema_version must be "1", "2", or "3".');
   }
   if (!isNull(frontmatter.viewport) && frontmatter.viewport !== "1440x900") {
     errors.push('viewport must be "1440x900" or null.');
@@ -864,8 +1053,7 @@ export function validateReport(reportPath) {
   }
 
   const counts = {};
-  const countKeys =
-    frontmatter.schema_version === "2" ? [...COUNT_KEYS, ...V2_COUNT_KEYS] : COUNT_KEYS;
+  const countKeys = [...COUNT_KEYS, ...versionCountKeys];
   for (const key of countKeys) {
     counts[key] = integer(frontmatter[key]);
     if (counts[key] === null) errors.push(`${key} must be a non-negative integer.`);
@@ -903,17 +1091,25 @@ export function validateReport(reportPath) {
     }
   }
 
-  if (frontmatter.schema_version === "2") {
+  if (frontmatter.schema_version === "2" || frontmatter.schema_version === "3") {
     if ((counts.cold_first_view_witnesses ?? 0) > 1) {
       errors.push("cold_first_view_witnesses must not exceed 1.");
     }
     if ((counts.independent_claim_challenges ?? 0) > 3) {
       errors.push("independent_claim_challenges must not exceed 3.");
     }
+  }
+  if (frontmatter.schema_version === "2") {
     if ((counts.paired_draw_checks ?? 0) > 1) {
       errors.push("paired_draw_checks must not exceed 1.");
     }
     errors.push(...v2MethodEvidenceErrors(markdown, counts));
+  }
+  if (frontmatter.schema_version === "3") {
+    if ((counts.change_review_comparisons ?? 0) > 2) {
+      errors.push("change_review_comparisons must not exceed 2.");
+    }
+    errors.push(...v3MethodEvidenceErrors(markdown, counts));
   }
 
   const providerAttempts = counts.provider_request_attempts ?? 0;
@@ -962,7 +1158,7 @@ export function validateReport(reportPath) {
   }
 
   const requiredTableHeaders = [
-    frontmatter.schema_version === "2" ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER,
+    ["2", "3"].includes(frontmatter.schema_version) ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER,
     ...COMMON_REQUIRED_TABLE_HEADERS
   ];
   for (const header of requiredTableHeaders) {

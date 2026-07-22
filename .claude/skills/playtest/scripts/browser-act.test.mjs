@@ -13,7 +13,7 @@ test("recognizes prose and assistance prompts before terminal output", () => {
     "# Generated Prose Prompt\nWrite one segment.",
     "# Grounded Ideation Prompt\nReturn ideas.",
     "# Story-Record Hygiene Prompt\nReview records.",
-    "# Segment Reconciliation Prompt\nPropose changes.",
+    "# Accepted-Segment Change Review Candidate Prompt\nReview the accepted segment.",
     "<role>Writer</role>\n<final_output_instruction>Prose only.</final_output_instruction>"
   ];
   for (const prompt of prompts) assert.equal(appearsToContainCompiledPrompt(prompt), true);
@@ -21,12 +21,22 @@ test("recognizes prose and assistance prompts before terminal output", () => {
 
 test("recognizes serialized headings and structural assistance prompt boundaries", () => {
   const prompts = [
-    '- code: "# Segment Reconciliation Prompt\\naccepted evidence follows"',
+    '- code: "# Accepted-Segment Change Review Candidate Prompt\\naccepted evidence follows"',
     "<ideation_role>Consultant</ideation_role>\n<ideation_output_format>Blocks</ideation_output_format>",
     "<record_hygiene_role>Reviewer</record_hygiene_role>\n<record_hygiene_output_format>JSON</record_hygiene_output_format>",
-    "<segment_reconciliation_role>Reviewer</segment_reconciliation_role>\n<segment_reconciliation_output_format>JSON</segment_reconciliation_output_format>"
+    "<accepted_segment_change_review_role>Reviewer</accepted_segment_change_review_role>\n<accepted_segment_change_review_output_format>JSON</accepted_segment_change_review_output_format>"
   ];
   for (const prompt of prompts) assert.equal(appearsToContainCompiledPrompt(prompt), true);
+});
+
+test("no longer recognizes the retired Segment Reconciliation identity as a compiled prompt", () => {
+  assert.equal(appearsToContainCompiledPrompt("# Segment Reconciliation Prompt\nPropose changes."), false);
+  assert.equal(
+    appearsToContainCompiledPrompt(
+      "<segment_reconciliation_role>Reviewer</segment_reconciliation_role>\n<segment_reconciliation_output_format>JSON</segment_reconciliation_output_format>"
+    ),
+    false
+  );
 });
 
 test("detects a visible prompt body inside or intersecting an output scope", async () => {
@@ -79,7 +89,11 @@ test("does not classify ordinary visible UI text as a compiled prompt", () => {
     false
   );
   assert.equal(
-    appearsToContainCompiledPrompt("## Segment Reconciliation Prompt Template"),
+    appearsToContainCompiledPrompt("## Accepted-Segment Change Review Candidate Prompt Template"),
+    false
+  );
+  assert.equal(
+    appearsToContainCompiledPrompt("Accepted-Segment Change Review\nReview accepted-segment changes."),
     false
   );
 });

@@ -559,8 +559,9 @@ export function inspectSourceReport(reportPath) {
   const frontmatter = parseFrontmatter(markdown);
   const priorReport = frontmatter?.prior_report ?? "null";
   const priorPrep = derivePriorPrep(reportPath, priorReport);
-  const prioritizedHeaders =
-    frontmatter?.schema_version === "2" ? V2_PRIORITIZED_HEADERS : PRIORITIZED_HEADERS;
+  const prioritizedHeaders = ["2", "3"].includes(frontmatter?.schema_version)
+    ? V2_PRIORITIZED_HEADERS
+    : PRIORITIZED_HEADERS;
   const prioritized = parseTable(markdown, "## Prioritized Findings", prioritizedHeaders, {
     allowEmpty: true
   });
