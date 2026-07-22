@@ -27,7 +27,8 @@ const generationBriefMock = vi.hoisted(() => ({
 vi.mock("../api.js", () => ({
   getProject: vi.fn(),
   acceptedSegmentChangeReviewCompile: vi.fn(),
-  acceptedSegmentChangeReviewAnalyze: vi.fn()
+  acceptedSegmentChangeReviewAnalyze: vi.fn(),
+  refreshModels: vi.fn()
 }));
 
 vi.mock("../ProjectPicker.js", () => ({

@@ -48,9 +48,9 @@ const INCOMPATIBLE_MESSAGE =
 const INCOMPATIBLE_RECOVERY =
   "Select a model that advertises strict structured output (a JSON Schema response format), refresh the model list if needed, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic.";
 const UNKNOWN_MESSAGE =
-  "Capability data for the selected model is missing or unusable, so strict structured-output support cannot be confirmed.";
+  "The selected model has no cached capability data, so strict structured-output support cannot be confirmed. This usually means the cached model list predates capability checks and is stale, not that the model is unsupported.";
 const UNKNOWN_RECOVERY =
-  "Refresh the OpenRouter model list and select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic.";
+  "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and Analyze again. No request was sent; no retry is automatic. If it still fails after a refresh, the selected model may not support strict structured output — choose one that does.";
 
 /**
  * Derive the routing-relevant capability requirements from the exact request envelope. Requirements

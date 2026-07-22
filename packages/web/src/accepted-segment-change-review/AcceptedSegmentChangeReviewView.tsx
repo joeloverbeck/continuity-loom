@@ -2,6 +2,7 @@ import type {
   AcceptedSegmentChangeReviewItem,
   AcceptedSegmentChangeReviewRecordScope,
   AcceptedSegmentChangeReviewRequest,
+  CompileResult,
   ConsumedGenerationGuidanceEntry
 } from "@loom/core";
 import { useEffect, useRef, useState } from "react";
@@ -10,17 +11,21 @@ import { useNavigate } from "react-router-dom";
 import {
   acceptedSegmentChangeReviewAnalyze,
   acceptedSegmentChangeReviewCompile,
+  refreshModels,
   type AcceptedSegmentChangeReviewAnalyzeResponse,
-  type AcceptedSegmentChangeReviewCompileResponse
+  type AcceptedSegmentChangeReviewCompileResponse,
+  type RefreshModelsResponse
 } from "../api.js";
 import { isTransportFailure } from "../openrouter-transport.js";
-import { presentOpenRouterFailure } from "../openrouter-failure.js";
+import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
+import { PromptInspector } from "../prompt/PromptInspector.js";
 
 export interface AcceptedSegmentChangeReviewClient {
   compile(request: AcceptedSegmentChangeReviewRequest): Promise<AcceptedSegmentChangeReviewCompileResponse>;
   analyze(
     request: AcceptedSegmentChangeReviewRequest & { expectedPromptFingerprint: string }
   ): Promise<AcceptedSegmentChangeReviewAnalyzeResponse>;
+  refreshModels(): Promise<RefreshModelsResponse>;
 }
 
 interface NavigationOptions {
@@ -34,7 +39,8 @@ export interface AcceptedSegmentChangeReviewViewProps {
 
 const defaultClient: AcceptedSegmentChangeReviewClient = {
   compile: acceptedSegmentChangeReviewCompile,
-  analyze: acceptedSegmentChangeReviewAnalyze
+  analyze: acceptedSegmentChangeReviewAnalyze,
+  refreshModels
 };
 
 type ReadyCompile = Extract<AcceptedSegmentChangeReviewCompileResponse, { ok: true }>;
@@ -51,10 +57,17 @@ type ReviewState =
   | { status: "success"; result: ValidReview }
   | { status: "quarantined"; reasonCode: string; summary: string }
   | { status: "stale"; message: string }
+  | { status: "capabilityStale"; message: string; recovery: string }
   | { status: "incompatibleModel"; message: string; recovery: string }
   | { status: "provider"; message: string }
   | { status: "oversize"; message: string }
   | { status: "local"; message: string };
+
+type ModelRefreshState =
+  | { status: "idle" }
+  | { status: "refreshing" }
+  | { status: "done"; modelCount: number }
+  | { status: "error"; message: string };
 
 export function AcceptedSegmentChangeReviewView({
   client = defaultClient,
@@ -68,6 +81,8 @@ export function AcceptedSegmentChangeReviewView({
   const [kept, setKept] = useState<ReadonlySet<string>>(() => new Set());
   const [reviewed, setReviewed] = useState<ReadonlySet<string>>(() => new Set());
   const [selectedGuidance, setSelectedGuidance] = useState<ReadonlySet<string>>(() => new Set());
+  const [searchTerm, setSearchTerm] = useState("");
+  const [modelRefresh, setModelRefresh] = useState<ModelRefreshState>({ status: "idle" });
   const sourceIdentity = useRef(0);
 
   useEffect(() => {
@@ -75,6 +90,7 @@ export function AcceptedSegmentChangeReviewView({
     sourceIdentity.current = identity;
     let active = true;
     setCompileState({ status: "loading" });
+    setSearchTerm("");
     clearReviewState();
 
     void client.compile(requestFor(recordScope))
@@ -108,6 +124,7 @@ export function AcceptedSegmentChangeReviewView({
     setKept(new Set());
     setReviewed(new Set());
     setSelectedGuidance(new Set());
+    setModelRefresh({ status: "idle" });
   }
 
   async function analyze(): Promise<void> {
@@ -116,6 +133,7 @@ export function AcceptedSegmentChangeReviewView({
     }
 
     setSendConfirmed(false);
+    setModelRefresh({ status: "idle" });
     setReviewState({ status: "sending" });
     const identity = sourceIdentity.current;
     const inspectedRequest = requestFor(compileState.result.disclosure.recordScope);
@@ -145,10 +163,15 @@ export function AcceptedSegmentChangeReviewView({
       }
 
       if (isTransportFailure(result)) {
-        if (
-          result.category === "structured-output-incompatible-model" ||
-          result.category === "structured-output-capability-unknown"
-        ) {
+        if (result.category === "structured-output-capability-unknown") {
+          setReviewState({
+            status: "capabilityStale",
+            message: result.message,
+            recovery: result.recovery ?? presentOpenRouterFailure(result)
+          });
+          return;
+        }
+        if (result.category === "structured-output-incompatible-model") {
           setReviewState({
             status: "incompatibleModel",
             message: result.message,
@@ -175,6 +198,26 @@ export function AcceptedSegmentChangeReviewView({
       setReviewState({
         status: "local",
         message: "The local Analyze request failed. Inspect the source and try again manually. No retry is automatic."
+      });
+    }
+  }
+
+  async function refreshModelsForRecovery(): Promise<void> {
+    setModelRefresh({ status: "refreshing" });
+    try {
+      const result = await client.refreshModels();
+      if (result.ok) {
+        setModelRefresh({ status: "done", modelCount: result.models.length });
+      } else {
+        setModelRefresh({ status: "error", message: presentOpenRouterFailure(result) });
+      }
+    } catch (error) {
+      setModelRefresh({
+        status: "error",
+        message: presentThrownOpenRouterFailure(
+          error,
+          "The model list could not be refreshed. Open Settings to refresh manually."
+        )
       });
     }
   }
@@ -231,17 +274,22 @@ export function AcceptedSegmentChangeReviewView({
             recordScope={recordScope}
             sendConfirmed={sendConfirmed}
             sending={reviewState.status === "sending"}
+            searchTerm={searchTerm}
             onScopeChange={setRecordScope}
             onConfirm={setSendConfirmed}
             onAnalyze={() => void analyze()}
+            onSearchTermChange={setSearchTerm}
+            onCopyPrompt={() => void navigator.clipboard?.writeText(compileState.result.prompt)}
           />
           <ReviewPanel
             state={reviewState}
             compile={compileState.result}
             kept={kept}
             reviewed={reviewed}
+            modelRefresh={modelRefresh}
             onToggleKept={(id) => toggle(setKept, id)}
             onToggleReviewed={(id) => toggle(setReviewed, id)}
+            onRefreshModels={() => void refreshModelsForRecovery()}
             onCopy={(item) => void navigator.clipboard?.writeText(formatItemForCopy(item))}
             onCitation={(citation) => navigate(citationTarget(
               citation,
@@ -269,74 +317,101 @@ function SourcePanel({
   recordScope,
   sendConfirmed,
   sending,
+  searchTerm,
   onScopeChange,
   onConfirm,
-  onAnalyze
+  onAnalyze,
+  onSearchTermChange,
+  onCopyPrompt
 }: {
   result: ReadyCompile;
   recordScope: AcceptedSegmentChangeReviewRecordScope;
   sendConfirmed: boolean;
   sending: boolean;
+  searchTerm: string;
   onScopeChange: (scope: AcceptedSegmentChangeReviewRecordScope) => void;
   onConfirm: (confirmed: boolean) => void;
   onAnalyze: () => void;
+  onSearchTermChange: (value: string) => void;
+  onCopyPrompt: () => void;
 }): React.JSX.Element {
   const disclosure = result.disclosure;
   return (
-    <section className="configPanel" aria-labelledby="change-review-source-title">
-      <h3 id="change-review-source-title">Complete source disclosure</h3>
-      <p>Latest accepted segment {disclosure.acceptedSegmentSequence}</p>
-      <p>Accepted {disclosure.acceptedSegmentAcceptedAt}</p>
-      <fieldset aria-label="Record scope">
-        <legend>Record scope</legend>
-        <label>
+    <>
+      <section className="configPanel" aria-labelledby="change-review-source-title">
+        <h3 id="change-review-source-title">Complete source disclosure</h3>
+        <p>Latest accepted segment {disclosure.acceptedSegmentSequence}</p>
+        <p>Accepted {disclosure.acceptedSegmentAcceptedAt}</p>
+        <fieldset aria-label="Record scope">
+          <legend>Record scope</legend>
+          <label>
+            <input
+              type="radio"
+              name="accepted-segment-change-review-scope"
+              disabled={sending}
+              checked={recordScope === "active_working_set"}
+              onChange={() => onScopeChange("active_working_set")}
+            />
+            Active Working Set
+          </label>
+          <label>
+            <input
+              type="radio"
+              name="accepted-segment-change-review-scope"
+              disabled={sending}
+              checked={recordScope === "whole_project"}
+              onChange={() => onScopeChange("whole_project")}
+            />
+            Whole Project
+          </label>
+        </fieldset>
+        <p>{disclosure.fullRecordCount} records</p>
+        <p>{disclosure.includesSecrets ? "SECRET records are included and will be sent after confirmation." : "No SECRET records are included."}</p>
+        <dl className="metadataGrid">
+          {Object.entries(disclosure.countsByType).map(([type, count]) => (
+            <div key={type}><dt>{type}</dt><dd>{count}</dd></div>
+          ))}
+        </dl>
+      </section>
+
+      <div className="previewToolbar">
+        <button type="button" className="secondaryButton" onClick={onCopyPrompt}>Copy prompt</button>
+      </div>
+
+      <PromptInspector
+        result={toInspectorResult(result)}
+        searchTerm={searchTerm}
+        onSearchTermChange={onSearchTermChange}
+      />
+
+      <section className="configPanel" aria-labelledby="change-review-send-title">
+        <h3 id="change-review-send-title">OpenRouter Send</h3>
+        <label className="checkboxLabel">
           <input
-            type="radio"
-            name="accepted-segment-change-review-scope"
+            type="checkbox"
             disabled={sending}
-            checked={recordScope === "active_working_set"}
-            onChange={() => onScopeChange("active_working_set")}
+            checked={sendConfirmed}
+            onChange={(event) => onConfirm(event.target.checked)}
           />
-          Active Working Set
+          I inspected the complete source and confirm this one-time send
         </label>
-        <label>
-          <input
-            type="radio"
-            name="accepted-segment-change-review-scope"
-            disabled={sending}
-            checked={recordScope === "whole_project"}
-            onChange={() => onScopeChange("whole_project")}
-          />
-          Whole Project
-        </label>
-      </fieldset>
-      <p>{disclosure.fullRecordCount} records</p>
-      <p>{disclosure.includesSecrets ? "SECRET records are included and will be sent after confirmation." : "No SECRET records are included."}</p>
-      <dl className="metadataGrid">
-        {Object.entries(disclosure.countsByType).map(([type, count]) => (
-          <div key={type}><dt>{type}</dt><dd>{count}</dd></div>
-        ))}
-        <div><dt>Prompt characters</dt><dd>{disclosure.promptLength}</dd></div>
-        <div><dt>Token estimate</dt><dd>{disclosure.tokenEstimate}</dd></div>
-        <div><dt>Fingerprint</dt><dd>{disclosure.fingerprint}</dd></div>
-        <div><dt>Versions</dt><dd>{disclosure.versions.template} / {disclosure.versions.compiler} / {disclosure.versions.contract}</dd></div>
-      </dl>
-      <details open>
-        <summary>Complete prompt source</summary>
-        <pre>{result.prompt}</pre>
-      </details>
-      <label className="checkboxLabel">
-        <input
-          type="checkbox"
-          disabled={sending}
-          checked={sendConfirmed}
-          onChange={(event) => onConfirm(event.target.checked)}
-        />
-        I inspected the complete source and confirm this one-time send
-      </label>
-      <button type="button" disabled={!sendConfirmed || sending} onClick={onAnalyze}>Analyze with OpenRouter</button>
-    </section>
+        <button type="button" disabled={!sendConfirmed || sending} onClick={onAnalyze}>Analyze with OpenRouter</button>
+      </section>
+    </>
   );
+}
+
+function toInspectorResult(result: ReadyCompile): CompileResult {
+  const { disclosure } = result;
+  return {
+    prompt: result.prompt,
+    metadata: {
+      versions: disclosure.versions,
+      fingerprint: disclosure.fingerprint,
+      lengthEstimate: disclosure.promptLength,
+      tokenEstimate: disclosure.tokenEstimate
+    }
+  };
 }
 
 function ReviewPanel({
@@ -344,8 +419,10 @@ function ReviewPanel({
   compile,
   kept,
   reviewed,
+  modelRefresh,
   onToggleKept,
   onToggleReviewed,
+  onRefreshModels,
   onCopy,
   onCitation,
   onClear
@@ -354,8 +431,10 @@ function ReviewPanel({
   compile: ReadyCompile;
   kept: ReadonlySet<string>;
   reviewed: ReadonlySet<string>;
+  modelRefresh: ModelRefreshState;
   onToggleKept: (id: string) => void;
   onToggleReviewed: (id: string) => void;
+  onRefreshModels: () => void;
   onCopy: (item: AcceptedSegmentChangeReviewItem) => void;
   onCitation: (citation: string) => void;
   onClear: () => void;
@@ -374,6 +453,28 @@ function ReviewPanel({
       ) : null}
       {state.status === "stale" ? (
         <Recovery title="Source changed" message={state.message} guidance="Refresh the source manually before another explicit Analyze. No retry is automatic." />
+      ) : null}
+      {state.status === "capabilityStale" ? (
+        <Recovery title="Model capability data needs a refresh" message={state.message} guidance={state.recovery}>
+          <div className="previewToolbar">
+            <button
+              type="button"
+              className="secondaryButton"
+              onClick={onRefreshModels}
+              disabled={modelRefresh.status === "refreshing"}
+            >
+              {modelRefresh.status === "refreshing" ? "Refreshing model list..." : "Refresh model list"}
+            </button>
+          </div>
+          {modelRefresh.status === "done" ? (
+            <p role="status">
+              Refreshed {modelRefresh.modelCount} models with capability data. Re-confirm the send and Analyze again.
+            </p>
+          ) : null}
+          {modelRefresh.status === "error" ? (
+            <p className="status statusError" role="alert">{modelRefresh.message}</p>
+          ) : null}
+        </Recovery>
       ) : null}
       {state.status === "incompatibleModel" ? (
         <Recovery title="Strict structured output unavailable" message={state.message} guidance={state.recovery} />
@@ -547,13 +648,24 @@ function ConsumedGuidancePanel({
   );
 }
 
-function Recovery({ title, message, guidance }: { title: string; message: string; guidance: string }): React.JSX.Element {
+function Recovery({
+  title,
+  message,
+  guidance,
+  children
+}: {
+  title: string;
+  message: string;
+  guidance: string;
+  children?: React.ReactNode;
+}): React.JSX.Element {
   const id = `change-review-recovery-${title.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <section className="status statusWarning" role="alert" aria-labelledby={id}>
       <h4 id={id}>{title}</h4>
       <p>{message}</p>
       <p>{guidance}</p>
+      {children}
     </section>
   );
 }

@@ -57,6 +57,7 @@ Every active Markdown document under `docs/` must appear in the registry below. 
 | `docs/agents/domain.md` | Engineering-skill rules for consuming the repository's single-context domain glossary and ADRs. | reference | support |
 | `docs/adr/0001-version-playtest-prep-contracts.md` | Version identity and producer-owned migration boundary for playtest PRD-prep artifacts. | decision | support |
 | `docs/adr/0002-validation-gates-fail-closed.md` | Validators must emit an error on unparseable input rather than returning an empty error set. | decision | support |
+| `docs/adr/0003-capability-admission-fails-closed-with-targeted-recovery.md` | Strict-output capability admission fails closed but separates stale-cache recovery (refresh) from incompatible-model recovery (choose another model). | decision | support |
 | `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
 
 ### Constitutional authority
@@ -106,6 +107,7 @@ Use these when changing validation coverage, demo fixture behavior, prompt/compi
 - `docs/agents/domain.md`
 - `docs/adr/0001-version-playtest-prep-contracts.md`
 - `docs/adr/0002-validation-gates-fail-closed.md`
+- `docs/adr/0003-capability-admission-fails-closed-with-targeted-recovery.md`
 - `docs/archival-workflow.md`
 
 Use these for repository workflow, PRD and issue shape, archival decisions, and completion standards. `tickets/README.md` and `tickets/_TEMPLATE.md` are no longer active authorities; they remain only as historical format references for the retired local-ticket workflow.
