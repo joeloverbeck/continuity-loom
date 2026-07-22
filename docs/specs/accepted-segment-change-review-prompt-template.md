@@ -3,7 +3,7 @@
 Status: active reference — domain authority for the accepted-segment-change-review assistance prompt template
 Authority: domain authority for the accepted-segment-change-review assistance prompt template (see `docs/ACTIVE-DOCS.md`)
 Profile id: `accepted-segment-change-review`
-Template version: `2.0.0`
+Template version: `2.1.0`
 Compiler version: `2.0.0`
 Compiler-contract version: `1.16.0`
 Output contract: `accepted_segment_change_review.v2`
@@ -27,6 +27,10 @@ The profile excludes every older accepted segment, segment range, candidate, reg
 ## Field Boundary
 
 The nineteen review paths are exactly the CURRENT AUTHORITATIVE STATE and IMMEDIATE HANDOFF paths declared in `docs/specs/story-record-schema.md`. No other Generation Brief surface — generation context, selected POV, cast bands, working-set membership, manual directive, stop guidance, voice controls, or validation focus — is a review source. The accepted segment is bounded evidence for advisory review, not canon authority and not prose-prompt authority.
+
+## Inherited-Brief Drift Elicitation
+
+Change review contrasts the accepted segment against the declared brief fields in both directions. Beyond a change the segment renders, the role prompt also elicits reverse-direction drift: an inherited current-state or immediate-handoff field that presupposes a beat the latest accepted segment never renders — drift that rests on the segment's absence of that beat. Because absence provides no qualifying verbatim excerpt, such an item is always `interpretation requiring author judgment` with an empty `evidence_excerpt`; it can never be an `established change`, and a drift item asserted as established quarantines under the same evidence_excerpt gate. The item names the drifted brief field through its contrast key and cites the accepted-segment span where the segment actually ends. This adds no output field, epistemic status, coverage row, or additional read; it is a role-prompt elicitation over the same nineteen brief paths and the single `latest` accepted segment (template `2.1.0`). The `immediate next-segment handoff` coverage row reflects such an item when present.
 
 ## Record Scope
 

@@ -84,6 +84,47 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(screen.queryByText(/Established evidence excerpt/i)).toBeNull();
   });
 
+  it("presents an inherited-brief drift item advisorily: names the drifted field, shows provenance keys, and never mutates or gates (F021)", async () => {
+    analyzeMock.mockResolvedValue(driftResponse());
+    renderView();
+    await analyze();
+
+    // The continuation-open drift item renders as interpretation-class with no extractive excerpt.
+    expect(await screen.findByRole("heading", { name: "Possible change ITEM-001" })).toBeTruthy();
+    expect(screen.getByText(/no extractive excerpt; author judgment required/i)).toBeTruthy();
+    expect(screen.queryByText(/Established evidence excerpt/i)).toBeNull();
+
+    // Names the drifted brief field through its contrast citation, and shows the accepted-segment
+    // provenance as an evidence key. Both are focusable controls with accessible names.
+    const contrastButton = screen.getByRole<HTMLButtonElement>("button", {
+      name: "Open contrast [BRIEF:immediate_handoff.last_visible_moment] for ITEM-001"
+    });
+    expect(screen.getByRole("button", { name: "Open evidence [SEG-7-S001] for ITEM-001" })).toBeTruthy();
+    contrastButton.focus();
+    expect(document.activeElement).toBe(contrastButton);
+
+    // Advisory-only: interacting is session-scoped scratch and navigates instead of mutating.
+    fireEvent.click(screen.getByRole("button", { name: "Keep ITEM-001" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mark ITEM-001 reviewed" }));
+    fireEvent.click(contrastButton);
+
+    expect(screen.getByText("Kept for this session")).toBeTruthy();
+    expect(screen.getByText("Reviewed for this session")).toBeTruthy();
+    expect(navigateMock).toHaveBeenCalledWith("/generation-brief?field=immediate_handoff.last_visible_moment");
+    expect(Object.keys(localStorage)).toHaveLength(0);
+    expect(Object.keys(sessionStorage)).toHaveLength(0);
+    expect(screen.getAllByText(/Unverified, noncanonical advice/).length).toBeGreaterThan(0);
+
+    // Non-mutating / non-gating: no apply/prefill/patch/create/generate/preview/reminder affordances.
+    for (const forbidden of [
+      "Apply", "Prefill", "Patch", "Create", "Archive", "Merge", "Use as prose",
+      "Generate prose", "Preview", "Acknowledge reminder", "Mark canon"
+    ]) {
+      expect(screen.queryByRole("button", { name: forbidden })).toBeNull();
+    }
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps all card actions in component memory and provides navigation instead of mutation", async () => {
     const { unmount } = renderView();
     await analyze();
@@ -307,6 +348,30 @@ function interpretationResponse(): AnalyzeSuccess {
         evidenceExcerpt: "",
         epistemicStatus: "interpretation requiring author judgment" as const
       }]
+    }
+  };
+}
+
+function driftResponse(): AnalyzeSuccess {
+  const base = successResponse();
+  return {
+    ...base,
+    review: {
+      ...base.review,
+      items: [{
+        id: "ITEM-001",
+        changeStatement:
+          "The inherited handoff presupposes the clerk already pivoted to the far bench, but the accepted segment ends before that turn occurs.",
+        evidenceExcerpt: "",
+        evidence: ["[SEG-7-S001]"],
+        contrast: ["[BRIEF:immediate_handoff.last_visible_moment]"],
+        epistemicStatus: "interpretation requiring author judgment" as const,
+        retentionHorizon: "next-brief-only" as const,
+        affectedTargetHints: ["IMMEDIATE-HANDOFF"],
+        uncertaintyOrRivalReading:
+          "The author may have intended an off-screen turn; only the author can reconcile the handoff with the rendered ending."
+      }],
+      coverage: coverageRows()
     }
   };
 }

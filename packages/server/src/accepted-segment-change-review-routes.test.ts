@@ -77,7 +77,7 @@ describe("Accepted-Segment Change Review routes", () => {
       fullRecordCount: 1,
       includesSecrets: false,
       promptLength: response.prompt.length,
-      versions: { template: "2.0.0", compiler: "2.0.0", contract: "2.1.0" }
+      versions: { template: "2.1.0", compiler: "2.0.0", contract: "2.1.0" }
     });
     expect(response.disclosure.countsByType).toEqual({ FACT: 1 });
     expect(response.disclosure.fingerprint).toMatch(/^fnv1a32:/);
