@@ -1,0 +1,29 @@
+diff --git a/.claude/skills/implement/references/closeout-templates.md b/reports/skill-evidence/implement-9c896fc7/reviews/rev_347bb52c-47bc-46b5-90b8-796611bc92d2/candidate/references/closeout-templates.md
+index c1741cd..e4c0ec1 100644
+--- a/.claude/skills/implement/references/closeout-templates.md
++++ b/reports/skill-evidence/implement-9c896fc7/reviews/rev_347bb52c-47bc-46b5-90b8-796611bc92d2/candidate/references/closeout-templates.md
+@@ -310,7 +310,7 @@ Post-smoke commit-only freshness example: if the final browser/manual proof ran
+ 
+ > Final freshness delta: files touched since the last browser/manual proof after final commit and verification edits: git commit metadata only; not affected because no tracked file content changed after the smoke, the evidence route/action/API/fixture <route/action/API/fixture> is untouched, and targeted proof `git diff HEAD -- <owned files>` is empty.
+ 
+-Validator-passing field examples: several closeout fields are enforced by exact-token regexes in `.claude/skills/tdd/scripts/tdd-evidence-contract.mjs` and `.claude/skills/code-review/scripts/review-evidence-contract.mjs`, and the natural-language placeholders in the template do not map one-to-one to the required tokens. When a validator rejects a field it already looks filled, match one of these copy-paste passing forms (substitute the bracketed specifics), then re-run the validator:
++Validator-passing field examples: several closeout fields are enforced by exact-token regexes in `.claude/skills/tdd/scripts/tdd-evidence-contract.mjs`, `.claude/skills/code-review/scripts/review-evidence-contract.mjs`, and the implement validator's own `.claude/skills/implement/scripts/validate-closeout-body.mjs`, and the natural-language placeholders in the template do not map one-to-one to the required tokens. When a validator rejects a field it already looks filled, match one of these copy-paste passing forms (substitute the bracketed specifics), then re-run the validator:
+ 
+ - **Backend process currentness** must contain the literal tokens `server command`, `watch/reload mode`, `process/port ownership`, `restart proof` (or `reload proof`), and an `expected ... API ... probe`:
+   > server command `npm start` (build then node ...launch.js), no watch/reload mode; process/port ownership pid <N> on 127.0.0.1:<port>; restart proof: proof server restarted on the post-fix build; expected API behavior probe POST /api/<route> returned <field>; N/A because no stateful fixture was copied
+@@ -331,6 +331,15 @@ Validator-passing field examples: several closeout fields are enforced by exact-
+   > `rg -n '<value1>|<value2>'` over this closeout body returns hits only inside the classified identity/history lines; no hits outside classified identity/history lines and no active-proof hits; historical-red hits classified in the Historical red identities line
+ - **Evidence and residual prose** must avoid the literal words `TBD`, `TODO`, `pending`, and `unknown`: the review validator's `unresolvedValue` check (in `review-evidence-contract.mjs`) flags them as unresolved placeholders even inside legitimate sentences and field values. Reword instead:
+   > RecordDetail.payload is `untyped` (not `unknown`) across the web layer; verification will be `confirmed` (not `pending`) after the close commands
++- **Accepted residual records (no-fix path)** are parsed by the implement validator itself. When review accepted a finding without fixing it and there is no immediate-fix finding ledger, the builder emits only `Residual findings: <none or accepted residual records>`; `--emit-final-summary` and `--mutation-ready` then reject a body that says `accepted residuals` anywhere without a structured record, so replace that placeholder with one bulleted block per residual, one field per line, `Axis` exactly `Standards` or `Spec` with no qualifier. A parent rollup must carry its own record — citing a child's residuals is not enough:
++  > Residual findings:
++  > - **Accepted residual**: <finding title>
++  >   - **Axis**: Standards
++  >   - **Source**: <final Standards review, or the `P<pass>-standards-N` ledger id>
++  >   - **Rationale**: <why the finding was intentionally accepted, not fixed>
++  >   - **Revisit trigger**: <condition that would reopen it>
++  >
++  > When findings were fixed through an immediate-fix finding ledger, read residuals from that ledger's `accepted residual` rows instead; do not author both a ledger row and a structured record for the same finding.
+ 
+ Do not leave temporary body files in the repo unless they are intentional committed evidence.
+ 

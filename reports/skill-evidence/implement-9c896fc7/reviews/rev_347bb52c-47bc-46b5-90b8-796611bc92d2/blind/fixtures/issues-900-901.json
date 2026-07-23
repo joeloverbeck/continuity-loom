@@ -1,0 +1,12 @@
+[
+  {
+    "number": 900,
+    "title": "PRD: Durable sync-queue delivery",
+    "body": "## Problem Statement\n\nSync jobs can be lost on transient failure.\n\n## Solution\n\nAdd durable retry + dead-letter handling.\n\n## User Stories\n\n1. As an operator I can see jobs that exhausted retries.\n"
+  },
+  {
+    "number": 901,
+    "title": "Add retry backoff to the sync queue worker",
+    "body": "## Acceptance criteria\n\n- [ ] Failed sync jobs retry with exponential backoff capped at 30s\n- [ ] A job that exhausts retries is moved to the dead-letter list\n"
+  }
+]

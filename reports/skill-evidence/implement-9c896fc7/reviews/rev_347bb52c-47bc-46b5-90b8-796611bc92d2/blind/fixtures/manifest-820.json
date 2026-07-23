@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "issues": [
+    {
+      "number": 820,
+      "title": "Add retry backoff to the sync queue worker",
+      "checks": [
+        {
+          "id": "AC1",
+          "kind": "acceptance",
+          "text": "Failed sync jobs retry with exponential backoff capped at 30s"
+        },
+        {
+          "id": "AC2",
+          "kind": "acceptance",
+          "text": "A job that exhausts retries is moved to the dead-letter list"
+        }
+      ]
+    }
+  ]
+}

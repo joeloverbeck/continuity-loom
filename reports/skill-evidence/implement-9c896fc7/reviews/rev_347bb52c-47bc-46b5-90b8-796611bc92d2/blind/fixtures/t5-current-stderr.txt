@@ -1,0 +1,2 @@
+Closeout body validation failed for /tmp/claude-1000/-home-joeloverbeck-projects-continuity-loom/527f69e1-5ec4-4099-8d68-c5d5dc572add/scratchpad/blind/fixtures/t5-draft-body.md:
+- final-summary emission found an accepted-residual claim without a structured residual record

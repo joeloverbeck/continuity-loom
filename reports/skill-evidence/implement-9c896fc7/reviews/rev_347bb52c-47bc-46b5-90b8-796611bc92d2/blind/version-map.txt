@@ -1,0 +1,3 @@
+version map (consult only after scoring):
+env-1 = CURRENT (unchanged live skill)
+env-2 = CANDIDATE (added structured accepted-residual copy-ready form)

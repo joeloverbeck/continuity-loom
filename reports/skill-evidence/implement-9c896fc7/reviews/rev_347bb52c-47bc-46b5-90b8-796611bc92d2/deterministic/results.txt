@@ -1,0 +1,5 @@
+D1 validate-closeout-body.test.mjs: candidate 43/43 (canonical-equiv), live 43/43
+D2 build-closeout-body.test.mjs: candidate 26/27 (sole fail = locational .agents adapter test, does not read closeout-templates.md), live 27/27
+D3 documented copy-ready form clears --closing --emit-preflight --mutation-ready one-shot (exit 0); summary 'Accepted residuals: 1; affected axes Standards'
+D4 diff isolated to references/closeout-templates.md; +1268 bytes (57139 -> 58407)
+D5 no script/.mjs byte changed

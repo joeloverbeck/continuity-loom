@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "issues": [
+    {
+      "number": 900,
+      "title": "PRD: Durable sync-queue delivery",
+      "checks": [
+        {
+          "id": "Parent-Solution",
+          "kind": "parent-prd-section",
+          "text": "Parent PRD ## Solution section"
+        },
+        {
+          "id": "US1",
+          "kind": "user-story",
+          "text": "As an operator I can see jobs that exhausted retries."
+        }
+      ]
+    },
+    {
+      "number": 901,
+      "title": "Add retry backoff to the sync queue worker",
+      "checks": [
+        {
+          "id": "AC1",
+          "kind": "acceptance",
+          "text": "Failed sync jobs retry with exponential backoff capped at 30s"
+        },
+        {
+          "id": "AC2",
+          "kind": "acceptance",
+          "text": "A job that exhausts retries is moved to the dead-letter list"
+        }
+      ]
+    }
+  ]
+}

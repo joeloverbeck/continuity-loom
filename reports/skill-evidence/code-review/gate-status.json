@@ -1,32 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-22T23:41:06.021Z",
+  "generated_at": "2026-07-23T19:57:39.466Z",
   "target_content_hash": "2967265361ebe8d7d3d27aed4f89d32e7489548b4441dd562d0bf2619ddab3c7",
   "qualifying_uses_on_current_hash": 11,
-  "open_incident_ids": [
-    "evt_543ac1c9-760f-4216-a626-a4921bd1be0f"
-  ],
-  "candidate_clusters": [
-    {
-      "symptom_key": "output",
-      "open_event_ids": [
-        "evt_543ac1c9-760f-4216-a626-a4921bd1be0f"
-      ],
-      "independent_incidents": 1,
-      "max_severity": "friction"
-    }
-  ],
-  "state": "eligible",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "ten_use_unresolved",
-  "trigger_event_ids": [
-    "evt_543ac1c9-760f-4216-a626-a4921bd1be0f"
-  ],
-  "threshold_session_id": "6b948cda-d93b-4c8d-9c49-12a82a3b5289",
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "dec_4bdc2f7f-a55a-4ed3-8f36-5305480cd71e",
+  "last_completed_review_id": "rev_88e8ca8e-68c7-445a-8687-ac49872f2d35",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "eb38b565-cee4-4e81-a159-a8f68eecdb87"
+  "derivation_session_id": "70973faf-d341-4aa7-89be-996ba45887c8"
 }

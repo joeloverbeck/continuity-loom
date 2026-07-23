@@ -1,0 +1,7 @@
+[
+  {
+    "number": 820,
+    "title": "Add retry backoff to the sync queue worker",
+    "body": "## Acceptance criteria\n\n- [ ] Failed sync jobs retry with exponential backoff capped at 30s\n- [ ] A job that exhausts retries is moved to the dead-letter list\n"
+  }
+]
