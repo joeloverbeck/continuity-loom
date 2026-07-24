@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-23T19:30:41.715Z",
+  "generated_at": "2026-07-24T02:10:11.215Z",
   "target_content_hash": "314a80595a7bea1d80679e2bc73a17ab3ef492729e8750bb31ee73877063dfc8",
-  "qualifying_uses_on_current_hash": 13,
+  "qualifying_uses_on_current_hash": 14,
   "open_incident_ids": [],
   "candidate_clusters": [],
   "state": "closed",
@@ -15,5 +15,5 @@
   "last_completed_review_id": "rev_7b300394-8acb-4ed6-9cc5-556562a45a8e",
   "target_name": "grilling",
   "target_repo_relative_path": ".claude/skills/grilling",
-  "derivation_session_id": "1d5c9424-a0b7-4af4-af2b-587bca65d419"
+  "derivation_session_id": "019f9195-a0a3-7a00-97eb-6a745bb5d92e"
 }

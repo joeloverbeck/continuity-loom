@@ -1,19 +1,32 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-23T19:43:11.820Z",
+  "generated_at": "2026-07-24T02:25:51.494Z",
   "target_content_hash": "b4857a8635d28a746cbb42f33a3713462b846d0591a71398b8eeabe4129e2f59",
-  "qualifying_uses_on_current_hash": 20,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
-  "authorized_workflow": null,
-  "authorization_reason": null,
-  "trigger_event_ids": [],
-  "threshold_session_id": null,
+  "qualifying_uses_on_current_hash": 21,
+  "open_incident_ids": [
+    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "execution",
+      "open_event_ids": [
+        "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "eligible_pending_cooldown",
+  "authorized_workflow": "skill-evolution",
+  "authorization_reason": "ten_use_unresolved",
+  "trigger_event_ids": [
+    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
+  ],
+  "threshold_session_id": "dc2cc49b-f78d-47b8-bcea-9a42e6900391",
   "not_before": null,
   "active_review_id": null,
   "last_completed_review_id": "rev_347bb52c-47bc-46b5-90b8-796611bc92d2",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "527f69e1-5ec4-4099-8d68-c5d5dc572add"
+  "derivation_session_id": "dc2cc49b-f78d-47b8-bcea-9a42e6900391"
 }
