@@ -8,15 +8,14 @@ import {
 } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
-import { admitOpenRouterRequest } from "./openrouter/capability.js";
-import { sendChatCompletion } from "./openrouter/client.js";
 import {
   buildChatCompletionRequest,
   inspectChatCompletionRequest,
   type OpenRouterRequestOptions
 } from "./openrouter/request.js";
+import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import type { ProjectStoreManager } from "./project-store.js";
-import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
+import { readOpenRouterSettings } from "./settings.js";
 import {
   buildAcceptedSegmentChangeReviewSnapshot,
   type BuildAcceptedSegmentChangeReviewSnapshotResult
@@ -78,59 +77,70 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       return reply.code(compiled.status).send(compiled.body);
     }
 
-    if (compiled.disclosure.fingerprint !== parsedRequest.expectedPromptFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "accepted-segment-change-review-source-changed",
-        message: "The review source changed. Compile and inspect it again before Analyze.",
-        currentPromptFingerprint: compiled.disclosure.fingerprint
-      });
-    }
-
-    const settings = readOpenRouterSettings();
     const outputSchema = acceptedSegmentChangeReviewOutputJsonSchema();
     const requestOptions = changeReviewRequestOptions(outputSchema);
-    const finalizedRequest = buildChatCompletionRequest({
-      prompt: compiled.prompt,
-      settings,
-      requestOptions
+    const sendResult = await runOpenRouterSendPipeline({
+      profile: {
+        prompt: compiled.prompt,
+        promptFingerprint: compiled.disclosure.fingerprint,
+        requestOptions,
+        staleness: {
+          mode: "separate",
+          expectedPromptFingerprint: parsedRequest.expectedPromptFingerprint ?? "",
+          expectedRequestFingerprint: parsedRequest.expectedRequestFingerprint ?? "",
+          promptRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "accepted-segment-change-review-source-changed",
+              message: "The review source changed. Compile and inspect it again before Analyze.",
+              currentPromptFingerprint: compiled.disclosure.fingerprint
+            }
+          },
+          providerRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "accepted-segment-change-review-source-changed",
+              message: "The review source or provider configuration changed. Compile and inspect it again before Analyze.",
+              currentPromptFingerprint: compiled.disclosure.fingerprint
+            }
+          }
+        },
+        contextWindow: {
+          promptTokenEstimate: compiled.disclosure.tokenEstimate,
+          refusal: {
+            body: {
+              ok: false,
+              kind: "accepted-segment-change-review-prompt-too-large",
+              message: "The complete review source exceeds the selected model context window. Choose an allowed narrower scope or a compatible model."
+            }
+          }
+        },
+        metadata: {
+          providerFields: "identity",
+          placement: "after",
+          additions: {
+            sourceProfile: ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE,
+            acceptedSegmentId: compiled.snapshot.acceptedSegment.id,
+            acceptedSegmentSequence: compiled.snapshot.acceptedSegment.sequence,
+            recordScope: compiled.snapshot.request.recordScope,
+            versions: compiled.disclosure.versions,
+            fingerprint: compiled.disclosure.fingerprint
+          }
+        }
+      }
     });
-    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== parsedRequest.expectedRequestFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "accepted-segment-change-review-source-changed",
-        message: "The review source or provider configuration changed. Compile and inspect it again before Analyze.",
-        currentPromptFingerprint: compiled.disclosure.fingerprint
-      });
-    }
-    if (!settings.hasOpenRouterCredential) {
-      return { ok: false, category: "missing-key", message: "OpenRouter API key is missing." };
-    }
-
-    if (isPromptTooLarge(compiled.disclosure.tokenEstimate, settings)) {
-      return {
-        ok: false,
-        kind: "accepted-segment-change-review-prompt-too-large",
-        message: "The complete review source exceeds the selected model context window. Choose an allowed narrower scope or a compatible model."
-      };
-    }
-
-    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
-    if (!admission.ok) {
-      return admission;
-    }
-
-    const transportResult = await sendChatCompletion({ request: finalizedRequest });
-
-    if (!transportResult.ok) {
-      return transportResult;
+    if (!sendResult.ok) {
+      return sendResult.status === undefined
+        ? sendResult.body
+        : reply.code(sendResult.status).send(sendResult.body);
     }
 
     const parsed = parseAcceptedSegmentChangeReviewOutput(
-      transportResult.candidate.text,
+      sendResult.candidate.text,
       parseContext(compiled.snapshot, compiled.disclosure.citationMap)
     );
-    const metadata = trustedMetadata(compiled, settings);
 
     if (parsed.status === "quarantined") {
       return {
@@ -139,7 +149,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
         reasonCode: parsed.reasonCode,
         summary: parsed.summary,
         recovery: parsed.recovery,
-        metadata
+        metadata: sendResult.metadata
       };
     }
 
@@ -147,7 +157,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       ok: true,
       review: parsed.output,
       advisory: { verified: false, canonical: false },
-      metadata
+      metadata: sendResult.metadata
     };
   });
 }
@@ -296,22 +306,4 @@ function parseContext(
     evidenceTextByKey: Object.fromEntries(snapshot.acceptedSegmentSpans.map((span) => [span.key, span.text])),
     contrastKeys: Object.keys(citationMap).filter((key) => !evidenceKeys.has(key))
   };
-}
-
-function trustedMetadata(compiled: CompiledReview, settings: OpenRouterSettingsStatus) {
-  return {
-    sourceProfile: ACCEPTED_SEGMENT_CHANGE_REVIEW_SOURCE_PROFILE,
-    acceptedSegmentId: compiled.snapshot.acceptedSegment.id,
-    acceptedSegmentSequence: compiled.snapshot.acceptedSegment.sequence,
-    recordScope: compiled.snapshot.request.recordScope,
-    versions: compiled.disclosure.versions,
-    fingerprint: compiled.disclosure.fingerprint,
-    model: settings.model,
-    provider: "openrouter"
-  };
-}
-
-function isPromptTooLarge(promptTokenEstimate: number, settings: OpenRouterSettingsStatus): boolean {
-  const contextLength = settings.cachedModels?.find((model) => model.id === settings.model)?.contextLength;
-  return contextLength !== undefined && promptTokenEstimate + settings.maxOutputTokens > contextLength;
 }

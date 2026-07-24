@@ -8,15 +8,14 @@ import {
 } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
-import { admitOpenRouterRequest } from "./openrouter/capability.js";
-import { sendChatCompletion } from "./openrouter/client.js";
 import {
   buildChatCompletionRequest,
   inspectChatCompletionRequest,
   type OpenRouterRequestOptions
 } from "./openrouter/request.js";
+import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import type { ProjectStoreManager } from "./project-store.js";
-import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
+import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 const compileKeys = new Set(["targetCharacterId", "avoidList", "baseSourceFingerprint"]);
@@ -77,53 +76,67 @@ export function registerCastPossibilitiesRoutes(
     if (!compiled.ok) {
       return reply.code(compiled.status).send(compiled.body);
     }
-    if (compiled.result.disclosure.fingerprint !== parsed.request.expectedPromptFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "cast-possibilities-source-changed",
-        message: "The saved Cast Possibilities source changed. Compile and inspect it again before sending.",
-        currentPromptFingerprint: compiled.result.disclosure.fingerprint
-      });
-    }
-
-    const settings = readOpenRouterSettings();
     const requestOptions = castRequestOptions();
-    const finalizedRequest = buildChatCompletionRequest({
-      prompt: compiled.result.prompt,
-      settings,
-      requestOptions
+    const sendResult = await runOpenRouterSendPipeline({
+      profile: {
+        prompt: compiled.result.prompt,
+        promptFingerprint: compiled.result.disclosure.fingerprint,
+        requestOptions,
+        staleness: {
+          mode: "separate",
+          expectedPromptFingerprint: parsed.request.expectedPromptFingerprint ?? "",
+          expectedRequestFingerprint: parsed.request.expectedRequestFingerprint ?? "",
+          promptRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "cast-possibilities-source-changed",
+              message: "The saved Cast Possibilities source changed. Compile and inspect it again before sending.",
+              currentPromptFingerprint: compiled.result.disclosure.fingerprint
+            }
+          },
+          providerRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "cast-possibilities-source-changed",
+              message: "The Cast Possibilities source or provider configuration changed. Compile and inspect it again before sending.",
+              currentPromptFingerprint: compiled.result.disclosure.fingerprint
+            }
+          }
+        },
+        contextWindow: {
+          promptTokenEstimate: compiled.result.disclosure.tokenEstimate,
+          refusal: {
+            body: {
+              ok: false,
+              kind: "cast-possibilities-prompt-too-large",
+              message: "The complete Cast Possibilities source exceeds the selected model context window. Choose a compatible model."
+            }
+          }
+        },
+        metadata: {
+          providerFields: "identity",
+          placement: "after",
+          additions: {
+            projectIdentity: compiled.projectIdentity,
+            savedDraftIdentity: compiled.result.disclosure.savedDraftIdentity,
+            sourceProfile: CAST_POSSIBILITIES_SOURCE_PROFILE,
+            character: parsed.request.targetCharacterId ?? "all-eligible-characters",
+            versions: compiled.result.disclosure.versions,
+            fingerprint: compiled.result.disclosure.fingerprint
+          }
+        }
+      }
     });
-    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== parsed.request.expectedRequestFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "cast-possibilities-source-changed",
-        message: "The Cast Possibilities source or provider configuration changed. Compile and inspect it again before sending.",
-        currentPromptFingerprint: compiled.result.disclosure.fingerprint
-      });
-    }
-    if (!settings.hasOpenRouterCredential) {
-      return { ok: false, category: "missing-key", message: "OpenRouter API key is missing." };
-    }
-    if (isPromptTooLarge(compiled.result.disclosure.tokenEstimate, settings)) {
-      return {
-        ok: false,
-        kind: "cast-possibilities-prompt-too-large",
-        message: "The complete Cast Possibilities source exceeds the selected model context window. Choose a compatible model."
-      };
-    }
-
-    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
-    if (!admission.ok) {
-      return admission;
-    }
-
-    const transport = await sendChatCompletion({ request: finalizedRequest });
-    if (!transport.ok) {
-      return transport;
+    if (!sendResult.ok) {
+      return sendResult.status === undefined
+        ? sendResult.body
+        : reply.code(sendResult.status).send(sendResult.body);
     }
 
     const parsedOutput = parseCastPossibilitiesOutput(
-      transport.candidate.text,
+      sendResult.candidate.text,
       compiled.result.parseContext
     );
     if (parsedOutput.status === "quarantined") {
@@ -136,7 +149,6 @@ export function registerCastPossibilitiesRoutes(
       };
     }
 
-    const metadata = trustedMetadata(compiled, settings, parsed.request.targetCharacterId);
     const characters = parsedOutput.output.characters;
     return {
       ok: true,
@@ -144,7 +156,7 @@ export function registerCastPossibilitiesRoutes(
         ? { replacement: characters[0] }
         : { possibilities: parsedOutput.output }),
       advisory: { verified: false, canonical: false, prose: false },
-      metadata
+      metadata: sendResult.metadata
     };
   });
 }
@@ -335,26 +347,4 @@ function invalidRequest(issues: string[]) {
     ok: false as const,
     body: { ok: false as const, kind: "invalid-cast-possibilities-request" as const, issues }
   };
-}
-
-function trustedMetadata(
-  compiled: CompiledCastPossibilities,
-  settings: OpenRouterSettingsStatus,
-  targetCharacterId?: string
-) {
-  return {
-    projectIdentity: compiled.projectIdentity,
-    savedDraftIdentity: compiled.result.disclosure.savedDraftIdentity,
-    sourceProfile: CAST_POSSIBILITIES_SOURCE_PROFILE,
-    character: targetCharacterId ?? "all-eligible-characters",
-    versions: compiled.result.disclosure.versions,
-    fingerprint: compiled.result.disclosure.fingerprint,
-    model: settings.model,
-    provider: "openrouter"
-  };
-}
-
-function isPromptTooLarge(promptTokenEstimate: number, settings: OpenRouterSettingsStatus): boolean {
-  const contextLength = settings.cachedModels?.find((model) => model.id === settings.model)?.contextLength;
-  return contextLength !== undefined && promptTokenEstimate + settings.maxOutputTokens > contextLength;
 }

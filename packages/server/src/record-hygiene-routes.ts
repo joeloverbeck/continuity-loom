@@ -1,13 +1,12 @@
 import { compileRecordHygienePrompt, type RecordHygieneRequest } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
-import { admitOpenRouterRequest } from "./openrouter/capability.js";
-import { sendChatCompletion } from "./openrouter/client.js";
 import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
+import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { parseRecordHygieneResponse } from "./record-hygiene-parse.js";
 import { buildStoryRecordHygieneSnapshot } from "./record-hygiene-snapshot-builder.js";
-import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
+import { readOpenRouterSettings } from "./settings.js";
 
 const defaultRequest: RecordHygieneRequest = { mode: "full_active_atomic_review" };
 const requestModes = new Set<RecordHygieneRequest["mode"]>([
@@ -52,64 +51,62 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
       return reply.code(compileResult.status).send(compileResult.body);
     }
 
-    const settings = readOpenRouterSettings();
-    const finalizedRequest = buildChatCompletionRequest({
-      prompt: compileResult.prompt,
-      settings
+    const sendResult = await runOpenRouterSendPipeline({
+      profile: {
+        prompt: compileResult.prompt,
+        promptFingerprint: compileResult.metadata.fingerprint,
+        staleness: {
+          mode: "combined",
+          expectedPromptFingerprint: hygieneRequest.expectedPromptFingerprint ?? "",
+          expectedRequestFingerprint: hygieneRequest.expectedRequestFingerprint ?? "",
+          refusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "stale-record-hygiene-inspection",
+              message: "The hygiene source or provider configuration changed. Compile and inspect it again before Analyze."
+            }
+          }
+        },
+        contextWindow: {
+          promptTokenEstimate: compileResult.metadata.tokenEstimate,
+          refusal: {
+            body: {
+              ok: false,
+              kind: "prompt-too-large",
+              message: "Compiled record hygiene prompt exceeds the selected model context window."
+            }
+          }
+        },
+        metadata: {
+          providerFields: "full",
+          placement: "before",
+          additions: compileMetadata(compileResult.metadata)
+        }
+      }
     });
-    if (
-      compileResult.metadata.fingerprint !== hygieneRequest.expectedPromptFingerprint ||
-      inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== hygieneRequest.expectedRequestFingerprint
-    ) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "stale-record-hygiene-inspection",
-        message: "The hygiene source or provider configuration changed. Compile and inspect it again before Analyze."
-      });
-    }
-    if (!settings.hasOpenRouterCredential) {
-      return {
-        ok: false,
-        category: "missing-key",
-        message: "OpenRouter API key is missing."
-      };
-    }
-
-    if (isPromptTooLarge(compileResult.metadata.tokenEstimate, settings)) {
-      return {
-        ok: false,
-        kind: "prompt-too-large",
-        message: "Compiled record hygiene prompt exceeds the selected model context window."
-      };
-    }
-
-    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
-    if (!admission.ok) {
-      return admission;
-    }
-    const transportResult = await sendChatCompletion({ request: finalizedRequest });
-
-    if (!transportResult.ok) {
-      return transportResult;
+    if (!sendResult.ok) {
+      return sendResult.status === undefined
+        ? sendResult.body
+        : reply.code(sendResult.status).send(sendResult.body);
     }
 
     const validCitationKeys = new Set(Object.keys(compileResult.metadata.citationMap ?? {}));
-    const parsed = parseRecordHygieneResponse(transportResult.candidate.text, validCitationKeys);
-    const metadata = analyzeMetadata(finalizedRequest, compileResult.metadata);
+    const parsed = parseRecordHygieneResponse(sendResult.candidate.text, validCitationKeys);
 
     if (!parsed.ok) {
       return {
         ok: true,
         malformed: true,
         raw: parsed.raw,
-        metadata
+        metadata: sendResult.metadata
       };
     }
 
     return {
       ok: true,
       findings: parsed.findings,
-      metadata
+      metadata: sendResult.metadata
     };
   });
 }
@@ -211,25 +208,4 @@ function compileMetadata(metadata: ReturnType<typeof compileRecordHygienePrompt>
     recordCount: Object.values(metadata.countsByType ?? {}).reduce((sum, count) => sum + count, 0),
     countsByType: metadata.countsByType
   };
-}
-
-function analyzeMetadata(
-  request: ReturnType<typeof buildChatCompletionRequest>,
-  metadata: ReturnType<typeof compileRecordHygienePrompt>["metadata"]
-) {
-  const inspection = inspectChatCompletionRequest(request);
-  return {
-    model: inspection.model,
-    provider: "openrouter",
-    temperatureMode: inspection.temperatureMode,
-    ...(inspection.temperature === undefined ? {} : { temperature: inspection.temperature }),
-    maxOutputTokens: inspection.maxOutputTokens,
-    ...(inspection.topP === undefined ? {} : { topP: inspection.topP }),
-    ...compileMetadata(metadata)
-  };
-}
-
-function isPromptTooLarge(promptTokenEstimate: number, settings: OpenRouterSettingsStatus): boolean {
-  const contextLength = settings.cachedModels?.find((model) => model.id === settings.model)?.contextLength;
-  return contextLength !== undefined && promptTokenEstimate + settings.maxOutputTokens > contextLength;
 }

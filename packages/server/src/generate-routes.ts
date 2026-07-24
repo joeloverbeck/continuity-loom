@@ -2,11 +2,8 @@ import { compilePrompt, runValidation } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
-import { admitOpenRouterRequest } from "./openrouter/capability.js";
-import { sendChatCompletion } from "./openrouter/client.js";
-import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
+import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import type { ProjectStoreManager } from "./project-store.js";
-import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 const generateRequestSchema = z
@@ -55,64 +52,48 @@ export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectSto
 
     const compileResult = compilePrompt(snapshotResult.snapshot);
 
-    if (compileResult.metadata.fingerprint !== expectedPromptFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "stale-prompt",
-        message: "The prompt changed after it was inspected. Refresh the prompt before generating."
-      });
-    }
-
-    const settings = readOpenRouterSettings();
-    const finalizedRequest = buildChatCompletionRequest({
-      prompt: compileResult.prompt,
-      settings
+    const sendResult = await runOpenRouterSendPipeline({
+      profile: {
+        prompt: compileResult.prompt,
+        promptFingerprint: compileResult.metadata.fingerprint,
+        staleness: {
+          mode: "separate",
+          expectedPromptFingerprint,
+          expectedRequestFingerprint,
+          promptRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "stale-prompt",
+              message: "The prompt changed after it was inspected. Refresh the prompt before generating."
+            }
+          },
+          providerRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "stale-provider-request",
+              message: "The provider configuration changed after inspection. Refresh the prompt before generating."
+            }
+          }
+        },
+        metadata: {
+          providerFields: "full",
+          placement: "before",
+          additions: { versions: compileResult.metadata.versions }
+        }
+      }
     });
-    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== expectedRequestFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "stale-provider-request",
-        message: "The provider configuration changed after inspection. Refresh the prompt before generating."
-      });
-    }
-
-    if (!settings.hasOpenRouterCredential) {
-      return {
-        ok: false,
-        category: "missing-key",
-        message: "OpenRouter API key is missing."
-      };
-    }
-
-    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
-    if (!admission.ok) {
-      return admission;
-    }
-    const transportResult = await sendChatCompletion({ request: finalizedRequest });
-
-    if (!transportResult.ok) {
-      return transportResult;
+    if (!sendResult.ok) {
+      return sendResult.status === undefined
+        ? sendResult.body
+        : reply.code(sendResult.status).send(sendResult.body);
     }
 
     return {
       ok: true,
-      candidate: transportResult.candidate,
-      metadata: {
-        ...providerMetadata(finalizedRequest),
-        versions: compileResult.metadata.versions
-      }
+      candidate: sendResult.candidate,
+      metadata: sendResult.metadata
     };
   });
-}
-
-function providerMetadata(request: ReturnType<typeof buildChatCompletionRequest>) {
-  const inspection = inspectChatCompletionRequest(request);
-  return {
-    model: inspection.model,
-    provider: "openrouter" as const,
-    temperatureMode: inspection.temperatureMode,
-    ...(inspection.temperature === undefined ? {} : { temperature: inspection.temperature }),
-    maxOutputTokens: inspection.maxOutputTokens,
-    ...(inspection.topP === undefined ? {} : { topP: inspection.topP })
-  };
 }

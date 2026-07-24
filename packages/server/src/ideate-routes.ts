@@ -11,11 +11,8 @@ import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import { parseIdeationResponse } from "./ideation-parse.js";
-import { admitOpenRouterRequest } from "./openrouter/capability.js";
-import { sendChatCompletion } from "./openrouter/client.js";
-import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
+import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import type { ProjectStoreManager } from "./project-store.js";
-import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 const ideationSendRequestSchema = ideationRequestSchema.extend({
@@ -55,59 +52,55 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       ideationRequest
     });
 
-    if (compileResult.metadata.fingerprint !== expectedPromptFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "stale-ideation-prompt",
-        message: "The ideation request changed. Inspect the current prompt before sending."
-      });
-    }
-
-    const settings = readOpenRouterSettings();
-    const finalizedRequest = buildChatCompletionRequest({
-      prompt: compileResult.prompt,
-      settings
+    const sendResult = await runOpenRouterSendPipeline({
+      profile: {
+        prompt: compileResult.prompt,
+        promptFingerprint: compileResult.metadata.fingerprint,
+        staleness: {
+          mode: "separate",
+          expectedPromptFingerprint,
+          expectedRequestFingerprint,
+          promptRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "stale-ideation-prompt",
+              message: "The ideation request changed. Inspect the current prompt before sending."
+            }
+          },
+          providerRefusal: {
+            status: 409,
+            body: {
+              ok: false,
+              kind: "stale-provider-request",
+              message: "The provider configuration changed after inspection. Inspect the current prompt before sending."
+            }
+          }
+        },
+        metadata: {
+          providerFields: "full",
+          placement: "before",
+          additions: { versions: compileResult.metadata.versions }
+        }
+      }
     });
-    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== expectedRequestFingerprint) {
-      return reply.code(409).send({
-        ok: false,
-        kind: "stale-provider-request",
-        message: "The provider configuration changed after inspection. Inspect the current prompt before sending."
-      });
-    }
-
-    if (!settings.hasOpenRouterCredential) {
-      return {
-        ok: false,
-        category: "missing-key",
-        message: "OpenRouter API key is missing."
-      };
-    }
-
-    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
-    if (!admission.ok) {
-      return admission;
-    }
-    const transportResult = await sendChatCompletion({ request: finalizedRequest });
-
-    if (!transportResult.ok) {
-      return transportResult;
+    if (!sendResult.ok) {
+      return sendResult.status === undefined
+        ? sendResult.body
+        : reply.code(sendResult.status).send(sendResult.body);
     }
 
     const citationKeys = citationKeysFor(snapshotResult.snapshot.records);
     const validCitationKeys = new Set(citationKeys.values());
     const citations = citationLabels(snapshotResult.snapshot.records, citationKeys);
-    const parsed = parseIdeationResponse(transportResult.candidate.text, validCitationKeys);
+    const parsed = parseIdeationResponse(sendResult.candidate.text, validCitationKeys);
 
     if (!parsed.ok) {
       return {
         ok: true,
         malformed: true,
         raw: parsed.raw,
-        metadata: ideationMetadata(
-          inspectChatCompletionRequest(finalizedRequest),
-          compileResult.metadata.versions
-        )
+        metadata: sendResult.metadata
       };
     }
 
@@ -115,10 +108,7 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       ok: true,
       ideas: parsed.ideas,
       citations,
-      metadata: ideationMetadata(
-        inspectChatCompletionRequest(finalizedRequest),
-        compileResult.metadata.versions
-      )
+      metadata: sendResult.metadata
     };
   });
 }
@@ -150,19 +140,4 @@ function parseIdeationBody(body: unknown):
       }
     };
   }
-}
-
-function ideationMetadata(
-  request: ReturnType<typeof inspectChatCompletionRequest>,
-  versions: { template: string; compiler: string; contract: string }
-) {
-  return {
-    model: request.model,
-    provider: "openrouter",
-    temperatureMode: request.temperatureMode,
-    ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
-    maxOutputTokens: request.maxOutputTokens,
-    ...(request.topP !== undefined ? { topP: request.topP } : {}),
-    versions
-  };
 }
