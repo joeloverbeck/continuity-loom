@@ -14,6 +14,7 @@ test("maps changed pillar source files to forced mutate targets", () => {
     [
       "packages/core/src/compiler/compile-prompt.ts",
       "packages/core/src/compiler/ideation/operators.ts",
+      "packages/core/src/compiler/cast-possibilities/parse-output.ts",
       "packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts",
       "packages/core/src/compiler/sections/ideation.ts",
       "packages/core/src/validation/engine.ts",
@@ -27,7 +28,11 @@ test("maps changed pillar source files to forced mutate targets", () => {
     plan.campaigns.map((campaign) => [campaign.pillar, campaign.mutate]),
     [
       ["change-review", ["packages/core/src/compiler/reconciliation/compile-change-review-prompt.ts"]],
-      ["ideation", ["packages/core/src/compiler/ideation/operators.ts", "packages/core/src/compiler/sections/ideation.ts"]],
+      ["ideation", [
+        "packages/core/src/compiler/cast-possibilities/parse-output.ts",
+        "packages/core/src/compiler/ideation/operators.ts",
+        "packages/core/src/compiler/sections/ideation.ts"
+      ]],
       ["prose", ["packages/core/src/compiler/compile-prompt.ts"]],
       ["validation", ["packages/core/src/validation/engine.ts"]]
     ]

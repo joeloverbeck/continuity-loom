@@ -36,7 +36,8 @@ const COMPILED_PROMPT_SECTION_PAIRS = [
   ["<role>", "<final_output_instruction>"],
   ["<ideation_role>", "<ideation_output_format>"],
   ["<record_hygiene_role>", "<record_hygiene_output_format>"],
-  ["<accepted_segment_change_review_role>", "<accepted_segment_change_review_output_format>"]
+  ["<accepted_segment_change_review_role>", "<accepted_segment_change_review_output_format>"],
+  ["<cast_possibilities_role>", "<output_instructions>"]
 ];
 const PROMPT_OUTPUT_ERROR =
   "Visible output appears to contain a compiled prompt; use text-file on the prompt element.";
@@ -107,7 +108,7 @@ export function appearsToContainCompiledPrompt(value) {
     COMPILED_PROMPT_SECTION_PAIRS.some(([first, last]) =>
       value.includes(first) && value.includes(last)
     ) ||
-    /(?:^|[^#])# (?:(?:Generated Prose|Grounded Ideation|Story-Record Hygiene) Prompt|Accepted-Segment Change Review Candidate Prompt)\b/m.test(
+    /(?:^|[^#])# (?:(?:Generated Prose|Grounded Ideation|Story-Record Hygiene|Cast Possibilities) Prompt|Accepted-Segment Change Review Candidate Prompt)\b/m.test(
       value
     )
   );

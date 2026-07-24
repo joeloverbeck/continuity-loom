@@ -51,6 +51,42 @@ export {
 export type { DemoRecord, DemoRecordType } from "./demo/index.js";
 export { compilePrompt, SECTION_ORDER } from "./compiler/compile-prompt.js";
 export type { CompilePromptOptions } from "./compiler/compile-prompt.js";
+export {
+  renderActiveDossier,
+  renderActiveDossierBody,
+  renderActiveVoicePressurePin
+} from "./compiler/sections/cast.js";
+export {
+  compileCastPossibilitiesPrompt
+} from "./compiler/cast-possibilities/compile-cast-possibilities-prompt.js";
+export {
+  castPossibilitiesOutputJsonSchema
+} from "./compiler/cast-possibilities/output-schema.js";
+export {
+  parseCastPossibilitiesOutput
+} from "./compiler/cast-possibilities/parse-output.js";
+export type {
+  CastPossibilitiesParseResult,
+  CastPossibilitiesQuarantineReason
+} from "./compiler/cast-possibilities/parse-output.js";
+export {
+  CAST_POSSIBILITIES_OUTPUT_CONTRACT,
+  CAST_POSSIBILITIES_SOURCE_PROFILE,
+  castPossibilitiesVersionInfo
+} from "./compiler/cast-possibilities/types.js";
+export type {
+  CastPossibilitiesCard,
+  CastPossibilitiesCharacterDisclosure,
+  CastPossibilitiesCharacterResult,
+  CastPossibilitiesCompileBlocked,
+  CastPossibilitiesCompileRequest,
+  CastPossibilitiesCompileResult,
+  CastPossibilitiesCompileSuccess,
+  CastPossibilitiesDisclosure,
+  CastPossibilitiesOutput,
+  CastPossibilitiesParseContext,
+  CastPossibilitiesReadinessBlocker
+} from "./compiler/cast-possibilities/types.js";
 export { EMPTY_STATE_CONSTANTS } from "./compiler/empty-states.js";
 export {
   PROVIDER_SAFE_OUTPUT_SCHEMA_KEYWORDS,
@@ -159,6 +195,7 @@ export type {
 } from "./compiler/reconciliation/types.js";
 export { citationKey, citationKeysFor } from "./compiler/ideation/citation-keys.js";
 export { displayLabel } from "./compiler/labels.js";
+export { fingerprintPrompt } from "./compiler/fingerprint.js";
 export { IDEATION_OPERATORS } from "./compiler/ideation/operators.js";
 export { assignSlots } from "./compiler/ideation/slot-assignment.js";
 export {

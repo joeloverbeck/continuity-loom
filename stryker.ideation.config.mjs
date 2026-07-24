@@ -4,6 +4,7 @@ export default createCoreMutationConfig({
   name: "ideation",
   mutate: [
     "packages/core/src/compiler/ideation/**/*.ts",
+    "packages/core/src/compiler/cast-possibilities/**/*.ts",
     "packages/core/src/compiler/sections/ideation.ts"
   ],
   thresholds: {

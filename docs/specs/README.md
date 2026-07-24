@@ -21,6 +21,7 @@ Completed historical implementation specs remain under `archive/specs/`.
 | [`prompt-template.md`](./prompt-template.md) | Universal prose prompt text and placeholders. |
 | [`cast-member-draft-prompt-template.md`](./cast-member-draft-prompt-template.md) | Static record-free Cast Member dossier drafting prompt and output contract. |
 | [`ideation-prompt-template.md`](./ideation-prompt-template.md) | Grounded ideation request, slot, and output contract. |
+| [`cast-possibilities-prompt-template.md`](./cast-possibilities-prompt-template.md) | Saved-moment Cast Possibilities source, shared dossier rendering, card contract, and quarantine rules. |
 | [`story-record-hygiene-prompt-template.md`](./story-record-hygiene-prompt-template.md) | Story-record hygiene source, comparison, and output contract. |
 | [`accepted-segment-change-review-prompt-template.md`](./accepted-segment-change-review-prompt-template.md) | Accepted-Segment Change Review source profile, nineteen-path field boundary, output contract, evidence_excerpt witness, coverage dimensions, and quarantine rules. |
 | [`story-record-schema.md`](./story-record-schema.md) | Story-record and generation-time brief schemas and record taxonomy. |

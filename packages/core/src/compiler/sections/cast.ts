@@ -73,19 +73,7 @@ export function renderCastPlaceholder(
 
 function renderActiveVoicePins(snapshot: ValidationSnapshot): string {
   const lines = activeCastRecords(snapshot)
-    .map((record) => {
-      const payload = payloadOf(record);
-      const parts = [
-        resolveLinkedEntityName(snapshot, record),
-        nestedString(payload.identity, "one_line"),
-        labelValue("local function", record.localFunction),
-        labelValue("voice anchor", nestedString(payload.voice_anchor, "core_voice")),
-        ...currentVoicePressureLines(snapshot.generationSession, record.id),
-        ...overrideLines(snapshot.generationSession, record.id, "active_onstage_cast_full")
-      ];
-
-      return compactParts(parts);
-    })
+    .map((record) => renderActiveVoicePressurePin(snapshot, record))
     .filter(Boolean)
     .map((line) => `- ${line}`);
 
@@ -94,7 +82,7 @@ function renderActiveVoicePins(snapshot: ValidationSnapshot): string {
 
 function renderActiveDossiers(snapshot: ValidationSnapshot): string {
   const dossiers = activeCastRecords(snapshot)
-    .map((record) => renderDossier(record, snapshot))
+    .map((record) => renderActiveDossier(snapshot, record))
     .filter(Boolean);
 
   return dossiers.join("\n\n") || EMPTY_STATE_CONSTANTS.active_onstage_full_cast_dossiers;
@@ -136,7 +124,28 @@ function activeCastRecords(snapshot: ValidationSnapshot): readonly ValidationRec
   return orderCompilerRecords(snapshot.records).filter((record) => record.castBand === "active_onstage_cast_full");
 }
 
-function renderDossier(record: ValidationRecord, snapshot: ValidationSnapshot): string {
+export function renderActiveDossier(snapshot: ValidationSnapshot, record: ValidationRecord): string {
+  return [`## ${resolveLinkedEntityName(snapshot, record)}`, renderActiveDossierBody(snapshot, record)]
+    .filter(Boolean)
+    .join("\n");
+}
+
+export function renderActiveVoicePressurePin(
+  snapshot: ValidationSnapshot,
+  record: ValidationRecord
+): string {
+  const payload = payloadOf(record);
+  return compactParts([
+    resolveLinkedEntityName(snapshot, record),
+    nestedString(payload.identity, "one_line"),
+    labelValue("local function", record.localFunction),
+    labelValue("voice anchor", nestedString(payload.voice_anchor, "core_voice")),
+    ...currentVoicePressureLines(snapshot.generationSession, record.id),
+    ...overrideLines(snapshot.generationSession, record.id, "active_onstage_cast_full")
+  ]);
+}
+
+export function renderActiveDossierBody(snapshot: ValidationSnapshot, record: ValidationRecord): string {
   const payload = payloadOf(record);
   const renderedFields = activeDossierFieldOrder
     .map((field) => renderDossierField(field, payload[field]))
@@ -147,7 +156,7 @@ function renderDossier(record: ValidationRecord, snapshot: ValidationSnapshot): 
     renderedFields.push(["Current generation voice override:", ...overrides.map((line) => `  ${line}`)].join("\n"));
   }
 
-  return [`## ${resolveLinkedEntityName(snapshot, record)}`, ...renderedFields].join("\n");
+  return renderedFields.join("\n");
 }
 
 /**

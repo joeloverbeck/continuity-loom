@@ -132,6 +132,42 @@ Ideas are AI-suggested scratch. They are not story state, not records, not Gener
 
 Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Author focus is not stored with keepers or anywhere else in browser or project storage. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.
 
+## Cast Possibilities - Explore Character Responses
+
+Open Cast Possibilities from primary navigation or **Explore cast
+possibilities** on Generation Brief. It uses the most recently saved Generation
+Brief, not unsaved edits still visible in another mounted editor. Save first
+when those edits should be included.
+
+The local preview lists the resolved POV, every eligible non-POV active/full
+character, record counts, SECRET inclusion, exact prompt, versions, and
+fingerprint. Cast Possibilities needs saved time, location, onstage entities,
+an immediate situation, resolved character POV, and at least one eligible
+linked dossier. It does not require a prose-ready `must_render`.
+
+Analyze remains disabled until you inspect and confirm the one-time OpenRouter
+send. It makes one full-cast request and either shows every character with
+exactly three cards or quarantines the whole response. Each card exposes its
+observable move, character fit, moment fit, local effect, dossier and context
+evidence, and distinction.
+
+Keep and Copy affect session scratch only. Regenerate first compiles a
+target-only prompt containing that character's three current observable-move
+summaries as an avoid list; the server first confirms that those cards still
+belong to the inspected full-slate source. Inspect and confirm the target prompt
+before its one request. It replaces only that character. If the saved source
+changes, older cards remain readable and copyable but become stale and cannot
+be regenerated. Missing capability data offers a read-only model-list refresh;
+a known incompatible model routes to Settings instead. Clear removes every
+Cast Possibilities scratch entry for the open project. If a provider response
+succeeds but browser session storage fails, the visible result remains
+non-canonical and the error says the provider request already completed.
+
+Cards are unverified, non-canonical, non-prose suggestions. They cannot be
+applied, accepted, inserted into records or the Generation Brief, added to the
+working set, or used as prose prompt authority. They are not stored in the
+project, backups, exports, accepted-segment provenance, or prompt archives.
+
 ## Record Hygiene - Review Overlapping Active Records
 
 Use Record Hygiene when a project has grown enough that active atomic records may overlap, restate one another, drift stale, or need manual consolidation. Open it from the primary navigation, inspect the compiled record-hygiene prompt locally, review the source counts and exclusions, then optionally confirm a one-time OpenRouter send.

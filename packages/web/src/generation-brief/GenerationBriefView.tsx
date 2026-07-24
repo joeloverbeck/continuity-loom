@@ -537,7 +537,10 @@ export function GenerationBriefView(): React.JSX.Element {
           <p className="eyebrow">Generation-time workflow</p>
           <h2 id="generation-brief-title">Generation Brief</h2>
         </div>
-        <Link className="secondaryButton" to="/ideate">Stuck? Get ideas</Link>
+        <div className="durableReminderLinks">
+          <Link to="/ideate">Stuck? Get ideas</Link>
+          <Link to="/cast-possibilities">Explore cast possibilities</Link>
+        </div>
       </div>
 
       {notice ? (

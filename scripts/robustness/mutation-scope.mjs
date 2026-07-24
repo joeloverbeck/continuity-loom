@@ -123,6 +123,7 @@ function pillarForSourcePath(path) {
 
   if (
     (path.startsWith("packages/core/src/compiler/ideation/") ||
+      path.startsWith("packages/core/src/compiler/cast-possibilities/") ||
       path === "packages/core/src/compiler/sections/ideation.ts") &&
     path.endsWith(".ts")
   ) {

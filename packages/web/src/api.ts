@@ -3,6 +3,8 @@ import type {
   AcceptedSegmentChangeReviewParsedOutput,
   AcceptedSegmentChangeReviewRequest,
   AcceptedSegmentProvenance,
+  CastPossibilitiesDisclosure,
+  CastPossibilitiesOutput,
   CompileResult,
   ConsumedGenerationGuidanceEntry,
   GenerationContextCoherence,
@@ -212,6 +214,69 @@ export type AcceptedSegmentChangeReviewAnalyzeResponse =
       metadata: AcceptedSegmentChangeReviewTrustedMetadata;
     }
   | ApiFailure
+  | TransportFailure;
+
+export type CastPossibilitiesCompileRequest = {
+  targetCharacterId?: string;
+  avoidList?: readonly string[];
+  baseSourceFingerprint?: string;
+};
+
+export type CastPossibilitiesNotReadyResponse = {
+  ok: false;
+  kind: "cast-possibilities-not-ready";
+  projectIdentity: string;
+  blockers: readonly { code: string; message: string; field?: string }[];
+  warnings: readonly { code: string; message: string }[];
+};
+
+export type CastPossibilitiesCompileResponse =
+  | {
+      ok: true;
+      projectIdentity: string;
+      prompt: string;
+      disclosure: CastPossibilitiesDisclosure;
+      citations: Record<string, string>;
+      outputSchema: unknown;
+      versions: CastPossibilitiesDisclosure["versions"];
+      fingerprint: string;
+    }
+  | ApiFailure
+  | CastPossibilitiesNotReadyResponse;
+
+export interface CastPossibilitiesTrustedMetadata {
+  projectIdentity: string;
+  savedDraftIdentity: string;
+  sourceProfile: "cast-possibilities";
+  character: string;
+  versions: CastPossibilitiesDisclosure["versions"];
+  fingerprint: string;
+  model: string;
+  provider: "openrouter";
+}
+
+export type CastPossibilitiesAnalyzeResponse =
+  | {
+      ok: true;
+      possibilities: CastPossibilitiesOutput;
+      advisory: { verified: false; canonical: false; prose: false };
+      metadata: CastPossibilitiesTrustedMetadata;
+    }
+  | {
+      ok: true;
+      replacement: CastPossibilitiesOutput["characters"][number];
+      advisory: { verified: false; canonical: false; prose: false };
+      metadata: CastPossibilitiesTrustedMetadata;
+    }
+  | {
+      ok: true;
+      quarantined: true;
+      reasonCode: string;
+      summary: string;
+      recovery: "inspect-source-and-response";
+    }
+  | ApiFailure
+  | CastPossibilitiesNotReadyResponse
   | TransportFailure;
 
 export interface AcceptedSegmentRef {
@@ -671,6 +736,21 @@ export async function acceptedSegmentChangeReviewAnalyze(
 ): Promise<AcceptedSegmentChangeReviewAnalyzeResponse> {
   return requestOpenRouterJson<AcceptedSegmentChangeReviewAnalyzeResponse>(
     "/api/accepted-segment-change-review/analyze",
+    request
+  );
+}
+
+export async function castPossibilitiesCompile(
+  request: CastPossibilitiesCompileRequest = {}
+): Promise<CastPossibilitiesCompileResponse> {
+  return postJson<CastPossibilitiesCompileResponse>("/api/cast-possibilities/compile", request);
+}
+
+export async function castPossibilitiesAnalyze(
+  request: CastPossibilitiesCompileRequest & { expectedPromptFingerprint: string }
+): Promise<CastPossibilitiesAnalyzeResponse> {
+  return requestOpenRouterJson<CastPossibilitiesAnalyzeResponse>(
+    "/api/cast-possibilities/analyze",
     request
   );
 }

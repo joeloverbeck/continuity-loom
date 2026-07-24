@@ -13,6 +13,7 @@ test("recognizes prose and assistance prompts before terminal output", () => {
     "# Generated Prose Prompt\nWrite one segment.",
     "# Grounded Ideation Prompt\nReturn ideas.",
     "# Story-Record Hygiene Prompt\nReview records.",
+    "# Cast Possibilities Prompt\nReturn character cards.",
     "# Accepted-Segment Change Review Candidate Prompt\nReview the accepted segment.",
     "<role>Writer</role>\n<final_output_instruction>Prose only.</final_output_instruction>"
   ];
@@ -24,7 +25,8 @@ test("recognizes serialized headings and structural assistance prompt boundaries
     '- code: "# Accepted-Segment Change Review Candidate Prompt\\naccepted evidence follows"',
     "<ideation_role>Consultant</ideation_role>\n<ideation_output_format>Blocks</ideation_output_format>",
     "<record_hygiene_role>Reviewer</record_hygiene_role>\n<record_hygiene_output_format>JSON</record_hygiene_output_format>",
-    "<accepted_segment_change_review_role>Reviewer</accepted_segment_change_review_role>\n<accepted_segment_change_review_output_format>JSON</accepted_segment_change_review_output_format>"
+    "<accepted_segment_change_review_role>Reviewer</accepted_segment_change_review_role>\n<accepted_segment_change_review_output_format>JSON</accepted_segment_change_review_output_format>",
+    "<cast_possibilities_role>Consultant</cast_possibilities_role>\n<output_instructions>JSON</output_instructions>"
   ];
   for (const prompt of prompts) assert.equal(appearsToContainCompiledPrompt(prompt), true);
 });

@@ -19,6 +19,7 @@ P1 prose compiler:
 
 - `packages/core/src/compiler/**/*.ts`
 - excluding `packages/core/src/compiler/ideation/**/*.ts`
+- excluding `packages/core/src/compiler/cast-possibilities/**/*.ts`
 - excluding `packages/core/src/compiler/sections/ideation.ts`
 - excluding `packages/core/src/compiler/reconciliation/**/*.ts`
 - excluding `packages/core/src/compiler/change-review/**/*.ts`
@@ -27,6 +28,7 @@ P1 prose compiler:
 P2 ideation compiler:
 
 - `packages/core/src/compiler/ideation/**/*.ts`
+- `packages/core/src/compiler/cast-possibilities/**/*.ts`
 - `packages/core/src/compiler/sections/ideation.ts`
 
 P3 accepted-segment assistance compilers and parsers:
@@ -88,7 +90,7 @@ have been reviewed and classified.
 Configured final floors:
 
 - P1 prose compiler: green `95`, warning `92`, break `90`
-- P2 ideation compiler: green `95`, warning `92`, break `90`
+- P2 prose-aligned non-prose assistance compiler: green `95`, warning `92`, break `90`
 - P3 accepted-segment assistance compilers and parsers: green `95`, warning `92`, break `90`
 - P4 validation engine: green `98`, warning `96`, break `95`
 

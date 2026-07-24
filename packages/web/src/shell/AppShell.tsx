@@ -5,6 +5,7 @@ import type { RuntimeStatus } from "../api.js";
 import { ProjectPicker } from "../ProjectPicker.js";
 import { AcceptedSegmentChangeReviewView } from "../accepted-segment-change-review/AcceptedSegmentChangeReviewView.js";
 import { AcceptedSegmentsView } from "../accepted-segments/AcceptedSegmentsView.js";
+import { CastPossibilitiesView } from "../cast-possibilities/CastPossibilitiesView.js";
 import { StoryConfigEditor } from "../config/StoryConfigEditor.js";
 import { GenerationBriefView } from "../generation-brief/GenerationBriefView.js";
 import { GenerateView } from "../generate/GenerateView.js";
@@ -36,6 +37,7 @@ const primaryRoutes = [
   { to: "/preview", label: "Validation / Prompt Preview", requiresProject: true },
   { to: "/generate", label: "Generate / Candidate", requiresProject: true },
   { to: "/ideate", label: "Ideate", requiresProject: true },
+  { to: "/cast-possibilities", label: "Cast Possibilities", requiresProject: true },
   { to: "/record-hygiene", label: "Record Hygiene", requiresProject: true },
   { to: "/accepted-segment-change-review", label: "Change Review", requiresProject: true },
   { to: "/accepted-segments", label: "Accepted Segments", requiresProject: true },
@@ -132,6 +134,7 @@ function AppShellContent({ loadState }: AppShellProps): React.JSX.Element {
               <Route path="/preview" element={<RequireProject><PromptPreviewView /></RequireProject>} />
               <Route path="/generate" element={<RequireProject><GenerateView /></RequireProject>} />
               <Route path="/ideate" element={<RequireProject><IdeateView /></RequireProject>} />
+              <Route path="/cast-possibilities" element={<RequireProject><CastPossibilitiesView /></RequireProject>} />
               <Route path="/record-hygiene" element={<RequireProject><RecordHygieneView /></RequireProject>} />
               <Route path="/accepted-segment-change-review" element={<RequireProject><AcceptedSegmentChangeReviewView /></RequireProject>} />
               <Route path="/accepted-segments" element={<RequireProject><AcceptedSegmentsView /></RequireProject>} />

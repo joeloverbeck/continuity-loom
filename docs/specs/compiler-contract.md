@@ -78,7 +78,39 @@ This profile excludes every older accepted segment, segment range, candidate, re
 
 Consumed-guidance listing is a separate deterministic control, not a prompt source or model output. It may list only the exact nonblank families named in `docs/principles/FOUNDATIONS.md` §9.1, preselects nothing, and removes only explicitly selected entries from an editable Generation Brief clone. Existing Generation Brief Save remains the sole project-store mutation.
 
-### 2.4 Universal exclusions
+### 2.4 Cast Possibilities source profile
+
+`cast-possibilities` is a prose-aligned, non-prose assistance profile governed
+by `docs/specs/cast-possibilities-prompt-template.md`. Its template, compiler,
+and contract versions are independently `1.0.0`; its output identity is
+`cast_possibilities.v1`.
+
+It reads the open project's most recently saved Generation Brief, story
+configuration, every selected active-working-set record, selected POV,
+active/full cast order, and the prose-authoritative active/full dossier and
+voice-pressure renderers. Purpose readiness requires resolved non-omniscient
+POV, saved time, location, onstage entities, immediate situation, selected
+record integrity, and one eligible non-POV active/full linked dossier. It does
+not require prose readiness or nonblank `must_render`.
+
+Every selected record renders completely as escaped canonical data. Every
+eligible cast dossier uses the same linked-ENTITY heading, field ordering,
+current voice pressure pin, and temporary override bytes as prose compilation.
+No retrieval, ranking, summarization, batching, truncation, or token-budget
+eviction is permitted.
+
+Compile emits exact prompt bytes, strict output schema, stable citations,
+complete disclosure, saved-draft identity, versions, and fingerprint without
+transport. Full-cast Analyze rebuilds and compares its inspected prompt
+fingerprint. Target preview and regeneration additionally require the inspected
+full-slate source fingerprint, reject stale avoid-list provenance before
+provider settings or transport, then compare the target prompt fingerprint
+before one explicit strict-output request. Trusted result metadata is attached
+only after whole-response parsing succeeds; quarantine contains safe local
+reason and recovery fields only. Cards are non-canonical, non-prose,
+session-only scratch.
+
+### 2.5 Universal exclusions
 
 No prose prompt, prose-aligned assistance prompt, or project-review assistance prompt may use accepted prose, rejected candidates, regenerated candidates, prompt archives, model memory, automatic prose-derived summaries, or author-private notes.
 
@@ -255,6 +287,17 @@ The compiler renders every section in this exact order:
 8. `<accepted_segment_change_review_output_format>`
 
 All eight sections always render. No formal-mutation section or schema catalog is present. Complete source stays before review instructions; the strict shallow output contract remains at the final edge.
+
+### 3.5 Cast Possibilities Prompt Section Order
+
+The compiler renders `<cast_possibilities_role>`, `<source_contract>`,
+`<story_configuration>`, `<saved_local_moment>`,
+`<selected_record_context>`, `<eligible_cast_dossiers>`, the optional
+`<target_character_avoid_list>`, `<citation_legend>`, and
+`<output_instructions>` in that order. Complete saved source precedes the
+procedure and strict schema. Target regeneration keeps the same order and
+projects exactly one eligible character plus its explicit three-summary avoid
+list.
 
 ## 4. Exhaustive placeholder mapping
 
@@ -544,6 +587,12 @@ Prompt-facing only as deterministic labels when useful for rendering/validation 
 
 For Accepted-Segment Change Review, accepted-segment text, source spans, the nineteen saved-draft review values, complete in-scope records, and minimal reference-label stubs are assistance-prompt-facing only. Fingerprint, source identity, scope, counts, SECRET inclusion, versions, prompt length/token estimate, parse reasons, and provider metadata are trusted local audit/validation metadata attached outside model output. Items, coverage, keeper/review state, and consumed-guidance selections are never prompt-facing for prose generation and never durable project state.
 
+For Cast Possibilities, story configuration, the saved local moment, complete
+selected records, and eligible active/full dossiers are assistance-prompt-facing
+only. The saved-draft identity, project identity, versions, fingerprint, model,
+provider, canon/prose flags, parse reasons, cards, and keeper state are trusted
+local metadata or session scratch and never prose-prompt-facing or durable.
+
 ## 10. Change-control rule
 
 Any change to a prompt placeholder, template section, schema field used for compilation, requiredness rule, empty-state rendering rule, validation focus tag, blocker/warning row, Red Bunny generated prompt surface, or stress-suite assumption must update this compiler contract in the same document revision.
@@ -553,3 +602,10 @@ Changes to pressure-predicate inclusion, pressure-summary field precedence, or V
 Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/specs/story-record-hygiene-prompt-template.md`, `docs/specs/story-record-schema.md` where applicable, this contract, compiler/template versions, and golden tests in the same change.
 
 Any change to the Accepted-Segment Change Review source profile, nineteen-path projection, record scope, reference-stub boundary, section order, versions, request/disclosure shape, output schema, `evidence_excerpt` witness rule, parser quarantine, shared echo threshold, provider policy, scratch behavior, or consumed-guidance allowlist must update `docs/specs/accepted-segment-change-review-prompt-template.md`, this contract, `docs/specs/story-record-schema.md` and `docs/user-guide.md` where applicable, template/compiler/contract versions, and focused core/route/component/property tests in the same revision. If the change widens accepted-prose access or authority, it also requires a FOUNDATIONS amendment approved under §1.1.
+
+Any change to Cast Possibilities source, purpose readiness, eligible cast,
+shared dossier rendering, section order, versions, disclosure, citations,
+schema, parser, provider policy, regeneration, or session scratch must update
+`docs/specs/cast-possibilities-prompt-template.md`, this contract,
+`docs/specs/story-record-schema.md`, `docs/user-guide.md`, public types, and
+focused core/server/browser tests in the same revision.

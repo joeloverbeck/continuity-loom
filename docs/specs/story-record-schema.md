@@ -1043,7 +1043,35 @@ Each included record renders its full payload as escaped canonical JSON plus one
 
 Hygiene findings are advisory assistance output. They do not mutate lifecycle, do not satisfy validation, do not add validation diagnostics, and do not change prose compilation or active-working-set membership.
 
-### 9.4 Accepted-Segment Change Review assistance projection
+### 9.4 Cast Possibilities assistance projection
+
+Cast Possibilities adds no stored field. It projects the most recently saved
+Generation Brief, story configuration, all
+`active_working_set.selected_records`, selected POV, and the ordered
+`active_onstage_cast_full` band into non-canonical assistance only.
+
+Purpose readiness requires saved current time, current location, onstage
+entities, immediate situation, resolved non-omniscient POV, selected-record
+integrity, and one non-POV active/full CAST MEMBER whose `entity_id` resolves to
+a selected ENTITY. It does not require nonblank `must_render` and does not
+change prose readiness.
+
+Every selected record payload is rendered completely. Eligible CAST MEMBER
+dossiers use the prose-authoritative linked-ENTITY heading, field order,
+current voice pressure pin, and temporary override renderers. Accepted prose,
+candidates, Private Notes, unselected records, unsaved browser edits, prior
+assistance, prompt archives, and automatic prose-derived summaries are outside
+the projection.
+
+Cards, keeper flags, and stale state are browser-session scratch keyed by
+project identity and prompt fingerprint. Only the latest fingerprinted slate
+per project is retained, target regeneration must prove its avoid list belongs
+to that full-slate fingerprint, and Clear removes every project-scoped Cast
+Possibilities scratch key. This state does not satisfy validation, change
+prompt authority, mutate records or the Generation Brief, or enter exports,
+backups, migrations, or provenance.
+
+### 9.5 Accepted-Segment Change Review assistance projection
 
 Accepted-Segment Change Review is an `accepted-segment-change-review` assistance surface, not a prose-prompt source, not a validation authority, and not a mutation surface. It adds no stored schema fields.
 
@@ -1098,6 +1126,7 @@ Schema/template synchronization rules:
 - Adding, renaming, or deleting a prompt placeholder requires a compiler-contract update in the same change.
 - Any change to the record-hygiene in-scope type list, active predicate, ordering, serialization, citation keys, section order, relation taxonomy, action taxonomy, type-aware distinction rules, output format, or parser validation must update `docs/specs/story-record-hygiene-prompt-template.md`, this schema where applicable, `docs/specs/compiler-contract.md`, compiler/template versions, and golden tests in the same change.
 - Any change to the Accepted-Segment Change Review accepted-segment source, allowed generation-field projection, record scope, reference-token rules, output schema, `evidence_excerpt` witness rule, or parser validation must update `docs/specs/accepted-segment-change-review-prompt-template.md`, this schema, `docs/specs/compiler-contract.md`, compiler/template/contract versions, and golden/parser tests in the same change.
+- Any change to Cast Possibilities projection, readiness, eligibility, shared cast rendering, output schema, or parser must update `docs/specs/cast-possibilities-prompt-template.md`, this schema, `docs/specs/compiler-contract.md`, independent versions, and focused core/server/browser tests in the same change.
 
 Minimum prompt completeness for v1:
 

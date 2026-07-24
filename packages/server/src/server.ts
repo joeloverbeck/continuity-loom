@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import type { AddressInfo } from "node:net";
 
 import { registerCompileRoutes } from "./compile-routes.js";
+import { registerCastPossibilitiesRoutes } from "./cast-possibilities-routes.js";
 import { registerAcceptedSegmentChangeReviewRoutes } from "./accepted-segment-change-review-routes.js";
 import { registerAcceptedRoutes } from "./accepted-routes.js";
 import { registerGenerateRoutes } from "./generate-routes.js";
@@ -90,6 +91,7 @@ export function createServer(options: ServerOptions = {}): FastifyInstance {
   registerValidationRoutes(app, projectStoreManager);
   registerReadinessRoutes(app, projectStoreManager);
   registerCompileRoutes(app, projectStoreManager);
+  registerCastPossibilitiesRoutes(app, projectStoreManager);
   registerSettingsRoutes(app);
   registerGenerateRoutes(app, projectStoreManager);
   registerIdeateRoutes(app, projectStoreManager);
