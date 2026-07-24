@@ -94,7 +94,7 @@ describe("OpenRouter failure presentation", () => {
     });
 
     expect(presented).toContain("Missing requirements: Temperature, Top P.");
-    expect(presented).toContain("Open Settings to deliberately change Temperature or Top P");
+    expect(presented).toContain("Open Settings to deliberately change both Temperature and Top P");
     expect(presented).toContain("Technical detail: temperature, top_p.");
     expect(presented).not.toMatch(/strict structured output/i);
   });
@@ -111,6 +111,22 @@ describe("OpenRouter failure presentation", () => {
       "Missing requirements: response format, strict structured output, completion length, tools, tool choice."
     );
     expect(presented).toContain("Choose a compatible model");
+  });
+
+  it("requires a compatible model when sampling and non-sampling capabilities are both missing", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      message: "The selected model cannot satisfy the finalized request.",
+      missingCapabilities: ["temperature", "response_format", "structured_outputs"]
+    });
+
+    expect(presented).toContain("Open Settings to deliberately change Temperature");
+    expect(presented).toMatch(/must also choose a model compatible with response format and strict structured output/i);
+    expect(presented).toMatch(
+      /or keep Temperature and choose a model compatible with Temperature and response format and strict structured output/i
+    );
+    expect(presented).not.toMatch(/change Temperature, or choose/i);
   });
 
   it("uses the caller fallback for untyped thrown failures", () => {

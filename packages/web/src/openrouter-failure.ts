@@ -43,11 +43,25 @@ function recoveryGuidance(failure: TransportFailure): string {
       return "Choose a model that supports the requested structured output, then use the existing action to try again. No retry is automatic.";
     case "structured-output-incompatible-model":
       if (failure.missingCapabilities?.some((token) => token === "temperature" || token === "top_p")) {
+        const nonSamplingCapabilities = failure.missingCapabilities.filter(
+          (token) => token !== "temperature" && token !== "top_p"
+        );
         const settings = [
           ...(failure.missingCapabilities.includes("temperature") ? ["Temperature"] : []),
           ...(failure.missingCapabilities.includes("top_p") ? ["Top P"] : [])
         ];
-        return `Open Settings to deliberately change ${settings.join(" or ")}, or choose a compatible model. Reinspect before using the existing action. No request was sent. No retry is automatic.`;
+        const settingsAction = settings.length === 1
+          ? settings[0]
+          : `both ${settings.join(" and ")}`;
+        if (nonSamplingCapabilities.length > 0) {
+          const modelRequirements = requirementNames(nonSamplingCapabilities);
+          return `Open Settings to deliberately change ${settingsAction} if you want to remove ${
+            settings.length === 1 ? "that sampling requirement" : "those sampling requirements"
+          }. You must also choose a model compatible with ${modelRequirements.join(" and ")}. Or keep ${
+            settings.join(" and ")
+          } and choose a model compatible with ${[...settings, ...modelRequirements].join(" and ")}. Reinspect before using the existing action. No request was sent. No retry is automatic.`;
+        }
+        return `Open Settings to deliberately change ${settingsAction}, or choose a compatible model. Reinspect before using the existing action. No request was sent. No retry is automatic.`;
       }
       return (
         failure.recovery ??

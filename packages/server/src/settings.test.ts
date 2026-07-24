@@ -56,6 +56,17 @@ describe("OpenRouter settings boundary", () => {
     });
   });
 
+  it("rejects a persisted explicit mode that omits its numeric temperature", () => {
+    writeFileSync(getOpenRouterConfigPath(), `{
+  "model": "modern/model",
+  "temperatureMode": "explicit",
+  "maxOutputTokens": 1536
+}
+`, "utf8");
+
+    expect(() => readOpenRouterSettings()).toThrow(/explicit temperature settings require a numeric temperature/i);
+  });
+
   it("persists provider-default temperature intent without a numeric value", () => {
     const written = writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-5",
@@ -78,6 +89,21 @@ describe("OpenRouter settings boundary", () => {
       temperatureMode: "provider_default",
       temperature: 0.4
     })).toThrow(/must omit the numeric temperature/);
+  });
+
+  it("rejects switching provider-default settings to explicit mode without a temperature", () => {
+    writeOpenRouterSettings({
+      model: "anthropic/claude-sonnet-5",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2048
+    });
+
+    expect(() => writeOpenRouterSettings({ temperatureMode: "explicit" }))
+      .toThrow(/explicit temperature settings require a numeric temperature/i);
+    expect(readOpenRouterSettings()).toMatchObject({
+      temperatureMode: "provider_default",
+      model: "anthropic/claude-sonnet-5"
+    });
   });
 
   it("uses null as the sole explicit Top P clear and removes the persisted value", () => {

@@ -135,6 +135,34 @@ describe("OpenRouter settings routes", () => {
       .toMatchObject({ temperatureMode: "explicit", temperature: 1 });
   });
 
+  it("rejects switching provider-default settings to explicit mode without a temperature", async () => {
+    const fastify = app();
+    await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        model: "anthropic/claude-sonnet-5",
+        temperatureMode: "provider_default",
+        maxOutputTokens: 2048
+      }
+    });
+
+    const response = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: { temperatureMode: "explicit" }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      ok: false,
+      kind: "invalid-request",
+      message: expect.stringMatching(/explicit temperature settings require a numeric temperature/i)
+    });
+    expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
+      .toMatchObject({ temperatureMode: "provider_default", model: "anthropic/claude-sonnet-5" });
+  });
+
   it("rejects key-shaped fields and does not persist them", async () => {
     const fastify = app();
 

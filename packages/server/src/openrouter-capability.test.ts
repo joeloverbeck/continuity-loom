@@ -200,6 +200,20 @@ describe("requiredOpenRouterCapabilities", () => {
     expect(flattened).toContain("tool_choice");
   });
 
+  it("requires an active tool choice even when the envelope has no tools array", () => {
+    const requirements = requiredOpenRouterCapabilities(
+      finalizedStrictRequest({
+        ...strictRequestOptions,
+        tools: [],
+        tool_choice: "required"
+      })
+    );
+    const flattened = requirements.flatMap((requirement) => requirement.anyOf);
+
+    expect(flattened).not.toContain("tools");
+    expect(flattened).toContain("tool_choice");
+  });
+
   it("omits the top_p requirement when the envelope sends no top_p", () => {
     const requirements = requiredOpenRouterCapabilities(
       buildChatCompletionRequest({

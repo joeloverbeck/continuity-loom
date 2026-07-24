@@ -142,23 +142,29 @@ function parseConfigFile(configPath: string): Record<string, unknown> {
 function normalizeSettings(value: unknown): OpenRouterSettings {
   const parsed = openRouterSettingsSchema.parse(value);
   const temperatureMode = parsed.temperatureMode ?? "explicit";
-  if (temperatureMode === "provider_default" && parsed.temperature !== undefined) {
-    throw new Error("Provider-default temperature settings must omit the numeric temperature.");
-  }
   const model = parsed.model ?? defaultOpenRouterSettings.model;
   const maxOutputTokens = parsed.maxOutputTokens ?? defaultOpenRouterSettings.maxOutputTokens;
-  const settings: OpenRouterSettings = temperatureMode === "explicit"
-    ? {
-        model,
-        temperatureMode,
-        temperature: parsed.temperature ?? defaultOpenRouterSettings.temperature,
-        maxOutputTokens
-      }
-    : {
-        model,
-        temperatureMode,
-        maxOutputTokens
-      };
+  let settings: OpenRouterSettings;
+  if (temperatureMode === "explicit") {
+    if (parsed.temperature === undefined) {
+      throw new Error("Explicit temperature settings require a numeric temperature.");
+    }
+    settings = {
+      model,
+      temperatureMode,
+      temperature: parsed.temperature,
+      maxOutputTokens
+    };
+  } else {
+    if (parsed.temperature !== undefined) {
+      throw new Error("Provider-default temperature settings must omit the numeric temperature.");
+    }
+    settings = {
+      model,
+      temperatureMode,
+      maxOutputTokens
+    };
+  }
 
   if (parsed.topP !== undefined) {
     settings.topP = parsed.topP;

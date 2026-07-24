@@ -80,9 +80,10 @@ export function requiredOpenRouterCapabilities(request: OpenRouterRequest): Capa
 
   if (requestsToolUse(request)) {
     requirements.push({ label: "tools", anyOf: ["tools"] });
-    if (requestsToolChoice(request)) {
-      requirements.push({ label: "tool choice", anyOf: ["tool_choice"] });
-    }
+  }
+
+  if (requestsToolChoice(request)) {
+    requirements.push({ label: "tool choice", anyOf: ["tool_choice"] });
   }
 
   return requirements;
