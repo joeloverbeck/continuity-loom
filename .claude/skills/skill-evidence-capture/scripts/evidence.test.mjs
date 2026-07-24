@@ -6,6 +6,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveTopLevelSessionId } from './evidence.mjs';
+
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'evidence.mjs');
 const SELF_SKILL_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -270,16 +272,126 @@ test('hash is stable across runs and changes when a file changes', () => {
 test('session id falls back to env, then to the 12-hour cooldown path', () => {
   const sb = sandbox();
   const r = run(['record', '--root', sb.root, '--target', sb.rel, '--outcome', 'clean', '--task-label', 'env task'],
-    { CLAUDE_CODE_SESSION_ID: 'env-session' });
+    { CLAUDE_CODE_SESSION_ID: 'env-session', CODEX_THREAD_ID: '' });
   assert.equal(r.code, 0);
   assert.equal(events(sb)[0].top_level_session_id, 'env-session');
   const sb2 = sandbox();
   const bare = spawnSync(process.execPath, [SCRIPT, 'record', '--root', sb2.root, '--target', sb2.rel,
     ...incidentArgs('severe_incident', 'state', 'no session task', 'IGNORED').filter((a) => a !== '--session-id' && a !== 'IGNORED')],
-  { encoding: 'utf8', env: { ...process.env, CLAUDE_CODE_SESSION_ID: '' } });
+  { encoding: 'utf8', env: { ...process.env, CLAUDE_CODE_SESSION_ID: '', CODEX_THREAD_ID: '' } });
   assert.equal(bare.status, 0, bare.stderr);
   const g = gate(sb2);
   assert.equal(g.threshold_session_id, null);
   assert.notEqual(g.not_before, null);
   assert.equal(g.state, 'quarantined_pending_cooldown');
+});
+
+// ---------- portable top-level-session identity resolver (#151) ----------
+
+// Incident args without an explicit --session-id, so the resolver reads the host env.
+const incidentArgsNoSession = (outcome, key, label) => [
+  '--outcome', outcome, '--task-label', label,
+  '--symptom-key', key, '--expected', 'exp', '--observed', 'obs', '--consequence', 'cons',
+];
+
+// Record with both supported host vars explicitly controlled ('' means the var is absent),
+// so an inherited CLAUDE_CODE_SESSION_ID from the test host cannot pollute the resolution.
+function recordEnv(sb, extra, env) {
+  return run(['record', '--root', sb.root, '--target', sb.rel, ...extra],
+    { CLAUDE_CODE_SESSION_ID: '', CODEX_THREAD_ID: '', ...env });
+}
+function deriveEnv(sb, env) {
+  return run(['derive', '--root', sb.root, '--target', sb.rel],
+    { CLAUDE_CODE_SESSION_ID: '', CODEX_THREAD_ID: '', ...env });
+}
+const eventsBytes = (sb) => readFileSync(
+  join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'events.jsonl'));
+
+test('resolveTopLevelSessionId honors an explicit override, both host vars, and fails closed on conflict', () => {
+  // Explicit override wins over any host env (the --session-id / test interface).
+  assert.equal(
+    resolveTopLevelSessionId({ explicit: 'explicit-id', env: { CLAUDE_CODE_SESSION_ID: 'c', CODEX_THREAD_ID: 'x' } }),
+    'explicit-id');
+  // An explicit empty override collapses to 'unavailable' and ignores host env (prior behavior).
+  assert.equal(
+    resolveTopLevelSessionId({ explicit: '', env: { CLAUDE_CODE_SESSION_ID: 'claude-1' } }), 'unavailable');
+  // Claude Code host only.
+  assert.equal(resolveTopLevelSessionId({ env: { CLAUDE_CODE_SESSION_ID: 'claude-1' } }), 'claude-1');
+  // Codex host only.
+  assert.equal(resolveTopLevelSessionId({ env: { CODEX_THREAD_ID: 'codex-1' } }), 'codex-1');
+  // No supported identity -> unavailable (empty strings count as absent).
+  assert.equal(resolveTopLevelSessionId({ env: {} }), 'unavailable');
+  assert.equal(resolveTopLevelSessionId({ env: { CLAUDE_CODE_SESSION_ID: '', CODEX_THREAD_ID: '' } }), 'unavailable');
+  // Identical dual identities are not a conflict; the shared value resolves.
+  assert.equal(
+    resolveTopLevelSessionId({ env: { CLAUDE_CODE_SESSION_ID: 'same', CODEX_THREAD_ID: 'same' } }), 'same');
+  // Conflicting simultaneous identities fail closed (Refusal, exit code 3), naming both.
+  assert.throws(
+    () => resolveTopLevelSessionId({ env: { CLAUDE_CODE_SESSION_ID: 'c-id', CODEX_THREAD_ID: 'x-id' } }),
+    (err) => err.code === 3 && /[Cc]onflict/.test(err.message)
+      && err.message.includes('CLAUDE_CODE_SESSION_ID') && err.message.includes('CODEX_THREAD_ID'));
+});
+
+test('AC1: a Claude-session threshold becomes eligible in a different Codex thread', () => {
+  const sb = sandbox();
+  record(sb, incidentArgs('friction', 'execution', 'task a', 'sA'));
+  record(sb, incidentArgs('friction', 'execution', 'task b', 'sB'));
+  const r3 = recordEnv(sb, incidentArgsNoSession('friction', 'execution', 'task c'),
+    { CLAUDE_CODE_SESSION_ID: 'claude-c' });
+  assert.equal(r3.code, 0, r3.err);
+  const g0 = gate(sb);
+  assert.equal(g0.state, 'eligible_pending_cooldown');
+  assert.equal(g0.threshold_session_id, 'claude-c');
+  const d = deriveEnv(sb, { CODEX_THREAD_ID: 'codex-d' });
+  assert.equal(d.code, 0, d.err);
+  const g = JSON.parse(d.out);
+  assert.equal(g.state, 'eligible');
+  assert.equal(g.derivation_session_id, 'codex-d');
+});
+
+test('AC2: a Codex-thread threshold becomes eligible in a different Claude session', () => {
+  const sb = sandbox();
+  record(sb, incidentArgs('friction', 'output', 'task a', 'sA'));
+  record(sb, incidentArgs('friction', 'output', 'task b', 'sB'));
+  const r3 = recordEnv(sb, incidentArgsNoSession('friction', 'output', 'task c'),
+    { CODEX_THREAD_ID: 'codex-c' });
+  assert.equal(r3.code, 0, r3.err);
+  assert.equal(gate(sb).threshold_session_id, 'codex-c');
+  const d = deriveEnv(sb, { CLAUDE_CODE_SESSION_ID: 'claude-d' });
+  assert.equal(d.code, 0, d.err);
+  const g = JSON.parse(d.out);
+  assert.equal(g.state, 'eligible');
+  assert.equal(g.derivation_session_id, 'claude-d');
+});
+
+test('AC6: conflicting simultaneous host identities fail closed, nothing recorded', () => {
+  const sb = sandbox();
+  const r = recordEnv(sb, ['--outcome', 'clean', '--task-label', 'conflict task'],
+    { CLAUDE_CODE_SESSION_ID: 'claude-x', CODEX_THREAD_ID: 'codex-y' });
+  assert.equal(r.code, 3, r.out);
+  assert.match(r.err, /[Cc]onflict/);
+  assert.equal(existsSync(join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'events.jsonl')), false);
+  // The same conflict on the read-only derive path also refuses and writes nothing.
+  const d = deriveEnv(sb, { CLAUDE_CODE_SESSION_ID: 'claude-x', CODEX_THREAD_ID: 'codex-y' });
+  assert.equal(d.code, 3);
+  assert.equal(existsSync(join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'gate-status.json')), false);
+});
+
+test('AC7: an unavailable-session threshold keeps the 12-hour clock and no host session bypasses it', () => {
+  const sb = sandbox();
+  record(sb, incidentArgs('friction', 'cost', 'task a', 'unavailable'));
+  record(sb, incidentArgs('friction', 'cost', 'task b', 'unavailable'));
+  record(sb, incidentArgs('friction', 'cost', 'task c', 'unavailable'));
+  const g0 = gate(sb);
+  assert.equal(g0.state, 'eligible_pending_cooldown');
+  assert.equal(g0.threshold_session_id, null);
+  assert.notEqual(g0.not_before, null);
+  const before = eventsBytes(sb);
+  // A real Codex host does not bypass the clock, and the immutable event stream is untouched.
+  const d = deriveEnv(sb, { CODEX_THREAD_ID: 'codex-fresh' });
+  assert.equal(d.code, 0, d.err);
+  const g = JSON.parse(d.out);
+  assert.equal(g.state, 'eligible_pending_cooldown');
+  assert.notEqual(g.not_before, null);
+  assert.deepEqual(eventsBytes(sb), before);
 });

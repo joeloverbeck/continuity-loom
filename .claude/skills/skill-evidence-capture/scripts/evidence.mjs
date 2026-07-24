@@ -53,6 +53,12 @@ const USE_PAYLOAD_KEYS = [
 ];
 const COOLDOWN_MS = 12 * 60 * 60 * 1000;
 const OPERATOR = 'skill-evidence-capture';
+// Supported top-level-session identity host variables, in a stable, host-neutral
+// order. Each names one host that exposes a stable top-level session identity:
+// Claude Code and Codex today. The resolver reads them; downstream helpers must
+// not read them directly (single point of provider resolution).
+export const SESSION_ENV_VARS = ['CLAUDE_CODE_SESSION_ID', 'CODEX_THREAD_ID'];
+export const SESSION_UNAVAILABLE = 'unavailable';
 
 export class Refusal extends Error {
   constructor(code, message) {
@@ -71,6 +77,41 @@ function fail(code, msg) {
 const sha256 = (s) => createHash('sha256').update(s).digest('hex');
 const normalizeLabel = (s) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 const isNonEmptyString = (v) => typeof v === 'string' && v.length > 0;
+
+/**
+ * Canonical, fail-closed top-level-session identity resolver shared by every
+ * evidence workflow (Evidence Capture, Skill Evolution, Legacy Skill
+ * Decontamination, and Skill Evolution Status). This is the single place that
+ * knows which host variables carry a stable top-level session identity.
+ *
+ * - An explicit override (the helper `--session-id` / test-and-maintenance
+ *   interface) always wins; an empty override collapses to `unavailable` and
+ *   ignores host env, preserving the previous `(explicit ?? env) || unavailable`
+ *   behavior for already-recorded compatibility.
+ * - Otherwise each supported host variable in `SESSION_ENV_VARS` is honored;
+ *   an empty value counts as absent.
+ * - Returns `unavailable` only when no supported host identity exists.
+ * - Fails closed (Refusal, exit 3, nothing recorded or modified) when two or
+ *   more supported host identities are simultaneously present with conflicting
+ *   values, so no workflow silently prefers one host's identity over another.
+ */
+export function resolveTopLevelSessionId({ explicit, env = process.env } = {}) {
+  if (explicit !== undefined && explicit !== null) {
+    return isNonEmptyString(explicit) ? explicit : SESSION_UNAVAILABLE;
+  }
+  const present = SESSION_ENV_VARS
+    .map((name) => ({ name, value: env[name] }))
+    .filter((p) => isNonEmptyString(p.value));
+  if (present.length === 0) return SESSION_UNAVAILABLE;
+  const distinct = new Set(present.map((p) => p.value));
+  if (distinct.size > 1) {
+    fail(3, 'Conflicting top-level-session identities: '
+      + `${present.map((p) => `${p.name}=${p.value}`).join(', ')}. `
+      + 'Refusing to guess which host owns this top-level session; nothing was recorded or modified. '
+      + 'Unset all but one supported session variable (or pass an explicit --session-id) and retry.');
+  }
+  return present[0].value;
+}
 
 function sleepMs(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
@@ -546,7 +587,7 @@ function cmdRecord(args) {
     }
   }
 
-  const sessionId = (args.sessionId ?? process.env.CLAUDE_CODE_SESSION_ID) || 'unavailable';
+  const sessionId = resolveTopLevelSessionId({ explicit: args.sessionId });
   const nowMs = Date.now();
   const normalized = normalizeLabel(args.taskLabel);
   const fingerprint = sha256(normalized).slice(0, 16);
@@ -607,7 +648,7 @@ function cmdRecord(args) {
 
 function cmdDerive(args) {
   const { targetReal, target, evidenceDir } = targetContext(args);
-  const sessionId = (args.sessionId ?? process.env.CLAUDE_CODE_SESSION_ID) || 'unavailable';
+  const sessionId = resolveTopLevelSessionId({ explicit: args.sessionId });
   mkdirSync(evidenceDir, { recursive: true });
   withLock(evidenceDir, () => {
     const { events, errors } = readEventsFile(join(evidenceDir, 'events.jsonl'));
@@ -636,8 +677,10 @@ Usage:
   evidence.mjs derive --target <skill-dir> [--session-id <id>] [--root <repo-root>]
   evidence.mjs hash   --target <skill-dir> [--root <repo-root>]
 
-Defaults: --root = git toplevel of the working directory; --session-id = $CLAUDE_CODE_SESSION_ID
-(else "unavailable", which switches the eligibility cooldown to a 12-hour clock);
+Defaults: --root = git toplevel of the working directory; --session-id defaults to the
+current host's top-level-session identity ($CLAUDE_CODE_SESSION_ID or $CODEX_THREAD_ID),
+else "unavailable", which switches the eligibility cooldown to a 12-hour clock. Two
+conflicting host identities at once fail closed (nothing recorded);
 --same-run-group = hash of target name + normalized task label, so a retry of the same task
 deduplicates and distinct tasks need distinct labels. Evidence lives under
 <root>/reports/skill-evidence/<skill-key>/. Exit codes: 0 ok; 3 refused, nothing written; 1 unsafe failure.

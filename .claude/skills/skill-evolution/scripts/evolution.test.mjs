@@ -260,3 +260,64 @@ test('a corrupt event stream refuses with the integrity condition', () => {
   assert.match(r.err, /Gate: blocked\./);
   assert.match(r.err, /Failed condition: event_stream_integrity_valid\./);
 });
+
+// ---------- portable top-level-session identity (#151) ----------
+
+// Run with both supported host vars explicitly controlled ('' means absent), so an
+// inherited CLAUDE_CODE_SESSION_ID from the test host cannot pollute host resolution.
+function runEnv(script, args, env) {
+  const r = spawnSync(process.execPath, [script, ...args],
+    { encoding: 'utf8', env: { ...process.env, CLAUDE_CODE_SESSION_ID: '', CODEX_THREAD_ID: '', ...env } });
+  return { code: r.status, out: r.stdout, err: r.stderr };
+}
+// Complete a three-incident friction threshold whose final event is recorded from `env`'s host.
+function seedThresholdFromHost(sb, label, env) {
+  seedIncident(sb, 'task a', 'sA');
+  seedIncident(sb, 'task b', 'sB');
+  const r3 = runEnv(CAPTURE, ['record', '--root', sb.root, '--target', sb.rel,
+    '--outcome', 'friction', '--task-label', label, '--symptom-key', 'execution',
+    '--expected', 'exp', '--observed', 'obs', '--consequence', 'cons', '--evidence-ref', `logs/${label}.txt`],
+    env);
+  assert.equal(r3.code, 0, r3.err);
+}
+
+test('AC3/AC4: a Codex threshold refuses in the same thread and authorizes from a different one', () => {
+  const sb = sandbox();
+  seedThresholdFromHost(sb, 'task c', { CODEX_THREAD_ID: 'codex-thread-c' });
+  assert.equal(gate(sb).threshold_session_id, 'codex-thread-c');
+  // AC3: same Codex thread stays eligible_pending_cooldown and Skill Evolution refuses.
+  const same = runEnv(SCRIPT, ['preflight', '--target', sb.rel, '--root', sb.root],
+    { CODEX_THREAD_ID: 'codex-thread-c' });
+  assert.equal(same.code, 3);
+  assert.match(same.err, /Gate: eligible_pending_cooldown\./);
+  assert.match(same.err, /Terminal outcome: refused_cooldown_or_same_session\./);
+  // AC4: a different Codex thread satisfies the fresh-session term and is authorized.
+  const fresh = runEnv(SCRIPT, ['preflight', '--target', sb.rel, '--root', sb.root],
+    { CODEX_THREAD_ID: 'codex-thread-d' });
+  assert.equal(fresh.code, 0, fresh.err);
+  const p = JSON.parse(fresh.out);
+  assert.equal(p.authorized, true);
+  assert.equal(p.gate.state, 'eligible');
+  assert.equal(p.gate.threshold_session_id, 'codex-thread-c');
+});
+
+test('cross-host: a Claude-session threshold authorizes a preflight from a different Codex thread', () => {
+  const sb = sandbox();
+  seedThresholdFromHost(sb, 'task c', { CLAUDE_CODE_SESSION_ID: 'claude-c' });
+  assert.equal(gate(sb).threshold_session_id, 'claude-c');
+  const fresh = runEnv(SCRIPT, ['preflight', '--target', sb.rel, '--root', sb.root],
+    { CODEX_THREAD_ID: 'codex-d' });
+  assert.equal(fresh.code, 0, fresh.err);
+  assert.equal(JSON.parse(fresh.out).gate.state, 'eligible');
+});
+
+test('conflicting host identities fail closed in a preflight, appending nothing', () => {
+  const sb = sandbox();
+  seedEligible(sb);
+  const before = readFileSync(join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'events.jsonl'));
+  const r = runEnv(SCRIPT, ['preflight', '--target', sb.rel, '--root', sb.root],
+    { CLAUDE_CODE_SESSION_ID: 'claude-x', CODEX_THREAD_ID: 'codex-y' });
+  assert.equal(r.code, 3);
+  assert.match(r.err, /[Cc]onflict/);
+  assert.deepEqual(readFileSync(join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'events.jsonl')), before);
+});

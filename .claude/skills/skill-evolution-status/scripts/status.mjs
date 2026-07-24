@@ -23,7 +23,13 @@ async function loadContract() {
         throw new Error(`Required sibling evidence contract not found: ${contractPath}`);
       }
       const contract = await import(CONTRACT_URL.href);
-      for (const name of ["deriveGate", "detectRoot", "hashSkillDir", "readEventsFile"]) {
+      for (const name of [
+        "deriveGate",
+        "detectRoot",
+        "hashSkillDir",
+        "readEventsFile",
+        "resolveTopLevelSessionId"
+      ]) {
         if (typeof contract[name] !== "function") {
           throw new Error(`Sibling evidence contract is incompatible: missing export ${name}.`);
         }
@@ -245,15 +251,24 @@ function inspectStore({ api, root, storeDir, storeKey, sessionId, nowMs }) {
   }
 
   if (status.threshold_session_id !== null) {
+    // A session-ID threshold can only be satisfied by a destination host that exposes
+    // a top-level-session identity. When the current host has none, the census cannot
+    // hand out a command that $skill-evolution would deterministically refuse.
+    if (sessionId === "unavailable") {
+      return {
+        category: "blocked",
+        value: {
+          ...common,
+          kind: "session_host_required"
+        }
+      };
+    }
     return {
       category: "ready",
       value: {
         ...common,
         command: commandFor(targetPath),
-        proof: {
-          type: "different_session",
-          current_host_has_session_id: sessionId !== "unavailable"
-        }
+        proof: { type: "different_session" }
       }
     };
   }
@@ -308,11 +323,15 @@ function sortEntries(report) {
 
 export async function scanRepository({
   root,
-  sessionId = process.env.CLAUDE_CODE_SESSION_ID || "unavailable",
+  sessionId,
   nowMs = Date.now(),
   contract
 } = {}) {
   const api = contract ?? (await loadContract());
+  // Resolve the current host's top-level-session identity through the one canonical
+  // resolver in the sibling evidence contract (Claude Code or Codex, else unavailable;
+  // conflicting host identities fail closed). An explicit sessionId still overrides it.
+  const resolvedSessionId = api.resolveTopLevelSessionId({ explicit: sessionId });
   const repoRoot = root ? realpathSync(resolve(root)) : api.detectRoot();
   const evolutionSkill = join(repoRoot, ".claude", "skills", "skill-evolution", "SKILL.md");
   if (!existsSync(evolutionSkill)) {
@@ -330,7 +349,7 @@ export async function scanRepository({
     schema_version: 1,
     generated_at: new Date(nowMs).toISOString(),
     repository_root: repoRoot,
-    current_host_has_session_id: sessionId !== "unavailable",
+    current_host_has_session_id: resolvedSessionId !== "unavailable",
     ready: [],
     blocked: [],
     indeterminate: [],
@@ -351,7 +370,7 @@ export async function scanRepository({
         root: repoRoot,
         storeDir: store.dir,
         storeKey: store.key,
-        sessionId,
+        sessionId: resolvedSessionId,
         nowMs
       });
     } catch (error) {
@@ -434,7 +453,7 @@ function renderReady(entry, timeZone) {
   ];
   if (entry.proof.type === "different_session") {
     lines.push(
-      "- Destination proof: Paste into a session-ID-capable fresh session whose `CLAUDE_CODE_SESSION_ID` differs from the threshold session. A no-ID destination will be refused; waiting will not help."
+      "- Destination proof: Paste into a session-ID-capable fresh session (Claude Code or Codex) whose top-level-session identity differs from the threshold session. A no-ID destination will be refused; waiting will not help."
     );
   } else {
     lines.push(
@@ -472,6 +491,13 @@ function renderBlocked(entry, timeZone) {
         `- Owner workflow: \`${entry.operator_workflow}\`${entry.risk_tier ? `; risk tier \`${entry.risk_tier}\`` : ""}.`
       );
     lines.push(`- Review artifacts: \`${entry.review_artifacts}\`.`);
+  } else if (entry.kind === "session_host_required") {
+    lines.push(
+      "- Blocker: This threshold was recorded with a top-level-session identity, so its destination proof needs a session-ID-capable host. The current host exposes no top-level-session identity."
+    );
+    lines.push(
+      "- Route: Rerun this read-only status census from a session-ID-capable host — Claude Code (`CLAUDE_CODE_SESSION_ID`) or Codex (`CODEX_THREAD_ID`) — whose identity differs from the threshold session. Waiting will not help; the 12-hour clock never applies to a session-ID threshold."
+    );
   } else if (entry.kind === "self_target") {
     lines.push(
       "- Blocker: Skill Evolution cannot target itself, so no `$skill-evolution` command is valid."
