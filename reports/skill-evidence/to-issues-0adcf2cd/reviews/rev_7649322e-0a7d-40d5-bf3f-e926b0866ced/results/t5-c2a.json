@@ -1,0 +1,60 @@
+{
+  "approvedCount": 3,
+  "forbidLiterals": ["SCRATCH-200"],
+  "forbidPatterns": [],
+  "runSheet": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/run-sheet.md",
+  "workingLedger": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/working-ledger.json",
+  "parent": {
+    "number": 200,
+    "token": "PRD #200",
+    "state": "OPEN",
+    "labels": ["needs-triage"],
+    "ledger": {
+      "status": "posted",
+      "commentUrl": "https://github.com/joeloverbeck/continuity-loom/issues/200#issuecomment-9001",
+      "bodyFile": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/ledger.md"
+    }
+  },
+  "children": [
+    {
+      "slice": "record",
+      "number": 201,
+      "url": "https://github.com/joeloverbeck/continuity-loom/issues/201",
+      "title": "Store scene beat annotations on the story record",
+      "bodyFile": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/record.md",
+      "acceptanceCount": 4,
+      "state": "OPEN",
+      "labels": ["enhancement", "ready-for-agent"],
+      "blockers": [],
+      "externalBlockers": [],
+      "checklistMapped": "N/A - changes no UI",
+      "noBlockerPhrase": "None - can start immediately"
+    },
+    {
+      "slice": "compiler",
+      "number": 202,
+      "url": "https://github.com/joeloverbeck/continuity-loom/issues/202",
+      "title": "Compile scene beat annotations into the prose prompt",
+      "bodyFile": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/compiler.md",
+      "acceptanceCount": 3,
+      "state": "OPEN",
+      "labels": ["enhancement", "ready-for-agent"],
+      "blockers": ["#188", "#201"],
+      "externalBlockers": [],
+      "checklistMapped": "N/A - changes no UI"
+    },
+    {
+      "slice": "editor",
+      "number": 203,
+      "url": "https://github.com/joeloverbeck/continuity-loom/issues/203",
+      "title": "Edit scene beat annotations in the scene editor",
+      "bodyFile": "/home/joeloverbeck/src/continuity-loom/reports/skill-evidence/to-issues-0adcf2cd/reviews/rev_7649322e-0a7d-40d5-bf3f-e926b0866ced/trials/staged/editor.md",
+      "acceptanceCount": 8,
+      "state": "OPEN",
+      "labels": ["enhancement", "ready-for-agent"],
+      "blockers": ["#202"],
+      "externalBlockers": [],
+      "checklistMapped": "yes"
+    }
+  ]
+}

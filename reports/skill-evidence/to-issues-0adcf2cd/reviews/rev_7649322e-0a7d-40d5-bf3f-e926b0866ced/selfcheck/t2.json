@@ -1,0 +1,8 @@
+{
+  "approvedCount": 3,
+  "entries": [
+    {"slice":"record","title":"Store scene beat annotations on the story record","acceptanceCount":4,"blockedBySlices":[],"prerequisiteIssues":[],"blockers":[],"externalBlockers":[],"number":null,"url":null,"verifierStatus":null},
+    {"slice":"compiler","title":"Compile scene beat annotations into the prose prompt","acceptanceCount":3,"blockedBySlices":["record"],"prerequisiteIssues":["#188"],"blockers":["#188"],"externalBlockers":[],"number":null,"url":null,"verifierStatus":null},
+    {"slice":"editor","title":"Edit scene beat annotations in the scene editor","acceptanceCount":8,"blockedBySlices":["compiler"],"prerequisiteIssues":[],"blockers":[],"externalBlockers":[],"number":null,"url":null,"verifierStatus":null}
+  ]
+}

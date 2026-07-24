@@ -1,38 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T03:16:54.758Z",
-  "target_content_hash": "23d6d5a8e62c9b559bfc09200d555a9fe9dc49801d7e908cadfecb892ecb1003",
-  "qualifying_uses_on_current_hash": 6,
-  "open_incident_ids": [
-    "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67",
-    "evt_bdb7352e-680d-4568-bdc2-d3bbdd2470a7",
-    "evt_d2af415e-3ac6-4d90-a8e1-f0fcb09606cf"
-  ],
-  "candidate_clusters": [
-    {
-      "symptom_key": "tool-compatibility",
-      "open_event_ids": [
-        "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67",
-        "evt_bdb7352e-680d-4568-bdc2-d3bbdd2470a7",
-        "evt_d2af415e-3ac6-4d90-a8e1-f0fcb09606cf"
-      ],
-      "independent_incidents": 3,
-      "max_severity": "friction"
-    }
-  ],
-  "state": "eligible_pending_cooldown",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "friction_recurrence:tool-compatibility",
-  "trigger_event_ids": [
-    "evt_44c0ab5a-7ec7-448d-8f6c-93d25e816b67",
-    "evt_bdb7352e-680d-4568-bdc2-d3bbdd2470a7",
-    "evt_d2af415e-3ac6-4d90-a8e1-f0fcb09606cf"
-  ],
-  "threshold_session_id": "019f91f1-e67f-75c2-a1c0-881bd9133841",
+  "generated_at": "2026-07-24T17:55:40.823Z",
+  "target_content_hash": "1b9d808fb81f0a5ec2c6e8bc812a53f842e823744dfe0112ce475966a8451416",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "dec_502bf8bb-b1c9-4e62-a783-8bd93c470cac",
+  "last_completed_review_id": "rev_7649322e-0a7d-40d5-bf3f-e926b0866ced",
   "target_name": "to-issues",
   "target_repo_relative_path": ".claude/skills/to-issues",
-  "derivation_session_id": "019f91f1-e67f-75c2-a1c0-881bd9133841"
+  "derivation_session_id": "ec5e0a2c-2a0c-45df-9247-379145f6c104"
 }
