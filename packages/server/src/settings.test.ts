@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -32,10 +32,68 @@ describe("OpenRouter settings boundary", () => {
   it("returns defaults when the config file is absent", () => {
     expect(readOpenRouterSettings()).toEqual({
       model: "",
+      temperatureMode: "explicit",
       temperature: 1,
       maxOutputTokens: 1024,
       hasOpenRouterCredential: false
     });
+  });
+
+  it("normalizes legacy numeric temperature settings to explicit intent without changing the value", () => {
+    writeFileSync(getOpenRouterConfigPath(), `{
+  "model": "legacy/model",
+  "temperature": 0.35,
+  "maxOutputTokens": 1536
+}
+`, "utf8");
+
+    expect(readOpenRouterSettings()).toEqual({
+      model: "legacy/model",
+      temperatureMode: "explicit",
+      temperature: 0.35,
+      maxOutputTokens: 1536,
+      hasOpenRouterCredential: false
+    });
+  });
+
+  it("persists provider-default temperature intent without a numeric value", () => {
+    const written = writeOpenRouterSettings({
+      model: "anthropic/claude-sonnet-5",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2048
+    });
+
+    expect(written).toEqual({
+      model: "anthropic/claude-sonnet-5",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2048,
+      hasOpenRouterCredential: false
+    });
+    expect(readOpenRouterSettings()).toEqual(written);
+    expect(readRawConfig()).not.toMatch(/"temperature":/);
+  });
+
+  it("rejects contradictory provider-default temperature settings", () => {
+    expect(() => writeOpenRouterSettings({
+      temperatureMode: "provider_default",
+      temperature: 0.4
+    })).toThrow(/must omit the numeric temperature/);
+  });
+
+  it("uses null as the sole explicit Top P clear and removes the persisted value", () => {
+    writeOpenRouterSettings({
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit",
+      temperature: 0.7,
+      maxOutputTokens: 1800,
+      topP: 0.9
+    });
+
+    const cleared = writeOpenRouterSettings({ topP: null });
+
+    expect(cleared.topP).toBeUndefined();
+    expect(readOpenRouterSettings().topP).toBeUndefined();
+    expect(readRawConfig()).not.toMatch(/"topP":/);
   });
 
   it("round-trips non-secret settings through the global config file", () => {
@@ -48,6 +106,7 @@ describe("OpenRouter settings boundary", () => {
 
     expect(written).toEqual({
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
       maxOutputTokens: 1800,
       topP: 0.9,
@@ -57,6 +116,7 @@ describe("OpenRouter settings boundary", () => {
     expect(readOpenRouterSettings()).toEqual(written);
     expect(readRawConfig()).toBe(`{
   "model": "anthropic/claude-sonnet-4",
+  "temperatureMode": "explicit",
   "temperature": 0.7,
   "maxOutputTokens": 1800,
   "topP": 0.9
@@ -86,6 +146,7 @@ describe("OpenRouter settings boundary", () => {
 
     expect(readOpenRouterSettings()).toEqual({
       model: "",
+      temperatureMode: "explicit",
       temperature: 1,
       maxOutputTokens: 1024,
       hasOpenRouterCredential: false

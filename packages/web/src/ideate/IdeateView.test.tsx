@@ -2,7 +2,6 @@
 
 import {
   IDEATION_FOCUS_MAX_CODE_POINTS,
-  type CompileResult,
   type GenerationReadiness,
   type ReadinessDiagnostic
 } from "@loom/core";
@@ -172,8 +171,8 @@ describe("IdeateView", () => {
   });
 
   it("invalidates send immediately and ignores an older compile response after rapid focus edits", async () => {
-    const first = deferred<CompileResult>();
-    const second = deferred<CompileResult>();
+    const first = deferred<ReturnType<typeof compileResult>>();
+    const second = deferred<ReturnType<typeof compileResult>>();
     vi.mocked(compileIdeation).mockImplementation((request = {}) => {
       if (request.focus === "first question") {
         return first.promise;
@@ -199,7 +198,7 @@ describe("IdeateView", () => {
       await second.promise;
     });
     expect((await screen.findByTestId("prompt-body")).textContent).toContain("second question");
-    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+    expect(screen.getAllByText("fingerprint-second")).toHaveLength(2);
 
     await act(async () => {
       first.resolve(compileResult("# Grounded Ideation Prompt\nfirst question", "fingerprint-first"));
@@ -207,7 +206,7 @@ describe("IdeateView", () => {
     });
     expect(screen.getByTestId("prompt-body").textContent).toContain("second question");
     expect(screen.getByTestId("prompt-body").textContent).not.toContain("first question");
-    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+    expect(screen.getAllByText("fingerprint-second")).toHaveLength(2);
     expect(screen.queryByText("fingerprint-first")).toBeNull();
   });
 
@@ -237,7 +236,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "door pressure",
       avoidList: []
-    }, "fingerprint:door pressure"));
+    }, "fingerprint:door pressure", "fingerprint:door pressure"));
     expect(ideate).toHaveBeenCalledTimes(1);
   });
 
@@ -308,7 +307,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "",
       avoidList: []
-    }, "fingerprint-1");
+    }, "fingerprint-1", "fingerprint-1");
   });
 
   it("preserves current focus, avoid-list, and fingerprint through every slate action", async () => {
@@ -344,7 +343,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "pressure at the door",
       avoidList: []
-    }, "fingerprint:pressure at the door:");
+    }, "fingerprint:pressure at the door:", "fingerprint:pressure at the door:");
 
     const getNewSlate = screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" });
     await waitFor(() => expect(getNewSlate.disabled).toBe(false));
@@ -356,7 +355,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "pressure at the door",
       avoidList: ["The sealed letter changes hands."]
-    }, "fingerprint:pressure at the door:The sealed letter changes hands.");
+    }, "fingerprint:pressure at the door:The sealed letter changes hands.", "fingerprint:pressure at the door:The sealed letter changes hands.");
 
     const regenerateAll = screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate all" });
     await waitFor(() => expect(regenerateAll.disabled).toBe(false));
@@ -368,7 +367,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "pressure at the door",
       avoidList: ["The latch interrupts the argument."]
-    }, "fingerprint:pressure at the door:The latch interrupts the argument.");
+    }, "fingerprint:pressure at the door:The latch interrupts the argument.", "fingerprint:pressure at the door:The latch interrupts the argument.");
 
     const regenerateSlot = screen.getByRole<HTMLButtonElement>("button", { name: "Regenerate slot" });
     await waitFor(() => expect(regenerateSlot.disabled).toBe(false));
@@ -380,7 +379,7 @@ describe("IdeateView", () => {
       dormantSlot: true,
       focus: "pressure at the door",
       avoidList: ["The lantern forces a choice."]
-    }, "fingerprint:pressure at the door:The lantern forces a choice.");
+    }, "fingerprint:pressure at the door:The lantern forces a choice.", "fingerprint:pressure at the door:The lantern forces a choice.");
     expect(focus.value).toBe("  pressure at the door  ");
   });
 
@@ -583,7 +582,7 @@ function renderIdeate() {
   );
 }
 
-function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1") {
   return {
     prompt,
     metadata: {
@@ -595,6 +594,13 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileRe
       fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
+    },
+    providerRequest: {
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit" as const,
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      requestFingerprint: fingerprint
     }
   };
 }
@@ -611,6 +617,7 @@ function generationMetadata() {
   return {
     model: "openai/gpt-4.1",
     provider: "openrouter" as const,
+    temperatureMode: "explicit" as const,
     temperature: 0.4,
     maxOutputTokens: 2200,
     versions: {

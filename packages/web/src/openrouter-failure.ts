@@ -11,6 +11,12 @@ export function presentOpenRouterFailure(failure: TransportFailure): string {
     parts.push(`Provider reason: ${failure.providerReason}`);
   }
 
+  if (failure.missingCapabilities?.length) {
+    const names = requirementNames(failure.missingCapabilities);
+    parts.push(`Missing requirements: ${names.join(", ")}.`);
+    parts.push(`Technical detail: ${failure.missingCapabilities.join(", ")}.`);
+  }
+
   parts.push(recoveryGuidance(failure));
   return parts.join(" ");
 }
@@ -36,9 +42,16 @@ function recoveryGuidance(failure: TransportFailure): string {
     case "structured-output-rejection":
       return "Choose a model that supports the requested structured output, then use the existing action to try again. No retry is automatic.";
     case "structured-output-incompatible-model":
+      if (failure.missingCapabilities?.some((token) => token === "temperature" || token === "top_p")) {
+        const settings = [
+          ...(failure.missingCapabilities.includes("temperature") ? ["Temperature"] : []),
+          ...(failure.missingCapabilities.includes("top_p") ? ["Top P"] : [])
+        ];
+        return `Open Settings to deliberately change ${settings.join(" or ")}, or choose a compatible model. Reinspect before using the existing action. No request was sent. No retry is automatic.`;
+      }
       return (
         failure.recovery ??
-        "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+        "Choose a compatible model, then reinspect before using the existing action. No request was sent. No retry is automatic."
       );
     case "structured-output-capability-unknown":
       return (
@@ -54,4 +67,29 @@ function recoveryGuidance(failure: TransportFailure): string {
     case "unknown":
       return "Use the existing action to try again when ready. No retry is automatic.";
   }
+}
+
+function requirementNames(tokens: readonly string[]): string[] {
+  const names = tokens.map((token) => {
+    switch (token) {
+      case "temperature":
+        return "Temperature";
+      case "top_p":
+        return "Top P";
+      case "response_format":
+        return "response format";
+      case "structured_outputs":
+        return "strict structured output";
+      case "max_tokens":
+      case "max_completion_tokens":
+        return "completion length";
+      case "tools":
+        return "tools";
+      case "tool_choice":
+        return "tool choice";
+      default:
+        return token;
+    }
+  });
+  return [...new Set(names)];
 }

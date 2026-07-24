@@ -10,6 +10,7 @@ import {
   type RecordHygieneAnalyzeResponse,
   type RecordHygieneCompileMetadata,
   type RecordHygieneCompileResponse,
+  type OpenRouterRequestInspection,
   type TransportFailure
 } from "../api.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
@@ -19,7 +20,13 @@ import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type Rec
 
 type CompileState =
   | { status: "loading" }
-  | { status: "ready"; prompt: string; metadata: RecordHygieneCompileMetadata; citations: Record<string, string> }
+  | {
+      status: "ready";
+      prompt: string;
+      metadata: RecordHygieneCompileMetadata;
+      citations: Record<string, string>;
+      providerRequest: OpenRouterRequestInspection;
+    }
   | { status: "error"; message: string };
 
 type ScratchState =
@@ -59,7 +66,8 @@ export function RecordHygieneView(): React.JSX.Element {
         status: "ready",
         prompt: result.prompt,
         metadata: result.metadata,
-        citations: result.citations
+        citations: result.citations,
+        providerRequest: result.providerRequest
       });
     } catch {
       setCompileState({ status: "error", message: "Could not compile the record hygiene prompt." });
@@ -67,10 +75,17 @@ export function RecordHygieneView(): React.JSX.Element {
   }
 
   async function analyze(): Promise<void> {
+    if (compileState.status !== "ready") {
+      return;
+    }
     setScratchState({ status: "sending" });
 
     try {
-      const result = await recordHygieneAnalyze(hygieneMode);
+      const result = await recordHygieneAnalyze(
+        hygieneMode,
+        compileState.metadata.fingerprint,
+        compileState.providerRequest.requestFingerprint
+      );
       if (result.ok) {
         if ("malformed" in result) {
           setScratchState({ status: "malformed", raw: result.raw });
@@ -193,7 +208,12 @@ export function RecordHygieneView(): React.JSX.Element {
             <button type="button" className="secondaryButton" onClick={() => copyText(compileState.prompt)}>Copy prompt</button>
           </div>
 
-          <PromptInspector result={promptResult} searchTerm={searchTerm} onSearchTermChange={setSearchTerm} />
+          <PromptInspector
+            result={promptResult}
+            providerRequest={compileState.providerRequest}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+          />
 
           <section className="configPanel" aria-labelledby="hygiene-send-title">
             <h3 id="hygiene-send-title">OpenRouter Send</h3>

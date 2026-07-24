@@ -50,10 +50,10 @@ describe("story notes isolation capstone", () => {
   });
 
   it("keeps note sentinels out of validation, readiness, prompts, OpenRouter requests, and logs", async () => {
-    sendChatCompletionMock.mockImplementation(async ({ prompt }) => ({
+    sendChatCompletionMock.mockImplementation(async ({ request }) => ({
       ok: true,
       candidate: {
-        text: prompt.includes("# Grounded Ideation Prompt")
+        text: request.messages[0].content.includes("# Grounded Ideation Prompt")
           ? [
               "IDEA 1",
               "operator: Reveal",
@@ -85,19 +85,29 @@ describe("story notes isolation capstone", () => {
         url: "/api/compile",
         payload: { promptKind: "ideation", ideationRequest: { count: 3 } }
       });
-      const proseCompileBody = proseCompile.json() as { metadata: { fingerprint: string } };
-      const ideationCompileBody = ideationCompile.json() as { metadata: { fingerprint: string } };
+      const proseCompileBody = proseCompile.json() as {
+        metadata: { fingerprint: string };
+        providerRequest: { requestFingerprint: string };
+      };
+      const ideationCompileBody = ideationCompile.json() as {
+        metadata: { fingerprint: string };
+        providerRequest: { requestFingerprint: string };
+      };
       const generate = await fastify.inject({
         method: "POST",
         url: "/api/generate",
-        payload: { expectedPromptFingerprint: proseCompileBody.metadata.fingerprint }
+        payload: {
+          expectedPromptFingerprint: proseCompileBody.metadata.fingerprint,
+          expectedRequestFingerprint: proseCompileBody.providerRequest.requestFingerprint
+        }
       });
       const ideate = await fastify.inject({
         method: "POST",
         url: "/api/ideate",
         payload: {
           count: 3,
-          expectedPromptFingerprint: ideationCompileBody.metadata.fingerprint
+          expectedPromptFingerprint: ideationCompileBody.metadata.fingerprint,
+          expectedRequestFingerprint: ideationCompileBody.providerRequest.requestFingerprint
         }
       });
 
@@ -197,8 +207,14 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     }
   });
 

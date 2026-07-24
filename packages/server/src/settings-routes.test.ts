@@ -44,6 +44,7 @@ describe("OpenRouter settings routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       model: "",
+      temperatureMode: "explicit",
       temperature: 1,
       maxOutputTokens: 1024,
       hasOpenRouterCredential: true
@@ -76,6 +77,62 @@ describe("OpenRouter settings routes", () => {
     const getResponse = await fastify.inject({ method: "GET", url: "/api/settings/openrouter" });
     expect(getResponse.json()).toEqual(putResponse.json());
     expect(`${putResponse.body}\n${getResponse.body}`).not.toMatch(/openRouterApiKey|OPENROUTER_API_KEY|apiKey|sk-|Bearer/);
+  });
+
+  it("persists provider-default temperature and explicitly clears Top P", async () => {
+    const fastify = app();
+    await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        model: "anthropic/claude-sonnet-5",
+        temperatureMode: "explicit",
+        temperature: 0.6,
+        maxOutputTokens: 2048,
+        topP: 0.8
+      }
+    });
+
+    const providerDefault = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        temperatureMode: "provider_default",
+        topP: null
+      }
+    });
+
+    expect(providerDefault.statusCode).toBe(200);
+    expect(providerDefault.json()).toEqual({
+      model: "anthropic/claude-sonnet-5",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2048,
+      hasOpenRouterCredential: false
+    });
+    expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
+      .toEqual(providerDefault.json());
+  });
+
+  it("rejects contradictory temperature intent before persistence", async () => {
+    const fastify = app();
+
+    const response = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        temperatureMode: "provider_default",
+        temperature: 0.4
+      }
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({
+      ok: false,
+      kind: "invalid-request",
+      message: expect.stringMatching(/must omit the numeric temperature/)
+    });
+    expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
+      .toMatchObject({ temperatureMode: "explicit", temperature: 1 });
   });
 
   it("rejects key-shaped fields and does not persist them", async () => {

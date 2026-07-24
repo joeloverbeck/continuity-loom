@@ -11,13 +11,16 @@ import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import { parseIdeationResponse } from "./ideation-parse.js";
+import { admitOpenRouterRequest } from "./openrouter/capability.js";
 import { sendChatCompletion } from "./openrouter/client.js";
+import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 const ideationSendRequestSchema = ideationRequestSchema.extend({
-  expectedPromptFingerprint: z.string().refine((value) => value.trim().length > 0)
+  expectedPromptFingerprint: z.string().refine((value) => value.trim().length > 0),
+  expectedRequestFingerprint: z.string().refine((value) => value.trim().length > 0)
 });
 
 export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
@@ -27,7 +30,7 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       return reply.code(400).send(parsedRequest.body);
     }
 
-    const { expectedPromptFingerprint, ...ideationRequest } = parsedRequest.value;
+    const { expectedPromptFingerprint, expectedRequestFingerprint, ...ideationRequest } = parsedRequest.value;
 
     const snapshotResult = buildSnapshotFromOpenProject(manager);
 
@@ -61,6 +64,17 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
     }
 
     const settings = readOpenRouterSettings();
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compileResult.prompt,
+      settings
+    });
+    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== expectedRequestFingerprint) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "stale-provider-request",
+        message: "The provider configuration changed after inspection. Inspect the current prompt before sending."
+      });
+    }
 
     if (!settings.hasOpenRouterCredential) {
       return {
@@ -70,10 +84,11 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       };
     }
 
-    const transportResult = await sendChatCompletion({
-      prompt: compileResult.prompt,
-      settings
-    });
+    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
+    if (!admission.ok) {
+      return admission;
+    }
+    const transportResult = await sendChatCompletion({ request: finalizedRequest });
 
     if (!transportResult.ok) {
       return transportResult;
@@ -89,7 +104,10 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
         ok: true,
         malformed: true,
         raw: parsed.raw,
-        metadata: ideationMetadata(settings, compileResult.metadata.versions)
+        metadata: ideationMetadata(
+          inspectChatCompletionRequest(finalizedRequest),
+          compileResult.metadata.versions
+        )
       };
     }
 
@@ -97,7 +115,10 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       ok: true,
       ideas: parsed.ideas,
       citations,
-      metadata: ideationMetadata(settings, compileResult.metadata.versions)
+      metadata: ideationMetadata(
+        inspectChatCompletionRequest(finalizedRequest),
+        compileResult.metadata.versions
+      )
     };
   });
 }
@@ -132,15 +153,16 @@ function parseIdeationBody(body: unknown):
 }
 
 function ideationMetadata(
-  settings: ReturnType<typeof readOpenRouterSettings>,
+  request: ReturnType<typeof inspectChatCompletionRequest>,
   versions: { template: string; compiler: string; contract: string }
 ) {
   return {
-    model: settings.model,
+    model: request.model,
     provider: "openrouter",
-    temperature: settings.temperature,
-    maxOutputTokens: settings.maxOutputTokens,
-    ...(settings.topP !== undefined ? { topP: settings.topP } : {}),
+    temperatureMode: request.temperatureMode,
+    ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
+    maxOutputTokens: request.maxOutputTokens,
+    ...(request.topP !== undefined ? { topP: request.topP } : {}),
     versions
   };
 }

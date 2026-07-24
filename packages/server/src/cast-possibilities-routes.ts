@@ -8,9 +8,13 @@ import {
 } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
-import { admitStructuredOutputModel } from "./openrouter/capability.js";
+import { admitOpenRouterRequest } from "./openrouter/capability.js";
 import { sendChatCompletion } from "./openrouter/client.js";
-import type { OpenRouterRequestOptions } from "./openrouter/request.js";
+import {
+  buildChatCompletionRequest,
+  inspectChatCompletionRequest,
+  type OpenRouterRequestOptions
+} from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
@@ -18,6 +22,7 @@ import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 const compileKeys = new Set(["targetCharacterId", "avoidList", "baseSourceFingerprint"]);
 const analyzeKeys = new Set([
   "expectedPromptFingerprint",
+  "expectedRequestFingerprint",
   "targetCharacterId",
   "avoidList",
   "baseSourceFingerprint"
@@ -25,6 +30,7 @@ const analyzeKeys = new Set([
 
 type CastPossibilitiesRequest = {
   expectedPromptFingerprint?: string;
+  expectedRequestFingerprint?: string;
   targetCharacterId?: string;
   avoidList?: readonly string[];
   baseSourceFingerprint?: string;
@@ -43,6 +49,12 @@ export function registerCastPossibilitiesRoutes(
     if (!compiled.ok) {
       return reply.code(compiled.status).send(compiled.body);
     }
+    const settings = readOpenRouterSettings();
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compiled.result.prompt,
+      settings,
+      requestOptions: castRequestOptions()
+    });
     return {
       ok: true,
       projectIdentity: compiled.projectIdentity,
@@ -51,7 +63,8 @@ export function registerCastPossibilitiesRoutes(
       citations: compiled.result.disclosure.citationMap,
       outputSchema: compiled.result.outputSchema,
       versions: compiled.result.disclosure.versions,
-      fingerprint: compiled.result.disclosure.fingerprint
+      fingerprint: compiled.result.disclosure.fingerprint,
+      providerRequest: inspectChatCompletionRequest(finalizedRequest)
     };
   });
 
@@ -74,6 +87,20 @@ export function registerCastPossibilitiesRoutes(
     }
 
     const settings = readOpenRouterSettings();
+    const requestOptions = castRequestOptions();
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compiled.result.prompt,
+      settings,
+      requestOptions
+    });
+    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== parsed.request.expectedRequestFingerprint) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "cast-possibilities-source-changed",
+        message: "The Cast Possibilities source or provider configuration changed. Compile and inspect it again before sending.",
+        currentPromptFingerprint: compiled.result.disclosure.fingerprint
+      });
+    }
     if (!settings.hasOpenRouterCredential) {
       return { ok: false, category: "missing-key", message: "OpenRouter API key is missing." };
     }
@@ -85,31 +112,12 @@ export function registerCastPossibilitiesRoutes(
       };
     }
 
-    const requestOptions: OpenRouterRequestOptions = {
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "cast_possibilities",
-          strict: true,
-          schema: castPossibilitiesOutputJsonSchema()
-        }
-      },
-      provider: { require_parameters: true, allow_fallbacks: false },
-      transforms: [],
-      plugins: [],
-      tools: [],
-      tool_choice: "none"
-    };
-    const admission = admitStructuredOutputModel({ settings, requestOptions });
+    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
     if (!admission.ok) {
       return admission;
     }
 
-    const transport = await sendChatCompletion({
-      prompt: compiled.result.prompt,
-      settings,
-      requestOptions
-    });
+    const transport = await sendChatCompletion({ request: finalizedRequest });
     if (!transport.ok) {
       return transport;
     }
@@ -242,6 +250,12 @@ function parseRequest(
     issues.push("expectedPromptFingerprint is required.");
   }
   if (
+    requireFingerprint &&
+    (typeof value.expectedRequestFingerprint !== "string" || !value.expectedRequestFingerprint.trim())
+  ) {
+    issues.push("expectedRequestFingerprint is required.");
+  }
+  if (
     value.targetCharacterId !== undefined &&
     (typeof value.targetCharacterId !== "string" || !value.targetCharacterId.trim())
   ) {
@@ -286,12 +300,33 @@ function parseRequest(
       ...(typeof value.expectedPromptFingerprint === "string"
         ? { expectedPromptFingerprint: value.expectedPromptFingerprint }
         : {}),
+      ...(typeof value.expectedRequestFingerprint === "string"
+        ? { expectedRequestFingerprint: value.expectedRequestFingerprint }
+        : {}),
       ...(typeof value.targetCharacterId === "string" ? { targetCharacterId: value.targetCharacterId } : {}),
       ...(Array.isArray(value.avoidList) ? { avoidList: value.avoidList as string[] } : {}),
       ...(typeof value.baseSourceFingerprint === "string"
         ? { baseSourceFingerprint: value.baseSourceFingerprint }
         : {})
     }
+  };
+}
+
+function castRequestOptions(): OpenRouterRequestOptions {
+  return {
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "cast_possibilities",
+        strict: true,
+        schema: castPossibilitiesOutputJsonSchema()
+      }
+    },
+    provider: { require_parameters: true, allow_fallbacks: false },
+    transforms: [],
+    plugins: [],
+    tools: [],
+    tool_choice: "none"
   };
 }
 

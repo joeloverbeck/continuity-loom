@@ -11,6 +11,7 @@ import {
   type CompileResponse,
   type GenerationMetadata,
   type GenerateResponse,
+  type OpenRouterRequestInspection,
   type TransportFailure,
   readiness
 } from "../api.js";
@@ -22,12 +23,17 @@ import { useReminderRefresh } from "../shell/reminder-refresh.js";
 type GenerateSurfaceState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness }
+  | {
+      status: "ready";
+      result: CompileResult & { providerRequest: OpenRouterRequestInspection };
+      readiness: GenerationReadiness;
+    }
   | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
 interface PromptSourceContext {
   fingerprint: string;
+  requestFingerprint: string;
   versions: CompileResult["metadata"]["versions"];
 }
 
@@ -119,7 +125,10 @@ export function GenerateView(): React.JSX.Element {
     setAcceptNotice(null);
 
     try {
-      const result = await generate({ expectedPromptFingerprint: sourceContext.fingerprint });
+      const result = await generate({
+        expectedPromptFingerprint: sourceContext.fingerprint,
+        expectedRequestFingerprint: sourceContext.requestFingerprint
+      });
 
       if (result.ok) {
         setCandidateState({
@@ -378,9 +387,12 @@ function isCandidateTransitionUnavailable(
   return pendingDiscardAction !== null || isCandidateOperationPending(candidate);
 }
 
-function promptSourceContext(result: CompileResult): PromptSourceContext {
+function promptSourceContext(
+  result: CompileResult & { providerRequest: OpenRouterRequestInspection }
+): PromptSourceContext {
   return {
     fingerprint: result.metadata.fingerprint,
+    requestFingerprint: result.providerRequest.requestFingerprint,
     versions: result.metadata.versions
   };
 }
@@ -403,7 +415,7 @@ function ReadyGenerate({
   onConfirmDiscard,
   onChecklistAction
 }: {
-  result: CompileResult;
+  result: CompileResult & { providerRequest: OpenRouterRequestInspection };
   readiness: GenerationReadiness;
   searchTerm: string;
   candidateState: CandidateState;
@@ -482,7 +494,12 @@ function ReadyGenerate({
         />
       ) : null}
 
-      <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+      <PromptInspector
+        result={result}
+        providerRequest={result.providerRequest}
+        searchTerm={searchTerm}
+        onSearchTermChange={onSearchTermChange}
+      />
 
       {candidateState.status === "candidate" ? (
         <section className="candidatePanel" aria-label="Draft candidate">

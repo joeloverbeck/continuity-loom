@@ -23,7 +23,10 @@ import { PromptInspector } from "../prompt/PromptInspector.js";
 export interface AcceptedSegmentChangeReviewClient {
   compile(request: AcceptedSegmentChangeReviewRequest): Promise<AcceptedSegmentChangeReviewCompileResponse>;
   analyze(
-    request: AcceptedSegmentChangeReviewRequest & { expectedPromptFingerprint: string }
+    request: AcceptedSegmentChangeReviewRequest & {
+      expectedPromptFingerprint: string;
+      expectedRequestFingerprint: string;
+    }
   ): Promise<AcceptedSegmentChangeReviewAnalyzeResponse>;
   refreshModels(): Promise<RefreshModelsResponse>;
 }
@@ -142,7 +145,8 @@ export function AcceptedSegmentChangeReviewView({
     try {
       const result = await client.analyze({
         ...inspectedRequest,
-        expectedPromptFingerprint: inspectedFingerprint
+        expectedPromptFingerprint: inspectedFingerprint,
+        expectedRequestFingerprint: compileState.result.providerRequest.requestFingerprint
       });
 
       if (identity !== sourceIdentity.current) {
@@ -167,7 +171,7 @@ export function AcceptedSegmentChangeReviewView({
           setReviewState({
             status: "capabilityStale",
             message: result.message,
-            recovery: result.recovery ?? presentOpenRouterFailure(result)
+            recovery: presentOpenRouterFailure(result)
           });
           return;
         }
@@ -175,7 +179,7 @@ export function AcceptedSegmentChangeReviewView({
           setReviewState({
             status: "incompatibleModel",
             message: result.message,
-            recovery: result.recovery ?? presentOpenRouterFailure(result)
+            recovery: presentOpenRouterFailure(result)
           });
           return;
         }
@@ -380,6 +384,7 @@ function SourcePanel({
 
       <PromptInspector
         result={toInspectorResult(result)}
+        providerRequest={result.providerRequest}
         searchTerm={searchTerm}
         onSearchTermChange={onSearchTermChange}
       />
@@ -477,7 +482,7 @@ function ReviewPanel({
         </Recovery>
       ) : null}
       {state.status === "incompatibleModel" ? (
-        <Recovery title="Strict structured output unavailable" message={state.message} guidance={state.recovery} />
+        <Recovery title="Model cannot satisfy this request" message={state.message} guidance={state.recovery} />
       ) : null}
       {state.status === "provider" ? (
         <Recovery title="OpenRouter request failed" message={state.message} guidance="No result was kept or written." />

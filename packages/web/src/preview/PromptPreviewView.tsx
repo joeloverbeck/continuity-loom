@@ -7,6 +7,7 @@ import {
   type ApiFailure,
   type CompileBlocked,
   type CompileResponse,
+  type OpenRouterRequestInspection,
   readiness
 } from "../api.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
@@ -15,7 +16,11 @@ import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 type PreviewState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness }
+  | {
+      status: "ready";
+      result: CompileResult & { providerRequest: OpenRouterRequestInspection };
+      readiness: GenerationReadiness;
+    }
   | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
@@ -162,7 +167,7 @@ function ReadyPreview({
   onRefresh,
   onChecklistAction
 }: {
-  result: CompileResult;
+  result: CompileResult & { providerRequest: OpenRouterRequestInspection };
   readiness: GenerationReadiness;
   searchTerm: string;
   copyStatus: "idle" | "copied" | "failed";
@@ -192,7 +197,12 @@ function ReadyPreview({
       {copyStatus === "copied" ? <p className="muted" role="status">Prompt copied.</p> : null}
       {copyStatus === "failed" ? <p className="status statusError" role="alert">Could not copy prompt.</p> : null}
 
-      <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+      <PromptInspector
+        result={result}
+        providerRequest={result.providerRequest}
+        searchTerm={searchTerm}
+        onSearchTermChange={onSearchTermChange}
+      />
     </section>
   );
 }

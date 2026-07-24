@@ -48,7 +48,8 @@ describe("Cast Possibilities browser workflow", () => {
 
     await waitFor(() => expect(client.analyze).toHaveBeenCalledTimes(1));
     expect(client.analyze).toHaveBeenCalledWith({
-      expectedPromptFingerprint: "fnv1a32:source-a"
+      expectedPromptFingerprint: "fnv1a32:source-a",
+      expectedRequestFingerprint: "request:fnv1a32:source-a"
     });
     const character = await screen.findByRole("group", { name: "Elian possibilities" });
     expect(within(character).getAllByRole("article")).toHaveLength(3);
@@ -220,7 +221,7 @@ describe("Cast Possibilities browser workflow", () => {
     renderView(incompatibleClient);
     await sendAnalyze();
 
-    expect(await screen.findByRole("heading", { name: "Strict structured output unavailable" })).not.toBeNull();
+    expect(await screen.findByRole("heading", { name: "Model cannot satisfy this request" })).not.toBeNull();
     expect(screen.getByRole("link", { name: "Open Settings" }).getAttribute("href")).toBe("/settings");
     expect(screen.queryByRole("button", { name: "Refresh model list" })).toBeNull();
   });
@@ -365,7 +366,8 @@ describe("Cast Possibilities browser workflow", () => {
       }
     });
     const firstResponse = await fixtureClient("fnv1a32:source-a").analyze({
-      expectedPromptFingerprint: "fnv1a32:source-a"
+      expectedPromptFingerprint: "fnv1a32:source-a",
+      expectedRequestFingerprint: "request:fnv1a32:source-a"
     });
     if (!firstResponse.ok || !("possibilities" in firstResponse)) {
       throw new Error("Expected a full-cast fixture response.");
@@ -533,6 +535,13 @@ function fixtureCompileResult(fingerprint: string) {
       citations: disclosure.citationMap,
       outputSchema: {},
       versions: disclosure.versions,
-      fingerprint
+      fingerprint,
+      providerRequest: {
+        model: "test/model",
+        temperatureMode: "explicit",
+        temperature: 0,
+        maxOutputTokens: 4096,
+        requestFingerprint: `request:${fingerprint}`
+      }
   } as const;
 }

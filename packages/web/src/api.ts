@@ -83,7 +83,19 @@ export type CompileBlocked = {
   readiness?: GenerationReadiness;
 };
 
-export type CompileResponse = CompileResult | CompileBlocked | ApiFailure;
+export interface OpenRouterRequestInspection {
+  model: string;
+  temperatureMode: "explicit" | "provider_default";
+  temperature?: number;
+  maxOutputTokens: number;
+  topP?: number;
+  requestFingerprint: string;
+}
+
+export type CompileResponse =
+  | (CompileResult & { providerRequest: OpenRouterRequestInspection })
+  | CompileBlocked
+  | ApiFailure;
 
 export interface OpenRouterModelListEntry {
   id: string;
@@ -94,29 +106,37 @@ export interface OpenRouterModelListEntry {
   supportedParameters?: string[];
 }
 
-export interface OpenRouterSettings {
+interface OpenRouterSettingsBase {
   model: string;
-  temperature: number;
   maxOutputTokens: number;
   topP?: number;
   cachedModels?: OpenRouterModelListEntry[];
 }
 
-export interface OpenRouterSettingsResponse extends OpenRouterSettings {
-  hasOpenRouterCredential: boolean;
-}
+export type OpenRouterSettings = OpenRouterSettingsBase & (
+  | { temperatureMode: "explicit"; temperature: number }
+  | { temperatureMode: "provider_default"; temperature?: never }
+);
 
-export type OpenRouterSettingsPatch = Partial<OpenRouterSettings>;
+export type OpenRouterSettingsResponse = OpenRouterSettings & { hasOpenRouterCredential: boolean };
+
+export type OpenRouterSettingsPatch = Partial<Omit<OpenRouterSettings, "topP">> & {
+  topP?: number | null;
+};
 export type RefreshModelsResponse = { ok: true; models: OpenRouterModelListEntry[] } | TransportFailure;
 
-export interface GenerationMetadata {
+type GenerationMetadataBase = {
   model: string;
   provider: "openrouter";
-  temperature: number;
   maxOutputTokens: number;
   topP?: number;
   versions: CompileResult["metadata"]["versions"];
-}
+};
+
+export type GenerationMetadata = GenerationMetadataBase & (
+  | { temperatureMode: "explicit"; temperature: number }
+  | { temperatureMode: "provider_default" }
+);
 
 export type GenerateResponse =
   | { ok: true; candidate: { text: string }; metadata: GenerationMetadata }
@@ -152,6 +172,7 @@ export type RecordHygieneCompileResponse =
       prompt: string;
       metadata: RecordHygieneCompileMetadata;
       citations: Record<string, string>;
+      providerRequest: OpenRouterRequestInspection;
     }
   | ApiFailure;
 
@@ -184,6 +205,7 @@ export type AcceptedSegmentChangeReviewCompileResponse =
       citations: Record<string, string>;
       outputSchema: unknown;
       consumedGuidance: readonly ConsumedGenerationGuidanceEntry[];
+      providerRequest: OpenRouterRequestInspection;
     }
   | ApiFailure;
 
@@ -240,6 +262,7 @@ export type CastPossibilitiesCompileResponse =
       outputSchema: unknown;
       versions: CastPossibilitiesDisclosure["versions"];
       fingerprint: string;
+      providerRequest: OpenRouterRequestInspection;
     }
   | ApiFailure
   | CastPossibilitiesNotReadyResponse;
@@ -696,17 +719,22 @@ export async function refreshModels(): Promise<RefreshModelsResponse> {
   return requestOpenRouterJson<RefreshModelsResponse>("/api/settings/openrouter/models");
 }
 
-export async function generate(request: { expectedPromptFingerprint: string }): Promise<GenerateResponse> {
+export async function generate(request: {
+  expectedPromptFingerprint: string;
+  expectedRequestFingerprint: string;
+}): Promise<GenerateResponse> {
   return requestOpenRouterJson<GenerateResponse>("/api/generate", request);
 }
 
 export async function ideate(
   request: Partial<IdeationRequest>,
-  expectedPromptFingerprint: string
+  expectedPromptFingerprint: string,
+  expectedRequestFingerprint: string
 ): Promise<IdeateResponse> {
   return requestOpenRouterJson<IdeateResponse>("/api/ideate", {
     ...request,
-    expectedPromptFingerprint
+    expectedPromptFingerprint,
+    expectedRequestFingerprint
   });
 }
 
@@ -716,9 +744,15 @@ export async function recordHygieneCompile(mode: RecordHygieneRequest["mode"] = 
   });
 }
 
-export async function recordHygieneAnalyze(mode: RecordHygieneRequest["mode"] = "full_active_atomic_review"): Promise<RecordHygieneAnalyzeResponse> {
+export async function recordHygieneAnalyze(
+  mode: RecordHygieneRequest["mode"],
+  expectedPromptFingerprint: string,
+  expectedRequestFingerprint: string
+): Promise<RecordHygieneAnalyzeResponse> {
   return requestOpenRouterJson<RecordHygieneAnalyzeResponse>("/api/record-hygiene/analyze", {
-    mode
+    mode,
+    expectedPromptFingerprint,
+    expectedRequestFingerprint
   });
 }
 
@@ -732,7 +766,10 @@ export async function acceptedSegmentChangeReviewCompile(
 }
 
 export async function acceptedSegmentChangeReviewAnalyze(
-  request: AcceptedSegmentChangeReviewRequest & { expectedPromptFingerprint: string }
+  request: AcceptedSegmentChangeReviewRequest & {
+    expectedPromptFingerprint: string;
+    expectedRequestFingerprint: string;
+  }
 ): Promise<AcceptedSegmentChangeReviewAnalyzeResponse> {
   return requestOpenRouterJson<AcceptedSegmentChangeReviewAnalyzeResponse>(
     "/api/accepted-segment-change-review/analyze",
@@ -747,7 +784,10 @@ export async function castPossibilitiesCompile(
 }
 
 export async function castPossibilitiesAnalyze(
-  request: CastPossibilitiesCompileRequest & { expectedPromptFingerprint: string }
+  request: CastPossibilitiesCompileRequest & {
+    expectedPromptFingerprint: string;
+    expectedRequestFingerprint: string;
+  }
 ): Promise<CastPossibilitiesAnalyzeResponse> {
   return requestOpenRouterJson<CastPossibilitiesAnalyzeResponse>(
     "/api/cast-possibilities/analyze",

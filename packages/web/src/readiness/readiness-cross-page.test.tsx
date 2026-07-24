@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import type { GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -361,7 +361,7 @@ function LocationProbe(): React.JSX.Element {
   return <output data-testid="route-location">{location.pathname}{location.search}</output>;
 }
 
-function compileResult(prompt: string): CompileResult {
+function compileResult(prompt: string) {
   return {
     prompt,
     metadata: {
@@ -369,6 +369,13 @@ function compileResult(prompt: string): CompileResult {
       fingerprint: "fingerprint-1",
       lengthEstimate: prompt.length,
       tokenEstimate: 7
+    },
+    providerRequest: {
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit" as const,
+      temperature: 1,
+      maxOutputTokens: 1024,
+      requestFingerprint: "request-fingerprint-1"
     }
   };
 }

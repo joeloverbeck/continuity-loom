@@ -74,7 +74,10 @@ describe("CAST MEMBER entity reference gating", () => {
     const blockedGenerateResponse = await fastify.inject({
       method: "POST",
       url: "/api/generate",
-      payload: { expectedPromptFingerprint: initialCompile.metadata.fingerprint }
+      payload: {
+        expectedPromptFingerprint: initialCompile.metadata.fingerprint,
+        expectedRequestFingerprint: initialCompile.providerRequest.requestFingerprint
+      }
     });
     expect(blockedGenerateResponse.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
     expect(blockedGenerateResponse.json()).not.toHaveProperty("candidate");
@@ -127,6 +130,7 @@ describe("CAST MEMBER entity reference gating", () => {
 interface CompileBody {
   prompt: string;
   metadata: { fingerprint: string };
+  providerRequest: { requestFingerprint: string };
 }
 
 async function openProject(fastify: ReturnType<typeof createServer>): Promise<string> {

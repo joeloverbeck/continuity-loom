@@ -378,7 +378,6 @@ type AcceptedSegmentProvenance =
       source: "openrouter";
       model: string;
       provider: "openrouter";
-      temperature: number;
       maxOutputTokens: number;
       topP?: number;
       versions: {
@@ -386,7 +385,10 @@ type AcceptedSegmentProvenance =
         compiler: string;
         contract: string;
       };
-    }
+    } & (
+      | { temperatureMode: "explicit"; temperature: number }
+      | { temperatureMode: "provider_default" }
+    )
   | {
       source: "user_supplied";
       versions: {
@@ -401,9 +403,10 @@ Rules:
 
 - Both variants use the existing accepted-segment table, route, archive, sequence ordering, and durable-change reminder.
 - The union is strict on writes and reads. Mixed variants and extra prompt, candidate, provider-secret, or edited-state fields are invalid.
-- OpenRouter provenance records the actual returned generation context. User-supplied provenance records the versions associated with the inspected prompt and has no model, provider, temperature, maximum-output-token, or top-p fields.
+- OpenRouter provenance records the exact declared request intent. Explicit mode requires its sent numeric temperature; provider-default mode forbids a numeric temperature because the provider's effective value is unknown. Top P appears only when sent. User-supplied provenance records the versions associated with the inspected prompt and has no model, provider, temperature mode, temperature, maximum-output-token, or top-p fields.
 - Candidate text and full prompt text are row content and ephemeral inspection state respectively; neither belongs in provenance metadata or logs.
 - Project schema migration v3 to v4 rewrites valid legacy metadata to the `openrouter` variant transactionally and idempotently, preserving accepted prose and every legacy metadata value in the same row and table. Malformed metadata or a failed rewrite rolls back the migration and leaves the project unopened with `migration-failed`.
+- Project schema migration v4 to v5 adds `temperatureMode: "explicit"` to every valid OpenRouter row with a legacy numeric temperature. It is transactional and idempotent and preserves prose, source, model, provider, temperature, Top P, completion ceiling, versions, timestamps, sequence, and ordering. Malformed metadata or any row/manifest write failure rolls back the complete step and leaves the project unopened with `migration-failed`.
 - The Accepted Segments view, source filter, and Markdown/text exports consume this same union. They label source truthfully and omit inapplicable user-supplied provider/settings lines rather than rendering placeholders.
 - Neither source variant enters prose prompts or becomes story-record, active-working-set, or generation-time authority.
 

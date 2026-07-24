@@ -383,7 +383,10 @@ describe("api client", () => {
       )
     );
 
-    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual({
+    await expect(generate({
+      expectedPromptFingerprint: "7b9d",
+      expectedRequestFingerprint: "request-7b9d"
+    })).resolves.toEqual({
       ok: false,
       category: "unknown",
       message: "OpenRouter request failed."
@@ -394,6 +397,7 @@ describe("api client", () => {
     const metadata = {
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       topP: 0.9,
@@ -413,19 +417,26 @@ describe("api client", () => {
       })
     );
 
-    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(success);
+    await expect(generate({
+      expectedPromptFingerprint: "7b9d",
+      expectedRequestFingerprint: "request-7b9d"
+    })).resolves.toEqual(success);
 
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
       ["/api/generate", "POST"]
     ]);
     expect(calls[0]?.init?.headers).toEqual({ Accept: "application/json", "Content-Type": "application/json" });
-    expect(calls[0]?.init?.body).toBe(JSON.stringify({ expectedPromptFingerprint: "7b9d" }));
+    expect(calls[0]?.init?.body).toBe(JSON.stringify({
+      expectedPromptFingerprint: "7b9d",
+      expectedRequestFingerprint: "request-7b9d"
+    }));
   });
 
   it("sends the complete ideation request with its inspected fingerprint", async () => {
     const metadata = {
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
@@ -446,7 +457,7 @@ describe("api client", () => {
       dormantSlot: false,
       focus: "door pressure",
       avoidList: ["repeat"]
-    }, "focused-fingerprint")).resolves.toEqual(success);
+    }, "focused-fingerprint", "focused-request-fingerprint")).resolves.toEqual(success);
 
     expect(calls.map((call) => [call.url, call.init?.method ?? "GET"])).toEqual([
       ["/api/ideate", "POST"]
@@ -457,7 +468,8 @@ describe("api client", () => {
       dormantSlot: false,
       focus: "door pressure",
       avoidList: ["repeat"],
-      expectedPromptFingerprint: "focused-fingerprint"
+      expectedPromptFingerprint: "focused-fingerprint",
+      expectedRequestFingerprint: "focused-request-fingerprint"
     }));
   });
 
@@ -466,6 +478,7 @@ describe("api client", () => {
       source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
@@ -501,6 +514,7 @@ describe("api client", () => {
       source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
@@ -520,6 +534,7 @@ describe("api client", () => {
       source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       topP: 0.9,
@@ -689,7 +704,10 @@ describe("api client", () => {
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(blockedBody, 200))));
 
-    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(blockedBody);
+    await expect(generate({
+      expectedPromptFingerprint: "7b9d",
+      expectedRequestFingerprint: "request-7b9d"
+    })).resolves.toEqual(blockedBody);
   });
 
   it("returns generate failures including missing-key unchanged", async () => {
@@ -700,7 +718,10 @@ describe("api client", () => {
     };
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse(failure, 200))));
 
-    await expect(generate({ expectedPromptFingerprint: "7b9d" })).resolves.toEqual(failure);
+    await expect(generate({
+      expectedPromptFingerprint: "7b9d",
+      expectedRequestFingerprint: "request-7b9d"
+    })).resolves.toEqual(failure);
   });
 
   it("returns structured error envelopes from failed route responses", async () => {

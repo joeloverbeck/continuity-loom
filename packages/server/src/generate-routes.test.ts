@@ -126,7 +126,10 @@ describe("generate routes", () => {
     const response = await fastify.inject({
       method: "POST",
       url: "/api/generate",
-      payload: { expectedPromptFingerprint: "stale-inspected-fingerprint" }
+      payload: {
+        expectedPromptFingerprint: "stale-inspected-fingerprint",
+        expectedRequestFingerprint: (await currentInspection(fastify)).requestFingerprint
+      }
     });
 
     expect(response.statusCode).toBe(409);
@@ -166,6 +169,7 @@ describe("generate routes", () => {
       metadata: {
         model: "openai/gpt-4.1",
         provider: "openrouter",
+        temperatureMode: "explicit",
         temperature: 0.4,
         maxOutputTokens: 2200,
         topP: 0.9,
@@ -177,11 +181,11 @@ describe("generate routes", () => {
     expect(JSON.stringify(body.metadata)).not.toContain("Candidate prose.");
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
     expect(sendChatCompletionMock.mock.calls[0]?.[0]).toMatchObject({
-      settings: expect.objectContaining({
+      request: expect.objectContaining({
         model: "openai/gpt-4.1",
         temperature: 0.4,
-        maxOutputTokens: 2200,
-        topP: 0.9
+        max_completion_tokens: 2200,
+        top_p: 0.9
       })
     });
     expect(after).toEqual(before);
@@ -203,11 +207,50 @@ describe("generate routes", () => {
     expect(body.metadata).toEqual({
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.7,
       maxOutputTokens: 1800,
           versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
     });
     expect(body.metadata).not.toHaveProperty("topP");
+  });
+
+  it("sends and records provider-default temperature without inventing a numeric value", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    const settingsResponse = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        model: "synthetic/sonnet-5",
+        temperatureMode: "provider_default",
+        maxOutputTokens: 2200,
+        cachedModels: [{
+          id: "synthetic/sonnet-5",
+          name: "No-temperature compatible model",
+          supportedParameters: ["max_completion_tokens"]
+        }]
+      }
+    });
+    expect(settingsResponse.statusCode).toBe(200);
+
+    const response = await injectGenerate(fastify);
+    const body = response.json() as { metadata: Record<string, unknown> };
+
+    expect(response.statusCode).toBe(200);
+    expect(body.metadata).toMatchObject({
+      model: "synthetic/sonnet-5",
+      provider: "openrouter",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2200
+    });
+    expect(body.metadata).not.toHaveProperty("temperature");
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0].request).not.toHaveProperty("temperature");
   });
 
   it("returns normalized transport errors without mutating project data", async () => {
@@ -398,13 +441,20 @@ async function putSettings(
   fastify: ReturnType<typeof createServer>,
   overrides: Record<string, unknown> = {}
 ): Promise<void> {
+  const model = String(overrides.model ?? "anthropic/claude-sonnet-4");
   const response = await fastify.inject({
     method: "PUT",
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
       maxOutputTokens: 1800,
+      cachedModels: [{
+        id: model,
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "top_p", "max_completion_tokens"]
+      }],
       ...overrides
     }
   });
@@ -422,19 +472,33 @@ async function injectGenerate(
   fastify: ReturnType<typeof createServer>,
   expectedPromptFingerprint?: string
 ) {
-  const fingerprint = expectedPromptFingerprint ?? await currentPromptFingerprint(fastify);
+  const inspection = expectedPromptFingerprint === undefined
+    ? await currentInspection(fastify)
+    : { promptFingerprint: expectedPromptFingerprint, requestFingerprint: "inspected-request-fingerprint" };
   return fastify.inject({
     method: "POST",
     url: "/api/generate",
-    payload: { expectedPromptFingerprint: fingerprint }
+    payload: {
+      expectedPromptFingerprint: inspection.promptFingerprint,
+      expectedRequestFingerprint: inspection.requestFingerprint
+    }
   });
 }
 
-async function currentPromptFingerprint(fastify: ReturnType<typeof createServer>): Promise<string> {
+async function currentInspection(fastify: ReturnType<typeof createServer>): Promise<{
+  promptFingerprint: string;
+  requestFingerprint: string;
+}> {
   const response = await fastify.inject({ method: "POST", url: "/api/compile" });
   expect(response.statusCode).toBe(200);
-  const body = response.json() as { metadata: { fingerprint: string } };
-  return body.metadata.fingerprint;
+  const body = response.json() as {
+    metadata: { fingerprint: string };
+    providerRequest: { requestFingerprint: string };
+  };
+  return {
+    promptFingerprint: body.metadata.fingerprint,
+    requestFingerprint: body.providerRequest.requestFingerprint
+  };
 }
 
 function captureProcessWrites(): { restore: () => string } {

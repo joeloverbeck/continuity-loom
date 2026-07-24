@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import type { GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -532,7 +532,7 @@ describe("GenerateView", () => {
     });
     expect(compile).toHaveBeenCalledTimes(2);
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
-    expect(screen.getByText("fingerprint-2")).toBeTruthy();
+    expect(screen.getAllByText("fingerprint-2")).toHaveLength(2);
   });
 
   it("lets empty drafts refresh or request a replacement without a discard confirmation", async () => {
@@ -759,7 +759,7 @@ function renderGenerateWithReminder() {
   );
 }
 
-function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1") {
   return {
     prompt,
     metadata: {
@@ -771,7 +771,8 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileRe
       fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
-    }
+    },
+    providerRequest: providerRequest(fingerprint)
   };
 }
 
@@ -782,6 +783,7 @@ function candidateMetadata(overrides: Partial<{
   return {
     model: overrides.model ?? "openai/gpt-4.1",
     provider: "openrouter" as const,
+    temperatureMode: "explicit" as const,
     temperature: overrides.temperature ?? 0.4,
     maxOutputTokens: 2200,
     versions: {
@@ -789,6 +791,16 @@ function candidateMetadata(overrides: Partial<{
       compiler: "compiler-1",
       contract: "contract-1"
     }
+  };
+}
+
+function providerRequest(requestFingerprint: string) {
+  return {
+    model: "openai/gpt-4.1",
+    temperatureMode: "explicit" as const,
+    temperature: 0.4,
+    maxOutputTokens: 2200,
+    requestFingerprint
   };
 }
 

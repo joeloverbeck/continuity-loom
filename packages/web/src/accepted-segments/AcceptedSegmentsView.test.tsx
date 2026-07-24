@@ -456,7 +456,10 @@ describe("AcceptedSegmentsView", () => {
           ...segment({ id: 2, sequence: 2, text: "Filtered-visible prose." }),
           metadata: { source: "user_supplied", versions: metadata.versions }
         },
-        segment({ id: 1, sequence: 1, text: "Hidden by active filter." })
+        {
+          ...segment({ id: 1, sequence: 1, text: "Hidden by active filter." }),
+          metadata: providerDefaultMetadata
+        }
       ]
     });
 
@@ -483,8 +486,10 @@ describe("AcceptedSegmentsView", () => {
       expect(plainText).toContain("Hidden by active filter.");
       expect(plainText).toContain("Filtered-visible prose.");
       expect(markdown).toContain("- Source: OpenRouter");
+      expect(markdown).toContain("- Temperature: Provider default");
       expect(markdown).toContain("- Source: User-supplied");
       expect(plainText).toContain("Source: OpenRouter");
+      expect(plainText).toContain("Temperature: Provider default");
       expect(plainText).toContain("Source: User-supplied");
       expect(markdown?.match(/^- Model:/gm)).toHaveLength(1);
       expect(markdown?.match(/^- Provider:/gm)).toHaveLength(1);
@@ -532,6 +537,7 @@ const metadata = {
   source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
+  temperatureMode: "explicit",
   temperature: 0.4,
   maxOutputTokens: 2200,
   topP: 0.9,
@@ -540,6 +546,15 @@ const metadata = {
     compiler: "compiler-1",
     contract: "contract-1"
   }
+} satisfies AcceptedSegment["metadata"];
+
+const providerDefaultMetadata = {
+  source: "openrouter",
+  model: "anthropic/claude-sonnet-5",
+  provider: "openrouter",
+  temperatureMode: "provider_default",
+  maxOutputTokens: 2200,
+  versions: metadata.versions
 } satisfies AcceptedSegment["metadata"];
 
 function getRenderedProse(container: HTMLElement): string[] {

@@ -16,6 +16,7 @@ import {
   type CompileBlocked,
   type CompileResponse,
   type IdeateResponse,
+  type OpenRouterRequestInspection,
   type ParsedIdeationIdea,
   type TransportFailure
 } from "../api.js";
@@ -29,7 +30,12 @@ import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type Ide
 type IdeateSurfaceState =
   | { status: "loading" }
   | { status: "idle" }
-  | { status: "ready"; result: CompileResult; readiness: GenerationReadiness; requestRevision: number }
+  | {
+      status: "ready";
+      result: CompileResult & { providerRequest: OpenRouterRequestInspection };
+      readiness: GenerationReadiness;
+      requestRevision: number;
+    }
   | { status: "blocked"; readiness: GenerationReadiness }
   | { status: "error"; kind: string; message: string };
 
@@ -152,6 +158,7 @@ export function IdeateView(): React.JSX.Element {
   async function requestIdeas(
     requestInput: IdeationRequest,
     expectedPromptFingerprint: string,
+    expectedRequestFingerprint: string,
     replacementSlotNumber?: number
   ): Promise<void> {
     const sendRevision = requestRevisionRef.current;
@@ -159,7 +166,7 @@ export function IdeateView(): React.JSX.Element {
     setScratchState({ status: "sending" });
 
     try {
-      const result = await ideate(requestInput, expectedPromptFingerprint);
+      const result = await ideate(requestInput, expectedPromptFingerprint, expectedRequestFingerprint);
 
       if (sendRevision !== requestRevisionRef.current) {
         setScratchState({ status: "empty" });
@@ -322,11 +329,20 @@ export function IdeateView(): React.JSX.Element {
           onRequestChange={changeIdeationRequest}
           onSearchTermChange={setSearchTerm}
           onRefresh={() => void refreshPrompt(ideationRequest, requestRevisionRef.current)}
-          onIdeate={() => void requestIdeas(currentFocusedRequest, state.result.metadata.fingerprint)}
-          onRegenerateAll={() => void requestIdeas(currentFocusedRequest, state.result.metadata.fingerprint)}
+          onIdeate={() => void requestIdeas(
+            currentFocusedRequest,
+            state.result.metadata.fingerprint,
+            state.result.providerRequest.requestFingerprint
+          )}
+          onRegenerateAll={() => void requestIdeas(
+            currentFocusedRequest,
+            state.result.metadata.fingerprint,
+            state.result.providerRequest.requestFingerprint
+          )}
           onRegenerateSlot={(idea) => void requestIdeas(
             currentFocusedRequest,
             state.result.metadata.fingerprint,
+            state.result.providerRequest.requestFingerprint,
             idea.slotNumber
           )}
           onClearAll={clearAll}
@@ -367,7 +383,7 @@ function ReadyIdeate({
   onRemoveKeeper,
   onChecklistAction
 }: {
-  result: CompileResult;
+  result: CompileResult & { providerRequest: OpenRouterRequestInspection };
   readiness: GenerationReadiness;
   searchTerm: string;
   scratchState: ScratchState;
@@ -432,7 +448,12 @@ function ReadyIdeate({
       ) : null}
 
       {previewIsCurrent ? (
-        <PromptInspector result={result} searchTerm={searchTerm} onSearchTermChange={onSearchTermChange} />
+        <PromptInspector
+          result={result}
+          providerRequest={result.providerRequest}
+          searchTerm={searchTerm}
+          onSearchTermChange={onSearchTermChange}
+        />
       ) : (
         <p className="muted" role="status">The current prompt is not ready for inspection or sending.</p>
       )}

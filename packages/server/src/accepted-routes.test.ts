@@ -15,6 +15,7 @@ const generationMetadata = {
   source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
+  temperatureMode: "explicit",
   temperature: 0.4,
   maxOutputTokens: 2200,
   topP: 0.9,
@@ -149,6 +150,7 @@ describe("accepted routes", () => {
             source: "openrouter",
             model: "openai/gpt-4.1",
             provider: "openrouter",
+            temperatureMode: "explicit",
             temperature: 0.4,
             maxOutputTokens: 2200,
             versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
@@ -225,6 +227,7 @@ describe("accepted routes", () => {
       source: "openrouter",
       model: "openai/gpt-4.1",
       provider: "openrouter",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }

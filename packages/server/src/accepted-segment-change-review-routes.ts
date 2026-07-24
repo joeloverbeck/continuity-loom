@@ -8,9 +8,13 @@ import {
 } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
-import { admitStructuredOutputModel } from "./openrouter/capability.js";
+import { admitOpenRouterRequest } from "./openrouter/capability.js";
 import { sendChatCompletion } from "./openrouter/client.js";
-import type { OpenRouterRequestOptions } from "./openrouter/request.js";
+import {
+  buildChatCompletionRequest,
+  inspectChatCompletionRequest,
+  type OpenRouterRequestOptions
+} from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings, type OpenRouterSettingsStatus } from "./settings.js";
 import {
@@ -24,7 +28,12 @@ const defaultRequest: AcceptedSegmentChangeReviewRequest = {
 };
 
 const compileKeys = new Set(["segmentSelection", "recordScope"]);
-const analyzeKeys = new Set(["segmentSelection", "recordScope", "expectedPromptFingerprint"]);
+const analyzeKeys = new Set([
+  "segmentSelection",
+  "recordScope",
+  "expectedPromptFingerprint",
+  "expectedRequestFingerprint"
+]);
 
 export function registerAcceptedSegmentChangeReviewRoutes(
   app: FastifyInstance,
@@ -41,13 +50,20 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       return reply.code(compiled.status).send(compiled.body);
     }
 
+    const settings = readOpenRouterSettings();
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compiled.prompt,
+      settings,
+      requestOptions: changeReviewRequestOptions()
+    });
     return {
       ok: true,
       prompt: compiled.prompt,
       disclosure: compiled.disclosure,
       citations: compiled.disclosure.citationMap,
       outputSchema: acceptedSegmentChangeReviewOutputJsonSchema(),
-      consumedGuidance: compiled.consumedGuidance
+      consumedGuidance: compiled.consumedGuidance,
+      providerRequest: inspectChatCompletionRequest(finalizedRequest)
     };
   });
 
@@ -72,6 +88,21 @@ export function registerAcceptedSegmentChangeReviewRoutes(
     }
 
     const settings = readOpenRouterSettings();
+    const outputSchema = acceptedSegmentChangeReviewOutputJsonSchema();
+    const requestOptions = changeReviewRequestOptions(outputSchema);
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compiled.prompt,
+      settings,
+      requestOptions
+    });
+    if (inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== parsedRequest.expectedRequestFingerprint) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "accepted-segment-change-review-source-changed",
+        message: "The review source or provider configuration changed. Compile and inspect it again before Analyze.",
+        currentPromptFingerprint: compiled.disclosure.fingerprint
+      });
+    }
     if (!settings.hasOpenRouterCredential) {
       return { ok: false, category: "missing-key", message: "OpenRouter API key is missing." };
     }
@@ -84,33 +115,12 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       };
     }
 
-    const outputSchema = acceptedSegmentChangeReviewOutputJsonSchema();
-    const requestOptions: OpenRouterRequestOptions = {
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "accepted_segment_change_review",
-          strict: true,
-          schema: outputSchema
-        }
-      },
-      provider: { require_parameters: true, allow_fallbacks: false },
-      transforms: [],
-      plugins: [],
-      tools: [],
-      tool_choice: "none"
-    };
-
-    const admission = admitStructuredOutputModel({ settings, requestOptions });
+    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
     if (!admission.ok) {
       return admission;
     }
 
-    const transportResult = await sendChatCompletion({
-      prompt: compiled.prompt,
-      settings,
-      requestOptions
-    });
+    const transportResult = await sendChatCompletion({ request: finalizedRequest });
 
     if (!transportResult.ok) {
       return transportResult;
@@ -182,11 +192,16 @@ function parseRequest(
   body: unknown,
   requireFingerprint: boolean
 ):
-  | { ok: true; request: AcceptedSegmentChangeReviewRequest; expectedPromptFingerprint?: string }
+  | {
+      ok: true;
+      request: AcceptedSegmentChangeReviewRequest;
+      expectedPromptFingerprint?: string;
+      expectedRequestFingerprint?: string;
+    }
   | { ok: false; body: { ok: false; kind: "invalid-accepted-segment-change-review-request"; issues: string[] } } {
   if (body === undefined || body === null) {
     return requireFingerprint
-      ? invalidRequest(["expectedPromptFingerprint is required."])
+      ? invalidRequest(["expectedPromptFingerprint and expectedRequestFingerprint are required."])
       : { ok: true, request: defaultRequest };
   }
 
@@ -216,6 +231,12 @@ function parseRequest(
   ) {
     issues.push("expectedPromptFingerprint is required.");
   }
+  if (
+    requireFingerprint &&
+    (typeof record.expectedRequestFingerprint !== "string" || !record.expectedRequestFingerprint.trim())
+  ) {
+    issues.push("expectedRequestFingerprint is required.");
+  }
 
   if (issues.length > 0) {
     return invalidRequest(issues);
@@ -229,7 +250,31 @@ function parseRequest(
     },
     ...(typeof record.expectedPromptFingerprint === "string"
       ? { expectedPromptFingerprint: record.expectedPromptFingerprint }
+      : {}),
+    ...(typeof record.expectedRequestFingerprint === "string"
+      ? { expectedRequestFingerprint: record.expectedRequestFingerprint }
       : {})
+  };
+}
+
+function changeReviewRequestOptions(
+  outputSchema: ReturnType<typeof acceptedSegmentChangeReviewOutputJsonSchema> =
+    acceptedSegmentChangeReviewOutputJsonSchema()
+): OpenRouterRequestOptions {
+  return {
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "accepted_segment_change_review",
+        strict: true,
+        schema: outputSchema
+      }
+    },
+    provider: { require_parameters: true, allow_fallbacks: false },
+    transforms: [],
+    plugins: [],
+    tools: [],
+    tool_choice: "none"
   };
 }
 

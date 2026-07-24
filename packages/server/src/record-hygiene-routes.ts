@@ -1,7 +1,9 @@
 import { compileRecordHygienePrompt, type RecordHygieneRequest } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 
+import { admitOpenRouterRequest } from "./openrouter/capability.js";
 import { sendChatCompletion } from "./openrouter/client.js";
+import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { parseRecordHygieneResponse } from "./record-hygiene-parse.js";
 import { buildStoryRecordHygieneSnapshot } from "./record-hygiene-snapshot-builder.js";
@@ -12,11 +14,12 @@ const requestModes = new Set<RecordHygieneRequest["mode"]>([
   "full_active_atomic_review",
   "active_working_set_atomic_review"
 ]);
-const allowedRequestKeys = new Set(["mode"]);
+const compileRequestKeys = new Set(["mode"]);
+const analyzeRequestKeys = new Set(["mode", "expectedPromptFingerprint", "expectedRequestFingerprint"]);
 
 export function registerRecordHygieneRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
   app.post("/api/record-hygiene/compile", async (request, reply) => {
-    const hygieneRequest = parseRecordHygieneRequest(request.body);
+    const hygieneRequest = parseRecordHygieneRequest(request.body, false);
     if (!hygieneRequest.ok) {
       return reply.code(400).send(hygieneRequest.body);
     }
@@ -30,12 +33,16 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
       ok: true,
       prompt: compileResult.prompt,
       metadata: compileMetadata(compileResult.metadata),
-      citations: compileResult.metadata.citationMap ?? {}
+      citations: compileResult.metadata.citationMap ?? {},
+      providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
+        prompt: compileResult.prompt,
+        settings: readOpenRouterSettings()
+      }))
     };
   });
 
   app.post("/api/record-hygiene/analyze", async (request, reply) => {
-    const hygieneRequest = parseRecordHygieneRequest(request.body);
+    const hygieneRequest = parseRecordHygieneRequest(request.body, true);
     if (!hygieneRequest.ok) {
       return reply.code(400).send(hygieneRequest.body);
     }
@@ -46,6 +53,20 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
     }
 
     const settings = readOpenRouterSettings();
+    const finalizedRequest = buildChatCompletionRequest({
+      prompt: compileResult.prompt,
+      settings
+    });
+    if (
+      compileResult.metadata.fingerprint !== hygieneRequest.expectedPromptFingerprint ||
+      inspectChatCompletionRequest(finalizedRequest).requestFingerprint !== hygieneRequest.expectedRequestFingerprint
+    ) {
+      return reply.code(409).send({
+        ok: false,
+        kind: "stale-record-hygiene-inspection",
+        message: "The hygiene source or provider configuration changed. Compile and inspect it again before Analyze."
+      });
+    }
     if (!settings.hasOpenRouterCredential) {
       return {
         ok: false,
@@ -62,10 +83,11 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
       };
     }
 
-    const transportResult = await sendChatCompletion({
-      prompt: compileResult.prompt,
-      settings
-    });
+    const admission = admitOpenRouterRequest({ request: finalizedRequest, cachedModels: settings.cachedModels });
+    if (!admission.ok) {
+      return admission;
+    }
+    const transportResult = await sendChatCompletion({ request: finalizedRequest });
 
     if (!transportResult.ok) {
       return transportResult;
@@ -73,7 +95,7 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
 
     const validCitationKeys = new Set(Object.keys(compileResult.metadata.citationMap ?? {}));
     const parsed = parseRecordHygieneResponse(transportResult.candidate.text, validCitationKeys);
-    const metadata = analyzeMetadata(settings, compileResult.metadata);
+    const metadata = analyzeMetadata(finalizedRequest, compileResult.metadata);
 
     if (!parsed.ok) {
       return {
@@ -119,11 +141,18 @@ function compileFromOpenProject(manager: ProjectStoreManager, request: RecordHyg
   return { ok: true, prompt: compileResult.prompt, metadata: compileResult.metadata };
 }
 
-function parseRecordHygieneRequest(body: unknown):
-  | { ok: true; value: RecordHygieneRequest }
+function parseRecordHygieneRequest(body: unknown, requireFingerprint: boolean):
+  | {
+      ok: true;
+      value: RecordHygieneRequest;
+      expectedPromptFingerprint?: string;
+      expectedRequestFingerprint?: string;
+    }
   | { ok: false; body: { ok: false; kind: "invalid-record-hygiene-request"; issues: string[] } } {
   if (body === undefined || body === null) {
-    return { ok: true, value: defaultRequest };
+    return requireFingerprint
+      ? invalidRequest(["expectedPromptFingerprint and expectedRequestFingerprint are required."])
+      : { ok: true, value: defaultRequest };
   }
 
   if (!body || typeof body !== "object" || Array.isArray(body)) {
@@ -131,7 +160,8 @@ function parseRecordHygieneRequest(body: unknown):
   }
 
   const keys = Object.keys(body);
-  const extraKeys = keys.filter((key) => !allowedRequestKeys.has(key));
+  const allowedKeys = requireFingerprint ? analyzeRequestKeys : compileRequestKeys;
+  const extraKeys = keys.filter((key) => !allowedKeys.has(key));
   if (extraKeys.length > 0) {
     return invalidRequest(extraKeys.map((key) => `Unsupported field: ${key}`));
   }
@@ -140,8 +170,29 @@ function parseRecordHygieneRequest(body: unknown):
   if (mode !== undefined && (typeof mode !== "string" || !requestModes.has(mode as RecordHygieneRequest["mode"]))) {
     return invalidRequest(["mode must be full_active_atomic_review or active_working_set_atomic_review."]);
   }
+  const record = body as Record<string, unknown>;
+  if (
+    requireFingerprint &&
+    (
+      typeof record.expectedPromptFingerprint !== "string" ||
+      !record.expectedPromptFingerprint.trim() ||
+      typeof record.expectedRequestFingerprint !== "string" ||
+      !record.expectedRequestFingerprint.trim()
+    )
+  ) {
+    return invalidRequest(["expectedPromptFingerprint and expectedRequestFingerprint are required."]);
+  }
 
-  return { ok: true, value: { mode: mode === undefined ? defaultRequest.mode : mode as RecordHygieneRequest["mode"] } };
+  return {
+    ok: true,
+    value: { mode: mode === undefined ? defaultRequest.mode : mode as RecordHygieneRequest["mode"] },
+    ...(typeof record.expectedPromptFingerprint === "string"
+      ? { expectedPromptFingerprint: record.expectedPromptFingerprint }
+      : {}),
+    ...(typeof record.expectedRequestFingerprint === "string"
+      ? { expectedRequestFingerprint: record.expectedRequestFingerprint }
+      : {})
+  };
 }
 
 function invalidRequest(issues: string[]): { ok: false; body: { ok: false; kind: "invalid-record-hygiene-request"; issues: string[] } } {
@@ -163,15 +214,17 @@ function compileMetadata(metadata: ReturnType<typeof compileRecordHygienePrompt>
 }
 
 function analyzeMetadata(
-  settings: OpenRouterSettingsStatus,
+  request: ReturnType<typeof buildChatCompletionRequest>,
   metadata: ReturnType<typeof compileRecordHygienePrompt>["metadata"]
 ) {
+  const inspection = inspectChatCompletionRequest(request);
   return {
-    model: settings.model,
+    model: inspection.model,
     provider: "openrouter",
-    temperature: settings.temperature,
-    maxOutputTokens: settings.maxOutputTokens,
-    ...(settings.topP !== undefined ? { topP: settings.topP } : {}),
+    temperatureMode: inspection.temperatureMode,
+    ...(inspection.temperature === undefined ? {} : { temperature: inspection.temperature }),
+    maxOutputTokens: inspection.maxOutputTokens,
+    ...(inspection.topP === undefined ? {} : { topP: inspection.topP }),
     ...compileMetadata(metadata)
   };
 }

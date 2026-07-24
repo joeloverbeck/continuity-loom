@@ -1,13 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { sendChatCompletion } from "./openrouter/client.js";
+import { buildChatCompletionRequest } from "./openrouter/request.js";
 
 const settings = {
   model: "anthropic/claude-sonnet-4",
+  temperatureMode: "explicit" as const,
   temperature: 0.7,
   maxOutputTokens: 1800,
   topP: 0.9
 };
+const request = buildChatCompletionRequest({ prompt: "Compiled prompt", settings });
 
 describe("sendChatCompletion", () => {
   let originalApiKey: string | undefined;
@@ -33,7 +36,7 @@ describe("sendChatCompletion", () => {
     vi.stubGlobal("fetch", fetchSpy);
     process.env.OPENROUTER_API_KEY = "sk-or-test";
 
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings })).resolves.toEqual({
+    await expect(sendChatCompletion({ request })).resolves.toEqual({
       ok: true,
       candidate: { text: "Candidate prose." }
     });
@@ -55,6 +58,11 @@ describe("sendChatCompletion", () => {
       temperature: 0.7,
       max_completion_tokens: 1800,
       top_p: 0.9,
+      provider: { require_parameters: true, allow_fallbacks: false },
+      plugins: [],
+      transforms: [],
+      tools: [],
+      tool_choice: "none",
       stream: false
     });
   });
@@ -63,7 +71,7 @@ describe("sendChatCompletion", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
 
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request })).resolves.toMatchObject({
       ok: false,
       category: "missing-key"
     });
@@ -78,7 +86,7 @@ describe("sendChatCompletion", () => {
   ] as const)("routes status %i through the normalizer", async (status, category) => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse({ error: { message: "Failure." } }, status))));
 
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category,
       providerStatus: status,
@@ -89,7 +97,7 @@ describe("sendChatCompletion", () => {
   it("retains provider status but falls back safely when the response body is not JSON", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(new Response("upstream html", { status: 502 }))));
 
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toEqual({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toEqual({
       ok: false,
       category: "provider-unavailable",
       message: "The selected model or provider is unavailable.",
@@ -109,7 +117,7 @@ describe("sendChatCompletion", () => {
       )
     );
 
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "rate-limit",
       providerStatus: 429,
@@ -120,13 +128,13 @@ describe("sendChatCompletion", () => {
 
   it("routes network throws and aborts through the normalizer", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new Error("getaddrinfo ENOTFOUND"))));
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "network"
     });
 
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new DOMException("Aborted", "AbortError"))));
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "timeout"
     });
@@ -134,13 +142,13 @@ describe("sendChatCompletion", () => {
 
   it("returns malformed-response when choices or message content are missing", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse({ choices: [] }))));
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "malformed-response"
     });
 
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve(jsonResponse({ choices: [{ message: {} }] }))));
-    await expect(sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-test" })).resolves.toMatchObject({
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
       ok: false,
       category: "malformed-response"
     });
@@ -154,8 +162,7 @@ describe("sendChatCompletion", () => {
     const controller = new AbortController();
 
     await sendChatCompletion({
-      prompt: "Compiled prompt",
-      settings,
+      request,
       apiKey: "sk-or-test",
       signal: controller.signal,
       config: {
@@ -185,7 +192,7 @@ describe("sendChatCompletion", () => {
       )
     );
 
-    const result = await sendChatCompletion({ prompt: "Compiled prompt", settings, apiKey: "sk-or-secret" });
+    const result = await sendChatCompletion({ request, apiKey: "sk-or-secret" });
     expect(JSON.stringify(result)).not.toMatch(/sk-|Bearer/);
   });
 });

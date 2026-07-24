@@ -18,6 +18,30 @@ The compiler must not use an LLM to select, rank, summarize, repair, rewrite, co
 
 This contract is not an appendix. It is the authoritative bridge between conceptual records and the generated prose prompt.
 
+### 1.1 Provider Request Boundary
+
+Provider settings are not prompt sources. For every OpenRouter completion
+workflow, the server builds one complete non-streaming request after local
+prompt compilation, derives capability requirements from properties present in
+that finalized object, and gives the same admitted object to transport.
+`temperature` is present only for explicit temperature mode; `top_p` is present
+only for an explicit Top P. Strict JSON Schema additionally requires
+`structured_outputs`; completion length accepts either advertised provider
+alias; tools and tool choice are requirements only when declared.
+
+Prompt inspection discloses a provider-request fingerprint and the exact model,
+temperature intent, optional Top P, and completion ceiling separately from
+prompt metadata. A changed model or sampling setting invalidates send
+eligibility even when prompt bytes are unchanged. Unknown capability data,
+known missing requirements, and post-admission transport failures have
+different manual recovery. No recovery mutates settings, refreshes, retries, or
+resends automatically.
+
+This provider-boundary change does not alter prompt sources, rendered prompt
+bytes, output fields, parsers, or source-profile identities. Consequently the
+template, compiler, compiler-contract, Accepted-Segment Change Review, and Cast
+Possibilities prompt/output version identities remain unchanged.
+
 ## 2. Source hierarchy
 
 Each prompt class has one explicit source profile. No compiler may read a source merely because it is available in the project store.

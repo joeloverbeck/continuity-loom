@@ -1,14 +1,18 @@
 import type { CompileResult } from "@loom/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import type { OpenRouterRequestInspection } from "../api.js";
+
 export interface PromptInspectorProps {
   result: CompileResult;
+  providerRequest?: OpenRouterRequestInspection;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
 }
 
 export function PromptInspector({
   result,
+  providerRequest,
   searchTerm,
   onSearchTermChange
 }: PromptInspectorProps): React.JSX.Element {
@@ -87,6 +91,36 @@ export function PromptInspector({
               <dt>Token estimate</dt>
               <dd>{result.metadata.tokenEstimate}</dd>
             </div>
+            {providerRequest ? (
+              <>
+                <div>
+                  <dt>Provider model</dt>
+                  <dd>{providerRequest.model}</dd>
+                </div>
+                <div>
+                  <dt>Temperature</dt>
+                  <dd>
+                    {providerRequest.temperatureMode === "explicit"
+                      ? `Explicit: ${providerRequest.temperature}`
+                      : "Provider default"}
+                  </dd>
+                </div>
+                {providerRequest.topP === undefined ? null : (
+                  <div>
+                    <dt>Top P</dt>
+                    <dd>{providerRequest.topP}</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Completion ceiling</dt>
+                  <dd>{providerRequest.maxOutputTokens}</dd>
+                </div>
+                <div>
+                  <dt>Request fingerprint</dt>
+                  <dd>{providerRequest.requestFingerprint}</dd>
+                </div>
+              </>
+            ) : null}
           </dl>
         </aside>
       </section>

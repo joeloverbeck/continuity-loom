@@ -55,11 +55,28 @@ describe("accepted segment provenance project-open migration", () => {
     expect(migrated).toEqual([
       {
         ...before[0],
-        metadata_json: JSON.stringify({ source: "openrouter", ...firstLegacyMetadata })
+        metadata_json: JSON.stringify({
+          source: "openrouter",
+          model: firstLegacyMetadata.model,
+          provider: "openrouter",
+          temperatureMode: "explicit",
+          temperature: firstLegacyMetadata.temperature,
+          maxOutputTokens: firstLegacyMetadata.maxOutputTokens,
+          topP: firstLegacyMetadata.topP,
+          versions: firstLegacyMetadata.versions
+        })
       },
       {
         ...before[1],
-        metadata_json: JSON.stringify({ source: "openrouter", ...secondLegacyMetadata })
+        metadata_json: JSON.stringify({
+          source: "openrouter",
+          model: secondLegacyMetadata.model,
+          provider: "openrouter",
+          temperatureMode: "explicit",
+          temperature: secondLegacyMetadata.temperature,
+          maxOutputTokens: secondLegacyMetadata.maxOutputTokens,
+          versions: secondLegacyMetadata.versions
+        })
       }
     ]);
     expect(tableNames(folderPath).filter((name) => name === "accepted_segments")).toEqual(["accepted_segments"]);
@@ -126,6 +143,70 @@ describe("accepted segment provenance project-open migration", () => {
     expect(await readFile(projectMetadataPath, "utf8")).toBe(originalMetadata);
     expect(acceptedRows(folderPath)).toEqual(before);
   });
+
+  it("migrates a version-4 OpenRouter row by declaring its legacy numeric temperature explicit", async () => {
+    const folderPath = await createLegacyV4Project();
+    const before = acceptedRows(folderPath);
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({ ok: true });
+    await manager.closeProject();
+    expect(acceptedRows(folderPath)).toEqual(before.map((row, index) => ({
+      ...row,
+      metadata_json: JSON.stringify({
+        source: "openrouter",
+        model: index === 0 ? firstLegacyMetadata.model : secondLegacyMetadata.model,
+        provider: "openrouter",
+        temperatureMode: "explicit",
+        temperature: index === 0 ? firstLegacyMetadata.temperature : secondLegacyMetadata.temperature,
+        maxOutputTokens: index === 0 ? firstLegacyMetadata.maxOutputTokens : secondLegacyMetadata.maxOutputTokens,
+        ...(index === 0 ? { topP: firstLegacyMetadata.topP } : {}),
+        versions: index === 0 ? firstLegacyMetadata.versions : secondLegacyMetadata.versions
+      })
+    })));
+  });
+
+  it("rolls back the version-4-to-5 step when any source-bearing row is malformed", async () => {
+    const folderPath = await createLegacyV4Project();
+    rewriteAcceptedMetadata(folderPath, 2, {
+      source: "openrouter",
+      model: secondLegacyMetadata.model,
+      provider: "openrouter",
+      maxOutputTokens: secondLegacyMetadata.maxOutputTokens,
+      versions: secondLegacyMetadata.versions
+    });
+    const before = acceptedRows(folderPath);
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "migration-failed" });
+    expect(manager.getActiveProjectStatus()).toEqual({ open: false });
+    expect(projectVersion(folderPath)).toBe(4);
+    expect(await metadataVersion(folderPath)).toBe(4);
+    expect(acceptedRows(folderPath)).toEqual(before);
+  });
+
+  it("rolls back version-4 metadata rewrites when the manifest replacement fails", async () => {
+    const folderPath = await createLegacyV4Project();
+    const before = acceptedRows(folderPath);
+    const projectMetadataPath = join(folderPath, "continuity-loom.project.json");
+    const originalMetadata = await readFile(projectMetadataPath, "utf8");
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+    writeFileMock.mockImplementationOnce(async () => {
+      throw Object.assign(new Error("injected metadata write"), { code: "ENOSPC" });
+    });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "migration-failed" });
+    expect(projectVersion(folderPath)).toBe(4);
+    expect(await metadataVersion(folderPath)).toBe(4);
+    expect(await readFile(projectMetadataPath, "utf8")).toBe(originalMetadata);
+    expect(acceptedRows(folderPath)).toEqual(before);
+  });
 });
 
 async function createLegacyV3Project(): Promise<string> {
@@ -151,6 +232,14 @@ async function createLegacyV3Project(): Promise<string> {
   }
 
   return status.folderPath;
+}
+
+async function createLegacyV4Project(): Promise<string> {
+  const folderPath = await createLegacyV3Project();
+  await setProjectVersion(folderPath, 4);
+  rewriteAcceptedMetadata(folderPath, 1, { source: "openrouter", ...firstLegacyMetadata });
+  rewriteAcceptedMetadata(folderPath, 2, { source: "openrouter", ...secondLegacyMetadata });
+  return folderPath;
 }
 
 async function setProjectVersion(folderPath: string, version: number): Promise<void> {

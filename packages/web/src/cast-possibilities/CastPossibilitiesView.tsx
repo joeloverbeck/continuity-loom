@@ -31,7 +31,10 @@ export interface CastPossibilitiesClient {
   compile(this: void, request?: CastPossibilitiesCompileRequest): Promise<CastPossibilitiesCompileResponse>;
   analyze(
     this: void,
-    request: CastPossibilitiesCompileRequest & { expectedPromptFingerprint: string }
+    request: CastPossibilitiesCompileRequest & {
+      expectedPromptFingerprint: string;
+      expectedRequestFingerprint: string;
+    }
   ): Promise<CastPossibilitiesAnalyzeResponse>;
   refreshModels(this: void): Promise<RefreshModelsResponse>;
 }
@@ -139,7 +142,10 @@ export function CastPossibilitiesView({
     setModelRefresh({ status: "idle" });
     setSendState({ status: "analyzing" });
     await handleAnalyze(
-      { expectedPromptFingerprint: compileState.result.disclosure.fingerprint },
+      {
+        expectedPromptFingerprint: compileState.result.disclosure.fingerprint,
+        expectedRequestFingerprint: compileState.result.providerRequest.requestFingerprint
+      },
       compileState.result,
       undefined
     );
@@ -203,6 +209,7 @@ export function CastPossibilitiesView({
     setSendState({ status: "regenerating" });
     await handleAnalyze({
       expectedPromptFingerprint: regeneration.compile.disclosure.fingerprint,
+      expectedRequestFingerprint: regeneration.compile.providerRequest.requestFingerprint,
       targetCharacterId: regeneration.targetCharacterId,
       avoidList: regeneration.avoidList,
       baseSourceFingerprint: scratchState.scratch.sourceFingerprint
@@ -210,7 +217,10 @@ export function CastPossibilitiesView({
   }
 
   async function handleAnalyze(
-    request: CastPossibilitiesCompileRequest & { expectedPromptFingerprint: string },
+    request: CastPossibilitiesCompileRequest & {
+      expectedPromptFingerprint: string;
+      expectedRequestFingerprint: string;
+    },
     inspected: ReadyCompile,
     targetCharacterId: string | undefined
   ): Promise<void> {
@@ -373,6 +383,7 @@ export function CastPossibilitiesView({
           </section>
           <PromptInspector
             result={toInspectorResult(compileState.result)}
+            providerRequest={compileState.result.providerRequest}
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
           />
@@ -422,7 +433,7 @@ export function CastPossibilitiesView({
       ) : null}
       {sendState.status === "incompatibleModel" ? (
         <section className="status statusError" aria-labelledby="cast-incompatible-model-title">
-          <h3 id="cast-incompatible-model-title">Strict structured output unavailable</h3>
+          <h3 id="cast-incompatible-model-title">Model cannot satisfy this request</h3>
           <p role="alert">{sendState.message}</p>
           <Link to="/settings">Open Settings</Link>
         </section>

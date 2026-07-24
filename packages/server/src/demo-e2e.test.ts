@@ -93,6 +93,7 @@ describe("demo project end-to-end capstone", () => {
           source: "openrouter",
           model: "demo/mock-writer",
           provider: "openrouter",
+          temperatureMode: "explicit",
           temperature: 0.2,
           maxOutputTokens: 800,
           versions: firstBody.metadata.versions

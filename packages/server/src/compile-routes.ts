@@ -2,7 +2,9 @@ import { compilePrompt, deriveReadiness, ideationRequestSchema, promptKindSchema
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 
+import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
 import type { ProjectStoreManager } from "./project-store.js";
+import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
 export function registerCompileRoutes(app: FastifyInstance, manager: ProjectStoreManager): void {
@@ -36,7 +38,15 @@ export function registerCompileRoutes(app: FastifyInstance, manager: ProjectStor
       };
     }
 
-    return compilePrompt(snapshotResult.snapshot, compileRequest.value);
+    const compiled = compilePrompt(snapshotResult.snapshot, compileRequest.value);
+    const settings = readOpenRouterSettings();
+    return {
+      ...compiled,
+      providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
+        prompt: compiled.prompt,
+        settings
+      }))
+    };
   });
 }
 

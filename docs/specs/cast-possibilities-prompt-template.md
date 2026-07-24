@@ -97,14 +97,17 @@ Local compilation returns the exact prompt, strict output schema, citation map,
 source profile, saved-draft identity, selected POV, ordered eligible cast,
 selected-record counts by type, truthful SECRET inclusion, prompt length, token
 estimate, the three independent versions above, and a reproducible prompt
-fingerprint.
+fingerprint. It also discloses the finalized provider model, explicit or
+provider-default temperature intent, optional Top P only when sent, completion
+ceiling, and a separate request fingerprint.
 
-Compile makes no provider request. Analyze rebuilds the current saved source
-server-side and compares it with the inspected prompt fingerprint before
-credentials, capability admission, or transport. Target preview and send first
-rebuild and compare the complete full-slate source against the inspected
-full-slate fingerprint, then separately compare the target prompt fingerprint.
-Either mismatch makes the displayed scratch stale and requires a fresh preview.
+Compile makes no provider request. Analyze rebuilds the current saved source and
+the complete provider envelope server-side and compares both inspected
+fingerprints before credentials, capability admission, or transport. Target
+preview and send first rebuild and compare the complete full-slate source
+against the inspected full-slate fingerprint, then separately compare the
+target prompt and provider-request fingerprints. Any mismatch makes the
+displayed scratch stale and requires a fresh preview.
 
 ## 6. Strict output contract
 
@@ -143,12 +146,18 @@ recovery; raw provider output is not returned or logged.
 
 ## 8. Provider and storage boundary
 
-Full-cast Analyze and confirmed target regeneration each make exactly one
+Full-cast Analyze and confirmed target regeneration each build exactly one
 OpenRouter request with strict JSON Schema, required parameter support,
 fallbacks and transforms disabled, no plugins, no tools, and `tool_choice:
-"none"`. Capability-unknown recovery may refresh the cached model list without
-resending; a known incompatible model instead requires explicit model selection
-in Settings. Target regeneration includes only that target's three current
+"none"`. Capability admission derives from the properties in that finalized
+request and transport sends the same object. A provider-default temperature is
+omitted; explicit Temperature and optional Top P remain binding when present.
+Capability-unknown recovery may refresh the cached model list without
+resending. A known incompatibility names every missing requirement:
+Temperature or Top P permits a deliberate Settings change or a compatible
+model, while response format or strict structured output requires a compatible
+model. Every recovery requires fresh inspection and a new explicit action.
+Target regeneration includes only that target's three current
 `observable_move` summaries as its avoid list and returns only the replacement.
 
 Cards and keeper flags may live only in browser `sessionStorage`, keyed by

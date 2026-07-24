@@ -46,9 +46,9 @@ describe("record hygiene end-to-end conformance", () => {
   });
 
   it("composes compile, analyze parsing, exclusion, non-persistence, and reference-integrity invariants", async () => {
-    sendChatCompletionMock.mockImplementation(async ({ prompt }) => ({
+    sendChatCompletionMock.mockImplementation(async ({ request }) => ({
       ok: true,
-      candidate: { text: validHygieneResponse(citationsFromPrompt(prompt)) }
+      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) }
     }));
     const fastify = app();
     const folderPath = await createDemo(fastify);
@@ -71,7 +71,11 @@ describe("record hygiene end-to-end conformance", () => {
     const analyze = await fastify.inject({
       method: "POST",
       url: "/api/record-hygiene/analyze",
-      payload: { mode: "full_active_atomic_review" }
+      payload: {
+        mode: "full_active_atomic_review",
+        expectedPromptFingerprint: firstCompile.metadata.fingerprint,
+        expectedRequestFingerprint: firstCompile.providerRequest.requestFingerprint
+      }
     });
     const proseAfter = await compileProse(fastify);
     const ideationAfter = await compileIdeation(fastify);
@@ -103,16 +107,16 @@ describe("record hygiene end-to-end conformance", () => {
     expect(analyzeBody.ok).toBe(true);
     expect(analyzeBody.findings).toHaveLength(1);
     expect(analyzeBody.metadata.fingerprint).toBe(firstCompile.metadata.fingerprint);
-    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).toBe(firstCompile.prompt);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content).toBe(firstCompile.prompt);
     expect(after).toEqual(before);
 
     await expectReferencedRecordProtection(fastify);
   });
 
   it("composes whole-project and working-set scope modes end to end", async () => {
-    sendChatCompletionMock.mockImplementation(async ({ prompt }) => ({
+    sendChatCompletionMock.mockImplementation(async ({ request }) => ({
       ok: true,
-      candidate: { text: validHygieneResponse(citationsFromPrompt(prompt)) }
+      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) }
     }));
     const fastify = app();
     await createDemo(fastify);
@@ -129,7 +133,11 @@ describe("record hygiene end-to-end conformance", () => {
     const analyze = await fastify.inject({
       method: "POST",
       url: "/api/record-hygiene/analyze",
-      payload: { mode: "active_working_set_atomic_review" }
+      payload: {
+        mode: "active_working_set_atomic_review",
+        expectedPromptFingerprint: workingSet.metadata.fingerprint,
+        expectedRequestFingerprint: workingSet.providerRequest.requestFingerprint
+      }
     });
     const emptyAfterAnalyze = await persistedSurfaces(fastify, join((await projectStatus(fastify)).folderPath, "loom.sqlite"));
     const analyzeBody = analyze.json() as { ok: true; findings: unknown[]; metadata: { fingerprint: string; recordCount: number } };
@@ -156,7 +164,7 @@ describe("record hygiene end-to-end conformance", () => {
     expect(analyzeBody.findings).toHaveLength(1);
     expect(analyzeBody.metadata.fingerprint).toBe(workingSet.metadata.fingerprint);
     expect(analyzeBody.metadata.recordCount).toBe(2);
-    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).toBe(workingSet.prompt);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content).toBe(workingSet.prompt);
     expect(emptyAfterAnalyze).toEqual(emptyBeforeAnalyze);
   });
 });
@@ -188,8 +196,14 @@ async function putSettings(fastify: FastifyApp): Promise<void> {
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.4,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     }
   });
 
@@ -207,6 +221,7 @@ async function addAcceptedSegment(fastify: FastifyApp): Promise<void> {
         source: "openrouter",
         model: "test/model",
         provider: "openrouter",
+        temperatureMode: "explicit",
         temperature: 0.1,
         maxOutputTokens: 500,
         versions: compile.metadata.versions
@@ -334,6 +349,7 @@ async function compileRecordHygiene(fastify: FastifyApp, mode: "full_active_atom
   prompt: string;
   metadata: { fingerprint: string; recordCount: number };
   citations: Record<string, string>;
+  providerRequest: { requestFingerprint: string };
 }> {
   const response = await fastify.inject({
     method: "POST",
@@ -346,6 +362,7 @@ async function compileRecordHygiene(fastify: FastifyApp, mode: "full_active_atom
     prompt: string;
     metadata: { fingerprint: string; recordCount: number };
     citations: Record<string, string>;
+    providerRequest: { requestFingerprint: string };
   };
 }
 

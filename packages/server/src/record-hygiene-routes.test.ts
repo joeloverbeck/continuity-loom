@@ -11,6 +11,7 @@ vi.mock("./openrouter/client.js", () => ({
 
 import { sendChatCompletion } from "./openrouter/client.js";
 import { createServer } from "./server.js";
+import { writeOpenRouterSettings } from "./settings.js";
 
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const apps: ReturnType<typeof createServer>[] = [];
@@ -30,6 +31,17 @@ describe("record hygiene routes", () => {
     configDir = mkdtempSync(join(tmpdir(), "loom-record-hygiene-settings-"));
     process.env.CONTINUITY_LOOM_CONFIG_DIR = configDir;
     delete process.env.OPENROUTER_API_KEY;
+    writeOpenRouterSettings({
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit",
+      temperature: 1,
+      maxOutputTokens: 1024,
+      cachedModels: [{
+        id: "openai/gpt-4.1",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
+    });
     sendChatCompletionMock.mockReset();
   });
 
@@ -174,8 +186,7 @@ describe("record hygiene routes", () => {
     const fastify = app();
     await prepareHygieneProject(fastify);
 
-    const compileResponse = await fastify.inject({ method: "POST", url: "/api/record-hygiene/compile" });
-    const analyzeResponse = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+    const { compileResponse, analyzeResponse } = await analyzeHygiene(fastify);
 
     expect(compileResponse.statusCode).toBe(200);
     expect(analyzeResponse.json()).toEqual({
@@ -193,17 +204,16 @@ describe("record hygiene routes", () => {
     await prepareHygieneProject(fastify);
 
     const before = await listRecords(fastify);
-    const compileResponse = await fastify.inject({ method: "POST", url: "/api/record-hygiene/compile" });
-    const analyzeResponse = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+    const { compileResponse, analyzeResponse } = await analyzeHygiene(fastify);
     const after = await listRecords(fastify);
     const compileBody = compileResponse.json() as { prompt: string };
     const analyzeBody = analyzeResponse.json() as { findings: unknown[]; metadata: Record<string, unknown> };
 
     expect(analyzeResponse.statusCode).toBe(200);
     expect(analyzeBody.findings).toHaveLength(1);
-    expect(analyzeBody.metadata).toMatchObject({ provider: "openrouter", model: "" });
+    expect(analyzeBody.metadata).toMatchObject({ provider: "openrouter", model: "openai/gpt-4.1" });
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
-    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).toBe(compileBody.prompt);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content).toBe(compileBody.prompt);
     expect(after).toEqual(before);
   });
 
@@ -220,7 +230,7 @@ describe("record hygiene routes", () => {
     const fastify = app();
     await prepareHygieneProject(fastify);
 
-    const response = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+    const { analyzeResponse: response } = await analyzeHygiene(fastify);
 
     expect(response.json()).toEqual({
       ok: false,
@@ -239,7 +249,7 @@ describe("record hygiene routes", () => {
     const fastify = app();
     await prepareHygieneProject(fastify);
 
-    const response = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+    const { analyzeResponse: response } = await analyzeHygiene(fastify);
 
     expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform hygiene answer" });
   });
@@ -256,7 +266,7 @@ describe("record hygiene routes", () => {
     await prepareHygieneProject(fastify);
 
     const before = await listRecords(fastify);
-    const response = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+    const { analyzeResponse: response } = await analyzeHygiene(fastify);
     const after = await listRecords(fastify);
 
     expect(response.json()).toEqual({
@@ -276,7 +286,7 @@ describe("record hygiene routes", () => {
 
     try {
       await prepareHygieneProject(fastify);
-      const response = await fastify.inject({ method: "POST", url: "/api/record-hygiene/analyze" });
+      const { analyzeResponse: response } = await analyzeHygiene(fastify);
 
       expect(response.statusCode).toBe(200);
       expect(response.body).not.toContain(keySecretText);
@@ -295,6 +305,24 @@ function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeo
   const fastify = createServer(options);
   apps.push(fastify);
   return fastify;
+}
+
+async function analyzeHygiene(fastify: ReturnType<typeof createServer>) {
+  const compileResponse = await fastify.inject({ method: "POST", url: "/api/record-hygiene/compile" });
+  expect(compileResponse.statusCode).toBe(200);
+  const compile = compileResponse.json() as {
+    metadata: { fingerprint: string };
+    providerRequest: { requestFingerprint: string };
+  };
+  const analyzeResponse = await fastify.inject({
+    method: "POST",
+    url: "/api/record-hygiene/analyze",
+    payload: {
+      expectedPromptFingerprint: compile.metadata.fingerprint,
+      expectedRequestFingerprint: compile.providerRequest.requestFingerprint
+    }
+  });
+  return { compileResponse, analyzeResponse };
 }
 
 async function prepareHygieneProject(fastify: ReturnType<typeof createServer>): Promise<{ alphaId: string; betaId: string }> {

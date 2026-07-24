@@ -47,7 +47,8 @@ describe("ideation end-to-end capstone", () => {
   });
 
   it("composes demo ideation compile, route parsing, citation verification, determinism, and no persistence", async () => {
-    sendChatCompletionMock.mockImplementation(async ({ prompt }) => {
+    sendChatCompletionMock.mockImplementation(async ({ request }) => {
+      const prompt = request.messages[0].content;
       const secretKey = prompt.match(/\[SECRET-\d+\]/)?.[0] ?? "[SECRET-0]";
       return {
         ok: true,
@@ -79,7 +80,8 @@ describe("ideation end-to-end capstone", () => {
       url: "/api/ideate",
       payload: {
         ...ideationRequest,
-        expectedPromptFingerprint: firstCompile.metadata.fingerprint
+        expectedPromptFingerprint: firstCompile.metadata.fingerprint,
+        expectedRequestFingerprint: firstCompile.providerRequest.requestFingerprint
       }
     });
     const proseAfter = await compileProse(fastify);
@@ -89,7 +91,7 @@ describe("ideation end-to-end capstone", () => {
       ideas: Array<{ headline: string; grounds: string[]; unknownCitations: string[] }>;
       metadata: { versions: { template: string; compiler: string; contract: string } };
     };
-    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
+    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content ?? "";
 
     expect(firstCompile.prompt).toContain("# Grounded Ideation Prompt");
     expect(firstCompile.prompt.match(/What pressure does &lt;the letter&gt; create\?/g)).toHaveLength(1);
@@ -170,8 +172,14 @@ async function putSettings(fastify: FastifyApp): Promise<void> {
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     }
   });
 
@@ -187,14 +195,22 @@ async function listRecords(fastify: FastifyApp): Promise<{ records: unknown[] }>
 async function compileIdeation(
   fastify: FastifyApp,
   request: Record<string, unknown> = { count: 3 }
-): Promise<{ prompt: string; metadata: { fingerprint: string } }> {
+): Promise<{
+  prompt: string;
+  metadata: { fingerprint: string };
+  providerRequest: { requestFingerprint: string };
+}> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/compile",
     payload: { promptKind: "ideation", ideationRequest: request }
   });
   expect(response.statusCode).toBe(200);
-  return response.json() as { prompt: string; metadata: { fingerprint: string } };
+  return response.json() as {
+    prompt: string;
+    metadata: { fingerprint: string };
+    providerRequest: { requestFingerprint: string };
+  };
 }
 
 async function compileProse(fastify: FastifyApp): Promise<{ prompt: string }> {

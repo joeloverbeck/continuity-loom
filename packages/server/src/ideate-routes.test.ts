@@ -74,7 +74,7 @@ describe("ideate routes", () => {
       provider: "openrouter",
       versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
     });
-    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
+    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content ?? "";
     expect(sentPrompt).toContain("# Grounded Ideation Prompt");
     expect(sentPrompt.match(/What pressure &lt;opens&gt; the door\?/g)).toHaveLength(1);
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
@@ -383,8 +383,14 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     }
   });
 
@@ -406,11 +412,19 @@ async function inspectedIdeationPayload(
     url: "/api/compile",
     payload: { promptKind: "ideation", ideationRequest: request }
   });
-  const body = response.json() as { metadata?: { fingerprint?: string } };
+  const body = response.json() as {
+    metadata?: { fingerprint?: string };
+    providerRequest?: { requestFingerprint?: string };
+  };
 
   expect(response.statusCode).toBe(200);
   expect(body.metadata?.fingerprint).toEqual(expect.any(String));
-  return { ...request, expectedPromptFingerprint: body.metadata!.fingerprint! };
+  expect(body.providerRequest?.requestFingerprint).toEqual(expect.any(String));
+  return {
+    ...request,
+    expectedPromptFingerprint: body.metadata!.fingerprint!,
+    expectedRequestFingerprint: body.providerRequest!.requestFingerprint!
+  };
 }
 
 function restoreEnv(name: string, value: string | undefined): void {

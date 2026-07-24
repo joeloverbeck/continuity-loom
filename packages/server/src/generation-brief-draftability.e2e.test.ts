@@ -1,4 +1,5 @@
 import { mkdtemp } from "node:fs/promises";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -16,6 +17,8 @@ const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const acceptedProseSentinel = "DRAFTABILITY_ACCEPTED_PROSE_SENTINEL_DO_NOT_PROMPT";
 const draftSaveSentinel = "DRAFTABILITY_DRAFT_SAVE_SENTINEL_DO_NOT_LOG";
 let originalApiKey: string | undefined;
+let originalConfigDir: string | undefined;
+let configDir: string;
 
 async function tempParent(): Promise<string> {
   return mkdtemp(join(tmpdir(), "loom-generation-brief-draftability-"));
@@ -55,6 +58,9 @@ function captureProcessWrites(): { restore: () => string } {
 
 beforeEach(() => {
   originalApiKey = process.env.OPENROUTER_API_KEY;
+  originalConfigDir = process.env.CONTINUITY_LOOM_CONFIG_DIR;
+  configDir = mkdtempSync(join(tmpdir(), "loom-generation-brief-settings-"));
+  process.env.CONTINUITY_LOOM_CONFIG_DIR = configDir;
   delete process.env.OPENROUTER_API_KEY;
   sendChatCompletionMock.mockReset();
 });
@@ -62,6 +68,8 @@ beforeEach(() => {
 afterEach(async () => {
   await Promise.all(apps.splice(0).map((fastify) => fastify.close()));
   restoreEnv("OPENROUTER_API_KEY", originalApiKey);
+  restoreEnv("CONTINUITY_LOOM_CONFIG_DIR", originalConfigDir);
+  rmSync(configDir, { recursive: true, force: true });
 });
 
 describe("generation brief draftability capstone", () => {
@@ -71,6 +79,7 @@ describe("generation brief draftability capstone", () => {
 
     try {
       await openProject(fastify);
+      await putSettings(fastify);
       await putStoryConfig(fastify);
       await appendAcceptedSegment(fastify);
       const entityId = await createCleanEntity(fastify);
@@ -185,6 +194,7 @@ describe("generation brief draftability capstone", () => {
 
     try {
       const folderPath = await openProject(fastify);
+      await putSettings(fastify);
       const databasePath = join(folderPath, "loom.sqlite");
       await putStoryConfig(fastify);
       const entityId = await createCleanEntity(fastify);
@@ -231,7 +241,10 @@ describe("generation brief draftability capstone", () => {
       const firstBlockedGenerate = await fastify.inject({
         method: "POST",
         url: "/api/generate",
-        payload: { expectedPromptFingerprint: initialCompile.metadata.fingerprint }
+        payload: {
+          expectedPromptFingerprint: initialCompile.metadata.fingerprint,
+          expectedRequestFingerprint: initialCompile.providerRequest.requestFingerprint
+        }
       });
       expect(firstBlockedGenerate.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
       expect(firstBlockedGenerate.json()).not.toHaveProperty("candidate");
@@ -265,7 +278,10 @@ describe("generation brief draftability capstone", () => {
       const recoveredGenerate = await fastify.inject({
         method: "POST",
         url: "/api/generate",
-        payload: { expectedPromptFingerprint: continuationCompile.metadata.fingerprint }
+        payload: {
+          expectedPromptFingerprint: continuationCompile.metadata.fingerprint,
+          expectedRequestFingerprint: continuationCompile.providerRequest.requestFingerprint
+        }
       });
       expect(recoveredGenerate.json()).toMatchObject({ ok: true, candidate: { text: "Fresh candidate prose." } });
       expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
@@ -307,7 +323,10 @@ describe("generation brief draftability capstone", () => {
       const finalBlockedGenerate = await fastify.inject({
         method: "POST",
         url: "/api/generate",
-        payload: { expectedPromptFingerprint: continuationCompile.metadata.fingerprint }
+        payload: {
+          expectedPromptFingerprint: continuationCompile.metadata.fingerprint,
+          expectedRequestFingerprint: continuationCompile.providerRequest.requestFingerprint
+        }
       });
       expect(finalBlockedGenerate.json()).toMatchObject({ ok: false, kind: "validation-blocked" });
       expect(sendChatCompletionMock).toHaveBeenCalledTimes(providerCallsBeforeFinalBlock);
@@ -364,6 +383,7 @@ interface GenerationBriefBody {
 interface CompileBody {
   prompt: string;
   metadata: { fingerprint: string };
+  providerRequest: { requestFingerprint: string };
 }
 
 async function openProject(fastify: ReturnType<typeof createServer>): Promise<string> {
@@ -380,6 +400,25 @@ async function openProject(fastify: ReturnType<typeof createServer>): Promise<st
 
   expect(response.statusCode).toBe(201);
   return body.folderPath;
+}
+
+async function putSettings(fastify: ReturnType<typeof createServer>): Promise<void> {
+  const response = await fastify.inject({
+    method: "PUT",
+    url: "/api/settings/openrouter",
+    payload: {
+      model: "test/mock-writer",
+      temperatureMode: "explicit",
+      temperature: 0.2,
+      maxOutputTokens: 800,
+      cachedModels: [{
+        id: "test/mock-writer",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
+    }
+  });
+  expect(response.statusCode).toBe(200);
 }
 
 async function putStoryConfig(fastify: ReturnType<typeof createServer>): Promise<void> {
@@ -428,6 +467,7 @@ async function appendAcceptedSegment(
         source: "openrouter",
         model: "test/mock-writer",
         provider: "openrouter",
+        temperatureMode: "explicit",
         temperature: 0.2,
         maxOutputTokens: 800,
         versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }

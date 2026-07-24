@@ -85,6 +85,34 @@ describe("OpenRouter failure presentation", () => {
     expect(presented).toContain("No retry is automatic.");
   });
 
+  it("names the exact missing Temperature and Top P requirements with deliberate manual recovery", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      message: "The selected model cannot satisfy the finalized request.",
+      missingCapabilities: ["temperature", "top_p"]
+    });
+
+    expect(presented).toContain("Missing requirements: Temperature, Top P.");
+    expect(presented).toContain("Open Settings to deliberately change Temperature or Top P");
+    expect(presented).toContain("Technical detail: temperature, top_p.");
+    expect(presented).not.toMatch(/strict structured output/i);
+  });
+
+  it("maps response and completion tokens to primary author-facing names", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      message: "The selected model cannot satisfy the finalized request.",
+      missingCapabilities: ["response_format", "structured_outputs", "max_tokens", "tools", "tool_choice"]
+    });
+
+    expect(presented).toContain(
+      "Missing requirements: response format, strict structured output, completion length, tools, tool choice."
+    );
+    expect(presented).toContain("Choose a compatible model");
+  });
+
   it("uses the caller fallback for untyped thrown failures", () => {
     expect(presentThrownOpenRouterFailure(new Error("raw failure"), "Generation request failed.")).toBe(
       "Generation request failed."

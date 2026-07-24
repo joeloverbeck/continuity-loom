@@ -75,6 +75,27 @@ The complete response is quarantined when malformed, stale, enum-invalid, covera
 
 Items and coverage are session-only, visibly non-canonical scratch. Keeping, copying, marking reviewed, clearing, or navigating from them must not acknowledge the durable-change reminder; write project data; enter any prose prompt, story record, Generation Brief field, active working set, log, export, backup, or provenance field; prefill a canonical editor; or cause an automatic retry, repair, fallback, or provider call. The author must independently write and explicitly save any canonical change in its normal editor.
 
+## Provider Boundary and Recovery
+
+Local compile makes no provider request. It discloses the finalized provider
+model, explicit or provider-default temperature intent, optional Top P only
+when sent, completion ceiling, and a provider-request fingerprint separately
+from the prompt fingerprint. Analyze rebuilds both the complete prompt source
+and complete OpenRouter request, rejects either stale fingerprint before
+transport, derives capability requirements from the properties present in that
+request, and sends the same admitted object exactly once after explicit
+confirmation.
+
+Strict JSON Schema, required-parameter routing, disabled fallbacks and
+transforms, no plugins, no tools, and `tool_choice: "none"` remain binding.
+Provider-default temperature omits `temperature`; explicit Temperature and
+optional Top P remain binding when present. Missing or empty cached capability
+data offers an explicit model-list refresh. Known incompatibility names the
+complete missing requirement set: Temperature or Top P permits a deliberate
+Settings change or compatible model, while response format or strict structured
+output requires a compatible model. Recovery never refreshes, edits settings,
+selects a model, retries, repairs, falls back, or resends automatically.
+
 ## Consumed-Guidance Control
 
 Accepted-Segment Change Review may present a separate deterministic consumed-guidance control. It is not model output and must not infer what the accepted prose consumed. It may list only nonblank values from `manual_moment_directive.must_render[]`, `manual_moment_directive.may_render_if_naturally_caused[]`, `manual_moment_directive.do_not_force[]`, populated `current_cast_voice_pressure[]` and `cast_voice_overrides[]` entries, `generation_validation_focus.validation_focus_tags.expected_local_modes[]`, `generation_validation_focus.validation_focus_tags.possible_durable_changes[]`, and `stop_guidance.soft_unit_guidance`. It must exclude `generation_context`, the active working set including selected POV and cast bands, `current_authoritative_state`, and `immediate_handoff`. Nothing is preselected. Only values explicitly selected by the user may be removed from the editable Generation Brief draft, and the existing explicit Generation Brief Save action remains the sole project-store mutation.

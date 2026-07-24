@@ -17,16 +17,27 @@ export interface ModelListEntry {
   supportedParameters?: string[];
 }
 
-export interface OpenRouterSettings {
+interface OpenRouterSettingsBase {
   model: string;
-  temperature: number;
   maxOutputTokens: number;
   topP?: number;
   cachedModels?: ModelListEntry[];
 }
 
-export interface OpenRouterSettingsStatus extends OpenRouterSettings {
-  hasOpenRouterCredential: boolean;
+export type OpenRouterSettings = OpenRouterSettingsBase & (
+  | { temperatureMode: "explicit"; temperature: number }
+  | { temperatureMode: "provider_default"; temperature?: never }
+);
+
+export type OpenRouterSettingsStatus = OpenRouterSettings & { hasOpenRouterCredential: boolean };
+
+export interface OpenRouterSettingsPatch {
+  model?: string;
+  temperatureMode?: OpenRouterSettings["temperatureMode"];
+  temperature?: number;
+  maxOutputTokens?: number;
+  topP?: number | null;
+  cachedModels?: ModelListEntry[];
 }
 
 const keyFieldPattern = /openRouterApiKey|OPENROUTER_API_KEY|apiKey|api_key/i;
@@ -39,20 +50,24 @@ const modelListEntrySchema = z.strictObject({
 });
 
 const openRouterSettingsSchema = z.strictObject({
-  model: z.string().trim(),
-  temperature: z.number().min(0).max(2),
-  maxOutputTokens: z.number().int().positive(),
+  model: z.string().trim().optional(),
+  temperatureMode: z.enum(["explicit", "provider_default"]).optional(),
+  temperature: z.number().min(0).max(2).optional(),
+  maxOutputTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).optional(),
   cachedModels: z.array(modelListEntrySchema).optional()
 });
 
-const openRouterSettingsPatchSchema = openRouterSettingsSchema.partial();
+const openRouterSettingsPatchSchema = openRouterSettingsSchema.extend({
+  topP: z.number().min(0).max(1).nullable().optional()
+}).partial();
 
-const defaultOpenRouterSettings: OpenRouterSettings = {
+const defaultOpenRouterSettings = {
   model: "",
+  temperatureMode: "explicit",
   temperature: 1,
   maxOutputTokens: 1024
-};
+} satisfies OpenRouterSettings;
 
 export function getOpenRouterConfigPath(): string {
   return join(getOpenRouterConfigDir(), "openrouter.json");
@@ -65,23 +80,30 @@ export function readOpenRouterSettings(): OpenRouterSettingsStatus {
   }
 
   const parsed = parseConfigFile(configPath);
-  const settings = normalizeSettings({
-    ...defaultOpenRouterSettings,
-    ...parsed
-  });
+  const settings = normalizeSettings(parsed);
 
   return withCredentialStatus(settings);
 }
 
-export function writeOpenRouterSettings(patch: Partial<OpenRouterSettings>): OpenRouterSettingsStatus {
+export function writeOpenRouterSettings(patch: OpenRouterSettingsPatch): OpenRouterSettingsStatus {
   assertNoKeyFields(patch);
 
   const parsedPatch = stripUndefinedProperties(openRouterSettingsPatchSchema.parse(patch));
+  if (parsedPatch.temperatureMode === "provider_default" && parsedPatch.temperature !== undefined) {
+    throw new Error("Provider-default temperature settings must omit the numeric temperature.");
+  }
   const current = readPersistedSettings();
-  const settings = normalizeSettings({
+  const candidate: Record<string, unknown> = {
     ...current,
     ...parsedPatch
-  });
+  };
+  if (parsedPatch.temperatureMode === "provider_default") {
+    delete candidate.temperature;
+  }
+  if (parsedPatch.topP === null) {
+    delete candidate.topP;
+  }
+  const settings = normalizeSettings(candidate);
 
   mkdirSync(getOpenRouterConfigDir(), { recursive: true });
   writeFileSync(getOpenRouterConfigPath(), `${JSON.stringify(settings, null, 2)}\n`, "utf8");
@@ -108,10 +130,7 @@ function readPersistedSettings(): OpenRouterSettings {
   }
 
   const parsed = parseConfigFile(configPath);
-  return normalizeSettings({
-    ...defaultOpenRouterSettings,
-    ...parsed
-  });
+  return normalizeSettings(parsed);
 }
 
 function parseConfigFile(configPath: string): Record<string, unknown> {
@@ -122,11 +141,24 @@ function parseConfigFile(configPath: string): Record<string, unknown> {
 
 function normalizeSettings(value: unknown): OpenRouterSettings {
   const parsed = openRouterSettingsSchema.parse(value);
-  const settings: OpenRouterSettings = {
-    model: parsed.model,
-    temperature: parsed.temperature,
-    maxOutputTokens: parsed.maxOutputTokens
-  };
+  const temperatureMode = parsed.temperatureMode ?? "explicit";
+  if (temperatureMode === "provider_default" && parsed.temperature !== undefined) {
+    throw new Error("Provider-default temperature settings must omit the numeric temperature.");
+  }
+  const model = parsed.model ?? defaultOpenRouterSettings.model;
+  const maxOutputTokens = parsed.maxOutputTokens ?? defaultOpenRouterSettings.maxOutputTokens;
+  const settings: OpenRouterSettings = temperatureMode === "explicit"
+    ? {
+        model,
+        temperatureMode,
+        temperature: parsed.temperature ?? defaultOpenRouterSettings.temperature,
+        maxOutputTokens
+      }
+    : {
+        model,
+        temperatureMode,
+        maxOutputTokens
+      };
 
   if (parsed.topP !== undefined) {
     settings.topP = parsed.topP;

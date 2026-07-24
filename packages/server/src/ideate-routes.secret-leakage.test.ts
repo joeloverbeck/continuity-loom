@@ -55,6 +55,22 @@ describe("ideate route secret leakage regression", () => {
         payload: { parentPath: configDir, folderName: "ideate-secret" }
       });
       expect(created.statusCode).toBe(201);
+      const settings = await fastify.inject({
+        method: "PUT",
+        url: "/api/settings/openrouter",
+        payload: {
+          model: "anthropic/claude-sonnet-4",
+          temperatureMode: "explicit",
+          temperature: 0.7,
+          maxOutputTokens: 1800,
+          cachedModels: [{
+            id: "anthropic/claude-sonnet-4",
+            name: "Compatible test model",
+            supportedParameters: ["temperature", "max_completion_tokens"]
+          }]
+        }
+      });
+      expect(settings.statusCode).toBe(200);
       const compile = await fastify.inject({
         method: "POST",
         url: "/api/compile",
@@ -63,17 +79,21 @@ describe("ideate route secret leakage regression", () => {
           ideationRequest: { focus: focusLogCanary }
         }
       });
-      const compileBody = compile.json() as { metadata: { fingerprint: string } };
+      const compileBody = compile.json() as {
+        metadata: { fingerprint: string };
+        providerRequest: { requestFingerprint: string };
+      };
       expect(compile.statusCode).toBe(200);
       const response = await fastify.inject({
         method: "POST",
         url: "/api/ideate",
         payload: {
           focus: focusLogCanary,
-          expectedPromptFingerprint: compileBody.metadata.fingerprint
+          expectedPromptFingerprint: compileBody.metadata.fingerprint,
+          expectedRequestFingerprint: compileBody.providerRequest.requestFingerprint
         }
       });
-      const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt ?? "";
+      const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content ?? "";
 
       expect(response.statusCode).toBe(200);
       expect(response.body).not.toContain(fakeApiKey);

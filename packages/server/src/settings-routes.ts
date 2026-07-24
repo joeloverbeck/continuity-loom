@@ -2,7 +2,12 @@ import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import { refreshModelList } from "./openrouter/models.js";
-import { readOpenRouterSettings, type OpenRouterSettings, type ModelListEntry, writeOpenRouterSettings } from "./settings.js";
+import {
+  readOpenRouterSettings,
+  type ModelListEntry,
+  type OpenRouterSettingsPatch,
+  writeOpenRouterSettings
+} from "./settings.js";
 
 const modelListEntrySchema = z
   .object({
@@ -16,9 +21,10 @@ const modelListEntrySchema = z
 const openRouterSettingsPatchSchema = z
   .object({
     model: z.string().trim().optional(),
+    temperatureMode: z.enum(["explicit", "provider_default"]).optional(),
     temperature: z.number().min(0).max(2).optional(),
     maxOutputTokens: z.number().int().positive().optional(),
-    topP: z.number().min(0).max(1).optional(),
+    topP: z.number().min(0).max(1).nullable().optional(),
     cachedModels: z.array(modelListEntrySchema).optional()
   })
   .strict();
@@ -63,11 +69,14 @@ export function registerSettingsRoutes(app: FastifyInstance): void {
   });
 }
 
-function toSettingsPatch(patch: z.infer<typeof openRouterSettingsPatchSchema>): Partial<OpenRouterSettings> {
-  const settingsPatch: Partial<OpenRouterSettings> = {};
+function toSettingsPatch(patch: z.infer<typeof openRouterSettingsPatchSchema>): OpenRouterSettingsPatch {
+  const settingsPatch: OpenRouterSettingsPatch = {};
 
   if (patch.model !== undefined) {
     settingsPatch.model = patch.model;
+  }
+  if (patch.temperatureMode !== undefined) {
+    settingsPatch.temperatureMode = patch.temperatureMode;
   }
   if (patch.temperature !== undefined) {
     settingsPatch.temperature = patch.temperature;

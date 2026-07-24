@@ -137,7 +137,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
 
     expect(response.statusCode).toBe(409);
@@ -160,7 +160,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const after = await projectSurfaces(candidate);
     const body = response.json();
@@ -179,8 +179,8 @@ describe("Accepted-Segment Change Review routes", () => {
         fingerprint: compile.disclosure.fingerprint
       }
     });
-    expect(outbound?.prompt).toBe(compile.prompt);
-    expect(outbound?.requestOptions).toMatchObject({
+    expect(outbound?.request.messages).toEqual([{ role: "user", content: compile.prompt }]);
+    expect(outbound?.request).toMatchObject({
       response_format: { type: "json_schema", json_schema: { name: "accepted_segment_change_review", strict: true } },
       provider: { require_parameters: true, allow_fallbacks: false },
       transforms: [],
@@ -213,13 +213,13 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const body = response.json() as { ok: false; category: string; recovery: string; message: string };
 
     expect(body.ok).toBe(false);
     expect(body.category).toBe("structured-output-incompatible-model");
-    expect(body.recovery).toMatch(/structured output/i);
+    expect(body.recovery).toMatch(/every named requirement/i);
     expect(body.message.length).toBeGreaterThan(0);
     expect(JSON.stringify(body)).not.toContain(acceptedText);
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
@@ -240,7 +240,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const body = response.json() as { ok: false; category: string; recovery: string };
 
@@ -261,7 +261,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const body = response.json();
 
@@ -289,7 +289,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
 
     expect(response.json()).toEqual(failure);
@@ -311,7 +311,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/accepted-segment-change-review/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const body = response.json();
 
@@ -338,7 +338,7 @@ describe("Accepted-Segment Change Review routes", () => {
     expect(response.json()).toEqual({
       ok: false,
       kind: "invalid-accepted-segment-change-review-request",
-      issues: ["Unsupported field: retryAutomatically"]
+      issues: ["Unsupported field: retryAutomatically", "expectedRequestFingerprint is required."]
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
@@ -438,6 +438,7 @@ async function addAcceptedSegment(fastify: FastifyApp, text: string): Promise<vo
         source: "openrouter",
         model: "test/model",
         provider: "openrouter",
+        temperatureMode: "explicit",
         temperature: 0.1,
         maxOutputTokens: 500,
         versions: { template: "test", compiler: "test", contract: "test" }
@@ -452,6 +453,17 @@ interface CompileReviewResponse {
   disclosure: AcceptedSegmentChangeReviewDisclosure;
   outputSchema: { required: readonly string[] };
   consumedGuidance: readonly ConsumedGenerationGuidanceEntry[];
+  providerRequest: { requestFingerprint: string };
+}
+
+function analyzePayload(compile: CompileReviewResponse): {
+  expectedPromptFingerprint: string;
+  expectedRequestFingerprint: string;
+} {
+  return {
+    expectedPromptFingerprint: compile.disclosure.fingerprint,
+    expectedRequestFingerprint: compile.providerRequest.requestFingerprint
+  };
 }
 
 async function compileReview(fastify: FastifyApp): Promise<CompileReviewResponse> {

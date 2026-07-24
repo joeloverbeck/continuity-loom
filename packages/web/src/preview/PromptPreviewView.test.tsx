@@ -3,7 +3,6 @@
 import {
   buildValidationSnapshot,
   compilePrompt,
-  type CompileResult,
   type GenerationReadiness,
   type ReadinessDiagnostic,
   type ValidationRecord
@@ -107,7 +106,7 @@ describe("PromptPreviewView", () => {
     expect(within(metadata).getByText("template-1")).toBeTruthy();
     expect(within(metadata).getByText("compiler-1")).toBeTruthy();
     expect(within(metadata).getByText("contract-1")).toBeTruthy();
-    expect(within(metadata).getByText("fingerprint-1")).toBeTruthy();
+    expect(within(metadata).getAllByText("fingerprint-1")).toHaveLength(2);
     expect(screen.queryByRole("button", { name: "Generate" })).toBeNull();
     expect(screen.queryByTestId("candidate-body")).toBeNull();
   });
@@ -221,7 +220,7 @@ describe("PromptPreviewView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Refresh preview" }));
 
     expect(await screen.findByText(/SECOND/)).toBeTruthy();
-    expect(screen.getByText("fingerprint-second")).toBeTruthy();
+    expect(screen.getAllByText("fingerprint-second")).toHaveLength(2);
     expect(screen.queryByText(/FIRST/)).toBeNull();
     expect(screen.queryByRole("heading", { name: "Record Reference Unselected Required" })).toBeNull();
     expect(compile).toHaveBeenCalledTimes(3);
@@ -322,7 +321,7 @@ function compiledEntityPrompt(): string {
   ).prompt;
 }
 
-function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileResult {
+function compileResult(prompt: string, fingerprint = "fingerprint-1") {
   return {
     prompt,
     metadata: {
@@ -334,6 +333,13 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1"): CompileRe
       fingerprint,
       lengthEstimate: prompt.length,
       tokenEstimate: 7
+    },
+    providerRequest: {
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit" as const,
+      temperature: 1,
+      maxOutputTokens: 1024,
+      requestFingerprint: fingerprint
     }
   };
 }

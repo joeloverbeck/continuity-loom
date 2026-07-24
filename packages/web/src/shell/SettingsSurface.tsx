@@ -6,7 +6,7 @@ import {
   putOpenRouterSettings,
   refreshModels,
   type OpenRouterModelListEntry,
-  type OpenRouterSettings,
+  type OpenRouterSettingsPatch,
   type OpenRouterSettingsResponse
 } from "../api.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
@@ -18,6 +18,7 @@ type LoadState =
 
 interface SettingsFormState {
   model: string;
+  temperatureMode: "explicit" | "provider_default";
   temperature: string;
   maxOutputTokens: string;
   topP: string;
@@ -29,6 +30,7 @@ export function SettingsSurface(): React.JSX.Element {
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [form, setForm] = useState<SettingsFormState>({
     model: "",
+    temperatureMode: "explicit",
     temperature: "1",
     maxOutputTokens: "1024",
     topP: "",
@@ -164,6 +166,47 @@ export function SettingsSurface(): React.JSX.Element {
               </select>
             </label>
 
+            <fieldset>
+              <legend>Temperature mode</legend>
+              <label>
+                <input
+                  type="radio"
+                  name="temperature-mode"
+                  value="explicit"
+                  checked={form.temperatureMode === "explicit"}
+                  onChange={() =>
+                    setForm((current) => ({
+                      ...current,
+                      temperatureMode: "explicit",
+                      temperature: current.temperature || "1"
+                    }))
+                  }
+                />
+                Explicit value
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="temperature-mode"
+                  value="provider_default"
+                  checked={form.temperatureMode === "provider_default"}
+                  onChange={() =>
+                    setForm((current) => ({
+                      ...current,
+                      temperatureMode: "provider_default",
+                      temperature: ""
+                    }))
+                  }
+                />
+                Provider default
+              </label>
+              {form.temperatureMode === "provider_default" ? (
+                <p className="muted">
+                  Provider default omits Temperature and cannot know the provider's effective numeric value.
+                </p>
+              ) : null}
+            </fieldset>
+
             <div className="settingsNumberGrid">
               <label>
                 Temperature
@@ -172,6 +215,8 @@ export function SettingsSurface(): React.JSX.Element {
                   min="0"
                   max="2"
                   step="0.1"
+                  disabled={form.temperatureMode === "provider_default"}
+                  required={form.temperatureMode === "explicit"}
                   value={form.temperature}
                   onChange={(event) => setForm((current) => ({ ...current, temperature: event.target.value }))}
                 />
@@ -222,19 +267,21 @@ export function SettingsSurface(): React.JSX.Element {
 function toForm(settings: OpenRouterSettingsResponse): SettingsFormState {
   return {
     model: settings.model,
-    temperature: String(settings.temperature),
+    temperatureMode: settings.temperatureMode,
+    temperature: settings.temperature === undefined ? "" : String(settings.temperature),
     maxOutputTokens: String(settings.maxOutputTokens),
     topP: settings.topP === undefined ? "" : String(settings.topP),
     cachedModels: settings.cachedModels ?? []
   };
 }
 
-function toPatch(form: SettingsFormState): OpenRouterSettings {
+function toPatch(form: SettingsFormState): OpenRouterSettingsPatch {
   return {
     model: form.model,
-    temperature: Number(form.temperature),
+    temperatureMode: form.temperatureMode,
+    ...(form.temperatureMode === "explicit" ? { temperature: Number(form.temperature) } : {}),
     maxOutputTokens: Number(form.maxOutputTokens),
-    ...(form.topP.trim() ? { topP: Number(form.topP) } : {}),
+    topP: form.topP.trim() ? Number(form.topP) : null,
     cachedModels: form.cachedModels
   };
 }

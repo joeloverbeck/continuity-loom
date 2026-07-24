@@ -23,6 +23,7 @@ const refreshModelsMock = vi.mocked(refreshModels);
 
 const baseSettings: OpenRouterSettingsResponse = {
   model: "openai/gpt-4.1",
+  temperatureMode: "explicit",
   temperature: 0.7,
   maxOutputTokens: 1800,
   topP: 0.8,
@@ -32,13 +33,20 @@ const baseSettings: OpenRouterSettingsResponse = {
 
 beforeEach(() => {
   getOpenRouterSettingsMock.mockResolvedValue(baseSettings);
-  putOpenRouterSettingsMock.mockImplementation((patch) =>
-    Promise.resolve({
+  putOpenRouterSettingsMock.mockImplementation((patch) => {
+    const result: OpenRouterSettingsResponse = {
       ...baseSettings,
       ...patch,
       hasOpenRouterCredential: baseSettings.hasOpenRouterCredential
-    })
-  );
+    } as OpenRouterSettingsResponse;
+    if (patch.topP === null) {
+      delete result.topP;
+    }
+    if (patch.temperatureMode === "provider_default") {
+      delete result.temperature;
+    }
+    return Promise.resolve(result);
+  });
   refreshModelsMock.mockResolvedValue({ ok: true, models: baseSettings.cachedModels ?? [] });
 });
 
@@ -61,11 +69,58 @@ describe("SettingsSurface", () => {
     expect(await screen.findByText("Settings saved.")).toBeTruthy();
     expect(putOpenRouterSettingsMock).toHaveBeenCalledWith({
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2400,
       topP: 0.9,
       cachedModels: baseSettings.cachedModels
     });
+  });
+
+  it("saves provider-default temperature without a number and explicitly clears blank Top P", async () => {
+    render(<SettingsSurface />);
+
+    await screen.findByLabelText("Model ID");
+    fireEvent.click(screen.getByRole("radio", { name: "Provider default" }));
+    const temperature = screen.getByLabelText<HTMLInputElement>("Temperature");
+    expect(temperature.disabled).toBe(true);
+    expect(temperature.required).toBe(false);
+    expect(screen.getByText(/omits Temperature and cannot know the provider's effective numeric value/)).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Top P"), { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    expect(await screen.findByText("Settings saved.")).toBeTruthy();
+    expect(putOpenRouterSettingsMock).toHaveBeenCalledWith({
+      model: "openai/gpt-4.1",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 1800,
+      topP: null,
+      cachedModels: baseSettings.cachedModels
+    });
+  });
+
+  it("requires and enables the numeric Temperature only in explicit mode", async () => {
+    const providerDefaultSettings: OpenRouterSettingsResponse = {
+      model: baseSettings.model,
+      temperatureMode: "provider_default",
+      maxOutputTokens: baseSettings.maxOutputTokens,
+      ...(baseSettings.topP === undefined ? {} : { topP: baseSettings.topP }),
+      ...(baseSettings.cachedModels === undefined ? {} : { cachedModels: baseSettings.cachedModels }),
+      hasOpenRouterCredential: baseSettings.hasOpenRouterCredential
+    };
+    getOpenRouterSettingsMock.mockResolvedValue(providerDefaultSettings);
+    render(<SettingsSurface />);
+
+    const providerDefault = await screen.findByRole("radio", { name: "Provider default" });
+    expect((providerDefault as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByLabelText<HTMLInputElement>("Temperature").disabled).toBe(true);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Explicit value" }));
+
+    const temperature = screen.getByLabelText<HTMLInputElement>("Temperature");
+    expect(temperature.disabled).toBe(false);
+    expect(temperature.required).toBe(true);
+    expect(temperature.value).toBe("1");
   });
 
   it("renders credential status from the boolean without a key value", async () => {

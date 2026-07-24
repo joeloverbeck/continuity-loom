@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // Application ID identifies Loom stores; schema version advances only with a matching migration.
 export const LOOM_APPLICATION_ID = 0x4c4f4f4d;
-export const LOOM_SCHEMA_VERSION = 4;
+export const LOOM_SCHEMA_VERSION = 5;
 
 export const projectMetadataSchema = z
   .object({

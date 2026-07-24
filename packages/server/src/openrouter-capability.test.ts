@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  admitStructuredOutputModel,
-  requiredStructuredOutputCapabilities,
+  admitOpenRouterRequest,
+  requiredOpenRouterCapabilities,
   type CapabilityAdmissionResult
 } from "./openrouter/capability.js";
-import type { OpenRouterRequestOptions } from "./openrouter/request.js";
-import type { ModelListEntry, OpenRouterSettings } from "./settings.js";
+import { buildChatCompletionRequest, type OpenRouterRequestOptions } from "./openrouter/request.js";
+import type { ModelListEntry } from "./settings.js";
 
 // The exact strict structured-output request options both analyze routes send.
 const strictRequestOptions: OpenRouterRequestOptions = {
@@ -50,24 +50,22 @@ const sonnet46Union = [
   "verbosity"
 ];
 
-function settingsFor(model: string, cachedModels?: ModelListEntry[]): OpenRouterSettings {
-  return {
-    model,
-    temperature: 0,
-    maxOutputTokens: 4096,
-    topP: 1,
-    ...(cachedModels ? { cachedModels } : {})
-  };
-}
-
 function admit(model: string, cachedModels?: ModelListEntry[]): CapabilityAdmissionResult {
-  return admitStructuredOutputModel({
-    settings: settingsFor(model, cachedModels),
+  const request = buildChatCompletionRequest({
+    prompt: "",
+    settings: {
+      model,
+      temperatureMode: "explicit",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      topP: 1
+    },
     requestOptions: strictRequestOptions
   });
+  return admitOpenRouterRequest({ request, cachedModels });
 }
 
-describe("admitStructuredOutputModel", () => {
+describe("admitOpenRouterRequest", () => {
   it("admits a model whose capability union covers the exact strict envelope", () => {
     const result = admit("anthropic/claude-sonnet-4.6", [
       { id: "anthropic/claude-sonnet-4.6", name: "Sonnet 4.6", supportedParameters: sonnet46Union }
@@ -97,7 +95,7 @@ describe("admitStructuredOutputModel", () => {
     if (result.ok) throw new Error("expected rejection");
     expect(result.category).toBe("structured-output-incompatible-model");
     expect(result.missingCapabilities).toEqual(expect.arrayContaining(["response_format", "structured_outputs"]));
-    expect(result.recovery).toMatch(/structured output/i);
+    expect(result.recovery).toMatch(/every named requirement/i);
     expect(result.message.length).toBeGreaterThan(0);
   });
 
@@ -165,12 +163,9 @@ describe("admitStructuredOutputModel", () => {
   });
 });
 
-describe("requiredStructuredOutputCapabilities", () => {
+describe("requiredOpenRouterCapabilities", () => {
   it("derives strict-output, sampling, completion-length, and response-format requirements from the exact envelope", () => {
-    const requirements = requiredStructuredOutputCapabilities({
-      settings: settingsFor("any/model"),
-      requestOptions: strictRequestOptions
-    });
+    const requirements = requiredOpenRouterCapabilities(finalizedStrictRequest());
     const anyOf = requirements.map((requirement) => requirement.anyOf);
 
     // strict json_schema requires both response_format and structured_outputs
@@ -184,10 +179,7 @@ describe("requiredStructuredOutputCapabilities", () => {
   });
 
   it("omits tool requirements when the envelope requests no tools", () => {
-    const requirements = requiredStructuredOutputCapabilities({
-      settings: settingsFor("any/model"),
-      requestOptions: strictRequestOptions
-    });
+    const requirements = requiredOpenRouterCapabilities(finalizedStrictRequest());
     const flattened = requirements.flatMap((requirement) => requirement.anyOf);
 
     expect(flattened).not.toContain("tools");
@@ -195,14 +187,13 @@ describe("requiredStructuredOutputCapabilities", () => {
   });
 
   it("requires tool capabilities only when the envelope actually requests tool use", () => {
-    const requirements = requiredStructuredOutputCapabilities({
-      settings: settingsFor("any/model"),
-      requestOptions: {
+    const requirements = requiredOpenRouterCapabilities(
+      finalizedStrictRequest({
         ...strictRequestOptions,
         tools: [{ type: "function", function: { name: "lookup" } }],
         tool_choice: "auto"
-      }
-    });
+      })
+    );
     const flattened = requirements.flatMap((requirement) => requirement.anyOf);
 
     expect(flattened).toContain("tools");
@@ -210,12 +201,85 @@ describe("requiredStructuredOutputCapabilities", () => {
   });
 
   it("omits the top_p requirement when the envelope sends no top_p", () => {
-    const requirements = requiredStructuredOutputCapabilities({
-      settings: { model: "any/model", temperature: 0 },
-      requestOptions: strictRequestOptions
-    });
+    const requirements = requiredOpenRouterCapabilities(
+      buildChatCompletionRequest({
+        prompt: "",
+        settings: {
+          model: "any/model",
+          temperatureMode: "explicit",
+          temperature: 0,
+          maxOutputTokens: 4096
+        },
+        requestOptions: strictRequestOptions
+      })
+    );
     const flattened = requirements.flatMap((requirement) => requirement.anyOf);
 
     expect(flattened).not.toContain("top_p");
+  });
+});
+
+function finalizedStrictRequest(requestOptions: OpenRouterRequestOptions = strictRequestOptions) {
+  return buildChatCompletionRequest({
+    prompt: "",
+    settings: {
+      model: "any/model",
+      temperatureMode: "explicit",
+      temperature: 0,
+      maxOutputTokens: 4096,
+      topP: 1
+    },
+    requestOptions
+  });
+}
+
+describe("finalized request admission", () => {
+  const sonnet5ShapedCapabilities = [
+    "response_format",
+    "structured_outputs",
+    "max_completion_tokens"
+  ];
+
+  function finalizedRequest(temperatureMode: "explicit" | "provider_default", topP?: number) {
+    return buildChatCompletionRequest({
+      prompt: "Prompt",
+      settings: {
+        model: "synthetic/sonnet-5",
+        temperatureMode,
+        ...(temperatureMode === "explicit" ? { temperature: 1 } : {}),
+        maxOutputTokens: 2048,
+        ...(topP === undefined ? {} : { topP })
+      },
+      requestOptions: strictRequestOptions
+    });
+  }
+
+  it("derives conditional sampling requirements from the exact finalized object", () => {
+    const providerDefault = finalizedRequest("provider_default");
+    const explicit = finalizedRequest("explicit");
+    const withTopP = finalizedRequest("provider_default", 0.9);
+
+    expect(requiredOpenRouterCapabilities(providerDefault).flatMap((requirement) => requirement.anyOf))
+      .not.toContain("temperature");
+    expect(requiredOpenRouterCapabilities(explicit).flatMap((requirement) => requirement.anyOf))
+      .toContain("temperature");
+    expect(requiredOpenRouterCapabilities(withTopP).flatMap((requirement) => requirement.anyOf))
+      .toContain("top_p");
+  });
+
+  it("admits provider-default and rejects only the exact missing explicit parameter", () => {
+    const cachedModels = [{
+      id: "synthetic/sonnet-5",
+      name: "Synthetic Sonnet 5",
+      supportedParameters: sonnet5ShapedCapabilities
+    }];
+
+    expect(admitOpenRouterRequest({ request: finalizedRequest("provider_default"), cachedModels }))
+      .toEqual({ ok: true });
+    expect(admitOpenRouterRequest({ request: finalizedRequest("explicit"), cachedModels }))
+      .toMatchObject({
+        ok: false,
+        missingCapabilities: ["temperature"]
+      });
   });
 });

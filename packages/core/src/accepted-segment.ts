@@ -6,22 +6,33 @@ export const acceptedSegmentVersionsSchema = z.strictObject({
   contract: z.string().min(1)
 });
 
-export const openRouterAcceptedSegmentProvenanceSchema = z.strictObject({
+const openRouterAcceptedSegmentProvenanceBase = {
   source: z.literal("openrouter"),
   model: z.string().min(1),
   provider: z.literal("openrouter"),
-  temperature: z.number(),
   maxOutputTokens: z.number().int(),
   topP: z.number().optional(),
   versions: acceptedSegmentVersionsSchema
-});
+};
+
+export const openRouterAcceptedSegmentProvenanceSchema = z.union([
+  z.strictObject({
+    ...openRouterAcceptedSegmentProvenanceBase,
+    temperatureMode: z.literal("explicit"),
+    temperature: z.number()
+  }),
+  z.strictObject({
+    ...openRouterAcceptedSegmentProvenanceBase,
+    temperatureMode: z.literal("provider_default")
+  })
+]);
 
 export const userSuppliedAcceptedSegmentProvenanceSchema = z.strictObject({
   source: z.literal("user_supplied"),
   versions: acceptedSegmentVersionsSchema
 });
 
-export const acceptedSegmentProvenanceSchema = z.discriminatedUnion("source", [
+export const acceptedSegmentProvenanceSchema = z.union([
   openRouterAcceptedSegmentProvenanceSchema,
   userSuppliedAcceptedSegmentProvenanceSchema
 ]);

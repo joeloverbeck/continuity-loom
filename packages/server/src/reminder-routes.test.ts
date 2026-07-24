@@ -15,6 +15,7 @@ const generationMetadata = {
   source: "openrouter",
   model: "openai/gpt-4.1",
   provider: "openrouter",
+  temperatureMode: "explicit",
   temperature: 0.4,
   maxOutputTokens: 2200,
   topP: 0.9,

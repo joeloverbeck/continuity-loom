@@ -44,15 +44,22 @@ describe("generate route secret leakage regression", () => {
 
     const preview = await fastify.inject({ method: "POST", url: "/api/compile" });
     expect(preview.statusCode).toBe(200);
-    const previewBody = preview.json() as { prompt: string; metadata: { fingerprint: string } };
+    const previewBody = preview.json() as {
+      prompt: string;
+      metadata: { fingerprint: string };
+      providerRequest: { requestFingerprint: string };
+    };
     expect(previewBody.prompt).not.toContain(fakeApiKey);
 
     const response = await fastify.inject({
       method: "POST",
       url: "/api/generate",
-      payload: { expectedPromptFingerprint: previewBody.metadata.fingerprint }
+      payload: {
+        expectedPromptFingerprint: previewBody.metadata.fingerprint,
+        expectedRequestFingerprint: previewBody.providerRequest.requestFingerprint
+      }
     });
-    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.prompt;
+    const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content;
 
     expect(response.statusCode).toBe(200);
     expect(sentPrompt).toBe(previewBody.prompt);
@@ -72,16 +79,22 @@ describe("generate route secret leakage regression", () => {
     try {
       await prepareGenerationProject(fastify);
       const preview = await fastify.inject({ method: "POST", url: "/api/compile" });
-      const previewBody = preview.json() as { metadata: { fingerprint: string } };
+      const previewBody = preview.json() as {
+        metadata: { fingerprint: string };
+        providerRequest: { requestFingerprint: string };
+      };
       const response = await fastify.inject({
         method: "POST",
         url: "/api/generate",
-        payload: { expectedPromptFingerprint: previewBody.metadata.fingerprint }
+        payload: {
+          expectedPromptFingerprint: previewBody.metadata.fingerprint,
+          expectedRequestFingerprint: previewBody.providerRequest.requestFingerprint
+        }
       });
 
       expect(response.statusCode).toBe(200);
       expect(response.body).not.toContain(fakeApiKey);
-      expect(sendChatCompletionMock.mock.calls[0]?.[0]?.prompt).not.toContain(fakeApiKey);
+      expect(sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content).not.toContain(fakeApiKey);
     } finally {
       const output = capture.restore();
       expect(output).not.toContain(fakeApiKey);
@@ -192,8 +205,14 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
     url: "/api/settings/openrouter",
     payload: {
       model: "anthropic/claude-sonnet-4",
+      temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compatible test model",
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     }
   });
 

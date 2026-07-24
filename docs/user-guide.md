@@ -204,7 +204,28 @@ Every item is suggestion-only scratch. There is no apply, prefill, create, deact
 
 OpenRouter is the external prose transport. It is not a continuity authority.
 
-Configure the model, temperature, maximum output tokens, and optional top-p in global OpenRouter settings. These are local app settings, not project canon.
+Configure the model, Temperature mode, maximum output tokens, and optional Top P
+in global OpenRouter settings. These are local app settings, not project canon.
+**Explicit value** requires a number from 0 through 2 and sends it on every
+completion request. **Provider default** omits `temperature`; Continuity Loom
+does not know or display a fabricated provider-effective number. A blank Top P
+likewise means provider default: saving it clears any prior value and subsequent
+requests omit `top_p`. Model selection and model-list refresh never change
+these choices.
+
+Prompt Inspector shows the exact model, Temperature intent, optional Top P,
+completion ceiling, and provider-request fingerprint that a later send must
+match. Changing any provider setting requires a fresh local inspection even
+when the prompt text itself did not change.
+
+If capability data is missing, use the explicit model-list refresh and inspect
+again. If the selected model is known to lack a requirement, the error names
+Temperature, Top P, response format, strict structured output, completion
+length, tools, or tool choice as applicable. Change a sampling setting only
+deliberately, or choose a compatible model, then inspect and invoke the existing
+Generate, Analyze, or Regenerate action yourself. Refresh, settings edits,
+inspection, and error viewing never make a completion request, and recovery
+never retries automatically.
 
 For local key setup, copy `.env.example` to `.env` at the repository root and set `OPENROUTER_API_KEY=<your key>`. The root `.env` is gitignored and loads automatically when the app launches through `npm run dev` or `npm start`; a shell-exported `OPENROUTER_API_KEY` also works as an alternative. The key is not stored in project metadata, the SQLite project store, accepted segment metadata, compiled prompts, prompt preview text, or logs. If a key appears in any of those surfaces, treat it as a security bug.
 
@@ -242,7 +263,7 @@ Use "Expand all" when you want whole-story reading or browser find across the fu
 
 The archive also lets you filter and export accepted output. Export always uses the complete archive in story order, independent of filters or expansion state. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
 
-Each accepted segment identifies its source as `OpenRouter` or `User-supplied`, and source is searchable from the archive filter. OpenRouter entries show their actual model, provider, generation settings, and compiler versions. User-supplied entries show the compiler versions associated with the inspected prompt and omit model, provider, and generation-setting fields instead of displaying blank or invented values. Markdown and text exports preserve the same truthful source distinction in story order.
+Each accepted segment identifies its source as `OpenRouter` or `User-supplied`, and source is searchable from the archive filter. OpenRouter entries show their actual model, provider, generation settings, and compiler versions. Temperature is the sent number for explicit mode or **Provider default** when the parameter was omitted; Top P appears only when sent. User-supplied entries show the compiler versions associated with the inspected prompt and omit model, provider, and generation-setting fields instead of displaying blank or invented values. Markdown and text exports preserve the same truthful source distinction in story order.
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
 

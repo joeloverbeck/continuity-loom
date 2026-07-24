@@ -382,7 +382,7 @@ function MetadataGrid({ metadata, sequence }: { metadata: AcceptedSegment["metad
     ...(metadata.source === "openrouter" ? [
       ["Model", metadata.model],
       ["Provider", metadata.provider],
-      ["Temperature", String(metadata.temperature)],
+      ["Temperature", temperatureLabel(metadata)],
       ["Max output tokens", String(metadata.maxOutputTokens)],
       ["Top P", metadata.topP === undefined ? "Not set" : String(metadata.topP)]
     ] satisfies Array<[string, string]> : []),
@@ -417,7 +417,7 @@ function searchableText(segment: AcceptedSegment): string {
     ...(metadata.source === "openrouter" ? [
       metadata.model,
       metadata.provider,
-      String(metadata.temperature),
+      temperatureLabel(metadata),
       String(metadata.maxOutputTokens),
       metadata.topP === undefined ? "" : String(metadata.topP)
     ] : []),
@@ -431,6 +431,10 @@ function searchableText(segment: AcceptedSegment): string {
 
 function sourceLabel(metadata: AcceptedSegment["metadata"]): "OpenRouter" | "User-supplied" {
   return metadata.source === "openrouter" ? "OpenRouter" : "User-supplied";
+}
+
+function temperatureLabel(metadata: Extract<AcceptedSegment["metadata"], { source: "openrouter" }>): string {
+  return metadata.temperatureMode === "explicit" ? String(metadata.temperature) : "Provider default";
 }
 
 function segmentExcerpt(text: string): string {
@@ -528,7 +532,7 @@ function exportMetadataLines(metadata: AcceptedSegment["metadata"], prefix = "")
     ...(metadata.source === "openrouter" ? [
       `${prefix}Model: ${metadata.model}`,
       `${prefix}Provider: ${metadata.provider}`,
-      `${prefix}Temperature: ${metadata.temperature}`,
+      `${prefix}Temperature: ${temperatureLabel(metadata)}`,
       `${prefix}Max output tokens: ${metadata.maxOutputTokens}`,
       `${prefix}Top P: ${metadata.topP === undefined ? "Not set" : metadata.topP}`
     ] : []),

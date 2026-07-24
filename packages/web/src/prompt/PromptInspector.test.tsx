@@ -122,6 +122,49 @@ describe("PromptInspector", () => {
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Next" }).disabled).toBe(true);
     expect(screen.getByTestId("prompt-body").querySelector("mark")).toBeNull();
   });
+
+  it("discloses the exact finalized provider controls and omits absent Top P", () => {
+    const { rerender } = render(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/model",
+          temperatureMode: "provider_default",
+          maxOutputTokens: 2048,
+          requestFingerprint: "request-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+
+    const metadata = screen.getByLabelText("Prompt metadata");
+    expect(within(metadata).getByText("provider/model")).toBeTruthy();
+    expect(within(metadata).getByText("Provider default")).toBeTruthy();
+    expect(within(metadata).queryByText("Top P")).toBeNull();
+    expect(within(metadata).getByText("2048")).toBeTruthy();
+    expect(within(metadata).getByText("request-fingerprint")).toBeTruthy();
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/model",
+          temperatureMode: "explicit",
+          temperature: 0.7,
+          topP: 0.9,
+          maxOutputTokens: 2048,
+          requestFingerprint: "request-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+
+    expect(within(metadata).getByText("Explicit: 0.7")).toBeTruthy();
+    expect(within(metadata).getByText("Top P")).toBeTruthy();
+    expect(within(metadata).getByText("0.9")).toBeTruthy();
+  });
 });
 
 function compileResult(prompt: string): CompileResult {

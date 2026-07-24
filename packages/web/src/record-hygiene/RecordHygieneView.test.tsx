@@ -135,7 +135,11 @@ describe("RecordHygieneView", () => {
     expect(analyzeButton.disabled).toBe(false);
     fireEvent.click(analyzeButton);
 
-    await waitFor(() => expect(recordHygieneAnalyze).toHaveBeenCalledWith("active_working_set_atomic_review"));
+    await waitFor(() => expect(recordHygieneAnalyze).toHaveBeenCalledWith(
+      "active_working_set_atomic_review",
+      "fingerprint-1",
+      "request-fingerprint-1"
+    ));
   });
 
   it("keeps findings in session scratch and clear removes session residue", async () => {
@@ -267,6 +271,13 @@ function compileResponse(overrides: Partial<{
     citations: overrides.citations ?? {
       "[FACT-1]": "fact-a",
       "[FACT-2]": "fact-b"
+    },
+    providerRequest: {
+      model: "openai/gpt-4.1",
+      temperatureMode: "explicit" as const,
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      requestFingerprint: "request-fingerprint-1"
     }
   };
 }
@@ -299,6 +310,7 @@ function analyzeMetadata() {
   return {
     model: "openai/gpt-4.1",
     provider: "openrouter" as const,
+    temperatureMode: "explicit" as const,
     temperature: 0.4,
     maxOutputTokens: 2200,
     versions: {

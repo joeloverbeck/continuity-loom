@@ -16,7 +16,10 @@ import { isAbsolute, join, relative, resolve } from "node:path";
 import { z, ZodError } from "zod";
 
 import { backfillDisplayLabels } from "./display-label-backfill.js";
-import { rewriteAcceptedSegmentProvenance } from "./accepted-segment-provenance-migration.js";
+import {
+  rewriteAcceptedSegmentProvenance,
+  rewriteAcceptedSegmentSamplingMode
+} from "./accepted-segment-provenance-migration.js";
 import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
 import { migrateGlobalConfigRecords } from "./global-config-migration.js";
 import { migrateRecordPayloads } from "./record-payload-cleanup-migration.js";
@@ -334,6 +337,44 @@ async function migrateStoreFromV3ToV4(
   return migratedMetadata;
 }
 
+async function migrateStoreFromV4ToV5(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata
+): Promise<ProjectMetadata> {
+  const migratedMetadata = projectMetadataSchema.parse({
+    ...metadata,
+    schemaMinVersion: 5,
+    updatedAt: new Date().toISOString()
+  });
+  let metadataWasUpdated = false;
+
+  try {
+    database.exec("BEGIN IMMEDIATE");
+    rewriteAcceptedSegmentSamplingMode(database);
+    database.exec("PRAGMA user_version = 5");
+    await writeProjectMetadataAtomically(folderPath, migratedMetadata);
+    metadataWasUpdated = true;
+    database.exec("COMMIT");
+  } catch (error) {
+    if (database.isOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+    }
+
+    if (metadataWasUpdated) {
+      await writeProjectMetadataAtomically(folderPath, metadata);
+    }
+
+    throw error;
+  }
+
+  return migratedMetadata;
+}
+
 async function migrateStoreToCurrentSchema(
   database: DatabaseSync,
   folderPath: string,
@@ -346,7 +387,8 @@ async function migrateStoreToCurrentSchema(
   const migrations: Record<number, (db: DatabaseSync, path: string, data: ProjectMetadata) => Promise<ProjectMetadata>> = {
     1: migrateStoreFromV1ToV2,
     2: migrateStoreFromV2ToV3,
-    3: migrateStoreFromV3ToV4
+    3: migrateStoreFromV3ToV4,
+    4: migrateStoreFromV4ToV5
   };
 
   while (currentVersion < LOOM_SCHEMA_VERSION) {

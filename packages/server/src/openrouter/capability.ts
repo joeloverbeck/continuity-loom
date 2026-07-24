@@ -1,6 +1,6 @@
-import type { ModelListEntry, OpenRouterSettings } from "../settings.js";
+import type { ModelListEntry } from "../settings.js";
 
-import type { OpenRouterRequestOptions } from "./request.js";
+import type { OpenRouterRequest } from "./request.js";
 
 /**
  * Model-neutral admission for strict structured-output requests.
@@ -32,9 +32,9 @@ export interface CapabilityAdmissionRejection {
 
 export type CapabilityAdmissionResult = { ok: true } | CapabilityAdmissionRejection;
 
-export interface StructuredOutputAdmissionInput {
-  settings: Pick<OpenRouterSettings, "model" | "temperature" | "topP" | "cachedModels">;
-  requestOptions: OpenRouterRequestOptions;
+export interface OpenRouterRequestAdmissionInput {
+  request: OpenRouterRequest;
+  cachedModels: ModelListEntry[] | undefined;
 }
 
 /** A routing-relevant control the request declares. The model satisfies it by advertising ANY listed token. */
@@ -44,24 +44,23 @@ export interface CapabilityRequirement {
 }
 
 const INCOMPATIBLE_MESSAGE =
-  "The selected model does not support the strict structured-output request this workflow requires.";
+  "The selected model cannot satisfy every requirement in the finalized request.";
 const INCOMPATIBLE_RECOVERY =
-  "Select a model that advertises strict structured output (a JSON Schema response format), refresh the model list if needed, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic.";
+  "Choose a model compatible with every named requirement, then reinspect before using the existing action. No request was sent. No retry is automatic.";
 const UNKNOWN_MESSAGE =
-  "The selected model has no cached capability data, so strict structured-output support cannot be confirmed. This usually means the cached model list predates capability checks and is stale, not that the model is unsupported.";
+  "The selected model has no usable cached capability data, so the finalized request cannot be admitted.";
 const UNKNOWN_RECOVERY =
-  "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and Analyze again. No request was sent; no retry is automatic. If it still fails after a refresh, the selected model may not support strict structured output — choose one that does.";
+  "Refresh the OpenRouter model list, then reinspect before using the existing action. No request was sent; no retry is automatic. If admission still fails, choose a model compatible with every named requirement.";
 
 /**
  * Derive the routing-relevant capability requirements from the exact request envelope. Requirements
  * mirror OpenRouter's `supported_parameters` vocabulary and are grouped so an alias (max_tokens vs
  * max_completion_tokens) is satisfied by either token.
  */
-export function requiredStructuredOutputCapabilities(input: StructuredOutputAdmissionInput): CapabilityRequirement[] {
-  const { settings, requestOptions } = input;
+export function requiredOpenRouterCapabilities(request: OpenRouterRequest): CapabilityRequirement[] {
   const requirements: CapabilityRequirement[] = [];
 
-  const responseFormat = asRecord(requestOptions.response_format);
+  const responseFormat = asRecord(request.response_format);
   if (responseFormat !== undefined) {
     requirements.push({ label: "response format", anyOf: ["response_format"] });
     if (isStrictJsonSchema(responseFormat)) {
@@ -69,17 +68,19 @@ export function requiredStructuredOutputCapabilities(input: StructuredOutputAdmi
     }
   }
 
-  // The chat-completion request always sends temperature and a completion-length ceiling.
-  requirements.push({ label: "sampling temperature", anyOf: ["temperature"] });
+  if (request.temperature !== undefined) {
+    requirements.push({ label: "sampling temperature", anyOf: ["temperature"] });
+  }
+
   requirements.push({ label: "completion length", anyOf: ["max_tokens", "max_completion_tokens"] });
 
-  if (settings.topP !== undefined) {
+  if (request.top_p !== undefined) {
     requirements.push({ label: "sampling top_p", anyOf: ["top_p"] });
   }
 
-  if (requestsToolUse(requestOptions)) {
+  if (requestsToolUse(request)) {
     requirements.push({ label: "tools", anyOf: ["tools"] });
-    if (requestsToolChoice(requestOptions)) {
+    if (requestsToolChoice(request)) {
       requirements.push({ label: "tool choice", anyOf: ["tool_choice"] });
     }
   }
@@ -92,8 +93,8 @@ export function requiredStructuredOutputCapabilities(input: StructuredOutputAdmi
  * with `structured-output-capability-unknown` when capability data is missing/empty/stale, and with
  * `structured-output-incompatible-model` when the data proves at least one requirement is unmet.
  */
-export function admitStructuredOutputModel(input: StructuredOutputAdmissionInput): CapabilityAdmissionResult {
-  const entry = findSelectedModel(input.settings);
+export function admitOpenRouterRequest(input: OpenRouterRequestAdmissionInput): CapabilityAdmissionResult {
+  const entry = findSelectedModel(input.request.model, input.cachedModels);
   const supported = entry?.supportedParameters;
 
   if (supported === undefined || supported.length === 0) {
@@ -106,7 +107,7 @@ export function admitStructuredOutputModel(input: StructuredOutputAdmissionInput
   }
 
   const supportedSet = new Set(supported);
-  const missingCapabilities = requiredStructuredOutputCapabilities(input)
+  const missingCapabilities = requiredOpenRouterCapabilities(input.request)
     .filter((requirement) => !requirement.anyOf.some((token) => supportedSet.has(token)))
     .map((requirement) => requirement.anyOf[0]);
 
@@ -123,14 +124,12 @@ export function admitStructuredOutputModel(input: StructuredOutputAdmissionInput
   return { ok: true };
 }
 
-function findSelectedModel(
-  settings: Pick<OpenRouterSettings, "model" | "cachedModels">
-): ModelListEntry | undefined {
-  if (!settings.model) {
+function findSelectedModel(model: string, cachedModels?: ModelListEntry[]): ModelListEntry | undefined {
+  if (!model) {
     return undefined;
   }
 
-  return settings.cachedModels?.find((model) => model.id === settings.model);
+  return cachedModels?.find((entry) => entry.id === model);
 }
 
 function isStrictJsonSchema(responseFormat: Record<string, unknown>): boolean {
@@ -142,12 +141,12 @@ function isStrictJsonSchema(responseFormat: Record<string, unknown>): boolean {
   return jsonSchema?.strict === true;
 }
 
-function requestsToolUse(requestOptions: OpenRouterRequestOptions): boolean {
-  return Array.isArray(requestOptions.tools) && requestOptions.tools.length > 0;
+function requestsToolUse(request: Pick<OpenRouterRequest, "tools">): boolean {
+  return Array.isArray(request.tools) && request.tools.length > 0;
 }
 
-function requestsToolChoice(requestOptions: OpenRouterRequestOptions): boolean {
-  const toolChoice = requestOptions.tool_choice;
+function requestsToolChoice(request: Pick<OpenRouterRequest, "tool_choice">): boolean {
+  const toolChoice = request.tool_choice;
   return toolChoice !== undefined && toolChoice !== "none";
 }
 

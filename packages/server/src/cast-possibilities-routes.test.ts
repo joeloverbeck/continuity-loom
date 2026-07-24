@@ -154,7 +154,7 @@ describe("Cast Possibilities routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
 
     expect(response.statusCode).toBe(409);
@@ -182,7 +182,7 @@ describe("Cast Possibilities routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
 
     expect(response.statusCode).toBe(422);
@@ -211,7 +211,7 @@ describe("Cast Possibilities routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const body = response.json();
     const after = await projectSurfaces(candidate);
@@ -230,8 +230,12 @@ describe("Cast Possibilities routes", () => {
     });
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
     expect(sendChatCompletionMock.mock.calls[0]?.[0]).toMatchObject({
-      prompt: compile.prompt,
-      requestOptions: {
+      request: {
+        model: "test/structured-output-capable",
+        messages: [{ role: "user", content: compile.prompt }],
+        temperature: 0,
+        max_completion_tokens: 4096,
+        stream: false,
         response_format: {
           type: "json_schema",
           json_schema: { name: "cast_possibilities", strict: true }
@@ -274,7 +278,7 @@ describe("Cast Possibilities routes", () => {
       method: "POST",
       url: "/api/cast-possibilities/analyze",
       payload: {
-        expectedPromptFingerprint: targeted.disclosure.fingerprint,
+        ...analyzePayload(targeted),
         targetCharacterId: target.castMemberId,
         avoidList,
         baseSourceFingerprint: full.disclosure.fingerprint
@@ -331,12 +335,12 @@ describe("Cast Possibilities routes", () => {
   it("distinguishes missing credentials, unknown capability, incompatible models, and oversize prompts before transport", async () => {
     const candidate = await preparedApp();
     const compile = await compilePossibilities(candidate);
-    const analyzePayload = { expectedPromptFingerprint: compile.disclosure.fingerprint };
+    const currentAnalyzePayload = analyzePayload(compile);
 
     const missingKey = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: analyzePayload
+      payload: currentAnalyzePayload
     });
     expect(missingKey.json()).toMatchObject({ ok: false, category: "missing-key" });
 
@@ -347,10 +351,20 @@ describe("Cast Possibilities routes", () => {
       maxOutputTokens: 4096,
       cachedModels: []
     });
+    const stale = await candidate.inject({
+      method: "POST",
+      url: "/api/cast-possibilities/analyze",
+      payload: currentAnalyzePayload
+    });
+    expect(stale.json()).toMatchObject({
+      ok: false,
+      kind: "cast-possibilities-source-changed"
+    });
+    const unknownInspection = await compilePossibilities(candidate);
     const unknown = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: analyzePayload
+      payload: analyzePayload(unknownInspection)
     });
     expect(unknown.json()).toMatchObject({
       ok: false,
@@ -364,10 +378,11 @@ describe("Cast Possibilities routes", () => {
         supportedParameters: ["temperature"]
       }]
     });
+    const incompatibleInspection = await compilePossibilities(candidate);
     const incompatible = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: analyzePayload
+      payload: analyzePayload(incompatibleInspection)
     });
     expect(incompatible.json()).toMatchObject({
       ok: false,
@@ -383,10 +398,11 @@ describe("Cast Possibilities routes", () => {
         supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
       }]
     });
+    const oversizeInspection = await compilePossibilities(candidate);
     const oversize = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: analyzePayload
+      payload: analyzePayload(oversizeInspection)
     });
     expect(oversize.json()).toMatchObject({
       ok: false,
@@ -406,7 +422,7 @@ describe("Cast Possibilities routes", () => {
     const response = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
-      payload: { expectedPromptFingerprint: compile.disclosure.fingerprint }
+      payload: analyzePayload(compile)
     });
     const serialized = JSON.stringify(response.json());
 
@@ -436,7 +452,18 @@ async function preparedApp(): Promise<FastifyApp> {
 type CompileResponse = {
   prompt: string;
   disclosure: CastPossibilitiesDisclosure;
+  providerRequest: { requestFingerprint: string };
 };
+
+function analyzePayload(compile: CompileResponse): {
+  expectedPromptFingerprint: string;
+  expectedRequestFingerprint: string;
+} {
+  return {
+    expectedPromptFingerprint: compile.disclosure.fingerprint,
+    expectedRequestFingerprint: compile.providerRequest.requestFingerprint
+  };
+}
 
 async function compilePossibilities(
   candidate: FastifyApp,

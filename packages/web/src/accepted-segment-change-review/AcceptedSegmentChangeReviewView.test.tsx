@@ -64,7 +64,8 @@ describe("AcceptedSegmentChangeReviewView", () => {
     await waitFor(() => expect(analyzeMock).toHaveBeenCalledWith({
       segmentSelection: "latest",
       recordScope: "active_working_set",
-      expectedPromptFingerprint: "fnv1a32:12345678"
+      expectedPromptFingerprint: "fnv1a32:12345678",
+      expectedRequestFingerprint: "request:12345678"
     }));
     expect(await screen.findByRole("heading", { name: "Possible change ITEM-001" })).toBeTruthy();
     expect(screen.getAllByRole("row")).toHaveLength(7);
@@ -186,7 +187,8 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(analyzeMock).toHaveBeenCalledWith({
       segmentSelection: "latest",
       recordScope: "active_working_set",
-      expectedPromptFingerprint: "fnv1a32:12345678"
+      expectedPromptFingerprint: "fnv1a32:12345678",
+      expectedRequestFingerprint: "request:12345678"
     });
     expect(await screen.findByText("fnv1a32:87654321")).toBeTruthy();
 
@@ -229,7 +231,7 @@ describe("AcceptedSegmentChangeReviewView", () => {
     ["quarantined", quarantineResponse(), "Quarantined response", "schema-mismatch"],
     ["stale", staleResponse(), "Source changed", "Compile and inspect again"],
     ["provider", providerResponse(), "OpenRouter request failed", "No retry is automatic"],
-    ["incompatible model", incompatibleModelResponse(), "Strict structured output unavailable", "advertises strict structured output"],
+    ["incompatible model", incompatibleModelResponse(), "Model cannot satisfy this request", "compatible with every named requirement"],
     ["oversize", oversizeResponse(), "Complete source is too large", "Choose Whole Project only when needed"],
     ["local request", localRequestResponse(), "Local request failed", "Inspect local project state"]
   ] as const)("renders the %s state with distinct manual recovery", async (_label, response, heading, detail) => {
@@ -279,8 +281,8 @@ describe("AcceptedSegmentChangeReviewView", () => {
     // Distinct recovery from the incompatible-model case: the cause is named as a stale cache,
     // not a wrong model choice.
     expect(await screen.findByRole("heading", { name: "Model capability data needs a refresh" })).toBeTruthy();
-    expect(screen.getByText(/predates capability checks and is stale/i)).toBeTruthy();
-    expect(screen.queryByRole("heading", { name: "Strict structured output unavailable" })).toBeNull();
+    expect(screen.getAllByText(/predates capability checks and is stale/i).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: "Model cannot satisfy this request" })).toBeNull();
 
     fireEvent.click(screen.getByRole("button", { name: "Refresh model list" }));
 
@@ -358,7 +360,14 @@ function compileResponse(): CompileSuccess {
     consumedGuidance: [
       { id: "manual_moment_directive.must_render[]:0", fieldPath: "manual_moment_directive.must_render[]", value: "Open the door." },
       { id: "stop_guidance.soft_unit_guidance:0", fieldPath: "stop_guidance.soft_unit_guidance", value: "Stop after the reply." }
-    ]
+    ],
+    providerRequest: {
+      model: "test/model",
+      temperatureMode: "explicit",
+      temperature: 0.1,
+      maxOutputTokens: 500,
+      requestFingerprint: "request:12345678"
+    }
   };
 }
 
@@ -469,9 +478,9 @@ function incompatibleModelResponse(): AcceptedSegmentChangeReviewAnalyzeResponse
   return {
     ok: false as const,
     category: "structured-output-incompatible-model" as const,
-    message: "The selected model does not support the strict structured-output request this workflow requires.",
+    message: "The selected model cannot satisfy every requirement in the finalized request.",
     recovery:
-      "Select a model that advertises strict structured output, then inspect the recompiled source before Analyze. No request was sent. No retry is automatic."
+      "Choose a model compatible with every named requirement, then reinspect before using the existing action. No request was sent. No retry is automatic."
   };
 }
 
