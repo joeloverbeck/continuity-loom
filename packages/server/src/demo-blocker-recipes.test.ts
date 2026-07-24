@@ -30,18 +30,6 @@ const apps: FastifyApp[] = [];
 
 const RECIPES: readonly Recipe[] = [
   {
-    name: "letter has two holders",
-    code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
-    async apply(app) {
-      const letter = await recordByLabel(app, "Sealed letter");
-      const niko = await recordByLabel(app, "Niko Bram");
-      await updateRecord(app, letter, {
-        ...objectPayload(letter.payload),
-        carried_by: niko.id
-      });
-    }
-  },
-  {
     name: "Niko reads the hidden letter without physical context",
     code: DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
     async apply(app) {
@@ -207,6 +195,31 @@ describe("demo blocker recipes", () => {
     expect(body.kind).toBe("validation-blocked");
     expect(body.validation?.isBlocked).toBe(true);
     expect(body).not.toHaveProperty("prompt");
+  });
+
+  it("does not block Preview/Generate when an object's owner differs from its current holder", async () => {
+    const fastify = app();
+    await createDemo(fastify);
+    await expectNoBaselineBlockers(fastify);
+
+    // Elin owns the sealed letter; Niko physically carries it on his person.
+    // owner ≠ carried_by is a legitimate possession state, not two current holders.
+    const letter = await recordByLabel(fastify, "Sealed letter");
+    const niko = await recordByLabel(fastify, "Niko Bram");
+    await updateRecord(fastify, letter, {
+      ...objectPayload(letter.payload),
+      carried_by: niko.id,
+      current_location: "carried_by_holder"
+    });
+
+    const validation = await validate(fastify);
+    expect(validation.isBlocked).toBe(false);
+    expect(validation.blockers).toEqual([]);
+
+    const compile = await fastify.inject({ method: "POST", url: "/api/compile" });
+    const body = compile.json() as { kind?: string; prompt?: string };
+    expect(body.kind).not.toBe("validation-blocked");
+    expect(typeof body.prompt).toBe("string");
   });
 });
 

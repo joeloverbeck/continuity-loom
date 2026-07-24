@@ -122,7 +122,6 @@ export const expectedRunnableDiagnosticCodes = [
   DIAGNOSTIC_CODES.missingStoryConfig,
   DIAGNOSTIC_CODES.noActiveClockPressure,
   DIAGNOSTIC_CODES.noSampleUtterances,
-  DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
   DIAGNOSTIC_CODES.objectLocationHolderIncoherence,
   DIAGNOSTIC_CODES.offstageEntityReferenceUnselectedOptional,
   DIAGNOSTIC_CODES.offstageEntityReferenceInvalid,
@@ -260,15 +259,6 @@ const coveredContracts = [
       ];
     },
     expectedAffected: [{ recordId: auxIds.actor, field: "ENTITY STATUS.location" }]
-  }),
-  covered({
-    code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
-    severity: "blocker",
-    promptKinds: "applies",
-    introduceMinimalDefect: (input) => {
-      input.records = [...input.records, objectRecord({ owner: validationIds.entity, carried_by: auxIds.actor })];
-    },
-    expectedAffected: [{ recordId: auxIds.object, field: "OBJECT.owner/carried_by" }]
   }),
   covered({
     code: DIAGNOSTIC_CODES.inactivePlanHolder,

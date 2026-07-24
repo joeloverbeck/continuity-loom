@@ -126,9 +126,10 @@ Validation focus tags:
 
 Expected blockers:
 
-- Two current holders.
 - Object transferred without body positions or plausible action.
 - Directive requires character to use an object they cannot see/access.
+
+`owner ≠ carried_by` is a legitimate possession state (owner by right, holder by custody), not a contradiction, and is not blocked. A genuine possession contradiction — `carried_by` disagreeing with CURRENT AUTHORITATIVE STATE possessions (an object changing hands without an action) — is a deferred follow-up, not a v1 blocker.
 
 Prompt-quality risk:
 

@@ -45,7 +45,6 @@ FOUNDATIONS §11 taxonomy clauses used below:
 | `onstage-offstage-entity-overlap` | blocker | applies | Current authoritative state places the same entity both onstage and offstage-pressuring. | §11.3 | — |
 | `onstage-entity-status-contradiction` | blocker | applies | An onstage entity's selected status places it offstage, concealed, or at a different record-id current location. | §11.3 | — |
 | `entity-current-location-contradiction` | blocker | applies | Selected records place one entity in more than one current location. | §11.3 | Case 14 |
-| `object-current-holder-contradiction` | blocker | applies | Selected object has two different current holders. | §11.3 | Case 16 |
 | `object-location-holder-incoherence` | blocker | applies | Object location says carried-by-holder while carried_by is none. | §11.3 | — |
 | `relationship-self-reference` | blocker | applies | A selected relationship record uses the same endpoint for from and to. | §11.3 | — |
 | `inactive-plan-holder` | blocker | applies | Active plan is held by an entity that currently cannot plausibly act. | §11.3 | Case 17 |

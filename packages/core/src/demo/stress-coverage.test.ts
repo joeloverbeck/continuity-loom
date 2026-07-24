@@ -26,7 +26,6 @@ const MATRIX_DIAGNOSTIC_CODES = [
   DIAGNOSTIC_CODES.matrixLocationChangeIncomplete,
   DIAGNOSTIC_CODES.matrixViolenceOrInjuryIncomplete,
   DIAGNOSTIC_CODES.impossibleActionPhysicalContext,
-  DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
   DIAGNOSTIC_CODES.matrixObjectTransferIncomplete,
   DIAGNOSTIC_CODES.matrixObjectUseIncomplete,
   DIAGNOSTIC_CODES.offstageInterruptionMissingRoute,
@@ -82,6 +81,22 @@ describe("SPEC-013 stress coverage audit", () => {
     expect(second).toEqual(first);
   });
 
+  it("does not block an OBJECT whose owner differs from its current holder", () => {
+    // Elin owns the sealed letter; Niko physically carries it on his person.
+    // owner ≠ carried_by is a legitimate possession state (borrowed, taken, held for
+    // safekeeping), not "two current holders": there is exactly one holder (carried_by).
+    const input = baseInput();
+    mutateRecord(input, demoRecordIds.sealedLetter, {
+      carried_by: demoRecordIds.nikoEntity,
+      current_location: "carried_by_holder"
+    });
+
+    const result = runValidation(snapshotFrom(input));
+
+    expect(result.blockers).toEqual([]);
+    expect(result.isBlocked).toBe(false);
+  });
+
   it.each([
     ["no accepted prose in prompts", DIAGNOSTIC_CODES.promptFacingProseContamination, contaminateHandoff],
     ["first segment empty-state correctness", DIAGNOSTIC_CODES.missingCurrentAuthoritativeState, removeCurrentState],
@@ -90,7 +105,6 @@ describe("SPEC-013 stress coverage audit", () => {
     ["active silent body presence", DIAGNOSTIC_CODES.matrixActiveSilentPresenceIncomplete, requireSilentWithoutPressure],
     ["POV and secrets separation", DIAGNOSTIC_CODES.hiddenTruthInPovKnowledge, leakHiddenSecretToPov],
     ["physical continuity", DIAGNOSTIC_CODES.matrixPhysicalInteractionIncomplete, removePhysicalLocks],
-    ["object use and transfer", DIAGNOSTIC_CODES.objectCurrentHolderContradiction, splitObjectHolder],
     ["offstage/institutional/nonhuman pressure", DIAGNOSTIC_CODES.offstageInterruptionMissingRoute, removeOffstageRoute],
     ["mature fiction envelope", DIAGNOSTIC_CODES.contentEnvelopeContradiction, contradictContentEnvelope],
     ["clocks/obligations/consequences", DIAGNOSTIC_CODES.matrixClockTickIncomplete, removeClockForTick],
@@ -189,10 +203,6 @@ function leakHiddenSecretToPov(input: BuildValidationSnapshotInput): void {
 
 function removePhysicalLocks(input: BuildValidationSnapshotInput): void {
   input.generationSession.current_authoritative_state!.current_locks = [];
-}
-
-function splitObjectHolder(input: BuildValidationSnapshotInput): void {
-  mutateRecord(input, demoRecordIds.sealedLetter, { carried_by: demoRecordIds.nikoEntity });
 }
 
 function removeOffstageRoute(input: BuildValidationSnapshotInput): void {

@@ -130,7 +130,7 @@ describe("ideation end-to-end capstone", () => {
 
     const contradictionApp = app();
     await createDemo(contradictionApp, "contradiction");
-    await makeLetterHolderContradiction(contradictionApp);
+    await makeLetterLocationHolderIncoherence(contradictionApp);
 
     const blockedIdeation = await contradictionApp.inject({
       method: "POST",
@@ -233,12 +233,14 @@ async function clearManualDirective(fastify: FastifyApp): Promise<void> {
   });
 }
 
-async function makeLetterHolderContradiction(fastify: FastifyApp): Promise<void> {
+async function makeLetterLocationHolderIncoherence(fastify: FastifyApp): Promise<void> {
+  // A hard object contradiction that survives the relaxed ideation gate: the letter's
+  // current_location claims it is carried by its holder while carried_by is none.
   const letter = await recordByLabel(fastify, "Sealed letter");
-  const niko = await recordByLabel(fastify, "Niko Bram");
   await updateRecord(fastify, letter, {
     ...objectPayload(letter.payload),
-    carried_by: niko.id
+    carried_by: "none",
+    current_location: "carried_by_holder"
   });
 }
 
