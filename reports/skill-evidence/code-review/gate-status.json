@@ -1,19 +1,32 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T10:19:34.160Z",
+  "generated_at": "2026-07-24T20:47:23.609Z",
   "target_content_hash": "2967265361ebe8d7d3d27aed4f89d32e7489548b4441dd562d0bf2619ddab3c7",
-  "qualifying_uses_on_current_hash": 14,
-  "open_incident_ids": [],
-  "candidate_clusters": [],
-  "state": "closed",
-  "authorized_workflow": null,
-  "authorization_reason": null,
-  "trigger_event_ids": [],
-  "threshold_session_id": null,
+  "qualifying_uses_on_current_hash": 15,
+  "open_incident_ids": [
+    "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "cost",
+      "open_event_ids": [
+        "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "eligible_pending_cooldown",
+  "authorized_workflow": "skill-evolution",
+  "authorization_reason": "ten_use_unresolved",
+  "trigger_event_ids": [
+    "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
+  ],
+  "threshold_session_id": "019f9573-7d0b-7df0-be01-c73e7b97dc71",
   "not_before": null,
   "active_review_id": null,
   "last_completed_review_id": "rev_88e8ca8e-68c7-445a-8687-ac49872f2d35",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "4e6bc226-fedc-47fa-9d55-0e61894a5f52"
+  "derivation_session_id": "019f9573-7d0b-7df0-be01-c73e7b97dc71"
 }

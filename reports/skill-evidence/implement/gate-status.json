@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-07-24T20:34:48.176Z",
+  "target_content_hash": "877e856dc058ef9b54b4510c81701b2da094f7430f9e4c8827bad5599bb5d303",
+  "qualifying_uses_on_current_hash": 1,
+  "open_incident_ids": [
+    "evt_d28b5081-e520-4890-97da-31521b9a6c6e"
+  ],
+  "candidate_clusters": [
+    {
+      "symptom_key": "cost",
+      "open_event_ids": [
+        "evt_d28b5081-e520-4890-97da-31521b9a6c6e"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
+    }
+  ],
+  "state": "collecting",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
+  "not_before": null,
+  "active_review_id": null,
+  "last_completed_review_id": null,
+  "target_name": "implement",
+  "target_repo_relative_path": ".claude/skills/implement",
+  "derivation_session_id": "019f9573-7d0b-7df0-be01-c73e7b97dc71"
+}

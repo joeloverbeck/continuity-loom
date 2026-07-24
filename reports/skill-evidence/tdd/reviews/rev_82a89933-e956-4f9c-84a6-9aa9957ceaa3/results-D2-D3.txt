@@ -1,0 +1,26 @@
+OK   | T1 | current=reject candidate=accept | expected=accept-on-candidate | "passed 21 of 21; failed 0"
+OK   | T1 | current=reject candidate=reject | expected=reject-both | "passed; all matched files use Prettier code style"
+OK   | T2 | current=reject candidate=accept | expected=accept-on-candidate | "21 passed, 0 failed"
+OK   | T2 | current=reject candidate=accept | expected=accept-on-candidate | "3 passing, 0 failing"
+OK   | T2 | current=reject candidate=accept | expected=accept-on-candidate | "passed 21/21"
+OK   | T2 | current=accept candidate=accept | expected=accept-both | "passed; exit 0"
+OK   | T3 | current=reject candidate=reject | expected=reject-both | "focused tests passed"
+OK   | T3 | current=reject candidate=reject | expected=reject-both | "all good"
+OK   | T3 | current=reject candidate=reject | expected=reject-both | "tests were run"
+OK   | T3 | current=reject candidate=reject | expected=reject-both | "looks fine"
+OK   | T3 | current=reject candidate=reject | expected=reject-both | "passed"
+OK   | T4 | current=accept candidate=accept | expected=accept-both | "passed: 2 files and 5 tests; exit 0"
+OK   | T4 | current=accept candidate=accept | expected=accept-both | "passed: 1 file and 3 tests; exit 0"
+OK   | T4 | current=accept candidate=accept | expected=accept-both | "blocked because the proof server port was owned by an unrelated process"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "21 tests"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "exit code"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "<n> tests passed"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "not applicable"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "passed 0 of 0"
+OK   | T5 | current=reject candidate=reject | expected=reject-both | "passed 0/0; failed 0"
+
+D3 current message names accepted forms: false
+D3 candidate message names accepted forms: true
+D3 candidate keeps pinned substring: true
+
+MISMATCHES: 0

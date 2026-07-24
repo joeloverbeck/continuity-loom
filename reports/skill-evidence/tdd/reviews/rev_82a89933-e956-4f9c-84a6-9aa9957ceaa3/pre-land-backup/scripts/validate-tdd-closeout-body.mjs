@@ -347,22 +347,13 @@ export const validateTddCloseoutBody = (body, options = {}) => {
       if (!commandMatch || !isExecutableCommand(commandMatch[1])) {
         errors.push(`verification command ledger row ${row} must contain an exact executable command`);
       }
-      const hasObservedOutcome = /\b(?:passed|passing|failed|failing|blocked|unavailable|not applicable)\b/i.test(result);
-      const nonZeroCount = String.raw`\d*[1-9]\d*`;
-      const countedOutcome = "passed|passing|failed|failing";
+      const hasObservedOutcome = /\b(?:passed|failed|blocked|unavailable|not applicable)\b/i.test(result);
       const hasOutputDetail =
         /\bexit(?: code)?\s*-?\d+\b/i.test(result) ||
         /\b\d+\s+(?:tests?|files?|suites?|checks?|assertions?|errors?|warnings?|packages?|tasks?|snapshots?|rows?|bytes?)\b/i.test(result) ||
-        new RegExp(String.raw`\b${nonZeroCount}\s*(?:\/|\s+of\s+)\s*\d+\b`, "i").test(result) ||
-        new RegExp(String.raw`\b${nonZeroCount}\s+(?:${countedOutcome})\b`, "i").test(result) ||
-        new RegExp(String.raw`\b(?:${countedOutcome})\s+${nonZeroCount}\b`, "i").test(result) ||
         /\b(?:blocked|unavailable|not applicable)\b.+\bbecause\b/i.test(result);
       if (!hasObservedOutcome || !hasOutputDetail) {
-        errors.push(
-          `verification command ledger row ${row} must contain an output-derived result or count: an outcome word ` +
-            `(passed, failed, blocked, unavailable, not applicable) plus an observed count or exit code, such as ` +
-            `\`passed 21 of 21; failed 0\`, \`21 passed, 0 failed\`, \`passed: 5 tests\`, or \`passed; exit 0\``
-        );
+        errors.push(`verification command ledger row ${row} must contain an output-derived result or count`);
       }
       if (!/^[1-9]\d*$/.test(runCount)) {
         errors.push(`verification command ledger row ${row} run count must be a positive integer`);
