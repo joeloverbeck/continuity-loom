@@ -5,12 +5,6 @@ import { basename, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const CONTRACT_URL = new URL("../../skill-evidence-capture/scripts/evidence.mjs", import.meta.url);
-const ELIGIBILITY_STATES = new Set([
-  "eligible",
-  "eligible_pending_cooldown",
-  "quarantined_eligible",
-  "quarantined_pending_cooldown"
-]);
 const START_EVENT_TYPES = new Set(["review_started", "decontamination_started"]);
 
 let contractPromise;
@@ -201,7 +195,7 @@ function inspectStore({ api, root, storeDir, storeKey, sessionId, nowMs }) {
       sessionId,
       nowMs
     });
-    if (!isEvolutionReview && !ELIGIBILITY_STATES.has(underlying.state)) {
+    if (!isEvolutionReview && underlying.authorization_reason === null) {
       return { category: "omitted" };
     }
     return {
@@ -216,6 +210,7 @@ function inspectStore({ api, root, storeDir, storeKey, sessionId, nowMs }) {
         operator_workflow: started?.operator_workflow ?? null,
         risk_tier: started?.payload?.risk_tier ?? null,
         review_artifacts: `${toRepoPath(root, storeDir)}/reviews`,
+        threshold_session_id: underlying.threshold_session_id,
         quarantined: underlying.authorization_reason === "severe",
         authorization_reason:
           started?.payload?.authorizing_rule ?? underlying.authorization_reason ?? null
@@ -223,15 +218,20 @@ function inspectStore({ api, root, storeDir, storeKey, sessionId, nowMs }) {
     };
   }
 
-  if (!ELIGIBILITY_STATES.has(status.state)) return { category: "omitted" };
+  // A fired threshold is the whole eligibility question, and `authorization_reason` is set
+  // exactly when one fired. `status.state` must never gate this decision: it is derived
+  // relative to *this* deriving session, while the census predicts what a *different*
+  // destination session will derive, so a `*_pending_cooldown` state here says nothing
+  // about the destination. Route only on session-invariant facts.
+  if (status.authorization_reason === null) return { category: "omitted" };
 
   const timer = timerDetails(status, nowMs);
   const common = {
     store_key: storeKey,
     target_name: target.name,
     target_path: targetPath,
-    gate_state: status.state,
     authorization_reason: status.authorization_reason,
+    threshold_session_id: status.threshold_session_id,
     quarantined: quarantined(status),
     trigger_event_ids: status.trigger_event_ids
   };
@@ -349,7 +349,9 @@ export async function scanRepository({
     schema_version: 1,
     generated_at: new Date(nowMs).toISOString(),
     repository_root: repoRoot,
-    current_host_has_session_id: resolvedSessionId !== "unavailable",
+    // The one session-relative fact in the report: which session ran the census. Entry
+    // fields stay session-invariant so a destination session can trust them.
+    census_session_id: resolvedSessionId === "unavailable" ? null : resolvedSessionId,
     ready: [],
     blocked: [],
     indeterminate: [],
@@ -445,7 +447,7 @@ function quarantineLine(entry) {
     : null;
 }
 
-function renderReady(entry, timeZone) {
+function renderReady(entry, timeZone, censusSessionId) {
   const lines = [
     `### ${entry.target_path}${entry.quarantined ? " — QUARANTINED" : ""}`,
     "",
@@ -458,6 +460,11 @@ function renderReady(entry, timeZone) {
   } else {
     lines.push(
       `- Destination proof: The 12-hour clock proof already passed at ${formatLocal(entry.proof.not_before, timeZone)} (${timeZone}); ${entry.proof.not_before}. A destination session ID is not required.`
+    );
+  }
+  if (entry.threshold_session_id !== null && entry.threshold_session_id === censusSessionId) {
+    lines.push(
+      `- This census session recorded the threshold (\`${entry.threshold_session_id}\`), so it cannot be the destination; Skill Evolution would refuse here with \`refused_cooldown_or_same_session\`. The destination proof above still governs which session qualifies.`
     );
   }
   const quarantine = quarantineLine(entry);
@@ -545,7 +552,11 @@ export function renderReport(
   }
   if (report.ready.length) {
     lines.push("", "## Ready to evolve", "");
-    lines.push(report.ready.map((entry) => renderReady(entry, timeZone)).join("\n\n"));
+    lines.push(
+      report.ready
+        .map((entry) => renderReady(entry, timeZone, report.census_session_id))
+        .join("\n\n")
+    );
   }
   if (report.blocked.length) {
     lines.push("", "## Eligible but blocked", "");
