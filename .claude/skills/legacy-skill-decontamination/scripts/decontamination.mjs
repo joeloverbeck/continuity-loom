@@ -31,8 +31,8 @@ import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   Refusal, appendEventLine, deriveGate, detectRoot, diffDirs, hashSkillDir,
-  readEventsFile, repoHead, resolveTargetDir, skillKey, syncDir, validateEvent,
-  withLock, writeGateStatus,
+  readEventsFile, repoHead, resolveTargetDir, resolveTopLevelSessionId, skillKey,
+  syncDir, validateEvent, withLock, writeGateStatus,
 } from '../../skill-evidence-capture/scripts/evidence.mjs';
 
 const OPERATOR = 'legacy-skill-decontamination';
@@ -79,7 +79,7 @@ function targetContext(args) {
   const repoRelativePath = rel.startsWith('..') ? targetReal : rel.split(sep).join('/');
   const target = { name: targetReal.split(sep).pop(), repo_relative_path: repoRelativePath };
   const evidenceDir = join(root, 'reports', 'skill-evidence', key);
-  const sessionId = (args.sessionId ?? process.env.CLAUDE_CODE_SESSION_ID) || 'unavailable';
+  const sessionId = resolveTopLevelSessionId({ explicit: args.sessionId });
   return { root, targetReal, target, evidenceDir, sessionId };
 }
 
@@ -489,8 +489,9 @@ Bases: owner-confirmed (standing owner confirmation of repeated old-audit rounds
 audit-history (--basis-note describes the recovered modification history),
 imported (--basis-note describes the equivalent accretion provenance),
 routed-review (--basis-ref cites the routing review_disposition event).
-Defaults: --root = git toplevel; --session-id = $CLAUDE_CODE_SESSION_ID (else "unavailable").
-Evidence lives under <root>/reports/skill-evidence/<skill-key>/; run artifacts under
+Defaults: --root = git toplevel; --session-id defaults to the current host's top-level-session
+identity ($CLAUDE_CODE_SESSION_ID or $CODEX_THREAD_ID), else "unavailable"; two conflicting host
+identities at once fail closed. Evidence lives under <root>/reports/skill-evidence/<skill-key>/; run artifacts under
 its decontamination/<run-id>/ directory. All writes are lock-protected, append-only,
 and re-derive gate-status.json. Exit codes: 0 ok; 3 refused, nothing mutated; 1 unsafe failure.
 `;

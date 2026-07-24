@@ -142,19 +142,39 @@ function reviewStarted(target, triggerIds, at = NOW - HOUR) {
   };
 }
 
-test("session-id eligibility supplies a command and names the destination constraint", async (t) => {
+test("a session-ID threshold on a no-ID host is blocked with no command (fail closed)", async (t) => {
   const fx = fixture(t);
-  const target = fx.skill("session-ready");
+  const target = fx.skill("session-threshold");
   fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
 
   const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "unavailable" });
 
   assert.equal(report.summary.stores_scanned, 1);
+  assert.equal(report.ready.length, 0);
+  assert.equal(report.blocked.length, 1);
+  assert.equal(report.blocked[0].kind, "session_host_required");
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.match(rendered, /session-ID-capable host/i);
+  assert.match(rendered, /waiting will not help/i);
+  assert.doesNotMatch(rendered, /\$skill-evolution/);
+});
+
+test("a session-ID threshold on a session-ID-capable host is ready with a command", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("session-ready");
+  fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
+
+  // Any supported host identity (here a Codex thread) that differs from the threshold session.
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "codex-thread-x" });
+
+  assert.equal(report.summary.stores_scanned, 1);
   assert.equal(report.ready.length, 1);
   assert.equal(report.ready[0].proof.type, "different_session");
   assert.equal(report.ready[0].command, '$skill-evolution ".claude/skills/session-ready"');
-  assert.match(renderReport(report, { timeZone: "UTC" }), /session-ID-capable fresh session/);
-  assert.match(renderReport(report, { timeZone: "UTC" }), /waiting will not help/i);
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.match(rendered, /differs from the threshold session/i);
+  // Terminology is host-neutral: it must not imply Claude Code is the only capable host.
+  assert.doesNotMatch(rendered, /CLAUDE_CODE_SESSION_ID/);
 });
 
 test("an unelapsed clock gate is blocked with an exact countdown and timestamps", async (t) => {
@@ -217,7 +237,9 @@ test("quarantine remains visible for both ready and timer-blocked severe inciden
     })
   ]);
 
-  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "unavailable" });
+  // The session-ID (ready) severe threshold needs a session-ID-capable host to be ready;
+  // the unavailable-session (waiting) one is on the 12-hour clock regardless of host.
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
 
   assert.equal(report.ready[0].quarantined, true);
   assert.equal(report.blocked[0].quarantined, true);
@@ -393,7 +415,8 @@ test("target names are derived from evidence rather than report-directory keys",
   const target = fx.skill("colliding-name");
   fx.store("colliding-name-deadbeef", target, frictionThreshold(target, NOW - HOUR));
 
-  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "unavailable" });
+  // A session-ID threshold is ready only from a session-ID-capable host.
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
 
   assert.equal(report.ready[0].target_name, basename(target.dir));
   assert.equal(report.ready[0].target_path, ".claude/skills/colliding-name");
@@ -402,12 +425,19 @@ test("target names are derived from evidence rather than report-directory keys",
 test("the copied skill runs from another repository with only its sibling contract", async (t) => {
   const fx = fixture(t);
   const target = fx.skill("portable-target");
-  fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
+  // A clock-elapsed threshold emits a command on any host, so portability is proven
+  // independently of the current host's top-level-session identity.
+  fx.store(
+    target.name,
+    target,
+    frictionThreshold(target, NOW - 13 * HOUR, ["unavailable", "unavailable", "unavailable"])
+  );
   const skillsDir = join(fx.root, ".claude", "skills");
   cpSync(STATUS_SKILL, join(skillsDir, "skill-evolution-status"), { recursive: true });
   cpSync(CAPTURE_SKILL, join(skillsDir, "skill-evidence-capture"), { recursive: true });
   const env = { ...process.env };
   delete env.CLAUDE_CODE_SESSION_ID;
+  delete env.CODEX_THREAD_ID;
 
   const result = spawnSync(
     process.execPath,
@@ -418,4 +448,26 @@ test("the copied skill runs from another repository with only its sibling contra
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Scanned 1 evidence store read-only/);
   assert.match(result.stdout, /\$skill-evolution ".claude\/skills\/portable-target"/);
+});
+
+test("a session-ID threshold is command-ready end-to-end from a Codex host", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("codex-host-target");
+  fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
+  const skillsDir = join(fx.root, ".claude", "skills");
+  cpSync(STATUS_SKILL, join(skillsDir, "skill-evolution-status"), { recursive: true });
+  cpSync(CAPTURE_SKILL, join(skillsDir, "skill-evidence-capture"), { recursive: true });
+  // Codex host identity, distinct from the threshold session, with no Claude Code identity.
+  const env = { ...process.env, CODEX_THREAD_ID: "codex-thread-run" };
+  delete env.CLAUDE_CODE_SESSION_ID;
+
+  const result = spawnSync(
+    process.execPath,
+    [join(skillsDir, "skill-evolution-status", "scripts", "status.mjs")],
+    { cwd: fx.root, encoding: "utf8", env }
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /## Ready to evolve/);
+  assert.match(result.stdout, /\$skill-evolution ".claude\/skills\/codex-host-target"/);
 });
