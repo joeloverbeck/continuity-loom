@@ -632,7 +632,7 @@ for (const match of body.matchAll(/<[^>\n]{1,120}>/g)) {
 const parsedAuditRows = parseAcceptanceAuditRows(body);
 const statusRows = parsedAuditRows.map((row) => row.cells);
 const circularEvidenceReference = /\b(?:exact named (?:items?|atoms?|surfaces?) in (?:this|the) (?:criterion|checkbox|requirement)|(?:criterion|checkbox|requirement) (?:above|as written|itself)|(?:all|every) (?:named|listed) (?:items?|atoms?|surfaces?))\b/i;
-const concreteProofAnchor = /(?:https?:\/\/\S+|#\d+\b|\b(?:pnpm|npm|npx|node|cargo|gh|curl|bash)\s+[^;]+|(?:^|[\s`(])\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+|\b(?:[A-Za-z0-9_.-]+\/)+[A-Za-z0-9_.-]+\b|\b[A-Za-z0-9_.-]+\.(?:md|json|html|sql|sqlite|wasm|[cm]?[jt]sx?)\b)/i;
+const concreteProofAnchor = /(?:https?:\/\/\S+|#\d+\b|\b(?:pnpm|npm|npx|node|cargo|gh|curl|bash)\s+[^;]+|(?:^|[\s`(])\/[A-Za-z0-9._~!$&'()*+,;=:@%/-]+|\b(?:[A-Za-z0-9_.-]+\/)+[A-Za-z0-9_.-]+\b|\b[A-Za-z0-9_.-]+\.(?:test|spec)\.[cm]?[jt]sx?\b|\b[A-Za-z0-9_.-]+\.(?:md|json|html|sql|sqlite|wasm)\b)/i;
 
 const evidenceField = (evidence, label, nextLabels) => {
   const next = nextLabels.map((nextLabel) => nextLabel.replace(" ", "\\s+")).join("|");
@@ -653,12 +653,8 @@ for (const cells of statusRows) {
         errors.push(`satisfied audit row Evidence is missing ${label} | ${cells.join(" | ")} |`);
       }
     }
-    const citedLiteral = /`[^`\n]*`|"[^"\n]*"|“[^”\n]*”/g;
-    const unresolvedValue = evidence.replace(citedLiteral, " ").match(/\b(?:TODO|TBD|pending|unknown)\b/i);
-    if (unresolvedValue) {
-      errors.push(
-        `satisfied audit row Evidence contains an unresolved value "${unresolvedValue[0]}"; put a literal identifier containing that word in backticks or quotation marks: | ${cells.join(" | ")} |`
-      );
+    if (/\b(?:TODO|TBD|pending|unknown)\b/i.test(evidence)) {
+      errors.push(`satisfied audit row Evidence contains an unresolved value: | ${cells.join(" | ")} |`);
     }
     for (const label of ["atoms", "proof surfaces", "sequence"]) {
       const emptyLabel = new RegExp(`${label}:\\s*(?:;|$)`, "i");

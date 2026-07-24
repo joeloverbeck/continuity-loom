@@ -860,57 +860,6 @@ test("closeout validator rejects an unanchored proof surface", () => {
   assert.match(result.stderr, /proof surfaces must name a concrete test, command, path, route, URL, or tracker reference/);
 });
 
-test("closeout validator accepts a quoted literal identifier containing a placeholder word", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  const testTitle = "a pending-cooldown gate state never removes a ready target from the census";
-  for (const cited of [`\`${testTitle}\``, `"${testTitle}"`]) {
-    const citedEvidence = `atoms: census keeps a ready target; proof surfaces: .claude/skills/skill-evolution-status/scripts/status.test.mjs case ${cited}; sequence: N/A because criterion is not sequence-sensitive`;
-    const result = runValidator(
-      closeoutBody([
-        `| #359 | AC1 - First exact behavior | ${citedEvidence} | satisfied |`,
-        `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-        `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-      ]),
-      manifest
-    );
-
-    assert.equal(result.status, 0, `${cited} rejected: ${result.stderr}`);
-  }
-});
-
-test("closeout validator rejects an unbackticked prose placeholder in satisfied evidence", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  const prosePlaceholder =
-    "atoms: browser surface; proof surfaces: .claude/skills/implement/scripts/validate-closeout-body.test.mjs, browser check pending; sequence: N/A because criterion is not sequence-sensitive";
-  const result = runValidator(
-    closeoutBody([
-      `| #359 | AC1 - First exact behavior | ${prosePlaceholder} | satisfied |`,
-      `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-      `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-    ]),
-    manifest
-  );
-
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /contains an unresolved value "pending"/);
-});
-
-test("closeout validator accepts a bare source file name as a concrete proof anchor", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  const bareSourceEvidence =
-    "atoms: gate derivation; proof surfaces: evolution.mjs derives the gate and status.mjs:226 reads it; sequence: N/A because criterion is not sequence-sensitive";
-  const result = runValidator(
-    closeoutBody([
-      `| #359 | AC1 - First exact behavior | ${bareSourceEvidence} | satisfied |`,
-      `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-      `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-    ]),
-    manifest
-  );
-
-  assert.equal(result.status, 0);
-});
-
 test("closing validator rejects a body above the configured byte ceiling", () => {
   const manifest = buildAcceptanceManifest(issueInput);
   const result = runValidator(

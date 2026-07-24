@@ -126,7 +126,7 @@ Long parent rollup, sibling-issue rollup, or child-family audit bodies must incl
 |---|---|---|---|
 | #N | AC1 - exact criterion | atoms: authoritative atoms; proof surfaces: concrete test path, command, route, URL, or tracker reference for each atom; sequence: ordered proof / N/A because criterion is not sequence-sensitive | satisfied / blocked / not done |
 
-The `atoms:` and `proof surfaces:` values must stand on their own. Do not point back to “this criterion,” “the criterion above,” or “all named items.” Every satisfied `proof surfaces:` value needs at least one concrete anchor such as a source or test file name, verification command, API/browser route, documentation path, URL, or tracker reference. In a satisfied row, put a literal identifier that contains `TODO`, `TBD`, `pending`, or `unknown` — a test title, state name, or flag — in backticks or quotation marks so it reads as a citation rather than an unresolved value; never rename a repository artifact to satisfy this validator.
+The `atoms:` and `proof surfaces:` values must stand on their own. Do not point back to “this criterion,” “the criterion above,” or “all named items.” Every satisfied `proof surfaces:` value needs at least one concrete anchor such as a test file, verification command, API/browser route, documentation path, URL, or tracker reference.
 
 For parent PRD rollups, including a single child plus parent PRD closeout, 4+ child issues, and small child families that choose a parent rollup as the durable sink, start from this body shape unless the issue set needs a richer audit:
 

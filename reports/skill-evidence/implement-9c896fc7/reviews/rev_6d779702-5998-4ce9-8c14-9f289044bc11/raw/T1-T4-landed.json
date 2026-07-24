@@ -1,0 +1,62 @@
+{
+  "T1": {
+    "exit": 0,
+    "unresolved": false,
+    "anchor": false,
+    "circular": false
+  },
+  "T1b": {
+    "exit": 0,
+    "unresolved": false,
+    "anchor": false,
+    "circular": false
+  },
+  "T2": {
+    "exit": 0,
+    "unresolved": false,
+    "anchor": false,
+    "circular": false
+  },
+  "T3a": {
+    "exit": 1,
+    "unresolved": true,
+    "anchor": true,
+    "circular": false
+  },
+  "T3b": {
+    "exit": 1,
+    "unresolved": true,
+    "anchor": false,
+    "circular": false
+  },
+  "T3c": {
+    "exit": 1,
+    "unresolved": true,
+    "anchor": false,
+    "circular": false
+  },
+  "T3d": {
+    "exit": 1,
+    "unresolved": true,
+    "anchor": false,
+    "circular": false
+  },
+  "T4a": {
+    "exit": 1,
+    "unresolved": false,
+    "anchor": true,
+    "circular": false
+  },
+  "T4b": {
+    "exit": 1,
+    "unresolved": false,
+    "anchor": true,
+    "circular": false
+  },
+  "T4c": {
+    "exit": 1,
+    "unresolved": false,
+    "anchor": true,
+    "circular": true
+  }
+}

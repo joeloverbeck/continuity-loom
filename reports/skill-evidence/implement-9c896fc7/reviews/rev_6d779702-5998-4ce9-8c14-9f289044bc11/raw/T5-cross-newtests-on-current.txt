@@ -1,0 +1,122 @@
+✔ buildAcceptanceManifest preserves source order and adds Principles (1.488521ms)
+✔ buildAcceptanceManifest keeps an empty Principles heading as a required check (0.166979ms)
+✔ buildAcceptanceManifest expands parent PRD sections and individual user stories (3.519764ms)
+✔ selectAcceptanceManifest emits deterministic issue and check subsets (0.565268ms)
+✔ manifest CLI writes JSON and audit scaffold from saved issue output (20.379143ms)
+✔ manifest CLI writes a selected check subset and matching audit scaffold (16.9842ms)
+✔ manifest CLI projects selected rows from one completed full audit (37.354316ms)
+✔ closeout validator accepts exact one-to-one manifest coverage (25.129787ms)
+✔ closing validator requires a live expected final SHA (19.996858ms)
+✔ closing validator compares every Final SHA and reviewed HEAD SHA with live HEAD (50.673169ms)
+✔ closing validator requires final-tree verification ledger rows (80.280847ms)
+✔ emit-preflight prints the exact validated preflight block and gate line (25.831189ms)
+✔ ordinary closing validation warns that it is not mutation-ready (22.833518ms)
+✔ mutation-ready validation requires and confirms preflight emission (43.924645ms)
+✔ final-summary emission derives accepted residual count, axis, and required wording (21.851166ms)
+✔ final-summary emission reads accepted residuals from the structured review ledger (24.841576ms)
+✔ final-summary emission does not double-count residuals shared by the finding ledger and structured records (27.625443ms)
+✔ linked audit chunks validate exact rows without repeating the shared evidence core (44.22621ms)
+✔ split-core validation distinguishes pre-index truth from the final concrete URL index (269.18751ms)
+✔ audit-only validator accepts a review-ready audit without closeout fields (25.942994ms)
+✔ audit-only validator accepts the exact ideation prompt tag from a manifest criterion (22.113269ms)
+✔ audit-only validator permits truthful blocked rows until review entry (45.228025ms)
+✔ audit-only mode requires a manifest and rejects closeout flags (38.347465ms)
+✔ closeout validator rejects missing manifest coverage (25.120448ms)
+✔ closeout validator rejects a matching ID with substituted criterion text (21.869431ms)
+✔ closeout validator rejects a matching ID with a descriptive criterion suffix (23.304376ms)
+✔ closeout validator rejects incomplete satisfied-row evidence (20.827407ms)
+✔ closeout validator rejects unresolved satisfied-row evidence (23.223139ms)
+✔ closeout validator rejects circular satisfied-row evidence (23.949076ms)
+✔ closeout validator rejects an unanchored proof surface (24.076437ms)
+✖ closeout validator accepts a quoted literal identifier containing a placeholder word (24.792114ms)
+✖ closeout validator rejects an unbackticked prose placeholder in satisfied evidence (22.78947ms)
+✖ closeout validator accepts a bare source file name as a concrete proof anchor (32.363697ms)
+✔ closing validator rejects a body above the configured byte ceiling (20.859061ms)
+✔ closeout validator rejects a superseded inventory without a no-hit sweep (22.966126ms)
+✔ closeout validator accepts terminal punctuation on an all-none superseded inventory (25.765576ms)
+✔ closeout validator requires the cross-validator-safe superseded sweep (65.492262ms)
+✔ closeout validator compares backend currentness commits with Final SHA (64.803175ms)
+✔ closeout validator rejects unresolved current evidence identities (25.092497ms)
+✔ closing validator rejects a local staging path in publishable sink fields (23.373003ms)
+✔ closing validator permits local fixture paths outside publishable sink fields (22.811947ms)
+✔ closing validator accepts a complete authority-sensitive withheld fixture identity (23.546708ms)
+✔ closing validator rejects an incomplete withheld fixture identity (22.211623ms)
+✔ normal-review template and validator matrix use the normal contract (0.407495ms)
+✔ implementation guidance carries the audited staging, exactness, and sibling contracts (0.91787ms)
+✔ documented normal-review fields satisfy the normal-review validator (21.061916ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 43
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1495.088524
+
+✖ failing tests:
+
+test at ../../../../tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:863:1
+✖ closeout validator accepts a quoted literal identifier containing a placeholder word (24.792114ms)
+  AssertionError [ERR_ASSERTION]: `a pending-cooldown gate state never removes a ready target from the census` rejected: Closeout body validation failed for /tmp/implement-closeout-test-LA9M5R/body.md:
+  - satisfied audit row Evidence contains an unresolved value: | #359 | AC1 - First exact behavior | atoms: census keeps a ready target; proof surfaces: .claude/skills/skill-evolution-status/scripts/status.test.mjs case `a pending-cooldown gate state never removes a ready target from the census`; sequence: N/A because criterion is not sequence-sensitive | satisfied |
+  
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:877:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../../tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:881:1
+✖ closeout validator rejects an unbackticked prose placeholder in satisfied evidence (22.78947ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /contains an unresolved value "pending"/. Input:
+  
+  'Closeout body validation failed for /tmp/implement-closeout-test-6K6e3w/body.md:\n' +
+    '- satisfied audit row Evidence contains an unresolved value: | #359 | AC1 - First exact behavior | atoms: browser surface; proof surfaces: .claude/skills/implement/scripts/validate-closeout-body.test.mjs, browser check pending; sequence: N/A because criterion is not sequence-sensitive | satisfied |\n'
+  
+      at TestContext.<anonymous> (file:///tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:895:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Closeout body validation failed for /tmp/implement-closeout-test-6K6e3w/body.md:\n- satisfied audit row Evidence contains an unresolved value: | #359 | AC1 - First exact behavior | atoms: browser surface; proof surfaces: .claude/skills/implement/scripts/validate-closeout-body.test.mjs, browser check pending; sequence: N/A because criterion is not sequence-sensitive | satisfied |\n',
+    expected: /contains an unresolved value "pending"/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at ../../../../tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:898:1
+✖ closeout validator accepts a bare source file name as a concrete proof anchor (32.363697ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/e4489434-3116-4afe-bdb0-128ee8195fb5/scratchpad/t5/cross/.claude/skills/implement/scripts/validate-closeout-body.test.mjs:911:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

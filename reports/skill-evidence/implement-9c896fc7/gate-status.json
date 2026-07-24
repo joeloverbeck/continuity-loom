@@ -1,41 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T10:18:15.923Z",
-  "target_content_hash": "b4857a8635d28a746cbb42f33a3713462b846d0591a71398b8eeabe4129e2f59",
-  "qualifying_uses_on_current_hash": 23,
-  "open_incident_ids": [
-    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667",
-    "evt_3d45297f-111b-453c-844a-3788424240b2"
-  ],
-  "candidate_clusters": [
-    {
-      "symptom_key": "execution",
-      "open_event_ids": [
-        "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
-      ],
-      "independent_incidents": 1,
-      "max_severity": "friction"
-    },
-    {
-      "symptom_key": "tool-compatibility",
-      "open_event_ids": [
-        "evt_3d45297f-111b-453c-844a-3788424240b2"
-      ],
-      "independent_incidents": 1,
-      "max_severity": "friction"
-    }
-  ],
-  "state": "eligible",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "ten_use_unresolved",
-  "trigger_event_ids": [
-    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
-  ],
-  "threshold_session_id": "dc2cc49b-f78d-47b8-bcea-9a42e6900391",
+  "generated_at": "2026-07-24T10:56:33.626Z",
+  "target_content_hash": "021824fa09e12a131cc5877f3f4a376eca88dac93fa59e7befeac039781a6760",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "rev_347bb52c-47bc-46b5-90b8-796611bc92d2",
+  "last_completed_review_id": "rev_6d779702-5998-4ce9-8c14-9f289044bc11",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "4e6bc226-fedc-47fa-9d55-0e61894a5f52"
+  "derivation_session_id": "e4489434-3116-4afe-bdb0-128ee8195fb5"
 }
