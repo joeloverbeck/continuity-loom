@@ -18,7 +18,6 @@ const danglingId = "019b0298-5c00-7000-8000-000000000999";
 describe("validation stress-suite mapping", () => {
   it.each([
     ["two current locations", DIAGNOSTIC_CODES.entityCurrentLocationContradiction, twoLocations],
-    ["two object holders", DIAGNOSTIC_CODES.objectCurrentHolderContradiction, twoObjectHolders],
     ["secret leakage", DIAGNOSTIC_CODES.secretRevealContradiction, secretLeakage],
     ["impossible physical action", DIAGNOSTIC_CODES.impossibleActionPhysicalContext, impossiblePhysicalAction],
     ["non-local directive", DIAGNOSTIC_CODES.localProseScopeViolation, nonLocalDirective],
@@ -175,19 +174,6 @@ function twoLocations(input: BuildValidationSnapshotInput): void {
   input.records = [
     entityStatus("019b0298-5c00-7000-8000-000000000101", "019b0298-5c00-7000-8000-000000000201"),
     entityStatus("019b0298-5c00-7000-8000-000000000102", "019b0298-5c00-7000-8000-000000000202")
-  ];
-}
-
-function twoObjectHolders(input: BuildValidationSnapshotInput): void {
-  input.records = [
-    {
-      id: "019b0298-5c00-7000-8000-000000000103",
-      type: "OBJECT",
-      payload: {
-        owner: "019b0298-5c00-7000-8000-000000000301",
-        carried_by: "019b0298-5c00-7000-8000-000000000302"
-      }
-    }
   ];
 }
 

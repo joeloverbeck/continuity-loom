@@ -103,23 +103,6 @@ describe("universal blocker validation", () => {
       }
     ],
     [
-      "one object with two holders",
-      DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
-      (input: BuildValidationSnapshotInput) => {
-        input.records = [
-          ...input.records,
-          {
-            id: recordA,
-            type: "OBJECT",
-            payload: {
-              owner: povId,
-              carried_by: entityId
-            }
-          }
-        ];
-      }
-    ],
-    [
       "active plan held by unable entity",
       DIAGNOSTIC_CODES.inactivePlanHolder,
       (input: BuildValidationSnapshotInput) => {
@@ -280,19 +263,6 @@ describe("universal blocker validation", () => {
         affected: [{ recordId: entityId, field: "ENTITY STATUS.location" }],
         message: "Selected records place one entity in more than one current location.",
         whyItMatters: "A character or entity cannot be physically current in two different places unless the records explicitly model a special means.",
-        suggestedActions: ["revise", "remove", "deselect"]
-      }
-    },
-    {
-      name: "object holder conflict",
-      code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
-      mutate: (input: BuildValidationSnapshotInput) => {
-        input.records = [...input.records, { id: recordA, type: "OBJECT", payload: { owner: povId, carried_by: entityId } }];
-      },
-      expected: {
-        affected: [{ recordId: recordA, field: "OBJECT.owner/carried_by" }],
-        message: "Selected object has two different current holders.",
-        whyItMatters: "Object possession must be deterministic before the prompt can render use, transfer, loss, or physical action.",
         suggestedActions: ["revise", "remove", "deselect"]
       }
     },
@@ -694,19 +664,14 @@ describe("universal blocker validation", () => {
     ["carrier unknown", { owner: povId, carried_by: "unknown" }],
     ["same holder", { owner: povId, carried_by: povId }],
     ["missing owner", { carried_by: entityId }],
-    ["missing carrier", { owner: povId }]
-  ])("does not block object holder state when %s", (_name, payload) => {
+    ["missing carrier", { owner: povId }],
+    ["owner differs from current holder", { owner: povId, carried_by: entityId }],
+    ["owner differs from holder while on the holder", { owner: povId, carried_by: entityId, current_location: "carried_by_holder" }]
+  ])("does not block object owner/holder state when %s (owner ≠ carried_by is legitimate possession, not two holders)", (_name, payload) => {
     const input = cleanInput();
     input.records = [...input.records, { id: recordA, type: "OBJECT", payload }];
 
-    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
-  });
-
-  it("does not inspect non-object records for owner and carrier conflicts", () => {
-    const input = cleanInput();
-    input.records = [...input.records, { id: recordA, type: "FACT", payload: { owner: povId, carried_by: entityId } }];
-
-    expect(blockerCodes(input)).not.toContain(DIAGNOSTIC_CODES.objectCurrentHolderContradiction);
+    expect(blockerCodes(input)).toEqual([]);
   });
 
   it.each([

@@ -1122,7 +1122,7 @@ Blockers prevent prompt generation and OpenRouter sending. Warnings remain app-s
 Blockers include:
 
 - two current locations for one entity;
-- two holders for one object;
+- one object physically held by two entities at once (`carried_by` is single-valued; `owner ≠ carried_by` is a legitimate possession state, not two holders);
 - active plan held by a dead, unconscious, captive, incapacitated, absent, or otherwise unable entity with no plausible means to act;
 - selected POV both lacks and has the same secret according to selected records;
 - manual directive requiring impossible movement, perception, timing, object possession, knowledge, or reveal;

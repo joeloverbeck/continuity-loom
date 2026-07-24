@@ -44,7 +44,6 @@ export const universalBlockerRules: readonly ValidationRule[] = Object.freeze([
   validateDirectiveStopAgreement,
   validateStateHandoffAgreement,
   validateEntityLocations,
-  validateObjectHolders,
   validateActivePlanHolders,
   validateSecretFirewall,
   validateOffstageInterruptionRoute,
@@ -158,31 +157,6 @@ function validateEntityLocations(snapshot: ValidationSnapshot): readonly Diagnos
         suggestedActions: ["revise", "remove", "deselect"]
       })
     ];
-  });
-}
-
-function validateObjectHolders(snapshot: ValidationSnapshot): readonly Diagnostic[] {
-  return snapshot.records.flatMap((record) => {
-    if (record.type !== "OBJECT") {
-      return [];
-    }
-
-    const payload = objectPayload(record);
-
-    if (isText(payload.owner) && isText(payload.carried_by) && !["none", "unknown"].includes(payload.owner) && !["none", "unknown"].includes(payload.carried_by) && payload.owner !== payload.carried_by) {
-      return [
-        blocker({
-          code: DIAGNOSTIC_CODES.objectCurrentHolderContradiction,
-          recordId: record.id,
-          field: "OBJECT.owner/carried_by",
-          message: "Selected object has two different current holders.",
-          whyItMatters: "Object possession must be deterministic before the prompt can render use, transfer, loss, or physical action.",
-          suggestedActions: ["revise", "remove", "deselect"]
-        })
-      ];
-    }
-
-    return [];
   });
 }
 

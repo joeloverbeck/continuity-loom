@@ -491,7 +491,7 @@ This blocker taxonomy defines when readiness blockers are legitimate. Readiness 
 Hard validation must include objective continuity contradictions and deterministically detectable prompt-safety gaps, including:
 
 - two current locations for the same entity;
-- two holders for the same object;
+- the same object physically held by two entities at once (a single object has at most one `carried_by`; `owner ≠ carried_by` is a legitimate possession state — owner by right, holder by custody — not two holders);
 - selected POV lacks required knowledge constraints;
 - manual directive requires impossible knowledge, perception, movement, timing, or physical action;
 - current authoritative state contradicts immediate handoff;
