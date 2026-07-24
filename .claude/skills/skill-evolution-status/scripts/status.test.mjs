@@ -14,7 +14,7 @@ import { basename, dirname, join, relative, sep } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { hashSkillDir } from "../../skill-evidence-capture/scripts/evidence.mjs";
+import { deriveGate, hashSkillDir } from "../../skill-evidence-capture/scripts/evidence.mjs";
 import { renderReport, scanRepository } from "./status.mjs";
 
 const NOW = Date.parse("2026-07-21T12:00:00.000Z");
@@ -177,6 +177,151 @@ test("a session-ID threshold on a session-ID-capable host is ready with a comman
   assert.doesNotMatch(rendered, /CLAUDE_CODE_SESSION_ID/);
 });
 
+test("a census inside the threshold session stays ready and names the refusal it foresees", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("threshold-session-census");
+  fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
+
+  // The event completing the threshold carries session-c, so this census runs inside it.
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "session-c" });
+
+  assert.equal(report.ready.length, 1);
+  assert.equal(report.ready[0].threshold_session_id, "session-c");
+  assert.equal(
+    report.ready[0].command,
+    '$skill-evolution ".claude/skills/threshold-session-census"'
+  );
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.match(rendered, /## Ready to evolve/);
+  assert.match(rendered, /this census session recorded the threshold \(`session-c`\)/i);
+  assert.match(rendered, /cannot be the destination/i);
+  // The warning must not loosen the destination proof stated directly above it: a
+  // session-ID threshold still refuses a no-ID destination.
+  assert.doesNotMatch(rendered, /any other top-level session/i);
+});
+
+test("a quarantined census inside the threshold session renders quarantine and the warning", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("threshold-session-severe");
+  fx.store(target.name, target, [
+    useEvent(target, {
+      at: NOW - HOUR,
+      label: "severe-threshold-session",
+      outcome: "severe_incident",
+      session: "threshold-session",
+      symptom: "state"
+    })
+  ]);
+
+  const report = await scanRepository({
+    root: fx.root,
+    nowMs: NOW,
+    sessionId: "threshold-session"
+  });
+
+  assert.equal(report.ready.length, 1);
+  assert.equal(report.ready[0].quarantined, true);
+  assert.equal(report.ready[0].threshold_session_id, "threshold-session");
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.match(rendered, /Stop using this target/);
+  assert.match(rendered, /recorded the threshold \(`threshold-session`\)/i);
+  assert.match(rendered, /cannot be the destination/i);
+});
+
+test("a census outside the threshold session renders no threshold-session warning", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("other-session-census");
+  fx.store(target.name, target, frictionThreshold(target, NOW - HOUR));
+
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
+
+  assert.equal(report.ready.length, 1);
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.doesNotMatch(rendered, /recorded the threshold/i);
+  assert.doesNotMatch(rendered, /cannot be the destination/i);
+});
+
+test("an eligible_pending_cooldown gate state never removes a ready target from the census", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("pending-cooldown-ready");
+  const events = frictionThreshold(target, NOW - HOUR);
+  fx.store(target.name, target, events);
+
+  // Derived inside the threshold session, this store carries the exact state
+  // $skill-evolution refuses; readiness must come from session-invariant facts instead,
+  // because the destination session is a different one.
+  const derived = deriveGate({
+    events,
+    errors: [],
+    currentHash: target.hash,
+    target: { name: target.name, repo_relative_path: target.path },
+    sessionId: "session-c",
+    nowMs: NOW
+  });
+  assert.equal(derived.state, "eligible_pending_cooldown");
+
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "session-c" });
+
+  assert.equal(report.ready.length, 1);
+  assert.equal(report.summary.omitted_not_eligible, 0);
+});
+
+test("entries carry the session-invariant threshold identity and never a derived gate state", async (t) => {
+  const fx = fixture(t);
+  const ready = fx.skill("shape-ready");
+  fx.store(ready.name, ready, frictionThreshold(ready, NOW - HOUR));
+
+  const waiting = fx.skill("shape-timer");
+  fx.store(
+    waiting.name,
+    waiting,
+    frictionThreshold(waiting, NOW - 2 * HOUR, ["unavailable", "unavailable", "unavailable"])
+  );
+
+  const claimed = fx.skill("shape-claimed");
+  const triggers = frictionThreshold(claimed, NOW - 2 * HOUR);
+  fx.store(claimed.name, claimed, [
+    ...triggers,
+    reviewStarted(
+      claimed,
+      triggers.map((event) => event.event_id)
+    )
+  ]);
+
+  const corrupt = fx.skill("shape-corrupt");
+  const corruptDir = fx.store(corrupt.name, corrupt, frictionThreshold(corrupt, NOW - HOUR));
+  writeFileSync(
+    join(corruptDir, "events.jsonl"),
+    `${readFileSync(join(corruptDir, "events.jsonl"), "utf8")}not-json\n`
+  );
+
+  const report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
+
+  assert.equal(report.ready.length, 1);
+  assert.equal(report.blocked.length, 2);
+  assert.equal(report.indeterminate.length, 1);
+  for (const entry of [...report.ready, ...report.blocked, ...report.indeterminate]) {
+    assert.equal(
+      Object.hasOwn(entry, "gate_state"),
+      false,
+      `${entry.store_key} carries gate_state`
+    );
+  }
+  for (const entry of [...report.ready, ...report.blocked]) {
+    assert.equal(
+      Object.hasOwn(entry, "threshold_session_id"),
+      true,
+      `${entry.store_key} lacks threshold_session_id`
+    );
+  }
+  assert.equal(report.ready[0].threshold_session_id, "session-c");
+  assert.equal(report.blocked.find((entry) => entry.kind === "timer").threshold_session_id, null);
+  assert.equal(
+    report.blocked.find((entry) => entry.kind === "review_in_progress").threshold_session_id,
+    "session-c"
+  );
+});
+
 test("an unelapsed clock gate is blocked with an exact countdown and timestamps", async (t) => {
   const fx = fixture(t);
   const target = fx.skill("timer-waiting");
@@ -211,7 +356,11 @@ test("an elapsed clock gate is ready in either host family", async (t) => {
 
   assert.equal(report.ready.length, 1);
   assert.equal(report.ready[0].proof.type, "cooldown_elapsed");
-  assert.match(renderReport(report, { timeZone: "UTC" }), /clock proof already passed/);
+  const rendered = renderReport(report, { timeZone: "UTC" });
+  assert.match(rendered, /clock proof already passed/);
+  // A clock threshold has no session identity, so a no-ID census host must not be
+  // mistaken for it.
+  assert.doesNotMatch(rendered, /recorded the threshold/i);
 });
 
 test("quarantine remains visible for both ready and timer-blocked severe incidents", async (t) => {
