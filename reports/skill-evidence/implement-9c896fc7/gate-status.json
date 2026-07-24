@@ -1,10 +1,11 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T02:25:51.494Z",
+  "generated_at": "2026-07-24T10:18:15.923Z",
   "target_content_hash": "b4857a8635d28a746cbb42f33a3713462b846d0591a71398b8eeabe4129e2f59",
-  "qualifying_uses_on_current_hash": 21,
+  "qualifying_uses_on_current_hash": 23,
   "open_incident_ids": [
-    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667"
+    "evt_482eb48e-9bb2-43e2-be3c-7fe9ec55b667",
+    "evt_3d45297f-111b-453c-844a-3788424240b2"
   ],
   "candidate_clusters": [
     {
@@ -14,9 +15,17 @@
       ],
       "independent_incidents": 1,
       "max_severity": "friction"
+    },
+    {
+      "symptom_key": "tool-compatibility",
+      "open_event_ids": [
+        "evt_3d45297f-111b-453c-844a-3788424240b2"
+      ],
+      "independent_incidents": 1,
+      "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
+  "state": "eligible",
   "authorized_workflow": "skill-evolution",
   "authorization_reason": "ten_use_unresolved",
   "trigger_event_ids": [
@@ -28,5 +37,5 @@
   "last_completed_review_id": "rev_347bb52c-47bc-46b5-90b8-796611bc92d2",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "dc2cc49b-f78d-47b8-bcea-9a42e6900391"
+  "derivation_session_id": "4e6bc226-fedc-47fa-9d55-0e61894a5f52"
 }
