@@ -29,10 +29,15 @@ only for an explicit Top P. Strict JSON Schema additionally requires
 `structured_outputs`; completion length accepts either advertised provider
 alias; tools and tool choice are requirements only when declared.
 
-Prompt inspection discloses a provider-request fingerprint and the exact model,
-temperature intent, optional Top P, and completion ceiling separately from
-prompt metadata. A changed model or sampling setting invalidates send
-eligibility even when prompt bytes are unchanged. Unknown capability data,
+Output policy selects exactly one global completion ceiling before request
+construction: Prose for Generate, and Assistance for Ideation, Record Hygiene,
+Cast Possibilities full analysis and target regeneration, and Accepted-Segment
+Change Review. Prompt inspection discloses the selected Prose or Assistance
+class and value with the exact model, temperature intent, optional Top P, and
+provider-request fingerprint separately from prompt metadata. A changed model,
+sampling setting, or applicable ceiling invalidates send eligibility even when
+prompt bytes are unchanged; changing only the unused ceiling does not alter the
+finalized request or fingerprint. Unknown capability data,
 known missing requirements, and post-admission transport failures have
 different manual recovery. No recovery mutates settings, refreshes, retries, or
 resends automatically.

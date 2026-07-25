@@ -84,6 +84,10 @@ describe("Accepted-Segment Change Review routes", () => {
     expect(response.consumedGuidance).toEqual(expect.arrayContaining([
       expect.objectContaining({ fieldPath: "manual_moment_directive.must_render[]", value: "Keep Mara guarded." })
     ]));
+    expect(response.providerRequest).toMatchObject({
+      completionCeilingClass: "assistance",
+      maxOutputTokens: 4096
+    });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
     expect(after).toEqual(before);
   });
@@ -197,7 +201,8 @@ describe("Accepted-Segment Change Review routes", () => {
     writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-4",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [
         {
           id: "anthropic/claude-sonnet-4",
@@ -230,7 +235,8 @@ describe("Accepted-Segment Change Review routes", () => {
     writeOpenRouterSettings({
       model: "vendor/uncached",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{ id: "vendor/uncached", name: "Uncached" }]
     });
     const candidate = app();
@@ -301,7 +307,8 @@ describe("Accepted-Segment Change Review routes", () => {
     writeOpenRouterSettings({
       model: "tiny/context",
       temperature: 0.1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 1024,
       cachedModels: [{
         id: "tiny/context",
         name: "Tiny Context",
@@ -372,7 +379,8 @@ function configureCompatibleModel(): void {
   writeOpenRouterSettings({
     model: "test/structured-output-capable",
     temperature: 0,
-    maxOutputTokens: 4096,
+    proseMaxOutputTokens: 1024,
+    assistanceMaxOutputTokens: 4096,
     cachedModels: [
       {
         id: "test/structured-output-capable",
@@ -469,7 +477,12 @@ interface CompileReviewResponse {
   disclosure: AcceptedSegmentChangeReviewDisclosure;
   outputSchema: { required: readonly string[] };
   consumedGuidance: readonly ConsumedGenerationGuidanceEntry[];
-  providerRequest: { requestFingerprint: string; contextLength?: number };
+  providerRequest: {
+    completionCeilingClass: "assistance";
+    maxOutputTokens: number;
+    requestFingerprint: string;
+    contextLength?: number;
+  };
 }
 
 function analyzePayload(compile: CompileReviewResponse): {

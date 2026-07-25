@@ -114,7 +114,13 @@ Ideate compiles and inspects locally before any provider request. The optional m
 
 Every request edit invalidates the prior preview synchronously. Valid edits start a local compile with a monotonically increasing ownership token. Only the latest attempt may publish prompt bytes and fingerprint; an older response can never restore a stale preview or send eligibility. The exact normalized escaped focus and current fingerprint must be visible in Prompt Inspector before send.
 
-`POST /api/ideate` carries the complete normalized request plus `expectedPromptFingerprint`. The server reparses the request, rebuilds current project state and readiness, compiles again, and compares the fingerprint before reading credentials or calling OpenRouter. Missing, malformed, over-limit, or stale input makes zero provider calls; a mismatch returns `409 stale-ideation-prompt`. A matching explicit action makes one provider call with the server-rebuilt prompt.
+`POST /api/ideate` carries the complete normalized request plus the inspected prompt and provider-request fingerprints. The server reparses the request, rebuilds current project state and readiness, compiles again, selects the global Assistance ceiling, rebuilds the finalized request, and compares both fingerprints before reading credentials or calling OpenRouter. Missing, malformed, over-limit, or stale input makes zero provider calls; a mismatch returns a stale prompt or provider-request refusal. Changing only the Prose ceiling leaves this request unchanged; changing the Assistance ceiling requires fresh inspection. A matching explicit action makes one provider call with the server-rebuilt prompt and selected Assistance ceiling.
+
+Prompt Inspector names the effective Assistance class and value. An Assistance
+value below 4,096 produces shared non-gating suitability guidance; the existing
+context advisory uses the same effective value. Neither warning derives a
+required output size, changes Settings, or sends, retries, or narrows the
+request automatically.
 
 Ideate requires a normal decoded completion before parsing. Provider errors,
 length limits, content-filter or tool termination, missing content, and

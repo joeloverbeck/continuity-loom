@@ -53,6 +53,7 @@ describe("IdeateView", () => {
     renderIdeate();
 
     const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
     expect(advisory.textContent).toContain("estimated at 7 tokens");
     expect(advisory.textContent).not.toContain("narrow the selected scope");
     expect(advisory.textContent).not.toContain("# Grounded Ideation Prompt");
@@ -639,6 +640,7 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1") {
       model: "openai/gpt-4.1",
       temperatureMode: "explicit" as const,
       temperature: 0.4,
+      completionCeilingClass: "assistance" as const,
       maxOutputTokens: 2200,
       requestFingerprint: fingerprint
     }

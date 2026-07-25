@@ -20,19 +20,25 @@ interface SettingsFormState {
   model: string;
   temperatureMode: "explicit" | "provider_default";
   temperature: string;
-  maxOutputTokens: string;
+  proseMaxOutputTokens: string;
+  assistanceMaxOutputTokens: string;
   topP: string;
   cachedModels: OpenRouterModelListEntry[];
 }
 
 export function SettingsSurface(): React.JSX.Element {
   const modelSelectId = useId();
+  const proseCeilingId = useId();
+  const proseCeilingDescriptionId = useId();
+  const assistanceCeilingId = useId();
+  const assistanceCeilingDescriptionId = useId();
   const [loadState, setLoadState] = useState<LoadState>({ status: "loading" });
   const [form, setForm] = useState<SettingsFormState>({
     model: "",
     temperatureMode: "explicit",
     temperature: "1",
-    maxOutputTokens: "1024",
+    proseMaxOutputTokens: "1024",
+    assistanceMaxOutputTokens: "4096",
     topP: "",
     cachedModels: []
   });
@@ -222,16 +228,44 @@ export function SettingsSurface(): React.JSX.Element {
                 />
               </label>
 
-              <label>
-                Max output tokens
+              <div>
+                <label htmlFor={proseCeilingId}>Prose ceiling</label>
                 <input
+                  id={proseCeilingId}
                   type="number"
                   min="1"
                   step="1"
-                  value={form.maxOutputTokens}
-                  onChange={(event) => setForm((current) => ({ ...current, maxOutputTokens: event.target.value }))}
+                  required
+                  aria-describedby={proseCeilingDescriptionId}
+                  value={form.proseMaxOutputTokens}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, proseMaxOutputTokens: event.target.value }))
+                  }
                 />
-              </label>
+                <p id={proseCeilingDescriptionId} className="muted">
+                  Upper bound for Generate prose. It is not a target or a guarantee of output length.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor={assistanceCeilingId}>Assistance ceiling</label>
+                <input
+                  id={assistanceCeilingId}
+                  type="number"
+                  min="1"
+                  step="1"
+                  required
+                  aria-describedby={assistanceCeilingDescriptionId}
+                  value={form.assistanceMaxOutputTokens}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, assistanceMaxOutputTokens: event.target.value }))
+                  }
+                />
+                <p id={assistanceCeilingDescriptionId} className="muted">
+                  Upper bound for Ideate, Record Hygiene, Cast Possibilities, and Change Review. 4096 is a starting
+                  allowance, not a guarantee of complete structured output.
+                </p>
+              </div>
 
               <label>
                 Top P
@@ -269,7 +303,8 @@ function toForm(settings: OpenRouterSettingsResponse): SettingsFormState {
     model: settings.model,
     temperatureMode: settings.temperatureMode,
     temperature: settings.temperature === undefined ? "" : String(settings.temperature),
-    maxOutputTokens: String(settings.maxOutputTokens),
+    proseMaxOutputTokens: String(settings.proseMaxOutputTokens),
+    assistanceMaxOutputTokens: String(settings.assistanceMaxOutputTokens),
     topP: settings.topP === undefined ? "" : String(settings.topP),
     cachedModels: settings.cachedModels ?? []
   };
@@ -280,7 +315,8 @@ function toPatch(form: SettingsFormState): OpenRouterSettingsPatch {
     model: form.model,
     temperatureMode: form.temperatureMode,
     ...(form.temperatureMode === "explicit" ? { temperature: Number(form.temperature) } : {}),
-    maxOutputTokens: Number(form.maxOutputTokens),
+    proseMaxOutputTokens: Number(form.proseMaxOutputTokens),
+    assistanceMaxOutputTokens: Number(form.assistanceMaxOutputTokens),
     topP: form.topP.trim() ? Number(form.topP) : null,
     cachedModels: form.cachedModels
   };

@@ -130,6 +130,10 @@ describe("Cast Possibilities routes", () => {
     expect(body.outputSchema).toMatchObject({
       required: ["contract", "characters"]
     });
+    expect(body.providerRequest).toMatchObject({
+      completionCeilingClass: "assistance",
+      maxOutputTokens: 4096
+    });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
@@ -399,7 +403,8 @@ describe("Cast Possibilities routes", () => {
     writeOpenRouterSettings({
       model: "test/no-cache",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: []
     });
     const stale = await candidate.inject({
@@ -441,7 +446,8 @@ describe("Cast Possibilities routes", () => {
     });
 
     writeOpenRouterSettings({
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "test/no-cache",
         name: "Too small",
@@ -508,7 +514,12 @@ async function preparedApp(): Promise<FastifyApp> {
 type CompileResponse = {
   prompt: string;
   disclosure: CastPossibilitiesDisclosure;
-  providerRequest: { requestFingerprint: string; contextLength?: number };
+  providerRequest: {
+    completionCeilingClass: "assistance";
+    maxOutputTokens: number;
+    requestFingerprint: string;
+    contextLength?: number;
+  };
 };
 
 function analyzePayload(compile: CompileResponse): {
@@ -538,7 +549,8 @@ function configureCompatibleModel(contextLength?: number): void {
   writeOpenRouterSettings({
     model: "test/structured-output-capable",
     temperature: 0,
-    maxOutputTokens: 4096,
+    proseMaxOutputTokens: 1024,
+    assistanceMaxOutputTokens: 4096,
     cachedModels: [{
       id: "test/structured-output-capable",
       name: "Structured Output Capable",

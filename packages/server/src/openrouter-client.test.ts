@@ -7,10 +7,11 @@ const settings = {
   model: "anthropic/claude-sonnet-4",
   temperatureMode: "explicit" as const,
   temperature: 0.7,
-  maxOutputTokens: 1800,
+  proseMaxOutputTokens: 1800,
+  assistanceMaxOutputTokens: 4096,
   topP: 0.9
 };
-const request = buildChatCompletionRequest({ prompt: "Compiled prompt", settings });
+const request = buildChatCompletionRequest({ prompt: "Compiled prompt", settings, outputPolicy: "prose" });
 
 describe("sendChatCompletion", () => {
   let originalApiKey: string | undefined;

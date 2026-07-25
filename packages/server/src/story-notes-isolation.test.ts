@@ -222,7 +222,8 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       model: "anthropic/claude-sonnet-4",
       temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",

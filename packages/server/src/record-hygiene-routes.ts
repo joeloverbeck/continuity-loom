@@ -37,8 +37,9 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
       citations: compileResult.metadata.citationMap ?? {},
       providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
         prompt: compileResult.prompt,
-        settings
-      }), settings)
+        settings,
+        outputPolicy: "strict"
+      }), "strict", settings)
     };
   });
 

@@ -25,7 +25,8 @@ const baseSettings: OpenRouterSettingsResponse = {
   model: "openai/gpt-4.1",
   temperatureMode: "explicit",
   temperature: 0.7,
-  maxOutputTokens: 1800,
+  proseMaxOutputTokens: 1800,
+  assistanceMaxOutputTokens: 5200,
   topP: 0.8,
   cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }],
   hasOpenRouterCredential: true
@@ -56,13 +57,37 @@ afterEach(() => {
 });
 
 describe("SettingsSurface", () => {
+  it("edits and saves independent Prose and Assistance ceilings", async () => {
+    render(<SettingsSurface />);
+
+    const proseCeiling = await screen.findByLabelText<HTMLInputElement>("Prose ceiling");
+    const assistanceCeiling = screen.getByLabelText<HTMLInputElement>("Assistance ceiling");
+    expect(proseCeiling.getAttribute("aria-describedby")).toBeTruthy();
+    expect(assistanceCeiling.getAttribute("aria-describedby")).toBeTruthy();
+    expect(screen.getByText(/upper bound for Generate prose/i)).toBeTruthy();
+    expect(screen.getByText(/upper bound for Ideate, Record Hygiene, Cast Possibilities, and Change Review/i))
+      .toBeTruthy();
+    expect(screen.getByText(/4096 is a starting allowance, not a guarantee/i)).toBeTruthy();
+
+    fireEvent.change(proseCeiling, { target: { value: "2400" } });
+    fireEvent.change(assistanceCeiling, { target: { value: "3072" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    expect(await screen.findByText("Settings saved.")).toBeTruthy();
+    expect(putOpenRouterSettingsMock).toHaveBeenCalledWith(expect.objectContaining({
+      proseMaxOutputTokens: 2400,
+      assistanceMaxOutputTokens: 3072
+    }));
+  });
+
   it("loads current settings, edits fields, and saves the non-secret patch", async () => {
     render(<SettingsSurface />);
 
     const modelInput = await screen.findByLabelText("Model ID");
     fireEvent.change(modelInput, { target: { value: "anthropic/claude-sonnet-4" } });
     fireEvent.change(screen.getByLabelText("Temperature"), { target: { value: "0.4" } });
-    fireEvent.change(screen.getByLabelText("Max output tokens"), { target: { value: "2400" } });
+    fireEvent.change(screen.getByLabelText("Prose ceiling"), { target: { value: "2400" } });
+    fireEvent.change(screen.getByLabelText("Assistance ceiling"), { target: { value: "6400" } });
     fireEvent.change(screen.getByLabelText("Top P"), { target: { value: "0.9" } });
     fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
 
@@ -71,7 +96,8 @@ describe("SettingsSurface", () => {
       model: "anthropic/claude-sonnet-4",
       temperatureMode: "explicit",
       temperature: 0.4,
-      maxOutputTokens: 2400,
+      proseMaxOutputTokens: 2400,
+      assistanceMaxOutputTokens: 6400,
       topP: 0.9,
       cachedModels: baseSettings.cachedModels
     });
@@ -93,7 +119,8 @@ describe("SettingsSurface", () => {
     expect(putOpenRouterSettingsMock).toHaveBeenCalledWith({
       model: "openai/gpt-4.1",
       temperatureMode: "provider_default",
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 5200,
       topP: null,
       cachedModels: baseSettings.cachedModels
     });
@@ -103,7 +130,8 @@ describe("SettingsSurface", () => {
     const providerDefaultSettings: OpenRouterSettingsResponse = {
       model: baseSettings.model,
       temperatureMode: "provider_default",
-      maxOutputTokens: baseSettings.maxOutputTokens,
+      proseMaxOutputTokens: baseSettings.proseMaxOutputTokens,
+      assistanceMaxOutputTokens: baseSettings.assistanceMaxOutputTokens,
       ...(baseSettings.topP === undefined ? {} : { topP: baseSettings.topP }),
       ...(baseSettings.cachedModels === undefined ? {} : { cachedModels: baseSettings.cachedModels }),
       hasOpenRouterCredential: baseSettings.hasOpenRouterCredential

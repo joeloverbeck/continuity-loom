@@ -31,6 +31,8 @@ export function PromptInspector({
   const contextWindowAdvisory = providerRequest === undefined
     ? undefined
     : buildContextWindowAdvisory(result.metadata.tokenEstimate, providerRequest, canNarrowScope);
+  const showAssistanceCeilingAdvisory = providerRequest?.completionCeilingClass === "assistance" &&
+    providerRequest.maxOutputTokens < 4096;
 
   useEffect(() => {
     activeMarkRef.current?.scrollIntoView?.({ block: "center" });
@@ -67,9 +69,21 @@ export function PromptInspector({
         </div>
       ) : null}
 
-      {contextWindowAdvisory ? (
+      {showAssistanceCeilingAdvisory ? (
         <p
           className="status statusWarning"
+          role="status"
+          aria-label="Assistance-ceiling suitability advisory"
+        >
+          The configured Assistance ceiling is {providerRequest.maxOutputTokens} tokens and may be too small for a
+          complete structured result. 4096 is a starting allowance, not a guarantee. <a href="/settings">Open
+          Settings</a> to review it; reading this advisory leaves the configured value unchanged.
+        </p>
+      ) : null}
+
+      {contextWindowAdvisory ? (
+        <p
+          className="status statusContextAdvisory"
           role="status"
           aria-label="Context-window advisory"
         >
@@ -127,7 +141,7 @@ export function PromptInspector({
                   </div>
                 )}
                 <div>
-                  <dt>Completion ceiling</dt>
+                  <dt>{ceilingClassLabel(providerRequest.completionCeilingClass)} ceiling</dt>
                   <dd>{providerRequest.maxOutputTokens}</dd>
                 </div>
                 <div>
@@ -157,17 +171,22 @@ function buildContextWindowAdvisory(
   }
 
   const estimatedTotal = promptTokenEstimate + maxOutputTokens;
+  const ceilingLabel = ceilingClassLabel(providerRequest.completionCeilingClass);
   const remedies = [
     ...(canNarrowScope ? ["narrow the selected scope"] : []),
-    "reduce the configured maximum output tokens",
+    `reduce the configured ${ceilingLabel} ceiling`,
     "choose a model with a larger context window"
   ];
 
   return `The compiled prompt is estimated at ${promptTokenEstimate} tokens. ` +
-    `With the configured maximum output of ${maxOutputTokens} tokens, that estimate totals ` +
+    `With the configured ${ceilingLabel} ceiling of ${maxOutputTokens} tokens, that estimate totals ` +
     `${estimatedTotal} tokens and may exceed ${model}'s cached context window of ` +
     `${contextLength} tokens. You can ${joinRemedies(remedies)}. ` +
     "This is an estimate, not a provider measurement, and it does not block sending.";
+}
+
+function ceilingClassLabel(completionCeilingClass: OpenRouterRequestInspection["completionCeilingClass"]): string {
+  return completionCeilingClass === "prose" ? "Prose" : "Assistance";
 }
 
 function joinRemedies(remedies: readonly string[]): string {

@@ -120,7 +120,8 @@ describe("generate routes", () => {
     await putStoryConfig(fastify);
     await putBrief(fastify);
     await putSettings(fastify, {
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compact test model",
@@ -129,7 +130,10 @@ describe("generate routes", () => {
       }]
     });
 
-    for (const payload of [{ promptKind: "prose" }, { promptKind: "ideation" }]) {
+    for (const [payload, completionCeilingClass, maxOutputTokens] of [
+      [{ promptKind: "prose" }, "prose", 1800],
+      [{ promptKind: "ideation" }, "assistance", 4096]
+    ] as const) {
       const response = await fastify.inject({
         method: "POST",
         url: "/api/compile",
@@ -138,10 +142,45 @@ describe("generate routes", () => {
       expect(response.statusCode).toBe(200);
       expect(response.json().providerRequest).toMatchObject({
         model: "anthropic/claude-sonnet-4",
-        maxOutputTokens: 1800,
+        completionCeilingClass,
+        maxOutputTokens,
         contextLength: 1801
       });
     }
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("invalidates only Prose ceiling changes for an inspected Generate request", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify);
+    const inspected = await currentInspection(fastify);
+
+    await putSettings(fastify, { assistanceMaxOutputTokens: 8192 });
+    const unchanged = await fastify.inject({
+      method: "POST",
+      url: "/api/generate",
+      payload: {
+        expectedPromptFingerprint: inspected.promptFingerprint,
+        expectedRequestFingerprint: inspected.requestFingerprint
+      }
+    });
+    expect(unchanged.statusCode).toBe(200);
+    expect(unchanged.json()).toMatchObject({ ok: false, category: "missing-key" });
+
+    await putSettings(fastify, { proseMaxOutputTokens: 1801, assistanceMaxOutputTokens: 8192 });
+    const stale = await fastify.inject({
+      method: "POST",
+      url: "/api/generate",
+      payload: {
+        expectedPromptFingerprint: inspected.promptFingerprint,
+        expectedRequestFingerprint: inspected.requestFingerprint
+      }
+    });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ ok: false, kind: "stale-provider-request" });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
@@ -153,7 +192,8 @@ describe("generate routes", () => {
     await putStoryConfig(fastify);
     await putBrief(fastify);
     await putSettings(fastify, {
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Tiny compatible model",
@@ -182,7 +222,8 @@ describe("generate routes", () => {
     await putStoryConfig(fastify);
     await putBrief(fastify);
     await putSettings(fastify, {
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Large compatible model",
@@ -241,7 +282,8 @@ describe("generate routes", () => {
     await putSettings(fastify, {
       model: "openai/gpt-4.1",
       temperature: 0.4,
-      maxOutputTokens: 2200,
+      proseMaxOutputTokens: 2200,
+      assistanceMaxOutputTokens: 4096,
       topP: 0.9
     });
 
@@ -318,7 +360,8 @@ describe("generate routes", () => {
       payload: {
         model: "synthetic/sonnet-5",
         temperatureMode: "provider_default",
-        maxOutputTokens: 2200,
+        proseMaxOutputTokens: 2200,
+        assistanceMaxOutputTokens: 4096,
         cachedModels: [{
           id: "synthetic/sonnet-5",
           name: "No-temperature compatible model",
@@ -539,7 +582,8 @@ async function putSettings(
       model: "anthropic/claude-sonnet-4",
       temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: model,
         name: "Compatible test model",

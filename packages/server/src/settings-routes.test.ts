@@ -46,7 +46,8 @@ describe("OpenRouter settings routes", () => {
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       hasOpenRouterCredential: true
     });
     expect(response.body).not.toMatch(/openRouterApiKey|OPENROUTER_API_KEY|apiKey|sk-|Bearer/);
@@ -61,7 +62,8 @@ describe("OpenRouter settings routes", () => {
       payload: {
         model: "openai/gpt-4.1",
         temperature: 0.2,
-        maxOutputTokens: 2048,
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 6144,
         topP: 0.8
       }
     });
@@ -69,7 +71,8 @@ describe("OpenRouter settings routes", () => {
     expect(putResponse.json()).toMatchObject({
       model: "openai/gpt-4.1",
       temperature: 0.2,
-      maxOutputTokens: 2048,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 6144,
       topP: 0.8,
       hasOpenRouterCredential: false
     });
@@ -88,7 +91,8 @@ describe("OpenRouter settings routes", () => {
         model: "anthropic/claude-sonnet-5",
         temperatureMode: "explicit",
         temperature: 0.6,
-        maxOutputTokens: 2048,
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 6144,
         topP: 0.8
       }
     });
@@ -106,7 +110,8 @@ describe("OpenRouter settings routes", () => {
     expect(providerDefault.json()).toEqual({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
-      maxOutputTokens: 2048,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 6144,
       hasOpenRouterCredential: false
     });
     expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
@@ -143,7 +148,8 @@ describe("OpenRouter settings routes", () => {
       payload: {
         model: "anthropic/claude-sonnet-5",
         temperatureMode: "provider_default",
-        maxOutputTokens: 2048
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 6144
       }
     });
 
@@ -181,6 +187,59 @@ describe("OpenRouter settings routes", () => {
 
     const getResponse = await fastify.inject({ method: "GET", url: "/api/settings/openrouter" });
     expect(getResponse.json()).toMatchObject({ model: "" });
+  });
+
+  it("updates each completion ceiling independently and preserves the other", async () => {
+    const fastify = app();
+
+    const proseResponse = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: { proseMaxOutputTokens: 1536 }
+    });
+    expect(proseResponse.statusCode).toBe(200);
+    expect(proseResponse.json()).toMatchObject({
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 4096
+    });
+
+    const assistanceResponse = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: { assistanceMaxOutputTokens: 3072 }
+    });
+    expect(assistanceResponse.statusCode).toBe(200);
+    expect(assistanceResponse.json()).toMatchObject({
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 3072
+    });
+    expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
+      .toEqual(assistanceResponse.json());
+  });
+
+  it.each([
+    { payload: { proseMaxOutputTokens: 0 }, label: "zero Prose ceiling" },
+    { payload: { assistanceMaxOutputTokens: -1 }, label: "negative Assistance ceiling" },
+    { payload: { assistanceMaxOutputTokens: 1.5 }, label: "fractional Assistance ceiling" },
+    {
+      payload: { maxOutputTokens: 2048, proseMaxOutputTokens: 2048 },
+      label: "retired and canonical fields together"
+    },
+    { payload: { completionBudget: 2048 }, label: "unknown settings field" }
+  ])("rejects $label without changing settings", async ({ payload }) => {
+    const fastify = app();
+    const before = (await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json();
+
+    const response = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toMatchObject({ ok: false, kind: "invalid-request" });
+    expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
+      .toEqual(before);
   });
 
   it("caches successful model refreshes without exposing secrets", async () => {

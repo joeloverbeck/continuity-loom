@@ -1,6 +1,12 @@
 import { createHash } from "node:crypto";
 
 import type { OpenRouterSettings } from "../settings.js";
+import {
+  completionCeilingClassForPolicy,
+  resolveCompletionCeiling,
+  type CompletionCeilingClass,
+  type OpenRouterOutputPolicy
+} from "./output-policy.js";
 
 export interface OpenRouterMessage {
   role: "user";
@@ -35,6 +41,7 @@ export interface OpenRouterRequestInspection {
   model: string;
   temperatureMode: "explicit" | "provider_default";
   temperature?: number;
+  completionCeilingClass: CompletionCeilingClass;
   maxOutputTokens: number;
   contextLength?: number;
   topP?: number;
@@ -44,16 +51,19 @@ export interface OpenRouterRequestInspection {
 export function buildChatCompletionRequest({
   prompt,
   settings,
+  outputPolicy,
   requestOptions
 }: {
   prompt: string;
   settings: OpenRouterSettings;
+  outputPolicy: OpenRouterOutputPolicy;
   requestOptions?: OpenRouterRequestOptions;
 }): OpenRouterRequest {
+  const completionCeiling = resolveCompletionCeiling(settings, outputPolicy);
   const request: OpenRouterRequest = {
     model: settings.model,
     messages: [{ role: "user", content: prompt }],
-    max_completion_tokens: settings.maxOutputTokens,
+    max_completion_tokens: completionCeiling.maxOutputTokens,
     ...(requestOptions ?? {}),
     provider: {
       ...asRecord(requestOptions?.provider),
@@ -93,6 +103,7 @@ export function fingerprintChatCompletionRequest(request: OpenRouterRequest): st
 
 export function inspectChatCompletionRequest(
   request: OpenRouterRequest,
+  outputPolicy: OpenRouterOutputPolicy,
   settings?: OpenRouterSettings
 ): OpenRouterRequestInspection {
   const contextLength = settings?.cachedModels
@@ -103,6 +114,7 @@ export function inspectChatCompletionRequest(
     model: request.model,
     temperatureMode: request.temperature === undefined ? "provider_default" : "explicit",
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
+    completionCeilingClass: completionCeilingClassForPolicy(outputPolicy),
     maxOutputTokens: request.max_completion_tokens,
     ...(contextLength === undefined ? {} : { contextLength }),
     ...(request.top_p === undefined ? {} : { topP: request.top_p }),

@@ -52,6 +52,7 @@ export function registerCastPossibilitiesRoutes(
     const finalizedRequest = buildChatCompletionRequest({
       prompt: compiled.result.prompt,
       settings,
+      outputPolicy: "strict",
       requestOptions: castRequestOptions(compiled.result.outputSchema)
     });
     return {
@@ -63,7 +64,7 @@ export function registerCastPossibilitiesRoutes(
       outputSchema: compiled.result.outputSchema,
       versions: compiled.result.disclosure.versions,
       fingerprint: compiled.result.disclosure.fingerprint,
-      providerRequest: inspectChatCompletionRequest(finalizedRequest, settings)
+      providerRequest: inspectChatCompletionRequest(finalizedRequest, "strict", settings)
     };
   });
 

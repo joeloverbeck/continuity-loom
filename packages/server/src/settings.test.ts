@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -29,12 +29,13 @@ describe("OpenRouter settings boundary", () => {
     rmSync(configDir, { recursive: true, force: true });
   });
 
-  it("returns defaults when the config file is absent", () => {
+  it("returns independent Prose and Assistance ceiling defaults when the config file is absent", () => {
     expect(readOpenRouterSettings()).toEqual({
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       hasOpenRouterCredential: false
     });
   });
@@ -51,9 +52,73 @@ describe("OpenRouter settings boundary", () => {
       model: "legacy/model",
       temperatureMode: "explicit",
       temperature: 0.35,
-      maxOutputTokens: 1536,
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 1536,
       hasOpenRouterCredential: false
     });
+    expect(readRawConfig()).toBe(`{
+  "model": "legacy/model",
+  "temperatureMode": "explicit",
+  "temperature": 0.35,
+  "proseMaxOutputTokens": 1536,
+  "assistanceMaxOutputTokens": 1536
+}
+`);
+  });
+
+  it.each([512, 4096, 8192])(
+    "migrates legacy ceiling %i unchanged to both fields and remains idempotent",
+    (legacyCeiling) => {
+      writeFileSync(getOpenRouterConfigPath(), `${JSON.stringify({
+        model: "legacy/model",
+        temperature: 0.5,
+        maxOutputTokens: legacyCeiling
+      }, null, 2)}\n`, "utf8");
+
+      expect(readOpenRouterSettings()).toMatchObject({
+        proseMaxOutputTokens: legacyCeiling,
+        assistanceMaxOutputTokens: legacyCeiling
+      });
+      const migrated = readRawConfig();
+      expect(migrated).not.toMatch(/"maxOutputTokens"/);
+
+      expect(readOpenRouterSettings()).toMatchObject({
+        proseMaxOutputTokens: legacyCeiling,
+        assistanceMaxOutputTokens: legacyCeiling
+      });
+      expect(readRawConfig()).toBe(migrated);
+    }
+  );
+
+  it("leaves malformed legacy settings byte-for-byte intact and fails clearly", () => {
+    const original = `{
+  "model": "legacy/model",
+  "temperature": 0.5,
+  "maxOutputTokens": 0
+}
+`;
+    writeFileSync(getOpenRouterConfigPath(), original, "utf8");
+
+    expect(() => readOpenRouterSettings()).toThrow(/expected number to be >0/i);
+    expect(readRawConfig()).toBe(original);
+  });
+
+  it("leaves a valid legacy file intact when its atomic migration write fails", () => {
+    const original = `{
+  "model": "legacy/model",
+  "temperature": 0.5,
+  "maxOutputTokens": 1536
+}
+`;
+    writeFileSync(getOpenRouterConfigPath(), original, "utf8");
+    chmodSync(configDir, 0o500);
+
+    try {
+      expect(() => readOpenRouterSettings()).toThrow();
+    } finally {
+      chmodSync(configDir, 0o700);
+    }
+    expect(readRawConfig()).toBe(original);
   });
 
   it("rejects a persisted explicit mode that omits its numeric temperature", () => {
@@ -71,13 +136,15 @@ describe("OpenRouter settings boundary", () => {
     const written = writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
-      maxOutputTokens: 2048
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 4096
     });
 
     expect(written).toEqual({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
-      maxOutputTokens: 2048,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 4096,
       hasOpenRouterCredential: false
     });
     expect(readOpenRouterSettings()).toEqual(written);
@@ -95,7 +162,8 @@ describe("OpenRouter settings boundary", () => {
     writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
-      maxOutputTokens: 2048
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 4096
     });
 
     expect(() => writeOpenRouterSettings({ temperatureMode: "explicit" }))
@@ -111,7 +179,8 @@ describe("OpenRouter settings boundary", () => {
       model: "openai/gpt-4.1",
       temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4200,
       topP: 0.9
     });
 
@@ -126,7 +195,8 @@ describe("OpenRouter settings boundary", () => {
     const written = writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-4",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4200,
       topP: 0.9
     });
 
@@ -134,7 +204,8 @@ describe("OpenRouter settings boundary", () => {
       model: "anthropic/claude-sonnet-4",
       temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1800,
+      assistanceMaxOutputTokens: 4200,
       topP: 0.9,
       hasOpenRouterCredential: false
     });
@@ -144,14 +215,20 @@ describe("OpenRouter settings boundary", () => {
   "model": "anthropic/claude-sonnet-4",
   "temperatureMode": "explicit",
   "temperature": 0.7,
-  "maxOutputTokens": 1800,
+  "proseMaxOutputTokens": 1800,
+  "assistanceMaxOutputTokens": 4200,
   "topP": 0.9
 }
 `);
   });
 
   it("derives credential presence from the environment without changing persisted settings", () => {
-    writeOpenRouterSettings({ model: "openai/gpt-4.1", temperature: 1, maxOutputTokens: 1024 });
+    writeOpenRouterSettings({
+      model: "openai/gpt-4.1",
+      temperature: 1,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096
+    });
     const rawBefore = readRawConfig();
 
     process.env.OPENROUTER_API_KEY = "sk-or-test";
@@ -174,7 +251,8 @@ describe("OpenRouter settings boundary", () => {
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       hasOpenRouterCredential: false
     });
   });
@@ -183,7 +261,8 @@ describe("OpenRouter settings boundary", () => {
     const written = writeOpenRouterSettings({
       model: "anthropic/claude-sonnet-4.6",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [
         {
           id: "anthropic/claude-sonnet-4.6",
@@ -211,7 +290,8 @@ describe("OpenRouter settings boundary", () => {
     writeOpenRouterSettings({
       model: "openai/gpt-4.1",
       temperature: 0,
-      maxOutputTokens: 256,
+      proseMaxOutputTokens: 256,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }]
     });
 

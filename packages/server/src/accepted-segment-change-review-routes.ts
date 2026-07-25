@@ -54,6 +54,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
     const finalizedRequest = buildChatCompletionRequest({
       prompt: compiled.prompt,
       settings,
+      outputPolicy: "strict",
       requestOptions: changeReviewRequestOptions()
     });
     return {
@@ -63,7 +64,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       citations: compiled.disclosure.citationMap,
       outputSchema: acceptedSegmentChangeReviewOutputJsonSchema(),
       consumedGuidance: compiled.consumedGuidance,
-      providerRequest: inspectChatCompletionRequest(finalizedRequest, settings)
+      providerRequest: inspectChatCompletionRequest(finalizedRequest, "strict", settings)
     };
   });
 

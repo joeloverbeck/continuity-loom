@@ -23,7 +23,8 @@ const openRouterSettingsPatchSchema = z
     model: z.string().trim().optional(),
     temperatureMode: z.enum(["explicit", "provider_default"]).optional(),
     temperature: z.number().min(0).max(2).optional(),
-    maxOutputTokens: z.number().int().positive().optional(),
+    proseMaxOutputTokens: z.number().int().positive().optional(),
+    assistanceMaxOutputTokens: z.number().int().positive().optional(),
     topP: z.number().min(0).max(1).nullable().optional(),
     cachedModels: z.array(modelListEntrySchema).optional()
   })
@@ -81,8 +82,11 @@ function toSettingsPatch(patch: z.infer<typeof openRouterSettingsPatchSchema>): 
   if (patch.temperature !== undefined) {
     settingsPatch.temperature = patch.temperature;
   }
-  if (patch.maxOutputTokens !== undefined) {
-    settingsPatch.maxOutputTokens = patch.maxOutputTokens;
+  if (patch.proseMaxOutputTokens !== undefined) {
+    settingsPatch.proseMaxOutputTokens = patch.proseMaxOutputTokens;
+  }
+  if (patch.assistanceMaxOutputTokens !== undefined) {
+    settingsPatch.assistanceMaxOutputTokens = patch.assistanceMaxOutputTokens;
   }
   if (patch.topP !== undefined) {
     settingsPatch.topP = patch.topP;

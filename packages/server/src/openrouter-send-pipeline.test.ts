@@ -15,7 +15,8 @@ describe("OpenRouter send pipeline", () => {
     const settings: OpenRouterSettingsStatus = {
       model: "test/model",
       temperatureMode: "provider_default",
-      maxOutputTokens: 321,
+      proseMaxOutputTokens: 321,
+      assistanceMaxOutputTokens: 4321,
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
@@ -24,8 +25,12 @@ describe("OpenRouter send pipeline", () => {
       hasOpenRouterCredential: true
     };
     const prompt = "The inspected prompt";
-    const expectedRequest = buildChatCompletionRequest({ prompt, settings });
-    const expectedRequestFingerprint = inspectChatCompletionRequest(expectedRequest).requestFingerprint;
+    const expectedRequestFingerprint = (outputPolicy: "strict" | "prose") =>
+      inspectChatCompletionRequest(
+        buildChatCompletionRequest({ prompt, settings, outputPolicy }),
+        outputPolicy,
+        settings
+      ).requestFingerprint;
     const transport = vi.fn(async () => ({
       ok: true as const,
       candidate: { text: "Incomplete prose must stay prose-only." },
@@ -45,7 +50,7 @@ describe("OpenRouter send pipeline", () => {
       staleness: {
         mode: "separate" as const,
         expectedPromptFingerprint: "prompt-fingerprint",
-        expectedRequestFingerprint,
+        expectedRequestFingerprint: "set-per-policy",
         promptRefusal: { status: 409, body: { ok: false } },
         providerRefusal: { status: 409, body: { ok: false } }
       },
@@ -57,12 +62,20 @@ describe("OpenRouter send pipeline", () => {
     };
 
     const strict = await runOpenRouterSendPipeline({
-      profile: { ...baseProfile, outputPolicy: "strict" },
+      profile: {
+        ...baseProfile,
+        outputPolicy: "strict",
+        staleness: { ...baseProfile.staleness, expectedRequestFingerprint: expectedRequestFingerprint("strict") }
+      },
       settings,
       transport
     });
     const prose = await runOpenRouterSendPipeline({
-      profile: { ...baseProfile, outputPolicy: "prose" },
+      profile: {
+        ...baseProfile,
+        outputPolicy: "prose",
+        staleness: { ...baseProfile.staleness, expectedRequestFingerprint: expectedRequestFingerprint("prose") }
+      },
       settings,
       transport
     });
@@ -106,7 +119,8 @@ describe("OpenRouter send pipeline", () => {
     const settings: OpenRouterSettingsStatus = {
       model: "test/model",
       temperatureMode: "provider_default",
-      maxOutputTokens: 321,
+      proseMaxOutputTokens: 321,
+      assistanceMaxOutputTokens: 4321,
       topP: 0.75,
       cachedModels: [{
         id: "test/model",
@@ -116,8 +130,12 @@ describe("OpenRouter send pipeline", () => {
       hasOpenRouterCredential: true
     };
     const prompt = "The inspected prompt";
-    const expectedRequest = buildChatCompletionRequest({ prompt, settings });
-    const expectedRequestFingerprint = inspectChatCompletionRequest(expectedRequest).requestFingerprint;
+    const expectedRequest = buildChatCompletionRequest({ prompt, settings, outputPolicy: "strict" });
+    const expectedRequestFingerprint = inspectChatCompletionRequest(
+      expectedRequest,
+      "strict",
+      settings
+    ).requestFingerprint;
     let transportedRequest: OpenRouterRequest | undefined;
     const transport = vi.fn(async ({ request }: { request: OpenRouterRequest }) => {
       transportedRequest = request;
@@ -173,7 +191,7 @@ describe("OpenRouter send pipeline", () => {
         model: "test/model",
         provider: "openrouter",
         temperatureMode: "provider_default",
-        maxOutputTokens: 321,
+        maxOutputTokens: 4321,
         topP: 0.75,
         versions: { template: "1", compiler: "2", contract: "3" }
       },
@@ -236,7 +254,8 @@ describe("OpenRouter send pipeline", () => {
       model: "test/model",
       temperatureMode: "explicit",
       temperature: 0.4,
-      maxOutputTokens: 100,
+      proseMaxOutputTokens: 50,
+      assistanceMaxOutputTokens: 100,
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
@@ -246,7 +265,9 @@ describe("OpenRouter send pipeline", () => {
     };
     const prompt = "Current prompt";
     const requestFingerprint = inspectChatCompletionRequest(
-      buildChatCompletionRequest({ prompt, settings })
+      buildChatCompletionRequest({ prompt, settings, outputPolicy: "strict" }),
+      "strict",
+      settings
     ).requestFingerprint;
     const transport = vi.fn(async () => ({
       ok: true as const,

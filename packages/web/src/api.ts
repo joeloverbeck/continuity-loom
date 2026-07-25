@@ -95,6 +95,7 @@ export interface OpenRouterRequestInspection {
   model: string;
   temperatureMode: "explicit" | "provider_default";
   temperature?: number;
+  completionCeilingClass: "prose" | "assistance";
   maxOutputTokens: number;
   contextLength?: number;
   topP?: number;
@@ -117,7 +118,8 @@ export interface OpenRouterModelListEntry {
 
 interface OpenRouterSettingsBase {
   model: string;
-  maxOutputTokens: number;
+  proseMaxOutputTokens: number;
+  assistanceMaxOutputTokens: number;
   topP?: number;
   cachedModels?: OpenRouterModelListEntry[];
 }

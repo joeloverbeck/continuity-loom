@@ -282,6 +282,12 @@ h1 {
   background: #fff8e7;
 }
 
+.statusContextAdvisory {
+  border: 1px solid #5b88c7;
+  color: #214f82;
+  background: #eef6ff;
+}
+
 .runtimeGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

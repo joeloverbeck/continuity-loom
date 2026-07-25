@@ -129,6 +129,13 @@ END HYGIENE REVIEW
 
 Findings require at least two distinct citations. `MERGE` and `REMOVE` require same-type citations and one cited survivor. Unknown actions, relations, confidence values, duplicate finding numbers, duplicate clusters, unknown citations, cross-type merge/remove, mismatched `findings_reported`, or a missing `END HYGIENE REVIEW` marker make the output malformed and quarantined.
 
+Local inspection selects and discloses the global Assistance ceiling and binds
+the finalized request fingerprint to that value. Changing only Prose leaves the
+request unchanged; changing Assistance requires fresh inspection. Assistance
+below 4,096 produces the shared non-gating suitability advisory, while the
+context-window advisory uses the same effective value. Neither advisory edits
+settings, evicts records, narrows scope, or sends or retries automatically.
+
 Record Hygiene requires a normal decoded completion before parsing. Provider
 errors, length limits, content-filter or tool termination, missing content, and
 unrecognized envelopes yield a sanitized transient diagnostic and no findings.

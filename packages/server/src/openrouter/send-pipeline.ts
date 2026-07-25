@@ -13,6 +13,7 @@ import {
   type OpenRouterResponseFacts
 } from "./response.js";
 import { admitOpenRouterRequest } from "./capability.js";
+import type { OpenRouterOutputPolicy } from "./output-policy.js";
 import {
   buildChatCompletionRequest,
   inspectChatCompletionRequest,
@@ -53,7 +54,7 @@ export interface OpenRouterSendProfile {
   requestOptions?: OpenRouterRequestOptions;
   staleness: OpenRouterPipelineStaleness;
   metadata: OpenRouterPipelineMetadataProfile;
-  outputPolicy: "strict" | "prose";
+  outputPolicy: OpenRouterOutputPolicy;
 }
 
 export interface RunOpenRouterSendPipelineInput {
@@ -88,9 +89,10 @@ export async function runOpenRouterSendPipeline(
   const request = buildChatCompletionRequest({
     prompt: profile.prompt,
     settings,
+    outputPolicy: profile.outputPolicy,
     ...(profile.requestOptions === undefined ? {} : { requestOptions: profile.requestOptions })
   });
-  const inspection = inspectChatCompletionRequest(request);
+  const inspection = inspectChatCompletionRequest(request, profile.outputPolicy, settings);
 
   if (profile.staleness.mode === "combined") {
     if (

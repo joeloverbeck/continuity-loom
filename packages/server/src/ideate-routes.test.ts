@@ -119,7 +119,8 @@ describe("ideate routes", () => {
         model: "anthropic/claude-sonnet-4",
         temperatureMode: "explicit",
         temperature: 0.7,
-        maxOutputTokens: 1800,
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 1800,
         cachedModels: [{
           id: "anthropic/claude-sonnet-4",
           name: "Tiny compatible model",
@@ -308,6 +309,23 @@ describe("ideate routes", () => {
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
+
+  it("invalidates only Assistance ceiling changes for an inspected Ideation request", async () => {
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+    const inspected = await inspectedIdeationPayload(fastify, { focus: "What opens?" });
+
+    await putSettings(fastify, { proseMaxOutputTokens: 777 });
+    const unchanged = await fastify.inject({ method: "POST", url: "/api/ideate", payload: inspected });
+    expect(unchanged.statusCode).toBe(200);
+    expect(unchanged.json()).toMatchObject({ ok: false, category: "missing-key" });
+
+    await putSettings(fastify, { proseMaxOutputTokens: 777, assistanceMaxOutputTokens: 1801 });
+    const stale = await fastify.inject({ method: "POST", url: "/api/ideate", payload: inspected });
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ ok: false, kind: "stale-provider-request" });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
 });
 
 function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeof createServer> {
@@ -428,7 +446,10 @@ function cleanBriefForEntity(entityId: string, secretId: string) {
   };
 }
 
-async function putSettings(fastify: ReturnType<typeof createServer>): Promise<void> {
+async function putSettings(
+  fastify: ReturnType<typeof createServer>,
+  overrides: Record<string, unknown> = {}
+): Promise<void> {
   const response = await fastify.inject({
     method: "PUT",
     url: "/api/settings/openrouter",
@@ -436,12 +457,14 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       model: "anthropic/claude-sonnet-4",
       temperatureMode: "explicit",
       temperature: 0.7,
-      maxOutputTokens: 1800,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 1800,
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
         supportedParameters: ["temperature", "max_completion_tokens"]
-      }]
+      }],
+      ...overrides
     }
   });
 
@@ -465,11 +488,19 @@ async function inspectedIdeationPayload(
   });
   const body = response.json() as {
     metadata?: { fingerprint?: string };
-    providerRequest?: { requestFingerprint?: string };
+    providerRequest?: {
+      completionCeilingClass?: string;
+      maxOutputTokens?: number;
+      requestFingerprint?: string;
+    };
   };
 
   expect(response.statusCode).toBe(200);
   expect(body.metadata?.fingerprint).toEqual(expect.any(String));
+  expect(body.providerRequest).toMatchObject({
+    completionCeilingClass: "assistance",
+    maxOutputTokens: 1800
+  });
   expect(body.providerRequest?.requestFingerprint).toEqual(expect.any(String));
   return {
     ...request,

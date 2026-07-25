@@ -293,7 +293,8 @@ describe("api client", () => {
     const settingsBody = {
       model: "openai/gpt-4.1",
       temperature: 0.2,
-      maxOutputTokens: 2048,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 4096,
       topP: 0.8,
       cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }],
       hasOpenRouterCredential: true
@@ -312,7 +313,8 @@ describe("api client", () => {
       putOpenRouterSettings({
         model: "openai/gpt-4.1",
         temperature: 0.2,
-        maxOutputTokens: 2048,
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 4096,
         topP: 0.8
       })
     ).resolves.toEqual(settingsBody);
@@ -328,7 +330,13 @@ describe("api client", () => {
       "Content-Type": "application/json"
     });
     expect(calls[1]?.init?.body).toBe(
-      JSON.stringify({ model: "openai/gpt-4.1", temperature: 0.2, maxOutputTokens: 2048, topP: 0.8 })
+      JSON.stringify({
+        model: "openai/gpt-4.1",
+        temperature: 0.2,
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 4096,
+        topP: 0.8
+      })
     );
     expect(JSON.stringify(settingsBody)).not.toMatch(/OPENROUTER_API_KEY|openRouterApiKey|sk-|Bearer/);
   });

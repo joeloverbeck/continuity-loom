@@ -832,6 +832,7 @@ function providerRequest(requestFingerprint: string) {
     model: "openai/gpt-4.1",
     temperatureMode: "explicit" as const,
     temperature: 0.4,
+    completionCeilingClass: "prose" as const,
     maxOutputTokens: 2200,
     requestFingerprint
   };

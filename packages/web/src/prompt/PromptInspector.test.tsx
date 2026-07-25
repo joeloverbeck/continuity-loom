@@ -12,6 +12,60 @@ afterEach(() => {
 });
 
 describe("PromptInspector", () => {
+  it("keeps suitability and context advisories distinct across all four states", () => {
+    const { rerender } = render(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={providerRequest("assistance", 4095)}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+
+    const suitability = screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" });
+    expect(suitability.textContent).toContain("configured Assistance ceiling is 4095 tokens");
+    expect(suitability.textContent).toContain("may be too small for a complete structured result");
+    expect(suitability.textContent).toContain("4096 is a starting allowance, not a guarantee");
+    expect(within(suitability).getByRole("link", { name: "Open Settings" }).getAttribute("href"))
+      .toBe("/settings");
+    expect(screen.queryByRole("status", { name: "Context-window advisory" })).toBeNull();
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{ ...providerRequest("prose", 5000), contextLength: 5006 }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeNull();
+    expect(screen.getByRole("status", { name: "Context-window advisory" }).textContent)
+      .toContain("configured Prose ceiling of 5000 tokens");
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{ ...providerRequest("assistance", 4095), contextLength: 4101 }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
+    expect(screen.getByRole("status", { name: "Context-window advisory" })).toBeTruthy();
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{ ...providerRequest("assistance", 4096), contextLength: 4103 }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeNull();
+    expect(screen.queryByRole("status", { name: "Context-window advisory" })).toBeNull();
+    expect(within(screen.getByLabelText("Prompt metadata")).getByText("Assistance ceiling")).toBeTruthy();
+  });
+
   it("renders the compiled prompt, metadata, and prompt search highlighting", () => {
     const onSearchTermChange = vi.fn();
     const prompt = "<role>\nA prompt line.\nAnother prompt line.";
@@ -130,6 +184,7 @@ describe("PromptInspector", () => {
         providerRequest={{
           model: "provider/model",
           temperatureMode: "provider_default",
+          completionCeilingClass: "prose",
           maxOutputTokens: 2048,
           requestFingerprint: "request-fingerprint"
         }}
@@ -153,6 +208,7 @@ describe("PromptInspector", () => {
           temperatureMode: "explicit",
           temperature: 0.7,
           topP: 0.9,
+          completionCeilingClass: "assistance",
           maxOutputTokens: 2048,
           requestFingerprint: "request-fingerprint"
         }}
@@ -173,6 +229,7 @@ describe("PromptInspector", () => {
         providerRequest={{
           model: "provider/compact-model",
           temperatureMode: "provider_default",
+          completionCeilingClass: "assistance",
           maxOutputTokens: 2048,
           contextLength: 2054,
           requestFingerprint: "request-fingerprint"
@@ -186,7 +243,7 @@ describe("PromptInspector", () => {
     expect(advisory.textContent).toContain("provider/compact-model");
     expect(advisory.textContent).toContain("estimated at 7 tokens");
     expect(advisory.textContent).toContain("cached context window of 2054 tokens");
-    expect(advisory.textContent).toContain("reduce the configured maximum output tokens");
+    expect(advisory.textContent).toContain("reduce the configured Assistance ceiling");
     expect(advisory.textContent).toContain("choose a model with a larger context window");
     expect(advisory.textContent).not.toContain("narrow the selected scope");
     expect(advisory.textContent).not.toContain("Prompt");
@@ -197,6 +254,7 @@ describe("PromptInspector", () => {
         providerRequest={{
           model: "provider/compact-model",
           temperatureMode: "provider_default",
+          completionCeilingClass: "assistance",
           maxOutputTokens: 2047,
           contextLength: 2054,
           requestFingerprint: "request-fingerprint"
@@ -213,6 +271,7 @@ describe("PromptInspector", () => {
         providerRequest={{
           model: "provider/unknown-model",
           temperatureMode: "provider_default",
+          completionCeilingClass: "assistance",
           maxOutputTokens: 2048,
           requestFingerprint: "request-fingerprint"
         }}
@@ -228,6 +287,7 @@ describe("PromptInspector", () => {
         providerRequest={{
           model: "provider/compact-model",
           temperatureMode: "provider_default",
+          completionCeilingClass: "assistance",
           maxOutputTokens: 2048,
           contextLength: 2054,
           requestFingerprint: "request-fingerprint"
@@ -255,5 +315,18 @@ function compileResult(prompt: string): CompileResult {
       lengthEstimate: prompt.length,
       tokenEstimate: 7
     }
+  };
+}
+
+function providerRequest(
+  completionCeilingClass: "prose" | "assistance",
+  maxOutputTokens: number
+) {
+  return {
+    model: "provider/model",
+    temperatureMode: "provider_default" as const,
+    completionCeilingClass,
+    maxOutputTokens,
+    requestFingerprint: `request-${completionCeilingClass}-${maxOutputTokens}`
   };
 }

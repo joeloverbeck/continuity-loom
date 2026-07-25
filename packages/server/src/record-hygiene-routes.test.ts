@@ -35,7 +35,8 @@ describe("record hygiene routes", () => {
       model: "openai/gpt-4.1",
       temperatureMode: "explicit",
       temperature: 1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "openai/gpt-4.1",
         name: "Compatible test model",
@@ -77,6 +78,7 @@ describe("record hygiene routes", () => {
       prompt: string;
       metadata: { recordCount: number; countsByType: Record<string, number> };
       citations: Record<string, string>;
+      providerRequest: { completionCeilingClass: string; maxOutputTokens: number };
     };
 
     expect(response.statusCode).toBe(200);
@@ -85,6 +87,10 @@ describe("record hygiene routes", () => {
     expect(body.metadata.recordCount).toBe(2);
     expect(body.metadata.countsByType.FACT).toBe(2);
     expect(body.citations).toEqual({ "[FACT-1]": expect.any(String), "[FACT-2]": expect.any(String) });
+    expect(body.providerRequest).toMatchObject({
+      completionCeilingClass: "assistance",
+      maxOutputTokens: 4096
+    });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
@@ -275,7 +281,8 @@ describe("record hygiene routes", () => {
     await putSettings(fastify, {
       model: "tiny/context",
       temperature: 1,
-      maxOutputTokens: 1024,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 1024,
       cachedModels: [{
         id: "tiny/context",
         name: "Tiny Context",
@@ -291,6 +298,7 @@ describe("record hygiene routes", () => {
 
     expect(compileResponse.json().providerRequest).toMatchObject({
       model: "tiny/context",
+      completionCeilingClass: "assistance",
       maxOutputTokens: 1024,
       contextLength: 16
     });

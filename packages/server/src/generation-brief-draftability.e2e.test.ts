@@ -426,7 +426,8 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       model: "test/mock-writer",
       temperatureMode: "explicit",
       temperature: 0.2,
-      maxOutputTokens: 800,
+      proseMaxOutputTokens: 800,
+      assistanceMaxOutputTokens: 4096,
       cachedModels: [{
         id: "test/mock-writer",
         name: "Compatible test model",

@@ -57,9 +57,11 @@ function admit(model: string, cachedModels?: ModelListEntry[]): CapabilityAdmiss
       model,
       temperatureMode: "explicit",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       topP: 1
     },
+    outputPolicy: "strict",
     requestOptions: strictRequestOptions
   });
   return admitOpenRouterRequest({ request, cachedModels });
@@ -222,8 +224,10 @@ describe("requiredOpenRouterCapabilities", () => {
           model: "any/model",
           temperatureMode: "explicit",
           temperature: 0,
-          maxOutputTokens: 4096
+          proseMaxOutputTokens: 1024,
+          assistanceMaxOutputTokens: 4096
         },
+        outputPolicy: "strict",
         requestOptions: strictRequestOptions
       })
     );
@@ -240,9 +244,11 @@ function finalizedStrictRequest(requestOptions: OpenRouterRequestOptions = stric
       model: "any/model",
       temperatureMode: "explicit",
       temperature: 0,
-      maxOutputTokens: 4096,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
       topP: 1
     },
+    outputPolicy: "strict",
     requestOptions
   });
 }
@@ -261,9 +267,11 @@ describe("finalized request admission", () => {
         model: "synthetic/sonnet-5",
         temperatureMode,
         ...(temperatureMode === "explicit" ? { temperature: 1 } : {}),
-        maxOutputTokens: 2048,
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 2048,
         ...(topP === undefined ? {} : { topP })
       },
+      outputPolicy: "strict",
       requestOptions: strictRequestOptions
     });
   }

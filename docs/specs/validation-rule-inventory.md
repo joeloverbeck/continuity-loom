@@ -9,26 +9,35 @@ Same-change rule: adding, removing, or re-severitying a diagnostic code must upd
 
 Record hygiene findings are non-deterministic advisory assistance output, not validation diagnostics. They do not appear in `DIAGNOSTIC_CODES`, do not add rule IDs to this inventory, and do not gate save, preview, generate, accept, archive, or record editing operations.
 
-## Provider-Boundary Advisory Outside `DIAGNOSTIC_CODES`
+## Provider-Boundary Advisories Outside `DIAGNOSTIC_CODES`
 
-The context-window estimate is a provider-boundary advisory, not a validation
-diagnostic. It is deliberately outside `DIAGNOSTIC_CODES`, so it does not add a
-rule ID to the severity tables below and does not change their drift contract.
+Assistance-ceiling suitability and the context-window estimate are distinct
+provider-boundary advisories, not validation diagnostics. They are deliberately
+outside `DIAGNOSTIC_CODES`, so they add no rule IDs to the severity tables below
+and do not change their drift contract.
 
 Prompt Inspector evaluates the condition once for every OpenRouter completion
 surface: prose generation, Ideation, the story-record review workflow, Cast
 Possibilities analysis and per-character regeneration, and Accepted-Segment
 Change Review.
-It compares the compiled prompt's deterministic token estimate plus the
-configured maximum output tokens with the selected model's cached context
-length. The advisory appears only when that sum is greater than the cached
-length. When the selected model has no cached context length, it does not
+The suitability advisory appears only for an effective Assistance ceiling below
+4,096. It names the configured value, explains that it may be too small for a
+complete structured result, identifies 4,096 as a starting allowance rather
+than a guarantee, and directs the author to Settings. Prose never produces this
+advisory, 4,096 itself does not produce it, and the value is never raised or
+otherwise changed automatically.
+
+The context-window advisory compares the compiled prompt's deterministic token
+estimate plus the effective Prose or Assistance ceiling with the selected
+model's cached context length. It appears only when that sum is greater than the
+cached length. When the selected model has no cached context length, it does not
 appear.
 
-The advisory names the selected model, cached context window, estimated prompt
-tokens, and available manual remedies. It never disables Generate, Analyze, or
-Regenerate and never prevents provider transport. Displaying or ignoring it
-makes no provider request and triggers no automatic refresh, retry, model
+The context advisory names the selected model, effective ceiling class and
+value, cached context window, estimated prompt tokens, and available manual
+remedies. Neither advisory disables Generate, Analyze, or Regenerate or
+prevents provider transport. Displaying or ignoring either one makes no
+provider request and triggers no automatic refresh, retry, model
 change, scope change, resend, or setting change. This is a FOUNDATIONS §11
 threshold warning; every credential, staleness, capability-admission, and
 deterministic readiness blocker remains separate and blocking.

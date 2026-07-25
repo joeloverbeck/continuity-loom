@@ -186,7 +186,12 @@ recovery; raw provider output is not returned or logged.
 Full-cast Analyze and confirmed target regeneration each build exactly one
 OpenRouter request with strict JSON Schema, required parameter support,
 fallbacks and transforms disabled, no plugins, no tools, and `tool_choice:
-"none"`. Capability admission derives from the properties in that finalized
+"none"`. Both select and disclose the global Assistance ceiling; changing only
+Prose leaves either request unchanged, while changing Assistance requires fresh
+inspection. Assistance below 4,096 shows the shared non-gating suitability
+advisory, and the context-window advisory uses the same effective value. Neither
+advisory changes a setting, card, avoid list, scope, or request. Capability
+admission derives from the properties in that finalized
 request and transport sends the same object. A provider-default temperature is
 omitted; explicit Temperature and optional Top P remain binding when present.
 Capability-unknown recovery may refresh the cached model list without

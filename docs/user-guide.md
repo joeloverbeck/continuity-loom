@@ -219,8 +219,14 @@ Every item is suggestion-only scratch. There is no apply, prefill, create, deact
 
 OpenRouter is the external prose transport. It is not a continuity authority.
 
-Configure the model, Temperature mode, maximum output tokens, and optional Top P
-in global OpenRouter settings. These are local app settings, not project canon.
+Configure the model, Temperature mode, **Prose ceiling**, **Assistance
+ceiling**, and optional Top P in global OpenRouter settings. These are local app
+settings, not project canon. Prose defaults to 1,024 tokens and applies only to
+Generate. Assistance defaults to 4,096 and applies to Ideate, Record Hygiene,
+Cast Possibilities full analysis and target regeneration, and Accepted-Segment
+Change Review. Both are upper bounds, not target lengths or completion
+guarantees, and every positive Assistance value remains valid.
+
 **Explicit value** requires a number from 0 through 2 and sends it on every
 completion request. **Provider default** omits `temperature`; Continuity Loom
 does not know or display a fabricated provider-effective number. A blank Top P
@@ -229,23 +235,32 @@ requests omit `top_p`. Model selection and model-list refresh never change
 these choices.
 
 Prompt Inspector shows the exact model, Temperature intent, optional Top P,
-completion ceiling, and provider-request fingerprint that a later send must
-match. Changing any provider setting requires a fresh local inspection even
-when the prompt text itself did not change.
+effective Prose or Assistance ceiling and value, and provider-request
+fingerprint that a later send must match. Changing the applicable provider
+setting requires a fresh local inspection even when the prompt text itself did
+not change; changing only the unused ceiling leaves that workflow's request
+unchanged.
 
-When the compiled prompt's deterministic token estimate plus the configured
-maximum output tokens is greater than the selected model's cached context
+When an Assistance workflow uses fewer than 4,096 tokens, Prompt Inspector
+shows a suitability advisory. It names the configured value and explains that
+it may be too small for a complete structured result. The 4,096 default is a
+starting allowance, not a guarantee or a predicted requirement. Use **Open
+Settings** to review it, or deliberately proceed with the existing action; the
+warning never changes the value or blocks sending.
+
+When the compiled prompt's deterministic token estimate plus the effective
+Prose or Assistance ceiling is greater than the selected model's cached context
 window, Prompt Inspector shows a context-window advisory on every completion
 surface. It names the model, cached window, and estimated counts, and identifies
 the count as an estimate rather than a provider measurement. You can reduce the
-maximum output tokens, choose a model with a larger context window, or narrow
-the selected scope on Record Hygiene and Accepted-Segment Change Review.
+effective ceiling, choose a model with a larger context window, or narrow the
+selected scope on Record Hygiene and Accepted-Segment Change Review.
 
-The advisory never disables Generate, Analyze, or Regenerate. You may inspect
-it and send anyway; the provider's real result or existing normalized provider
-failure is the outcome. If the model has no cached context length, no size
-advisory appears. Merely displaying or ignoring the advisory makes no provider
-request and does not refresh capabilities, retry, change models, change scope,
+Neither advisory disables Generate, Analyze, or Regenerate. You may inspect
+either one and send anyway; the provider's real result or existing normalized
+provider failure is the outcome. If the model has no cached context length, no
+size advisory appears. Merely displaying or ignoring either advisory makes no
+provider request and does not refresh capabilities, retry, change models, change scope,
 resend, or edit settings.
 
 If capability data is missing, use the explicit model-list refresh and inspect

@@ -7,6 +7,47 @@ import {
 } from "./openrouter/request.js";
 
 describe("buildChatCompletionRequest", () => {
+  it("selects one completion ceiling through the output policy", () => {
+    const settings = {
+      model: "test/model",
+      temperatureMode: "provider_default" as const,
+      proseMaxOutputTokens: 1200,
+      assistanceMaxOutputTokens: 5000
+    };
+    const proseRequest = buildChatCompletionRequest({ prompt: "Same prompt", settings, outputPolicy: "prose" });
+    const assistanceRequest = buildChatCompletionRequest({
+      prompt: "Same prompt",
+      settings,
+      outputPolicy: "strict"
+    });
+
+    expect(inspectChatCompletionRequest(proseRequest, "prose", settings)).toMatchObject({
+      completionCeilingClass: "prose",
+      maxOutputTokens: 1200
+    });
+    expect(inspectChatCompletionRequest(assistanceRequest, "strict", settings)).toMatchObject({
+      completionCeilingClass: "assistance",
+      maxOutputTokens: 5000
+    });
+    expect(fingerprintChatCompletionRequest(proseRequest)).not.toBe(
+      fingerprintChatCompletionRequest(assistanceRequest)
+    );
+    expect(fingerprintChatCompletionRequest(proseRequest)).toBe(fingerprintChatCompletionRequest(
+      buildChatCompletionRequest({
+        prompt: "Same prompt",
+        settings: { ...settings, assistanceMaxOutputTokens: 9000 },
+        outputPolicy: "prose"
+      })
+    ));
+    expect(fingerprintChatCompletionRequest(assistanceRequest)).toBe(fingerprintChatCompletionRequest(
+      buildChatCompletionRequest({
+        prompt: "Same prompt",
+        settings: { ...settings, proseMaxOutputTokens: 3000 },
+        outputPolicy: "strict"
+      })
+    ));
+  });
+
   it("builds a non-streaming chat completion request from the compiled prompt and settings", () => {
     expect(
       buildChatCompletionRequest({
@@ -15,9 +56,11 @@ describe("buildChatCompletionRequest", () => {
           model: "anthropic/claude-sonnet-4",
           temperatureMode: "explicit",
           temperature: 0.7,
-          maxOutputTokens: 1800,
+          proseMaxOutputTokens: 1800,
+          assistanceMaxOutputTokens: 4096,
           topP: 0.9
-        }
+        },
+        outputPolicy: "prose"
       })
     ).toEqual({
       model: "anthropic/claude-sonnet-4",
@@ -41,8 +84,10 @@ describe("buildChatCompletionRequest", () => {
         model: "openai/gpt-4.1",
         temperatureMode: "explicit",
         temperature: 1,
-        maxOutputTokens: 1024
-      }
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 4096
+      },
+      outputPolicy: "prose"
     });
 
     expect(request).toEqual({
@@ -68,8 +113,10 @@ describe("buildChatCompletionRequest", () => {
         model: "openai/gpt-4.1",
         temperatureMode: "explicit",
         temperature: 1,
-        maxOutputTokens: 1024
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 4096
       },
+      outputPolicy: "strict",
       requestOptions: {
         provider: { require_parameters: false, allow_fallbacks: true, data_collection: "deny" },
         plugins: [{ id: "unexpected" }],
@@ -96,14 +143,17 @@ describe("buildChatCompletionRequest", () => {
       settings: {
         model: "anthropic/claude-sonnet-5",
         temperatureMode: "provider_default",
-        maxOutputTokens: 2048
-      }
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 2048
+      },
+      outputPolicy: "strict"
     });
 
     expect(request).not.toHaveProperty("temperature");
-    expect(inspectChatCompletionRequest(request)).toEqual({
+    expect(inspectChatCompletionRequest(request, "strict")).toEqual({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
+      completionCeilingClass: "assistance",
       maxOutputTokens: 2048,
       requestFingerprint: fingerprintChatCompletionRequest(request)
     });
@@ -113,22 +163,24 @@ describe("buildChatCompletionRequest", () => {
     const settings = {
       model: "provider/selected",
       temperatureMode: "provider_default" as const,
-      maxOutputTokens: 2048,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 2048,
       cachedModels: [
         { id: "provider/other", name: "Other", contextLength: 999 },
         { id: "provider/selected", name: "Selected", contextLength: 4096 }
       ]
     };
-    const request = buildChatCompletionRequest({ prompt: "Prompt", settings });
+    const request = buildChatCompletionRequest({ prompt: "Prompt", settings, outputPolicy: "strict" });
 
-    expect(inspectChatCompletionRequest(request, settings)).toEqual({
+    expect(inspectChatCompletionRequest(request, "strict", settings)).toEqual({
       model: "provider/selected",
       temperatureMode: "provider_default",
+      completionCeilingClass: "assistance",
       maxOutputTokens: 2048,
       contextLength: 4096,
       requestFingerprint: fingerprintChatCompletionRequest(request)
     });
-    expect(inspectChatCompletionRequest(request, {
+    expect(inspectChatCompletionRequest(request, "strict", {
       ...settings,
       cachedModels: [{ id: "provider/selected", name: "Selected" }]
     })).not.toHaveProperty("contextLength");
@@ -141,16 +193,20 @@ describe("buildChatCompletionRequest", () => {
         model: "test/model",
         temperatureMode: "explicit",
         temperature: 1,
-        maxOutputTokens: 1024
-      }
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 4096
+      },
+      outputPolicy: "prose"
     });
     const providerDefault = buildChatCompletionRequest({
       prompt: "Byte-identical prompt",
       settings: {
         model: "test/model",
         temperatureMode: "provider_default",
-        maxOutputTokens: 1024
-      }
+        proseMaxOutputTokens: 1024,
+        assistanceMaxOutputTokens: 4096
+      },
+      outputPolicy: "prose"
     });
 
     expect(explicit.messages).toEqual(providerDefault.messages);

@@ -40,12 +40,14 @@ export function registerCompileRoutes(app: FastifyInstance, manager: ProjectStor
 
     const compiled = compilePrompt(snapshotResult.snapshot, compileRequest.value);
     const settings = readOpenRouterSettings();
+    const outputPolicy = compileRequest.value.promptKind === "prose" ? "prose" : "strict";
     return {
       ...compiled,
       providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
         prompt: compiled.prompt,
-        settings
-      }), settings)
+        settings,
+        outputPolicy
+      }), outputPolicy, settings)
     };
   });
 }

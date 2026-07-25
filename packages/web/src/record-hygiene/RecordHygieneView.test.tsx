@@ -195,6 +195,7 @@ describe("RecordHygieneView", () => {
     renderRecordHygiene();
 
     const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
     expect(advisory.textContent).toContain("estimated at 11 tokens");
     expect(advisory.textContent).toContain("narrow the selected scope");
     expect(advisory.textContent).not.toContain("# Story-Record Hygiene Prompt");
@@ -293,6 +294,7 @@ function compileResponse(overrides: Partial<{
       model: "openai/gpt-4.1",
       temperatureMode: "explicit" as const,
       temperature: 0.4,
+      completionCeilingClass: "assistance" as const,
       maxOutputTokens: 2200,
       ...(overrides.contextLength === undefined ? {} : { contextLength: overrides.contextLength }),
       requestFingerprint: "request-fingerprint-1"

@@ -238,6 +238,7 @@ describe("AcceptedSegmentChangeReviewView", () => {
     renderView();
 
     const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
     expect(advisory.textContent).toContain("estimated at 10 tokens");
     expect(advisory.textContent).toContain("narrow the selected scope");
     expect(advisory.textContent).not.toContain("Complete prompt source for comparison.");
@@ -387,6 +388,7 @@ function compileResponse(): CompileSuccess {
       model: "test/model",
       temperatureMode: "explicit",
       temperature: 0.1,
+      completionCeilingClass: "assistance",
       maxOutputTokens: 500,
       requestFingerprint: "request:12345678"
     }

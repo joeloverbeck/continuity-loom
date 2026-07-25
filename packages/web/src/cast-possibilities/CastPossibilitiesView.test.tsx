@@ -67,12 +67,14 @@ describe("Cast Possibilities browser workflow", () => {
       ...compiled,
       providerRequest: {
         ...compiled.providerRequest,
+        maxOutputTokens: 4095,
         contextLength: 4096
       }
     });
     renderView(client);
 
     const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
     expect(advisory.textContent).toContain("estimated at 7 tokens");
     expect(advisory.textContent).not.toContain("narrow the selected scope");
     expect(advisory.textContent).not.toContain("# Cast Possibilities Prompt");
@@ -136,10 +138,12 @@ describe("Cast Possibilities browser workflow", () => {
 
   it("replaces only the regenerated character while preserving the full-cast source identity", async () => {
     const client = fixtureClient("fnv1a32:source-a");
+    vi.mocked(client.compile).mockResolvedValue(fixtureCompileResult("fnv1a32:source-a", 4095));
     const first = renderView(client);
     fireEvent.click(await screen.findByRole("checkbox", { name: /confirm this one-time send/i }));
     fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
     fireEvent.click(await screen.findByRole("button", { name: /Regenerate Elian/ }));
+    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
     fireEvent.click(await screen.findByRole("checkbox", { name: /confirm one regeneration request/i }));
     fireEvent.click(screen.getByRole("button", { name: "Send regeneration" }));
 
@@ -528,7 +532,7 @@ function fixtureClient(fingerprint: string): CastPossibilitiesClient {
   };
 }
 
-function fixtureCompileResult(fingerprint: string) {
+function fixtureCompileResult(fingerprint: string, maxOutputTokens = 4096) {
   const disclosure = {
     sourceProfile: "cast-possibilities" as const,
     savedDraftIdentity: `generation-brief:${fingerprint}`,
@@ -564,7 +568,8 @@ function fixtureCompileResult(fingerprint: string) {
         model: "test/model",
         temperatureMode: "explicit",
         temperature: 0,
-        maxOutputTokens: 4096,
+        completionCeilingClass: "assistance",
+        maxOutputTokens,
         requestFingerprint: `request:${fingerprint}`
       }
   } as const;

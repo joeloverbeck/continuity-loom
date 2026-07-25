@@ -374,6 +374,7 @@ function compileResult(prompt: string) {
       model: "openai/gpt-4.1",
       temperatureMode: "explicit" as const,
       temperature: 1,
+      completionCeilingClass: "prose" as const,
       maxOutputTokens: 1024,
       requestFingerprint: "request-fingerprint-1"
     }

@@ -79,12 +79,20 @@ Items and coverage are session-only, visibly non-canonical scratch. Keeping, cop
 
 Local compile makes no provider request. It discloses the finalized provider
 model, explicit or provider-default temperature intent, optional Top P only
-when sent, completion ceiling, and a provider-request fingerprint separately
+when sent, the effective Assistance ceiling class and value, and a
+provider-request fingerprint separately
 from the prompt fingerprint. Analyze rebuilds both the complete prompt source
 and complete OpenRouter request, rejects either stale fingerprint before
 transport, derives capability requirements from the properties present in that
 request, and sends the same admitted object exactly once after explicit
 confirmation.
+
+Changing only the Prose ceiling leaves this assistance request unchanged;
+changing Assistance requires fresh inspection. Assistance below 4,096 produces
+the shared non-gating suitability advisory, and the context-window advisory
+uses the same effective value. Both warnings are ephemeral: they never change
+Settings or review scope, acknowledge the durable-change reminder, or send,
+retry, repair, or persist a result.
 
 Strict JSON Schema, required-parameter routing, disabled fallbacks and
 transforms, no plugins, no tools, and `tool_choice: "none"` remain binding.

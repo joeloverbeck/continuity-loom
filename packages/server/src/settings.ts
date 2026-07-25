@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -19,7 +20,8 @@ export interface ModelListEntry {
 
 interface OpenRouterSettingsBase {
   model: string;
-  maxOutputTokens: number;
+  proseMaxOutputTokens: number;
+  assistanceMaxOutputTokens: number;
   topP?: number;
   cachedModels?: ModelListEntry[];
 }
@@ -35,7 +37,8 @@ export interface OpenRouterSettingsPatch {
   model?: string;
   temperatureMode?: OpenRouterSettings["temperatureMode"];
   temperature?: number;
-  maxOutputTokens?: number;
+  proseMaxOutputTokens?: number;
+  assistanceMaxOutputTokens?: number;
   topP?: number | null;
   cachedModels?: ModelListEntry[];
 }
@@ -49,24 +52,38 @@ const modelListEntrySchema = z.strictObject({
   supportedParameters: z.array(z.string().trim().min(1)).optional()
 });
 
-const openRouterSettingsSchema = z.strictObject({
+const settingsFields = {
   model: z.string().trim().optional(),
   temperatureMode: z.enum(["explicit", "provider_default"]).optional(),
   temperature: z.number().min(0).max(2).optional(),
-  maxOutputTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).optional(),
   cachedModels: z.array(modelListEntrySchema).optional()
+};
+
+const canonicalOpenRouterSettingsSchema = z.strictObject({
+  ...settingsFields,
+  proseMaxOutputTokens: z.number().int().positive(),
+  assistanceMaxOutputTokens: z.number().int().positive()
 });
 
-const openRouterSettingsPatchSchema = openRouterSettingsSchema.extend({
+const legacyOpenRouterSettingsSchema = z.strictObject({
+  ...settingsFields,
+  maxOutputTokens: z.number().int().positive().optional()
+});
+
+const openRouterSettingsPatchSchema = z.strictObject({
+  ...settingsFields,
+  proseMaxOutputTokens: z.number().int().positive().optional(),
+  assistanceMaxOutputTokens: z.number().int().positive().optional(),
   topP: z.number().min(0).max(1).nullable().optional()
-}).partial();
+});
 
 const defaultOpenRouterSettings = {
   model: "",
   temperatureMode: "explicit",
   temperature: 1,
-  maxOutputTokens: 1024
+  proseMaxOutputTokens: 1024,
+  assistanceMaxOutputTokens: 4096
 } satisfies OpenRouterSettings;
 
 export function getOpenRouterConfigPath(): string {
@@ -80,7 +97,10 @@ export function readOpenRouterSettings(): OpenRouterSettingsStatus {
   }
 
   const parsed = parseConfigFile(configPath);
-  const settings = normalizeSettings(parsed);
+  const settings = normalizePersistedSettings(parsed);
+  if (parsed.kind === "legacy") {
+    writeSettingsFileAtomic(settings);
+  }
 
   return withCredentialStatus(settings);
 }
@@ -103,10 +123,8 @@ export function writeOpenRouterSettings(patch: OpenRouterSettingsPatch): OpenRou
   if (parsedPatch.topP === null) {
     delete candidate.topP;
   }
-  const settings = normalizeSettings(candidate);
-
-  mkdirSync(getOpenRouterConfigDir(), { recursive: true });
-  writeFileSync(getOpenRouterConfigPath(), `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+  const settings = normalizeCanonicalSettings(candidate);
+  writeSettingsFileAtomic(settings);
 
   return withCredentialStatus(settings);
 }
@@ -130,20 +148,51 @@ function readPersistedSettings(): OpenRouterSettings {
   }
 
   const parsed = parseConfigFile(configPath);
-  return normalizeSettings(parsed);
+  const settings = normalizePersistedSettings(parsed);
+  if (parsed.kind === "legacy") {
+    writeSettingsFileAtomic(settings);
+  }
+  return settings;
 }
 
-function parseConfigFile(configPath: string): Record<string, unknown> {
+type ParsedPersistedSettings =
+  | { kind: "canonical"; value: z.infer<typeof canonicalOpenRouterSettingsSchema> }
+  | { kind: "legacy"; value: z.infer<typeof legacyOpenRouterSettingsSchema> };
+
+function parseConfigFile(configPath: string): ParsedPersistedSettings {
   const parsed: unknown = JSON.parse(readFileSync(configPath, "utf8"));
   assertNoKeyFields(parsed);
-  return stripUndefinedProperties(openRouterSettingsPatchSchema.parse(parsed));
+  if (hasOwnField(parsed, "maxOutputTokens") || (
+    !hasOwnField(parsed, "proseMaxOutputTokens") &&
+    !hasOwnField(parsed, "assistanceMaxOutputTokens")
+  )) {
+    return { kind: "legacy", value: legacyOpenRouterSettingsSchema.parse(parsed) };
+  }
+  return { kind: "canonical", value: canonicalOpenRouterSettingsSchema.parse(parsed) };
 }
 
-function normalizeSettings(value: unknown): OpenRouterSettings {
-  const parsed = openRouterSettingsSchema.parse(value);
+function normalizePersistedSettings(parsed: ParsedPersistedSettings): OpenRouterSettings {
+  if (parsed.kind === "canonical") {
+    return normalizeCanonicalSettings(parsed.value);
+  }
+
+  const legacyCeiling = parsed.value.maxOutputTokens ?? defaultOpenRouterSettings.proseMaxOutputTokens;
+  return buildNormalizedSettings({
+    ...parsed.value,
+    proseMaxOutputTokens: legacyCeiling,
+    assistanceMaxOutputTokens: legacyCeiling
+  });
+}
+
+function normalizeCanonicalSettings(value: unknown): OpenRouterSettings {
+  return buildNormalizedSettings(canonicalOpenRouterSettingsSchema.parse(value));
+}
+
+function buildNormalizedSettings(
+  parsed: z.infer<typeof canonicalOpenRouterSettingsSchema>
+): OpenRouterSettings {
   const temperatureMode = parsed.temperatureMode ?? "explicit";
   const model = parsed.model ?? defaultOpenRouterSettings.model;
-  const maxOutputTokens = parsed.maxOutputTokens ?? defaultOpenRouterSettings.maxOutputTokens;
   let settings: OpenRouterSettings;
   if (temperatureMode === "explicit") {
     if (parsed.temperature === undefined) {
@@ -153,7 +202,8 @@ function normalizeSettings(value: unknown): OpenRouterSettings {
       model,
       temperatureMode,
       temperature: parsed.temperature,
-      maxOutputTokens
+      proseMaxOutputTokens: parsed.proseMaxOutputTokens,
+      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens
     };
   } else {
     if (parsed.temperature !== undefined) {
@@ -162,7 +212,8 @@ function normalizeSettings(value: unknown): OpenRouterSettings {
     settings = {
       model,
       temperatureMode,
-      maxOutputTokens
+      proseMaxOutputTokens: parsed.proseMaxOutputTokens,
+      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens
     };
   }
 
@@ -190,6 +241,29 @@ function normalizeSettings(value: unknown): OpenRouterSettings {
   }
 
   return settings;
+}
+
+function writeSettingsFileAtomic(settings: OpenRouterSettings): void {
+  const configDir = getOpenRouterConfigDir();
+  const configPath = getOpenRouterConfigPath();
+  const tempPath = join(configDir, `.openrouter-${randomUUID()}.tmp`);
+  mkdirSync(configDir, { recursive: true });
+
+  try {
+    writeFileSync(tempPath, `${JSON.stringify(settings, null, 2)}\n`, { encoding: "utf8", flag: "wx" });
+    renameSync(tempPath, configPath);
+  } catch (error) {
+    try {
+      unlinkSync(tempPath);
+    } catch {
+      // The temporary file may not have been created. Preserve the original failure.
+    }
+    throw error;
+  }
+}
+
+function hasOwnField(value: unknown, key: string): boolean {
+  return value !== null && typeof value === "object" && Object.hasOwn(value, key);
 }
 
 function stripUndefinedProperties(value: Record<string, unknown>): Record<string, unknown> {
