@@ -9,6 +9,30 @@ Same-change rule: adding, removing, or re-severitying a diagnostic code must upd
 
 Record hygiene findings are non-deterministic advisory assistance output, not validation diagnostics. They do not appear in `DIAGNOSTIC_CODES`, do not add rule IDs to this inventory, and do not gate save, preview, generate, accept, archive, or record editing operations.
 
+## Provider-Boundary Advisory Outside `DIAGNOSTIC_CODES`
+
+The context-window estimate is a provider-boundary advisory, not a validation
+diagnostic. It is deliberately outside `DIAGNOSTIC_CODES`, so it does not add a
+rule ID to the severity tables below and does not change their drift contract.
+
+Prompt Inspector evaluates the condition once for every OpenRouter completion
+surface: prose generation, Ideation, the story-record review workflow, Cast
+Possibilities analysis and per-character regeneration, and Accepted-Segment
+Change Review.
+It compares the compiled prompt's deterministic token estimate plus the
+configured maximum output tokens with the selected model's cached context
+length. The advisory appears only when that sum is greater than the cached
+length. When the selected model has no cached context length, it does not
+appear.
+
+The advisory names the selected model, cached context window, estimated prompt
+tokens, and available manual remedies. It never disables Generate, Analyze, or
+Regenerate and never prevents provider transport. Displaying or ignoring it
+makes no provider request and triggers no automatic refresh, retry, model
+change, scope change, resend, or setting change. This is a FOUNDATIONS §11
+threshold warning; every credential, staleness, capability-admission, and
+deterministic readiness blocker remains separate and blocking.
+
 FOUNDATIONS §11 taxonomy clauses used below:
 
 1. Compiler cannot produce a structurally valid universal prompt.

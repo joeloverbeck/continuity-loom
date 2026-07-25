@@ -60,6 +60,30 @@ describe("Cast Possibilities browser workflow", () => {
     expect(screen.getByText(/non-canonical/i)).not.toBeNull();
   });
 
+  it("shows the shared advisory without changing explicit Analyze availability or sending", async () => {
+    const client = fixtureClient("fnv1a32:source-a");
+    const compiled = fixtureCompileResult("fnv1a32:source-a");
+    vi.mocked(client.compile).mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        contextLength: 4096
+      }
+    });
+    renderView(client);
+
+    const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("estimated at 7 tokens");
+    expect(advisory.textContent).not.toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("# Cast Possibilities Prompt");
+
+    const analyze = screen.getByRole<HTMLButtonElement>("button", { name: "Analyze with OpenRouter" });
+    expect(analyze.disabled).toBe(true);
+    fireEvent.click(screen.getByRole("checkbox", { name: /confirm this one-time send/i }));
+    expect(analyze.disabled).toBe(false);
+    expect(client.analyze).not.toHaveBeenCalled();
+  });
+
   it("keeps only session scratch and preserves stale cards as readable and copyable without regeneration", async () => {
     const firstClient = fixtureClient("fnv1a32:source-a");
     const first = renderView(firstClient);

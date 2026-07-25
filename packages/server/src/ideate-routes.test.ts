@@ -96,6 +96,46 @@ describe("ideate routes", () => {
     expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform answer" });
   });
 
+  it("sends Ideation exactly once when the deterministic estimate exceeds cached context length", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform answer" } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+    const settings = await fastify.inject({
+      method: "PUT",
+      url: "/api/settings/openrouter",
+      payload: {
+        model: "anthropic/claude-sonnet-4",
+        temperatureMode: "explicit",
+        temperature: 0.7,
+        maxOutputTokens: 1800,
+        cachedModels: [{
+          id: "anthropic/claude-sonnet-4",
+          name: "Tiny compatible model",
+          contextLength: 1,
+          supportedParameters: ["temperature", "max_completion_tokens"]
+        }]
+      }
+    });
+    expect(settings.statusCode).toBe(200);
+
+    const inspected = await fastify.inject({
+      method: "POST",
+      url: "/api/compile",
+      payload: { promptKind: "ideation" }
+    });
+    expect(inspected.statusCode).toBe(200);
+    expect(inspected.json().providerRequest).toMatchObject({ contextLength: 1 });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: await inspectedIdeationPayload(fastify)
+    });
+    expect(response.json()).toMatchObject({ ok: true, malformed: true });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("returns missing-key before transport when no API key is configured", async () => {
     const fastify = app();
     await prepareIdeationProject(fastify);

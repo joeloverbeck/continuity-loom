@@ -6,6 +6,7 @@ import type { OpenRouterRequestInspection } from "../api.js";
 export interface PromptInspectorProps {
   result: CompileResult;
   providerRequest?: OpenRouterRequestInspection;
+  canNarrowScope?: boolean;
   searchTerm: string;
   onSearchTermChange: (value: string) => void;
 }
@@ -13,6 +14,7 @@ export interface PromptInspectorProps {
 export function PromptInspector({
   result,
   providerRequest,
+  canNarrowScope = false,
   searchTerm,
   onSearchTermChange
 }: PromptInspectorProps): React.JSX.Element {
@@ -26,6 +28,9 @@ export function PromptInspector({
       ? Math.min(navigation.index, matches.length - 1)
       : 0;
   const highlightedPrompt = highlightPrompt(result.prompt, matches, activeMatchIndex, activeMarkRef);
+  const contextWindowAdvisory = providerRequest === undefined
+    ? undefined
+    : buildContextWindowAdvisory(result.metadata.tokenEstimate, providerRequest, canNarrowScope);
 
   useEffect(() => {
     activeMarkRef.current?.scrollIntoView?.({ block: "center" });
@@ -60,6 +65,16 @@ export function PromptInspector({
             <button type="button" onClick={() => navigate(1)} disabled={matches.length === 0}>Next</button>
           </div>
         </div>
+      ) : null}
+
+      {contextWindowAdvisory ? (
+        <p
+          className="status statusWarning"
+          role="status"
+          aria-label="Context-window advisory"
+        >
+          {contextWindowAdvisory}
+        </p>
       ) : null}
 
       <section className="promptPreviewLayout" aria-label="Compiled prompt preview">
@@ -126,6 +141,41 @@ export function PromptInspector({
       </section>
     </>
   );
+}
+
+function buildContextWindowAdvisory(
+  promptTokenEstimate: number,
+  providerRequest: OpenRouterRequestInspection,
+  canNarrowScope: boolean
+): string | undefined {
+  const { contextLength, maxOutputTokens, model } = providerRequest;
+  if (
+    contextLength === undefined ||
+    promptTokenEstimate + maxOutputTokens <= contextLength
+  ) {
+    return undefined;
+  }
+
+  const estimatedTotal = promptTokenEstimate + maxOutputTokens;
+  const remedies = [
+    ...(canNarrowScope ? ["narrow the selected scope"] : []),
+    "reduce the configured maximum output tokens",
+    "choose a model with a larger context window"
+  ];
+
+  return `The compiled prompt is estimated at ${promptTokenEstimate} tokens. ` +
+    `With the configured maximum output of ${maxOutputTokens} tokens, that estimate totals ` +
+    `${estimatedTotal} tokens and may exceed ${model}'s cached context window of ` +
+    `${contextLength} tokens. You can ${joinRemedies(remedies)}. ` +
+    "This is an estimate, not a provider measurement, and it does not block sending.";
+}
+
+function joinRemedies(remedies: readonly string[]): string {
+  if (remedies.length === 2) {
+    return `${remedies[0]} or ${remedies[1]}`;
+  }
+
+  return `${remedies.slice(0, -1).join(", ")}, or ${remedies.at(-1)}`;
 }
 
 interface PromptMatch {

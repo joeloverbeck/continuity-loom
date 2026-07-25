@@ -76,7 +76,7 @@ describe("OpenRouter send pipeline", () => {
     });
   });
 
-  it("is the sole owner of send-path primitives and the three-surface context-window predicate", () => {
+  it("is the sole owner of send-path primitives and contains no context-window refusal gate", () => {
     const routeSources = Object.fromEntries(
       [
         "generate-routes.ts",
@@ -94,6 +94,7 @@ describe("OpenRouter send pipeline", () => {
     for (const source of Object.values(routeSources)) {
       expect(source).not.toContain("admitOpenRouterRequest");
       expect(source).not.toContain("sendChatCompletion");
+      expect(source).not.toContain("contextWindow:");
       expect(source.match(/\brunOpenRouterSendPipeline\(/g)).toHaveLength(1);
     }
 
@@ -105,14 +106,13 @@ describe("OpenRouter send pipeline", () => {
       "accepted-segment-change-review-routes.ts"
     ]) {
       expect(routeSources[filename]?.match(/\bbuildChatCompletionRequest\(/g)).toHaveLength(1);
-      expect(routeSources[filename]?.match(/\bcontextWindow:/g)).toHaveLength(1);
     }
 
-    expect(routeSources["generate-routes.ts"]).not.toContain("contextWindow:");
-    expect(routeSources["ideate-routes.ts"]).not.toContain("contextWindow:");
     expect(pipelineSource.match(/\bbuildChatCompletionRequest\(/g)).toHaveLength(1);
     expect(pipelineSource.match(/\badmitOpenRouterRequest\(/g)).toHaveLength(1);
-    expect(pipelineSource.match(/\bfunction isPromptTooLarge\(/g)).toHaveLength(1);
+    expect(pipelineSource).not.toContain("contextWindow");
+    expect(pipelineSource).not.toContain("isPromptTooLarge");
+    expect(pipelineSource).not.toContain("prompt-too-large");
     expect(pipelineSource).toContain("input.settings ?? readOpenRouterSettings()");
     expect(pipelineSource).toContain("input.transport ?? sendChatCompletion");
   });

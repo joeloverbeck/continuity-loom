@@ -63,7 +63,7 @@ export function registerCastPossibilitiesRoutes(
       outputSchema: compiled.result.outputSchema,
       versions: compiled.result.disclosure.versions,
       fingerprint: compiled.result.disclosure.fingerprint,
-      providerRequest: inspectChatCompletionRequest(finalizedRequest)
+      providerRequest: inspectChatCompletionRequest(finalizedRequest, settings)
     };
   });
 
@@ -102,16 +102,6 @@ export function registerCastPossibilitiesRoutes(
               kind: "cast-possibilities-source-changed",
               message: "The Cast Possibilities source or provider configuration changed. Compile and inspect it again before sending.",
               currentPromptFingerprint: compiled.result.disclosure.fingerprint
-            }
-          }
-        },
-        contextWindow: {
-          promptTokenEstimate: compiled.result.disclosure.tokenEstimate,
-          refusal: {
-            body: {
-              ok: false,
-              kind: "cast-possibilities-prompt-too-large",
-              message: "The complete Cast Possibilities source exceeds the selected model context window. Choose a compatible model."
             }
           }
         },

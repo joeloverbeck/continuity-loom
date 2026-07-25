@@ -63,7 +63,6 @@ type ReviewState =
   | { status: "capabilityStale"; message: string; recovery: string }
   | { status: "incompatibleModel"; message: string; recovery: string }
   | { status: "provider"; message: string }
-  | { status: "oversize"; message: string }
   | { status: "local"; message: string };
 
 type ModelRefreshState =
@@ -189,11 +188,6 @@ export function AcceptedSegmentChangeReviewView({
 
       if (result.kind === "accepted-segment-change-review-source-changed") {
         setReviewState({ status: "stale", message: result.message });
-        return;
-      }
-
-      if (result.kind === "accepted-segment-change-review-prompt-too-large") {
-        setReviewState({ status: "oversize", message: result.message });
         return;
       }
 
@@ -385,6 +379,7 @@ function SourcePanel({
       <PromptInspector
         result={toInspectorResult(result)}
         providerRequest={result.providerRequest}
+        canNarrowScope
         searchTerm={searchTerm}
         onSearchTermChange={onSearchTermChange}
       />
@@ -486,9 +481,6 @@ function ReviewPanel({
       ) : null}
       {state.status === "provider" ? (
         <Recovery title="OpenRouter request failed" message={state.message} guidance="No result was kept or written." />
-      ) : null}
-      {state.status === "oversize" ? (
-        <Recovery title="Complete source is too large" message={state.message} guidance="Use Active Working Set or a compatible model. Nothing was trimmed." />
       ) : null}
       {state.status === "local" ? (
         <Recovery title="Local request failed" message={state.message} guidance="Inspect local project state and retry manually. No provider fallback or automatic retry is used." />

@@ -296,17 +296,33 @@ describe("Accepted-Segment Change Review routes", () => {
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("rejects oversize complete source before transport without trimming or leaking source", async () => {
+  it("warns through inspection and sends the complete source once without leaking it", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
     writeOpenRouterSettings({
       model: "tiny/context",
       temperature: 0.1,
       maxOutputTokens: 1024,
-      cachedModels: [{ id: "tiny/context", name: "Tiny Context", contextLength: 16 }]
+      cachedModels: [{
+        id: "tiny/context",
+        name: "Tiny Context",
+        contextLength: 16,
+        supportedParameters: [
+          "response_format",
+          "structured_outputs",
+          "temperature",
+          "max_completion_tokens",
+          "tools",
+          "tool_choice"
+        ]
+      }]
     });
     const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validOutput() }
+    });
 
     const response = await candidate.inject({
       method: "POST",
@@ -315,13 +331,12 @@ describe("Accepted-Segment Change Review routes", () => {
     });
     const body = response.json();
 
-    expect(body).toEqual({
-      ok: false,
-      kind: "accepted-segment-change-review-prompt-too-large",
-      message: "The complete review source exceeds the selected model context window. Choose an allowed narrower scope or a compatible model."
+    expect(compile.providerRequest).toMatchObject({
+      contextLength: 16
     });
+    expect(body).toMatchObject({ ok: true, review: { contract: "accepted_segment_change_review.v2" } });
     expect(JSON.stringify(body)).not.toContain(acceptedText);
-    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
   it("rejects undeclared local request fields before source or provider work", async () => {
@@ -453,7 +468,7 @@ interface CompileReviewResponse {
   disclosure: AcceptedSegmentChangeReviewDisclosure;
   outputSchema: { required: readonly string[] };
   consumedGuidance: readonly ConsumedGenerationGuidanceEntry[];
-  providerRequest: { requestFingerprint: string };
+  providerRequest: { requestFingerprint: string; contextLength?: number };
 }
 
 function analyzePayload(compile: CompileReviewResponse): {

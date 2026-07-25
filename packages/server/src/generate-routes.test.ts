@@ -114,6 +114,96 @@ describe("generate routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("discloses the selected cached context length for prose and Ideation inspection", async () => {
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify, {
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Compact test model",
+        contextLength: 1801,
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
+    });
+
+    for (const payload of [{ promptKind: "prose" }, { promptKind: "ideation" }]) {
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/compile",
+        payload
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().providerRequest).toMatchObject({
+        model: "anthropic/claude-sonnet-4",
+        maxOutputTokens: 1800,
+        contextLength: 1801
+      });
+    }
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
+  it("sends prose exactly once when the deterministic estimate exceeds cached context length", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify, {
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Tiny compatible model",
+        contextLength: 1,
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
+    });
+
+    const inspection = await fastify.inject({ method: "POST", url: "/api/compile" });
+    expect(inspection.statusCode).toBe(200);
+    expect(inspection.json().providerRequest).toMatchObject({ contextLength: 1 });
+
+    const response = await injectGenerate(fastify);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      candidate: { text: "Provider answer." }
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends prose exactly once when the inspected prompt is below cached context length", async () => {
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." } });
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await openProject(fastify);
+    await putStoryConfig(fastify);
+    await putBrief(fastify);
+    await putSettings(fastify, {
+      maxOutputTokens: 1800,
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Large compatible model",
+        contextLength: 100_000,
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
+    });
+
+    const inspection = await fastify.inject({ method: "POST", url: "/api/compile" });
+    expect(inspection.statusCode).toBe(200);
+    expect(inspection.json().providerRequest).toMatchObject({ contextLength: 100_000 });
+    expect(inspection.json().metadata.tokenEstimate + 1800).toBeLessThan(100_000);
+
+    const response = await injectGenerate(fastify);
+    expect(response.json()).toMatchObject({
+      ok: true,
+      candidate: { text: "Provider answer." }
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("rejects generation before transport when the inspected prompt fingerprint is stale", async () => {
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
     process.env.OPENROUTER_API_KEY = keySecretText;

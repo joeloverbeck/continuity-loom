@@ -45,7 +45,7 @@ export function registerCompileRoutes(app: FastifyInstance, manager: ProjectStor
       providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
         prompt: compiled.prompt,
         settings
-      }))
+      }), settings)
     };
   });
 }

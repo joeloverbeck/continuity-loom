@@ -77,7 +77,7 @@ Record Hygiene coverage is advisory-assistance coverage, not validation coverage
 | RH-17 | Archived duplicate excluded | Archive exclusion | Source predicate and web source disclosure name archived records as excluded. |
 | RH-18 | Malformed record row | Fail-closed source build | Snapshot-builder tests cover `malformed-hygiene-source` without silent skipping. |
 | RH-19 | Malformed model output | Output quarantine | Parser and UI tests quarantine raw output as non-canonical scratch. |
-| RH-20 | Oversized project review | No eviction/retry | Route test covers `prompt-too-large` with no reduced-record retry. |
+| RH-20 | Oversized project review | Non-gating advisory; no eviction/retry | Shared Prompt Inspector and Record Hygiene view tests cover the scope-aware advisory, unchanged confirmed-Analyze availability, and zero display-time requests; the route test covers one attempted send with the complete source, unchanged records, and no reduced-record retry. |
 | RH-21 | Working-set scope disclosure | Scope transparency | Core hygiene golden and Record Hygiene view tests assert request mode, `hygiene_scope`, and UI scope copy for both modes. |
 | RH-22 | Working-set predicate completeness | Scoped source completeness | Server snapshot-builder and route tests cover selected in-scope inclusion, fixed output order, and route/compiler composition. |
 | RH-23 | Empty working-set scope | Truthful scoped empty state | Core hygiene golden covers empty working-set prompt rendering; Record Hygiene view tests cover the distinct empty-scope UI message and unchanged send enablement. |

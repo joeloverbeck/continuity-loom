@@ -165,6 +165,81 @@ describe("PromptInspector", () => {
     expect(within(metadata).getByText("Top P")).toBeTruthy();
     expect(within(metadata).getByText("0.9")).toBeTruthy();
   });
+
+  it("presents one accessible non-gating context-window advisory from disclosed estimates", () => {
+    const { rerender } = render(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/compact-model",
+          temperatureMode: "provider_default",
+          maxOutputTokens: 2048,
+          contextLength: 2054,
+          requestFingerprint: "request-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+
+    const advisory = screen.getByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("provider/compact-model");
+    expect(advisory.textContent).toContain("estimated at 7 tokens");
+    expect(advisory.textContent).toContain("cached context window of 2054 tokens");
+    expect(advisory.textContent).toContain("reduce the configured maximum output tokens");
+    expect(advisory.textContent).toContain("choose a model with a larger context window");
+    expect(advisory.textContent).not.toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("Prompt");
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/compact-model",
+          temperatureMode: "provider_default",
+          maxOutputTokens: 2047,
+          contextLength: 2054,
+          requestFingerprint: "request-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("status", { name: "Context-window advisory" })).toBeNull();
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/unknown-model",
+          temperatureMode: "provider_default",
+          maxOutputTokens: 2048,
+          requestFingerprint: "request-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.queryByRole("status", { name: "Context-window advisory" })).toBeNull();
+
+    rerender(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/compact-model",
+          temperatureMode: "provider_default",
+          maxOutputTokens: 2048,
+          contextLength: 2054,
+          requestFingerprint: "request-fingerprint"
+        }}
+        canNarrowScope
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+    expect(screen.getByRole("status", { name: "Context-window advisory" }).textContent)
+      .toContain("narrow the selected scope");
+  });
 });
 
 function compileResult(prompt: string): CompileResult {

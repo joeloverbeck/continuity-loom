@@ -62,7 +62,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
       citations: compiled.disclosure.citationMap,
       outputSchema: acceptedSegmentChangeReviewOutputJsonSchema(),
       consumedGuidance: compiled.consumedGuidance,
-      providerRequest: inspectChatCompletionRequest(finalizedRequest)
+      providerRequest: inspectChatCompletionRequest(finalizedRequest, settings)
     };
   });
 
@@ -104,16 +104,6 @@ export function registerAcceptedSegmentChangeReviewRoutes(
               kind: "accepted-segment-change-review-source-changed",
               message: "The review source or provider configuration changed. Compile and inspect it again before Analyze.",
               currentPromptFingerprint: compiled.disclosure.fingerprint
-            }
-          }
-        },
-        contextWindow: {
-          promptTokenEstimate: compiled.disclosure.tokenEstimate,
-          refusal: {
-            body: {
-              ok: false,
-              kind: "accepted-segment-change-review-prompt-too-large",
-              message: "The complete review source exceeds the selected model context window. Choose an allowed narrower scope or a compatible model."
             }
           }
         },

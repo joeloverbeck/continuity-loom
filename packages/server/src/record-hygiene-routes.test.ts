@@ -254,27 +254,37 @@ describe("record hygiene routes", () => {
     expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform hygiene answer" });
   });
 
-  it("returns prompt-too-large before transport when the selected model context is too small", async () => {
+  it("warns through inspection and sends once without record eviction when the context estimate is too large", async () => {
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validHygieneResponse("The facts may overlap.") }
+    });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await putSettings(fastify, {
       model: "tiny/context",
       temperature: 1,
       maxOutputTokens: 1024,
-      cachedModels: [{ id: "tiny/context", name: "Tiny Context", contextLength: 16 }]
+      cachedModels: [{
+        id: "tiny/context",
+        name: "Tiny Context",
+        contextLength: 16,
+        supportedParameters: ["temperature", "max_completion_tokens"]
+      }]
     });
     await prepareHygieneProject(fastify);
 
     const before = await listRecords(fastify);
-    const { analyzeResponse: response } = await analyzeHygiene(fastify);
+    const { compileResponse, analyzeResponse: response } = await analyzeHygiene(fastify);
     const after = await listRecords(fastify);
 
-    expect(response.json()).toEqual({
-      ok: false,
-      kind: "prompt-too-large",
-      message: "Compiled record hygiene prompt exceeds the selected model context window."
+    expect(compileResponse.json().providerRequest).toMatchObject({
+      model: "tiny/context",
+      maxOutputTokens: 1024,
+      contextLength: 16
     });
-    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+    expect(response.json()).toMatchObject({ ok: true });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
     expect(after).toEqual(before);
   });
 

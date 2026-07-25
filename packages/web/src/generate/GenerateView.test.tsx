@@ -56,6 +56,39 @@ afterEach(() => {
 });
 
 describe("GenerateView", () => {
+  it("shows the shared advisory while Generate remains enabled and display sends nothing", async () => {
+    const compiled = compileResult("<role>\nPrompt");
+    vi.mocked(compile).mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        contextLength: 2200
+      }
+    });
+
+    renderGenerate();
+
+    const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("estimated at 7 tokens");
+    expect(advisory.textContent).not.toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("<role>");
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Generate" }).disabled).toBe(false);
+    expect(generate).not.toHaveBeenCalled();
+
+    vi.mocked(generate).mockResolvedValue({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The selected model or provider is unavailable."
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+
+    expect((await screen.findByRole("alert")).textContent).toContain(
+      "The selected model or provider is unavailable."
+    );
+    expect(screen.getByRole("status", { name: "Context-window advisory" })).toBeTruthy();
+    expect(generate).toHaveBeenCalledTimes(1);
+  });
+
   it("edits and accepts the current draft candidate with its generation metadata", async () => {
     const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));

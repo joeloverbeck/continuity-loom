@@ -226,13 +226,35 @@ describe("AcceptedSegmentChangeReviewView", () => {
     });
   });
 
+  it("shows the shared scope-aware advisory without changing explicit Analyze availability or sending", async () => {
+    const compiled = compileResponse();
+    compileMock.mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        contextLength: 509
+      }
+    });
+    renderView();
+
+    const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("estimated at 10 tokens");
+    expect(advisory.textContent).toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("Complete prompt source for comparison.");
+
+    const analyzeButton = screen.getByRole<HTMLButtonElement>("button", { name: "Analyze with OpenRouter" });
+    expect(analyzeButton.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText("I inspected the complete source and confirm this one-time send"));
+    expect(analyzeButton.disabled).toBe(false);
+    expect(analyzeMock).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["empty", emptyResponse(), "Unverified no-change result", "No change items were returned"],
     ["quarantined", quarantineResponse(), "Quarantined response", "schema-mismatch"],
     ["stale", staleResponse(), "Source changed", "Compile and inspect again"],
     ["provider", providerResponse(), "OpenRouter request failed", "No retry is automatic"],
     ["incompatible model", incompatibleModelResponse(), "Model cannot satisfy this request", "compatible with every named requirement"],
-    ["oversize", oversizeResponse(), "Complete source is too large", "Choose Whole Project only when needed"],
     ["local request", localRequestResponse(), "Local request failed", "Inspect local project state"]
   ] as const)("renders the %s state with distinct manual recovery", async (_label, response, heading, detail) => {
     analyzeMock.mockResolvedValue(response);
@@ -495,14 +517,6 @@ function capabilityUnknownResponse(): AcceptedSegmentChangeReviewAnalyzeResponse
       "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and " +
       "Analyze again. No request was sent; no retry is automatic. If it still fails after a refresh, the selected model " +
       "may not support strict structured output — choose one that does."
-  };
-}
-
-function oversizeResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {
-  return {
-    ok: false as const,
-    kind: "accepted-segment-change-review-prompt-too-large",
-    message: "Complete source is too large. Choose Whole Project only when needed."
   };
 }
 

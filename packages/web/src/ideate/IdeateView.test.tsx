@@ -40,6 +40,26 @@ afterEach(() => {
 });
 
 describe("IdeateView", () => {
+  it("shows the shared advisory while Get ideas remains enabled and display sends nothing", async () => {
+    const compiled = compileResult("# Grounded Ideation Prompt\n<ideation_slots>");
+    vi.mocked(compileIdeation).mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        contextLength: 2200
+      }
+    });
+
+    renderIdeate();
+
+    const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("estimated at 7 tokens");
+    expect(advisory.textContent).not.toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("# Grounded Ideation Prompt");
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Get ideas" }).disabled).toBe(false);
+    expect(ideate).not.toHaveBeenCalled();
+  });
+
   it("shows the compiled ideation prompt before sending and keeps output quarantined", async () => {
     renderIdeate();
 

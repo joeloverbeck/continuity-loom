@@ -1456,9 +1456,15 @@ Proof surface: parser tests and UI malformed-output test.
 
 Stress target: full active review exceeds known selected model context length.
 
-Expected hygiene review: prompt-too-large response with no record eviction and no retry with fewer records.
+Expected hygiene review: Prompt Inspector shows the non-gating context-window
+advisory. After explicit confirmation, Analyze attempts the complete request;
+there is no record eviction, reduced-record retry, automatic retry, or local
+size refusal.
 
-Proof surface: route test covers no-eviction fail-fast behavior.
+Proof surface: the shared Prompt Inspector component and Record Hygiene view
+tests cover advisory presentation, enabled confirmed Analyze, and zero provider
+requests from display. The route test covers one attempted send with the
+complete source, unchanged records, and no reduced-record retry.
 
 ### RH-21 — Working-set scope disclosure
 

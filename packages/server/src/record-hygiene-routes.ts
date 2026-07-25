@@ -27,6 +27,7 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
     if (!compileResult.ok) {
       return reply.code(compileResult.status).send(compileResult.body);
     }
+    const settings = readOpenRouterSettings();
 
     return {
       ok: true,
@@ -35,8 +36,8 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
       citations: compileResult.metadata.citationMap ?? {},
       providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
         prompt: compileResult.prompt,
-        settings: readOpenRouterSettings()
-      }))
+        settings
+      }), settings)
     };
   });
 
@@ -65,16 +66,6 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
               ok: false,
               kind: "stale-record-hygiene-inspection",
               message: "The hygiene source or provider configuration changed. Compile and inspect it again before Analyze."
-            }
-          }
-        },
-        contextWindow: {
-          promptTokenEstimate: compileResult.metadata.tokenEstimate,
-          refusal: {
-            body: {
-              ok: false,
-              kind: "prompt-too-large",
-              message: "Compiled record hygiene prompt exceeds the selected model context window."
             }
           }
         },

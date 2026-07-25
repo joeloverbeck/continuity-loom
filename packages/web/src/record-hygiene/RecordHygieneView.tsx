@@ -211,6 +211,7 @@ export function RecordHygieneView(): React.JSX.Element {
           <PromptInspector
             result={promptResult}
             providerRequest={compileState.providerRequest}
+            canNarrowScope
             searchTerm={searchTerm}
             onSearchTermChange={setSearchTerm}
           />
@@ -359,10 +360,6 @@ function toCompileResult(prompt: string, metadata: RecordHygieneCompileMetadata)
 function errorMessage(result: ApiFailure | TransportFailure | RecordHygieneAnalyzeResponse | RecordHygieneCompileResponse): string {
   if ("category" in result) {
     return presentOpenRouterFailure(result);
-  }
-
-  if ("kind" in result && result.kind === "prompt-too-large") {
-    return "Compiled record hygiene prompt is too large for the selected model.";
   }
 
   if ("kind" in result && result.kind === "no-open-project") {

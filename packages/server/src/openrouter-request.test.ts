@@ -109,6 +109,31 @@ describe("buildChatCompletionRequest", () => {
     });
   });
 
+  it("discloses only the selected model's cached context length without changing the request fingerprint", () => {
+    const settings = {
+      model: "provider/selected",
+      temperatureMode: "provider_default" as const,
+      maxOutputTokens: 2048,
+      cachedModels: [
+        { id: "provider/other", name: "Other", contextLength: 999 },
+        { id: "provider/selected", name: "Selected", contextLength: 4096 }
+      ]
+    };
+    const request = buildChatCompletionRequest({ prompt: "Prompt", settings });
+
+    expect(inspectChatCompletionRequest(request, settings)).toEqual({
+      model: "provider/selected",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 2048,
+      contextLength: 4096,
+      requestFingerprint: fingerprintChatCompletionRequest(request)
+    });
+    expect(inspectChatCompletionRequest(request, {
+      ...settings,
+      cachedModels: [{ id: "provider/selected", name: "Selected" }]
+    })).not.toHaveProperty("contextLength");
+  });
+
   it("fingerprints provider configuration without changing prompt bytes", () => {
     const explicit = buildChatCompletionRequest({
       prompt: "Byte-identical prompt",

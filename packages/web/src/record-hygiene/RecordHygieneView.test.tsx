@@ -190,18 +190,20 @@ describe("RecordHygieneView", () => {
     expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
   });
 
-  it("keeps the workflow-local prompt-size failure outside transport presentation", async () => {
-    vi.mocked(recordHygieneAnalyze).mockResolvedValue({
-      ok: false,
-      kind: "prompt-too-large",
-      message: "Compiled record hygiene prompt exceeds the selected model context window."
-    });
+  it("shows the shared scope-aware advisory without changing explicit Analyze availability or sending", async () => {
+    vi.mocked(recordHygieneCompile).mockResolvedValue(compileResponse({ contextLength: 2200 }));
     renderRecordHygiene();
 
-    await analyzeOnce();
+    const advisory = await screen.findByRole("status", { name: "Context-window advisory" });
+    expect(advisory.textContent).toContain("estimated at 11 tokens");
+    expect(advisory.textContent).toContain("narrow the selected scope");
+    expect(advisory.textContent).not.toContain("# Story-Record Hygiene Prompt");
 
-    expect(await screen.findByText("Compiled record hygiene prompt is too large for the selected model.")).toBeTruthy();
-    expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
+    const analyzeButton = screen.getByRole<HTMLButtonElement>("button", { name: "Analyze with OpenRouter" });
+    expect(analyzeButton.disabled).toBe(true);
+    fireEvent.click(screen.getByLabelText("Confirm this one-time send"));
+    expect(analyzeButton.disabled).toBe(false);
+    expect(recordHygieneAnalyze).not.toHaveBeenCalled();
   });
 
   it("labels malformed output as non-canonical scratch and makes it copyable", async () => {
@@ -249,6 +251,7 @@ function compileResponse(overrides: Partial<{
   recordCount: number;
   countsByType: Record<string, number>;
   citations: Record<string, string>;
+  contextLength: number;
 }> = {}) {
   return {
     ok: true as const,
@@ -277,6 +280,7 @@ function compileResponse(overrides: Partial<{
       temperatureMode: "explicit" as const,
       temperature: 0.4,
       maxOutputTokens: 2200,
+      ...(overrides.contextLength === undefined ? {} : { contextLength: overrides.contextLength }),
       requestFingerprint: "request-fingerprint-1"
     }
   };

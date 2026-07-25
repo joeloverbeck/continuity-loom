@@ -47,10 +47,6 @@ export interface OpenRouterSendProfile {
   promptFingerprint: string;
   requestOptions?: OpenRouterRequestOptions;
   staleness: OpenRouterPipelineStaleness;
-  contextWindow?: {
-    promptTokenEstimate: number;
-    refusal: OpenRouterPipelineRefusal;
-  };
   metadata: OpenRouterPipelineMetadataProfile;
 }
 
@@ -110,13 +106,6 @@ export async function runOpenRouterSendPipeline(
     };
   }
 
-  if (
-    profile.contextWindow !== undefined &&
-    isPromptTooLarge(profile.contextWindow.promptTokenEstimate, settings)
-  ) {
-    return { ok: false, ...profile.contextWindow.refusal };
-  }
-
   const admission = admitOpenRouterRequest({
     request,
     cachedModels: settings.cachedModels
@@ -159,15 +148,4 @@ function trustedMetadata(
   return profile.placement === "before"
     ? { ...providerMetadata, ...profile.additions }
     : { ...profile.additions, ...providerMetadata };
-}
-
-function isPromptTooLarge(
-  promptTokenEstimate: number,
-  settings: OpenRouterSettingsStatus
-): boolean {
-  const contextLength = settings.cachedModels
-    ?.find((model) => model.id === settings.model)
-    ?.contextLength;
-  return contextLength !== undefined &&
-    promptTokenEstimate + settings.maxOutputTokens > contextLength;
 }

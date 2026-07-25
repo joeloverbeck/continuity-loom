@@ -36,6 +36,7 @@ export interface OpenRouterRequestInspection {
   temperatureMode: "explicit" | "provider_default";
   temperature?: number;
   maxOutputTokens: number;
+  contextLength?: number;
   topP?: number;
   requestFingerprint: string;
 }
@@ -90,12 +91,20 @@ export function fingerprintChatCompletionRequest(request: OpenRouterRequest): st
   return createHash("sha256").update(JSON.stringify(request)).digest("hex");
 }
 
-export function inspectChatCompletionRequest(request: OpenRouterRequest): OpenRouterRequestInspection {
+export function inspectChatCompletionRequest(
+  request: OpenRouterRequest,
+  settings?: OpenRouterSettings
+): OpenRouterRequestInspection {
+  const contextLength = settings?.cachedModels
+    ?.find((model) => model.id === request.model)
+    ?.contextLength;
+
   return {
     model: request.model,
     temperatureMode: request.temperature === undefined ? "provider_default" : "explicit",
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
     maxOutputTokens: request.max_completion_tokens,
+    ...(contextLength === undefined ? {} : { contextLength }),
     ...(request.top_p === undefined ? {} : { topP: request.top_p }),
     requestFingerprint: fingerprintChatCompletionRequest(request)
   };

@@ -252,7 +252,7 @@ describe("Cast Possibilities routes", () => {
 
   it("regenerates exactly one inspected target from its three explicit avoid summaries", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-cast-possibilities-test";
-    configureCompatibleModel();
+    configureCompatibleModel(1);
     const candidate = await preparedApp();
     const full = await compilePossibilities(candidate);
     const target = full.disclosure.eligibleCharacters[0];
@@ -269,6 +269,7 @@ describe("Cast Possibilities routes", () => {
     expect(targeted.prompt).toContain("<target_character_avoid_list>");
     avoidList.forEach((summary) => expect(targeted.prompt).toContain(summary));
     expect(targeted.disclosure.eligibleCharacters).toHaveLength(1);
+    expect(targeted.providerRequest.contextLength).toBe(1);
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
       candidate: { text: validOutput(targeted.disclosure) }
@@ -399,16 +400,20 @@ describe("Cast Possibilities routes", () => {
       }]
     });
     const oversizeInspection = await compilePossibilities(candidate);
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validOutput(oversizeInspection.disclosure) }
+    });
     const oversize = await candidate.inject({
       method: "POST",
       url: "/api/cast-possibilities/analyze",
       payload: analyzePayload(oversizeInspection)
     });
-    expect(oversize.json()).toMatchObject({
-      ok: false,
-      kind: "cast-possibilities-prompt-too-large"
+    expect(oversizeInspection.providerRequest).toMatchObject({
+      contextLength: 4097
     });
-    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+    expect(oversize.json()).toMatchObject({ ok: true });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns one safe whole-response quarantine without raw provider output", async () => {
@@ -452,7 +457,7 @@ async function preparedApp(): Promise<FastifyApp> {
 type CompileResponse = {
   prompt: string;
   disclosure: CastPossibilitiesDisclosure;
-  providerRequest: { requestFingerprint: string };
+  providerRequest: { requestFingerprint: string; contextLength?: number };
 };
 
 function analyzePayload(compile: CompileResponse): {
@@ -478,7 +483,7 @@ async function compilePossibilities(
   return response.json<CompileResponse>();
 }
 
-function configureCompatibleModel(): void {
+function configureCompatibleModel(contextLength?: number): void {
   writeOpenRouterSettings({
     model: "test/structured-output-capable",
     temperature: 0,
@@ -486,6 +491,7 @@ function configureCompatibleModel(): void {
     cachedModels: [{
       id: "test/structured-output-capable",
       name: "Structured Output Capable",
+      ...(contextLength === undefined ? {} : { contextLength }),
       supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
     }]
   });

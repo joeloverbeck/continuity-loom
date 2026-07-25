@@ -218,6 +218,21 @@ completion ceiling, and provider-request fingerprint that a later send must
 match. Changing any provider setting requires a fresh local inspection even
 when the prompt text itself did not change.
 
+When the compiled prompt's deterministic token estimate plus the configured
+maximum output tokens is greater than the selected model's cached context
+window, Prompt Inspector shows a context-window advisory on every completion
+surface. It names the model, cached window, and estimated counts, and identifies
+the count as an estimate rather than a provider measurement. You can reduce the
+maximum output tokens, choose a model with a larger context window, or narrow
+the selected scope on Record Hygiene and Accepted-Segment Change Review.
+
+The advisory never disables Generate, Analyze, or Regenerate. You may inspect
+it and send anyway; the provider's real result or existing normalized provider
+failure is the outcome. If the model has no cached context length, no size
+advisory appears. Merely displaying or ignoring the advisory makes no provider
+request and does not refresh capabilities, retry, change models, change scope,
+resend, or edit settings.
+
 If capability data is missing, use the explicit model-list refresh and inspect
 again. If the selected model is known to lack a requirement, the error names
 Temperature, Top P, response format, strict structured output, completion

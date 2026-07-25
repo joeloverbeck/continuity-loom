@@ -88,6 +88,7 @@ export interface OpenRouterRequestInspection {
   temperatureMode: "explicit" | "provider_default";
   temperature?: number;
   maxOutputTokens: number;
+  contextLength?: number;
   topP?: number;
   requestFingerprint: string;
 }
