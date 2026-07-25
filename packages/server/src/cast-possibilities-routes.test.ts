@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.5", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.6", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -253,7 +253,7 @@ describe("Cast Possibilities routes", () => {
                       cards: {
                         items: {
                           description: expect.stringContaining(
-                            "Render Elin trying to keep Niko from touching or reading the hidden letter."
+                            "A card does not need to enact every scene-level requirement."
                           ),
                           properties: {
                             dossier_keys: {
@@ -271,6 +271,11 @@ describe("Cast Possibilities routes", () => {
                             observable_move: {
                               description: expect.stringContaining(
                                 "Do not write quoted dialogue or exact words"
+                              )
+                            },
+                            moment_fit: {
+                              description: expect.stringContaining(
+                                "Remain compatible with every saved constraint"
                               )
                             }
                           }

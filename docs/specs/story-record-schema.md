@@ -1075,7 +1075,7 @@ prompt authority, mutate records or the Generation Brief, or enter exports,
 backups, migrations, or provenance.
 
 The Cast Possibilities model-facing schema is restricted to the provider-safe
-keyword allowlist. Its compiler version is `1.0.5`; template and contract remain
+keyword allowlist. Its compiler version is `1.0.6`; template and contract remain
 `1.0.0` and the output identity remains `cast_possibilities.v1`. The local
 parser continues to enforce exact counts, nonblank values, nonempty unique
 citations, and the contract literal before any result can leave quarantine.
@@ -1085,11 +1085,13 @@ set, and context citations to the compiled non-dossier citation-key set. The
 prompt lists each character's owned dossier keys explicitly. The parser
 independently enforces per-character dossier ownership plus complete, unique,
 deterministic character order.
-Provider-facing field descriptions and output instructions also require every
-card to honor the saved immediate situation and manual directive constraints,
-and require speech acts to be summarized without quoted or exact drafted
-dialogue. These semantic requirements remain configured-model evaluation
-claims rather than brittle parser heuristics.
+Provider-facing field descriptions and output instructions require every card
+to remain compatible with the saved immediate situation and exact manual
+constraints. A card need not enact every scene-level requirement, while every
+requirement explicitly constraining that eligible character's participation
+applies to each of its cards. Speech acts must be summarized without quoted or
+exact drafted dialogue. These semantic requirements remain configured-model
+evaluation claims rather than brittle parser heuristics.
 The compiler repeats the exact request-specific immediate situation and manual
 directive lists in a proximal prompt block and on the provider-facing card
 object, deriving both from one projection.

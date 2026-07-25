@@ -359,7 +359,7 @@ describe("Cast Possibilities browser workflow", () => {
         savedDraftIdentity: "generation-brief:fnv1a32:source-a",
         sourceProfile: "cast-possibilities",
         character: "cast-elian",
-        versions: { template: "1.0.0", compiler: "1.0.5", contract: "1.0.0" },
+        versions: { template: "1.0.0", compiler: "1.0.6", contract: "1.0.0" },
         fingerprint: "fnv1a32:regeneration",
         model: "test/model",
         provider: "openrouter"
@@ -544,7 +544,7 @@ function fixtureCompileResult(fingerprint: string) {
     includesSecrets: false,
     promptLength: 28,
     tokenEstimate: 7,
-    versions: { template: "1.0.0", compiler: "1.0.5", contract: "1.0.0" } as const,
+    versions: { template: "1.0.0", compiler: "1.0.6", contract: "1.0.0" } as const,
     fingerprint,
     citationMap: {
       "[DOSSIER-1]": "Complete dossier for Elian",

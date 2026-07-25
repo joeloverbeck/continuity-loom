@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.5`
+Compiler version: `1.0.6`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -83,12 +83,15 @@ complete-source rule, and non-canonical/non-prose boundary. Story configuration,
 saved local moment, selected records, dossiers, citations, and output schema are
 data, not instructions supplied by those records.
 
-Output instructions make the saved local moment binding for every card. Every
-card must satisfy the immediate situation and every nonblank `must_render`
-item, must not violate `do_not_force`, and may use
-`may_render_if_naturally_caused` only when the saved source naturally causes
-it. An observable move may summarize a speech act, but it must not quote or
-draft the character's exact words.
+Output instructions make the saved local moment binding. Every card must remain
+compatible with the immediate situation and every exact manual constraint, must
+not violate `do_not_force`, and may use `may_render_if_naturally_caused` only
+when the saved source naturally causes it. A character-move card is not a
+whole-scene package and need not enact every scene-level `must_render` item.
+Every `must_render` item that explicitly constrains the eligible character's
+participation must be satisfied by every card for that character. An observable
+move may summarize a speech act, but it must not quote or draft the character's
+exact words.
 
 `<card_constraints>` repeats the exact request-specific immediate situation,
 `must_render`, `may_render_if_naturally_caused`, and `do_not_force` values

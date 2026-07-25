@@ -38,7 +38,7 @@ describe("Cast Possibilities core contract", () => {
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
     expect(castPossibilitiesVersionInfo).toEqual({
       template: "1.0.0",
-      compiler: "1.0.5",
+      compiler: "1.0.6",
       contract: "1.0.0"
     });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
@@ -102,6 +102,9 @@ describe("Cast Possibilities core contract", () => {
                     observable_move: {
                       description: string;
                     };
+                    moment_fit: {
+                      description: string;
+                    };
                     context_keys: {
                       items: { enum: string[] };
                     };
@@ -123,13 +126,32 @@ describe("Cast Possibilities core contract", () => {
       outputSchema.properties.characters.items.properties.cards.items.properties.observable_move.description
     ).toContain("Do not write quoted dialogue or exact words");
     expect(
+      outputSchema.properties.characters.items.properties.cards.items.properties.moment_fit.description
+    ).toContain(
+      "Remain compatible with every saved constraint and explain how the move satisfies each requirement that explicitly constrains this character's participation."
+    );
+    expect(
       outputSchema.properties.characters.items.properties.cards.items.description
     ).toContain("Keep the archive door locked.");
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.description
+    ).toContain("A card does not need to enact every scene-level requirement.");
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.description
+    ).toContain(
+      "Every requirement that explicitly constrains this character's participation must be satisfied by every card."
+    );
     expect(compiled.prompt).toContain(
       "For each character, copy dossier_keys only from that character's listed dossier_keys."
     );
     expect(compiled.prompt).toContain(
-      "Every card must satisfy the saved immediate situation and every nonblank manual_moment_directive.must_render item."
+      "Every card must remain compatible with the saved immediate situation and every exact manual_moment_directive constraint."
+    );
+    expect(compiled.prompt).toContain(
+      "A character-move card is not a whole-scene package and does not need to enact every scene-level must_render item itself."
+    );
+    expect(compiled.prompt).toContain(
+      "Every must_render item that explicitly constrains the eligible character's participation must be satisfied by every card for that character."
     );
     expect(compiled.prompt).toContain(
       "Summarize any speech act without quoting or drafting the character's exact words."
@@ -137,7 +159,7 @@ describe("Cast Possibilities core contract", () => {
     expect(compiled.prompt).toContain([
       "<card_constraints>",
       'Saved immediate situation: "The three characters face a locked archive."',
-      'Every card must render: ["Keep the archive door locked."]',
+      'Exact saved must_render requirements: ["Keep the archive door locked."]',
       'May render only if naturally caused: ["A practical response."]',
       'Every card must not force: ["No reveal."]',
       "</card_constraints>"
