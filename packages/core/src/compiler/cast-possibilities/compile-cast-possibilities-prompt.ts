@@ -396,6 +396,7 @@ function renderPrompt(
     "Every card must remain compatible with the saved immediate situation and every exact manual_moment_directive constraint.",
     "A character-move card is not a whole-scene package and does not need to enact every scene-level must_render item itself.",
     "Every must_render item that explicitly constrains the eligible character's participation must be satisfied by every card for that character.",
+    "When one must_render item joins multiple requirements for that character, every card must satisfy every joined requirement; never distribute them across cards.",
     "Never violate a manual_moment_directive.do_not_force item. Use a manual_moment_directive.may_render_if_naturally_caused item only when the saved source naturally causes it.",
     "Summarize any speech act without quoting or drafting the character's exact words.",
     "Diversify observable channels when evidence permits. Cards are independent and are not guaranteed to be mutually compatible.",

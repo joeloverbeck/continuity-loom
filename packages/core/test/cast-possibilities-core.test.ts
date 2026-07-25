@@ -23,6 +23,59 @@ const secondEntityId = "019c0000-0000-7000-8000-000000000006";
 const factId = "019c0000-0000-7000-8000-000000000007";
 
 describe("Cast Possibilities core contract", () => {
+  it("keeps joined character-participation clauses conjunctive within every card", () => {
+    const joinedRequirement =
+      "Let Second Character use wounded loyalty and observational sharpness rather than generic accusation.";
+    const compiled = compileCastPossibilitiesPrompt(fixtureSnapshot({
+      manual_moment_directive: {
+        must_render: [joinedRequirement],
+        may_render_if_naturally_caused: [],
+        do_not_force: ["No reveal."]
+      }
+    }), {
+      savedDraftIdentity: "generation-brief:sha256:fixture"
+    });
+
+    expect(compiled.ok).toBe(true);
+    if (!compiled.ok) {
+      return;
+    }
+
+    const outputSchema = compiled.outputSchema as {
+      properties: {
+        characters: {
+          items: {
+            properties: {
+              cards: {
+                items: {
+                  description: string;
+                  properties: {
+                    moment_fit: { description: string };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+
+    expect(compiled.prompt).toContain(
+      "When one must_render item joins multiple requirements for that character, every card must satisfy every joined requirement; never distribute them across cards."
+    );
+    expect(compiled.prompt).toContain(
+      `Exact saved must_render requirements: ${JSON.stringify([joinedRequirement])}`
+    );
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.description
+    ).toContain(
+      "Joined character-participation clauses are conjunctive for every card and must not be distributed across cards."
+    );
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.description
+    ).toContain(`Exact saved must_render requirements: ${JSON.stringify([joinedRequirement])}.`);
+  });
+
   it("compiles every eligible non-POV active/full character in working-set order from the saved moment", () => {
     const snapshot = fixtureSnapshot();
     const compiled = compileCastPossibilitiesPrompt(snapshot, {
@@ -38,7 +91,7 @@ describe("Cast Possibilities core contract", () => {
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
     expect(castPossibilitiesVersionInfo).toEqual({
       template: "1.0.0",
-      compiler: "1.0.6",
+      compiler: "1.0.7",
       contract: "1.0.0"
     });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
@@ -129,6 +182,11 @@ describe("Cast Possibilities core contract", () => {
       outputSchema.properties.characters.items.properties.cards.items.properties.moment_fit.description
     ).toContain(
       "Remain compatible with every saved constraint and explain how the move satisfies each requirement that explicitly constrains this character's participation."
+    );
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.properties.moment_fit.description
+    ).toContain(
+      "When one requirement joins multiple character-participation clauses, explain how this move satisfies every joined clause."
     );
     expect(
       outputSchema.properties.characters.items.properties.cards.items.description

@@ -106,7 +106,7 @@ Consumed-guidance listing is a separate deterministic control, not a prompt sour
 
 `cast-possibilities` is a prose-aligned, non-prose assistance profile governed
 by `docs/specs/cast-possibilities-prompt-template.md`. Its template and contract
-versions are `1.0.0`, its compiler version is `1.0.6`, and its output identity
+versions are `1.0.0`, its compiler version is `1.0.7`, and its output identity
 is `cast_possibilities.v1`.
 
 It reads the open project's most recently saved Generation Brief, story

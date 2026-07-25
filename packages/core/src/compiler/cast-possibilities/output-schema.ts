@@ -26,7 +26,7 @@ export function castPossibilitiesOutputJsonSchema(
   const momentFit = {
     type: "string",
     description:
-      "Explain why the move is feasible now. Remain compatible with every saved constraint and explain how the move satisfies each requirement that explicitly constrains this character's participation."
+      "Explain why the move is feasible now. Remain compatible with every saved constraint and explain how the move satisfies each requirement that explicitly constrains this character's participation. When one requirement joins multiple character-participation clauses, explain how this move satisfies every joined clause."
   };
   const localEffect = {
     type: "string",
@@ -43,6 +43,7 @@ export function castPossibilitiesOutputJsonSchema(
       "Every card must remain compatible with this exact saved constraint set.",
       "A card does not need to enact every scene-level requirement.",
       "Every requirement that explicitly constrains this character's participation must be satisfied by every card.",
+      "Joined character-participation clauses are conjunctive for every card and must not be distributed across cards.",
       `Saved immediate situation: ${JSON.stringify(guidance.immediateSituation)}.`,
       `Exact saved must_render requirements: ${JSON.stringify(guidance.mustRender)}.`,
       `May render only if naturally caused: ${JSON.stringify(guidance.mayRenderIfNaturallyCaused)}.`,

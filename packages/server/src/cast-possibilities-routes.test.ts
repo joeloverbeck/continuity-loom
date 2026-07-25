@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.6", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.7", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -252,8 +252,8 @@ describe("Cast Possibilities routes", () => {
                       },
                       cards: {
                         items: {
-                          description: expect.stringContaining(
-                            "A card does not need to enact every scene-level requirement."
+                          description: expect.stringMatching(
+                            /A card does not need to enact every scene-level requirement\..*Joined character-participation clauses are conjunctive for every card and must not be distributed across cards\./
                           ),
                           properties: {
                             dossier_keys: {
@@ -274,8 +274,8 @@ describe("Cast Possibilities routes", () => {
                               )
                             },
                             moment_fit: {
-                              description: expect.stringContaining(
-                                "Remain compatible with every saved constraint"
+                              description: expect.stringMatching(
+                                /Remain compatible with every saved constraint.*When one requirement joins multiple character-participation clauses, explain how this move satisfies every joined clause\./
                               )
                             }
                           }

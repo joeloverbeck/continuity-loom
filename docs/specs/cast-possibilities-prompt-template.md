@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.6`
+Compiler version: `1.0.7`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -89,9 +89,11 @@ not violate `do_not_force`, and may use `may_render_if_naturally_caused` only
 when the saved source naturally causes it. A character-move card is not a
 whole-scene package and need not enact every scene-level `must_render` item.
 Every `must_render` item that explicitly constrains the eligible character's
-participation must be satisfied by every card for that character. An observable
-move may summarize a speech act, but it must not quote or draft the character's
-exact words.
+participation must be satisfied by every card for that character. Multiple
+character-participation requirements joined inside one item are conjunctive:
+every card must satisfy every joined requirement, and the slate must not
+distribute them across cards. An observable move may summarize a speech act,
+but it must not quote or draft the character's exact words.
 
 `<card_constraints>` repeats the exact request-specific immediate situation,
 `must_render`, `may_render_if_naturally_caused`, and `do_not_force` values
