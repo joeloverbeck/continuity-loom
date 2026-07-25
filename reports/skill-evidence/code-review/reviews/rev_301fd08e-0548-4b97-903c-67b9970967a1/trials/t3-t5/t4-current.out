@@ -1,0 +1,26 @@
+Review fallback body validation failed for /tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/4dfaf82f-3843-4ae2-8e4d-d1fd7a83ea02/scratchpad/t345/valid.md:
+- missing Review frame:
+- missing fixed point resolved SHA
+- missing reviewed HEAD SHA
+- missing diff command
+- missing commits
+- missing worktree scope
+- missing spec source
+- missing Fallback used:
+- missing Delegation policy source:
+- missing Sources reviewed:
+- missing Smell baseline applied:
+- missing axis summary
+- missing Review fallback gate passed line
+- gate line missing value for frame
+- gate line missing value for delegation policy source
+- gate line missing value for Standards
+- gate line missing value for Spec
+- gate line missing value for child table
+- gate line missing value for smell baseline
+- gate line missing value for evidence identities
+- gate line missing value for found-vs-residual
+- gate line missing value for closeout line
+- gate line missing value for immediate-fix block
+- gate line missing value for tdd fielded closeout gate
+- gate line missing value for verification/browser freshness

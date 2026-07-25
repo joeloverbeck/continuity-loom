@@ -223,15 +223,9 @@ const validateSequenceSource = (source) => {
   }
 
   const hasOrder = /(?:→|->|\b(?:before|after|then|followed by|ordered)\b)/i.test(sequence);
-  const hasProof =
-    /\b(?:observ(?:e|ed|es|ing|ation)|assert(?:s|ed|ion|ions)|verif(?:y|ies|ied|ication)|prov(?:e|ed|es|en)|proof|test(?:s|ed|ing)?|suite|covered|exercised|confirmed|demonstrated|shown|trace(?:s|d)?|evidence|artifact(?:s)?|log(?:s|ged)?|screenshot(?:s)?|browser|report(?:s|ed)?|API)\b/i.test(
-      sequence
-    );
-  if (!hasOrder) {
-    return "must name ordered events with -> / then / before / after / ordered. Example: 'submit-fail -> retain input -> retry, observed on one active instance by the recovery test'";
-  }
-  if (!hasProof) {
-    return "must name the proof that observes the order, using one of: observed / asserted / assertion / verified / verification / proved / proven / proof / test / tests / suite / covered / exercised / confirmed / demonstrated / shown / trace / evidence / artifact / log / screenshot / browser / report / API. Example: 'submit-fail -> retain input -> retry, observed on one active instance by the recovery test'";
+  const hasProof = /\b(?:observ(?:e|ed|es|ing)|asserted|verified|proved|test|trace|evidence|artifact|log|browser|report|API)\b/i.test(sequence);
+  if (!hasOrder || !hasProof) {
+    return "must name ordered events and the proof that observes their order. Example: 'submit-fail -> retain input -> retry, observed on one active instance by the recovery test'";
   }
   return "";
 };

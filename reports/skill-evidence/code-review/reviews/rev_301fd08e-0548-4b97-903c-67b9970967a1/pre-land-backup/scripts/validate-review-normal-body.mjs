@@ -206,7 +206,7 @@ const concretePath = (value) =>
 const concreteSpecSource = (value) =>
   concretePath(value) ||
   /^(?:(?:issue|PRD|PR|GitHub issue)\s+)?#\d+$/i.test(value) ||
-  /^(?:GitHub\s+)?(?:issue|PR)\s+#?\d+\s+comment\s+(?:ID\s+)?#?\d+$/i.test(value) ||
+  /^(?:GitHub\s+)?(?:issue|PR)\s+#?\d+\s+comment\s+#?\d+$/i.test(value) ||
   /^!\d+$/.test(value);
 
 const normalizedInventory = (entries) =>
@@ -236,9 +236,7 @@ const validateSourceInventory = (value, axis, phase, errors) => {
     if (!noSpec) {
       for (const entry of entries) {
         if (!concreteSpecSource(entry)) {
-          errors.push(
-            `Spec source inventory entry is not a concrete path or issue/PR identifier; accepted forms are a path with an extension, a URL, #N, issue/PR/PRD #N, issue #N comment ID <digits>, or !N, one entry per source: ${entry}`
-          );
+          errors.push(`Spec source inventory entry is not a concrete path or issue/PR identifier: ${entry}`);
         }
       }
     }

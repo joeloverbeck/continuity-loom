@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "issues": [
+    { "number": 369, "title": "Settings persistence", "checks": [
+      { "id": "AC1", "kind": "acceptance", "text": "Saved settings survive a reload" },
+      { "id": "AC2", "kind": "acceptance", "text": "Cleared settings survive a reload" }
+    ]},
+    { "number": 370, "title": "Request finalization", "checks": [
+      { "id": "AC1", "kind": "acceptance", "text": "One finalized request object is transported unchanged" }
+    ]},
+    { "number": 371, "title": "Conformance", "checks": [
+      { "id": "AC1", "kind": "acceptance", "text": "Principles and ADR conformance" }
+    ]}
+  ]
+}

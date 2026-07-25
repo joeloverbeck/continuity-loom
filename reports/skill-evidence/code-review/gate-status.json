@@ -1,32 +1,30 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-24T20:47:23.609Z",
-  "target_content_hash": "2967265361ebe8d7d3d27aed4f89d32e7489548b4441dd562d0bf2619ddab3c7",
-  "qualifying_uses_on_current_hash": 15,
+  "generated_at": "2026-07-25T00:57:39.875Z",
+  "target_content_hash": "4664a842e65b7c8d6d6b8d6b68e480721be4c27375ec6524774771625b3beec4",
+  "qualifying_uses_on_current_hash": 2,
   "open_incident_ids": [
-    "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
+    "evt_eec1a769-684d-43d8-b274-5345937792b9"
   ],
   "candidate_clusters": [
     {
       "symptom_key": "cost",
       "open_event_ids": [
-        "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
+        "evt_eec1a769-684d-43d8-b274-5345937792b9"
       ],
       "independent_incidents": 1,
       "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "ten_use_unresolved",
-  "trigger_event_ids": [
-    "evt_40796ead-c1ae-477f-85af-b4972f18ec9e"
-  ],
-  "threshold_session_id": "019f9573-7d0b-7df0-be01-c73e7b97dc71",
+  "state": "collecting",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "rev_88e8ca8e-68c7-445a-8687-ac49872f2d35",
+  "last_completed_review_id": "rev_301fd08e-0548-4b97-903c-67b9970967a1",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "019f9573-7d0b-7df0-be01-c73e7b97dc71"
+  "derivation_session_id": "019f968d-6f21-7f22-8f64-e9f235c1c8da"
 }

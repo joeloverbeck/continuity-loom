@@ -1,0 +1,139 @@
+✔ accepts sequence evidence and reconciled evidence identities (7.01869ms)
+✔ rejects read/present-only authority statuses in every TDD evidence surface (1.49396ms)
+✔ rejects an unresolved authority conflict (0.413302ms)
+✔ rejects an approved authority change without a durable reference (0.584426ms)
+✔ accepts explicit aligned and approved-amendment authority dispositions (0.561499ms)
+✔ accepts terminal punctuation on an all-none superseded inventory (0.303936ms)
+✔ parent-rollup manifest validation requires every individual story mapping (1.821242ms)
+✔ accepts bare exact parent manifest IDs in the matching compact row (0.376626ms)
+✔ does not borrow a bare manifest ID from another issue (0.428605ms)
+✔ rejects malformed existing contract-change expectation evidence (0.50737ms)
+✔ rejects an expectation-rewrite prefix without a failing command or assertion (0.612042ms)
+✔ accepts exact existing contract-change expectation evidence (0.419389ms)
+✔ parent-rollup CLI requires and reads an acceptance manifest (48.981998ms)
+✔ closing rejects local staging paths while interim validation permits them (0.996615ms)
+✔ closing permits local fixture paths outside publishable sink fields (0.40957ms)
+✔ rejects a visible-before-red claim without a durable evidence reference (0.289346ms)
+✔ rejects a pre-red reference without an anchor and chronology proof (0.267985ms)
+✔ rejects a recovery claim without a real recovery addendum block (0.45626ms)
+✔ accepts a complete anchored recovery addendum block (0.782973ms)
+✔ accepts a reasoned manifest N/A in a single-issue recovery addendum (0.400482ms)
+✔ rejects a recovery addendum missing any required inventory field (1.187738ms)
+✔ closing rejects a local pre-red staging reference (0.320281ms)
+✔ closing rejects a local recovery preservation sink (0.359296ms)
+✔ closing rejects a body above the configured UTF-8 byte ceiling (0.351863ms)
+✔ CLI enforces the configured byte ceiling (27.626893ms)
+✔ rejects backticked identifiers masquerading as red commands (0.425329ms)
+✔ accepts an exact executable red command with its failure signal (0.274236ms)
+✔ closing requires and validates the live expected final SHA (1.11587ms)
+✔ CLI closing mode requires the expected final SHA (21.497686ms)
+✔ CLI closing success prints the exact post-comment verification reminder (27.916758ms)
+✔ closing requires a durable final-tree verification command ledger (1.65743ms)
+✔ rejects a compact row without sequence evidence (0.275291ms)
+✔ rejects sequence N/A without a reason (0.272839ms)
+✔ rejects an empty sequence value (0.235914ms)
+✔ rejects the circular atom wording from the published session closeout (0.23127ms)
+✔ rejects an unanchored proof surface without matching concrete green evidence (0.430399ms)
+✔ rejects superseded identities without an active-proof sweep (0.27723ms)
+✔ accepts cross-validator-safe sweep wording with classified historical red identities (0.265753ms)
+✔ rejects one-sided superseded-token sweep wording (0.451547ms)
+✔ accepts slash ownership and a domain-qualified expected API field probe (1.090538ms)
+✔ still rejects backend currentness without an expected API probe (0.650159ms)
+✔ browser evidence reconciles non-none fixture identities with backend snapshot currentness (1.434007ms)
+✔ rejects stale currentness commits in every repeated field (1.27074ms)
+✔ browser evidence rejects a proof-server preflight that claims no browser rows (0.341993ms)
+✔ rejects an incomplete proof-server preflight (0.273566ms)
+✔ accepts a keyed one-finding review-fix map (0.271068ms)
+✔ rejects the legacy bundled review-fix addendum (0.306009ms)
+✔ rejects a duplicate review-fix finding identity (0.296968ms)
+✔ rejects a review-fix map that does not target the exact compact seam (0.274145ms)
+✔ rejects one review-fix identity reused by a second compact TDD row (0.340223ms)
+✔ rejects a review-fix identity reused in an N/A-prefixed parent mapping row (0.326114ms)
+✔ review-fix map requires regression durability for transient browser red evidence (0.306225ms)
+✔ rejects unresolved evidence identity placeholders (0.234535ms)
+✔ accepts a complete authority-sensitive withheld fixture identity (0.23527ms)
+✔ rejects the legacy none-published-because fixture identity (0.222385ms)
+✔ rejects an incomplete withheld fixture identity (0.228186ms)
+✔ downstream review validation rejects HTML-like angle tokens in compact values (0.12423ms)
+✖ guidance carries sink, snapshot, exactness, and shared closeout contracts (1.207093ms)
+ℹ tests 58
+ℹ suites 0
+ℹ pass 57
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 208.311064
+
+✖ failing tests:
+
+test at ../../../../tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/4dfaf82f-3843-4ae2-8e4d-d1fd7a83ea02/scratchpad/tree/current/tdd/scripts/validate-tdd-closeout-body.test.mjs:1005:1
+✖ guidance carries sink, snapshot, exactness, and shared closeout contracts (1.207093ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /docs\/robustness-testing\.md/. Input:
+  
+  '---\n' +
+    'name: tdd\n' +
+    'description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.\n' +
+    '---\n' +
+    '\n' +
+    '# Test-Driven Development\n' +
+    '\n' +
+    'TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.\n' +
+    '\n' +
+    '**Orientation.** For a single feature or bug fix, the operative guidance is *What a good test is*, *Seams*, *Anti-patterns*, and *Rules of the loop* below. The preflight, acceptance-manifest, shared-boundary-table, atom/sequence-map, and closeout hard-stops between here and those sections apply when the work is a PRD or multi-issue family — typically when this skill runs under the `implement` skill; that closeout contract lives in [closeout-evidence.md](closeout-evidence.md).\n' +
+    '\n' +
+    "When exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project's domain language, and respect ADRs in the area you're touching.\n" +
+    '\n' +
+    'Before the first red test, record whether `CONTEXT.md` exists and was read, identify every applicable ADR or principle document, and give each one an explicit authority disposition: aligned with a concrete basis, covered by an approved amendment or exception with a durable reference, or reasoned N/A.\n' +
+    '\n' +
+    'Use this preflight before writing the first red test:\n' +
+    '\n' +
+    '```markdown\n' +
+    'TDD preflight:\n' +
+    '- CONTEXT.md status: <read / absent / N/A>\n' +
+    '- ADRs/principles/docs status: <aligned because authorities and concrete basis / approved amendment or exception with durable authority reference / conflict - blocked because ... / N/A because ...>\n' +
+    '- Pre-red evidence reference: <file-backed or tracker-backed ledger plus heading or row anchor by default; exact conversation block plus anchor only while it remains inspectable; chronology proof that this preflight and table precede the first red command>\n' +
+    '- Agreed seams: <issue/PRD-stated seams restated / user-confirmed seams / confirmation needed>\n' +
+    '- Authoritative acceptance manifest: <path generated from saved exact issue JSON / N/A because one non-PRD issue has no shared or parent boundary>\n' +
+    '- Row plan: <red-first seams>; <no-runnable criteria>; <evidence-only browser/manual/external seams>\n' +
+    '- Acceptance atom map: <each exact criterion mapped to authoritative atoms and required proof surfaces, with every named value in a quantified range listed unless the source permits sampling / all criteria atomic, with proof surfaces named / blocked because ...>\n' +
+    '- Acceptance sequence map: <each order/transition/timeline-sensitive criterion mapped to the ordered events and proof that observes their order; stateful re-entry and terminal paths mapped on one active instance; overlapping async invocation either prevented or mapped through attempt A remains pending -> attempt B settles -> attempt A settles / all rows use sequence N/A because their criteria are not sequence-sensitive / blocked because ...>\n' +
+    '- Proof server plan: <configured API/UI ports plus owner-check command; unrelated pre-existing owners and isolated proof-owned ports/proxy plan / configured ports verified free / N/A because no browser/manual proof server applies>\n' +
+    '- Shared-boundary table stub: <created before first red test / N/A>; <every in-scope issue has a row or exceptions named>\n' +
+    '- Existing expectation rewrite checkpoint: <none yet / row will be added immediately if an existing test, fixture, snapshot, route/schema expectation, or artifact assertion is edited after a failing command>\n' +
+    '- User confirmation needed: <yes/no, and why>\n' +
+    '```\n' +
+    '\n' +
+    'Authority-conformance pre-red hard stop: reading an authority is not a conformance result. For every applicable authority, record `aligned` with the exact basis or record an `approved amendment` or `approved exception` with a durable authority reference. If the requested behavior conflicts with an authority, stop and obtain the exact amendment, exception, or scope correction; do not run the first red command while any authority conflict is unresolved. `N/A` requires a reason. Carry the same disposition into every affected compact row and the closeout gate.\n' +
+    '\n' +
+    'Acceptance-source inventory hard stop: for a parent PRD, child issue family, or named multi-issue set, save the exact issue JSON and generate the authoritative acceptance manifest with `.claude/skills/implement/scripts/build-acceptance-manifest.mjs` before the first red command. The preflight and compact-table row plan must account for every generated parent section check, individual `USN`, AC check, and Principles check. A broad range such as `US1-US36` does not replace the individual story-to-seam map; use exact keyed rows or an adjacent keyed map for every story. Reuse the same manifest for TDD closeout, review, and implementation closeout rather than rebuilding scope from prose.\n' +
+    '\n' +
+    'Shared-boundary pre-red hard stop: when the work covers multiple issues, one PRD with child issues, or one implementation boundary shared by several acceptance rows, paste the compact evidence table immediately below the preflight before any red command. A prose row plan is not enough. Mark each row as `red-first`, `existing contract-change expectation`, `static contract check + browser evidence`, `coverage-only existing behavior`, `no-runnable`, or `evidence-only`; if the table is genuinely N/A, name the exception in the `Shared-boundary table stub` field before proceeding.\n' +
+    '\n' +
+    "Acceptance-atom and sequence pre-red hard stop: before the first red command, resolve every composite term in the issue or PRD through its authoritative parent/child definition, implementation decision, glossary, or named contract. In `Acceptance atom map`, list every required atom and map each atom to every promised proof surface. In `Acceptance sequence map`, identify every order-, transition-, or timeline-sensitive criterion and list the ordered events plus the proof surface that observes their order. For example, if `provenance` means `actor + timestamp + flow step` across `API + report + browser`, the map and eventual evidence must name all six obligations rather than only `provenance`; if acceptance requires Proposal → staging → Pressure, it must preserve that order rather than proving the three states independently. A quantified range such as “two through five” requires proof at every named value unless the source explicitly permits boundary or representative sampling. A lifecycle or renderer term such as “controlled rerender,” “resume,” or “transition” requires one active instance plus the triggering action and observer that prove continuity; two independent snapshots or server renders are not equivalent. For an ephemeral draft, provenance report, modal workflow, or other stateful interaction, map re-entry while state is active and every applicable terminal path: success, failure, cancel, discard, persistence, baseline restoration, and the action that retains, clears, or re-enables the session. For a user-triggered async action that can be invoked before its earlier promise settles, either prove the action prevents overlap or map `attempt A remains pending -> attempt B settles -> attempt A settles`, including mixed success/failure orderings and the observer that proves newest-attempt ownership. A row may group atoms, surfaces, or ordered events only when its assertion or evidence directly proves every grouped obligation; otherwise split the row. Carry the exact criterion plus `atoms:`, `proof surfaces:`, and `sequence:` into each row's `Acceptance covered` cell, using `atoms: atomic` only when the authoritative criterion truly has one indivisible obligation and `sequence: N/A because the criterion is not sequence-sensitive` only when order cannot affect acceptance.\n" +
+    '\n' +
+    'Coverage-only admissibility hard stop: before classifying a row as `coverage-only existing behavior`, map the exact acceptance criteria to materially distinct public seams. A route, action, refresh, request, API, or rendered-state behavior needs its own row unless one assertion directly observes every grouped condition. Run the criterion-specific public assertion or probe before any production change and record its concrete green command/evidence plus the exact acceptance reference. If the assertion fails, classify the seam as `red-first`; if it has not run yet, leave the row `TBD` rather than claiming coverage-only behavior.\n' +
+    '\n' +
+    'Existing expectation rewrite checkpoint: if an existing test, fixture, snapshot, route/schema expectation, or artifact assertion fails after an intended contract change and you edit that existing expected value, update the compact evidence table immediately before continuing. Use an `existing contract-change expectation` row, start `Red command/failure` with `existing contract-change expectation in <test file> because ...` plus the failing command/assertion, cite the authorizing spec/issue/worked example in `Acceptance covered`, and keep the full existing-test closeout rule under [Rules of the loop](#rules-of-the-loop) from becoming a last-minute validator repair.\n' +
+    '\n' +
+    'For shared-boundary issue families, paste this compact evidence table stub before the first red test; do not substitute a prose-only row plan. The red and green cells can be `TBD` while work is still in progress, but every in-scope issue and agreed seam must already have a row with a `red-first`, `existing contract-change expectation`, `static contract check + browser evidence`, `coverage-only existing behavior`, `no-runnable`, or `evidence-only` classification.\n' +
+    '\n' +
+    '```markdown\n' +
+    '| Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |\n' +
+    '|---|---|---|---|---|---|---|---|\n' +
+    '| #N | <read / absent / N/A> | <aligned because authorities and basis / approved amendment or exception with durable reference / N/A because .'... 25412 more characters
+  
+      at TestContext.<anonymous> (file:///tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/4dfaf82f-3843-4ae2-8e4d-d1fd7a83ea02/scratchpad/tree/current/tdd/scripts/validate-tdd-closeout-body.test.mjs:1028:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '---\nname: tdd\ndescription: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.\n---\n\n# Test-Driven Development\n\nTDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.\n\n**Orientation.** For a single feature or bug fix, the operative guidance is *What a good test is*, *Seams*, *Anti-patterns*, and *Rules of the loop* below. The preflight, acceptance-manifest, shared-boundary-table, atom/sequence-map, and closeout hard-stops between here and those sections apply when the work is a PRD or multi-issue family — typically when this skill runs under the `implement` skill; that closeout contract lives in [closeout-evidence.md](closeout-evidence.md).\n\nWhen exploring the codebase, read `CONTEXT.md` (if it exists) so test names and interface vocabulary match the project\'s domain language, and respect ADRs in the area you\'re touching.\n\nBefore the first red test, record whether `CONTEXT.md` exists and was read, identify every applicable ADR or principle document, and give each one an explicit authority disposition: aligned with a concrete basis, covered by an approved amendment or exception with a durable reference, or reasoned N/A.\n\nUse this preflight before writing the first red test:\n\n```markdown\nTDD preflight:\n- CONTEXT.md status: <read / absent / N/A>\n- ADRs/principles/docs status: <aligned because authorities and concrete basis / approved amendment or exception with durable authority reference / conflict - blocked because ... / N/A because ...>\n- Pre-red evidence reference: <file-backed or tracker-backed ledger plus heading or row anchor by default; exact conversation block plus anchor only while it remains inspectable; chronology proof that this preflight and table precede the first red command>\n- Agreed seams: <issue/PRD-stated seams restated / user-confirmed seams / confirmation needed>\n- Authoritative acceptance manifest: <path generated from saved exact issue JSON / N/A because one non-PRD issue has no shared or parent boundary>\n- Row plan: <red-first seams>; <no-runnable criteria>; <evidence-only browser/manual/external seams>\n- Acceptance atom map: <each exact criterion mapped to authoritative atoms and required proof surfaces, with every named value in a quantified range listed unless the source permits sampling / all criteria atomic, with proof surfaces named / blocked because ...>\n- Acceptance sequence map: <each order/transition/timeline-sensitive criterion mapped to the ordered events and proof that observes their order; stateful re-entry and terminal paths mapped on one active instance; overlapping async invocation either prevented or mapped through attempt A remains pending -> attempt B settles -> attempt A settles / all rows use sequence N/A because their criteria are not sequence-sensitive / blocked because ...>\n- Proof server plan: <configured API/UI ports plus owner-check command; unrelated pre-existing owners and isolated proof-owned ports/proxy plan / configured ports verified free / N/A because no browser/manual proof server applies>\n- Shared-boundary table stub: <created before first red test / N/A>; <every in-scope issue has a row or exceptions named>\n- Existing expectation rewrite checkpoint: <none yet / row will be added immediately if an existing test, fixture, snapshot, route/schema expectation, or artifact assertion is edited after a failing command>\n- User confirmation needed: <yes/no, and why>\n```\n\nAuthority-conformance pre-red hard stop: reading an authority is not a conformance result. For every applicable authority, record `aligned` with the exact basis or record an `approved amendment` or `approved exception` with a durable authority reference. If the requested behavior conflicts with an authority, stop and obtain the exact amendment, exception, or scope correction; do not run the first red command while any authority conflict is unresolved. `N/A` requires a reason. Carry the same disposition into every affected compact row and the closeout gate.\n\nAcceptance-source inventory hard stop: for a parent PRD, child issue family, or named multi-issue set, save the exact issue JSON and generate the authoritative acceptance manifest with `.claude/skills/implement/scripts/build-acceptance-manifest.mjs` before the first red command. The preflight and compact-table row plan must account for every generated parent section check, individual `USN`, AC check, and Principles check. A broad range such as `US1-US36` does not replace the individual story-to-seam map; use exact keyed rows or an adjacent keyed map for every story. Reuse the same manifest for TDD closeout, review, and implementation closeout rather than rebuilding scope from prose.\n\nShared-boundary pre-red hard stop: when the work covers multiple issues, one PRD with child issues, or one implementation boundary shared by several acceptance rows, paste the compact evidence table immediately below the preflight before any red command. A prose row plan is not enough. Mark each row as `red-first`, `existing contract-change expectation`, `static contract check + browser evidence`, `coverage-only existing behavior`, `no-runnable`, or `evidence-only`; if the table is genuinely N/A, name the exception in the `Shared-boundary table stub` field before proceeding.\n\nAcceptance-atom and sequence pre-red hard stop: before the first red command, resolve every composite term in the issue or PRD through its authoritative parent/child definition, implementation decision, glossary, or named contract. In `Acceptance atom map`, list every required atom and map each atom to every promised proof surface. In `Acceptance sequence map`, identify every order-, transition-, or timeline-sensitive criterion and list the ordered events plus the proof surface that observes their order. For example, if `provenance` means `actor + timestamp + flow step` across `API + report + browser`, the map and eventual evidence must name all six obligations rather than only `provenance`; if acceptance requires Proposal → staging → Pressure, it must preserve that order rather than proving the three states independently. A quantified range such as “two through five” requires proof at every named value unless the source explicitly permits boundary or representative sampling. A lifecycle or renderer term such as “controlled rerender,” “resume,” or “transition” requires one active instance plus the triggering action and observer that prove continuity; two independent snapshots or server renders are not equivalent. For an ephemeral draft, provenance report, modal workflow, or other stateful interaction, map re-entry while state is active and every applicable terminal path: success, failure, cancel, discard, persistence, baseline restoration, and the action that retains, clears, or re-enables the session. For a user-triggered async action that can be invoked before its earlier promise settles, either prove the action prevents overlap or map `attempt A remains pending -> attempt B settles -> attempt A settles`, including mixed success/failure orderings and the observer that proves newest-attempt ownership. A row may group atoms, surfaces, or ordered events only when its assertion or evidence directly proves every grouped obligation; otherwise split the row. Carry the exact criterion plus `atoms:`, `proof surfaces:`, and `sequence:` into each row\'s `Acceptance covered` cell, using `atoms: atomic` only when the authoritative criterion truly has one indivisible obligation and `sequence: N/A because the criterion is not sequence-sensitive` only when order cannot affect acceptance.\n\nCoverage-only admissibility hard stop: before classifying a row as `coverage-only existing behavior`, map the exact acceptance criteria to materially distinct public seams. A route, action, refresh, request, API, or rendered-state behavior needs its own row unless one assertion directly observes every grouped condition. Run the criterion-specific public assertion or probe before any production change and record its concrete green command/evidence plus the exact acceptance reference. If the assertion fails, classify the seam as `red-first`; if it has not run yet, leave the row `TBD` rather than claiming coverage-only behavior.\n\nExisting expectation rewrite checkpoint: if an existing test, fixture, snapshot, route/schema expectation, or artifact assertion fails after an intended contract change and you edit that existing expected value, update the compact evidence table immediately before continuing. Use an `existing contract-change expectation` row, start `Red command/failure` with `existing contract-change expectation in <test file> because ...` plus the failing command/assertion, cite the authorizing spec/issue/worked example in `Acceptance covered`, and keep the full existing-test closeout rule under [Rules of the loop](#rules-of-the-loop) from becoming a last-minute validator repair.\n\nFor shared-boundary issue families, paste this compact evidence table stub before the first red test; do not substitute a prose-only row plan. The red and green cells can be `TBD` while work is still in progress, but every in-scope issue and agreed seam must already have a row with a `red-first`, `existing contract-change expectation`, `static contract check + browser evidence`, `coverage-only existing behavior`, `no-runnable`, or `evidence-only` classification.\n\n```markdown\n| Issue | CONTEXT.md status | ADRs/principles/docs status | Seam | Red command/failure | Green command or evidence | Acceptance covered | Review fix / red-first skip reason |\n|---|---|---|---|---|---|---|---|\n| #N | <read / absent / N/A> | <aligned because authorities and basis / approved amendment or exception with durable reference / N/A because .'... 25412 more characters,
+    expected: /docs\/robustness-testing\.md/,
+    operator: 'match',
+    diff: 'simple'
+  }

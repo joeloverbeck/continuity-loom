@@ -1,0 +1,2 @@
+Normal review body validation failed for /tmp/claude-1000/-home-joeloverbeck-src-continuity-loom/4dfaf82f-3843-4ae2-8e4d-d1fd7a83ea02/scratchpad/t345/t5a.md:
+- issue-set coverage row #369 must name ordered events with -> / then / before / after / ordered. Example: 'submit-fail -> retain input -> retry, observed on one active instance by the recovery test'
