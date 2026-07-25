@@ -11,6 +11,14 @@ export function presentOpenRouterFailure(failure: TransportFailure): string {
     parts.push(`Provider reason: ${failure.providerReason}`);
   }
 
+  if (failure.providerErrorType !== undefined) {
+    parts.push(`Provider error type: ${failure.providerErrorType}.`);
+  }
+
+  if (failure.providerCode !== undefined) {
+    parts.push(`Provider code: ${failure.providerCode}.`);
+  }
+
   if (failure.missingCapabilities?.length) {
     const names = requirementNames(failure.missingCapabilities);
     parts.push(`Missing requirements: ${names.join(", ")}.`);

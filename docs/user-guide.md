@@ -162,6 +162,9 @@ a known incompatible model routes to Settings instead. Clear removes every
 Cast Possibilities scratch entry for the open project. If a provider response
 succeeds but browser session storage fails, the visible result remains
 non-canonical and the error says the provider request already completed.
+When OpenRouter supplies safe diagnostic codes for a failed request, the error
+also shows those short codes alongside the stable local explanation. It never
+shows raw provider metadata, prompts, records, or credentials.
 
 Cards are unverified, non-canonical, non-prose suggestions. They cannot be
 applied, accepted, inserted into records or the Generation Brief, added to the

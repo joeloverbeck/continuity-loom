@@ -2,6 +2,7 @@ import {
   CAST_POSSIBILITIES_OUTPUT_CONTRACT,
   CAST_POSSIBILITIES_SOURCE_PROFILE,
   buildValidationSnapshot,
+  castPossibilitiesVersionInfo,
   compileCastPossibilitiesPrompt,
   parseCastPossibilitiesOutput,
   renderActiveDossier,
@@ -35,6 +36,11 @@ describe("Cast Possibilities core contract", () => {
 
     expect(CAST_POSSIBILITIES_SOURCE_PROFILE).toBe("cast-possibilities");
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
+    expect(castPossibilitiesVersionInfo).toEqual({
+      template: "1.0.0",
+      compiler: "1.0.1",
+      contract: "1.0.0"
+    });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
       secondCastId,
       firstCastId

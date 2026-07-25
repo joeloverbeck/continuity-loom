@@ -20,6 +20,8 @@ export type TransportFailure = {
   message: string;
   providerStatus?: number;
   providerReason?: string;
+  providerErrorType?: string;
+  providerCode?: string;
   retryAfter?: number;
   // Present on pre-send capability-admission rejections: an actionable recovery instruction.
   recovery?: string;
@@ -55,5 +57,7 @@ export function isTransportFailure(value: unknown): value is TransportFailure {
     typeof failure.message === "string" &&
     (failure.providerStatus === undefined || typeof failure.providerStatus === "number") &&
     (failure.providerReason === undefined || typeof failure.providerReason === "string") &&
+    (failure.providerErrorType === undefined || typeof failure.providerErrorType === "string") &&
+    (failure.providerCode === undefined || typeof failure.providerCode === "string") &&
     (failure.retryAfter === undefined || typeof failure.retryAfter === "number");
 }

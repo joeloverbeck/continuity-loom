@@ -122,7 +122,8 @@ describe("Cast Possibilities routes", () => {
       disclosure: {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
-        fingerprint: expect.stringMatching(/^fnv1a32:/)
+        fingerprint: expect.stringMatching(/^fnv1a32:/),
+        versions: { template: "1.0.0", compiler: "1.0.1", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");

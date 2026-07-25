@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.0`
+Compiler version: `1.0.1`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -131,6 +131,13 @@ exactly three cards. Each card has exactly these nonblank fields:
 dossier key must belong to that card's character. Every context key must resolve
 to the compiled saved brief or selected-record source.
 
+The model-facing strict JSON Schema uses only the repository provider-safe
+keyword allowlist. Constraints that Anthropic rejects before generation —
+nonblank strings, nonempty and unique citation arrays, exact card and character
+counts, and the contract literal — remain equally enforced by the deterministic
+whole-response parser. Removing those provider-facing keywords does not weaken
+quarantine.
+
 The envelope cannot supply trusted project, saved-draft, version, fingerprint,
 model, provider, canon, or prose metadata. The server attaches those values
 locally only after successful whole-response parsing.
@@ -157,6 +164,10 @@ resending. A known incompatibility names every missing requirement:
 Temperature or Top P permits a deliberate Settings change or a compatible
 model, while response format or strict structured output requires a compatible
 model. Every recovery requires fresh inspection and a new explicit action.
+Transport failures may expose only sanitized OpenRouter `error_type` and
+`provider_code` tokens in addition to the stable local category, status, and
+safe provider reason. Arbitrary metadata and payload-shaped diagnostics remain
+excluded.
 Target regeneration includes only that target's three current
 `observable_move` summaries as its avoid list and returns only the replacement.
 

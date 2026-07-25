@@ -44,6 +44,44 @@ describe("normalizeOpenRouterError", () => {
     });
   });
 
+  it("retains safe OpenRouter error type and provider code diagnostics", () => {
+    expect(
+      normalizeOpenRouterError(400, {
+        error: {
+          message: "Provider returned error",
+          metadata: {
+            error_type: "invalid_request",
+            provider_code: "invalid_request_error"
+          }
+        }
+      })
+    ).toEqual({
+      category: "invalid-request",
+      message: "OpenRouter rejected the request.",
+      providerStatus: 400,
+      providerReason: "Provider returned error",
+      providerErrorType: "invalid_request",
+      providerCode: "invalid_request_error"
+    });
+  });
+
+  it.each([
+    ["error_type", "invalid request with spaces"],
+    ["provider_code", "Authorization: Bearer sk-or-diagnostic-secret"],
+    ["provider_code", "sk-or-v1-diagnostic-secret"],
+    ["provider_code", "{\"prompt\":\"FULL_PROMPT_SECRET\"}"]
+  ] as const)("drops unsafe provider diagnostic token %s=%s", (field, diagnostic) => {
+    const result = normalizeOpenRouterError(400, {
+      error: {
+        message: "Provider returned error",
+        metadata: { [field]: diagnostic }
+      }
+    });
+
+    expect(result).not.toHaveProperty(field === "error_type" ? "providerErrorType" : "providerCode");
+    expect(JSON.stringify(result)).not.toMatch(/diagnostic-secret|FULL_PROMPT_SECRET/);
+  });
+
   it("maps timeout and abort causes to timeout", () => {
     expect(normalizeOpenRouterError(undefined, undefined, { name: "AbortError" })).toMatchObject({
       category: "timeout"

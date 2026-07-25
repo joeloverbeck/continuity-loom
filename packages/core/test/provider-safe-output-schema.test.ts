@@ -4,11 +4,13 @@ import {
   PROVIDER_SAFE_OUTPUT_SCHEMA_KEYWORDS,
   PROVIDER_UNSAFE_OUTPUT_SCHEMA_KEYWORDS,
   acceptedSegmentChangeReviewOutputJsonSchema,
+  castPossibilitiesOutputJsonSchema,
   collectDisallowedOutputSchemaKeywords
 } from "../src/index.js";
 
 const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
-  ["change-review", acceptedSegmentChangeReviewOutputJsonSchema()]
+  ["change-review", acceptedSegmentChangeReviewOutputJsonSchema()],
+  ["cast-possibilities", castPossibilitiesOutputJsonSchema()]
 ];
 
 describe("provider-safe strict output schemas", () => {

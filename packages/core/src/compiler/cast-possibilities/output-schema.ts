@@ -1,12 +1,13 @@
 import { CAST_POSSIBILITIES_OUTPUT_CONTRACT } from "./types.js";
 
 export function castPossibilitiesOutputJsonSchema(): Record<string, unknown> {
-  const nonblankString = { type: "string", minLength: 1 };
+  // Anthropic rejects several ordinary JSON-Schema constraint keywords before
+  // generation. The deterministic parser below this boundary re-enforces every
+  // omitted semantic constraint with fail-closed whole-response quarantine.
+  const string = { type: "string" };
   const citationArray = {
     type: "array",
-    minItems: 1,
-    uniqueItems: true,
-    items: { type: "string", minLength: 1 }
+    items: string
   };
   const card = {
     type: "object",
@@ -21,13 +22,13 @@ export function castPossibilitiesOutputJsonSchema(): Record<string, unknown> {
       "distinction"
     ],
     properties: {
-      observable_move: nonblankString,
-      character_fit: nonblankString,
-      moment_fit: nonblankString,
-      local_effect: nonblankString,
+      observable_move: string,
+      character_fit: string,
+      moment_fit: string,
+      local_effect: string,
       dossier_keys: citationArray,
       context_keys: citationArray,
-      distinction: nonblankString
+      distinction: string
     }
   };
 
@@ -36,20 +37,17 @@ export function castPossibilitiesOutputJsonSchema(): Record<string, unknown> {
     additionalProperties: false,
     required: ["contract", "characters"],
     properties: {
-      contract: { type: "string", const: CAST_POSSIBILITIES_OUTPUT_CONTRACT },
+      contract: { enum: [CAST_POSSIBILITIES_OUTPUT_CONTRACT] },
       characters: {
         type: "array",
-        minItems: 1,
         items: {
           type: "object",
           additionalProperties: false,
           required: ["character_key", "cards"],
           properties: {
-            character_key: nonblankString,
+            character_key: string,
             cards: {
               type: "array",
-              minItems: 3,
-              maxItems: 3,
               items: card
             }
           }

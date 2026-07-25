@@ -29,6 +29,7 @@ export const PROVIDER_UNSAFE_OUTPUT_SCHEMA_KEYWORDS: readonly string[] = [
   "uniqueItems",
   "minItems",
   "maxItems",
+  "minLength",
   "pattern",
   "const"
 ];

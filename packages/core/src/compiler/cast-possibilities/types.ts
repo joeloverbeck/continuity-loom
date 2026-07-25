@@ -5,7 +5,7 @@ export const CAST_POSSIBILITIES_OUTPUT_CONTRACT = "cast_possibilities.v1";
 
 export const castPossibilitiesVersionInfo = Object.freeze({
   template: "1.0.0",
-  compiler: "1.0.0",
+  compiler: "1.0.1",
   contract: "1.0.0"
 });
 

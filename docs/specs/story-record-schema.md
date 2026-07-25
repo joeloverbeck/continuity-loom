@@ -1074,6 +1074,15 @@ Possibilities scratch key. This state does not satisfy validation, change
 prompt authority, mutate records or the Generation Brief, or enter exports,
 backups, migrations, or provenance.
 
+The Cast Possibilities model-facing schema is restricted to the provider-safe
+keyword allowlist. Its compiler version is `1.0.1`; template and contract remain
+`1.0.0` and the output identity remains `cast_possibilities.v1`. The local
+parser continues to enforce exact counts, nonblank values, nonempty unique
+citations, and the contract literal before any result can leave quarantine.
+OpenRouter failures may carry sanitized scalar error-type and provider-code
+tokens, but no arbitrary provider metadata or payload becomes stored project
+state.
+
 ### 9.5 Accepted-Segment Change Review assistance projection
 
 Accepted-Segment Change Review is an `accepted-segment-change-review` assistance surface, not a prose-prompt source, not a validation authority, and not a mutation surface. It adds no stored schema fields.

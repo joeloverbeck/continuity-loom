@@ -47,6 +47,24 @@ describe("OpenRouter failure presentation", () => {
     );
   });
 
+  it("presents safe OpenRouter error type and provider code diagnostics", () => {
+    expect(
+      presentOpenRouterFailure({
+        ok: false,
+        category: "invalid-request",
+        message: genericMessages["invalid-request"],
+        providerStatus: 400,
+        providerReason: "Provider returned error",
+        providerErrorType: "invalid_request",
+        providerCode: "invalid_request_error"
+      })
+    ).toBe(
+      "OpenRouter rejected the request. Provider status: 400. Provider reason: Provider returned error " +
+      "Provider error type: invalid_request. Provider code: invalid_request_error. " +
+      "Review the selected model and request settings before trying again. No retry is automatic."
+    );
+  });
+
   it("preserves a thrown typed safe failure instead of replacing it with generic catch text", () => {
     const failure: TransportFailure = {
       ok: false,

@@ -105,9 +105,9 @@ Consumed-guidance listing is a separate deterministic control, not a prompt sour
 ### 2.4 Cast Possibilities source profile
 
 `cast-possibilities` is a prose-aligned, non-prose assistance profile governed
-by `docs/specs/cast-possibilities-prompt-template.md`. Its template, compiler,
-and contract versions are independently `1.0.0`; its output identity is
-`cast_possibilities.v1`.
+by `docs/specs/cast-possibilities-prompt-template.md`. Its template and contract
+versions are `1.0.0`, its compiler version is `1.0.1`, and its output identity
+is `cast_possibilities.v1`.
 
 It reads the open project's most recently saved Generation Brief, story
 configuration, every selected active-working-set record, selected POV,
@@ -133,6 +133,12 @@ before one explicit strict-output request. Trusted result metadata is attached
 only after whole-response parsing succeeds; quarantine contains safe local
 reason and recovery fields only. Cards are non-canonical, non-prose,
 session-only scratch.
+
+The strict output schema emits only provider-safe keywords. Exact counts,
+nonblank strings, nonempty and unique citations, and the contract literal are
+enforced with equal strength by the fail-closed local parser. Provider failures
+retain only safe scalar `error_type` and `provider_code` diagnostics; arbitrary
+provider metadata is not part of the browser-consumed failure envelope.
 
 ### 2.5 Universal exclusions
 

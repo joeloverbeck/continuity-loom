@@ -17,6 +17,8 @@ export interface NormalizedTransportError {
   message: string;
   providerStatus?: number;
   providerReason?: string;
+  providerErrorType?: string;
+  providerCode?: string;
   retryAfter?: number;
 }
 
@@ -38,6 +40,8 @@ const categoryMessages = {
 export function normalizeOpenRouterError(status?: number, body?: unknown, cause?: unknown): NormalizedTransportError {
   const retryAfter = parseRetryAfter(body);
   const providerReason = extractProviderReason(body);
+  const providerErrorType = extractProviderDiagnostic(body, "error_type");
+  const providerCode = extractProviderDiagnostic(body, "provider_code");
   const category = categoryFromCause(cause) ?? categoryFromBody(body) ?? categoryFromStatus(status) ?? "unknown";
   const normalized: NormalizedTransportError = {
     category,
@@ -52,11 +56,35 @@ export function normalizeOpenRouterError(status?: number, body?: unknown, cause?
     normalized.providerReason = providerReason;
   }
 
+  if (providerErrorType !== undefined) {
+    normalized.providerErrorType = providerErrorType;
+  }
+
+  if (providerCode !== undefined) {
+    normalized.providerCode = providerCode;
+  }
+
   if (retryAfter !== undefined) {
     normalized.retryAfter = retryAfter;
   }
 
   return normalized;
+}
+
+function extractProviderDiagnostic(body: unknown, key: "error_type" | "provider_code"): string | undefined {
+  const error = getUnknownProperty(body, "error");
+  const metadata = getUnknownProperty(error, "metadata");
+  const value = getUnknownProperty(metadata, key);
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim();
+  if (/^sk-or-(?:v1-)?[a-z0-9_-]+$/iu.test(normalized)) {
+    return undefined;
+  }
+
+  return /^[a-z0-9][a-z0-9._:/-]{0,79}$/iu.test(normalized) ? normalized : undefined;
 }
 
 function extractProviderReason(body: unknown): string | undefined {
