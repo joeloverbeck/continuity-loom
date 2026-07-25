@@ -38,7 +38,7 @@ describe("Cast Possibilities core contract", () => {
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
     expect(castPossibilitiesVersionInfo).toEqual({
       template: "1.0.0",
-      compiler: "1.0.2",
+      compiler: "1.0.3",
       contract: "1.0.0"
     });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
@@ -59,8 +59,8 @@ describe("Cast Possibilities core contract", () => {
     expect(compiled.prompt).toContain("Do not write scene prose, drafted dialogue, branches, plans, or future sequences.");
     expect(compiled.prompt).toContain([
       "<expected_character_order>",
-      '1. character_key="[CHARACTER-1]" label="Second Character"',
-      '2. character_key="[CHARACTER-2]" label="First Character"',
+      '1. character_key="[CHARACTER-1]" label="Second Character" dossier_keys=["[DOSSIER-1]"]',
+      '2. character_key="[CHARACTER-2]" label="First Character" dossier_keys=["[DOSSIER-2]"]',
       "</expected_character_order>"
     ].join("\n"));
     expect(compiled.prompt).toContain(
@@ -73,12 +73,51 @@ describe("Cast Possibilities core contract", () => {
             properties: {
               character_key: {
                 enum: ["[CHARACTER-1]", "[CHARACTER-2]"]
+              },
+              cards: {
+                items: {
+                  properties: {
+                    dossier_keys: {
+                      items: {
+                        enum: ["[DOSSIER-1]", "[DOSSIER-2]"]
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         }
       }
     });
+    const outputSchema = compiled.outputSchema as {
+      properties: {
+        characters: {
+          items: {
+            properties: {
+              cards: {
+                items: {
+                  properties: {
+                    context_keys: {
+                      items: { enum: string[] };
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      };
+    };
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.properties.context_keys.items.enum
+    ).toEqual(expect.arrayContaining([
+      "[BRIEF-current_time]",
+      "[FACT-1]"
+    ]));
+    expect(compiled.prompt).toContain(
+      "For each character, copy dossier_keys only from that character's listed dossier_keys."
+    );
     expect(compiled.prompt).toContain('"statement":"The archive door is locked."');
     expect(compiled.prompt).not.toContain("accepted prose");
   });

@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.2`
+Compiler version: `1.0.3`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -88,11 +88,14 @@ stable `[TYPE-n]` key in selected snapshot order; saved required moment fields
 receive stable `[BRIEF-field]` keys.
 
 `<expected_character_order>` lists every output `character_key` in its required
-order alongside the display label. Output instructions require copying those
-tokens verbatim, including brackets, and forbid substituting names, record IDs,
-dossier keys, or other labels. The provider-facing schema restricts
-`character_key` to that exact request-specific key set; the local parser still
-enforces completeness, uniqueness, and order.
+order alongside the display label and that character's owned `dossier_keys`.
+Output instructions require copying those tokens verbatim, including brackets,
+and forbid substituting names, record IDs, keys owned by another character, or
+other labels. The provider-facing schema restricts `character_key` and
+`dossier_keys` to the exact request-specific eligible sets and `context_keys`
+to the exact compiled non-dossier citation set. Because the provider-safe
+schema cannot express per-array-member dossier ownership, the local parser
+still enforces exact character ownership, completeness, uniqueness, and order.
 
 The linked-ENTITY `##` heading, every populated dossier field in its
 prose-authoritative order, current voice pressure pin, and temporary voice

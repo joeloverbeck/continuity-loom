@@ -1075,13 +1075,16 @@ prompt authority, mutate records or the Generation Brief, or enter exports,
 backups, migrations, or provenance.
 
 The Cast Possibilities model-facing schema is restricted to the provider-safe
-keyword allowlist. Its compiler version is `1.0.2`; template and contract remain
+keyword allowlist. Its compiler version is `1.0.3`; template and contract remain
 `1.0.0` and the output identity remains `cast_possibilities.v1`. The local
 parser continues to enforce exact counts, nonblank values, nonempty unique
 citations, and the contract literal before any result can leave quarantine.
 The request-specific schema restricts `character_key` to the exact stable keys
-listed in the compiled prompt. The parser independently enforces complete,
-unique, deterministic character order.
+listed in the compiled prompt, dossier citations to the eligible dossier-key
+set, and context citations to the compiled non-dossier citation-key set. The
+prompt lists each character's owned dossier keys explicitly. The parser
+independently enforces per-character dossier ownership plus complete, unique,
+deterministic character order.
 OpenRouter failures may carry sanitized scalar error-type and provider-code
 tokens, but no arbitrary provider metadata or payload becomes stored project
 state.

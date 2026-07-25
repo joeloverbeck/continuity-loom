@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.2", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.3", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -249,6 +249,24 @@ describe("Cast Possibilities routes", () => {
                     properties: {
                       character_key: {
                         enum: ["[CHARACTER-1]"]
+                      },
+                      cards: {
+                        items: {
+                          properties: {
+                            dossier_keys: {
+                              items: {
+                                enum: ["[DOSSIER-1]"]
+                              }
+                            },
+                            context_keys: {
+                              items: {
+                                enum: expect.arrayContaining([
+                                  "[BRIEF-current_time]"
+                                ])
+                              }
+                            }
+                          }
+                        }
                       }
                     }
                   }
