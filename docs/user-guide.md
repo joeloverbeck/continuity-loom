@@ -149,7 +149,9 @@ keys for each eligible character. The provider schema accepts only the compiled
 character, dossier, and context citation keys.
 Each card must honor the saved immediate situation and manual directive. A card
 may summarize something a character could say, but it must not draft or quote
-the character's exact dialogue.
+the character's exact dialogue. Prompt Inspector repeats the exact per-card
+constraints immediately before the output instructions; the inspected request
+schema carries the same constraint set.
 
 Analyze remains disabled until you inspect and confirm the one-time OpenRouter
 send. It makes one full-cast request and either shows every character with

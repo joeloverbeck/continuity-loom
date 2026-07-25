@@ -3,8 +3,16 @@ import {
   type CastPossibilitiesParseContext
 } from "./types.js";
 
+export interface CastPossibilitiesOutputGuidance {
+  immediateSituation: string;
+  mustRender: readonly string[];
+  mayRenderIfNaturallyCaused: readonly string[];
+  doNotForce: readonly string[];
+}
+
 export function castPossibilitiesOutputJsonSchema(
-  context: CastPossibilitiesParseContext
+  context: CastPossibilitiesParseContext,
+  guidance: CastPossibilitiesOutputGuidance
 ): Record<string, unknown> {
   // Anthropic rejects several ordinary JSON-Schema constraint keywords before
   // generation. The deterministic parser below this boundary re-enforces every
@@ -31,6 +39,13 @@ export function castPossibilitiesOutputJsonSchema(
   const contextKeys = uniqueValues(context.contextKeys);
   const card = {
     type: "object",
+    description: [
+      "Every card must satisfy this exact saved constraint set.",
+      `Saved immediate situation: ${JSON.stringify(guidance.immediateSituation)}.`,
+      `Every card must render: ${JSON.stringify(guidance.mustRender)}.`,
+      `May render only if naturally caused: ${JSON.stringify(guidance.mayRenderIfNaturallyCaused)}.`,
+      `Every card must not force: ${JSON.stringify(guidance.doNotForce)}.`
+    ].join(" "),
     additionalProperties: false,
     required: [
       "observable_move",

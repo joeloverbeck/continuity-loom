@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.4", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.5", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -252,6 +252,9 @@ describe("Cast Possibilities routes", () => {
                       },
                       cards: {
                         items: {
+                          description: expect.stringContaining(
+                            "Render Elin trying to keep Niko from touching or reading the hidden letter."
+                          ),
                           properties: {
                             dossier_keys: {
                               items: {

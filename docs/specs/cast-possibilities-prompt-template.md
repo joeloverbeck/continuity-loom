@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.4`
+Compiler version: `1.0.5`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -75,7 +75,8 @@ The compiler renders these blocks in order:
 7. `<expected_character_order>`
 8. optional `<target_character_avoid_list>`
 9. `<citation_legend>`
-10. `<output_instructions>`
+10. `<card_constraints>`
+11. `<output_instructions>`
 
 The prompt declares source profile, output identity, saved-draft identity,
 complete-source rule, and non-canonical/non-prose boundary. Story configuration,
@@ -88,6 +89,12 @@ item, must not violate `do_not_force`, and may use
 `may_render_if_naturally_caused` only when the saved source naturally causes
 it. An observable move may summarize a speech act, but it must not quote or
 draft the character's exact words.
+
+`<card_constraints>` repeats the exact request-specific immediate situation,
+`must_render`, `may_render_if_naturally_caused`, and `do_not_force` values
+immediately before output instructions. The compiler derives that block and
+the provider-facing card-object description from one constraint projection, so
+the inspected prompt and sent schema cannot drift.
 
 Each eligible character receives a stable `[CHARACTER-n]` key and one
 character-owned `[DOSSIER-n]` evidence key. Each selected record receives a

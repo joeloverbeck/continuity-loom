@@ -3,7 +3,10 @@ import { escapeDataText } from "../escaping.js";
 import { estimatePromptTokens, fingerprintPrompt } from "../fingerprint.js";
 import { displayLabel, resolveRecordLabelStrict } from "../labels.js";
 import { renderActiveDossier, renderActiveVoicePressurePin } from "../sections/cast.js";
-import { castPossibilitiesOutputJsonSchema } from "./output-schema.js";
+import {
+  castPossibilitiesOutputJsonSchema,
+  type CastPossibilitiesOutputGuidance
+} from "./output-schema.js";
 import {
   CAST_POSSIBILITIES_OUTPUT_CONTRACT,
   CAST_POSSIBILITIES_SOURCE_PROFILE,
@@ -62,8 +65,16 @@ export function compileCastPossibilitiesPrompt(
     })),
     contextKeys
   };
-  const outputSchema = castPossibilitiesOutputJsonSchema(parseContext);
-  const prompt = renderPrompt(snapshot, request, targetCharacters, citationMap, outputSchema);
+  const outputGuidance = buildOutputGuidance(snapshot);
+  const outputSchema = castPossibilitiesOutputJsonSchema(parseContext, outputGuidance);
+  const prompt = renderPrompt(
+    snapshot,
+    request,
+    targetCharacters,
+    citationMap,
+    outputSchema,
+    outputGuidance
+  );
   const fingerprint = fingerprintPrompt(prompt);
   const recordCountsByType = countRecords(snapshot.records);
   const disclosure = {
@@ -293,7 +304,8 @@ function renderPrompt(
   request: CastPossibilitiesCompileRequest,
   characters: readonly CastPossibilitiesCharacterDisclosure[],
   citationMap: Readonly<Record<string, string>>,
-  outputSchema: Readonly<Record<string, unknown>>
+  outputSchema: Readonly<Record<string, unknown>>,
+  outputGuidance: CastPossibilitiesOutputGuidance
 ): string {
   const session = snapshot.generationSession;
   const state = objectOf(session.current_authoritative_state);
@@ -368,6 +380,13 @@ function renderPrompt(
     ...Object.entries(citationMap).map(([key, label]) => `${key} ${escapeDataText(label)}`),
     "</citation_legend>",
     "",
+    "<card_constraints>",
+    `Saved immediate situation: ${canonicalData(outputGuidance.immediateSituation)}`,
+    `Every card must render: ${canonicalData(outputGuidance.mustRender)}`,
+    `May render only if naturally caused: ${canonicalData(outputGuidance.mayRenderIfNaturallyCaused)}`,
+    `Every card must not force: ${canonicalData(outputGuidance.doNotForce)}`,
+    "</card_constraints>",
+    "",
     "<output_instructions>",
     "Return every eligible character exactly once in the listed order and exactly three cards per character.",
     "Copy each listed character_key exactly, including brackets, into the corresponding output object. Do not substitute a character name, record ID, dossier key, or other label.",
@@ -378,9 +397,21 @@ function renderPrompt(
     "Never violate a manual_moment_directive.do_not_force item. Use a manual_moment_directive.may_render_if_naturally_caused item only when the saved source naturally causes it.",
     "Summarize any speech act without quoting or drafting the character's exact words.",
     "Diversify observable channels when evidence permits. Cards are independent and are not guaranteed to be mutually compatible.",
-    JSON.stringify(outputSchema),
+    canonicalData(outputSchema),
     "</output_instructions>"
   ].join("\n");
+}
+
+function buildOutputGuidance(snapshot: ValidationSnapshot): CastPossibilitiesOutputGuidance {
+  const session = snapshot.generationSession;
+  const state = objectOf(session.current_authoritative_state);
+  const directive = session.manual_moment_directive;
+  return {
+    immediateSituation: textOf(state.immediate_situation_summary),
+    mustRender: directive?.must_render ?? [],
+    mayRenderIfNaturallyCaused: directive?.may_render_if_naturally_caused ?? [],
+    doNotForce: directive?.do_not_force ?? []
+  };
 }
 
 function renderSelectedRecords(records: readonly ValidationRecord[]): string {

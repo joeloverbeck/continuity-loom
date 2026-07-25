@@ -16,6 +16,11 @@ const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
       dossierKeys: ["[DOSSIER-1]"]
     }],
     contextKeys: ["[BRIEF-current_time]"]
+  }, {
+    immediateSituation: "A locked archive door blocks the cast.",
+    mustRender: ["Keep the archive door locked."],
+    mayRenderIfNaturallyCaused: ["A practical response."],
+    doNotForce: ["Do not reveal the archive contents."]
   })]
 ];
 
