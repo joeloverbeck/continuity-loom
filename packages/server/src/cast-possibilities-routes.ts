@@ -1,6 +1,5 @@
 import {
   CAST_POSSIBILITIES_SOURCE_PROFILE,
-  castPossibilitiesOutputJsonSchema,
   compileCastPossibilitiesPrompt,
   fingerprintPrompt,
   parseCastPossibilitiesOutput,
@@ -52,7 +51,7 @@ export function registerCastPossibilitiesRoutes(
     const finalizedRequest = buildChatCompletionRequest({
       prompt: compiled.result.prompt,
       settings,
-      requestOptions: castRequestOptions()
+      requestOptions: castRequestOptions(compiled.result.outputSchema)
     });
     return {
       ok: true,
@@ -76,7 +75,7 @@ export function registerCastPossibilitiesRoutes(
     if (!compiled.ok) {
       return reply.code(compiled.status).send(compiled.body);
     }
-    const requestOptions = castRequestOptions();
+    const requestOptions = castRequestOptions(compiled.result.outputSchema);
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
         prompt: compiled.result.prompt,
@@ -314,14 +313,16 @@ function parseRequest(
   };
 }
 
-function castRequestOptions(): OpenRouterRequestOptions {
+function castRequestOptions(
+  outputSchema: Readonly<Record<string, unknown>>
+): OpenRouterRequestOptions {
   return {
     response_format: {
       type: "json_schema",
       json_schema: {
         name: "cast_possibilities",
         strict: true,
-        schema: castPossibilitiesOutputJsonSchema()
+        schema: outputSchema
       }
     },
     provider: { require_parameters: true, allow_fallbacks: false },

@@ -1,6 +1,8 @@
 import { CAST_POSSIBILITIES_OUTPUT_CONTRACT } from "./types.js";
 
-export function castPossibilitiesOutputJsonSchema(): Record<string, unknown> {
+export function castPossibilitiesOutputJsonSchema(
+  characterKeys: readonly string[]
+): Record<string, unknown> {
   // Anthropic rejects several ordinary JSON-Schema constraint keywords before
   // generation. The deterministic parser below this boundary re-enforces every
   // omitted semantic constraint with fail-closed whole-response quarantine.
@@ -45,7 +47,7 @@ export function castPossibilitiesOutputJsonSchema(): Record<string, unknown> {
           additionalProperties: false,
           required: ["character_key", "cards"],
           properties: {
-            character_key: string,
+            character_key: { enum: [...characterKeys] },
             cards: {
               type: "array",
               items: card

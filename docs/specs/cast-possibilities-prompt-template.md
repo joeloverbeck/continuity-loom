@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.1`
+Compiler version: `1.0.2`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -72,9 +72,10 @@ The compiler renders these blocks in order:
 4. `<saved_local_moment>`
 5. `<selected_record_context>`
 6. `<eligible_cast_dossiers>`
-7. optional `<target_character_avoid_list>`
-8. `<citation_legend>`
-9. `<output_instructions>`
+7. `<expected_character_order>`
+8. optional `<target_character_avoid_list>`
+9. `<citation_legend>`
+10. `<output_instructions>`
 
 The prompt declares source profile, output identity, saved-draft identity,
 complete-source rule, and non-canonical/non-prose boundary. Story configuration,
@@ -85,6 +86,13 @@ Each eligible character receives a stable `[CHARACTER-n]` key and one
 character-owned `[DOSSIER-n]` evidence key. Each selected record receives a
 stable `[TYPE-n]` key in selected snapshot order; saved required moment fields
 receive stable `[BRIEF-field]` keys.
+
+`<expected_character_order>` lists every output `character_key` in its required
+order alongside the display label. Output instructions require copying those
+tokens verbatim, including brackets, and forbid substituting names, record IDs,
+dossier keys, or other labels. The provider-facing schema restricts
+`character_key` to that exact request-specific key set; the local parser still
+enforces completeness, uniqueness, and order.
 
 The linked-ENTITY `##` heading, every populated dossier field in its
 prose-authoritative order, current voice pressure pin, and temporary voice

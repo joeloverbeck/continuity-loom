@@ -10,7 +10,7 @@ import {
 
 const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
   ["change-review", acceptedSegmentChangeReviewOutputJsonSchema()],
-  ["cast-possibilities", castPossibilitiesOutputJsonSchema()]
+  ["cast-possibilities", castPossibilitiesOutputJsonSchema(["[CHARACTER-1]"])]
 ];
 
 describe("provider-safe strict output schemas", () => {

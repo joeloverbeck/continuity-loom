@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.1", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.2", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -239,7 +239,23 @@ describe("Cast Possibilities routes", () => {
         stream: false,
         response_format: {
           type: "json_schema",
-          json_schema: { name: "cast_possibilities", strict: true }
+          json_schema: {
+            name: "cast_possibilities",
+            strict: true,
+            schema: {
+              properties: {
+                characters: {
+                  items: {
+                    properties: {
+                      character_key: {
+                        enum: ["[CHARACTER-1]"]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         },
         provider: { require_parameters: true, allow_fallbacks: false },
         transforms: [],

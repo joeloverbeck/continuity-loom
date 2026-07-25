@@ -106,7 +106,7 @@ Consumed-guidance listing is a separate deterministic control, not a prompt sour
 
 `cast-possibilities` is a prose-aligned, non-prose assistance profile governed
 by `docs/specs/cast-possibilities-prompt-template.md`. Its template and contract
-versions are `1.0.0`, its compiler version is `1.0.1`, and its output identity
+versions are `1.0.0`, its compiler version is `1.0.2`, and its output identity
 is `cast_possibilities.v1`.
 
 It reads the open project's most recently saved Generation Brief, story
@@ -322,12 +322,12 @@ All eight sections always render. No formal-mutation section or schema catalog i
 
 The compiler renders `<cast_possibilities_role>`, `<source_contract>`,
 `<story_configuration>`, `<saved_local_moment>`,
-`<selected_record_context>`, `<eligible_cast_dossiers>`, the optional
-`<target_character_avoid_list>`, `<citation_legend>`, and
-`<output_instructions>` in that order. Complete saved source precedes the
-procedure and strict schema. Target regeneration keeps the same order and
-projects exactly one eligible character plus its explicit three-summary avoid
-list.
+`<selected_record_context>`, `<eligible_cast_dossiers>`,
+`<expected_character_order>`, the optional `<target_character_avoid_list>`,
+`<citation_legend>`, and `<output_instructions>` in that order. Complete saved
+source precedes the procedure and strict schema. Target regeneration keeps the
+same order and projects exactly one eligible character plus its explicit
+three-summary avoid list.
 
 ## 4. Exhaustive placeholder mapping
 

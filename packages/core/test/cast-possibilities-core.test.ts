@@ -38,7 +38,7 @@ describe("Cast Possibilities core contract", () => {
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
     expect(castPossibilitiesVersionInfo).toEqual({
       template: "1.0.0",
-      compiler: "1.0.1",
+      compiler: "1.0.2",
       contract: "1.0.0"
     });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
@@ -57,6 +57,28 @@ describe("Cast Possibilities core contract", () => {
     expect(compiled.disclosure.includesSecrets).toBe(false);
     expect(compiled.prompt).toContain("Immediate situation: The three characters face a locked archive.");
     expect(compiled.prompt).toContain("Do not write scene prose, drafted dialogue, branches, plans, or future sequences.");
+    expect(compiled.prompt).toContain([
+      "<expected_character_order>",
+      '1. character_key="[CHARACTER-1]" label="Second Character"',
+      '2. character_key="[CHARACTER-2]" label="First Character"',
+      "</expected_character_order>"
+    ].join("\n"));
+    expect(compiled.prompt).toContain(
+      "Copy each listed character_key exactly, including brackets, into the corresponding output object."
+    );
+    expect(compiled.outputSchema).toMatchObject({
+      properties: {
+        characters: {
+          items: {
+            properties: {
+              character_key: {
+                enum: ["[CHARACTER-1]", "[CHARACTER-2]"]
+              }
+            }
+          }
+        }
+      }
+    });
     expect(compiled.prompt).toContain('"statement":"The archive door is locked."');
     expect(compiled.prompt).not.toContain("accepted prose");
   });

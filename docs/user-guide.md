@@ -144,6 +144,8 @@ character, record counts, SECRET inclusion, exact prompt, versions, and
 fingerprint. Cast Possibilities needs saved time, location, onstage entities,
 an immediate situation, resolved character POV, and at least one eligible
 linked dossier. It does not require a prose-ready `must_render`.
+The preview also pins the exact ordered output key for each eligible character;
+the provider schema accepts only those displayed keys.
 
 Analyze remains disabled until you inspect and confirm the one-time OpenRouter
 send. It makes one full-cast request and either shows every character with

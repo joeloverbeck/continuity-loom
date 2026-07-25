@@ -54,7 +54,10 @@ export function compileCastPossibilitiesPrompt(
   }
 
   const citationMap = buildCitationMap(snapshot, targetCharacters);
-  const prompt = renderPrompt(snapshot, request, targetCharacters, citationMap);
+  const outputSchema = castPossibilitiesOutputJsonSchema(
+    targetCharacters.map((character) => character.characterKey)
+  );
+  const prompt = renderPrompt(snapshot, request, targetCharacters, citationMap, outputSchema);
   const fingerprint = fingerprintPrompt(prompt);
   const recordCountsByType = countRecords(snapshot.records);
   const disclosure = {
@@ -76,7 +79,7 @@ export function compileCastPossibilitiesPrompt(
     ok: true,
     prompt,
     disclosure,
-    outputSchema: castPossibilitiesOutputJsonSchema(),
+    outputSchema,
     parseContext: {
       expectedCharacters: targetCharacters.map((character) => ({
         characterKey: character.characterKey,
@@ -291,7 +294,8 @@ function renderPrompt(
   snapshot: ValidationSnapshot,
   request: CastPossibilitiesCompileRequest,
   characters: readonly CastPossibilitiesCharacterDisclosure[],
-  citationMap: Readonly<Record<string, string>>
+  citationMap: Readonly<Record<string, string>>,
+  outputSchema: Readonly<Record<string, unknown>>
 ): string {
   const session = snapshot.generationSession;
   const state = objectOf(session.current_authoritative_state);
@@ -349,6 +353,12 @@ function renderPrompt(
     "<eligible_cast_dossiers>",
     dossierBlocks.join("\n\n"),
     "</eligible_cast_dossiers>",
+    "",
+    "<expected_character_order>",
+    ...characters.map((character, index) =>
+      `${index + 1}. character_key=${canonicalData(character.characterKey)} label=${canonicalData(character.label)}`
+    ),
+    "</expected_character_order>",
     ...(avoidList.length > 0 ? [
       "",
       "<target_character_avoid_list>",
@@ -362,9 +372,10 @@ function renderPrompt(
     "",
     "<output_instructions>",
     "Return every eligible character exactly once in the listed order and exactly three cards per character.",
+    "Copy each listed character_key exactly, including brackets, into the corresponding output object. Do not substitute a character name, record ID, dossier key, or other label.",
     "Each card needs one character-owned dossier key, one saved-brief or selected-record context key, and nonblank observable_move, character_fit, moment_fit, local_effect, and distinction.",
     "Diversify observable channels when evidence permits. Cards are independent and are not guaranteed to be mutually compatible.",
-    JSON.stringify(castPossibilitiesOutputJsonSchema()),
+    JSON.stringify(outputSchema),
     "</output_instructions>"
   ].join("\n");
 }
