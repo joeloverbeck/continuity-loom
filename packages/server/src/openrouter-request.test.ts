@@ -138,19 +138,20 @@ describe("buildChatCompletionRequest", () => {
   });
 
   it("omits temperature in provider-default mode and discloses no invented numeric value", () => {
+    const settings = {
+      model: "anthropic/claude-sonnet-5",
+      temperatureMode: "provider_default" as const,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 2048
+    };
     const request = buildChatCompletionRequest({
       prompt: "Prompt",
-      settings: {
-        model: "anthropic/claude-sonnet-5",
-        temperatureMode: "provider_default",
-        proseMaxOutputTokens: 1024,
-        assistanceMaxOutputTokens: 2048
-      },
+      settings,
       outputPolicy: "strict"
     });
 
     expect(request).not.toHaveProperty("temperature");
-    expect(inspectChatCompletionRequest(request, "strict")).toEqual({
+    expect(inspectChatCompletionRequest(request, "strict", settings)).toEqual({
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default",
       completionCeilingClass: "assistance",
@@ -184,6 +185,20 @@ describe("buildChatCompletionRequest", () => {
       ...settings,
       cachedModels: [{ id: "provider/selected", name: "Selected" }]
     })).not.toHaveProperty("contextLength");
+  });
+
+  it("refuses inspection when the ceiling policy contradicts the finalized request", () => {
+    const settings = {
+      model: "provider/selected",
+      temperatureMode: "provider_default" as const,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096
+    };
+    const request = buildChatCompletionRequest({ prompt: "Prompt", settings, outputPolicy: "prose" });
+
+    expect(() => inspectChatCompletionRequest(request, "strict", settings)).toThrow(
+      /finalized request uses 1024 completion tokens but the Assistance ceiling is 4096/i
+    );
   });
 
   it("fingerprints provider configuration without changing prompt bytes", () => {

@@ -86,6 +86,7 @@ export function CastPossibilitiesView({
   const [diagnosticFailure, setDiagnosticFailure] = useState<TransportFailure | null>(null);
   const [sendConfirmed, setSendConfirmed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [regenerationSearchTerm, setRegenerationSearchTerm] = useState("");
   const [copiedCard, setCopiedCard] = useState<string | null>(null);
   const [regeneration, setRegeneration] = useState<RegenerationPreview | null>(null);
   const [modelRefresh, setModelRefresh] = useState<ModelRefreshState>({ status: "idle" });
@@ -192,6 +193,7 @@ export function CastPossibilitiesView({
         compile: compiled,
         confirmed: false
       });
+      setRegenerationSearchTerm("");
       setSendState({ status: "idle" });
     } catch {
       setSendState({ status: "local", message: "The target regeneration source could not be compiled locally." });
@@ -300,6 +302,7 @@ export function CastPossibilitiesView({
     };
     setScratchState({ scratch: next, stale: false });
     setRegeneration(null);
+    setRegenerationSearchTerm("");
     try {
       saveCastPossibilitiesScratch(sessionStorage, next);
     } catch {
@@ -488,7 +491,12 @@ export function CastPossibilitiesView({
         <section className="configPanel" aria-labelledby="regeneration-preview-title">
           <h3 id="regeneration-preview-title">Inspect regeneration for {regeneration.label}</h3>
           <p>This one target-only request includes the character’s current three observable-move summaries as an avoid list.</p>
-          <pre className="promptBody">{regeneration.compile.prompt}</pre>
+          <PromptInspector
+            result={toInspectorResult(regeneration.compile)}
+            providerRequest={regeneration.compile.providerRequest}
+            searchTerm={regenerationSearchTerm}
+            onSearchTermChange={setRegenerationSearchTerm}
+          />
           <label className="checkboxLabel">
             <input
               type="checkbox"
@@ -513,7 +521,10 @@ export function CastPossibilitiesView({
             type="button"
             className="secondaryButton"
             disabled={sendState.status === "analyzing" || sendState.status === "regenerating"}
-            onClick={() => setRegeneration(null)}
+            onClick={() => {
+              setRegeneration(null);
+              setRegenerationSearchTerm("");
+            }}
           >
             Cancel
           </button>

@@ -94,6 +94,54 @@ describe("record hygiene routes", () => {
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
 
+  it("keeps Prose edits eligible, sends the inspected Assistance ceiling, and stales Assistance edits", async () => {
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await prepareHygieneProject(fastify);
+    const inspected = await fastify.inject({ method: "POST", url: "/api/record-hygiene/compile" });
+    const compile = inspected.json() as {
+      metadata: { fingerprint: string };
+      providerRequest: { maxOutputTokens: number; requestFingerprint: string };
+    };
+    writeOpenRouterSettings({ proseMaxOutputTokens: 2048 });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validHygieneResponse("No conflict.") },
+      response: normalResponse()
+    });
+
+    const eligible = await fastify.inject({
+      method: "POST",
+      url: "/api/record-hygiene/analyze",
+      payload: {
+        expectedPromptFingerprint: compile.metadata.fingerprint,
+        expectedRequestFingerprint: compile.providerRequest.requestFingerprint
+      }
+    });
+
+    expect(eligible.statusCode).toBe(200);
+    expect(compile.providerRequest.maxOutputTokens).toBe(4096);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0].request.max_completion_tokens).toBe(
+      compile.providerRequest.maxOutputTokens
+    );
+
+    const refreshed = await fastify.inject({ method: "POST", url: "/api/record-hygiene/compile" });
+    const current = refreshed.json() as typeof compile;
+    writeOpenRouterSettings({ assistanceMaxOutputTokens: 2048 });
+    const stale = await fastify.inject({
+      method: "POST",
+      url: "/api/record-hygiene/analyze",
+      payload: {
+        expectedPromptFingerprint: current.metadata.fingerprint,
+        expectedRequestFingerprint: current.providerRequest.requestFingerprint
+      }
+    });
+
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ ok: false, kind: "stale-record-hygiene-inspection" });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("accepts working-set mode, scopes by selected records, and does not mutate the working set", async () => {
     const fastify = app();
     const { alphaId } = await prepareHygieneProject(fastify);

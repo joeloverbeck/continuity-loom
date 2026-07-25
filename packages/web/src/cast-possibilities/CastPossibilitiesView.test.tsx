@@ -138,12 +138,30 @@ describe("Cast Possibilities browser workflow", () => {
 
   it("replaces only the regenerated character while preserving the full-cast source identity", async () => {
     const client = fixtureClient("fnv1a32:source-a");
-    vi.mocked(client.compile).mockResolvedValue(fixtureCompileResult("fnv1a32:source-a", 4095));
+    const fullCompile = fixtureCompileResult("fnv1a32:source-a");
+    const targetCompile = fixtureCompileResult("fnv1a32:regeneration", 3000, 4096, 1200);
+    vi.mocked(client.compile).mockImplementation((request = {}) => Promise.resolve(
+      request.targetCharacterId
+        ? {
+            ...targetCompile,
+            prompt: "# Cast Possibilities Prompt\nTarget regeneration"
+          }
+        : fullCompile
+    ));
     const first = renderView(client);
     fireEvent.click(await screen.findByRole("checkbox", { name: /confirm this one-time send/i }));
     fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
     fireEvent.click(await screen.findByRole("button", { name: /Regenerate Elian/ }));
-    expect(screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" })).toBeTruthy();
+    const targetPreview = await screen.findByRole("region", { name: "Inspect regeneration for Elian" });
+    expect(within(targetPreview).getByTestId("prompt-body").textContent).toContain("Target regeneration");
+    expect(within(targetPreview).getByText("Assistance ceiling", { selector: "dt" })).toBeTruthy();
+    expect(within(targetPreview).getByText("3000", { selector: "dd" })).toBeTruthy();
+    expect(within(targetPreview).getByRole("status", {
+      name: "Assistance-ceiling suitability advisory"
+    })).toBeTruthy();
+    const contextAdvisory = within(targetPreview).getByRole("status", { name: "Context-window advisory" });
+    expect(contextAdvisory.textContent).toContain("estimated at 1200 tokens");
+    expect(client.analyze).toHaveBeenCalledTimes(1);
     fireEvent.click(await screen.findByRole("checkbox", { name: /confirm one regeneration request/i }));
     fireEvent.click(screen.getByRole("button", { name: "Send regeneration" }));
 
@@ -532,7 +550,12 @@ function fixtureClient(fingerprint: string): CastPossibilitiesClient {
   };
 }
 
-function fixtureCompileResult(fingerprint: string, maxOutputTokens = 4096) {
+function fixtureCompileResult(
+  fingerprint: string,
+  maxOutputTokens = 4096,
+  contextLength?: number,
+  tokenEstimate = 7
+) {
   const disclosure = {
     sourceProfile: "cast-possibilities" as const,
     savedDraftIdentity: `generation-brief:${fingerprint}`,
@@ -547,7 +570,7 @@ function fixtureCompileResult(fingerprint: string, maxOutputTokens = 4096) {
     recordCountsByType: { "CAST MEMBER": 2, ENTITY: 2 },
     includesSecrets: false,
     promptLength: 28,
-    tokenEstimate: 7,
+    tokenEstimate,
     versions: { template: "1.0.0", compiler: "1.0.7", contract: "1.0.0" } as const,
     fingerprint,
     citationMap: {
@@ -570,6 +593,7 @@ function fixtureCompileResult(fingerprint: string, maxOutputTokens = 4096) {
         temperature: 0,
         completionCeilingClass: "assistance",
         maxOutputTokens,
+        ...(contextLength === undefined ? {} : { contextLength }),
         requestFingerprint: `request:${fingerprint}`
       }
   } as const;

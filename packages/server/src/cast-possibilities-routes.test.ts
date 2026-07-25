@@ -350,6 +350,95 @@ describe("Cast Possibilities routes", () => {
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps Prose edits eligible and stales Assistance edits for full and target requests", async () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-cast-possibilities-test";
+    configureCompatibleModel();
+    const candidate = await preparedApp();
+    const full = await compilePossibilities(candidate);
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validOutput(full.disclosure) },
+      response: normalResponse()
+    });
+    writeOpenRouterSettings({ proseMaxOutputTokens: 2048 });
+
+    const fullEligible = await candidate.inject({
+      method: "POST",
+      url: "/api/cast-possibilities/analyze",
+      payload: analyzePayload(full)
+    });
+
+    expect(fullEligible.statusCode).toBe(200);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0].request.max_completion_tokens).toBe(
+      full.providerRequest.maxOutputTokens
+    );
+
+    const staleFullInspection = await compilePossibilities(candidate);
+    writeOpenRouterSettings({ assistanceMaxOutputTokens: 2048 });
+    const fullStale = await candidate.inject({
+      method: "POST",
+      url: "/api/cast-possibilities/analyze",
+      payload: analyzePayload(staleFullInspection)
+    });
+    expect(fullStale.statusCode).toBe(409);
+    expect(fullStale.json()).toMatchObject({ ok: false, kind: "cast-possibilities-source-changed" });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+
+    writeOpenRouterSettings({ assistanceMaxOutputTokens: 4096 });
+    const currentFull = await compilePossibilities(candidate);
+    const target = currentFull.disclosure.eligibleCharacters[0]!;
+    const avoidList = ["First prior card", "Second prior card", "Third prior card"];
+    const targeted = await compilePossibilities(candidate, {
+      targetCharacterId: target.castMemberId,
+      avoidList,
+      baseSourceFingerprint: currentFull.disclosure.fingerprint
+    });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validOutput(targeted.disclosure) },
+      response: normalResponse()
+    });
+    writeOpenRouterSettings({ proseMaxOutputTokens: 3072 });
+
+    const targetEligible = await candidate.inject({
+      method: "POST",
+      url: "/api/cast-possibilities/analyze",
+      payload: {
+        ...analyzePayload(targeted),
+        targetCharacterId: target.castMemberId,
+        avoidList,
+        baseSourceFingerprint: currentFull.disclosure.fingerprint
+      }
+    });
+
+    expect(targetEligible.statusCode).toBe(200);
+    expect(sendChatCompletionMock.mock.calls[1]?.[0].request.max_completion_tokens).toBe(
+      targeted.providerRequest.maxOutputTokens
+    );
+
+    const refreshedFull = await compilePossibilities(candidate);
+    const refreshedTarget = await compilePossibilities(candidate, {
+      targetCharacterId: target.castMemberId,
+      avoidList,
+      baseSourceFingerprint: refreshedFull.disclosure.fingerprint
+    });
+    writeOpenRouterSettings({ assistanceMaxOutputTokens: 2048 });
+    const stale = await candidate.inject({
+      method: "POST",
+      url: "/api/cast-possibilities/analyze",
+      payload: {
+        ...analyzePayload(refreshedTarget),
+        targetCharacterId: target.castMemberId,
+        avoidList,
+        baseSourceFingerprint: refreshedFull.disclosure.fingerprint
+      }
+    });
+
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({ ok: false, kind: "cast-possibilities-source-changed" });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(2);
+  });
+
   it("rejects target compilation when the full-slate source fingerprint is stale", async () => {
     const candidate = await preparedApp();
     const full = await compilePossibilities(candidate);

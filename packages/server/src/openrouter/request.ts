@@ -2,7 +2,6 @@ import { createHash } from "node:crypto";
 
 import type { OpenRouterSettings } from "../settings.js";
 import {
-  completionCeilingClassForPolicy,
   resolveCompletionCeiling,
   type CompletionCeilingClass,
   type OpenRouterOutputPolicy
@@ -104,9 +103,18 @@ export function fingerprintChatCompletionRequest(request: OpenRouterRequest): st
 export function inspectChatCompletionRequest(
   request: OpenRouterRequest,
   outputPolicy: OpenRouterOutputPolicy,
-  settings?: OpenRouterSettings
+  settings: OpenRouterSettings
 ): OpenRouterRequestInspection {
-  const contextLength = settings?.cachedModels
+  const completionCeiling = resolveCompletionCeiling(settings, outputPolicy);
+  if (request.max_completion_tokens !== completionCeiling.maxOutputTokens) {
+    const label = completionCeiling.completionCeilingClass === "prose" ? "Prose" : "Assistance";
+    throw new Error(
+      `The finalized request uses ${request.max_completion_tokens} completion tokens but the ${label} ceiling is ` +
+      `${completionCeiling.maxOutputTokens}.`
+    );
+  }
+
+  const contextLength = settings.cachedModels
     ?.find((model) => model.id === request.model)
     ?.contextLength;
 
@@ -114,7 +122,7 @@ export function inspectChatCompletionRequest(
     model: request.model,
     temperatureMode: request.temperature === undefined ? "provider_default" : "explicit",
     ...(request.temperature === undefined ? {} : { temperature: request.temperature }),
-    completionCeilingClass: completionCeilingClassForPolicy(outputPolicy),
+    completionCeilingClass: completionCeiling.completionCeilingClass,
     maxOutputTokens: request.max_completion_tokens,
     ...(contextLength === undefined ? {} : { contextLength }),
     ...(request.top_p === undefined ? {} : { topP: request.top_p }),

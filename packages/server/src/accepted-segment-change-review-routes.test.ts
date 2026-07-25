@@ -92,6 +92,47 @@ describe("Accepted-Segment Change Review routes", () => {
     expect(after).toEqual(before);
   });
 
+  it("keeps Prose edits eligible, sends the inspected Assistance ceiling, and stales Assistance edits", async () => {
+    process.env.OPENROUTER_API_KEY = "sk-or-change-review-test";
+    configureCompatibleModel();
+    const candidate = app();
+    await prepareProject(candidate);
+    const inspected = await compileReview(candidate);
+    writeOpenRouterSettings({ proseMaxOutputTokens: 2048 });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: validOutput() },
+      response: normalResponse()
+    });
+
+    const eligible = await candidate.inject({
+      method: "POST",
+      url: "/api/accepted-segment-change-review/analyze",
+      payload: analyzePayload(inspected)
+    });
+
+    expect(eligible.statusCode).toBe(200);
+    expect(inspected.providerRequest.maxOutputTokens).toBe(4096);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0].request.max_completion_tokens).toBe(
+      inspected.providerRequest.maxOutputTokens
+    );
+
+    const refreshed = await compileReview(candidate);
+    writeOpenRouterSettings({ assistanceMaxOutputTokens: 2048 });
+    const stale = await candidate.inject({
+      method: "POST",
+      url: "/api/accepted-segment-change-review/analyze",
+      payload: analyzePayload(refreshed)
+    });
+
+    expect(stale.statusCode).toBe(409);
+    expect(stale.json()).toMatchObject({
+      ok: false,
+      kind: "accepted-segment-change-review-source-changed"
+    });
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+  });
+
   it("uses Active Working Set by default and discloses every complete Whole Project record and SECRET explicitly", async () => {
     const candidate = app();
     await prepareProject(candidate);
