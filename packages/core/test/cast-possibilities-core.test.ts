@@ -38,7 +38,7 @@ describe("Cast Possibilities core contract", () => {
     expect(CAST_POSSIBILITIES_OUTPUT_CONTRACT).toBe("cast_possibilities.v1");
     expect(castPossibilitiesVersionInfo).toEqual({
       template: "1.0.0",
-      compiler: "1.0.3",
+      compiler: "1.0.4",
       contract: "1.0.0"
     });
     expect(compiled.disclosure.eligibleCharacters.map((character) => character.castMemberId)).toEqual([
@@ -98,6 +98,9 @@ describe("Cast Possibilities core contract", () => {
               cards: {
                 items: {
                   properties: {
+                    observable_move: {
+                      description: string;
+                    };
                     context_keys: {
                       items: { enum: string[] };
                     };
@@ -115,8 +118,17 @@ describe("Cast Possibilities core contract", () => {
       "[BRIEF-current_time]",
       "[FACT-1]"
     ]));
+    expect(
+      outputSchema.properties.characters.items.properties.cards.items.properties.observable_move.description
+    ).toContain("Do not write quoted dialogue or exact words");
     expect(compiled.prompt).toContain(
       "For each character, copy dossier_keys only from that character's listed dossier_keys."
+    );
+    expect(compiled.prompt).toContain(
+      "Every card must satisfy the saved immediate situation and every nonblank manual_moment_directive.must_render item."
+    );
+    expect(compiled.prompt).toContain(
+      "Summarize any speech act without quoting or drafting the character's exact words."
     );
     expect(compiled.prompt).toContain('"statement":"The archive door is locked."');
     expect(compiled.prompt).not.toContain("accepted prose");

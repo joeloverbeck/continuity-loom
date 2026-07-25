@@ -10,6 +10,21 @@ export function castPossibilitiesOutputJsonSchema(
   // generation. The deterministic parser below this boundary re-enforces every
   // omitted semantic constraint with fail-closed whole-response quarantine.
   const string = { type: "string" };
+  const observableMove = {
+    type: "string",
+    description:
+      "Describe one premise-level observable action feasible in the saved immediate situation. Summarize any speech act. Do not write quoted dialogue or exact words."
+  };
+  const momentFit = {
+    type: "string",
+    description:
+      "Explain why the move is feasible now and satisfies the saved immediate situation plus every manual must_render requirement."
+  };
+  const localEffect = {
+    type: "string",
+    description:
+      "Describe only the useful immediate pressure or changed local action space, without future sequence or plot planning."
+  };
   const dossierKeys = uniqueValues(
     context.expectedCharacters.flatMap((character) => character.dossierKeys)
   );
@@ -27,10 +42,10 @@ export function castPossibilitiesOutputJsonSchema(
       "distinction"
     ],
     properties: {
-      observable_move: string,
+      observable_move: observableMove,
       character_fit: string,
-      moment_fit: string,
-      local_effect: string,
+      moment_fit: momentFit,
+      local_effect: localEffect,
       dossier_keys: {
         type: "array",
         items: {

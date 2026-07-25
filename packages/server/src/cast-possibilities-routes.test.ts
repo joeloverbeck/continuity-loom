@@ -123,7 +123,7 @@ describe("Cast Possibilities routes", () => {
         sourceProfile: "cast-possibilities",
         savedDraftIdentity: expect.stringMatching(/^generation-brief:fnv1a32:/),
         fingerprint: expect.stringMatching(/^fnv1a32:/),
-        versions: { template: "1.0.0", compiler: "1.0.3", contract: "1.0.0" }
+        versions: { template: "1.0.0", compiler: "1.0.4", contract: "1.0.0" }
       }
     });
     expect(body.prompt).toContain("# Cast Possibilities Prompt");
@@ -264,6 +264,11 @@ describe("Cast Possibilities routes", () => {
                                   "[BRIEF-current_time]"
                                 ])
                               }
+                            },
+                            observable_move: {
+                              description: expect.stringContaining(
+                                "Do not write quoted dialogue or exact words"
+                              )
                             }
                           }
                         }

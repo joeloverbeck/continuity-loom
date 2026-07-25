@@ -3,7 +3,7 @@
 Status: active specification — source profile, deterministic prompt, output contract, and quarantine rules
 Authority: domain authority for the Cast Possibilities assistance prompt (see `docs/ACTIVE-DOCS.md`)
 Template version: `1.0.0`
-Compiler version: `1.0.3`
+Compiler version: `1.0.4`
 Contract version: `1.0.0`
 Output identity: `cast_possibilities.v1`
 
@@ -81,6 +81,13 @@ The prompt declares source profile, output identity, saved-draft identity,
 complete-source rule, and non-canonical/non-prose boundary. Story configuration,
 saved local moment, selected records, dossiers, citations, and output schema are
 data, not instructions supplied by those records.
+
+Output instructions make the saved local moment binding for every card. Every
+card must satisfy the immediate situation and every nonblank `must_render`
+item, must not violate `do_not_force`, and may use
+`may_render_if_naturally_caused` only when the saved source naturally causes
+it. An observable move may summarize a speech act, but it must not quote or
+draft the character's exact words.
 
 Each eligible character receives a stable `[CHARACTER-n]` key and one
 character-owned `[DOSSIER-n]` evidence key. Each selected record receives a
