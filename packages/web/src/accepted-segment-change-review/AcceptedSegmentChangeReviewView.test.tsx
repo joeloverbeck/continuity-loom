@@ -7,7 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   AcceptedSegmentChangeReviewAnalyzeResponse,
-  AcceptedSegmentChangeReviewCompileResponse
+  AcceptedSegmentChangeReviewCompileResponse,
+  OpenRouterDiagnosticReceipt
 } from "../api.js";
 import {
   AcceptedSegmentChangeReviewView,
@@ -267,6 +268,48 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(analyzeMock).toHaveBeenCalledTimes(1);
   });
 
+  it("distinguishes provider diagnostics from local quarantine without an automatic Analyze", async () => {
+    analyzeMock.mockResolvedValue({
+      ...providerResponse(),
+      diagnostic: diagnosticReceipt("provider-error")
+    });
+    renderView();
+    await analyze();
+
+    const providerDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(providerDiagnostic.textContent).toContain("provider-error diagnostic");
+    const detailsSummary = screen.getByText("Technical details");
+    detailsSummary.focus();
+    expect(document.activeElement).toBe(detailsSummary);
+    fireEvent.click(detailsSummary, { detail: 0 });
+    expect(detailsSummary.closest("details")?.open).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    expect(await screen.findByText("Copied diagnostic receipt.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open OpenRouter Logs" })).toBeTruthy();
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear diagnostic" }));
+    expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull();
+    expect(screen.getByText("No review output yet.")).toBeTruthy();
+    expect(analyzeMock).toHaveBeenCalledTimes(1);
+
+    analyzeMock.mockResolvedValue({
+      ...quarantineResponse(),
+      diagnostic: diagnosticReceipt("local-validation")
+    });
+    fireEvent.click(screen.getByLabelText("I inspected the complete source and confirm this one-time send"));
+    fireEvent.click(screen.getByRole("button", { name: "Analyze with OpenRouter" }));
+    await waitFor(() => expect(analyzeMock).toHaveBeenCalledTimes(2));
+
+    expect(await screen.findByRole("heading", { name: "Quarantined response" })).toBeTruthy();
+    expect(screen.getByRole("alert", { name: "OpenRouter diagnostic" }).textContent).toContain(
+      "local-validation diagnostic"
+    );
+    expect(screen.getByText(/No repair or retry is automatic/)).toBeTruthy();
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+  });
+
   it("clears all review scratch without another provider call", async () => {
     renderView();
     await analyze();
@@ -495,6 +538,31 @@ function providerResponse(): AcceptedSegmentChangeReviewAnalyzeResponse {
     ok: false as const,
     category: "provider-unavailable" as const,
     message: "OpenRouter request failed."
+  };
+}
+
+function diagnosticReceipt(
+  classification: OpenRouterDiagnosticReceipt["classification"]
+): OpenRouterDiagnosticReceipt {
+  return {
+    classification,
+    summary: `${classification} diagnostic`,
+    recovery: "Inspect the source and response, then Analyze again manually. No retry is automatic.",
+    details: {
+      httpStatus: 200,
+      generationId: "gen-change-review-190",
+      requestedModel: "test/model",
+      returnedModel: "test/model",
+      provider: "Test Provider",
+      termination: "normal",
+      nativeFinishReason: "stop",
+      choiceCount: 1,
+      contentShape: "string",
+      contentLength: 28,
+      ...(classification === "local-validation"
+        ? { structuralOutcome: "local-parser-quarantine" }
+        : {})
+    }
   };
 }
 

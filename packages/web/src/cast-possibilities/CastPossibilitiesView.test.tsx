@@ -5,6 +5,7 @@ import type { CastPossibilitiesCard, CastPossibilitiesOutput } from "@loom/core"
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { OpenRouterDiagnosticReceipt } from "../api.js";
 import {
   CastPossibilitiesView,
   type CastPossibilitiesClient
@@ -84,6 +85,66 @@ describe("Cast Possibilities browser workflow", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /confirm this one-time send/i }));
     expect(analyze.disabled).toBe(false);
     expect(client.analyze).not.toHaveBeenCalled();
+  });
+
+  it("uses the shared current-attempt diagnostic for both full-cast analysis and regeneration", async () => {
+    const client = fixtureClient("fnv1a32:source-a");
+    vi.mocked(client.analyze).mockResolvedValueOnce({
+      ok: false,
+      category: "provider-unavailable",
+      message: "The provider is unavailable.",
+      diagnostic: diagnosticReceipt("gen-full-cast-190")
+    });
+    renderView(client);
+
+    await sendAnalyze();
+    const analysisDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(analysisDiagnostic.textContent).toContain("Current-attempt provider diagnostic");
+    const detailsSummary = screen.getByText("Technical details");
+    detailsSummary.focus();
+    expect(document.activeElement).toBe(detailsSummary);
+    fireEvent.click(detailsSummary, { detail: 0 });
+    expect(detailsSummary.closest("details")?.open).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    expect(await screen.findByText("Copied diagnostic receipt.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open OpenRouter Logs" })).toBeTruthy();
+    expect(client.analyze).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear diagnostic" }));
+    expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull();
+    expect(client.analyze).toHaveBeenCalledTimes(1);
+
+    await sendAnalyze();
+    expect(await screen.findByText("Observable move 1")).toBeTruthy();
+    expect(client.analyze).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole("button", { name: /Regenerate Elian/ }));
+    expect(await screen.findByRole("region", { name: "Inspect regeneration for Elian" })).toBeTruthy();
+    vi.mocked(client.analyze).mockResolvedValueOnce({
+      ok: false,
+      category: "rate-limit",
+      message: "The provider rate limit was reached.",
+      diagnostic: diagnosticReceipt("gen-regeneration-190")
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /confirm one regeneration request/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Send regeneration" }));
+
+    await waitFor(() => expect(client.analyze).toHaveBeenCalledTimes(3));
+    const regenerationDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(regenerationDiagnostic.textContent).toContain("Generation ID: gen-regeneration-190");
+    expect(client.analyze).toHaveBeenCalledTimes(3);
+    expect(localStorage.length).toBe(0);
+    const storedSessionPayload = Array.from({ length: sessionStorage.length }, (_, index) => {
+      const key = sessionStorage.key(index);
+      return key === null ? "" : sessionStorage.getItem(key) ?? "";
+    }).join("\n");
+    expect(storedSessionPayload).not.toMatch(
+      /gen-full-cast-190|gen-regeneration-190|Current-attempt provider diagnostic/u
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear diagnostic" }));
+    expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull();
+    expect(client.analyze).toHaveBeenCalledTimes(3);
   });
 
   it("keeps only session scratch and preserves stale cards as readable and copyable without regeneration", async () => {
@@ -597,4 +658,24 @@ function fixtureCompileResult(
         requestFingerprint: `request:${fingerprint}`
       }
   } as const;
+}
+
+function diagnosticReceipt(generationId: string): OpenRouterDiagnosticReceipt {
+  return {
+    classification: "provider-error",
+    summary: "Current-attempt provider diagnostic",
+    recovery: "Inspect the attempt and use the existing action manually. No retry is automatic.",
+    details: {
+      httpStatus: 200,
+      generationId,
+      requestedModel: "test/model",
+      returnedModel: "test/model",
+      provider: "Test Provider",
+      termination: "error",
+      nativeFinishReason: "error",
+      choiceCount: 1,
+      contentShape: "string",
+      contentLength: 0
+    }
+  };
 }

@@ -13,6 +13,7 @@ import {
   getDurableChangeReminder,
   readiness,
   type DurableChangeReminderResponse,
+  type OpenRouterDiagnosticReceipt,
 } from "../api.js";
 import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
 import { useProjectOpen } from "../shell/project-open.js";
@@ -87,6 +88,69 @@ describe("GenerateView", () => {
     );
     expect(screen.getByRole("status", { name: "Context-window advisory" })).toBeTruthy();
     expect(generate).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps provider diagnostics and incomplete prose on the current explicit Generate attempt only", async () => {
+    const writeText = vi.fn<(value: string) => Promise<void>>().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText }
+    });
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate)
+      .mockResolvedValueOnce({
+        ok: false,
+        category: "rate-limit",
+        message: "OpenRouter rate limit.",
+        diagnostic: diagnosticReceipt("provider-error")
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        candidate: { text: "A visibly unfinished sentence", incomplete: true },
+        metadata: candidateMetadata(),
+        diagnostic: diagnosticReceipt("incomplete-prose")
+      });
+
+    renderGenerate();
+
+    const generateButton = await screen.findByRole<HTMLButtonElement>("button", { name: "Generate" });
+    generateButton.focus();
+    expect(document.activeElement).toBe(generateButton);
+    fireEvent.click(generateButton, { detail: 0 });
+
+    const firstReceipt = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(firstReceipt.textContent).toContain("provider-error diagnostic");
+    const detailsSummary = screen.getByText("Technical details");
+    detailsSummary.focus();
+    expect(document.activeElement).toBe(detailsSummary);
+    fireEvent.click(detailsSummary, { detail: 0 });
+    expect(detailsSummary.closest("details")?.open).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    expect(await screen.findByText("Copied diagnostic receipt.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Open OpenRouter Logs" })).toBeTruthy();
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Refresh prompt" }));
+    await waitFor(() => expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull());
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(await screen.findByRole("button", { name: "Generate" }));
+    expect(await screen.findByText("Incomplete Draft Candidate — generation stopped at the output limit.")).toBeTruthy();
+    expect(screen.getByRole<HTMLTextAreaElement>("textbox", { name: "Candidate text" }).value).toBe(
+      "A visibly unfinished sentence"
+    );
+    expect(screen.getByRole("alert", { name: "OpenRouter diagnostic" }).textContent).toContain(
+      "incomplete-prose diagnostic"
+    );
+    expect(screen.getByText("Draft candidate - not accepted, not canon.")).toBeTruthy();
+    expect(acceptCandidate).not.toHaveBeenCalled();
+    expect(generate).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull();
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
   });
 
   it("edits and accepts the current draft candidate with its generation metadata", async () => {
@@ -835,6 +899,28 @@ function providerRequest(requestFingerprint: string) {
     completionCeilingClass: "prose" as const,
     maxOutputTokens: 2200,
     requestFingerprint
+  };
+}
+
+function diagnosticReceipt(
+  classification: OpenRouterDiagnosticReceipt["classification"]
+): OpenRouterDiagnosticReceipt {
+  return {
+    classification,
+    summary: `${classification} diagnostic`,
+    recovery: "Inspect the current attempt and use the existing action manually. No retry is automatic.",
+    details: {
+      httpStatus: 200,
+      generationId: "gen-safe-190",
+      requestedModel: "openai/gpt-4.1",
+      returnedModel: "openai/gpt-4.1",
+      provider: "OpenAI",
+      termination: classification === "incomplete-prose" ? "length" : "error",
+      nativeFinishReason: classification === "incomplete-prose" ? "length" : "error",
+      choiceCount: 1,
+      contentShape: "string",
+      contentLength: classification === "incomplete-prose" ? 31 : 0
+    }
   };
 }
 
