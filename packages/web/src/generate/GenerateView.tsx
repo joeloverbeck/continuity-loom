@@ -11,10 +11,13 @@ import {
   type CompileResponse,
   type GenerationMetadata,
   type GenerateResponse,
+  type OpenRouterDiagnosticReceipt as DiagnosticReceipt,
   type OpenRouterRequestInspection,
   type TransportFailure,
   readiness
 } from "../api.js";
+import { OpenRouterDiagnosticReceipt } from "../OpenRouterDiagnosticReceipt.js";
+import { isTransportFailure } from "../openrouter-transport.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
@@ -49,6 +52,8 @@ interface CandidateCommon {
   acceptError?: string | undefined;
   replacementStatus: "idle" | "sending";
   replacementError?: string | undefined;
+  incomplete?: true | undefined;
+  diagnostic?: DiagnosticReceipt | undefined;
 }
 
 type Candidate = CandidateCommon & CandidateDraftSource;
@@ -57,7 +62,7 @@ type CandidateState =
   | { status: "idle" }
   | { status: "sending" }
   | Candidate
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; failure?: TransportFailure };
 
 type PendingDiscardAction = "refresh" | "replace";
 
@@ -139,6 +144,8 @@ export function GenerateView(): React.JSX.Element {
           generationMetadata: result.metadata,
           acceptStatus: "idle",
           replacementStatus: "idle"
+          , ...(result.candidate.incomplete ? { incomplete: true } : {})
+          , ...(result.diagnostic === undefined ? {} : { diagnostic: result.diagnostic })
         });
         return;
       }
@@ -152,7 +159,11 @@ export function GenerateView(): React.JSX.Element {
       const message = generateErrorMessage(result);
       setCandidateState(replacedCandidate
         ? updateCandidate(replacedCandidate, { replacementStatus: "idle", replacementError: message })
-        : { status: "error", message });
+        : {
+            status: "error",
+            message,
+            ...(isTransportFailure(result) ? { failure: result } : {})
+          });
     } catch (error) {
       const message = presentThrownOpenRouterFailure(error, "Could not generate candidate prose.");
       setCandidateState(replacedCandidate
@@ -481,7 +492,11 @@ function ReadyGenerate({
       </div>
       {candidateState.status === "sending" ? <p className="muted" role="status">Generating...</p> : null}
       {candidateState.status === "error" ? (
-        <p className="status statusError" role="alert">{candidateState.message}</p>
+        candidateState.failure?.diagnostic ? (
+          <OpenRouterDiagnosticReceipt
+            receipt={candidateState.failure.diagnostic}
+          />
+        ) : <p className="status statusError" role="alert">{candidateState.message}</p>
       ) : null}
       {acceptNotice ? <p className="status statusSuccess" role="status">{acceptNotice}</p> : null}
 
@@ -506,6 +521,9 @@ function ReadyGenerate({
           <div className="candidateHeader">
             <div>
               <h3>Draft candidate</h3>
+              {candidateState.incomplete ? (
+                <p className="status statusWarning" role="status">Incomplete Draft Candidate — generation stopped at the output limit.</p>
+              ) : null}
               <p className="muted">Draft candidate - not accepted, not canon.</p>
               <p className="muted">Source: {candidateState.source === "openrouter" ? "OpenRouter" : "User-supplied"}</p>
               <p className="muted">Inspected prompt: {candidateState.sourceContext.fingerprint}</p>
@@ -514,6 +532,11 @@ function ReadyGenerate({
               </p>
             </div>
           </div>
+          {candidateState.diagnostic ? (
+            <OpenRouterDiagnosticReceipt
+              receipt={candidateState.diagnostic}
+            />
+          ) : null}
           <label className="candidateEditorLabel">
             Candidate text
             <textarea

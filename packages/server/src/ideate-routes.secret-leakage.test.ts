@@ -42,7 +42,8 @@ describe("ideate route secret leakage regression", () => {
       ok: true,
       candidate: {
         text: "IDEA 1\noperator: Reveal\nheadline: A pressure.\nwhy: It follows.\ngrounds: [ENTITY: A]"
-      }
+      },
+      response: normalResponse()
     });
     const capture = captureProcessWrites();
     const fastify = createServer({ logger: true });
@@ -131,6 +132,18 @@ function captureProcessWrites(): { restore: () => string } {
       process.stderr.write = originalStderrWrite;
       return captured;
     }
+  };
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
   };
 }
 

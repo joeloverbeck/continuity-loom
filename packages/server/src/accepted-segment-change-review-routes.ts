@@ -14,6 +14,7 @@ import {
   type OpenRouterRequestOptions
 } from "./openrouter/request.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
+import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import {
@@ -81,6 +82,7 @@ export function registerAcceptedSegmentChangeReviewRoutes(
     const requestOptions = changeReviewRequestOptions(outputSchema);
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt: compiled.prompt,
         promptFingerprint: compiled.disclosure.fingerprint,
         requestOptions,
@@ -139,6 +141,12 @@ export function registerAcceptedSegmentChangeReviewRoutes(
         reasonCode: parsed.reasonCode,
         summary: parsed.summary,
         recovery: parsed.recovery,
+        diagnostic: createDiagnosticReceipt(
+          "local-validation",
+          sendResult.response,
+          "Candidate content reached Continuity Loom but failed local Change Review validation.",
+          "Inspect the source and response contract before using Analyze again. No retry is automatic."
+        ),
         metadata: sendResult.metadata
       };
     }

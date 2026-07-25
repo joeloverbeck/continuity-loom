@@ -4,6 +4,12 @@ export type TransportErrorCategory =
   | "insufficient-credits"
   | "invalid-request"
   | "structured-output-rejection"
+  | "no-content"
+  | "unrecognized-response"
+  | "output-limit"
+  | "content-policy"
+  | "refusal"
+  | "server-error"
   | "provider-unavailable"
   | "rate-limit"
   | "timeout"
@@ -28,6 +34,12 @@ const categoryMessages = {
   "insufficient-credits": "OpenRouter account has insufficient credits.",
   "invalid-request": "OpenRouter rejected the request.",
   "structured-output-rejection": "OpenRouter rejected the structured-output request.",
+  "no-content": "OpenRouter generated no candidate content.",
+  "unrecognized-response": "OpenRouter returned an unrecognized response envelope.",
+  "output-limit": "OpenRouter stopped after reaching an output limit.",
+  "content-policy": "OpenRouter stopped for content-policy reasons.",
+  refusal: "The provider refused the request.",
+  "server-error": "OpenRouter or the selected provider reported a server error.",
   "provider-unavailable": "The selected model or provider is unavailable.",
   "rate-limit": "OpenRouter rate limit reached. Wait before retrying.",
   timeout: "OpenRouter request timed out.",
@@ -164,6 +176,16 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
     return explicitCategory;
   }
 
+  const error = getUnknownProperty(body, "error");
+  const canonicalType = (
+    getStringProperty(error, "type") ||
+    getStringProperty(getUnknownProperty(error, "metadata"), "error_type")
+  ).toLowerCase();
+  const canonicalCategory = categoryFromCanonicalType(canonicalType);
+  if (canonicalCategory !== undefined) {
+    return canonicalCategory;
+  }
+
   if (isMalformedChatCompletion(body)) {
     return "malformed-response";
   }
@@ -203,6 +225,45 @@ function categoryFromBody(body: unknown): TransportErrorCategory | undefined {
   return undefined;
 }
 
+function categoryFromCanonicalType(value: string): TransportErrorCategory | undefined {
+  switch (value) {
+    case "rate_limit":
+    case "rate_limit_error":
+      return "rate-limit";
+    case "provider_unavailable":
+    case "service_unavailable":
+    case "overloaded_error":
+      return "provider-unavailable";
+    case "timeout":
+    case "timeout_error":
+      return "timeout";
+    case "refusal":
+    case "refusal_error":
+      return "refusal";
+    case "content_policy":
+    case "content_policy_error":
+    case "moderation":
+      return "content-policy";
+    case "context_length_exceeded":
+    case "max_tokens":
+    case "output_limit":
+      return "output-limit";
+    case "invalid_request":
+    case "invalid_request_error":
+      return "invalid-request";
+    case "authentication_error":
+    case "invalid_api_key":
+      return "invalid-key";
+    case "insufficient_credits":
+      return "insufficient-credits";
+    case "server_error":
+    case "provider_error":
+      return "server-error";
+    default:
+      return undefined;
+  }
+}
+
 function supportedClassificationText(body: unknown): string {
   const error = getUnknownProperty(body, "error");
   return [
@@ -224,6 +285,12 @@ function isTransportErrorCategory(value: unknown): value is TransportErrorCatego
     value === "insufficient-credits" ||
     value === "invalid-request" ||
     value === "structured-output-rejection" ||
+    value === "no-content" ||
+    value === "unrecognized-response" ||
+    value === "output-limit" ||
+    value === "content-policy" ||
+    value === "refusal" ||
+    value === "server-error" ||
     value === "provider-unavailable" ||
     value === "rate-limit" ||
     value === "timeout" ||

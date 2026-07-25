@@ -10,6 +10,97 @@ import {
 import type { OpenRouterSettingsStatus } from "./settings.js";
 
 describe("OpenRouter send pipeline", () => {
+  it("applies strict and prose completion policies after one decoded transport handoff", async () => {
+    const { runOpenRouterSendPipeline } = await import("./openrouter/send-pipeline.js");
+    const settings: OpenRouterSettingsStatus = {
+      model: "test/model",
+      temperatureMode: "provider_default",
+      maxOutputTokens: 321,
+      cachedModels: [{
+        id: "test/model",
+        name: "Test Model",
+        supportedParameters: ["max_completion_tokens"]
+      }],
+      hasOpenRouterCredential: true
+    };
+    const prompt = "The inspected prompt";
+    const expectedRequest = buildChatCompletionRequest({ prompt, settings });
+    const expectedRequestFingerprint = inspectChatCompletionRequest(expectedRequest).requestFingerprint;
+    const transport = vi.fn(async () => ({
+      ok: true as const,
+      candidate: { text: "Incomplete prose must stay prose-only." },
+      response: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        termination: "length" as const,
+        nativeFinishReason: "length",
+        choiceCount: 1,
+        contentShape: "string" as const,
+        contentLength: 36
+      }
+    }));
+    const baseProfile = {
+      prompt,
+      promptFingerprint: "prompt-fingerprint",
+      staleness: {
+        mode: "separate" as const,
+        expectedPromptFingerprint: "prompt-fingerprint",
+        expectedRequestFingerprint,
+        promptRefusal: { status: 409, body: { ok: false } },
+        providerRefusal: { status: 409, body: { ok: false } }
+      },
+      metadata: {
+        providerFields: "full" as const,
+        placement: "before" as const,
+        additions: {}
+      }
+    };
+
+    const strict = await runOpenRouterSendPipeline({
+      profile: { ...baseProfile, outputPolicy: "strict" },
+      settings,
+      transport
+    });
+    const prose = await runOpenRouterSendPipeline({
+      profile: { ...baseProfile, outputPolicy: "prose" },
+      settings,
+      transport
+    });
+
+    expect(strict).toMatchObject({
+      ok: false,
+      body: {
+        ok: false,
+        category: "output-limit",
+        classification: "incomplete-generation",
+        diagnostic: {
+          classification: "incomplete-generation",
+          details: {
+            termination: "length",
+            contentShape: "string",
+            contentLength: 36
+          }
+        }
+      }
+    });
+    expect(JSON.stringify(strict)).not.toContain("Incomplete prose must stay prose-only.");
+    expect(prose).toMatchObject({
+      ok: true,
+      candidate: {
+        text: "Incomplete prose must stay prose-only.",
+        incomplete: true
+      },
+      diagnostic: {
+        classification: "incomplete-prose",
+        details: {
+          termination: "length",
+          contentLength: 36
+        }
+      }
+    });
+    expect(transport).toHaveBeenCalledTimes(2);
+  });
+
   it("uses injected settings and transport for one finalized admitted request with trusted metadata", async () => {
     const { runOpenRouterSendPipeline } = await import("./openrouter/send-pipeline.js");
     const settings: OpenRouterSettingsStatus = {
@@ -30,11 +121,24 @@ describe("OpenRouter send pipeline", () => {
     let transportedRequest: OpenRouterRequest | undefined;
     const transport = vi.fn(async ({ request }: { request: OpenRouterRequest }) => {
       transportedRequest = request;
-      return { ok: true as const, candidate: { text: "Candidate text" } };
+      return {
+        ok: true as const,
+        candidate: { text: "Candidate text" },
+        response: {
+          httpStatus: 200,
+          requestedModel: "test/model",
+          termination: "normal" as const,
+          nativeFinishReason: "stop",
+          choiceCount: 1,
+          contentShape: "string" as const,
+          contentLength: 14
+        }
+      };
     });
 
     const result = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt,
         promptFingerprint: "prompt-fingerprint",
         staleness: {
@@ -72,6 +176,15 @@ describe("OpenRouter send pipeline", () => {
         maxOutputTokens: 321,
         topP: 0.75,
         versions: { template: "1", compiler: "2", contract: "3" }
+      },
+      response: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        termination: "normal",
+        nativeFinishReason: "stop",
+        choiceCount: 1,
+        contentShape: "string",
+        contentLength: 14
       }
     });
   });
@@ -137,7 +250,15 @@ describe("OpenRouter send pipeline", () => {
     ).requestFingerprint;
     const transport = vi.fn(async () => ({
       ok: true as const,
-      candidate: { text: "must not be sent" }
+      candidate: { text: "must not be sent" },
+      response: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        termination: "normal" as const,
+        choiceCount: 1,
+        contentShape: "string" as const,
+        contentLength: 16
+      }
     }));
     const metadata = {
       providerFields: "identity" as const,
@@ -159,6 +280,7 @@ describe("OpenRouter send pipeline", () => {
 
     const separatePrompt = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt,
         promptFingerprint: "current",
         staleness: {
@@ -175,6 +297,7 @@ describe("OpenRouter send pipeline", () => {
     });
     const separateProvider = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt,
         promptFingerprint: "current",
         staleness: {
@@ -191,6 +314,7 @@ describe("OpenRouter send pipeline", () => {
     });
     const combinedPrompt = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt,
         promptFingerprint: "current",
         staleness: {
@@ -206,6 +330,7 @@ describe("OpenRouter send pipeline", () => {
     });
     const combinedProvider = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt,
         promptFingerprint: "current",
         staleness: {

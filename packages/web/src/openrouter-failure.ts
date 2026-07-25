@@ -82,6 +82,16 @@ function recoveryGuidance(failure: TransportFailure): string {
       );
     case "moderation-refusal":
       return "Review the requested content and provider policy before trying again. No retry is automatic.";
+    case "content-policy":
+    case "refusal":
+      return "Review the requested content and provider policy before trying again. No retry is automatic.";
+    case "output-limit":
+      return "Review the completion ceiling, scope, or model, then reinspect before using the existing action. No retry is automatic.";
+    case "no-content":
+    case "unrecognized-response":
+      return "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic.";
+    case "server-error":
+      return "Check OpenRouter or provider availability before using the existing action again. No retry is automatic.";
     case "provider-unavailable":
     case "timeout":
     case "malformed-response":

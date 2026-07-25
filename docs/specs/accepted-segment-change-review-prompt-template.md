@@ -96,6 +96,15 @@ Settings change or compatible model, while response format or strict structured
 output requires a compatible model. Recovery never refreshes, edits settings,
 selects a model, retries, repairs, falls back, or resends automatically.
 
+Change Review requires a normal decoded completion before its whole-response
+parser runs. Provider errors, length limits, content-filter or tool
+termination, missing content, and unrecognized envelopes produce a sanitized
+transient diagnostic and no items. Local parser rejection uses the same
+receipt shape without returning rejected provider text. Receipts contain only
+allowlisted transport facts and local recovery, are never durable project
+state, and never make a request when viewed, copied, cleared, or linked to
+OpenRouter Logs.
+
 ## Consumed-Guidance Control
 
 Accepted-Segment Change Review may present a separate deterministic consumed-guidance control. It is not model output and must not infer what the accepted prose consumed. It may list only nonblank values from `manual_moment_directive.must_render[]`, `manual_moment_directive.may_render_if_naturally_caused[]`, `manual_moment_directive.do_not_force[]`, populated `current_cast_voice_pressure[]` and `cast_voice_overrides[]` entries, `generation_validation_focus.validation_focus_tags.expected_local_modes[]`, `generation_validation_focus.validation_focus_tags.possible_durable_changes[]`, and `stop_guidance.soft_unit_guidance`. It must exclude `generation_context`, the active working set including selected POV and cast bands, `current_authoritative_state`, and `immediate_handoff`. Nothing is preselected. Only values explicitly selected by the user may be removed from the editable Generation Brief draft, and the existing explicit Generation Brief Save action remains the sole project-store mutation.

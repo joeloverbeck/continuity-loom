@@ -1,11 +1,21 @@
 import { normalizeOpenRouterError, type NormalizedTransportError } from "./errors.js";
 import type { OpenRouterRequest } from "./request.js";
+import {
+  decodeOpenRouterResponse,
+  type OpenRouterDiagnosticReceipt,
+  type OpenRouterResponseClassification,
+  type OpenRouterResponseFacts
+} from "./response.js";
 
 const defaultChatCompletionEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
 export type TransportResult =
-  | { ok: true; candidate: { text: string } }
-  | ({ ok: false } & NormalizedTransportError);
+  | { ok: true; candidate: { text: string }; response: OpenRouterResponseFacts }
+  | ({
+      ok: false;
+      classification?: OpenRouterResponseClassification;
+      diagnostic?: OpenRouterDiagnosticReceipt;
+    } & NormalizedTransportError);
 
 export interface OpenRouterRequestConfig {
   endpointUrl?: string;
@@ -41,19 +51,21 @@ export async function sendChatCompletion({
     }
 
     const response = await fetch(config?.endpointUrl ?? defaultChatCompletionEndpoint, requestInit);
-    const body = await readJsonBody(response);
-    const bodyWithHeaders = addRetryAfter(body, response.headers.get("retry-after"));
+    const decodedBody = await readJsonBody(response);
+    const bodyWithHeaders = addRetryAfter(decodedBody.body, response.headers.get("retry-after"));
 
     if (!response.ok) {
       return { ok: false, ...normalizeOpenRouterError(response.status, bodyWithHeaders) };
     }
 
-    const text = extractCandidateText(body);
-    if (text === undefined) {
-      return { ok: false, ...normalizeOpenRouterError(response.status, bodyWithHeaders) };
-    }
-
-    return { ok: true, candidate: { text } };
+    return decodeOpenRouterResponse({
+      httpStatus: response.status,
+      body: decodedBody.body,
+      bodyWasJson: decodedBody.ok,
+      generationIdHeader: response.headers.get("x-openrouter-generation-id"),
+      requestedModel: request.model,
+      retryAfterHeader: response.headers.get("retry-after")
+    });
   } catch (error) {
     return { ok: false, ...normalizeOpenRouterError(undefined, undefined, error) };
   }
@@ -76,11 +88,11 @@ function buildHeaders(apiKey: string, config: OpenRouterRequestConfig | undefine
   return headers;
 }
 
-async function readJsonBody(response: Response): Promise<unknown> {
+async function readJsonBody(response: Response): Promise<{ ok: boolean; body: unknown }> {
   try {
-    return await response.json();
+    return { ok: true, body: await response.json() };
   } catch {
-    return undefined;
+    return { ok: false, body: undefined };
   }
 }
 
@@ -97,25 +109,4 @@ function addRetryAfter(body: unknown, retryAfter: string | null): unknown {
     ...body,
     retryAfter
   };
-}
-
-function extractCandidateText(body: unknown): string | undefined {
-  const choices = getUnknownProperty(body, "choices");
-  if (!Array.isArray(choices) || choices.length === 0) {
-    return undefined;
-  }
-
-  const firstChoice: unknown = choices[0];
-  const message = getUnknownProperty(firstChoice, "message");
-  const content = getUnknownProperty(message, "content");
-
-  return typeof content === "string" ? content : undefined;
-}
-
-function getUnknownProperty(value: unknown, key: string): unknown {
-  if (!value || typeof value !== "object") {
-    return undefined;
-  }
-
-  return (value as Record<string, unknown>)[key];
 }

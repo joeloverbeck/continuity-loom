@@ -188,7 +188,11 @@ describe("generation brief draftability capstone", () => {
 
   it("preserves the saved draft through every accepted-segment boundary and fails closed until explicit repair", async () => {
     process.env.OPENROUTER_API_KEY = "sk-or-coherence-capstone";
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Fresh candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: "Fresh candidate prose." },
+      response: normalResponse()
+    });
     const capture = captureProcessWrites();
     const fastify = app({ logger: true });
 
@@ -369,6 +373,18 @@ interface ValidationBody {
   blockers: { code: string }[];
   warnings: { code: string }[];
   isBlocked: boolean;
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 interface GenerationBriefBody {

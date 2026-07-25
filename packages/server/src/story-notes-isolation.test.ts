@@ -62,7 +62,8 @@ describe("story notes isolation capstone", () => {
               "grounds: [SECRET-1]"
             ].join("\n")
           : "Candidate prose."
-      }
+      },
+      response: normalResponse()
     }));
     const capture = captureProcessWrites();
     const fastify = app({ logger: true });
@@ -184,6 +185,18 @@ function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeo
   const fastify = createServer(options);
   apps.push(fastify);
   return fastify;
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 async function createDemo(fastify: ReturnType<typeof createServer>, folderName: string): Promise<string> {

@@ -20,9 +20,17 @@ import type {
   ValidationResult,
   VersionInfo
 } from "@loom/core";
-import { isTransportFailure, type TransportFailure } from "./openrouter-transport.js";
+import {
+  isTransportFailure,
+  type OpenRouterDiagnosticReceipt,
+  type TransportFailure
+} from "./openrouter-transport.js";
 
-export type { TransportErrorCategory, TransportFailure } from "./openrouter-transport.js";
+export type {
+  OpenRouterDiagnosticReceipt,
+  TransportErrorCategory,
+  TransportFailure
+} from "./openrouter-transport.js";
 
 export interface HealthResponse {
   status: "ok";
@@ -140,7 +148,12 @@ export type GenerationMetadata = GenerationMetadataBase & (
 );
 
 export type GenerateResponse =
-  | { ok: true; candidate: { text: string }; metadata: GenerationMetadata }
+  | {
+      ok: true;
+      candidate: { text: string; incomplete?: true };
+      metadata: GenerationMetadata;
+      diagnostic?: OpenRouterDiagnosticReceipt;
+    }
   | CompileBlocked
   | ApiFailure
   | TransportFailure;
@@ -157,7 +170,7 @@ export interface ParsedIdeationIdea {
 
 export type IdeateResponse =
   | { ok: true; ideas: readonly ParsedIdeationIdea[]; citations: Record<string, string>; metadata: GenerationMetadata }
-  | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata }
+  | { ok: true; quarantined: true; reasonCode: string; summary: string; recovery: string; diagnostic: OpenRouterDiagnosticReceipt }
   | CompileBlocked
   | ApiFailure
   | TransportFailure;
@@ -194,7 +207,7 @@ export interface ParsedRecordHygieneFinding {
 
 export type RecordHygieneAnalyzeResponse =
   | { ok: true; findings: readonly ParsedRecordHygieneFinding[]; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
-  | { ok: true; malformed: true; raw: string; metadata: GenerationMetadata & RecordHygieneCompileMetadata }
+  | { ok: true; quarantined: true; reasonCode: string; summary: string; recovery: string; diagnostic: OpenRouterDiagnosticReceipt }
   | ApiFailure
   | TransportFailure;
 
@@ -234,6 +247,7 @@ export type AcceptedSegmentChangeReviewAnalyzeResponse =
       reasonCode: string;
       summary: string;
       recovery: "inspect-source-and-response";
+      diagnostic?: OpenRouterDiagnosticReceipt;
       metadata: AcceptedSegmentChangeReviewTrustedMetadata;
     }
   | ApiFailure
@@ -298,6 +312,7 @@ export type CastPossibilitiesAnalyzeResponse =
       reasonCode: string;
       summary: string;
       recovery: "inspect-source-and-response";
+      diagnostic?: OpenRouterDiagnosticReceipt;
     }
   | ApiFailure
   | CastPossibilitiesNotReadyResponse

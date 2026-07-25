@@ -1,0 +1,5 @@
+{
+  "number": 901,
+  "title": "Preserve exact closeout scope",
+  "body": "## Acceptance Criteria\n\n- [ ] The standalone issue closes with truthful scope wording.\n\n## Principles\n\n- No deliberate exceptions."
+}

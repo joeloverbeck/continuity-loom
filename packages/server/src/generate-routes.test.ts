@@ -146,7 +146,7 @@ describe("generate routes", () => {
   });
 
   it("sends prose exactly once when the deterministic estimate exceeds cached context length", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -175,7 +175,7 @@ describe("generate routes", () => {
   });
 
   it("sends prose exactly once when the inspected prompt is below cached context length", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Provider answer." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -205,7 +205,7 @@ describe("generate routes", () => {
   });
 
   it("rejects generation before transport when the inspected prompt fingerprint is stale", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -232,7 +232,7 @@ describe("generate routes", () => {
   });
 
   it("returns candidate text and full generation metadata on success without mutating project data", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -282,7 +282,7 @@ describe("generate routes", () => {
   });
 
   it("omits topP from generation metadata when it is not configured", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -306,7 +306,7 @@ describe("generate routes", () => {
   });
 
   it("sends and records provider-default temperature without inventing a numeric value", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await openProject(fastify);
@@ -413,7 +413,7 @@ describe("generate routes", () => {
   });
 
   it("does not log key, prompt, or candidate text", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: candidateSecretText } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: candidateSecretText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const capture = captureProcessWrites();
     const fastify = app({ logger: true });
@@ -623,6 +623,18 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 const storyConfigPayloads = {

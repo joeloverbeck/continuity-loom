@@ -54,6 +54,7 @@ export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectSto
 
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "prose",
         prompt: compileResult.prompt,
         promptFingerprint: compileResult.metadata.fingerprint,
         staleness: {
@@ -93,7 +94,8 @@ export function registerGenerateRoutes(app: FastifyInstance, manager: ProjectSto
     return {
       ok: true,
       candidate: sendResult.candidate,
-      metadata: sendResult.metadata
+      metadata: sendResult.metadata,
+      ...(sendResult.diagnostic === undefined ? {} : { diagnostic: sendResult.diagnostic })
     };
   });
 }

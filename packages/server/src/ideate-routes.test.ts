@@ -48,7 +48,8 @@ describe("ideate routes", () => {
           "why: The selected records support a reveal-adjacent pressure move.",
           "grounds: [SECRET-1], [UNKNOWN-99]"
         ].join("\n")
-      }
+      },
+      response: normalResponse()
     });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -81,8 +82,9 @@ describe("ideate routes", () => {
     expect(after).toEqual(before);
   });
 
-  it("returns malformed raw scratch when the model output cannot be parsed", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform answer" } });
+  it("quarantines malformed model output without returning provider text", async () => {
+    const rejectedProviderText = "freeform answer model-private-canary";
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: rejectedProviderText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await prepareIdeationProject(fastify);
@@ -93,11 +95,20 @@ describe("ideate routes", () => {
       payload: await inspectedIdeationPayload(fastify)
     });
 
-    expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform answer" });
+    expect(response.json()).toMatchObject({
+      ok: true,
+      quarantined: true,
+      reasonCode: "local-parser-rejected",
+      diagnostic: {
+        classification: "local-validation",
+        details: { termination: "normal", contentShape: "string" }
+      }
+    });
+    expect(response.body).not.toContain(rejectedProviderText);
   });
 
   it("sends Ideation exactly once when the deterministic estimate exceeds cached context length", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform answer" } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform answer" }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await prepareIdeationProject(fastify);
@@ -132,7 +143,7 @@ describe("ideate routes", () => {
       url: "/api/ideate",
       payload: await inspectedIdeationPayload(fastify)
     });
-    expect(response.json()).toMatchObject({ ok: true, malformed: true });
+    expect(response.json()).toMatchObject({ ok: true, quarantined: true });
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
@@ -473,6 +484,18 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 const storyConfigPayloads = {

@@ -48,7 +48,8 @@ describe("record hygiene end-to-end conformance", () => {
   it("composes compile, analyze parsing, exclusion, non-persistence, and reference-integrity invariants", async () => {
     sendChatCompletionMock.mockImplementation(async ({ request }) => ({
       ok: true,
-      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) }
+      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) },
+      response: normalResponse()
     }));
     const fastify = app();
     const folderPath = await createDemo(fastify);
@@ -116,7 +117,8 @@ describe("record hygiene end-to-end conformance", () => {
   it("composes whole-project and working-set scope modes end to end", async () => {
     sendChatCompletionMock.mockImplementation(async ({ request }) => ({
       ok: true,
-      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) }
+      candidate: { text: validHygieneResponse(citationsFromPrompt(request.messages[0].content)) },
+      response: normalResponse()
     }));
     const fastify = app();
     await createDemo(fastify);
@@ -173,6 +175,18 @@ function app(): FastifyApp {
   const fastify = createServer();
   apps.push(fastify);
   return fastify;
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 async function createDemo(fastify: FastifyApp): Promise<string> {

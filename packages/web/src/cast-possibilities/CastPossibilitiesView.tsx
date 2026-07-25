@@ -14,8 +14,10 @@ import {
   type CastPossibilitiesAnalyzeResponse,
   type CastPossibilitiesCompileRequest,
   type CastPossibilitiesCompileResponse,
-  type RefreshModelsResponse
+  type RefreshModelsResponse,
+  type TransportFailure
 } from "../api.js";
+import { OpenRouterDiagnosticReceipt } from "../OpenRouterDiagnosticReceipt.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { isTransportFailure } from "../openrouter-transport.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
@@ -81,6 +83,7 @@ export function CastPossibilitiesView({
   const [compileState, setCompileState] = useState<CompileState>({ status: "loading" });
   const [scratchState, setScratchState] = useState<{ scratch: CastPossibilitiesScratch; stale: boolean } | null>(null);
   const [sendState, setSendState] = useState<SendState>({ status: "idle" });
+  const [diagnosticFailure, setDiagnosticFailure] = useState<TransportFailure | null>(null);
   const [sendConfirmed, setSendConfirmed] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [copiedCard, setCopiedCard] = useState<string | null>(null);
@@ -237,6 +240,7 @@ export function CastPossibilitiesView({
 
     if (!result.ok) {
       if (isTransportFailure(result)) {
+        setDiagnosticFailure(result);
         if (result.category === "structured-output-capability-unknown") {
           setSendState({ status: "capabilityStale", message: presentOpenRouterFailure(result) });
         } else if (result.category === "structured-output-incompatible-model") {
@@ -262,6 +266,14 @@ export function CastPossibilitiesView({
       return;
     }
     if ("quarantined" in result) {
+      if (result.diagnostic) {
+        setDiagnosticFailure({
+          ok: false,
+          category: "unknown",
+          message: result.summary,
+          diagnostic: result.diagnostic
+        });
+      }
       setSendState({ status: "quarantined", message: `${result.summary} No partial cards were kept.` });
       return;
     }
@@ -413,6 +425,9 @@ export function CastPossibilitiesView({
       {sendState.status === "analyzing" ? <p role="status">Analyzing all eligible characters with one request…</p> : null}
       {sendState.status === "regenerating" ? <p role="status">Preparing or sending one target-character request…</p> : null}
       {sendState.status === "quarantined" ? <p className="status statusError" role="alert">{sendState.message}</p> : null}
+      {sendState.status === "quarantined" && diagnosticFailure?.diagnostic ? (
+        <OpenRouterDiagnosticReceipt receipt={diagnosticFailure.diagnostic} />
+      ) : null}
       {sendState.status === "capabilityStale" ? (
         <section className="status statusError" aria-labelledby="cast-capability-stale-title">
           <h3 id="cast-capability-stale-title">Model capability data needs a refresh</h3>
@@ -439,7 +454,17 @@ export function CastPossibilitiesView({
         </section>
       ) : null}
       {sendState.status === "provider" || sendState.status === "local"
-        ? <p className="status statusError" role="alert">{sendState.message}</p>
+        ? sendState.status === "provider" && diagnosticFailure?.diagnostic
+          ? (
+              <OpenRouterDiagnosticReceipt
+                receipt={diagnosticFailure.diagnostic}
+                onClear={() => {
+                  setDiagnosticFailure(null);
+                  setSendState({ status: "idle" });
+                }}
+              />
+            )
+          : <p className="status statusError" role="alert">{sendState.message}</p>
         : null}
       {sendState.status === "cleared" ? <p role="status">{sendState.message}</p> : null}
 

@@ -198,6 +198,14 @@ Transport failures may expose only sanitized OpenRouter `error_type` and
 `provider_code` tokens in addition to the stable local category, status, and
 safe provider reason. Arbitrary metadata and payload-shaped diagnostics remain
 excluded.
+Cast Possibilities requires a normal decoded completion before whole-response
+parsing. Provider errors, length limits, content-filter or tool termination,
+missing content, and unrecognized envelopes produce a sanitized transient
+diagnostic and no cards. Local parser rejection uses that same safe receipt
+shape without returning rejected provider text. The receipt may include only
+allowlisted response facts and local recovery; viewing, copying, clearing, or
+following its generation-id Logs link makes no provider request or project
+write.
 Target regeneration includes only that target's three current
 `observable_move` summaries as its avoid list and returns only the replacement.
 

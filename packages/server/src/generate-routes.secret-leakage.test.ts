@@ -38,7 +38,11 @@ describe("generate route secret leakage regression", () => {
   });
 
   it("keeps configured keys out of prompt preview text and generated success surfaces", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." } });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: "Candidate prose." },
+      response: normalResponse()
+    });
     const fastify = app();
     await prepareGenerationProject(fastify);
 
@@ -116,6 +120,18 @@ function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeo
   const fastify = createServer(options);
   apps.push(fastify);
   return fastify;
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 async function prepareGenerationProject(fastify: ReturnType<typeof createServer>): Promise<void> {

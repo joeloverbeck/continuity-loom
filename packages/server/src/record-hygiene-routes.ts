@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 
 import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
+import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { parseRecordHygieneResponse } from "./record-hygiene-parse.js";
 import { buildStoryRecordHygieneSnapshot } from "./record-hygiene-snapshot-builder.js";
@@ -54,6 +55,7 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
 
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt: compileResult.prompt,
         promptFingerprint: compileResult.metadata.fingerprint,
         staleness: {
@@ -88,9 +90,16 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
     if (!parsed.ok) {
       return {
         ok: true,
-        malformed: true,
-        raw: parsed.raw,
-        metadata: sendResult.metadata
+        quarantined: true,
+        reasonCode: "local-parser-rejected",
+        summary: "Candidate content reached Continuity Loom but failed local Record Hygiene validation.",
+        recovery: "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic.",
+        diagnostic: createDiagnosticReceipt(
+          "local-validation",
+          sendResult.response,
+          "Candidate content reached Continuity Loom but failed local Record Hygiene validation.",
+          "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic."
+        )
       };
     }
 

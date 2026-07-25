@@ -1,0 +1,3 @@
+No tracker comment or close command is authorized. Unresolved placeholders and the missing closing validation keep all tracker mutations blocked.
+
+The final mechanical gate immediately before the first mutation is the applicable implement closing validator run against the exact inspected body with `--closing --expected-final-sha "$(git rev-parse HEAD)" --emit-preflight --mutation-ready` plus every applicable scope/evidence flag. Its exact emitted `Closeout preflight:` block, `Closeout gate passed: audit sink ...` line, `Post-comment verification next:` reminder, and mutation-ready confirmation must be copied verbatim into the conversation or durable audit sink. A plain successful `--closing` run is not mutation-ready.

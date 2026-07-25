@@ -461,12 +461,14 @@ describe("IdeateView", () => {
 
   it.each([
     {
-      outcome: "malformed output",
+      outcome: "locally rejected output",
       response: {
         ok: true as const,
-        malformed: true as const,
-        raw: "freeform answer",
-        metadata: generationMetadata()
+        quarantined: true as const,
+        reasonCode: "local-parser-rejected",
+        summary: "Candidate content failed local validation.",
+        recovery: "Inspect the source before using the action again.",
+        diagnostic: diagnosticReceipt()
       }
     },
     {
@@ -575,12 +577,14 @@ describe("IdeateView", () => {
     expect(screen.getByText(`0 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
   });
 
-  it("renders malformed raw scratch instead of treating it as story state", async () => {
+  it("renders a sanitized diagnostic instead of locally rejected provider text", async () => {
     vi.mocked(ideate).mockResolvedValue({
       ok: true,
-      malformed: true,
-      raw: "freeform answer",
-      metadata: generationMetadata()
+      quarantined: true,
+      reasonCode: "local-parser-rejected",
+      summary: "Candidate content failed local Ideate validation.",
+      recovery: "Inspect the source before using the action again.",
+      diagnostic: diagnosticReceipt()
     });
 
     renderIdeate();
@@ -588,11 +592,27 @@ describe("IdeateView", () => {
     expect(await screen.findByTestId("prompt-body")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
 
-    expect(await screen.findByText("The response could not be parsed into idea blocks.")).toBeTruthy();
-    expect(screen.getByText("freeform answer")).toBeTruthy();
+    expect(await screen.findByRole("alert", { name: "OpenRouter diagnostic" })).toBeTruthy();
+    expect(screen.getByText("Candidate content failed local validation.")).toBeTruthy();
+    expect(screen.queryByText("freeform answer")).toBeNull();
     expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(2);
   });
 });
+
+function diagnosticReceipt() {
+  return {
+    classification: "local-validation" as const,
+    summary: "Candidate content failed local validation.",
+    recovery: "Inspect the source before using the action again.",
+    details: {
+      httpStatus: 200,
+      requestedModel: "anthropic/claude-sonnet-4",
+      termination: "normal" as const,
+      choiceCount: 1,
+      contentShape: "string" as const
+    }
+  };
+}
 
 function renderIdeate() {
   return render(

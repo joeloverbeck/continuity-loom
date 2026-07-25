@@ -17,10 +17,13 @@ import {
   type CompileResponse,
   type IdeateResponse,
   type OpenRouterRequestInspection,
+  type OpenRouterDiagnosticReceipt as DiagnosticReceipt,
   type ParsedIdeationIdea,
   type TransportFailure
 } from "../api.js";
+import { OpenRouterDiagnosticReceipt } from "../OpenRouterDiagnosticReceipt.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
+import { isTransportFailure } from "../openrouter-transport.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
 import { IdeateControls } from "./IdeateControls.js";
@@ -46,7 +49,7 @@ type ScratchState =
   | { status: "sending" }
   | { status: "ideas"; ideas: readonly ParsedIdeationIdea[]; citations: Record<string, string> }
   | { status: "malformed"; raw: string }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; failure?: TransportFailure; diagnostic?: DiagnosticReceipt };
 
 const defaultIdeationRequest: IdeationRequest = {
   mode: "ideas",
@@ -175,8 +178,8 @@ export function IdeateView(): React.JSX.Element {
       }
 
       if (result.ok) {
-        if ("malformed" in result) {
-          setScratchState({ status: "malformed", raw: result.raw });
+        if ("quarantined" in result) {
+          setScratchState({ status: "error", message: result.summary, diagnostic: result.diagnostic });
           clearAvoidListAndRefresh();
           return;
         }
@@ -211,7 +214,11 @@ export function IdeateView(): React.JSX.Element {
         return;
       }
 
-      setScratchState({ status: "error", message: ideateErrorMessage(result) });
+      setScratchState({
+        status: "error",
+        message: ideateErrorMessage(result),
+        ...(isTransportFailure(result) ? { failure: result } : {})
+      });
       clearAvoidListAndRefresh();
     } catch (error) {
       setScratchState({
@@ -444,7 +451,11 @@ function ReadyIdeate({
 
       {scratchState.status === "sending" ? <p className="muted" role="status">Requesting ideas...</p> : null}
       {scratchState.status === "error" ? (
-        <p className="status statusError" role="alert">{scratchState.message}</p>
+        scratchState.diagnostic ?? scratchState.failure?.diagnostic ? (
+          <OpenRouterDiagnosticReceipt
+            receipt={(scratchState.diagnostic ?? scratchState.failure?.diagnostic)!}
+          />
+        ) : <p className="status statusError" role="alert">{scratchState.message}</p>
       ) : null}
 
       {previewIsCurrent ? (

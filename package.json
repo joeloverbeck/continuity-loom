@@ -48,5 +48,12 @@
   },
   "overrides": {
     "qs": "6.15.2"
+  },
+  "packageManager": "npm@11.16.0",
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "onFail": "error"
+    }
   }
 }

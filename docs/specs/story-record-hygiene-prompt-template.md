@@ -129,8 +129,14 @@ END HYGIENE REVIEW
 
 Findings require at least two distinct citations. `MERGE` and `REMOVE` require same-type citations and one cited survivor. Unknown actions, relations, confidence values, duplicate finding numbers, duplicate clusters, unknown citations, cross-type merge/remove, mismatched `findings_reported`, or a missing `END HYGIENE REVIEW` marker make the output malformed and quarantined.
 
+Record Hygiene requires a normal decoded completion before parsing. Provider
+errors, length limits, content-filter or tool termination, missing content, and
+unrecognized envelopes yield a sanitized transient diagnostic and no findings.
+A normal completion rejected by the local parser yields the same safe receipt
+shape; raw or partial provider output is never returned to the browser.
+
 ## 11. UI Quarantine
 
 The Record Hygiene page must show a quarantine banner, source counts/exclusions, prompt inspector, copy prompt, explicit OpenRouter disclosure/confirmation, parsed finding cards, record navigation, sessionStorage keepers, copy findings, and clear.
 
-It must not include apply, merge, delete, deactivate, archive, accept, fix-all, brief-insertion, working-set mutation, use-as-prose, notes-import, background-scan, persisted-history, or automatic record-write controls. A read-only scope selector may mention the active working set only to choose the request scope. Clearing findings performs no server write.
+It must not include apply, merge, delete, deactivate, archive, accept, fix-all, brief-insertion, working-set mutation, use-as-prose, notes-import, background-scan, persisted-history, or automatic record-write controls. A read-only scope selector may mention the active working set only to choose the request scope. Clearing findings performs no server write. Viewing, copying, or clearing a diagnostic receipt also performs no project write, retry, fallback, provider send, or settings change.

@@ -206,26 +206,40 @@ describe("RecordHygieneView", () => {
     expect(recordHygieneAnalyze).not.toHaveBeenCalled();
   });
 
-  it("labels malformed output as non-canonical scratch and makes it copyable", async () => {
+  it("renders a sanitized diagnostic instead of locally rejected provider text", async () => {
     vi.mocked(recordHygieneAnalyze).mockResolvedValue({
       ok: true,
-      malformed: true,
-      raw: "freeform answer",
-      metadata: analyzeMetadata()
+      quarantined: true,
+      reasonCode: "local-parser-rejected",
+      summary: "Candidate content failed local Record Hygiene validation.",
+      recovery: "Inspect the source before using the action again.",
+      diagnostic: diagnosticReceipt()
     });
 
     renderRecordHygiene();
 
     await analyzeOnce();
 
-    expect(await screen.findByText(/Non-canonical raw output/)).toBeTruthy();
-    expect(screen.getByText("freeform answer")).toBeTruthy();
-
-    fireEvent.click(screen.getByRole("button", { name: "Copy raw output" }));
-
-    expect(clipboardWriteText).toHaveBeenCalledWith("freeform answer");
+    expect(await screen.findByRole("alert", { name: "OpenRouter diagnostic" })).toBeTruthy();
+    expect(screen.getByText("Candidate content failed local validation.")).toBeTruthy();
+    expect(screen.queryByText("freeform answer")).toBeNull();
   });
 });
+
+function diagnosticReceipt() {
+  return {
+    classification: "local-validation" as const,
+    summary: "Candidate content failed local validation.",
+    recovery: "Inspect the source before using the action again.",
+    details: {
+      httpStatus: 200,
+      requestedModel: "anthropic/claude-sonnet-4",
+      termination: "normal" as const,
+      choiceCount: 1,
+      contentShape: "string" as const
+    }
+  };
+}
 
 async function analyzeOnce(): Promise<void> {
   fireEvent.click(await screen.findByLabelText("Confirm this one-time send"));

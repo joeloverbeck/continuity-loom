@@ -1,0 +1,12 @@
+[
+  {
+    "number": 902,
+    "title": "First sibling",
+    "body": "## Acceptance Criteria\n\n- [ ] First sibling behavior is verified."
+  },
+  {
+    "number": 903,
+    "title": "Second sibling",
+    "body": "## Acceptance Criteria\n\n- [ ] Second sibling behavior is verified."
+  }
+]

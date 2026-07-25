@@ -206,7 +206,8 @@ describe("Cast Possibilities routes", () => {
     const compile = await compilePossibilities(candidate);
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: validOutput(compile.disclosure) }
+      candidate: { text: validOutput(compile.disclosure) },
+      response: normalResponse()
     });
 
     const response = await candidate.inject({
@@ -320,7 +321,8 @@ describe("Cast Possibilities routes", () => {
     expect(targeted.providerRequest.contextLength).toBe(1);
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: validOutput(targeted.disclosure) }
+      candidate: { text: validOutput(targeted.disclosure) },
+      response: normalResponse()
     });
 
     const response = await candidate.inject({
@@ -450,7 +452,8 @@ describe("Cast Possibilities routes", () => {
     const oversizeInspection = await compilePossibilities(candidate);
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: validOutput(oversizeInspection.disclosure) }
+      candidate: { text: validOutput(oversizeInspection.disclosure) },
+      response: normalResponse()
     });
     const oversize = await candidate.inject({
       method: "POST",
@@ -470,7 +473,7 @@ describe("Cast Possibilities routes", () => {
     const candidate = await preparedApp();
     const compile = await compilePossibilities(candidate);
     const sentinel = "RAW_PROVIDER_SENTINEL";
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: sentinel } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: sentinel }, response: normalResponse() });
 
     const response = await candidate.inject({
       method: "POST",
@@ -583,4 +586,16 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }

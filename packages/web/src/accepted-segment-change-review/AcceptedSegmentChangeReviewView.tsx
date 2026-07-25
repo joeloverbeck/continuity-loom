@@ -14,8 +14,10 @@ import {
   refreshModels,
   type AcceptedSegmentChangeReviewAnalyzeResponse,
   type AcceptedSegmentChangeReviewCompileResponse,
-  type RefreshModelsResponse
+  type RefreshModelsResponse,
+  type TransportFailure
 } from "../api.js";
+import { OpenRouterDiagnosticReceipt } from "../OpenRouterDiagnosticReceipt.js";
 import { isTransportFailure } from "../openrouter-transport.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
@@ -79,6 +81,7 @@ export function AcceptedSegmentChangeReviewView({
   const [recordScope, setRecordScope] = useState<AcceptedSegmentChangeReviewRecordScope>("active_working_set");
   const [compileState, setCompileState] = useState<CompileState>({ status: "loading" });
   const [reviewState, setReviewState] = useState<ReviewState>({ status: "idle" });
+  const [diagnosticFailure, setDiagnosticFailure] = useState<TransportFailure | null>(null);
   const [sendConfirmed, setSendConfirmed] = useState(false);
   const [kept, setKept] = useState<ReadonlySet<string>>(() => new Set());
   const [reviewed, setReviewed] = useState<ReadonlySet<string>>(() => new Set());
@@ -127,6 +130,7 @@ export function AcceptedSegmentChangeReviewView({
     setReviewed(new Set());
     setSelectedGuidance(new Set());
     setModelRefresh({ status: "idle" });
+    setDiagnosticFailure(null);
   }
 
   async function analyze(): Promise<void> {
@@ -154,6 +158,14 @@ export function AcceptedSegmentChangeReviewView({
 
       if (result.ok) {
         if ("quarantined" in result) {
+          if (result.diagnostic) {
+            setDiagnosticFailure({
+              ok: false,
+              category: "unknown",
+              message: result.summary,
+              diagnostic: result.diagnostic
+            });
+          }
           setReviewState({
             status: "quarantined",
             reasonCode: result.reasonCode,
@@ -166,6 +178,7 @@ export function AcceptedSegmentChangeReviewView({
       }
 
       if (isTransportFailure(result)) {
+        setDiagnosticFailure(result);
         if (result.category === "structured-output-capability-unknown") {
           setReviewState({
             status: "capabilityStale",
@@ -296,6 +309,9 @@ export function AcceptedSegmentChangeReviewView({
             ))}
             onClear={clearReviewState}
           />
+          {(reviewState.status === "provider" || reviewState.status === "quarantined") && diagnosticFailure?.diagnostic ? (
+            <OpenRouterDiagnosticReceipt receipt={diagnosticFailure.diagnostic} onClear={clearReviewState} />
+          ) : null}
           <ConsumedGuidancePanel
             entries={compileState.result.consumedGuidance}
             selected={selectedGuidance}

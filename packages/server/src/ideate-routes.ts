@@ -12,6 +12,7 @@ import { z, ZodError } from "zod";
 
 import { parseIdeationResponse } from "./ideation-parse.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
+import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
 
@@ -54,6 +55,7 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
 
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt: compileResult.prompt,
         promptFingerprint: compileResult.metadata.fingerprint,
         staleness: {
@@ -98,9 +100,16 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
     if (!parsed.ok) {
       return {
         ok: true,
-        malformed: true,
-        raw: parsed.raw,
-        metadata: sendResult.metadata
+        quarantined: true,
+        reasonCode: "local-parser-rejected",
+        summary: "Candidate content reached Continuity Loom but failed local Ideate validation.",
+        recovery: "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic.",
+        diagnostic: createDiagnosticReceipt(
+          "local-validation",
+          sendResult.response,
+          "Candidate content reached Continuity Loom but failed local Ideate validation.",
+          "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic."
+        )
       };
     }
 

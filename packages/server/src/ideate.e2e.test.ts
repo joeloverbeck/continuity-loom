@@ -60,7 +60,8 @@ describe("ideation end-to-end capstone", () => {
             "why: The selected secret and cellar objects support a clue-only pressure move.",
             `grounds: ${secretKey}, [UNKNOWN-99]`
           ].join("\n")
-        }
+        },
+        response: normalResponse()
       };
     });
     const fastify = app();
@@ -151,6 +152,18 @@ function app(): FastifyApp {
   const fastify = createServer();
   apps.push(fastify);
   return fastify;
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 async function createDemo(fastify: FastifyApp, folderName = "demo"): Promise<void> {

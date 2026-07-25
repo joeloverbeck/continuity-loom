@@ -213,7 +213,7 @@ Accepted-Segment Change Review reads exactly the latest accepted segment as boun
 
 Returning-author discipline: your Generation Brief current-state and immediate-handoff fields are carried forward by hand and can silently drift from what the latest accepted segment actually rendered — for example, the handoff can presuppose a beat (a turn, a move, a reveal) that the accepted segment ends before reaching. Before you trust the inherited brief at the start of a continuation, re-read the full latest accepted segment, and run (or re-run) Accepted-Segment Change Review with the explicit Analyze action; the latest accepted segment is unchanged, so the review contrasts your current inherited brief against it. When a current-state or immediate-handoff field presupposes a beat the segment does not render, the review surfaces it as an `interpretation requiring author judgment` item that names the drifted brief field and cites where the segment actually ends; drift resting on that absence never carries an evidence excerpt and never becomes an established change. The item is advisory only — re-author any drifted field yourself in the Generation Brief and save it; the review never edits a field, never acknowledges the durable-change reminder, and never gates Preview or Generate.
 
-Every item is suggestion-only scratch. There is no apply, prefill, create, deactivate, archive, merge, remove, working-set mutation, or use-as-prose action. Malformed model output is quarantined as raw scratch. Keepers are session-scoped by project and prompt fingerprint in browser session storage, not project data.
+Every item is suggestion-only scratch. There is no apply, prefill, create, deactivate, archive, merge, remove, working-set mutation, or use-as-prose action. Model output that fails local validation is quarantined without displaying its raw text. Keepers are session-scoped by project and prompt fingerprint in browser session storage, not project data.
 
 ## OpenRouter Settings
 
@@ -256,6 +256,23 @@ deliberately, or choose a compatible model, then inspect and invoke the existing
 Generate, Analyze, or Regenerate action yourself. Refresh, settings edits,
 inspection, and error viewing never make a completion request, and recovery
 never retries automatically.
+
+OpenRouter responses are decoded before any workflow treats text as usable.
+Generate can preserve output stopped by the completion limit, but labels it an
+**Incomplete Draft Candidate** with a diagnostic so you can edit, discard, or
+invoke Generate yourself again. Ideate, Record Hygiene, Change Review, and Cast
+Possibilities require a normal completion; they do not salvage partial
+structured output.
+
+Provider errors, missing content, filtered or tool-ended output, unrecognized
+responses, and local validation rejection show a transient sanitized
+diagnostic receipt. Expand **Technical details** to inspect safe facts, use
+**Copy diagnostic receipt** for support, and use **Open OpenRouter Logs** only
+when a safe generation id is available. Receipts never include prompt text,
+story records, credentials, arbitrary provider metadata, or rejected candidate
+text. They are not saved to the project or browser storage. Viewing, copying,
+clearing, or opening Logs never retries, changes settings, or sends another
+completion request.
 
 For local key setup, copy `.env.example` to `.env` at the repository root and set `OPENROUTER_API_KEY=<your key>`. The root `.env` is gitignored and loads automatically when the app launches through `npm run dev` or `npm start`; a shell-exported `OPENROUTER_API_KEY` also works as an alternative. The key is not stored in project metadata, the SQLite project store, accepted segment metadata, compiled prompts, prompt preview text, or logs. If a key appears in any of those surfaces, treat it as a security bug.
 

@@ -116,13 +116,20 @@ Every request edit invalidates the prior preview synchronously. Valid edits star
 
 `POST /api/ideate` carries the complete normalized request plus `expectedPromptFingerprint`. The server reparses the request, rebuilds current project state and readiness, compiles again, and compares the fingerprint before reading credentials or calling OpenRouter. Missing, malformed, over-limit, or stale input makes zero provider calls; a mismatch returns `409 stale-ideation-prompt`. A matching explicit action makes one provider call with the server-rebuilt prompt.
 
+Ideate requires a normal decoded completion before parsing. Provider errors,
+length limits, content-filter or tool termination, missing content, and
+unrecognized envelopes produce a sanitized transient diagnostic and no slate;
+no partial candidate text is parsed or returned. A normal completion that
+fails the local parser is likewise quarantined with a safe diagnostic, and its
+raw provider text is not returned to the browser.
+
 Focus remains mounted across Ideas/Questions, Count, Dormant slot, Get ideas/Get new slate, Regenerate all, per-slot Regenerate, and Clear all. Clear all removes the slate and keepers but not focus. A newly mounted Ideate view starts blank. Get ideas, Get new slate, Regenerate all, and per-slot Regenerate remain the only provider actions; typing, counting, validation, compilation, inspection, and recovery are localhost-only.
 
 ## Canon, Prose, And Persistence Boundaries
 
 Author focus is never story state or continuity authority. It is not imported, linked, prefilled, inferred, or derived from records, Generation Brief fields, Private Notes, candidates, accepted prose, rejected or superseded output, prior prompts, keepers, change-review or hygiene output, or other scratch. It never changes active-working-set membership and never enters a prose prompt automatically.
 
-Focused ideas and malformed output retain the existing quarantine with no apply, insert, accept, or use-as-prose action. Focus and prompt text are excluded from project and browser storage, keeper payloads, backup, migration, export, accepted-segment provenance, analytics, telemetry, and process logs. This feature adds no schema migration, background send, retry, provider fallback, or second provider call.
+Focused ideas and locally rejected output retain the existing quarantine with no apply, insert, accept, or use-as-prose action. Focus, prompt text, and diagnostic receipts are excluded from project and browser storage, keeper payloads, backup, migration, export, accepted-segment provenance, analytics, telemetry, and process logs. This feature adds no schema migration, background send, retry, provider fallback, or second provider call.
 
 ### `<ideation_quality>`
 

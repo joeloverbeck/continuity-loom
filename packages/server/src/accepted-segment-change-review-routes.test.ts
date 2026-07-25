@@ -155,7 +155,7 @@ describe("Accepted-Segment Change Review routes", () => {
     await prepareProject(candidate);
     const before = await projectSurfaces(candidate);
     const compile = await compileReview(candidate);
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validOutput() } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validOutput() }, response: normalResponse() });
 
     const response = await candidate.inject({
       method: "POST",
@@ -256,7 +256,7 @@ describe("Accepted-Segment Change Review routes", () => {
     const candidate = app();
     await prepareProject(candidate);
     const compile = await compileReview(candidate);
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: acceptedText } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: acceptedText }, response: normalResponse() });
 
     const response = await candidate.inject({
       method: "POST",
@@ -321,7 +321,8 @@ describe("Accepted-Segment Change Review routes", () => {
     const compile = await compileReview(candidate);
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: validOutput() }
+      candidate: { text: validOutput() },
+      response: normalResponse()
     });
 
     const response = await candidate.inject({
@@ -540,4 +541,16 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }

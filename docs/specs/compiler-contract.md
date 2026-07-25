@@ -42,6 +42,37 @@ bytes, output fields, parsers, or source-profile identities. Consequently the
 template, compiler, compiler-contract, Accepted-Segment Change Review, and Cast
 Possibilities prompt/output version identities remain unchanged.
 
+### 1.2 Provider Response Boundary
+
+OpenRouter response decoding is transport-owned and happens exactly once. The
+decoder projects only allowlisted facts: HTTP status, generation id, requested
+and returned model, provider, normalized and native termination reason, choice
+count, content shape and length, token usage, retry timing, and a stable
+structural outcome. It never exposes arbitrary provider metadata, prompts,
+records, credentials, or rejected candidate text. A supported in-band provider
+error takes precedence over any partial candidate content in the same response.
+
+Workflow policy, not transport, decides whether decoded candidate content is
+usable. Generate accepts normal completion and may retain length-limited prose
+as an explicitly incomplete Draft Candidate. Ideate, Record Hygiene,
+Accepted-Segment Change Review, and Cast Possibilities require normal
+completion before their existing whole-response parsers run. Missing content,
+tool or content-filter termination, provider error, and unrecognized response
+structure never become candidate text; strict workflows also reject
+length-limited completion without partial salvage.
+
+Every non-success path may return one transient sanitized diagnostic receipt
+containing only those allowlisted facts plus a local classification, summary,
+and manual recovery. Local parser rejection uses the same receipt shape but
+never returns the rejected provider text. Receipts are browser-visible scratch:
+they are not stored in the project, prompt context, accepted provenance,
+backups, exports, analytics, or process logs, and viewing, copying, clearing,
+or following a generation-id Logs link never retries or changes settings.
+
+This response-boundary change does not alter prompt source, prompt bytes,
+output schemas, local parser rules, stored data, or any prompt/compiler/contract
+identity; no version changes are required.
+
 ## 2. Source hierarchy
 
 Each prompt class has one explicit source profile. No compiler may read a source merely because it is available in the project store.

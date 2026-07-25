@@ -11,9 +11,12 @@ import {
   type RecordHygieneCompileMetadata,
   type RecordHygieneCompileResponse,
   type OpenRouterRequestInspection,
+  type OpenRouterDiagnosticReceipt as DiagnosticReceipt,
   type TransportFailure
 } from "../api.js";
+import { OpenRouterDiagnosticReceipt } from "../OpenRouterDiagnosticReceipt.js";
 import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../openrouter-failure.js";
+import { isTransportFailure } from "../openrouter-transport.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { HygieneFindingCard } from "./HygieneFindingCard.js";
 import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type RecordHygieneKeeper } from "./keepers.js";
@@ -34,13 +37,14 @@ type ScratchState =
   | { status: "sending" }
   | { status: "findings"; findings: readonly ParsedRecordHygieneFinding[] }
   | { status: "malformed"; raw: string }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; diagnostic?: DiagnosticReceipt };
 
 type HygieneMode = RecordHygieneRequest["mode"];
 
 export function RecordHygieneView(): React.JSX.Element {
   const [compileState, setCompileState] = useState<CompileState>({ status: "loading" });
   const [scratchState, setScratchState] = useState<ScratchState>({ status: "empty" });
+  const [diagnosticFailure, setDiagnosticFailure] = useState<TransportFailure | null>(null);
   const [keepers, setKeepers] = useState<readonly RecordHygieneKeeper[]>(() => listKeepers());
   const [searchTerm, setSearchTerm] = useState("");
   const [sendConfirmed, setSendConfirmed] = useState(false);
@@ -87,8 +91,8 @@ export function RecordHygieneView(): React.JSX.Element {
         compileState.providerRequest.requestFingerprint
       );
       if (result.ok) {
-        if ("malformed" in result) {
-          setScratchState({ status: "malformed", raw: result.raw });
+        if ("quarantined" in result) {
+          setScratchState({ status: "error", message: result.summary, diagnostic: result.diagnostic });
           return;
         }
 
@@ -96,6 +100,7 @@ export function RecordHygieneView(): React.JSX.Element {
         return;
       }
 
+      setDiagnosticFailure(isTransportFailure(result) ? result : null);
       setScratchState({ status: "error", message: errorMessage(result) });
     } catch (error) {
       setScratchState({
@@ -107,6 +112,7 @@ export function RecordHygieneView(): React.JSX.Element {
 
   function clearAll(): void {
     setScratchState({ status: "empty" });
+    setDiagnosticFailure(null);
     clearKeepers();
     setKeepers([]);
   }
@@ -233,7 +239,17 @@ export function RecordHygieneView(): React.JSX.Element {
           </section>
 
           {scratchState.status === "sending" ? <p className="muted" role="status">Requesting record hygiene analysis...</p> : null}
-          {scratchState.status === "error" ? <p className="status statusError" role="alert">{scratchState.message}</p> : null}
+          {scratchState.status === "error" ? (
+            scratchState.diagnostic ?? diagnosticFailure?.diagnostic ? (
+              <OpenRouterDiagnosticReceipt
+                receipt={(scratchState.diagnostic ?? diagnosticFailure?.diagnostic)!}
+                onClear={() => {
+                  setDiagnosticFailure(null);
+                  setScratchState({ status: "empty" });
+                }}
+              />
+            ) : <p className="status statusError" role="alert">{scratchState.message}</p>
+          ) : null}
 
           <ScratchPanel
             state={scratchState}

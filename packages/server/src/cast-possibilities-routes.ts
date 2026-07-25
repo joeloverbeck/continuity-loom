@@ -13,6 +13,7 @@ import {
   type OpenRouterRequestOptions
 } from "./openrouter/request.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
+import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
@@ -78,6 +79,7 @@ export function registerCastPossibilitiesRoutes(
     const requestOptions = castRequestOptions(compiled.result.outputSchema);
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
+        outputPolicy: "strict",
         prompt: compiled.result.prompt,
         promptFingerprint: compiled.result.disclosure.fingerprint,
         requestOptions,
@@ -134,7 +136,13 @@ export function registerCastPossibilitiesRoutes(
         quarantined: true,
         reasonCode: parsedOutput.reasonCode,
         summary: parsedOutput.summary,
-        recovery: parsedOutput.recovery
+        recovery: parsedOutput.recovery,
+        diagnostic: createDiagnosticReceipt(
+          "local-validation",
+          sendResult.response,
+          "Candidate content reached Continuity Loom but failed local Cast Possibilities validation.",
+          "Inspect the source and response contract before using the existing action again. No retry is automatic."
+        )
       };
     }
 

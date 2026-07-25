@@ -198,7 +198,7 @@ describe("record hygiene routes", () => {
   });
 
   it("sends the server-compiled prompt, returns parsed findings, and does not mutate project data", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validHygieneResponse() } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validHygieneResponse() }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await prepareHygieneProject(fastify);
@@ -243,21 +243,32 @@ describe("record hygiene routes", () => {
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
-  it("quarantines malformed model output as raw scratch", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform hygiene answer" } });
+  it("quarantines malformed model output without returning provider text", async () => {
+    const rejectedProviderText = "freeform hygiene answer model-private-canary";
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: rejectedProviderText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await prepareHygieneProject(fastify);
 
     const { analyzeResponse: response } = await analyzeHygiene(fastify);
 
-    expect(response.json()).toMatchObject({ ok: true, malformed: true, raw: "freeform hygiene answer" });
+    expect(response.json()).toMatchObject({
+      ok: true,
+      quarantined: true,
+      reasonCode: "local-parser-rejected",
+      diagnostic: {
+        classification: "local-validation",
+        details: { termination: "normal", contentShape: "string" }
+      }
+    });
+    expect(response.body).not.toContain(rejectedProviderText);
   });
 
   it("warns through inspection and sends once without record eviction when the context estimate is too large", async () => {
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: validHygieneResponse("The facts may overlap.") }
+      candidate: { text: validHygieneResponse("The facts may overlap.") },
+      response: normalResponse()
     });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -289,7 +300,7 @@ describe("record hygiene routes", () => {
   });
 
   it("keeps prompts, payloads, model output, parsed findings, citations, and keys out of logs", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validHygieneResponse(modelOutputSecretText) } });
+    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validHygieneResponse(modelOutputSecretText) }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const capture = captureProcessWrites();
     const fastify = app({ logger: true });
@@ -468,6 +479,18 @@ function restoreEnv(name: string, value: string | undefined): void {
   } else {
     process.env[name] = value;
   }
+}
+
+function normalResponse() {
+  return {
+    httpStatus: 200,
+    requestedModel: "test/model",
+    termination: "normal" as const,
+    nativeFinishReason: "stop",
+    choiceCount: 1,
+    contentShape: "string" as const,
+    contentLength: 1
+  };
 }
 
 function escapeDataText(value: string): string {
