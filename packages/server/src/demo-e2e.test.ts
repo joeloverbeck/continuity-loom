@@ -96,6 +96,7 @@ describe("demo project end-to-end capstone", () => {
           temperatureMode: "explicit",
           temperature: 0.2,
           maxOutputTokens: 800,
+          reasoningIntent: "medium",
           versions: firstBody.metadata.versions
         }
       }

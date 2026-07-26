@@ -29,6 +29,28 @@ const v4UserSuppliedMetadataSchema = z.strictObject({
   versions: acceptedSegmentVersionsSchema
 });
 
+const v5OpenRouterMetadataSchema = z.union([
+  z.strictObject({
+    source: z.literal("openrouter"),
+    model: z.string().min(1),
+    provider: z.literal("openrouter"),
+    temperatureMode: z.literal("explicit"),
+    temperature: z.number(),
+    maxOutputTokens: z.number().int(),
+    topP: z.number().optional(),
+    versions: acceptedSegmentVersionsSchema
+  }),
+  z.strictObject({
+    source: z.literal("openrouter"),
+    model: z.string().min(1),
+    provider: z.literal("openrouter"),
+    temperatureMode: z.literal("provider_default"),
+    maxOutputTokens: z.number().int(),
+    topP: z.number().optional(),
+    versions: acceptedSegmentVersionsSchema
+  })
+]);
+
 interface AcceptedMetadataRow {
   id: number;
   metadata_json: string;
@@ -89,6 +111,39 @@ export function rewriteAcceptedSegmentSamplingMode(database: DatabaseSync): void
         maxOutputTokens: legacy.maxOutputTokens,
         ...(legacy.topP === undefined ? {} : { topP: legacy.topP }),
         versions: legacy.versions
+      })
+    }];
+  });
+
+  const update = database.prepare("UPDATE accepted_segments SET metadata_json = ? WHERE id = ?");
+  for (const rewrite of rewrites) {
+    update.run(rewrite.metadataJson, rewrite.id);
+  }
+}
+
+export function rewriteAcceptedSegmentReasoningIntent(database: DatabaseSync): void {
+  const rows = database
+    .prepare("SELECT id, metadata_json FROM accepted_segments ORDER BY id")
+    .all() as unknown as AcceptedMetadataRow[];
+  const rewrites = rows.flatMap((row): AcceptedMetadataRewrite[] => {
+    const raw = JSON.parse(row.metadata_json) as unknown;
+    if (acceptedSegmentProvenanceSchema.safeParse(raw).success) {
+      return [];
+    }
+
+    const userSupplied = v4UserSuppliedMetadataSchema.safeParse(raw);
+    if (userSupplied.success) {
+      return [];
+    }
+
+    const legacy = v5OpenRouterMetadataSchema.parse(raw);
+    const { versions, ...metadata } = legacy;
+    return [{
+      id: row.id,
+      metadataJson: JSON.stringify({
+        ...metadata,
+        reasoningIntent: "provider_default",
+        versions
       })
     }];
   });

@@ -240,6 +240,7 @@ async function addAcceptedSegment(fastify: FastifyApp): Promise<void> {
         temperatureMode: "explicit",
         temperature: 0.1,
         maxOutputTokens: 500,
+        reasoningIntent: "medium",
         versions: compile.metadata.versions
       }
     }

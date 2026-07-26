@@ -488,6 +488,7 @@ async function appendAcceptedSegment(
         temperatureMode: "explicit",
         temperature: 0.2,
         maxOutputTokens: 800,
+        reasoningIntent: "medium",
         versions: { template: "1.0.0", compiler: "1.2.0", contract: "1.3.0" }
       }
     }

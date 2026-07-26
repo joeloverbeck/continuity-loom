@@ -1,6 +1,7 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createServer } from "./server.js";
@@ -86,6 +87,41 @@ describe("project routes", () => {
     });
   });
 
+  it("reports invalid accepted provenance clearly when opening a current-schema project", async () => {
+    const fastify = app();
+    const folderPath = await createProjectWithAcceptedSegment(fastify, "invalid-open");
+    await fastify.inject({ method: "POST", url: "/api/project/close" });
+    corruptAcceptedProvenance(folderPath);
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/project/open",
+      payload: { folderPath }
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "invalid-provenance",
+      message: "The project contains invalid accepted-segment provenance and was not opened."
+    });
+  });
+
+  it("reports invalid accepted provenance clearly when backup is refused", async () => {
+    const fastify = app();
+    const folderPath = await createProjectWithAcceptedSegment(fastify, "invalid-backup");
+    corruptAcceptedProvenance(folderPath);
+
+    const response = await fastify.inject({ method: "POST", url: "/api/project/backup" });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      ok: false,
+      kind: "invalid-provenance",
+      message: "The project contains invalid accepted-segment provenance and was not backed up."
+    });
+  });
+
   it("rejects relative parent paths so projects never land in the app folder", async () => {
     const fastify = app();
 
@@ -145,3 +181,50 @@ describe("project routes", () => {
     });
   });
 });
+
+async function createProjectWithAcceptedSegment(
+  fastify: ReturnType<typeof createServer>,
+  folderName: string
+): Promise<string> {
+  const created = await fastify.inject({
+    method: "POST",
+    url: "/api/project/create",
+    payload: { parentPath: await tempParent(), folderName, title: "Invalid provenance diagnostic" }
+  });
+  const { folderPath } = created.json() as { folderPath: string };
+  const accepted = await fastify.inject({
+    method: "POST",
+    url: "/api/accepted-segments",
+    payload: {
+      text: "Accepted prose.",
+      generationMetadata: {
+        source: "openrouter",
+        model: "openai/gpt-4.1",
+        provider: "openrouter",
+        temperatureMode: "explicit",
+        temperature: 0.4,
+        maxOutputTokens: 2200,
+        reasoningIntent: "high",
+        versions: { template: "test", compiler: "test", contract: "test" }
+      }
+    }
+  });
+
+  expect(created.statusCode).toBe(201);
+  expect(accepted.statusCode).toBe(201);
+  return folderPath;
+}
+
+function corruptAcceptedProvenance(folderPath: string): void {
+  const database = new DatabaseSync(join(folderPath, "loom.sqlite"));
+  try {
+    const row = database.prepare("SELECT metadata_json FROM accepted_segments WHERE sequence = 1").get() as {
+      metadata_json: string;
+    };
+    database.prepare("UPDATE accepted_segments SET metadata_json = ? WHERE sequence = 1").run(
+      JSON.stringify({ ...JSON.parse(row.metadata_json), reasoningIntent: "automatic" })
+    );
+  } finally {
+    database.close();
+  }
+}

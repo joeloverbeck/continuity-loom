@@ -6,7 +6,10 @@ import type { ProjectStoreManager } from "./project-store.js";
 
 const acceptBodySchema = z.strictObject({
   text: z.string().refine((value) => value.trim().length > 0),
-  generationMetadata: acceptedSegmentProvenanceSchema
+  generationMetadata: acceptedSegmentProvenanceSchema.refine(
+    (metadata) => metadata.source !== "openrouter" || metadata.reasoningIntent !== "provider_default",
+    { message: "Historical provider-default reasoning intent cannot be used for a new accepted segment." }
+  )
 });
 
 const acceptedSegmentParamsSchema = z.strictObject({

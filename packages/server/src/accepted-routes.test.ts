@@ -18,6 +18,7 @@ const generationMetadata = {
   temperatureMode: "explicit",
   temperature: 0.4,
   maxOutputTokens: 2200,
+  reasoningIntent: "medium",
   topP: 0.9,
   versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
 } as const;
@@ -153,6 +154,7 @@ describe("accepted routes", () => {
             temperatureMode: "explicit",
             temperature: 0.4,
             maxOutputTokens: 2200,
+            reasoningIntent: "medium",
             versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
           },
           createdAt: expect.any(String)
@@ -230,6 +232,7 @@ describe("accepted routes", () => {
       temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
+      reasoningIntent: "medium",
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     });
     expect(JSON.stringify(rows.map((row) => JSON.parse(row.metadata_json)))).not.toContain("edited");
@@ -271,8 +274,38 @@ describe("accepted routes", () => {
         apiKey: apiKeySecret
       }
     });
+    const historicalIntent = await postAccept(fastify, {
+      text: "Historical provenance cannot be newly accepted.",
+      generationMetadata: {
+        ...generationMetadata,
+        reasoningIntent: "provider_default"
+      }
+    });
+    const invalidIntent = await postAccept(fastify, {
+      text: "Invalid reasoning intent cannot persist.",
+      generationMetadata: {
+        ...generationMetadata,
+        reasoningIntent: "automatic"
+      }
+    });
+    const reasoningFields = await postAccept(fastify, {
+      text: "Reasoning material cannot persist.",
+      generationMetadata: {
+        ...generationMetadata,
+        reasoningContent: "private scratch",
+        reasoningTokens: 123
+      }
+    });
 
-    for (const response of [emptyText, missingText, promptMetadata, keyMetadata]) {
+    for (const response of [
+      emptyText,
+      missingText,
+      promptMetadata,
+      keyMetadata,
+      historicalIntent,
+      invalidIntent,
+      reasoningFields
+    ]) {
       expect(response.statusCode).toBe(422);
       expect(response.json()).toMatchObject({ ok: false, kind: "invalid-body" });
     }

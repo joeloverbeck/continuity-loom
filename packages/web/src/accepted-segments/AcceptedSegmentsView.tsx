@@ -384,6 +384,7 @@ function MetadataGrid({ metadata, sequence }: { metadata: AcceptedSegment["metad
       ["Provider", metadata.provider],
       ["Temperature", temperatureLabel(metadata)],
       ["Max output tokens", String(metadata.maxOutputTokens)],
+      ["Reasoning intent", reasoningIntentLabel(metadata)],
       ["Top P", metadata.topP === undefined ? "Not set" : String(metadata.topP)]
     ] satisfies Array<[string, string]> : []),
     ["Template version", metadata.versions.template],
@@ -419,6 +420,7 @@ function searchableText(segment: AcceptedSegment): string {
       metadata.provider,
       temperatureLabel(metadata),
       String(metadata.maxOutputTokens),
+      reasoningIntentLabel(metadata),
       metadata.topP === undefined ? "" : String(metadata.topP)
     ] : []),
     metadata.versions.template,
@@ -435,6 +437,12 @@ function sourceLabel(metadata: AcceptedSegment["metadata"]): "OpenRouter" | "Use
 
 function temperatureLabel(metadata: Extract<AcceptedSegment["metadata"], { source: "openrouter" }>): string {
   return metadata.temperatureMode === "explicit" ? String(metadata.temperature) : "Provider default";
+}
+
+function reasoningIntentLabel(metadata: Extract<AcceptedSegment["metadata"], { source: "openrouter" }>): string {
+  return metadata.reasoningIntent === "provider_default"
+    ? "provider_default (historical; exact effort unknown)"
+    : `${metadata.reasoningIntent} (exact sent effort)`;
 }
 
 function segmentExcerpt(text: string): string {
@@ -534,6 +542,7 @@ function exportMetadataLines(metadata: AcceptedSegment["metadata"], prefix = "")
       `${prefix}Provider: ${metadata.provider}`,
       `${prefix}Temperature: ${temperatureLabel(metadata)}`,
       `${prefix}Max output tokens: ${metadata.maxOutputTokens}`,
+      `${prefix}Reasoning intent: ${reasoningIntentLabel(metadata)}`,
       `${prefix}Top P: ${metadata.topP === undefined ? "Not set" : metadata.topP}`
     ] : []),
     `${prefix}Template version: ${metadata.versions.template}`,

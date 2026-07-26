@@ -429,6 +429,16 @@ export class RecordRepository {
     return { id: Number(result.lastInsertRowid), sequence, text: input.text, metadata, createdAt };
   }
 
+  validateAcceptedSegmentProvenance(): void {
+    const rows = this.database
+      .prepare("SELECT metadata_json FROM accepted_segments ORDER BY sequence")
+      .all() as Array<{ metadata_json: string }>;
+
+    for (const row of rows) {
+      acceptedSegmentProvenanceSchema.parse(parsePayloadJson(row.metadata_json));
+    }
+  }
+
   listAcceptedSegments(): AcceptedSegment[];
   listAcceptedSegments(options: { projection: "count" }): number;
   listAcceptedSegments(options: { projection?: "full" | "count" } = {}): AcceptedSegment[] | number {

@@ -18,6 +18,7 @@ import { z, ZodError } from "zod";
 import { backfillDisplayLabels } from "./display-label-backfill.js";
 import {
   rewriteAcceptedSegmentProvenance,
+  rewriteAcceptedSegmentReasoningIntent,
   rewriteAcceptedSegmentSamplingMode
 } from "./accepted-segment-provenance-migration.js";
 import { migrateGenerationSessionDraft } from "./generation-session-draft-migration.js";
@@ -43,6 +44,15 @@ export class ProjectCreateError extends Error {
   ) {
     super(message);
     this.name = "ProjectCreateError";
+  }
+}
+
+export class ProjectProvenanceError extends Error {
+  readonly kind = "invalid-provenance" as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ProjectProvenanceError";
   }
 }
 
@@ -375,6 +385,44 @@ async function migrateStoreFromV4ToV5(
   return migratedMetadata;
 }
 
+async function migrateStoreFromV5ToV6(
+  database: DatabaseSync,
+  folderPath: string,
+  metadata: ProjectMetadata
+): Promise<ProjectMetadata> {
+  const migratedMetadata = projectMetadataSchema.parse({
+    ...metadata,
+    schemaMinVersion: 6,
+    updatedAt: new Date().toISOString()
+  });
+  let metadataWasUpdated = false;
+
+  try {
+    database.exec("BEGIN IMMEDIATE");
+    rewriteAcceptedSegmentReasoningIntent(database);
+    database.exec("PRAGMA user_version = 6");
+    await writeProjectMetadataAtomically(folderPath, migratedMetadata);
+    metadataWasUpdated = true;
+    database.exec("COMMIT");
+  } catch (error) {
+    if (database.isOpen) {
+      try {
+        database.exec("ROLLBACK");
+      } catch {
+        // No active transaction to roll back.
+      }
+    }
+
+    if (metadataWasUpdated) {
+      await writeProjectMetadataAtomically(folderPath, metadata);
+    }
+
+    throw error;
+  }
+
+  return migratedMetadata;
+}
+
 async function migrateStoreToCurrentSchema(
   database: DatabaseSync,
   folderPath: string,
@@ -388,7 +436,8 @@ async function migrateStoreToCurrentSchema(
     1: migrateStoreFromV1ToV2,
     2: migrateStoreFromV2ToV3,
     3: migrateStoreFromV3ToV4,
-    4: migrateStoreFromV4ToV5
+    4: migrateStoreFromV4ToV5,
+    5: migrateStoreFromV5ToV6
   };
 
   while (currentVersion < LOOM_SCHEMA_VERSION) {
@@ -613,11 +662,21 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         repairWorkingSetReferences(database);
         migrateGenerationSessionDraft(database);
         migrateRecordPayloads(database);
+        const recordRepository = new RecordRepository(database);
+        try {
+          recordRepository.validateAcceptedSegmentProvenance();
+        } catch {
+          database.close();
+          return failure(
+            "invalid-provenance",
+            "The project contains invalid accepted-segment provenance and was not opened."
+          );
+        }
         active = {
           folderPath,
           metadata,
           database,
-          recordRepository: new RecordRepository(database),
+          recordRepository,
           storyNotesRepository: new StoryNotesRepository(database),
           storeUserVersion
         };
@@ -654,6 +713,13 @@ export function createProjectStoreManager(options: ProjectStoreOptions = {}): Pr
         throw new Error("No project is open.");
       }
 
+      try {
+        active.recordRepository.validateAcceptedSegmentProvenance();
+      } catch {
+        throw new ProjectProvenanceError(
+          "The project contains invalid accepted-segment provenance and was not backed up."
+        );
+      }
       const backupsPath = join(active.folderPath, "backups");
       await mkdir(backupsPath, { recursive: true });
 

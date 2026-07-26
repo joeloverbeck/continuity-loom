@@ -2,7 +2,11 @@ import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import { createDemoProject } from "./demo-creation.js";
-import { ProjectCreateError, type ProjectStoreManager } from "./project-store.js";
+import {
+  ProjectCreateError,
+  ProjectProvenanceError,
+  type ProjectStoreManager
+} from "./project-store.js";
 
 const createProjectBodySchema = z
   .object({
@@ -89,7 +93,11 @@ export function registerProjectRoutes(app: FastifyInstance, manager: ProjectStor
   app.post("/api/project/backup", async (request, reply) => {
     try {
       return await manager.createBackup();
-    } catch {
+    } catch (error) {
+      if (error instanceof ProjectProvenanceError) {
+        return reply.code(409).send({ ok: false, kind: error.kind, message: error.message });
+      }
+
       return reply.code(409).send(operationFailure("No project is open."));
     }
   });

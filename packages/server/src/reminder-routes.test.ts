@@ -19,6 +19,7 @@ const generationMetadata = {
   temperature: 0.4,
   maxOutputTokens: 2200,
   topP: 0.9,
+  reasoningIntent: "medium",
   versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
 } as const;
 

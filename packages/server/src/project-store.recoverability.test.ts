@@ -1,5 +1,5 @@
 import { LOOM_APPLICATION_ID, LOOM_SCHEMA_VERSION, projectMetadataSchema } from "@loom/core";
-import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { access, mkdtemp, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -88,7 +88,76 @@ describe("project storage recoverability", () => {
     expect(readPragmaNumber(backupPath, "application_id")).toBe(LOOM_APPLICATION_ID);
     expect(readPragmaNumber(backupPath, "user_version")).toBe(LOOM_SCHEMA_VERSION);
   });
+
+  it("rejects a current-schema project with malformed accepted provenance before activation", async () => {
+    const storeManager = manager();
+    const parentPath = await tempParent();
+    const status = await storeManager.createProject({
+      parentPath,
+      folderName: "invalid-current-provenance",
+      title: "Invalid Current Provenance"
+    });
+    appendAcceptedSegment(storeManager);
+    await storeManager.closeProject();
+    corruptAcceptedProvenance(status.folderPath);
+
+    const result = await storeManager.openProject(status.folderPath);
+
+    expect(result).toEqual({
+      ok: false,
+      kind: "invalid-provenance",
+      message: "The project contains invalid accepted-segment provenance and was not opened."
+    });
+    expect(storeManager.getActiveProjectStatus()).toEqual({ open: false });
+  });
+
+  it("rejects backup when an active project has malformed accepted provenance", async () => {
+    const storeManager = manager();
+    const parentPath = await tempParent();
+    const status = await storeManager.createProject({
+      parentPath,
+      folderName: "invalid-backup-provenance",
+      title: "Invalid Backup Provenance"
+    });
+    appendAcceptedSegment(storeManager);
+    corruptAcceptedProvenance(status.folderPath);
+
+    await expect(storeManager.createBackup()).rejects.toThrow(
+      "The project contains invalid accepted-segment provenance and was not backed up."
+    );
+    await expect(access(join(status.folderPath, "backups"))).rejects.toMatchObject({ code: "ENOENT" });
+  });
 });
+
+function appendAcceptedSegment(storeManager: ProjectStoreManager): void {
+  storeManager.getRecordRepository()?.appendAcceptedSegment({
+    text: "Accepted prose with current provenance.",
+    metadata: {
+      source: "openrouter",
+      model: "openai/gpt-4.1",
+      provider: "openrouter",
+      temperatureMode: "explicit",
+      temperature: 0.4,
+      maxOutputTokens: 2200,
+      reasoningIntent: "high",
+      versions: { template: "test", compiler: "test", contract: "test" }
+    }
+  });
+}
+
+function corruptAcceptedProvenance(folderPath: string): void {
+  const database = new DatabaseSync(databasePath(folderPath));
+  try {
+    const row = database.prepare("SELECT metadata_json FROM accepted_segments WHERE sequence = 1").get() as {
+      metadata_json: string;
+    };
+    database.prepare("UPDATE accepted_segments SET metadata_json = ? WHERE sequence = 1").run(
+      JSON.stringify({ ...JSON.parse(row.metadata_json), reasoningIntent: "automatic" })
+    );
+  } finally {
+    database.close();
+  }
+}
 
 async function setProjectVersion(folderPath: string, schemaVersion: number): Promise<void> {
   const metadata = projectMetadataSchema.parse(JSON.parse(await readMetadataText(folderPath)));

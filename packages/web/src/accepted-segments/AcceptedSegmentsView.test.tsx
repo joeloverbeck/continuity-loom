@@ -128,6 +128,8 @@ describe("AcceptedSegmentsView", () => {
     expect(screen.getAllByText("Temperature")).toHaveLength(1);
     expect(screen.getAllByText("Max output tokens")).toHaveLength(1);
     expect(screen.getAllByText("Top P")).toHaveLength(1);
+    expect(screen.getAllByText("Reasoning intent")).toHaveLength(1);
+    expect(screen.getByText("high (exact sent effort)")).toBeTruthy();
     expect(screen.queryByText("Not set")).toBeNull();
 
     const filter = screen.getByRole("searchbox", { name: "Filter archive" });
@@ -138,6 +140,42 @@ describe("AcceptedSegmentsView", () => {
     fireEvent.change(filter, { target: { value: "openrouter" } });
     expect(screen.getByRole("button", { name: /Segment 1/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Segment 2/ })).toBeNull();
+  });
+
+  it("distinguishes exact sent reasoning effort from unknown historical provider default accessibly", async () => {
+    vi.mocked(listAcceptedSegments).mockResolvedValue({
+      ok: true,
+      segments: [
+        segment({ id: 1, sequence: 1, text: "Current provenance." }),
+        {
+          ...segment({ id: 2, sequence: 2, text: "Migrated provenance." }),
+          metadata: providerDefaultMetadata
+        }
+      ]
+    });
+
+    render(<AcceptedSegmentsView />);
+
+    expect(await screen.findByRole("button", { name: /Segment 2/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+
+    const reasoningTerms = screen.getAllByText("Reasoning intent");
+    expect(reasoningTerms).toHaveLength(2);
+    expect(reasoningTerms.map((term) => ({
+      term: term.tagName,
+      definition: term.nextElementSibling?.tagName,
+      value: term.nextElementSibling?.textContent
+    }))).toEqual([
+      { term: "DT", definition: "DD", value: "high (exact sent effort)" },
+      { term: "DT", definition: "DD", value: "provider_default (historical; exact effort unknown)" }
+    ]);
+    expect(screen.getByText("high (exact sent effort)")).toBeTruthy();
+    expect(screen.getByText("provider_default (historical; exact effort unknown)")).toBeTruthy();
+
+    const filter = screen.getByRole("searchbox", { name: "Filter archive" });
+    fireEvent.change(filter, { target: { value: "exact effort unknown" } });
+    expect(screen.queryByRole("button", { name: /Segment 1/ })).toBeNull();
+    expect(screen.getByRole("button", { name: /Segment 2/ })).toBeTruthy();
   });
 
   it("toggles collapsed prose with mouse and keyboard while keeping collapsed prose out of the DOM", async () => {
@@ -487,20 +525,24 @@ describe("AcceptedSegmentsView", () => {
       expect(plainText).toContain("Filtered-visible prose.");
       expect(markdown).toContain("- Source: OpenRouter");
       expect(markdown).toContain("- Temperature: Provider default");
+      expect(markdown).toContain("- Reasoning intent: provider_default (historical; exact effort unknown)");
       expect(markdown).toContain("- Source: User-supplied");
       expect(plainText).toContain("Source: OpenRouter");
       expect(plainText).toContain("Temperature: Provider default");
+      expect(plainText).toContain("Reasoning intent: provider_default (historical; exact effort unknown)");
       expect(plainText).toContain("Source: User-supplied");
       expect(markdown?.match(/^- Model:/gm)).toHaveLength(1);
       expect(markdown?.match(/^- Provider:/gm)).toHaveLength(1);
       expect(markdown?.match(/^- Temperature:/gm)).toHaveLength(1);
       expect(markdown?.match(/^- Max output tokens:/gm)).toHaveLength(1);
       expect(markdown?.match(/^- Top P:/gm)).toHaveLength(1);
+      expect(markdown?.match(/^- Reasoning intent:/gm)).toHaveLength(1);
       expect(plainText?.match(/^Model:/gm)).toHaveLength(1);
       expect(plainText?.match(/^Provider:/gm)).toHaveLength(1);
       expect(plainText?.match(/^Temperature:/gm)).toHaveLength(1);
       expect(plainText?.match(/^Max output tokens:/gm)).toHaveLength(1);
       expect(plainText?.match(/^Top P:/gm)).toHaveLength(1);
+      expect(plainText?.match(/^Reasoning intent:/gm)).toHaveLength(1);
     } finally {
       restoreUrlProperty("createObjectURL", originalCreateObjectUrl);
       restoreUrlProperty("revokeObjectURL", originalRevokeObjectUrl);
@@ -540,6 +582,7 @@ const metadata = {
   temperatureMode: "explicit",
   temperature: 0.4,
   maxOutputTokens: 2200,
+  reasoningIntent: "high",
   topP: 0.9,
   versions: {
     template: "template-1",
@@ -554,6 +597,7 @@ const providerDefaultMetadata = {
   provider: "openrouter",
   temperatureMode: "provider_default",
   maxOutputTokens: 2200,
+  reasoningIntent: "provider_default",
   versions: metadata.versions
 } satisfies AcceptedSegment["metadata"];
 

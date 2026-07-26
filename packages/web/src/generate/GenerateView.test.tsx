@@ -214,7 +214,11 @@ describe("GenerateView", () => {
   it("edits and accepts the current draft candidate with its generation metadata", async () => {
     const storageSetItem = vi.spyOn(Storage.prototype, "setItem");
     vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
-    vi.mocked(generate).mockResolvedValue({ ok: true, candidate: { text: "Candidate prose." }, metadata: candidateMetadata() });
+    vi.mocked(generate).mockResolvedValue({
+      ok: true,
+      candidate: { text: "Candidate prose." },
+      metadata: candidateMetadata({ reasoningEffort: "high" })
+    });
     vi.mocked(acceptCandidate).mockResolvedValue({
       ok: true,
       segment: { id: 9, sequence: 4, createdAt: "2026-06-06T08:10:00.000Z" }
@@ -248,6 +252,7 @@ describe("GenerateView", () => {
         temperatureMode: "explicit",
         temperature: 0.4,
         maxOutputTokens: 2200,
+        reasoningIntent: "high",
         versions: {
           template: "template-1",
           compiler: "compiler-1",
@@ -789,6 +794,7 @@ describe("GenerateView", () => {
         temperatureMode: "explicit",
         temperature: 0.7,
         maxOutputTokens: 2200,
+        reasoningIntent: "low",
         versions: {
           template: "template-1",
           compiler: "compiler-1",
@@ -955,6 +961,7 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1") {
 function candidateMetadata(overrides: Partial<{
   model: string;
   temperature: number;
+  reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 }> = {}) {
   return {
     model: overrides.model ?? "openai/gpt-4.1",
@@ -964,7 +971,7 @@ function candidateMetadata(overrides: Partial<{
     completionCeilingClass: "prose" as const,
     maxOutputTokens: 2200,
     reasoningEnabled: true as const,
-    reasoningEffort: "low" as const,
+    reasoningEffort: overrides.reasoningEffort ?? "low",
     reasoningExcluded: true as const,
     versions: {
       template: "template-1",

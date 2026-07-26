@@ -497,6 +497,7 @@ describe("api client", () => {
       temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
+      reasoningIntent: "medium",
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     } satisfies AcceptedSegment["metadata"];
     const success = {
@@ -533,6 +534,7 @@ describe("api client", () => {
       temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
+      reasoningIntent: "medium",
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     } satisfies AcceptedSegment["metadata"];
     const failure = {
@@ -553,6 +555,7 @@ describe("api client", () => {
       temperatureMode: "explicit",
       temperature: 0.4,
       maxOutputTokens: 2200,
+      reasoningIntent: "medium",
       topP: 0.9,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     } satisfies AcceptedSegment["metadata"];

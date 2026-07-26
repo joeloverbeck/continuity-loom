@@ -6,11 +6,22 @@ export const acceptedSegmentVersionsSchema = z.strictObject({
   contract: z.string().min(1)
 });
 
+export const acceptedSegmentReasoningIntentSchema = z.enum([
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+  "max",
+  "provider_default"
+]);
+
 const openRouterAcceptedSegmentProvenanceBase = {
   source: z.literal("openrouter"),
   model: z.string().min(1),
   provider: z.literal("openrouter"),
   maxOutputTokens: z.number().int(),
+  reasoningIntent: acceptedSegmentReasoningIntentSchema,
   topP: z.number().optional(),
   versions: acceptedSegmentVersionsSchema
 };

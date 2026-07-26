@@ -100,7 +100,7 @@ describe("SPEC-003 record tables and repository", () => {
         DROP TABLE record_references;
         DROP TABLE records;
       `);
-      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 5 });
+      expect(database.prepare("PRAGMA user_version").get()).toEqual({ user_version: 6 });
     } finally {
       database.close();
     }

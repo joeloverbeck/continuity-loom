@@ -510,6 +510,7 @@ async function addAcceptedSegment(fastify: FastifyApp, text: string): Promise<vo
         temperatureMode: "explicit",
         temperature: 0.1,
         maxOutputTokens: 500,
+        reasoningIntent: "low",
         versions: { template: "test", compiler: "test", contract: "test" }
       }
     }

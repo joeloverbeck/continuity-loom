@@ -1,6 +1,7 @@
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { createServer } from "./server.js";
@@ -19,7 +20,7 @@ function app(options: Parameters<typeof createServer>[0] = {}): ReturnType<typeo
   return fastify;
 }
 
-async function openProject(fastify: ReturnType<typeof createServer>): Promise<void> {
+async function openProject(fastify: ReturnType<typeof createServer>): Promise<string> {
   const response = await fastify.inject({
     method: "POST",
     url: "/api/project/create",
@@ -31,6 +32,7 @@ async function openProject(fastify: ReturnType<typeof createServer>): Promise<vo
   });
 
   expect(response.statusCode).toBe(201);
+  return (response.json() as { folderPath: string }).folderPath;
 }
 
 async function putStoryConfig(
@@ -160,6 +162,68 @@ describe("compile routes", () => {
     expect(firstBody.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
     expect(secondBody.prompt).toBe(firstBody.prompt);
     expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
+  });
+
+  it("keeps accepted reasoning provenance out of prompt bytes and request freshness", async () => {
+    const fastify = app();
+    const folderPath = await openProject(fastify);
+    await putStoryConfig(fastify);
+    const accepted = await fastify.inject({
+      method: "POST",
+      url: "/api/accepted-segments",
+      payload: {
+        text: "Accepted prose stays outside future prose prompts.",
+        generationMetadata: {
+          source: "openrouter",
+          model: "openai/gpt-4.1",
+          provider: "openrouter",
+          temperatureMode: "explicit",
+          temperature: 0.4,
+          maxOutputTokens: 2200,
+          reasoningIntent: "low",
+          versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
+        }
+      }
+    });
+    expect(accepted.statusCode).toBe(201);
+    await putBrief(fastify, {
+      generation_validation_focus: {
+        validation_focus_tags: {
+          generation_context: ["continuation_after_accepted_segment"],
+          expected_local_modes: [],
+          possible_durable_changes: []
+        }
+      }
+    });
+
+    const first = await fastify.inject({ method: "POST", url: "/api/compile" });
+    const database = new DatabaseSync(join(folderPath, "loom.sqlite"));
+    try {
+      const row = database.prepare("SELECT metadata_json FROM accepted_segments WHERE sequence = 1").get() as {
+        metadata_json: string;
+      };
+      database.prepare("UPDATE accepted_segments SET metadata_json = ? WHERE sequence = 1").run(
+        JSON.stringify({ ...JSON.parse(row.metadata_json), reasoningIntent: "high" })
+      );
+    } finally {
+      database.close();
+    }
+    const second = await fastify.inject({ method: "POST", url: "/api/compile" });
+    const firstBody = first.json() as {
+      prompt: string;
+      metadata: { fingerprint: string };
+      providerRequest: { requestFingerprint: string };
+    };
+    const secondBody = second.json() as typeof firstBody;
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(secondBody.prompt).toBe(firstBody.prompt);
+    expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
+    expect(secondBody.providerRequest.requestFingerprint).toBe(firstBody.providerRequest.requestFingerprint);
+    expect(firstBody.prompt).not.toContain("reasoningIntent");
+    expect(firstBody.prompt).not.toContain("provider_default");
+    expect(firstBody.prompt).not.toContain("Accepted prose stays outside future prose prompts.");
   });
 
   it("compiles an ideation preview with relaxed readiness", async () => {

@@ -63,6 +63,7 @@ describe("accepted segment provenance project-open migration", () => {
           temperature: firstLegacyMetadata.temperature,
           maxOutputTokens: firstLegacyMetadata.maxOutputTokens,
           topP: firstLegacyMetadata.topP,
+          reasoningIntent: "provider_default",
           versions: firstLegacyMetadata.versions
         })
       },
@@ -75,6 +76,7 @@ describe("accepted segment provenance project-open migration", () => {
           temperatureMode: "explicit",
           temperature: secondLegacyMetadata.temperature,
           maxOutputTokens: secondLegacyMetadata.maxOutputTokens,
+          reasoningIntent: "provider_default",
           versions: secondLegacyMetadata.versions
         })
       }
@@ -163,6 +165,7 @@ describe("accepted segment provenance project-open migration", () => {
         temperature: index === 0 ? firstLegacyMetadata.temperature : secondLegacyMetadata.temperature,
         maxOutputTokens: index === 0 ? firstLegacyMetadata.maxOutputTokens : secondLegacyMetadata.maxOutputTokens,
         ...(index === 0 ? { topP: firstLegacyMetadata.topP } : {}),
+        reasoningIntent: "provider_default",
         versions: index === 0 ? firstLegacyMetadata.versions : secondLegacyMetadata.versions
       })
     })));
@@ -207,6 +210,110 @@ describe("accepted segment provenance project-open migration", () => {
     expect(await readFile(projectMetadataPath, "utf8")).toBe(originalMetadata);
     expect(acceptedRows(folderPath)).toEqual(before);
   });
+
+  it("adds historical reasoning intent only to older OpenRouter provenance and remains idempotent", async () => {
+    const folderPath = await createLegacyV5ReasoningProject();
+    const before = acceptedRows(folderPath);
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({
+      ok: true,
+      status: { appSchemaVersion: 6, storeUserVersion: 6 }
+    });
+    await manager.closeProject();
+
+    const migrated = acceptedRows(folderPath);
+    expect(migrated).toEqual([
+      {
+        ...before[0],
+        metadata_json: JSON.stringify({
+          source: "openrouter",
+          model: firstLegacyMetadata.model,
+          provider: "openrouter",
+          temperatureMode: "explicit",
+          temperature: firstLegacyMetadata.temperature,
+          maxOutputTokens: firstLegacyMetadata.maxOutputTokens,
+          topP: firstLegacyMetadata.topP,
+          reasoningIntent: "provider_default",
+          versions: firstLegacyMetadata.versions
+        })
+      },
+      before[1],
+      before[2]
+    ]);
+
+    const reopened = await manager.openProject(folderPath);
+    expect(reopened).toMatchObject({ ok: true });
+    await manager.closeProject();
+    expect(acceptedRows(folderPath)).toEqual(migrated);
+  });
+
+  it("fails closed on malformed version-5 reasoning provenance without changing the project", async () => {
+    const folderPath = await createLegacyV5ReasoningProject();
+    rewriteAcceptedMetadata(folderPath, 1, {
+      source: "openrouter",
+      model: firstLegacyMetadata.model,
+      provider: "openrouter",
+      temperatureMode: "explicit",
+      temperature: firstLegacyMetadata.temperature,
+      maxOutputTokens: firstLegacyMetadata.maxOutputTokens,
+      reasoningTokens: 400,
+      versions: firstLegacyMetadata.versions
+    });
+    const before = acceptedRows(folderPath);
+    const originalMetadata = await readFile(join(folderPath, "continuity-loom.project.json"), "utf8");
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "migration-failed" });
+    expect(manager.getActiveProjectStatus()).toEqual({ open: false });
+    expect(projectVersion(folderPath)).toBe(5);
+    expect(await metadataVersion(folderPath)).toBe(5);
+    expect(await readFile(join(folderPath, "continuity-loom.project.json"), "utf8")).toBe(originalMetadata);
+    expect(acceptedRows(folderPath)).toEqual(before);
+  });
+
+  it("rolls back the reasoning-intent migration and manifest when an accepted-row rewrite fails", async () => {
+    const folderPath = await createLegacyV5ReasoningProject();
+    installAcceptedUpdateFailureTrigger(folderPath);
+    const before = acceptedRows(folderPath);
+    const originalMetadata = await readFile(join(folderPath, "continuity-loom.project.json"), "utf8");
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+
+    const opened = await manager.openProject(folderPath);
+
+    expect(opened).toMatchObject({ ok: false, kind: "migration-failed" });
+    expect(manager.getActiveProjectStatus()).toEqual({ open: false });
+    expect(projectVersion(folderPath)).toBe(5);
+    expect(await metadataVersion(folderPath)).toBe(5);
+    expect(await readFile(join(folderPath, "continuity-loom.project.json"), "utf8")).toBe(originalMetadata);
+    expect(acceptedRows(folderPath)).toEqual(before);
+  });
+
+  it("preserves exact current and historical reasoning intent in a consistent backup", async () => {
+    const folderPath = await createLegacyV5ReasoningProject();
+    const manager = createProjectStoreManager({ applicationRoot: join(folderPath, "app") });
+    expect(await manager.openProject(folderPath)).toMatchObject({ ok: true });
+
+    const backup = await manager.createBackup();
+    const backupDatabase = new DatabaseSync(backup.backupPath);
+    try {
+      const metadata = backupDatabase
+        .prepare("SELECT metadata_json FROM accepted_segments ORDER BY sequence")
+        .all() as Array<{ metadata_json: string }>;
+      expect(metadata.map(({ metadata_json }) => JSON.parse(metadata_json))).toMatchObject([
+        { source: "openrouter", reasoningIntent: "provider_default" },
+        { source: "openrouter", reasoningIntent: "high" },
+        { source: "user_supplied" }
+      ]);
+    } finally {
+      backupDatabase.close();
+      await manager.closeProject();
+    }
+  });
 });
 
 async function createLegacyV3Project(): Promise<string> {
@@ -240,6 +347,53 @@ async function createLegacyV4Project(): Promise<string> {
   rewriteAcceptedMetadata(folderPath, 1, { source: "openrouter", ...firstLegacyMetadata });
   rewriteAcceptedMetadata(folderPath, 2, { source: "openrouter", ...secondLegacyMetadata });
   return folderPath;
+}
+
+async function createLegacyV5ReasoningProject(): Promise<string> {
+  const parentPath = await mkdtemp(join(tmpdir(), "loom-accepted-reasoning-migration-"));
+  const manager = createProjectStoreManager({ applicationRoot: join(parentPath, "app") });
+  const status = await manager.createProject({
+    parentPath,
+    folderName: "legacy-v5",
+    title: "Legacy reasoning provenance"
+  });
+  await manager.closeProject();
+  await setProjectVersion(status.folderPath, 5);
+
+  const database = new DatabaseSync(join(status.folderPath, "loom.sqlite"));
+  try {
+    const insert = database.prepare(
+      "INSERT INTO accepted_segments (sequence, text, metadata_json, created_at) VALUES (?, ?, ?, ?)"
+    );
+    insert.run(1, "Historical OpenRouter prose.", JSON.stringify({
+      source: "openrouter",
+      model: firstLegacyMetadata.model,
+      provider: "openrouter",
+      temperatureMode: "explicit",
+      temperature: firstLegacyMetadata.temperature,
+      maxOutputTokens: firstLegacyMetadata.maxOutputTokens,
+      topP: firstLegacyMetadata.topP,
+      versions: firstLegacyMetadata.versions
+    }), "2026-07-26T20:00:00.000Z");
+    insert.run(2, "Already current OpenRouter prose.", JSON.stringify({
+      source: "openrouter",
+      model: secondLegacyMetadata.model,
+      provider: "openrouter",
+      temperatureMode: "explicit",
+      temperature: secondLegacyMetadata.temperature,
+      maxOutputTokens: secondLegacyMetadata.maxOutputTokens,
+      reasoningIntent: "high",
+      versions: secondLegacyMetadata.versions
+    }), "2026-07-26T20:05:00.000Z");
+    insert.run(3, "User supplied prose.", JSON.stringify({
+      source: "user_supplied",
+      versions: firstLegacyMetadata.versions
+    }), "2026-07-26T20:10:00.000Z");
+  } finally {
+    database.close();
+  }
+
+  return status.folderPath;
 }
 
 async function setProjectVersion(folderPath: string, version: number): Promise<void> {

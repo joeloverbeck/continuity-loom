@@ -389,6 +389,7 @@ function acceptedOpenRouterProvenance(
         temperatureMode: "explicit",
         temperature: metadata.temperature,
         maxOutputTokens: metadata.maxOutputTokens,
+        reasoningIntent: metadata.reasoningEffort,
         ...(metadata.topP === undefined ? {} : { topP: metadata.topP }),
         versions: metadata.versions
       }
@@ -398,6 +399,7 @@ function acceptedOpenRouterProvenance(
         provider: metadata.provider,
         temperatureMode: "provider_default",
         maxOutputTokens: metadata.maxOutputTokens,
+        reasoningIntent: metadata.reasoningEffort,
         ...(metadata.topP === undefined ? {} : { topP: metadata.topP }),
         versions: metadata.versions
       };

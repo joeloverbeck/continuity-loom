@@ -341,7 +341,7 @@ Use "Expand all" when you want whole-story reading or browser find across the fu
 
 The archive also lets you filter and export accepted output. Export always uses the complete archive in story order, independent of filters or expansion state. It does not provide an "include in prompt" action. If something in accepted prose should affect future generation, update the story records, current authoritative state, immediate handoff, or another user-authored continuity field.
 
-Each accepted segment identifies its source as `OpenRouter` or `User-supplied`, and source is searchable from the archive filter. OpenRouter entries show their actual model, provider, generation settings, and compiler versions. Temperature is the sent number for explicit mode or **Provider default** when the parameter was omitted; Top P shows its sent numeric value or **Not set** when the parameter was omitted. User-supplied entries show the compiler versions associated with the inspected prompt and omit model, provider, and generation-setting fields instead of displaying blank or invented values. Markdown and text exports preserve the same truthful source distinction in story order.
+Each accepted segment identifies its source as `OpenRouter` or `User-supplied`, and source is searchable from the archive filter. OpenRouter entries show their actual model, provider, generation settings, and compiler versions. Temperature is the sent number for explicit mode or **Provider default** when the parameter was omitted; Top P shows its sent numeric value or **Not set** when the parameter was omitted. New OpenRouter entries show the exact sent reasoning effort captured with that generated candidate, even if Settings change later. Older migrated entries show **provider_default (historical; exact effort unknown)**: this means only that the segment predates exact effort capture, not that Continuity Loom reconstructed what the provider did. Reasoning text, summaries, details, and provider-reported reasoning-token counts never enter accepted provenance. User-supplied entries show the compiler versions associated with the inspected prompt and omit model, provider, and generation-setting fields instead of displaying blank or invented values. Markdown and text exports preserve the same truthful source distinction in story order.
 
 After acceptance, Continuity Loom reminds you that durable changes likely require manual record updates. The app never extracts canon from prose automatically.
 
@@ -351,7 +351,7 @@ Accepted-Segment Change Review can help review the latest accepted segment again
 
 The simplest backup is to close the project and copy the whole project folder somewhere safe.
 
-When the app offers a backup workflow, use "Create Backup Copy" to produce a consistent timestamped SQLite backup without needing to understand SQLite sidecar files.
+When the app offers a backup workflow, use "Create Backup Copy" to produce a consistent timestamped SQLite backup without needing to understand SQLite sidecar files. Accepted OpenRouter reasoning intent is part of the same accepted-segment metadata in the project store, so exact current efforts and historical `provider_default` markers remain intact when you copy, back up, restore, or reopen the project.
 
 Backup copies are safety copies, not branches or alternate timelines.
 
