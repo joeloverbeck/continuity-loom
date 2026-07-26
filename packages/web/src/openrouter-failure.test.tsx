@@ -17,6 +17,7 @@ const genericMessages: Record<TransportErrorCategory, string> = {
   "server-error": "OpenRouter reported a server error.",
   "structured-output-incompatible-model": "The selected model does not support strict structured output.",
   "structured-output-capability-unknown": "Capability data for the selected model is missing or unusable.",
+  "reasoning-effort-incompatible-model": "The selected model does not support the configured reasoning effort.",
   "provider-unavailable": "The selected model or provider is unavailable.",
   "rate-limit": "OpenRouter rate limit reached.",
   timeout: "OpenRouter request timed out.",

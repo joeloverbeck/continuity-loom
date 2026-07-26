@@ -34,10 +34,81 @@ describe("OpenRouter settings boundary", () => {
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      proseMaxOutputTokens: 1024,
-      assistanceMaxOutputTokens: 4096,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 8192,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: false
     });
+  });
+
+  it("atomically adds missing class efforts without changing preserved canonical ceilings", () => {
+    writeFileSync(getOpenRouterConfigPath(), `{
+  "model": "existing/model",
+  "temperatureMode": "explicit",
+  "temperature": 0.35,
+  "proseMaxOutputTokens": 1536,
+  "assistanceMaxOutputTokens": 6144
+}
+`, "utf8");
+
+    expect(readOpenRouterSettings()).toMatchObject({
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 6144,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low"
+    });
+    const migrated = readRawConfig();
+    expect(migrated).toContain('"proseReasoningEffort": "low"');
+    expect(migrated).toContain('"assistanceReasoningEffort": "low"');
+
+    expect(readOpenRouterSettings()).toMatchObject({
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 6144,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low"
+    });
+    expect(readRawConfig()).toBe(migrated);
+  });
+
+  it.each([
+    { missing: "proseReasoningEffort", preserved: "assistanceReasoningEffort", preservedValue: "max" },
+    { missing: "assistanceReasoningEffort", preserved: "proseReasoningEffort", preservedValue: "high" }
+  ] as const)("adds only missing $missing and preserves the other class intent", ({ missing, preserved, preservedValue }) => {
+    const settings = {
+      model: "existing/model",
+      temperatureMode: "explicit",
+      temperature: 0.35,
+      proseMaxOutputTokens: 1536,
+      assistanceMaxOutputTokens: 6144,
+      [preserved]: preservedValue
+    };
+    writeFileSync(getOpenRouterConfigPath(), `${JSON.stringify(settings, null, 2)}\n`, "utf8");
+
+    const migrated = readOpenRouterSettings();
+    expect(migrated[missing]).toBe("low");
+    expect(migrated[preserved]).toBe(preservedValue);
+    expect(migrated).toMatchObject({ proseMaxOutputTokens: 1536, assistanceMaxOutputTokens: 6144 });
+  });
+
+  it("leaves a pre-reasoning file intact when its atomic migration write fails", () => {
+    const original = `{
+  "model": "existing/model",
+  "temperatureMode": "explicit",
+  "temperature": 0.35,
+  "proseMaxOutputTokens": 1536,
+  "assistanceMaxOutputTokens": 6144
+}
+`;
+    writeFileSync(getOpenRouterConfigPath(), original, "utf8");
+    chmodSync(configDir, 0o500);
+
+    try {
+      expect(() => readOpenRouterSettings()).toThrow();
+    } finally {
+      chmodSync(configDir, 0o700);
+    }
+    expect(readRawConfig()).toBe(original);
   });
 
   it("normalizes legacy numeric temperature settings to explicit intent without changing the value", () => {
@@ -54,6 +125,8 @@ describe("OpenRouter settings boundary", () => {
       temperature: 0.35,
       proseMaxOutputTokens: 1536,
       assistanceMaxOutputTokens: 1536,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: false
     });
     expect(readRawConfig()).toBe(`{
@@ -61,7 +134,9 @@ describe("OpenRouter settings boundary", () => {
   "temperatureMode": "explicit",
   "temperature": 0.35,
   "proseMaxOutputTokens": 1536,
-  "assistanceMaxOutputTokens": 1536
+  "assistanceMaxOutputTokens": 1536,
+  "proseReasoningEffort": "low",
+  "assistanceReasoningEffort": "low"
 }
 `);
   });
@@ -145,6 +220,8 @@ describe("OpenRouter settings boundary", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: 2048,
       assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: false
     });
     expect(readOpenRouterSettings()).toEqual(written);
@@ -206,6 +283,8 @@ describe("OpenRouter settings boundary", () => {
       temperature: 0.7,
       proseMaxOutputTokens: 1800,
       assistanceMaxOutputTokens: 4200,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       topP: 0.9,
       hasOpenRouterCredential: false
     });
@@ -217,6 +296,8 @@ describe("OpenRouter settings boundary", () => {
   "temperature": 0.7,
   "proseMaxOutputTokens": 1800,
   "assistanceMaxOutputTokens": 4200,
+  "proseReasoningEffort": "low",
+  "assistanceReasoningEffort": "low",
   "topP": 0.9
 }
 `);
@@ -251,8 +332,10 @@ describe("OpenRouter settings boundary", () => {
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      proseMaxOutputTokens: 1024,
-      assistanceMaxOutputTokens: 4096,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 8192,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: false
     });
   });

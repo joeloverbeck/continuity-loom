@@ -92,6 +92,45 @@ describe("refreshModelList", () => {
     });
   });
 
+  it("decodes supported_efforts into the exact canonical selectable set", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(jsonResponse({
+        data: [
+          {
+            id: "vendor/partial",
+            reasoning: { supported_efforts: ["max", "none", "low", "future", "minimal", "low"] }
+          },
+          { id: "vendor/all", reasoning: { supported_efforts: null } },
+          { id: "vendor/no-recognized", reasoning: { supported_efforts: ["none", "future"] } },
+          { id: "vendor/malformed", reasoning: { supported_efforts: "low" } },
+          { id: "vendor/omitted" },
+          { id: "vendor/top-level-only", supported_efforts: ["low"] }
+        ]
+      })))
+    );
+
+    await expect(refreshModelList({ apiKey: "sk-or-test" })).resolves.toEqual({
+      ok: true,
+      models: [
+        {
+          id: "vendor/partial",
+          name: "vendor/partial",
+          supportedEfforts: ["minimal", "low", "max"]
+        },
+        {
+          id: "vendor/all",
+          name: "vendor/all",
+          supportedEfforts: ["minimal", "low", "medium", "high", "xhigh", "max"]
+        },
+        { id: "vendor/no-recognized", name: "vendor/no-recognized", supportedEfforts: [] },
+        { id: "vendor/malformed", name: "vendor/malformed" },
+        { id: "vendor/omitted", name: "vendor/omitted" },
+        { id: "vendor/top-level-only", name: "vendor/top-level-only" }
+      ]
+    });
+  });
+
   it("returns missing-key before any network request when the key is absent", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);

@@ -544,6 +544,31 @@ test("structured audit rows render exact manifest coverage and reject inconsiste
   );
 });
 
+test("structured closeout audit escapes manifest-authored angle literals", () => {
+  const literalManifest = buildAcceptanceManifest({
+    number: 197,
+    body: "## Acceptance criteria\n\n- [ ] Send `reasoning: { effort: <selected effort> }`.\n"
+  });
+  const body = buildCloseoutBodyScaffold(literalManifest, {
+    scopeMode: "issue-set",
+    anchorIssue: 197,
+    reviewMode: "normal",
+    evidence: {
+      auditRows: [{
+        issue: 197,
+        checkId: "AC1",
+        atoms: "exact reasoning effort",
+        proofSurfaces: "build-closeout-body.test.mjs",
+        sequence: "inspect -> send",
+        status: "satisfied"
+      }]
+    }
+  });
+
+  assert.match(body, /effort: &lt;selected effort&gt;/);
+  assert.doesNotMatch(body, /<selected effort>/);
+});
+
 test("split manifests can reuse complete TDD evidence while partitioning structured audit rows", () => {
   const source = buildAcceptanceManifest([
     {

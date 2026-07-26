@@ -1,6 +1,7 @@
 import type { ModelListEntry } from "../settings.js";
 
 import { normalizeOpenRouterError, type NormalizedTransportError } from "./errors.js";
+import { REASONING_EFFORTS, type ReasoningEffort } from "./output-policy.js";
 import type { OpenRouterRequestConfig } from "./client.js";
 
 const defaultModelsEndpoint = "https://openrouter.ai/api/v1/models";
@@ -102,6 +103,8 @@ function extractModels(body: unknown): ModelListEntry[] | undefined {
     const name = getUnknownProperty(model, "name");
     const contextLength = getUnknownProperty(model, "context_length");
     const supportedParameters = extractSupportedParameters(getUnknownProperty(model, "supported_parameters"));
+    const reasoning = getUnknownProperty(model, "reasoning");
+    const supportedEfforts = extractSupportedEfforts(getUnknownProperty(reasoning, "supported_efforts"));
 
     if (typeof id !== "string" || !id.trim()) {
       return [];
@@ -120,8 +123,24 @@ function extractModels(body: unknown): ModelListEntry[] | undefined {
       entry.supportedParameters = supportedParameters;
     }
 
+    if (supportedEfforts !== undefined) {
+      entry.supportedEfforts = supportedEfforts;
+    }
+
     return [entry];
   });
+}
+
+function extractSupportedEfforts(value: unknown): ReasoningEffort[] | undefined {
+  if (value === null) {
+    return [...REASONING_EFFORTS];
+  }
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const advertised = new Set(value.filter((entry): entry is string => typeof entry === "string"));
+  return REASONING_EFFORTS.filter((effort) => advertised.has(effort));
 }
 
 function extractSupportedParameters(value: unknown): string[] | undefined {

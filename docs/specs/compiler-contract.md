@@ -29,18 +29,28 @@ only for an explicit Top P. Strict JSON Schema additionally requires
 `structured_outputs`; completion length accepts either advertised provider
 alias; tools and tool choice are requirements only when declared.
 
-Output policy selects exactly one global completion ceiling before request
-construction: Prose for Generate, and Assistance for Ideation, Record Hygiene,
+Output policy selects exactly one global completion ceiling and reasoning
+effort before request construction: Prose for Generate, and Assistance for Ideation, Record Hygiene,
 Cast Possibilities full analysis and target regeneration, and Accepted-Segment
 Change Review. Prompt inspection discloses the selected Prose or Assistance
-class and value with the exact model, temperature intent, optional Top P, and
-provider-request fingerprint separately from prompt metadata. A changed model,
-sampling setting, or applicable ceiling invalidates send eligibility even when
-prompt bytes are unchanged; changing only the unused ceiling does not alter the
-finalized request or fingerprint. Unknown capability data,
+class and value with the exact model, temperature intent, optional Top P,
+mandatory reasoning effort, `exclude: true`, current capability snapshot, and
+provider-request fingerprint separately from prompt metadata. The finalized
+request contains exactly `reasoning: { effort, exclude: true }`. A changed
+model, sampling setting, applicable ceiling, applicable effort, exclusion,
+capability snapshot, or prompt invalidates send eligibility; changing only an
+unused class setting does not alter the finalized request or fingerprint.
+Unknown capability data,
 known missing requirements, and post-admission transport failures have
 different manual recovery. No recovery mutates settings, refreshes, retries, or
 resends automatically.
+
+Admission requires the selected cached model to advertise the exact stored
+effort. Unknown effort capability requires explicit refresh; a known
+incompatible effort preserves the stored intent and requires an explicit model
+or effort change. The response boundary positively projects candidate content
+and safe aggregate usage only. Provider reasoning text or details never become
+workflow output, diagnostics, logs, storage, provenance, or prompt context.
 
 This provider-boundary change does not alter prompt sources, rendered prompt
 bytes, output fields, parsers, or source-profile identities. Consequently the

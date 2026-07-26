@@ -11,6 +11,7 @@ import {
   buildAuditScaffold,
   selectAcceptanceManifest
 } from "./build-acceptance-manifest.mjs";
+import { acceptanceAuditCriterionCell } from "./acceptance-audit-contract.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const validator = resolve(here, "validate-closeout-body.mjs");
@@ -117,6 +118,21 @@ test("buildAcceptanceManifest preserves source order and adds Principles", () =>
     { id: "Principles", kind: "principles", text: "Principles/ADR conformance for #359" }
   ]);
   assert.match(buildAuditScaffold(manifest), /\| #359 \| AC2 - Second exact behavior with a continuation \|/);
+});
+
+test("audit table rendering escapes manifest-authored angle literals without changing manifest text", () => {
+  const manifest = buildAcceptanceManifest({
+    number: 197,
+    body: "## Acceptance criteria\n\n- [ ] Send `reasoning: { effort: <selected effort> }`.\n"
+  });
+
+  assert.equal(manifest.issues[0].checks[0].text, "Send `reasoning: { effort: <selected effort> }`.");
+  assert.equal(
+    acceptanceAuditCriterionCell(manifest.issues[0].checks[0]),
+    "AC1 - Send `reasoning: { effort: &lt;selected effort&gt; }`."
+  );
+  assert.match(buildAuditScaffold(manifest), /effort: &lt;selected effort&gt;/);
+  assert.doesNotMatch(buildAuditScaffold(manifest), /<selected effort>/);
 });
 
 test("buildAcceptanceManifest keeps an empty Principles heading as a required check", () => {
@@ -699,7 +715,7 @@ test("audit-only validator accepts the exact ideation prompt tag from a manifest
     body: "## Acceptance criteria\n\n- [ ] Render focus once in the existing `<ideation_slots>` request header.\n"
   });
   const body = auditBody([
-    `| #397 | AC1 - Render focus once in the existing \`<ideation_slots>\` request header. | ${evidence} | satisfied |`
+    `| #397 | ${acceptanceAuditCriterionCell(manifest.issues[0].checks[0])} | ${evidence} | satisfied |`
   ]);
 
   const result = runValidator(body, manifest, ["--audit-only", "--review-entry"]);

@@ -7,6 +7,7 @@ import { pathToFileURL } from "node:url";
 import { buildAuditScaffold } from "./build-acceptance-manifest.mjs";
 import {
   ACCEPTANCE_AUDIT_HEADER,
+  markdownTableText,
   matchingAcceptanceAuditRows,
   parseAcceptanceAuditRows
 } from "./acceptance-audit-contract.mjs";
@@ -75,8 +76,6 @@ export const buildCloseoutBodySizePlan = (
     status
   };
 };
-
-const tableText = (value) => value.replaceAll("|", "&#124;").replaceAll("\n", " ").trim();
 
 const requireManifest = (manifest) => {
   if (!Array.isArray(manifest?.issues) || manifest.issues.length === 0) {
@@ -190,7 +189,7 @@ const buildStructuredAudit = (manifest, auditRows) => {
   for (const issue of manifest.issues) {
     for (const check of issue.checks) {
       const row = byKey.get(structuredAuditKey(issue.number, check.id));
-      lines.push(`| #${issue.number} | ${check.id} - ${tableText(check.text)} | atoms: ${tableText(row.atoms)}; proof surfaces: ${tableText(row.proofSurfaces)}; sequence: ${tableText(row.sequence)} | ${row.status} |`);
+      lines.push(`| #${issue.number} | ${check.id} - ${markdownTableText(check.text)} | atoms: ${markdownTableText(row.atoms)}; proof surfaces: ${markdownTableText(row.proofSurfaces)}; sequence: ${markdownTableText(row.sequence)} | ${row.status} |`);
     }
   }
   return lines.join("\n");
@@ -355,7 +354,7 @@ const tddBlock = (manifest, evidence) => {
       const disposition = mappedFixes.length > 0
         ? `${evidenceIds(mappedFixes)} mapped below`
         : row.reviewDisposition;
-      return `| #${row.issue} | ${tableText(row.contextStatus)} | ${tableText(row.authorityStatus)} | ${tableText(row.seam)} | ${tableText(row.red)} | ${tableText(row.green)} | ${tableText(row.acceptance)} | ${tableText(disposition)} |`;
+      return `| #${row.issue} | ${markdownTableText(row.contextStatus)} | ${markdownTableText(row.authorityStatus)} | ${markdownTableText(row.seam)} | ${markdownTableText(row.red)} | ${markdownTableText(row.green)} | ${markdownTableText(row.acceptance)} | ${markdownTableText(disposition)} |`;
     })
     : manifest.issues.map(
       (issue) =>
@@ -367,7 +366,7 @@ const tddBlock = (manifest, evidence) => {
     : "<N/A because review created no TDD row changes or replace with the keyed map below>";
   const reviewFixRows = reviewFixes.length > 0
     ? reviewFixes.map((fix) =>
-      `| ${fix.id} | ${tableText(fix.finding)} | ${tableText(fix.red)} | ${tableText(fix.green)} | #${fix.issue} / ${tableText(fix.seam)} | ${tableText(fix.durability)} | ${tableText(fix.browserFreshness)} | ${tableText(fix.backendCurrentness)} | ${tableText(fix.identityRefresh)} |`
+      `| ${fix.id} | ${markdownTableText(fix.finding)} | ${markdownTableText(fix.red)} | ${markdownTableText(fix.green)} | #${fix.issue} / ${markdownTableText(fix.seam)} | ${markdownTableText(fix.durability)} | ${markdownTableText(fix.browserFreshness)} | ${markdownTableText(fix.backendCurrentness)} | ${markdownTableText(fix.identityRefresh)} |`
     )
     : ["| RF-1 | <one review finding/source> | <one red command/failure or explicit skip> | <one green command/evidence> | #N / <exact Seam cell> | <durable regression or reasoned N/A> | <freshness disposition> | <currentness disposition> | <same-sink identity refresh disposition> |"];
   const accountedRows = structuredRows.length > 0
@@ -440,7 +439,7 @@ const reviewFindingLedgerBlock = (evidence) => {
   const rows = findings.length > 0
     ? findings.map((finding) => {
       const { pass, axis } = reviewFindingParts(finding);
-      return `| ${finding.id} | ${pass} | ${axis} | ${tableText(finding.reviewer)} | ${tableText(finding.originalFinding)} | ${tableText(finding.repairClass)} | ${tableText(finding.tddDisposition)} | ${tableText(finding.repair)} | ${tableText(finding.rerunEvidence)} | ${tableText(finding.finalStatus)} |`;
+      return `| ${finding.id} | ${pass} | ${axis} | ${markdownTableText(finding.reviewer)} | ${markdownTableText(finding.originalFinding)} | ${markdownTableText(finding.repairClass)} | ${markdownTableText(finding.tddDisposition)} | ${markdownTableText(finding.repair)} | ${markdownTableText(finding.rerunEvidence)} | ${markdownTableText(finding.finalStatus)} |`;
     })
     : ["| P1-standards-1 | P1 | Standards | <initial reviewer ID or local fallback> | <original finding> | <repair class> | <RF-N or structured per-finding TDD disposition> | <repair> | <affected/full-axis rerun evidence> | <fixed or accepted residual> |"];
   return `| Finding ID | Review pass | Axis | Reviewer | Original finding | Repair class | TDD disposition | Repair | Rerun evidence | Final status |

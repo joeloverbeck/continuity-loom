@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
 import { refreshModelList } from "./openrouter/models.js";
+import { REASONING_EFFORTS } from "./openrouter/output-policy.js";
 import {
   readOpenRouterSettings,
   type ModelListEntry,
@@ -14,7 +15,8 @@ const modelListEntrySchema = z
     id: z.string().trim().min(1),
     name: z.string().trim().min(1),
     contextLength: z.number().int().positive().optional(),
-    supportedParameters: z.array(z.string().trim().min(1)).optional()
+    supportedParameters: z.array(z.string().trim().min(1)).optional(),
+    supportedEfforts: z.array(z.enum(REASONING_EFFORTS)).optional()
   })
   .strict();
 
@@ -25,6 +27,8 @@ const openRouterSettingsPatchSchema = z
     temperature: z.number().min(0).max(2).optional(),
     proseMaxOutputTokens: z.number().int().positive().optional(),
     assistanceMaxOutputTokens: z.number().int().positive().optional(),
+    proseReasoningEffort: z.enum(REASONING_EFFORTS).optional(),
+    assistanceReasoningEffort: z.enum(REASONING_EFFORTS).optional(),
     topP: z.number().min(0).max(1).nullable().optional(),
     cachedModels: z.array(modelListEntrySchema).optional()
   })
@@ -88,6 +92,12 @@ function toSettingsPatch(patch: z.infer<typeof openRouterSettingsPatchSchema>): 
   if (patch.assistanceMaxOutputTokens !== undefined) {
     settingsPatch.assistanceMaxOutputTokens = patch.assistanceMaxOutputTokens;
   }
+  if (patch.proseReasoningEffort !== undefined) {
+    settingsPatch.proseReasoningEffort = patch.proseReasoningEffort;
+  }
+  if (patch.assistanceReasoningEffort !== undefined) {
+    settingsPatch.assistanceReasoningEffort = patch.assistanceReasoningEffort;
+  }
   if (patch.topP !== undefined) {
     settingsPatch.topP = patch.topP;
   }
@@ -110,6 +120,10 @@ function toModelListEntry(model: z.infer<typeof modelListEntrySchema>): ModelLis
 
   if (model.supportedParameters !== undefined) {
     entry.supportedParameters = [...model.supportedParameters];
+  }
+
+  if (model.supportedEfforts !== undefined) {
+    entry.supportedEfforts = [...model.supportedEfforts];
   }
 
   return entry;

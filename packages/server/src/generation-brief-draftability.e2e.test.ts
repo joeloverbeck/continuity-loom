@@ -431,7 +431,8 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       cachedModels: [{
         id: "test/mock-writer",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     }
   });

@@ -34,6 +34,7 @@ export interface OpenRouterTokenUsage {
   promptTokens?: number;
   completionTokens?: number;
   totalTokens?: number;
+  reasoningTokens?: number;
 }
 
 export interface OpenRouterResponseFacts {
@@ -310,10 +311,12 @@ function decodeUsage(value: unknown): OpenRouterTokenUsage | undefined {
   if (!isRecord(value)) {
     return undefined;
   }
+  const completionDetails = property(value, "completion_tokens_details");
   const usage = compactRecord({
     promptTokens: safeNonNegativeInteger(property(value, "prompt_tokens")),
     completionTokens: safeNonNegativeInteger(property(value, "completion_tokens")),
-    totalTokens: safeNonNegativeInteger(property(value, "total_tokens"))
+    totalTokens: safeNonNegativeInteger(property(value, "total_tokens")),
+    reasoningTokens: safeNonNegativeInteger(property(completionDetails, "reasoning_tokens"))
   }) as OpenRouterTokenUsage;
   return Object.keys(usage).length > 0 ? usage : undefined;
 }

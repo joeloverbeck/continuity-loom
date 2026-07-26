@@ -4,7 +4,10 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { projectCompletedAcceptanceAudit } from "./acceptance-audit-contract.mjs";
+import {
+  markdownTableText,
+  projectCompletedAcceptanceAudit
+} from "./acceptance-audit-contract.mjs";
 
 const usage =
   "Usage: node .claude/skills/implement/scripts/build-acceptance-manifest.mjs <issues.json> [--output <manifest.json>] [--audit-output <audit.md> [--completed-audit-input <completed-audit.md>]] [--select <issue[:check-id[,check-id...]]>]...";
@@ -208,8 +211,6 @@ export const selectAcceptanceManifest = (manifest, selectors = []) => {
   return { version: 1, issues };
 };
 
-const tableText = (value) => value.replaceAll("|", "&#124;").replaceAll("\n", " ").trim();
-
 export const buildAuditScaffold = (manifest) => {
   const rows = [
     "| Issue | Acceptance criterion or conformance check | Evidence | Status |",
@@ -219,7 +220,7 @@ export const buildAuditScaffold = (manifest) => {
   for (const issue of manifest.issues) {
     for (const check of issue.checks) {
       rows.push(
-        `| #${issue.number} | ${check.id} - ${tableText(check.text)} | atoms: TODO; proof surfaces: TODO; sequence: TODO or N/A because criterion is not sequence-sensitive | not done |`
+        `| #${issue.number} | ${check.id} - ${markdownTableText(check.text)} | atoms: TODO; proof surfaces: TODO; sequence: TODO or N/A because criterion is not sequence-sensitive | not done |`
       );
     }
   }

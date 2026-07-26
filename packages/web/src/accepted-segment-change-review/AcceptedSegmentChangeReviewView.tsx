@@ -405,13 +405,19 @@ function SourcePanel({
         <label className="checkboxLabel">
           <input
             type="checkbox"
-            disabled={sending}
+            disabled={sending || result.providerRequest.admission?.ok === false}
             checked={sendConfirmed}
             onChange={(event) => onConfirm(event.target.checked)}
           />
           I inspected the complete source and confirm this one-time send
         </label>
-        <button type="button" disabled={!sendConfirmed || sending} onClick={onAnalyze}>Analyze with OpenRouter</button>
+        <button
+          type="button"
+          disabled={!sendConfirmed || sending || result.providerRequest.admission?.ok === false}
+          onClick={onAnalyze}
+        >
+          Analyze with OpenRouter
+        </button>
       </section>
     </>
   );

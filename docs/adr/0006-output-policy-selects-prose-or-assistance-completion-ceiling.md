@@ -5,8 +5,8 @@ status: accepted
 # Output policy selects the Prose or Assistance completion ceiling
 
 Continuity Loom stores exactly two global local OpenRouter completion ceilings:
-the Prose ceiling, defaulting to 1,024 tokens, and the Assistance ceiling,
-defaulting to 4,096 tokens. Both are positive-integer upper bounds, not target
+the Prose ceiling, defaulting to 2,048 tokens, and the Assistance ceiling,
+defaulting to 8,192 tokens. Both are positive-integer upper bounds, not target
 lengths, guarantees, or estimates of required output size.
 
 The existing output policy is the single selection boundary. Generate uses the
@@ -36,8 +36,8 @@ from becoming active.
   freshness harder to reason about. The meaningful boundary is prose versus
   strict assistance.
 - Migrate legacy Prose to the old value but raise Assistance automatically to
-  4,096. Rejected because migration must preserve the configured cost ceiling;
-  4,096 is guidance for new configurations, not authority to alter inherited
+  8,192. Rejected because migration must preserve the configured cost ceiling;
+  8,192 is guidance for new configurations, not authority to alter inherited
   settings.
 - Derive or adjust a ceiling from prompt size, schema, model, records, prior
   output, cost, or usage. Rejected because this would manufacture an
@@ -52,3 +52,7 @@ prose continues to record the actual sent limit in its existing provenance
 field; assistance creates no accepted provenance. Suitability and context
 warnings remain non-gating inspection guidance, and neither warning changes a
 setting or sends, retries, continues, or resends a completion.
+
+ADR 0007 extends this same output-policy boundary with mandatory class-specific
+reasoning effort and exclusion. It does not replace this ADR's ceiling
+ownership or cost-preserving migration rule.

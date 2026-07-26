@@ -7,12 +7,20 @@ import {
 } from "./openrouter/request.js";
 
 describe("buildChatCompletionRequest", () => {
-  it("selects one completion ceiling through the output policy", () => {
+  it("selects one mandatory reasoning policy and ceiling through the output policy", () => {
     const settings = {
       model: "test/model",
       temperatureMode: "provider_default" as const,
       proseMaxOutputTokens: 1200,
-      assistanceMaxOutputTokens: 5000
+      assistanceMaxOutputTokens: 5000,
+      proseReasoningEffort: "low" as const,
+      assistanceReasoningEffort: "high" as const,
+      cachedModels: [{
+        id: "test/model",
+        name: "Test Model",
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low" as const, "high" as const]
+      }]
     };
     const proseRequest = buildChatCompletionRequest({ prompt: "Same prompt", settings, outputPolicy: "prose" });
     const assistanceRequest = buildChatCompletionRequest({
@@ -23,28 +31,39 @@ describe("buildChatCompletionRequest", () => {
 
     expect(inspectChatCompletionRequest(proseRequest, "prose", settings)).toMatchObject({
       completionCeilingClass: "prose",
-      maxOutputTokens: 1200
+      maxOutputTokens: 1200,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
+      capabilitySnapshot: { supportedEfforts: ["low", "high"] },
+      admission: { ok: true }
     });
     expect(inspectChatCompletionRequest(assistanceRequest, "strict", settings)).toMatchObject({
       completionCeilingClass: "assistance",
-      maxOutputTokens: 5000
+      maxOutputTokens: 5000,
+      reasoningEnabled: true,
+      reasoningEffort: "high",
+      reasoningExcluded: true,
+      admission: { ok: true }
     });
-    expect(fingerprintChatCompletionRequest(proseRequest)).not.toBe(
-      fingerprintChatCompletionRequest(assistanceRequest)
+    expect(proseRequest.reasoning).toEqual({ effort: "low", exclude: true });
+    expect(assistanceRequest.reasoning).toEqual({ effort: "high", exclude: true });
+    expect(fingerprintChatCompletionRequest(proseRequest, "prose", settings)).not.toBe(
+      fingerprintChatCompletionRequest(assistanceRequest, "strict", settings)
     );
-    expect(fingerprintChatCompletionRequest(proseRequest)).toBe(fingerprintChatCompletionRequest(
+    expect(fingerprintChatCompletionRequest(proseRequest, "prose", settings)).toBe(fingerprintChatCompletionRequest(
       buildChatCompletionRequest({
         prompt: "Same prompt",
         settings: { ...settings, assistanceMaxOutputTokens: 9000 },
         outputPolicy: "prose"
-      })
+      }), "prose", { ...settings, assistanceMaxOutputTokens: 9000 }
     ));
-    expect(fingerprintChatCompletionRequest(assistanceRequest)).toBe(fingerprintChatCompletionRequest(
+    expect(fingerprintChatCompletionRequest(assistanceRequest, "strict", settings)).toBe(fingerprintChatCompletionRequest(
       buildChatCompletionRequest({
         prompt: "Same prompt",
         settings: { ...settings, proseMaxOutputTokens: 3000 },
         outputPolicy: "strict"
-      })
+      }), "strict", { ...settings, proseMaxOutputTokens: 3000 }
     ));
   });
 
@@ -58,6 +77,8 @@ describe("buildChatCompletionRequest", () => {
           temperature: 0.7,
           proseMaxOutputTokens: 1800,
           assistanceMaxOutputTokens: 4096,
+          proseReasoningEffort: "low",
+          assistanceReasoningEffort: "low",
           topP: 0.9
         },
         outputPolicy: "prose"
@@ -67,6 +88,7 @@ describe("buildChatCompletionRequest", () => {
       messages: [{ role: "user", content: "Compiled prompt\nwith records." }],
       temperature: 0.7,
       max_completion_tokens: 1800,
+      reasoning: { effort: "low", exclude: true },
       top_p: 0.9,
       provider: { require_parameters: true, allow_fallbacks: false },
       plugins: [],
@@ -85,7 +107,9 @@ describe("buildChatCompletionRequest", () => {
         temperatureMode: "explicit",
         temperature: 1,
         proseMaxOutputTokens: 1024,
-        assistanceMaxOutputTokens: 4096
+        assistanceMaxOutputTokens: 4096,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "low"
       },
       outputPolicy: "prose"
     });
@@ -95,6 +119,7 @@ describe("buildChatCompletionRequest", () => {
       messages: [{ role: "user", content: "Prompt" }],
       temperature: 1,
       max_completion_tokens: 1024,
+      reasoning: { effort: "low", exclude: true },
       provider: { require_parameters: true, allow_fallbacks: false },
       plugins: [],
       transforms: [],
@@ -114,7 +139,9 @@ describe("buildChatCompletionRequest", () => {
         temperatureMode: "explicit",
         temperature: 1,
         proseMaxOutputTokens: 1024,
-        assistanceMaxOutputTokens: 4096
+        assistanceMaxOutputTokens: 4096,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "low"
       },
       outputPolicy: "strict",
       requestOptions: {
@@ -142,7 +169,9 @@ describe("buildChatCompletionRequest", () => {
       model: "anthropic/claude-sonnet-5",
       temperatureMode: "provider_default" as const,
       proseMaxOutputTokens: 1024,
-      assistanceMaxOutputTokens: 2048
+      assistanceMaxOutputTokens: 2048,
+      proseReasoningEffort: "low" as const,
+      assistanceReasoningEffort: "low" as const
     };
     const request = buildChatCompletionRequest({
       prompt: "Prompt",
@@ -156,16 +185,33 @@ describe("buildChatCompletionRequest", () => {
       temperatureMode: "provider_default",
       completionCeilingClass: "assistance",
       maxOutputTokens: 2048,
-      requestFingerprint: fingerprintChatCompletionRequest(request)
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
+      capabilitySnapshot: {
+        model: "anthropic/claude-sonnet-5",
+        cacheEntryFound: false,
+        supportedParameters: null,
+        supportedEfforts: null
+      },
+      admission: {
+        ok: false,
+        category: "structured-output-capability-unknown",
+        message: "The selected model has no usable cached reasoning-effort capability data.",
+        recovery: "Refresh the OpenRouter model list, then reinspect before using the existing action. No request was sent; no retry is automatic."
+      },
+      requestFingerprint: fingerprintChatCompletionRequest(request, "strict", settings)
     });
   });
 
-  it("discloses only the selected model's cached context length without changing the request fingerprint", () => {
+  it("discloses only the selected model's capability snapshot and fingerprints cache changes", () => {
     const settings = {
       model: "provider/selected",
       temperatureMode: "provider_default" as const,
       proseMaxOutputTokens: 1024,
       assistanceMaxOutputTokens: 2048,
+      proseReasoningEffort: "low" as const,
+      assistanceReasoningEffort: "low" as const,
       cachedModels: [
         { id: "provider/other", name: "Other", contextLength: 999 },
         { id: "provider/selected", name: "Selected", contextLength: 4096 }
@@ -173,18 +219,37 @@ describe("buildChatCompletionRequest", () => {
     };
     const request = buildChatCompletionRequest({ prompt: "Prompt", settings, outputPolicy: "strict" });
 
-    expect(inspectChatCompletionRequest(request, "strict", settings)).toEqual({
+    const inspected = inspectChatCompletionRequest(request, "strict", settings);
+    expect(inspected).toEqual({
       model: "provider/selected",
       temperatureMode: "provider_default",
       completionCeilingClass: "assistance",
       maxOutputTokens: 2048,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
+      capabilitySnapshot: {
+        model: "provider/selected",
+        cacheEntryFound: true,
+        supportedParameters: null,
+        supportedEfforts: null,
+        contextLength: 4096
+      },
+      admission: {
+        ok: false,
+        category: "structured-output-capability-unknown",
+        message: "The selected model has no usable cached reasoning-effort capability data.",
+        recovery: "Refresh the OpenRouter model list, then reinspect before using the existing action. No request was sent; no retry is automatic."
+      },
       contextLength: 4096,
-      requestFingerprint: fingerprintChatCompletionRequest(request)
+      requestFingerprint: fingerprintChatCompletionRequest(request, "strict", settings)
     });
-    expect(inspectChatCompletionRequest(request, "strict", {
+    const refreshed = inspectChatCompletionRequest(request, "strict", {
       ...settings,
       cachedModels: [{ id: "provider/selected", name: "Selected" }]
-    })).not.toHaveProperty("contextLength");
+    });
+    expect(refreshed).not.toHaveProperty("contextLength");
+    expect(refreshed.requestFingerprint).not.toBe(inspected.requestFingerprint);
   });
 
   it("refuses inspection when the ceiling policy contradicts the finalized request", () => {
@@ -192,7 +257,9 @@ describe("buildChatCompletionRequest", () => {
       model: "provider/selected",
       temperatureMode: "provider_default" as const,
       proseMaxOutputTokens: 1024,
-      assistanceMaxOutputTokens: 4096
+      assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low" as const,
+      assistanceReasoningEffort: "low" as const
     };
     const request = buildChatCompletionRequest({ prompt: "Prompt", settings, outputPolicy: "prose" });
 
@@ -209,7 +276,9 @@ describe("buildChatCompletionRequest", () => {
         temperatureMode: "explicit",
         temperature: 1,
         proseMaxOutputTokens: 1024,
-        assistanceMaxOutputTokens: 4096
+        assistanceMaxOutputTokens: 4096,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "low"
       },
       outputPolicy: "prose"
     });
@@ -219,12 +288,29 @@ describe("buildChatCompletionRequest", () => {
         model: "test/model",
         temperatureMode: "provider_default",
         proseMaxOutputTokens: 1024,
-        assistanceMaxOutputTokens: 4096
+        assistanceMaxOutputTokens: 4096,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "low"
       },
       outputPolicy: "prose"
     });
 
     expect(explicit.messages).toEqual(providerDefault.messages);
-    expect(fingerprintChatCompletionRequest(explicit)).not.toBe(fingerprintChatCompletionRequest(providerDefault));
+    expect(fingerprintChatCompletionRequest(explicit, "prose", {
+      model: "test/model",
+      temperatureMode: "explicit",
+      temperature: 1,
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low"
+    })).not.toBe(fingerprintChatCompletionRequest(providerDefault, "prose", {
+      model: "test/model",
+      temperatureMode: "provider_default",
+      proseMaxOutputTokens: 1024,
+      assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low"
+    }));
   });
 });

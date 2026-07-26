@@ -5,6 +5,8 @@ import { join } from "node:path";
 
 import { z } from "zod";
 
+import { REASONING_EFFORTS, type ReasoningEffort } from "./openrouter/output-policy.js";
+
 export interface ModelListEntry {
   id: string;
   name: string;
@@ -16,12 +18,16 @@ export interface ModelListEntry {
    * admission; a missing token proves no endpoint advertises it.
    */
   supportedParameters?: string[];
+  /** Exact canonical reasoning efforts decoded from OpenRouter's `supported_efforts`. */
+  supportedEfforts?: ReasoningEffort[];
 }
 
 interface OpenRouterSettingsBase {
   model: string;
   proseMaxOutputTokens: number;
   assistanceMaxOutputTokens: number;
+  proseReasoningEffort: ReasoningEffort;
+  assistanceReasoningEffort: ReasoningEffort;
   topP?: number;
   cachedModels?: ModelListEntry[];
 }
@@ -39,17 +45,21 @@ export interface OpenRouterSettingsPatch {
   temperature?: number;
   proseMaxOutputTokens?: number;
   assistanceMaxOutputTokens?: number;
+  proseReasoningEffort?: ReasoningEffort;
+  assistanceReasoningEffort?: ReasoningEffort;
   topP?: number | null;
   cachedModels?: ModelListEntry[];
 }
 
 const keyFieldPattern = /openRouterApiKey|OPENROUTER_API_KEY|apiKey|api_key/i;
+const reasoningEffortSchema = z.enum(REASONING_EFFORTS);
 
 const modelListEntrySchema = z.strictObject({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1),
   contextLength: z.number().int().positive().optional(),
-  supportedParameters: z.array(z.string().trim().min(1)).optional()
+  supportedParameters: z.array(z.string().trim().min(1)).optional(),
+  supportedEfforts: z.array(reasoningEffortSchema).optional()
 });
 
 const settingsFields = {
@@ -63,7 +73,17 @@ const settingsFields = {
 const canonicalOpenRouterSettingsSchema = z.strictObject({
   ...settingsFields,
   proseMaxOutputTokens: z.number().int().positive(),
-  assistanceMaxOutputTokens: z.number().int().positive()
+  assistanceMaxOutputTokens: z.number().int().positive(),
+  proseReasoningEffort: reasoningEffortSchema,
+  assistanceReasoningEffort: reasoningEffortSchema
+});
+
+const preReasoningOpenRouterSettingsSchema = z.strictObject({
+  ...settingsFields,
+  proseMaxOutputTokens: z.number().int().positive(),
+  assistanceMaxOutputTokens: z.number().int().positive(),
+  proseReasoningEffort: reasoningEffortSchema.optional(),
+  assistanceReasoningEffort: reasoningEffortSchema.optional()
 });
 
 const legacyOpenRouterSettingsSchema = z.strictObject({
@@ -75,6 +95,8 @@ const openRouterSettingsPatchSchema = z.strictObject({
   ...settingsFields,
   proseMaxOutputTokens: z.number().int().positive().optional(),
   assistanceMaxOutputTokens: z.number().int().positive().optional(),
+  proseReasoningEffort: reasoningEffortSchema.optional(),
+  assistanceReasoningEffort: reasoningEffortSchema.optional(),
   topP: z.number().min(0).max(1).nullable().optional()
 });
 
@@ -82,9 +104,13 @@ const defaultOpenRouterSettings = {
   model: "",
   temperatureMode: "explicit",
   temperature: 1,
-  proseMaxOutputTokens: 1024,
-  assistanceMaxOutputTokens: 4096
+  proseMaxOutputTokens: 2048,
+  assistanceMaxOutputTokens: 8192,
+  proseReasoningEffort: "low",
+  assistanceReasoningEffort: "low"
 } satisfies OpenRouterSettings;
+
+const legacyDefaultCompletionCeiling = 1024;
 
 export function getOpenRouterConfigPath(): string {
   return join(getOpenRouterConfigDir(), "openrouter.json");
@@ -98,7 +124,7 @@ export function readOpenRouterSettings(): OpenRouterSettingsStatus {
 
   const parsed = parseConfigFile(configPath);
   const settings = normalizePersistedSettings(parsed);
-  if (parsed.kind === "legacy") {
+  if (parsed.kind !== "canonical") {
     writeSettingsFileAtomic(settings);
   }
 
@@ -149,7 +175,7 @@ function readPersistedSettings(): OpenRouterSettings {
 
   const parsed = parseConfigFile(configPath);
   const settings = normalizePersistedSettings(parsed);
-  if (parsed.kind === "legacy") {
+  if (parsed.kind !== "canonical") {
     writeSettingsFileAtomic(settings);
   }
   return settings;
@@ -157,6 +183,7 @@ function readPersistedSettings(): OpenRouterSettings {
 
 type ParsedPersistedSettings =
   | { kind: "canonical"; value: z.infer<typeof canonicalOpenRouterSettingsSchema> }
+  | { kind: "pre-reasoning"; value: z.infer<typeof preReasoningOpenRouterSettingsSchema> }
   | { kind: "legacy"; value: z.infer<typeof legacyOpenRouterSettingsSchema> };
 
 function parseConfigFile(configPath: string): ParsedPersistedSettings {
@@ -168,6 +195,9 @@ function parseConfigFile(configPath: string): ParsedPersistedSettings {
   )) {
     return { kind: "legacy", value: legacyOpenRouterSettingsSchema.parse(parsed) };
   }
+  if (!hasOwnField(parsed, "proseReasoningEffort") || !hasOwnField(parsed, "assistanceReasoningEffort")) {
+    return { kind: "pre-reasoning", value: preReasoningOpenRouterSettingsSchema.parse(parsed) };
+  }
   return { kind: "canonical", value: canonicalOpenRouterSettingsSchema.parse(parsed) };
 }
 
@@ -176,11 +206,21 @@ function normalizePersistedSettings(parsed: ParsedPersistedSettings): OpenRouter
     return normalizeCanonicalSettings(parsed.value);
   }
 
-  const legacyCeiling = parsed.value.maxOutputTokens ?? defaultOpenRouterSettings.proseMaxOutputTokens;
+  if (parsed.kind === "pre-reasoning") {
+    return buildNormalizedSettings({
+      ...parsed.value,
+      proseReasoningEffort: parsed.value.proseReasoningEffort ?? "low",
+      assistanceReasoningEffort: parsed.value.assistanceReasoningEffort ?? "low"
+    });
+  }
+
+  const legacyCeiling = parsed.value.maxOutputTokens ?? legacyDefaultCompletionCeiling;
   return buildNormalizedSettings({
     ...parsed.value,
     proseMaxOutputTokens: legacyCeiling,
-    assistanceMaxOutputTokens: legacyCeiling
+    assistanceMaxOutputTokens: legacyCeiling,
+    proseReasoningEffort: "low",
+    assistanceReasoningEffort: "low"
   });
 }
 
@@ -203,7 +243,9 @@ function buildNormalizedSettings(
       temperatureMode,
       temperature: parsed.temperature,
       proseMaxOutputTokens: parsed.proseMaxOutputTokens,
-      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens
+      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens,
+      proseReasoningEffort: parsed.proseReasoningEffort,
+      assistanceReasoningEffort: parsed.assistanceReasoningEffort
     };
   } else {
     if (parsed.temperature !== undefined) {
@@ -213,7 +255,9 @@ function buildNormalizedSettings(
       model,
       temperatureMode,
       proseMaxOutputTokens: parsed.proseMaxOutputTokens,
-      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens
+      assistanceMaxOutputTokens: parsed.assistanceMaxOutputTokens,
+      proseReasoningEffort: parsed.proseReasoningEffort,
+      assistanceReasoningEffort: parsed.assistanceReasoningEffort
     };
   }
 
@@ -234,6 +278,10 @@ function buildNormalizedSettings(
 
       if (model.supportedParameters !== undefined) {
         entry.supportedParameters = [...model.supportedParameters];
+      }
+
+      if (model.supportedEfforts !== undefined) {
+        entry.supportedEfforts = [...model.supportedEfforts];
       }
 
       return entry;

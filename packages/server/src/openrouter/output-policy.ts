@@ -2,10 +2,13 @@ import type { OpenRouterSettings } from "../settings.js";
 
 export type OpenRouterOutputPolicy = "strict" | "prose";
 export type CompletionCeilingClass = "prose" | "assistance";
+export const REASONING_EFFORTS = ["minimal", "low", "medium", "high", "xhigh", "max"] as const;
+export type ReasoningEffort = (typeof REASONING_EFFORTS)[number];
 
-export interface CompletionCeilingSelection {
+export interface OutputPolicySelection {
   completionCeilingClass: CompletionCeilingClass;
   maxOutputTokens: number;
+  reasoningEffort: ReasoningEffort;
 }
 
 export function completionCeilingClassForPolicy(
@@ -14,17 +17,19 @@ export function completionCeilingClassForPolicy(
   return outputPolicy === "prose" ? "prose" : "assistance";
 }
 
-export function resolveCompletionCeiling(
+export function resolveOutputPolicy(
   settings: OpenRouterSettings,
   outputPolicy: OpenRouterOutputPolicy
-): CompletionCeilingSelection {
+): OutputPolicySelection {
   return completionCeilingClassForPolicy(outputPolicy) === "prose"
     ? {
         completionCeilingClass: "prose",
-        maxOutputTokens: settings.proseMaxOutputTokens
+        maxOutputTokens: settings.proseMaxOutputTokens,
+        reasoningEffort: settings.proseReasoningEffort
       }
     : {
         completionCeilingClass: "assistance",
-        maxOutputTokens: settings.assistanceMaxOutputTokens
+        maxOutputTokens: settings.assistanceMaxOutputTokens,
+        reasoningEffort: settings.assistanceReasoningEffort
       };
 }

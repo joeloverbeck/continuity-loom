@@ -125,7 +125,8 @@ describe("ideate routes", () => {
           id: "anthropic/claude-sonnet-4",
           name: "Tiny compatible model",
           contextLength: 1,
-          supportedParameters: ["temperature", "max_completion_tokens"]
+          supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+          supportedEfforts: ["low"]
         }]
       }
     });
@@ -462,7 +463,8 @@ async function putSettings(
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }],
       ...overrides
     }

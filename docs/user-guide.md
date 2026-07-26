@@ -219,13 +219,16 @@ Every item is suggestion-only scratch. There is no apply, prefill, create, deact
 
 OpenRouter is the external prose transport. It is not a continuity authority.
 
-Configure the model, Temperature mode, **Prose ceiling**, **Assistance
-ceiling**, and optional Top P in global OpenRouter settings. These are local app
-settings, not project canon. Prose defaults to 1,024 tokens and applies only to
-Generate. Assistance defaults to 4,096 and applies to Ideate, Record Hygiene,
+Configure the model, Temperature mode, **Prose ceiling**, **Prose reasoning
+effort**, **Assistance ceiling**, **Assistance reasoning effort**, and optional
+Top P in global OpenRouter settings. These are local app settings, not project
+canon. Prose defaults to 2,048 tokens and applies only to Generate. Assistance
+defaults to 8,192 and applies to Ideate, Record Hygiene,
 Cast Possibilities full analysis and target regeneration, and Accepted-Segment
 Change Review. Both are upper bounds, not target lengths or completion
-guarantees, and every positive Assistance value remains valid.
+guarantees, and every positive value remains valid. Both reasoning efforts
+default to **low**. Reasoning is mandatory and its content is always excluded;
+there is no off, automatic, provider-default, alias, or token-budget setting.
 
 **Explicit value** requires a number from 0 through 2 and sends it on every
 completion request. **Provider default** omits `temperature`; Continuity Loom
@@ -235,16 +238,17 @@ requests omit `top_p`. Model selection and model-list refresh never change
 these choices.
 
 Prompt Inspector shows the exact model, Temperature intent, optional Top P,
-effective Prose or Assistance ceiling and value, and provider-request
-fingerprint that a later send must match. Changing the applicable provider
-setting requires a fresh local inspection even when the prompt text itself did
-not change; changing only the unused ceiling leaves that workflow's request
-unchanged.
+effective Prose or Assistance ceiling and value, selected reasoning effort,
+mandatory/excluded state, cached supported efforts, capability blocker, and
+provider-request fingerprint that a later send must match. Changing the model,
+applicable ceiling or effort, capability snapshot, or prompt requires a fresh
+local inspection. Changing only an unused class setting leaves that workflow's
+request unchanged.
 
-When an Assistance workflow uses fewer than 4,096 tokens, Prompt Inspector
-shows a suitability advisory. It names the configured value and explains that
-it may be too small for a complete structured result. The 4,096 default is a
-starting allowance, not a guarantee or a predicted requirement. Use **Open
+When Prose uses fewer than 2,048 tokens or Assistance uses fewer than 8,192,
+Prompt Inspector shows a suitability advisory. It names the preserved value
+and fresh default. A default is a starting allowance, not a guarantee or a
+predicted requirement. Use **Open
 Settings** to review it, or deliberately proceed with the existing action; the
 warning never changes the value or blocks sending.
 
@@ -263,8 +267,10 @@ size advisory appears. Merely displaying or ignoring either advisory makes no
 provider request and does not refresh capabilities, retry, change models, change scope,
 resend, or edit settings.
 
-If capability data is missing, use the explicit model-list refresh and inspect
-again. If the selected model is known to lack a requirement, the error names
+If capability or supported-effort data is missing, use the explicit model-list
+refresh and inspect again. If the selected model does not support the stored
+effort, the setting remains unchanged: choose a listed effort or another model,
+then inspect again. If the selected model is known to lack another requirement, the error names
 Temperature, Top P, response format, strict structured output, completion
 length, tools, or tool choice as applicable. Change a sampling setting only
 deliberately, or choose a compatible model, then inspect and invoke the existing
@@ -293,6 +299,11 @@ story records, credentials, arbitrary provider metadata, or rejected candidate
 text. They are not saved to the project or browser storage. Viewing, copying,
 clearing, or opening Logs never retries, changes settings, or sends another
 completion request.
+
+OpenRouter reasoning text, summaries, and details are discarded at transport
+and never appear in candidate content, diagnostics, logs, project data,
+accepted provenance, exports, backups, or later prompts. A safe aggregate
+reasoning-token count may appear transiently in technical diagnostics.
 
 For local key setup, copy `.env.example` to `.env` at the repository root and set `OPENROUTER_API_KEY=<your key>`. The root `.env` is gitignored and loads automatically when the app launches through `npm run dev` or `npm start`; a shell-exported `OPENROUTER_API_KEY` also works as an alternative. The key is not stored in project metadata, the SQLite project store, accepted segment metadata, compiled prompts, prompt preview text, or logs. If a key appears in any of those surfaces, treat it as a security bug.
 

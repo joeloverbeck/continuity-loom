@@ -6,6 +6,7 @@ import {
   putOpenRouterSettings,
   refreshModels,
   type OpenRouterModelListEntry,
+  type OpenRouterReasoningEffort,
   type OpenRouterSettingsPatch,
   type OpenRouterSettingsResponse
 } from "../api.js";
@@ -22,6 +23,8 @@ interface SettingsFormState {
   temperature: string;
   proseMaxOutputTokens: string;
   assistanceMaxOutputTokens: string;
+  proseReasoningEffort: OpenRouterReasoningEffort;
+  assistanceReasoningEffort: OpenRouterReasoningEffort;
   topP: string;
   cachedModels: OpenRouterModelListEntry[];
 }
@@ -37,8 +40,10 @@ export function SettingsSurface(): React.JSX.Element {
     model: "",
     temperatureMode: "explicit",
     temperature: "1",
-    proseMaxOutputTokens: "1024",
-    assistanceMaxOutputTokens: "4096",
+    proseMaxOutputTokens: "2048",
+    assistanceMaxOutputTokens: "8192",
+    proseReasoningEffort: "low",
+    assistanceReasoningEffort: "low",
     topP: "",
     cachedModels: []
   });
@@ -112,6 +117,7 @@ export function SettingsSurface(): React.JSX.Element {
   }
 
   const isReady = loadState.status === "ready";
+  const selectedModel = form.cachedModels.find((model) => model.id === form.model);
 
   return (
     <section className="surface" aria-labelledby="settings-title">
@@ -245,6 +251,18 @@ export function SettingsSurface(): React.JSX.Element {
                 <p id={proseCeilingDescriptionId} className="muted">
                   Upper bound for Generate prose. It is not a target or a guarantee of output length.
                 </p>
+                <ReasoningEffortSelect
+                  label="Prose reasoning effort"
+                  value={form.proseReasoningEffort}
+                  supportedEfforts={selectedModel?.supportedEfforts}
+                  onChange={(proseReasoningEffort) => setForm((current) => ({ ...current, proseReasoningEffort }))}
+                />
+                {Number(form.proseMaxOutputTokens) < 2048 ? (
+                  <p className="status statusWarning" role="status" aria-label="Prose ceiling advisory">
+                    This preserved Prose ceiling is below the fresh default of 2048 tokens. The warning does not
+                    change the setting or block saving or sending.
+                  </p>
+                ) : null}
               </div>
 
               <div>
@@ -262,9 +280,23 @@ export function SettingsSurface(): React.JSX.Element {
                   }
                 />
                 <p id={assistanceCeilingDescriptionId} className="muted">
-                  Upper bound for Ideate, Record Hygiene, Cast Possibilities, and Change Review. 4096 is a starting
+                  Upper bound for Ideate, Record Hygiene, Cast Possibilities, and Change Review. 8192 is a starting
                   allowance, not a guarantee of complete structured output.
                 </p>
+                <ReasoningEffortSelect
+                  label="Assistance reasoning effort"
+                  value={form.assistanceReasoningEffort}
+                  supportedEfforts={selectedModel?.supportedEfforts}
+                  onChange={(assistanceReasoningEffort) =>
+                    setForm((current) => ({ ...current, assistanceReasoningEffort }))
+                  }
+                />
+                {Number(form.assistanceMaxOutputTokens) < 8192 ? (
+                  <p className="status statusWarning" role="status" aria-label="Assistance ceiling advisory">
+                    This preserved Assistance ceiling is below the fresh default of 8192 tokens. The warning does not
+                    change the setting or block saving or sending.
+                  </p>
+                ) : null}
               </div>
 
               <label>
@@ -279,6 +311,11 @@ export function SettingsSurface(): React.JSX.Element {
                 />
               </label>
             </div>
+
+            <p className="muted" role="status" aria-label="Mandatory reasoning policy">
+              Reasoning is always enabled for OpenRouter completions, and reasoning content is excluded from the
+              response. Choose an exact effort for each output class; there is no on/off control.
+            </p>
 
             <div className="settingsActions">
               <button type="submit" disabled={isSaving}>
@@ -305,6 +342,8 @@ function toForm(settings: OpenRouterSettingsResponse): SettingsFormState {
     temperature: settings.temperature === undefined ? "" : String(settings.temperature),
     proseMaxOutputTokens: String(settings.proseMaxOutputTokens),
     assistanceMaxOutputTokens: String(settings.assistanceMaxOutputTokens),
+    proseReasoningEffort: settings.proseReasoningEffort,
+    assistanceReasoningEffort: settings.assistanceReasoningEffort,
     topP: settings.topP === undefined ? "" : String(settings.topP),
     cachedModels: settings.cachedModels ?? []
   };
@@ -317,9 +356,44 @@ function toPatch(form: SettingsFormState): OpenRouterSettingsPatch {
     ...(form.temperatureMode === "explicit" ? { temperature: Number(form.temperature) } : {}),
     proseMaxOutputTokens: Number(form.proseMaxOutputTokens),
     assistanceMaxOutputTokens: Number(form.assistanceMaxOutputTokens),
+    proseReasoningEffort: form.proseReasoningEffort,
+    assistanceReasoningEffort: form.assistanceReasoningEffort,
     topP: form.topP.trim() ? Number(form.topP) : null,
     cachedModels: form.cachedModels
   };
+}
+
+function ReasoningEffortSelect({
+  label,
+  value,
+  supportedEfforts,
+  onChange
+}: {
+  label: string;
+  value: OpenRouterReasoningEffort;
+  supportedEfforts: readonly OpenRouterReasoningEffort[] | undefined;
+  onChange: (value: OpenRouterReasoningEffort) => void;
+}): React.JSX.Element {
+  const incompatible = supportedEfforts === undefined || !supportedEfforts.includes(value);
+  const options = [
+    ...(incompatible ? [value] : []),
+    ...(supportedEfforts ?? [])
+  ];
+
+  return (
+    <label>
+      {label}
+      <select value={value} onChange={(event) => onChange(event.target.value as OpenRouterReasoningEffort)}>
+        {options.map((effort, index) => (
+          <option key={effort} value={effort}>
+            {index === 0 && incompatible
+              ? `${effort} (${supportedEfforts === undefined ? "support unknown; refresh model list" : "unsupported by selected model"})`
+              : effort}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
 }
 
 function isApiFailure(value: OpenRouterSettingsResponse | ApiFailure): value is ApiFailure {

@@ -80,6 +80,11 @@ function recoveryGuidance(failure: TransportFailure): string {
         failure.recovery ??
         "Refresh the OpenRouter model list to update its cached capability data, then inspect the recompiled source and Analyze again. No request was sent. No retry is automatic."
       );
+    case "reasoning-effort-incompatible-model":
+      return (
+        failure.recovery ??
+        "Choose a supported reasoning effort or another model, then reinspect before using the existing action. No request was sent. No retry is automatic."
+      );
     case "moderation-refusal":
       return "Review the requested content and provider policy before trying again. No retry is automatic.";
     case "content-policy":

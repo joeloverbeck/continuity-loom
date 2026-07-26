@@ -27,8 +27,15 @@ const baseSettings: OpenRouterSettingsResponse = {
   temperature: 0.7,
   proseMaxOutputTokens: 1800,
   assistanceMaxOutputTokens: 5200,
+  proseReasoningEffort: "high",
+  assistanceReasoningEffort: "low",
   topP: 0.8,
-  cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }],
+  cachedModels: [{
+    id: "openai/gpt-4.1",
+    name: "GPT 4.1",
+    contextLength: 128000,
+    supportedEfforts: ["minimal", "low", "max"]
+  }],
   hasOpenRouterCredential: true
 };
 
@@ -57,6 +64,37 @@ afterEach(() => {
 });
 
 describe("SettingsSurface", () => {
+  it("preserves incompatible class effort intent and offers only canonical supported efforts", async () => {
+    render(<SettingsSurface />);
+
+    const proseEffort = await screen.findByLabelText<HTMLSelectElement>("Prose reasoning effort");
+    const assistanceEffort = screen.getByLabelText<HTMLSelectElement>("Assistance reasoning effort");
+    expect(proseEffort.value).toBe("high");
+    expect(assistanceEffort.value).toBe("low");
+    expect([...proseEffort.options].map((option) => option.value)).toEqual([
+      "high",
+      "minimal",
+      "low",
+      "max"
+    ]);
+    expect(proseEffort.options[0]?.textContent).toMatch(/high.*unsupported/i);
+    expect(document.body.textContent).not.toMatch(/provider_default|none|token budget/i);
+    expect(screen.getByRole("status", { name: "Prose ceiling advisory" }).textContent)
+      .toContain("2048");
+    expect(screen.getByRole("status", { name: "Assistance ceiling advisory" }).textContent)
+      .toContain("8192");
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Save settings" }).disabled).toBe(false);
+
+    fireEvent.change(proseEffort, { target: { value: "max" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save settings" }));
+
+    expect(await screen.findByText("Settings saved.")).toBeTruthy();
+    expect(putOpenRouterSettingsMock).toHaveBeenCalledWith(expect.objectContaining({
+      proseReasoningEffort: "max",
+      assistanceReasoningEffort: "low"
+    }));
+  });
+
   it("edits and saves independent Prose and Assistance ceilings", async () => {
     render(<SettingsSurface />);
 
@@ -67,7 +105,7 @@ describe("SettingsSurface", () => {
     expect(screen.getByText(/upper bound for Generate prose/i)).toBeTruthy();
     expect(screen.getByText(/upper bound for Ideate, Record Hygiene, Cast Possibilities, and Change Review/i))
       .toBeTruthy();
-    expect(screen.getByText(/4096 is a starting allowance, not a guarantee/i)).toBeTruthy();
+    expect(screen.getByText(/8192 is a starting allowance, not a guarantee/i)).toBeTruthy();
 
     fireEvent.change(proseCeiling, { target: { value: "2400" } });
     fireEvent.change(assistanceCeiling, { target: { value: "3072" } });
@@ -98,6 +136,8 @@ describe("SettingsSurface", () => {
       temperature: 0.4,
       proseMaxOutputTokens: 2400,
       assistanceMaxOutputTokens: 6400,
+      proseReasoningEffort: "high",
+      assistanceReasoningEffort: "low",
       topP: 0.9,
       cachedModels: baseSettings.cachedModels
     });
@@ -121,6 +161,8 @@ describe("SettingsSurface", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: 1800,
       assistanceMaxOutputTokens: 5200,
+      proseReasoningEffort: "high",
+      assistanceReasoningEffort: "low",
       topP: null,
       cachedModels: baseSettings.cachedModels
     });
@@ -132,6 +174,8 @@ describe("SettingsSurface", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: baseSettings.proseMaxOutputTokens,
       assistanceMaxOutputTokens: baseSettings.assistanceMaxOutputTokens,
+      proseReasoningEffort: baseSettings.proseReasoningEffort,
+      assistanceReasoningEffort: baseSettings.assistanceReasoningEffort,
       ...(baseSettings.topP === undefined ? {} : { topP: baseSettings.topP }),
       ...(baseSettings.cachedModels === undefined ? {} : { cachedModels: baseSettings.cachedModels }),
       hasOpenRouterCredential: baseSettings.hasOpenRouterCredential

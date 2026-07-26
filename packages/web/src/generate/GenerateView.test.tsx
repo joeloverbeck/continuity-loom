@@ -58,6 +58,30 @@ afterEach(() => {
 });
 
 describe("GenerateView", () => {
+  it("keeps Generate unavailable when the inspected reasoning effort is not admitted", async () => {
+    const compiled = compileResult("<role>\nPrompt");
+    vi.mocked(compile).mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        admission: {
+          ok: false,
+          category: "reasoning-effort-incompatible-model",
+          message: "The selected model does not support the stored high reasoning effort.",
+          recovery: "Choose a supported effort or another model, then reinspect."
+        }
+      }
+    });
+
+    renderGenerate();
+
+    const button = await screen.findByRole<HTMLButtonElement>("button", { name: "Generate" });
+    expect(button.disabled).toBe(true);
+    expect(screen.getByRole("alert", { name: "OpenRouter capability blocker" })).toBeTruthy();
+    fireEvent.click(button);
+    expect(generate).not.toHaveBeenCalled();
+  });
+
   it("shows the shared advisory while Generate remains enabled and display sends nothing", async () => {
     const compiled = compileResult("<role>\nPrompt");
     vi.mocked(compile).mockResolvedValue({
@@ -217,7 +241,19 @@ describe("GenerateView", () => {
     expect(screen.queryByText(/Durable changes likely need manual record updates/i)).toBeNull();
     expect(acceptCandidate).toHaveBeenCalledWith({
       text: "Edited accepted prose.",
-      generationMetadata: { source: "openrouter", ...candidateMetadata() }
+      generationMetadata: {
+        source: "openrouter",
+        model: "openai/gpt-4.1",
+        provider: "openrouter",
+        temperatureMode: "explicit",
+        temperature: 0.4,
+        maxOutputTokens: 2200,
+        versions: {
+          template: "template-1",
+          compiler: "compiler-1",
+          contract: "contract-1"
+        }
+      }
     });
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
     expect(storageSetItem).not.toHaveBeenCalled();
@@ -748,7 +784,16 @@ describe("GenerateView", () => {
       text: "Provider replacement.",
       generationMetadata: {
         source: "openrouter",
-        ...candidateMetadata({ model: "anthropic/claude-sonnet-4", temperature: 0.7 })
+        model: "anthropic/claude-sonnet-4",
+        provider: "openrouter",
+        temperatureMode: "explicit",
+        temperature: 0.7,
+        maxOutputTokens: 2200,
+        versions: {
+          template: "template-1",
+          compiler: "compiler-1",
+          contract: "contract-1"
+        }
       }
     });
   });
@@ -916,7 +961,11 @@ function candidateMetadata(overrides: Partial<{
     provider: "openrouter" as const,
     temperatureMode: "explicit" as const,
     temperature: overrides.temperature ?? 0.4,
+    completionCeilingClass: "prose" as const,
     maxOutputTokens: 2200,
+    reasoningEnabled: true as const,
+    reasoningEffort: "low" as const,
+    reasoningExcluded: true as const,
     versions: {
       template: "template-1",
       compiler: "compiler-1",
@@ -932,6 +981,16 @@ function providerRequest(requestFingerprint: string) {
     temperature: 0.4,
     completionCeilingClass: "prose" as const,
     maxOutputTokens: 2200,
+    reasoningEnabled: true as const,
+    reasoningEffort: "low" as const,
+    reasoningExcluded: true as const,
+    capabilitySnapshot: {
+      model: "openai/gpt-4.1",
+      cacheEntryFound: true,
+      supportedParameters: ["max_completion_tokens", "reasoning"],
+      supportedEfforts: ["low" as const]
+    },
+    admission: { ok: true as const },
     requestFingerprint
   };
 }

@@ -6,6 +6,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { PromptInspector } from "./PromptInspector.js";
 
+const admittedRequestDefaults = {
+  reasoningEnabled: true as const,
+  reasoningEffort: "low" as const,
+  reasoningExcluded: true as const,
+  capabilitySnapshot: {
+    model: "provider/model",
+    cacheEntryFound: true,
+    supportedParameters: ["max_completion_tokens", "reasoning"],
+    supportedEfforts: ["low" as const]
+  },
+  admission: { ok: true as const }
+};
+
 afterEach(() => {
   cleanup();
   Reflect.deleteProperty(HTMLElement.prototype, "scrollIntoView");
@@ -16,16 +29,16 @@ describe("PromptInspector", () => {
     const { rerender } = render(
       <PromptInspector
         result={compileResult("Prompt")}
-        providerRequest={providerRequest("assistance", 4095)}
+        providerRequest={providerRequest("assistance", 8191)}
         searchTerm=""
         onSearchTermChange={vi.fn()}
       />
     );
 
     const suitability = screen.getByRole("status", { name: "Assistance-ceiling suitability advisory" });
-    expect(suitability.textContent).toContain("configured Assistance ceiling is 4095 tokens");
-    expect(suitability.textContent).toContain("may be too small for a complete structured result");
-    expect(suitability.textContent).toContain("4096 is a starting allowance, not a guarantee");
+    expect(suitability.textContent).toContain("configured Assistance ceiling is 8191 tokens");
+    expect(suitability.textContent).toContain("below the fresh default of 8192");
+    expect(suitability.textContent).toContain("warning does not block sending");
     expect(within(suitability).getByRole("link", { name: "Open Settings" }).getAttribute("href"))
       .toBe("/settings");
     expect(screen.queryByRole("status", { name: "Context-window advisory" })).toBeNull();
@@ -45,7 +58,7 @@ describe("PromptInspector", () => {
     rerender(
       <PromptInspector
         result={compileResult("Prompt")}
-        providerRequest={{ ...providerRequest("assistance", 4095), contextLength: 4101 }}
+        providerRequest={{ ...providerRequest("assistance", 8191), contextLength: 8197 }}
         searchTerm=""
         onSearchTermChange={vi.fn()}
       />
@@ -56,7 +69,7 @@ describe("PromptInspector", () => {
     rerender(
       <PromptInspector
         result={compileResult("Prompt")}
-        providerRequest={{ ...providerRequest("assistance", 4096), contextLength: 4103 }}
+        providerRequest={{ ...providerRequest("assistance", 8192), contextLength: 8199 }}
         searchTerm=""
         onSearchTermChange={vi.fn()}
       />
@@ -182,6 +195,7 @@ describe("PromptInspector", () => {
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/model",
           temperatureMode: "provider_default",
           completionCeilingClass: "prose",
@@ -204,6 +218,7 @@ describe("PromptInspector", () => {
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/model",
           temperatureMode: "explicit",
           temperature: 0.7,
@@ -222,11 +237,58 @@ describe("PromptInspector", () => {
     expect(within(metadata).getByText("0.9")).toBeTruthy();
   });
 
+  it("shows the exact mandatory reasoning policy and capability blocker", () => {
+    render(
+      <PromptInspector
+        result={compileResult("Prompt")}
+        providerRequest={{
+          model: "provider/model",
+          temperatureMode: "provider_default",
+          completionCeilingClass: "assistance",
+          maxOutputTokens: 8192,
+          reasoningEnabled: true,
+          reasoningEffort: "high",
+          reasoningExcluded: true,
+          capabilitySnapshot: {
+            model: "provider/model",
+            cacheEntryFound: true,
+            supportedParameters: ["max_completion_tokens", "reasoning"],
+            supportedEfforts: ["minimal", "low"]
+          },
+          admission: {
+            ok: false,
+            category: "reasoning-effort-incompatible-model",
+            message: "The selected model does not support the stored high reasoning effort.",
+            recovery: "Choose a supported effort or another model, then reinspect."
+          },
+          requestFingerprint: "reasoning-fingerprint"
+        }}
+        searchTerm=""
+        onSearchTermChange={vi.fn()}
+      />
+    );
+
+    const metadata = screen.getByLabelText("Prompt metadata");
+    expect(within(metadata).getByText("Output class")).toBeTruthy();
+    expect(within(metadata).getByText("Assistance")).toBeTruthy();
+    expect(within(metadata).getByText("Reasoning enabled")).toBeTruthy();
+    expect(within(metadata).getByText("Yes (mandatory)")).toBeTruthy();
+    expect(within(metadata).getByText("Reasoning effort")).toBeTruthy();
+    expect(within(metadata).getByText("high")).toBeTruthy();
+    expect(within(metadata).getByText("Reasoning content")).toBeTruthy();
+    expect(within(metadata).getByText("Excluded")).toBeTruthy();
+    expect(within(metadata).getByText("Supported efforts")).toBeTruthy();
+    expect(within(metadata).getByText("minimal, low")).toBeTruthy();
+    expect(screen.getByRole("alert", { name: "OpenRouter capability blocker" }).textContent)
+      .toContain("does not support the stored high reasoning effort");
+  });
+
   it("presents one accessible non-gating context-window advisory from disclosed estimates", () => {
     const { rerender } = render(
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/compact-model",
           temperatureMode: "provider_default",
           completionCeilingClass: "assistance",
@@ -252,6 +314,7 @@ describe("PromptInspector", () => {
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/compact-model",
           temperatureMode: "provider_default",
           completionCeilingClass: "assistance",
@@ -269,6 +332,7 @@ describe("PromptInspector", () => {
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/unknown-model",
           temperatureMode: "provider_default",
           completionCeilingClass: "assistance",
@@ -285,6 +349,7 @@ describe("PromptInspector", () => {
       <PromptInspector
         result={compileResult("Prompt")}
         providerRequest={{
+          ...admittedRequestDefaults,
           model: "provider/compact-model",
           temperatureMode: "provider_default",
           completionCeilingClass: "assistance",
@@ -323,6 +388,7 @@ function providerRequest(
   maxOutputTokens: number
 ) {
   return {
+    ...admittedRequestDefaults,
     model: "provider/model",
     temperatureMode: "provider_default" as const,
     completionCeilingClass,

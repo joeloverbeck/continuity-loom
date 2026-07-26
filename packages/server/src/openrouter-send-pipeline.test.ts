@@ -17,10 +17,13 @@ describe("OpenRouter send pipeline", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: 321,
       assistanceMaxOutputTokens: 4321,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
-        supportedParameters: ["max_completion_tokens"]
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }],
       hasOpenRouterCredential: true
     };
@@ -235,11 +238,14 @@ describe("OpenRouter send pipeline", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: 321,
       assistanceMaxOutputTokens: 4321,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       topP: 0.75,
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
-        supportedParameters: ["max_completion_tokens", "top_p"]
+        supportedParameters: ["max_completion_tokens", "top_p", "reasoning"],
+        supportedEfforts: ["low"]
       }],
       hasOpenRouterCredential: true
     };
@@ -304,6 +310,10 @@ describe("OpenRouter send pipeline", () => {
       metadata: {
         model: "test/model",
         provider: "openrouter",
+        completionCeilingClass: "assistance",
+        reasoningEnabled: true,
+        reasoningEffort: "low",
+        reasoningExcluded: true,
         temperatureMode: "provider_default",
         maxOutputTokens: 4321,
         topP: 0.75,
@@ -318,6 +328,90 @@ describe("OpenRouter send pipeline", () => {
         contentShape: "string",
         contentLength: 14
       }
+    });
+  });
+
+  it("preserves exact stored effort, blocks incompatible support, and sends one admitted request with trusted effort", async () => {
+    const { runOpenRouterSendPipeline } = await import("./openrouter/send-pipeline.js");
+    const baseSettings: OpenRouterSettingsStatus = {
+      model: "reasoning/model",
+      temperatureMode: "provider_default",
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 8192,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "high",
+      cachedModels: [{
+        id: "reasoning/model",
+        name: "Reasoning Model",
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
+      }],
+      hasOpenRouterCredential: true
+    };
+    const prompt = "Inspected assistance prompt";
+    const transport = vi.fn(async ({ request }: { request: OpenRouterRequest }) => ({
+      ok: true as const,
+      candidate: { text: "Structured result" },
+      response: {
+        httpStatus: 200,
+        requestedModel: request.model,
+        termination: "normal" as const,
+        choiceCount: 1,
+        contentShape: "string" as const,
+        contentLength: 17
+      }
+    }));
+    const profileFor = (settings: OpenRouterSettingsStatus) => ({
+      outputPolicy: "strict" as const,
+      prompt,
+      promptFingerprint: "prompt-fingerprint",
+      staleness: {
+        mode: "separate" as const,
+        expectedPromptFingerprint: "prompt-fingerprint",
+        expectedRequestFingerprint: inspectChatCompletionRequest(
+          buildChatCompletionRequest({ prompt, settings, outputPolicy: "strict" }),
+          "strict",
+          settings
+        ).requestFingerprint,
+        promptRefusal: { status: 409, body: { ok: false } },
+        providerRefusal: { status: 409, body: { ok: false } }
+      },
+      metadata: {
+        providerFields: "full" as const,
+        placement: "before" as const,
+        additions: {}
+      }
+    });
+
+    const blocked = await runOpenRouterSendPipeline({
+      profile: profileFor(baseSettings),
+      settings: baseSettings,
+      transport
+    });
+    expect(blocked).toMatchObject({
+      ok: false,
+      body: { category: "reasoning-effort-incompatible-model", supportedEfforts: ["low"] }
+    });
+    expect(transport).not.toHaveBeenCalled();
+
+    const compatibleSettings: OpenRouterSettingsStatus = {
+      ...baseSettings,
+      cachedModels: [{
+        ...baseSettings.cachedModels![0]!,
+        supportedEfforts: ["low", "high"]
+      }]
+    };
+    const admitted = await runOpenRouterSendPipeline({
+      profile: profileFor(compatibleSettings),
+      settings: compatibleSettings,
+      transport
+    });
+
+    expect(transport).toHaveBeenCalledTimes(1);
+    expect(transport.mock.calls[0]?.[0].request.reasoning).toEqual({ effort: "high", exclude: true });
+    expect(admitted).toMatchObject({
+      ok: true,
+      metadata: { reasoningEffort: "high" }
     });
   });
 
@@ -366,7 +460,8 @@ describe("OpenRouter send pipeline", () => {
     }
 
     expect(pipelineSource.match(/\bbuildChatCompletionRequest\(/g)).toHaveLength(1);
-    expect(pipelineSource.match(/\badmitOpenRouterRequest\(/g)).toHaveLength(1);
+    expect(pipelineSource).not.toContain("admitOpenRouterRequest");
+    expect(pipelineSource).toContain("const admission = inspection.admission");
     expect(pipelineSource).not.toContain("contextWindow");
     expect(pipelineSource).not.toContain("isPromptTooLarge");
     expect(pipelineSource).not.toContain("prompt-too-large");
@@ -382,10 +477,13 @@ describe("OpenRouter send pipeline", () => {
       temperature: 0.4,
       proseMaxOutputTokens: 50,
       assistanceMaxOutputTokens: 100,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }],
       hasOpenRouterCredential: true
     };

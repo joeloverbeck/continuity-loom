@@ -2,10 +2,16 @@ export const ACCEPTANCE_AUDIT_HEADER =
   "| Issue | Acceptance criterion or conformance check | Evidence | Status |";
 export const ACCEPTANCE_AUDIT_DIVIDER = "|---|---|---|---|";
 
-const tableText = (value) => value.replaceAll("|", "&#124;").replaceAll("\n", " ").trim();
+export const markdownTableText = (value) => value
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll("|", "&#124;")
+  .replaceAll("\n", " ")
+  .trim();
 
 export const acceptanceAuditCriterionCell = (check) =>
-  `${check.id} - ${tableText(check.text)}`;
+  `${check.id} - ${markdownTableText(check.text)}`;
 
 export const parseAcceptanceAuditRows = (markdown) => {
   const lines = markdown.split(/\r?\n/);

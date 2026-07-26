@@ -229,11 +229,20 @@ export function RecordHygieneView(): React.JSX.Element {
               <input
                 type="checkbox"
                 checked={sendConfirmed}
+                disabled={compileState.providerRequest.admission?.ok === false}
                 onChange={(event) => setSendConfirmed(event.target.checked)}
               />
               Confirm this one-time send
             </label>
-            <button type="button" disabled={!sendConfirmed || scratchState.status === "sending"} onClick={() => void analyze()}>
+            <button
+              type="button"
+              disabled={
+                !sendConfirmed ||
+                scratchState.status === "sending" ||
+                compileState.providerRequest.admission?.ok === false
+              }
+              onClick={() => void analyze()}
+            >
               Analyze with OpenRouter
             </button>
           </section>

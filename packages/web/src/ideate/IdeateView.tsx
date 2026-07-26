@@ -410,7 +410,10 @@ function ReadyIdeate({
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
   const focusIsValid = !ideationFocusState(ideationRequest.focus).error;
-  const canIdeate = readiness.canGenerate && previewIsCurrent && scratchState.status !== "sending";
+  const canIdeate = readiness.canGenerate &&
+    result.providerRequest.admission?.ok !== false &&
+    previewIsCurrent &&
+    scratchState.status !== "sending";
   const showReadinessChecklist = readiness.blockers.length > 0 || readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
   const hasSlate = scratchState.status === "ideas" || scratchState.status === "malformed";
 

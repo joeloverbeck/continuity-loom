@@ -340,6 +340,16 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1") {
       temperature: 1,
       completionCeilingClass: "prose" as const,
       maxOutputTokens: 1024,
+      reasoningEnabled: true as const,
+      reasoningEffort: "low" as const,
+      reasoningExcluded: true as const,
+      capabilitySnapshot: {
+        model: "openai/gpt-4.1",
+        cacheEntryFound: true,
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low" as const]
+      },
+      admission: { ok: true as const },
       requestFingerprint: fingerprint
     }
   };

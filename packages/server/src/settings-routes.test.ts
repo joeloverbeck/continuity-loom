@@ -46,8 +46,10 @@ describe("OpenRouter settings routes", () => {
       model: "",
       temperatureMode: "explicit",
       temperature: 1,
-      proseMaxOutputTokens: 1024,
-      assistanceMaxOutputTokens: 4096,
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 8192,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: true
     });
     expect(response.body).not.toMatch(/openRouterApiKey|OPENROUTER_API_KEY|apiKey|sk-|Bearer/);
@@ -64,6 +66,8 @@ describe("OpenRouter settings routes", () => {
         temperature: 0.2,
         proseMaxOutputTokens: 2048,
         assistanceMaxOutputTokens: 6144,
+        proseReasoningEffort: "high",
+        assistanceReasoningEffort: "max",
         topP: 0.8
       }
     });
@@ -73,6 +77,8 @@ describe("OpenRouter settings routes", () => {
       temperature: 0.2,
       proseMaxOutputTokens: 2048,
       assistanceMaxOutputTokens: 6144,
+      proseReasoningEffort: "high",
+      assistanceReasoningEffort: "max",
       topP: 0.8,
       hasOpenRouterCredential: false
     });
@@ -112,6 +118,8 @@ describe("OpenRouter settings routes", () => {
       temperatureMode: "provider_default",
       proseMaxOutputTokens: 2048,
       assistanceMaxOutputTokens: 6144,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       hasOpenRouterCredential: false
     });
     expect((await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json())
@@ -200,7 +208,7 @@ describe("OpenRouter settings routes", () => {
     expect(proseResponse.statusCode).toBe(200);
     expect(proseResponse.json()).toMatchObject({
       proseMaxOutputTokens: 1536,
-      assistanceMaxOutputTokens: 4096
+      assistanceMaxOutputTokens: 8192
     });
 
     const assistanceResponse = await fastify.inject({
@@ -225,7 +233,10 @@ describe("OpenRouter settings routes", () => {
       payload: { maxOutputTokens: 2048, proseMaxOutputTokens: 2048 },
       label: "retired and canonical fields together"
     },
-    { payload: { completionBudget: 2048 }, label: "unknown settings field" }
+    { payload: { completionBudget: 2048 }, label: "unknown settings field" },
+    { payload: { proseReasoningEffort: "none" }, label: "none reasoning effort" },
+    { payload: { assistanceReasoningEffort: "provider_default" }, label: "provider-default reasoning alias" },
+    { payload: { proseReasoningEffort: "high:4096" }, label: "reasoning token-budget alias" }
   ])("rejects $label without changing settings", async ({ payload }) => {
     const fastify = app();
     const before = (await fastify.inject({ method: "GET", url: "/api/settings/openrouter" })).json();
@@ -245,7 +256,12 @@ describe("OpenRouter settings routes", () => {
   it("caches successful model refreshes without exposing secrets", async () => {
     refreshModelListMock.mockResolvedValue({
       ok: true,
-      models: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }]
+      models: [{
+        id: "openai/gpt-4.1",
+        name: "GPT 4.1",
+        contextLength: 128000,
+        supportedEfforts: ["minimal", "low", "max"]
+      }]
     });
     const fastify = app();
 
@@ -254,13 +270,23 @@ describe("OpenRouter settings routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       ok: true,
-      models: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }]
+      models: [{
+        id: "openai/gpt-4.1",
+        name: "GPT 4.1",
+        contextLength: 128000,
+        supportedEfforts: ["minimal", "low", "max"]
+      }]
     });
     expect(response.body).not.toMatch(/openRouterApiKey|OPENROUTER_API_KEY|apiKey|sk-|Bearer/);
 
     const getResponse = await fastify.inject({ method: "GET", url: "/api/settings/openrouter" });
     expect(getResponse.json()).toMatchObject({
-      cachedModels: [{ id: "openai/gpt-4.1", name: "GPT 4.1", contextLength: 128000 }]
+      cachedModels: [{
+        id: "openai/gpt-4.1",
+        name: "GPT 4.1",
+        contextLength: 128000,
+        supportedEfforts: ["minimal", "low", "max"]
+      }]
     });
   });
 

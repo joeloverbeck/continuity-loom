@@ -59,15 +59,34 @@ function admit(model: string, cachedModels?: ModelListEntry[]): CapabilityAdmiss
       temperature: 0,
       proseMaxOutputTokens: 1024,
       assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       topP: 1
     },
     outputPolicy: "strict",
     requestOptions: strictRequestOptions
   });
-  return admitOpenRouterRequest({ request, cachedModels });
+  return admitOpenRouterRequest({
+    request,
+    cachedModels: cachedModels?.map((entry) => ({ supportedEfforts: ["low"], ...entry }))
+  });
 }
 
 describe("admitOpenRouterRequest", () => {
+  it("rejects a model that advertises the effort but not a reasoning routing parameter", () => {
+    const result = admit("reasoning/model", [{
+      id: "reasoning/model",
+      name: "Reasoning without routing token",
+      supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_completion_tokens"],
+      supportedEfforts: ["low"]
+    }]);
+
+    expect(result).toMatchObject({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      missingCapabilities: ["reasoning"]
+    });
+  });
   it("admits a model whose capability union covers the exact strict envelope", () => {
     const result = admit("anthropic/claude-sonnet-4.6", [
       { id: "anthropic/claude-sonnet-4.6", name: "Sonnet 4.6", supportedParameters: sonnet46Union }
@@ -81,7 +100,7 @@ describe("admitOpenRouterRequest", () => {
       {
         id: "compat/max-tokens-only",
         name: "Compatible",
-        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens", "reasoning"]
       }
     ]);
 
@@ -106,7 +125,7 @@ describe("admitOpenRouterRequest", () => {
       {
         id: "nonstrict/response-format-only",
         name: "Non-strict",
-        supportedParameters: ["response_format", "temperature", "top_p", "max_tokens"]
+        supportedParameters: ["response_format", "temperature", "top_p", "max_tokens", "reasoning"]
       }
     ]);
 
@@ -153,6 +172,54 @@ describe("admitOpenRouterRequest", () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected rejection");
     expect(result.category).toBe("structured-output-capability-unknown");
+  });
+
+  it("fails closed against unknown or incompatible exact reasoning effort support", () => {
+    const request = buildChatCompletionRequest({
+      prompt: "Prompt",
+      settings: {
+        model: "reasoning/model",
+        temperatureMode: "provider_default",
+        proseMaxOutputTokens: 2048,
+        assistanceMaxOutputTokens: 8192,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "high"
+      },
+      outputPolicy: "strict"
+    });
+    const supportedParameters = ["max_completion_tokens", "reasoning"];
+
+    expect(admitOpenRouterRequest({
+      request,
+      cachedModels: [{ id: "reasoning/model", name: "Reasoning", supportedParameters }]
+    })).toMatchObject({
+      ok: false,
+      category: "structured-output-capability-unknown",
+      recovery: expect.stringMatching(/refresh/i)
+    });
+    expect(admitOpenRouterRequest({
+      request,
+      cachedModels: [{
+        id: "reasoning/model",
+        name: "Reasoning",
+        supportedParameters,
+        supportedEfforts: ["minimal", "low"]
+      }]
+    })).toMatchObject({
+      ok: false,
+      category: "reasoning-effort-incompatible-model",
+      supportedEfforts: ["minimal", "low"],
+      recovery: expect.stringMatching(/supported effort or another model/i)
+    });
+    expect(admitOpenRouterRequest({
+      request,
+      cachedModels: [{
+        id: "reasoning/model",
+        name: "Reasoning",
+        supportedParameters,
+        supportedEfforts: ["low", "high"]
+      }]
+    })).toEqual({ ok: true });
   });
 
   it("never leaks secrets or prompt material in the sanitized rejection", () => {
@@ -225,7 +292,9 @@ describe("requiredOpenRouterCapabilities", () => {
           temperatureMode: "explicit",
           temperature: 0,
           proseMaxOutputTokens: 1024,
-          assistanceMaxOutputTokens: 4096
+          assistanceMaxOutputTokens: 4096,
+          proseReasoningEffort: "low",
+          assistanceReasoningEffort: "low"
         },
         outputPolicy: "strict",
         requestOptions: strictRequestOptions
@@ -246,6 +315,8 @@ function finalizedStrictRequest(requestOptions: OpenRouterRequestOptions = stric
       temperature: 0,
       proseMaxOutputTokens: 1024,
       assistanceMaxOutputTokens: 4096,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "low",
       topP: 1
     },
     outputPolicy: "strict",
@@ -257,7 +328,8 @@ describe("finalized request admission", () => {
   const sonnet5ShapedCapabilities = [
     "response_format",
     "structured_outputs",
-    "max_completion_tokens"
+    "max_completion_tokens",
+    "reasoning"
   ];
 
   function finalizedRequest(temperatureMode: "explicit" | "provider_default", topP?: number) {
@@ -269,6 +341,8 @@ describe("finalized request admission", () => {
         ...(temperatureMode === "explicit" ? { temperature: 1 } : {}),
         proseMaxOutputTokens: 1024,
         assistanceMaxOutputTokens: 2048,
+        proseReasoningEffort: "low",
+        assistanceReasoningEffort: "low",
         ...(topP === undefined ? {} : { topP })
       },
       outputPolicy: "strict",
@@ -293,7 +367,8 @@ describe("finalized request admission", () => {
     const cachedModels = [{
       id: "synthetic/sonnet-5",
       name: "Synthetic Sonnet 5",
-      supportedParameters: sonnet5ShapedCapabilities
+      supportedParameters: sonnet5ShapedCapabilities,
+      supportedEfforts: ["low" as const]
     }];
 
     expect(admitOpenRouterRequest({ request: finalizedRequest("provider_default"), cachedModels }))

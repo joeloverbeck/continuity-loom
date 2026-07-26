@@ -227,7 +227,8 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     }
   });

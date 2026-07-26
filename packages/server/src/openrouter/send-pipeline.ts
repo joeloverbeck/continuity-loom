@@ -12,7 +12,6 @@ import {
   type OpenRouterDiagnosticReceipt,
   type OpenRouterResponseFacts
 } from "./response.js";
-import { admitOpenRouterRequest } from "./capability.js";
 import type { OpenRouterOutputPolicy } from "./output-policy.js";
 import {
   buildChatCompletionRequest,
@@ -116,10 +115,7 @@ export async function runOpenRouterSendPipeline(
     };
   }
 
-  const admission = admitOpenRouterRequest({
-    request,
-    cachedModels: settings.cachedModels
-  });
+  const admission = inspection.admission;
   if (!admission.ok) {
     return { ok: false, body: admission };
   }
@@ -239,10 +235,17 @@ function trustedMetadata(
   profile: OpenRouterPipelineMetadataProfile,
   inspection: OpenRouterRequestInspection
 ): Readonly<Record<string, unknown>> {
+  const reasoningMetadata = {
+    completionCeilingClass: inspection.completionCeilingClass,
+    reasoningEnabled: inspection.reasoningEnabled,
+    reasoningEffort: inspection.reasoningEffort,
+    reasoningExcluded: inspection.reasoningExcluded
+  };
   const providerMetadata = profile.providerFields === "full"
     ? {
         model: inspection.model,
         provider: "openrouter",
+        ...reasoningMetadata,
         temperatureMode: inspection.temperatureMode,
         ...(inspection.temperature === undefined ? {} : { temperature: inspection.temperature }),
         maxOutputTokens: inspection.maxOutputTokens,
@@ -250,7 +253,8 @@ function trustedMetadata(
       }
     : {
         model: inspection.model,
-        provider: "openrouter"
+        provider: "openrouter",
+        ...reasoningMetadata
       };
 
   return profile.placement === "before"

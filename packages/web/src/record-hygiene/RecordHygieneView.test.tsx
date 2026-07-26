@@ -296,6 +296,16 @@ function compileResponse(overrides: Partial<{
       temperature: 0.4,
       completionCeilingClass: "assistance" as const,
       maxOutputTokens: 2200,
+      reasoningEnabled: true as const,
+      reasoningEffort: "low" as const,
+      reasoningExcluded: true as const,
+      capabilitySnapshot: {
+        model: "openai/gpt-4.1",
+        cacheEntryFound: true,
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low" as const]
+      },
+      admission: { ok: true as const },
       ...(overrides.contextLength === undefined ? {} : { contextLength: overrides.contextLength }),
       requestFingerprint: "request-fingerprint-1"
     }
@@ -332,7 +342,11 @@ function analyzeMetadata() {
     provider: "openrouter" as const,
     temperatureMode: "explicit" as const,
     temperature: 0.4,
+    completionCeilingClass: "assistance" as const,
     maxOutputTokens: 2200,
+    reasoningEnabled: true as const,
+    reasoningEffort: "low" as const,
+    reasoningExcluded: true as const,
     versions: {
       template: "template-hygiene",
       compiler: "compiler-1",

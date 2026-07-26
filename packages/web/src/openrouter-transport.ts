@@ -12,6 +12,7 @@ export type TransportErrorCategory =
   | "server-error"
   | "structured-output-incompatible-model"
   | "structured-output-capability-unknown"
+  | "reasoning-effort-incompatible-model"
   | "provider-unavailable"
   | "rate-limit"
   | "timeout"
@@ -42,6 +43,7 @@ export type OpenRouterDiagnosticDetails = {
     promptTokens?: number;
     completionTokens?: number;
     totalTokens?: number;
+    reasoningTokens?: number;
   };
   retryAfter?: number;
   structuralOutcome?: string;
@@ -66,6 +68,7 @@ export type TransportFailure = {
   // Present on pre-send capability-admission rejections: an actionable recovery instruction.
   recovery?: string;
   missingCapabilities?: string[];
+  supportedEfforts?: string[];
   classification?: OpenRouterResponseClassification;
   diagnostic?: OpenRouterDiagnosticReceipt;
 };
@@ -84,6 +87,7 @@ const transportCategories = new Set<TransportErrorCategory>([
   "server-error",
   "structured-output-incompatible-model",
   "structured-output-capability-unknown",
+  "reasoning-effort-incompatible-model",
   "provider-unavailable",
   "rate-limit",
   "timeout",

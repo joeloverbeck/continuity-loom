@@ -329,7 +329,8 @@ describe("Cast Possibilities browser workflow", () => {
     await sendAnalyze();
 
     expect(await screen.findByRole("heading", { name: "Model cannot satisfy this request" })).not.toBeNull();
-    expect(screen.getByRole("link", { name: "Open Settings" }).getAttribute("href")).toBe("/settings");
+    expect(screen.getAllByRole("link", { name: "Open Settings" })
+      .some((link) => link.getAttribute("href") === "/settings")).toBe(true);
     expect(screen.queryByRole("button", { name: "Refresh model list" })).toBeNull();
   });
 
@@ -654,6 +655,16 @@ function fixtureCompileResult(
         temperature: 0,
         completionCeilingClass: "assistance",
         maxOutputTokens,
+        reasoningEnabled: true,
+        reasoningEffort: "low",
+        reasoningExcluded: true,
+        capabilitySnapshot: {
+          model: "test/model",
+          cacheEntryFound: true,
+          supportedParameters: ["max_tokens", "reasoning"],
+          supportedEfforts: ["low"]
+        },
+        admission: { ok: true },
         ...(contextLength === undefined ? {} : { contextLength }),
         requestFingerprint: `request:${fingerprint}`
       }

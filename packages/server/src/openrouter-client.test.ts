@@ -9,6 +9,8 @@ const settings = {
   temperature: 0.7,
   proseMaxOutputTokens: 1800,
   assistanceMaxOutputTokens: 4096,
+  proseReasoningEffort: "low" as const,
+  assistanceReasoningEffort: "low" as const,
   topP: 0.9
 };
 const request = buildChatCompletionRequest({ prompt: "Compiled prompt", settings, outputPolicy: "prose" });
@@ -67,6 +69,7 @@ describe("sendChatCompletion", () => {
       messages: [{ role: "user", content: "Compiled prompt" }],
       temperature: 0.7,
       max_completion_tokens: 1800,
+      reasoning: { effort: "low", exclude: true },
       top_p: 0.9,
       provider: { require_parameters: true, allow_fallbacks: false },
       plugins: [],
@@ -133,6 +136,39 @@ describe("sendChatCompletion", () => {
       }
     });
     expect(JSON.stringify(result)).not.toMatch(/FULL_PROMPT_SECRET|sk-or-secret|ignored_metadata/);
+  });
+
+  it("drops unexpected reasoning content while retaining only safe aggregate reasoning-token usage", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(jsonResponse({
+        reasoning: "TOP_LEVEL_REASONING_MUST_NOT_CROSS",
+        choices: [{
+          finish_reason: "stop",
+          message: {
+            content: "Candidate prose.",
+            reasoning: "MESSAGE_REASONING_MUST_NOT_CROSS",
+            reasoning_content: "ALT_REASONING_MUST_NOT_CROSS",
+            reasoning_details: [{ text: "DETAIL_REASONING_MUST_NOT_CROSS" }]
+          }
+        }],
+        usage: {
+          completion_tokens_details: {
+            reasoning_tokens: 37,
+            reasoning_content: "USAGE_REASONING_MUST_NOT_CROSS"
+          }
+        }
+      })))
+    );
+
+    const result = await sendChatCompletion({ request, apiKey: "sk-or-test" });
+
+    expect(result).toMatchObject({
+      ok: true,
+      candidate: { text: "Candidate prose." },
+      response: { usage: { reasoningTokens: 37 } }
+    });
+    expect(JSON.stringify(result)).not.toMatch(/REASONING_MUST_NOT_CROSS|reasoning_content|reasoning_details/);
   });
 
   it("lets a structured in-band provider error defeat accompanying partial content", async () => {

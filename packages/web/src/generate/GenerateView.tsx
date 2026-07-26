@@ -1,4 +1,9 @@
-import type { CompileResult, GenerationReadiness, ReadinessDiagnostic } from "@loom/core";
+import type {
+  AcceptedSegmentProvenance,
+  CompileResult,
+  GenerationReadiness,
+  ReadinessDiagnostic
+} from "@loom/core";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -284,7 +289,7 @@ export function GenerateView(): React.JSX.Element {
       const result = await acceptCandidate({
         text: candidate.text,
         generationMetadata: candidate.source === "openrouter"
-          ? { source: "openrouter", ...candidate.generationMetadata }
+          ? acceptedOpenRouterProvenance(candidate.generationMetadata)
           : { source: "user_supplied", versions: candidate.sourceContext.versions }
       });
 
@@ -373,6 +378,31 @@ export function GenerateView(): React.JSX.Element {
   );
 }
 
+function acceptedOpenRouterProvenance(
+  metadata: GenerationMetadata
+): Extract<AcceptedSegmentProvenance, { source: "openrouter" }> {
+  return metadata.temperatureMode === "explicit"
+    ? {
+        source: "openrouter",
+        model: metadata.model,
+        provider: metadata.provider,
+        temperatureMode: "explicit",
+        temperature: metadata.temperature,
+        maxOutputTokens: metadata.maxOutputTokens,
+        ...(metadata.topP === undefined ? {} : { topP: metadata.topP }),
+        versions: metadata.versions
+      }
+    : {
+        source: "openrouter",
+        model: metadata.model,
+        provider: metadata.provider,
+        temperatureMode: "provider_default",
+        maxOutputTokens: metadata.maxOutputTokens,
+        ...(metadata.topP === undefined ? {} : { topP: metadata.topP }),
+        versions: metadata.versions
+      };
+}
+
 function updateCandidate(candidate: Candidate, updates: Partial<CandidateCommon>): Candidate {
   if (candidate.source === "openrouter") {
     return { ...candidate, ...updates, source: "openrouter" };
@@ -444,7 +474,9 @@ function ReadyGenerate({
   onChecklistAction: React.ComponentProps<typeof ReadinessChecklist>["actions"];
 }): React.JSX.Element {
   const candidateTransitionUnavailable = isCandidateTransitionUnavailable(candidateState, pendingDiscardAction);
-  const canGenerate = readiness.canGenerate && !candidateTransitionUnavailable;
+  const canGenerate = readiness.canGenerate &&
+    result.providerRequest.admission?.ok !== false &&
+    !candidateTransitionUnavailable;
   const showReadinessChecklist = readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
   const writeOrPasteRef = useRef<HTMLButtonElement>(null);
   const showManualEntryRecovery =
@@ -557,7 +589,7 @@ function ReadyGenerate({
               <button
                 type="button"
                 onClick={onGenerate}
-                disabled={!readiness.canGenerate || candidateTransitionUnavailable}
+                disabled={!canGenerate}
               >
                 Regenerate
               </button>
@@ -565,7 +597,7 @@ function ReadyGenerate({
               <button
                 type="button"
                 onClick={onGenerate}
-                disabled={!readiness.canGenerate || candidateTransitionUnavailable}
+                disabled={!canGenerate}
               >
                 Replace with OpenRouter generation
               </button>

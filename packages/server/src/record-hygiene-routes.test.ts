@@ -40,7 +40,8 @@ describe("record hygiene routes", () => {
       cachedModels: [{
         id: "openai/gpt-4.1",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
     sendChatCompletionMock.mockReset();
@@ -335,7 +336,8 @@ describe("record hygiene routes", () => {
         id: "tiny/context",
         name: "Tiny Context",
         contextLength: 16,
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
     await prepareHygieneProject(fastify);

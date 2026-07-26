@@ -409,14 +409,23 @@ export function CastPossibilitiesView({
               <input
                 type="checkbox"
                 checked={sendConfirmed}
-                disabled={sendState.status === "analyzing" || sendState.status === "regenerating"}
+                disabled={
+                  sendState.status === "analyzing" ||
+                  sendState.status === "regenerating" ||
+                  compileState.result.providerRequest.admission?.ok === false
+                }
                 onChange={(event) => setSendConfirmed(event.target.checked)}
               />
               I inspected the complete source and confirm this one-time send
             </label>
             <button
               type="button"
-              disabled={!sendConfirmed || sendState.status === "analyzing" || sendState.status === "regenerating"}
+              disabled={
+                !sendConfirmed ||
+                sendState.status === "analyzing" ||
+                sendState.status === "regenerating" ||
+                compileState.result.providerRequest.admission?.ok === false
+              }
               onClick={() => void analyze()}
             >
               Analyze with OpenRouter
@@ -501,7 +510,11 @@ export function CastPossibilitiesView({
             <input
               type="checkbox"
               checked={regeneration.confirmed}
-              disabled={sendState.status === "analyzing" || sendState.status === "regenerating"}
+              disabled={
+                sendState.status === "analyzing" ||
+                sendState.status === "regenerating" ||
+                regeneration.compile.providerRequest.admission?.ok === false
+              }
               onChange={(event) => setRegeneration({ ...regeneration, confirmed: event.target.checked })}
             />
             I inspected this target-only source and confirm one regeneration request
@@ -511,7 +524,8 @@ export function CastPossibilitiesView({
             disabled={
               !regeneration.confirmed ||
               sendState.status === "analyzing" ||
-              sendState.status === "regenerating"
+              sendState.status === "regenerating" ||
+              regeneration.compile.providerRequest.admission?.ok === false
             }
             onClick={() => void sendRegeneration()}
           >

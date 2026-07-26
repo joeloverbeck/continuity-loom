@@ -86,7 +86,7 @@ describe("Accepted-Segment Change Review routes", () => {
     ]));
     expect(response.providerRequest).toMatchObject({
       completionCeilingClass: "assistance",
-      maxOutputTokens: 4096
+      maxOutputTokens: 8192
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
     expect(after).toEqual(before);
@@ -248,7 +248,8 @@ describe("Accepted-Segment Change Review routes", () => {
         {
           id: "anthropic/claude-sonnet-4",
           name: "Sonnet 4",
-          supportedParameters: ["max_tokens", "temperature", "tool_choice", "tools", "top_p"]
+          supportedParameters: ["max_tokens", "temperature", "tool_choice", "tools", "top_p"],
+          supportedEfforts: ["low"]
         }
       ]
     });
@@ -359,9 +360,11 @@ describe("Accepted-Segment Change Review routes", () => {
           "structured_outputs",
           "temperature",
           "max_completion_tokens",
+          "reasoning",
           "tools",
           "tool_choice"
-        ]
+        ],
+        supportedEfforts: ["low"]
       }]
     });
     const candidate = app();
@@ -426,7 +429,8 @@ function configureCompatibleModel(): void {
       {
         id: "test/structured-output-capable",
         name: "Structured Output Capable",
-        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }
     ]
   });

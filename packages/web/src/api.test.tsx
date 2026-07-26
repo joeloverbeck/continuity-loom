@@ -407,7 +407,11 @@ describe("api client", () => {
       provider: "openrouter",
       temperatureMode: "explicit",
       temperature: 0.4,
+      completionCeilingClass: "prose",
       maxOutputTokens: 2200,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
       topP: 0.9,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     } satisfies GenerationMetadata;
@@ -446,7 +450,11 @@ describe("api client", () => {
       provider: "openrouter",
       temperatureMode: "explicit",
       temperature: 0.4,
+      completionCeilingClass: "assistance",
       maxOutputTokens: 2200,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
       versions: { template: "1.0.0", compiler: "1.0.0", contract: "1.0.0" }
     } satisfies GenerationMetadata;
     const success = { ok: true, malformed: true, raw: "scratch", metadata } as const;

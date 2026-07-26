@@ -126,7 +126,8 @@ describe("generate routes", () => {
         id: "anthropic/claude-sonnet-4",
         name: "Compact test model",
         contextLength: 1801,
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
 
@@ -198,7 +199,8 @@ describe("generate routes", () => {
         id: "anthropic/claude-sonnet-4",
         name: "Tiny compatible model",
         contextLength: 1,
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
 
@@ -228,7 +230,8 @@ describe("generate routes", () => {
         id: "anthropic/claude-sonnet-4",
         name: "Large compatible model",
         contextLength: 100_000,
-        supportedParameters: ["temperature", "max_completion_tokens"]
+        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
 
@@ -303,7 +306,11 @@ describe("generate routes", () => {
         provider: "openrouter",
         temperatureMode: "explicit",
         temperature: 0.4,
+        completionCeilingClass: "prose",
         maxOutputTokens: 2200,
+        reasoningEnabled: true,
+        reasoningEffort: "low",
+        reasoningExcluded: true,
         topP: 0.9,
           versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
       }
@@ -341,7 +348,11 @@ describe("generate routes", () => {
       provider: "openrouter",
       temperatureMode: "explicit",
       temperature: 0.7,
+      completionCeilingClass: "prose",
       maxOutputTokens: 1800,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
           versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
     });
     expect(body.metadata).not.toHaveProperty("topP");
@@ -365,7 +376,8 @@ describe("generate routes", () => {
         cachedModels: [{
           id: "synthetic/sonnet-5",
           name: "No-temperature compatible model",
-          supportedParameters: ["max_completion_tokens"]
+          supportedParameters: ["max_completion_tokens", "reasoning"],
+          supportedEfforts: ["low"]
         }]
       }
     });
@@ -587,7 +599,8 @@ async function putSettings(
       cachedModels: [{
         id: model,
         name: "Compatible test model",
-        supportedParameters: ["temperature", "top_p", "max_completion_tokens"]
+        supportedParameters: ["temperature", "top_p", "max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }],
       ...overrides
     }

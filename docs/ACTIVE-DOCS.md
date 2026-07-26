@@ -62,6 +62,7 @@ Every active Markdown document under `docs/` must appear in the registry below. 
 | `docs/adr/0004-secret-is-sole-reader-concealment-authority.md` | SECRET is the sole reader-concealment authority; FACT.audience_visibility is author metadata, not a reader-concealment control, and wiring it would require a FOUNDATIONS amendment first. | decision | support |
 | `docs/adr/0005-openrouter-transport-decodes-facts-workflows-decide-usability.md` | OpenRouter transport decodes response facts and sanitized correlation metadata while each workflow owns output usability. | decision | support |
 | `docs/adr/0006-output-policy-selects-prose-or-assistance-completion-ceiling.md` | Output policy selects one global Prose or Assistance completion ceiling, with cost-preserving atomic migration and request-fingerprint freshness. | decision | support |
+| `docs/adr/0007-output-policy-requires-explicit-excluded-reasoning.md` | Output policy requires a class-specific explicit reasoning effort, excluded reasoning content, fail-closed capability admission, and freshness-bound capability snapshots. | decision | support |
 | `docs/archival-workflow.md` | Repository archival destinations, required closeout steps, and post-archive reference rules. | how-to | support |
 
 ### Constitutional authority

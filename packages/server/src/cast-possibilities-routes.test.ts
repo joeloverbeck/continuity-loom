@@ -132,7 +132,7 @@ describe("Cast Possibilities routes", () => {
     });
     expect(body.providerRequest).toMatchObject({
       completionCeilingClass: "assistance",
-      maxOutputTokens: 4096
+      maxOutputTokens: 8192
     });
     expect(sendChatCompletionMock).not.toHaveBeenCalled();
   });
@@ -520,7 +520,8 @@ describe("Cast Possibilities routes", () => {
       cachedModels: [{
         id: "test/no-cache",
         name: "Known incompatible",
-        supportedParameters: ["temperature"]
+        supportedParameters: ["temperature"],
+        supportedEfforts: ["low"]
       }]
     });
     const incompatibleInspection = await compilePossibilities(candidate);
@@ -541,7 +542,8 @@ describe("Cast Possibilities routes", () => {
         id: "test/no-cache",
         name: "Too small",
         contextLength: 4097,
-        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+        supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens", "reasoning"],
+        supportedEfforts: ["low"]
       }]
     });
     const oversizeInspection = await compilePossibilities(candidate);
@@ -644,7 +646,8 @@ function configureCompatibleModel(contextLength?: number): void {
       id: "test/structured-output-capable",
       name: "Structured Output Capable",
       ...(contextLength === undefined ? {} : { contextLength }),
-      supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens"]
+      supportedParameters: ["response_format", "structured_outputs", "temperature", "top_p", "max_tokens", "reasoning"],
+      supportedEfforts: ["low"]
     }]
   });
 }

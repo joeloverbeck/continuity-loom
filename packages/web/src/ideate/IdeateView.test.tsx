@@ -40,6 +40,30 @@ afterEach(() => {
 });
 
 describe("IdeateView", () => {
+  it("keeps Assistance send unavailable when the inspected reasoning capability is unknown", async () => {
+    const compiled = compileResult("# Grounded Ideation Prompt\n<ideation_slots>");
+    vi.mocked(compileIdeation).mockResolvedValue({
+      ...compiled,
+      providerRequest: {
+        ...compiled.providerRequest,
+        admission: {
+          ok: false,
+          category: "structured-output-capability-unknown",
+          message: "The selected model has no usable cached reasoning-effort capability data.",
+          recovery: "Refresh the OpenRouter model list, then reinspect."
+        }
+      }
+    });
+
+    renderIdeate();
+
+    const button = await screen.findByRole<HTMLButtonElement>("button", { name: "Get ideas" });
+    expect(button.disabled).toBe(true);
+    expect(screen.getByRole("alert", { name: "OpenRouter capability blocker" })).toBeTruthy();
+    fireEvent.click(button);
+    expect(ideate).not.toHaveBeenCalled();
+  });
+
   it("shows the shared advisory while Get ideas remains enabled and display sends nothing", async () => {
     const compiled = compileResult("# Grounded Ideation Prompt\n<ideation_slots>");
     vi.mocked(compileIdeation).mockResolvedValue({
@@ -642,6 +666,16 @@ function compileResult(prompt: string, fingerprint = "fingerprint-1") {
       temperature: 0.4,
       completionCeilingClass: "assistance" as const,
       maxOutputTokens: 2200,
+      reasoningEnabled: true as const,
+      reasoningEffort: "low" as const,
+      reasoningExcluded: true as const,
+      capabilitySnapshot: {
+        model: "openai/gpt-4.1",
+        cacheEntryFound: true,
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low" as const]
+      },
+      admission: { ok: true as const },
       requestFingerprint: fingerprint
     }
   };
@@ -661,7 +695,11 @@ function generationMetadata() {
     provider: "openrouter" as const,
     temperatureMode: "explicit" as const,
     temperature: 0.4,
+    completionCeilingClass: "assistance" as const,
     maxOutputTokens: 2200,
+    reasoningEnabled: true as const,
+    reasoningEffort: "low" as const,
+    reasoningExcluded: true as const,
     versions: {
       template: "template-ideation",
       compiler: "compiler-1",

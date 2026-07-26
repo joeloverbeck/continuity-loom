@@ -31,8 +31,8 @@ export function PromptInspector({
   const contextWindowAdvisory = providerRequest === undefined
     ? undefined
     : buildContextWindowAdvisory(result.metadata.tokenEstimate, providerRequest, canNarrowScope);
-  const showAssistanceCeilingAdvisory = providerRequest?.completionCeilingClass === "assistance" &&
-    providerRequest.maxOutputTokens < 4096;
+  const showCeilingAdvisory = providerRequest !== undefined && providerRequest.maxOutputTokens <
+    (providerRequest.completionCeilingClass === "prose" ? 2048 : 8192);
 
   useEffect(() => {
     activeMarkRef.current?.scrollIntoView?.({ block: "center" });
@@ -69,15 +69,25 @@ export function PromptInspector({
         </div>
       ) : null}
 
-      {showAssistanceCeilingAdvisory ? (
+      {showCeilingAdvisory && providerRequest ? (
         <p
           className="status statusWarning"
           role="status"
-          aria-label="Assistance-ceiling suitability advisory"
+          aria-label={`${ceilingClassLabel(providerRequest.completionCeilingClass)}-ceiling suitability advisory`}
         >
-          The configured Assistance ceiling is {providerRequest.maxOutputTokens} tokens and may be too small for a
-          complete structured result. 4096 is a starting allowance, not a guarantee. <a href="/settings">Open
+          The configured {ceilingClassLabel(providerRequest.completionCeilingClass)} ceiling is {
+            providerRequest.maxOutputTokens
+          } tokens and is below the fresh default of {
+            providerRequest.completionCeilingClass === "prose" ? 2048 : 8192
+          }. This preserved setting remains usable; the warning does not block sending. <a href="/settings">Open
           Settings</a> to review it; reading this advisory leaves the configured value unchanged.
+        </p>
+      ) : null}
+
+      {providerRequest?.admission && !providerRequest.admission.ok ? (
+        <p className="status statusError" role="alert" aria-label="OpenRouter capability blocker">
+          {providerRequest.admission.message} {providerRequest.admission.recovery} <a href="/settings">Open
+          Settings</a> to refresh the model list or choose an explicit model and effort.
         </p>
       ) : null}
 
@@ -145,6 +155,26 @@ export function PromptInspector({
                   <dd>{providerRequest.maxOutputTokens}</dd>
                 </div>
                 <div>
+                  <dt>Output class</dt>
+                  <dd>{ceilingClassLabel(providerRequest.completionCeilingClass)}</dd>
+                </div>
+                <div>
+                  <dt>Reasoning enabled</dt>
+                  <dd>{providerRequest.reasoningEnabled ? "Yes (mandatory)" : "Unavailable"}</dd>
+                </div>
+                <div>
+                  <dt>Reasoning effort</dt>
+                  <dd>{providerRequest.reasoningEffort}</dd>
+                </div>
+                <div>
+                  <dt>Reasoning content</dt>
+                  <dd>{providerRequest.reasoningExcluded ? "Excluded" : "Unavailable"}</dd>
+                </div>
+                <div>
+                  <dt>Supported efforts</dt>
+                  <dd>{supportedEffortsLabel(providerRequest.capabilitySnapshot?.supportedEfforts)}</dd>
+                </div>
+                <div>
                   <dt>Request fingerprint</dt>
                   <dd>{providerRequest.requestFingerprint}</dd>
                 </div>
@@ -155,6 +185,15 @@ export function PromptInspector({
       </section>
     </>
   );
+}
+
+function supportedEffortsLabel(
+  supportedEfforts: OpenRouterRequestInspection["capabilitySnapshot"]["supportedEfforts"] | undefined
+): string {
+  if (supportedEfforts === undefined || supportedEfforts === null) {
+    return "Unknown - refresh model list";
+  }
+  return supportedEfforts.length === 0 ? "None" : supportedEfforts.join(", ");
 }
 
 function buildContextWindowAdvisory(

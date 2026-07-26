@@ -433,6 +433,16 @@ function compileResponse(): CompileSuccess {
       temperature: 0.1,
       completionCeilingClass: "assistance",
       maxOutputTokens: 500,
+      reasoningEnabled: true,
+      reasoningEffort: "low",
+      reasoningExcluded: true,
+      capabilitySnapshot: {
+        model: "test/model",
+        cacheEntryFound: true,
+        supportedParameters: ["max_tokens", "reasoning"],
+        supportedEfforts: ["low"]
+      },
+      admission: { ok: true },
       requestFingerprint: "request:12345678"
     }
   };

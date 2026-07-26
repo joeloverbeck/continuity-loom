@@ -97,10 +97,32 @@ export interface OpenRouterRequestInspection {
   temperature?: number;
   completionCeilingClass: "prose" | "assistance";
   maxOutputTokens: number;
+  reasoningEnabled: true;
+  reasoningEffort: OpenRouterReasoningEffort;
+  reasoningExcluded: true;
+  capabilitySnapshot: {
+    model: string;
+    cacheEntryFound: boolean;
+    supportedParameters: readonly string[] | null;
+    supportedEfforts: readonly OpenRouterReasoningEffort[] | null;
+    contextLength?: number;
+  };
+  admission:
+    | { ok: true }
+    | {
+        ok: false;
+        category: "structured-output-incompatible-model" | "structured-output-capability-unknown" | "reasoning-effort-incompatible-model";
+        message: string;
+        recovery: string;
+        missingCapabilities?: string[];
+        supportedEfforts?: OpenRouterReasoningEffort[];
+      };
   contextLength?: number;
   topP?: number;
   requestFingerprint: string;
 }
+
+export type OpenRouterReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 export type CompileResponse =
   | (CompileResult & { providerRequest: OpenRouterRequestInspection })
@@ -114,12 +136,15 @@ export interface OpenRouterModelListEntry {
   // OpenRouter's per-model union of endpoint-supported parameters; carried through the settings
   // round-trip so strict structured-output capability data is not stripped client-side.
   supportedParameters?: string[];
+  supportedEfforts?: OpenRouterReasoningEffort[];
 }
 
 interface OpenRouterSettingsBase {
   model: string;
   proseMaxOutputTokens: number;
   assistanceMaxOutputTokens: number;
+  proseReasoningEffort: OpenRouterReasoningEffort;
+  assistanceReasoningEffort: OpenRouterReasoningEffort;
   topP?: number;
   cachedModels?: OpenRouterModelListEntry[];
 }
@@ -139,7 +164,11 @@ export type RefreshModelsResponse = { ok: true; models: OpenRouterModelListEntry
 type GenerationMetadataBase = {
   model: string;
   provider: "openrouter";
+  completionCeilingClass: "prose" | "assistance";
   maxOutputTokens: number;
+  reasoningEnabled: true;
+  reasoningEffort: OpenRouterReasoningEffort;
+  reasoningExcluded: true;
   topP?: number;
   versions: CompileResult["metadata"]["versions"];
 };

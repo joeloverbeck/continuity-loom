@@ -19,7 +19,8 @@ import type { OpenRouterRequest } from "./request.js";
 
 export type CapabilityAdmissionCategory =
   | "structured-output-incompatible-model"
-  | "structured-output-capability-unknown";
+  | "structured-output-capability-unknown"
+  | "reasoning-effort-incompatible-model";
 
 export interface CapabilityAdmissionRejection {
   ok: false;
@@ -28,6 +29,7 @@ export interface CapabilityAdmissionRejection {
   recovery: string;
   /** Representative routing-capability token for each unsatisfied requirement (incompatible case only). */
   missingCapabilities?: string[];
+  supportedEfforts?: string[];
 }
 
 export type CapabilityAdmissionResult = { ok: true } | CapabilityAdmissionRejection;
@@ -73,7 +75,7 @@ export function requiredOpenRouterCapabilities(request: OpenRouterRequest): Capa
   }
 
   requirements.push({ label: "completion length", anyOf: ["max_tokens", "max_completion_tokens"] });
-
+  requirements.push({ label: "reasoning", anyOf: ["reasoning", "reasoning_effort"] });
   if (request.top_p !== undefined) {
     requirements.push({ label: "sampling top_p", anyOf: ["top_p"] });
   }
@@ -96,6 +98,23 @@ export function requiredOpenRouterCapabilities(request: OpenRouterRequest): Capa
  */
 export function admitOpenRouterRequest(input: OpenRouterRequestAdmissionInput): CapabilityAdmissionResult {
   const entry = findSelectedModel(input.request.model, input.cachedModels);
+  if (entry?.supportedEfforts === undefined) {
+    return {
+      ok: false,
+      category: "structured-output-capability-unknown",
+      message: "The selected model has no usable cached reasoning-effort capability data.",
+      recovery: "Refresh the OpenRouter model list, then reinspect before using the existing action. No request was sent; no retry is automatic."
+    };
+  }
+  if (!entry.supportedEfforts.includes(input.request.reasoning.effort)) {
+    return {
+      ok: false,
+      category: "reasoning-effort-incompatible-model",
+      message: `The selected model does not support the stored ${input.request.reasoning.effort} reasoning effort.`,
+      recovery: "Choose a supported effort or another model, then reinspect before using the existing action. No request was sent; no retry is automatic.",
+      supportedEfforts: [...entry.supportedEfforts]
+    };
+  }
   const supported = entry?.supportedParameters;
 
   if (supported === undefined || supported.length === 0) {
