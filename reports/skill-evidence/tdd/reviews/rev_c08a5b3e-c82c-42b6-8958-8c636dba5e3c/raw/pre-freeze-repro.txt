@@ -1,0 +1,69 @@
+
+### BASELINE
+  PASS (0 errors)
+
+### D-A1 aligned + 'no conflict with ADR-0003'
+  preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  gate ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  compact TDD row 7 ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+
+### D-A2 aligned citing a 'blocked' domain noun
+  preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  gate ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  compact TDD row 7 ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+
+### D-A3 N/A because ... 'no unresolved' authority
+  preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  gate ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+  compact TDD row 7 ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+
+### D-B1 'all acceptance-audit rows list ... atoms ... proof surfaces'
+  Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+
+### D-B2 'every row lists authoritative atoms and proof surfaces'
+  Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+
+### D-B3 seq: 'every row lists ordered proof or a justified sequence N/A'
+  Acceptance sequence map must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'
+
+### D-B4 seq: 'all acceptance-audit rows list ordered proof or a justified sequence N/A'
+  Acceptance sequence map must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'
+
+### D-C1 artifact path containing 'pending'
+  evidence identity fields are empty or unresolved
+
+### D-C2 identity naming an angle-bracket domain token
+  evidence identity fields are empty or unresolved
+
+### baseline
+  PASS
+
+### cov-1 canonical
+  PASS
+
+### cov-2 'the behavior already existed'
+  compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; red-first N/A because the behavior already existed and no production code changed; for expectation rewrites use `existing contract-change expectation in <test file> because ...`, not `existing-test contract-change expectation`
+
+### cov-3 'red-first is N/A because behavior already existed'
+  compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; red-first is N/A because behavior already existed and no production code changed; for expectation rewrites use `existing contract-change expectation in <test file> because ...`, not `existing-test contract-change expectation`
+
+### cov-4 'no production code changed; red-first N/A because behavior already existed'
+  PASS
+
+### fresh-1 canonical
+  PASS
+
+### fresh-2 'reran the browser smoke on the final tree; observed outcome ready'
+  PASS
+
+### fresh-3 'browser smoke re-executed on the final tree ... passed'
+  PASS
+
+### fresh-4 'not affected' full form
+  PASS
+
+### ps-1 doc example
+  PASS
+
+### ps-2 'configured ports 4173 and 5173 were free'
+  Evidence-only proof server preflight must state configured API/UI ports, owner-check result, unrelated pre-existing owners, configured-ports-free or isolated proof-owned ports with aligned proxy/API base, and cleanup ownership, or a justified N/A/blocked reason

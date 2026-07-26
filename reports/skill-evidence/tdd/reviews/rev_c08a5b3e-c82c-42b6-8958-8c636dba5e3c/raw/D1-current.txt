@@ -1,0 +1,30 @@
+F1	REJECT	authority: aligned + 'no conflict with ADR-0003'	preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+F2	REJECT	authority: aligned citing a 'blocked-demo' domain noun	preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+F3	REJECT	authority: N/A because no unresolved governing authority	preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+F4	REJECT	atom map: 'all acceptance-audit rows list ...'	Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+F5	REJECT	atom map: 'every row lists ...'	Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+F6	REJECT	sequence map: 'every row lists ordered proof or a justified sequence N/A'	Acceptance sequence map must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'
+F7	REJECT	identity artifact filename containing 'pending'	evidence identity fields are empty or unresolved
+F8	REJECT	identity naming a backticked angle-bracket domain token	evidence identity fields are empty or unresolved
+F9	REJECT	coverage-only red cell: 'because the behavior already existed'	compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; red-first N/A because the behavior already existed and no production code changed; for expectation rewrites use `existing contract-change expectation in <test file> because ...`, not `existing-test contract-change expectation`
+F10	REJECT	coverage-only red cell: 'red-first is N/A because ...'	compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; red-first is N/A because behavior already existed and no production code changed; for expectation rewrites use `existing contract-change expectation in <test file> because ...`, not `existing-test contract-change expectation`
+S1	REJECT	authority: genuine unresolved conflict	preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+S2	REJECT	authority: presence-only 'read'	preflight ADRs/principles/docs status must state an explicit authority disposition: aligned with a concrete basis, approved amendment/exception with a durable authority reference, or N/A because
+S3	REJECT	authority: approved amendment with no durable reference	preflight ADRs/principles/docs status must include a durable authority reference for the approved amendment, exception, or waiver
+S4	REJECT	identity: unresolved <paths> placeholder	evidence identity fields are empty or unresolved
+S5	REJECT	review-fix map cell literally TBD	TDD review-fix map row 1 Green command/evidence is empty or unresolved
+S6	REJECT	atom map: non-universal 'some rows'	Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+S7	REJECT	atom map: no quantifier	Acceptance atom map must state that all rows list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+S8	REJECT	coverage-only red cell with no reason clause	compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; for expectation rewrites use `existing contract-change expectation in <test file> because ...`, not `existing-test contract-change expectation`
+S9	REJECT	sequence map: 'most rows list ordered proof'	Acceptance sequence map must state that all rows list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'
+S10	REJECT	authority: bare 'aligned' with no basis	preflight ADRs/principles/docs status must state an explicit authority disposition: aligned with a concrete basis, approved amendment/exception with a durable authority reference, or N/A because
+P1	ACCEPT	baseline single-issue closing body	-
+P2	ACCEPT	canonical coverage-only red cell	-
+P3	ACCEPT	canonical atom and sequence maps	-
+P4	ACCEPT	withheld structured fixture identity	-
+P5	ACCEPT	browser evidence-only body	-
+P6	ACCEPT	existing contract-change expectation row	-
+P7	ACCEPT	recovery addendum body	-
+P8	ACCEPT	review-fix map body	-
+P9	ACCEPT	child-family body with acceptance manifest	-
+P10	ACCEPT	all-none superseded inventory with terminal punctuation	-

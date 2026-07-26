@@ -48,8 +48,14 @@ evidence, vocabulary, and card contract.
 
 Open the report when the environment allows, using the OS-appropriate command;
 on WSL prefer `wslview` or Windows Explorer. Dispatch terminal openers detached
-so they cannot hold the run open. Always print both the exact opener command and
-the absolute report path, because dispatch success does not prove a visible GUI.
+so they cannot hold the run open. When command execution is sandboxed, obtain
+the environment's normal GUI or host-execution authorization before dispatching
+the opener. Capture its immediate stderr and exit status; treat explicit
+launcher refusal output, including `snap-confine` refusing to continue, as a
+failed open even when `xdg-open` or `gio` returns zero. Apply the same GUI or
+host authorization to any named-browser fallback instead of retrying it inside
+the restricted sandbox. Always print both the exact opener command and the
+absolute report path, because dispatch success does not prove a visible GUI.
 Failure to open a GUI does not invalidate a report that exists at the printed
 path.
 

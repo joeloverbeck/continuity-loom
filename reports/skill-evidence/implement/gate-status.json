@@ -1,10 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-25T21:00:31.154Z",
+  "generated_at": "2026-07-26T18:56:44.039Z",
   "target_content_hash": "877e856dc058ef9b54b4510c81701b2da094f7430f9e4c8827bad5599bb5d303",
-  "qualifying_uses_on_current_hash": 5,
+  "qualifying_uses_on_current_hash": 7,
   "open_incident_ids": [
-    "evt_23c61dff-b9c3-4543-a0f7-385dd5274d28"
+    "evt_23c61dff-b9c3-4543-a0f7-385dd5274d28",
+    "evt_c18ab165-1b9e-46be-ab27-e2ece0cb66e0",
+    "evt_0b26ba69-a15c-460a-a96d-b8bfecbaa347"
   ],
   "candidate_clusters": [
     {
@@ -14,6 +16,15 @@
       ],
       "independent_incidents": 1,
       "max_severity": "material_failure"
+    },
+    {
+      "symptom_key": "cost",
+      "open_event_ids": [
+        "evt_c18ab165-1b9e-46be-ab27-e2ece0cb66e0",
+        "evt_0b26ba69-a15c-460a-a96d-b8bfecbaa347"
+      ],
+      "independent_incidents": 2,
+      "max_severity": "friction"
     }
   ],
   "state": "collecting",
@@ -26,5 +37,5 @@
   "last_completed_review_id": "rev_4e5092f1-25cc-4f89-861c-8d9e7a8e4c88",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "019f9ac1-a9b0-7252-97c7-8fe423e8a89e"
+  "derivation_session_id": "019f9f97-3784-7580-b405-06c1eab0bea9"
 }

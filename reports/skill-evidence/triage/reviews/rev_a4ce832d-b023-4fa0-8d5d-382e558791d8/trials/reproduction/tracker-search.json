@@ -1,0 +1,13 @@
+{
+  "query": "open and closed issues matching response classification repair or accepted contract regression",
+  "results": [
+    {
+      "number": 480,
+      "title": "Define response classification contract",
+      "state": "CLOSED",
+      "stateReason": "COMPLETED",
+      "labels": ["enhancement", "ready-for-agent"]
+    }
+  ],
+  "exhaustiveWithinFixture": true
+}

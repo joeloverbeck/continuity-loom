@@ -1,0 +1,14 @@
+{
+  "query": "project metadata migration",
+  "results": [
+    {
+      "number": 511,
+      "title": "Migrate project metadata to provenance schema v2",
+      "state": "OPEN",
+      "stateReason": null,
+      "labels": ["enhancement", "ready-for-agent"],
+      "body": "Owns the metadata migration required by #510."
+    }
+  ],
+  "exhaustiveWithinFixture": true
+}

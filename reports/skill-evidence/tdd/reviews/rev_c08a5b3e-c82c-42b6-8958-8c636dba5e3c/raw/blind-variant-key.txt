@@ -1,0 +1,7 @@
+Blind variant key (withheld from executors)
+kestrel = CURRENT (live target)
+osprey  = CURRENT (live target)
+marlin  = CANDIDATE
+tern    = CANDIDATE
+Trials T1, T3, T5 used kestrel/marlin; T2 and T4 used osprey/tern.
+Test files were removed from every variant so no executor could read the fixed-behavior tests.

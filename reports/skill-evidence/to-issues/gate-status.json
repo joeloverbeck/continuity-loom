@@ -1,19 +1,21 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-25T19:29:34.385Z",
+  "generated_at": "2026-07-26T01:06:25.412Z",
   "target_content_hash": "dad29d24f2a39c7e46c76844d31bf6d509881a47c21b5fa9fa6c9f7d7e9eea95",
-  "qualifying_uses_on_current_hash": 4,
+  "qualifying_uses_on_current_hash": 5,
   "open_incident_ids": [
     "evt_9933f52f-80a1-48b4-9072-94bef666eaa4",
+    "evt_95fe9fd1-b282-4b6d-a50c-e5ecfb3e02f8",
     "evt_8ea1fd2b-9060-4cc4-9c4e-40f6ea25e37b"
   ],
   "candidate_clusters": [
     {
       "symptom_key": "tool-compatibility",
       "open_event_ids": [
-        "evt_9933f52f-80a1-48b4-9072-94bef666eaa4"
+        "evt_9933f52f-80a1-48b4-9072-94bef666eaa4",
+        "evt_95fe9fd1-b282-4b6d-a50c-e5ecfb3e02f8"
       ],
-      "independent_incidents": 1,
+      "independent_incidents": 2,
       "max_severity": "friction"
     },
     {
@@ -35,5 +37,5 @@
   "last_completed_review_id": null,
   "target_name": "to-issues",
   "target_repo_relative_path": ".claude/skills/to-issues",
-  "derivation_session_id": "019f9a90-c292-7f32-a72f-2a63589991ca"
+  "derivation_session_id": "019f9bc5-4f16-77f2-b89b-3fcd199ac52b"
 }

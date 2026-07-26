@@ -1,0 +1,1 @@
+The current implementation passes the project title directly to the download filename builder. A focused test exports `Night Train` and observes the exact filename `Night Train.json`. The reporter's claimed behavior is not present in the supplied current tree.

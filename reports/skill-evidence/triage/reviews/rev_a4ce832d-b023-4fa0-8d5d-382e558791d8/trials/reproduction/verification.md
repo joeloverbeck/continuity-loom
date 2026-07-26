@@ -1,0 +1,1 @@
+Current HEAD routes a recognized `finish_reason: stop` response with `content: null` to a generic malformed-response error. Completed issue #480 requires classification before content usability is decided. The relevant focused test fails at current HEAD. No repository change is authorized in this trial.

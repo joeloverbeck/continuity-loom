@@ -1,0 +1,30 @@
+F1	ACCEPT	authority: aligned + 'no conflict with ADR-0003'	-
+F2	ACCEPT	authority: aligned citing a 'blocked-demo' domain noun	-
+F3	ACCEPT	authority: N/A because no unresolved governing authority	-
+F4	ACCEPT	atom map: 'all acceptance-audit rows list ...'	-
+F5	ACCEPT	atom map: 'every row lists ...'	-
+F6	ACCEPT	sequence map: 'every row lists ordered proof or a justified sequence N/A'	-
+F7	ACCEPT	identity artifact filename containing 'pending'	-
+F8	ACCEPT	identity naming a backticked angle-bracket domain token	-
+F9	ACCEPT	coverage-only red cell: 'because the behavior already existed'	-
+F10	ACCEPT	coverage-only red cell: 'red-first is N/A because ...'	-
+S1	REJECT	authority: genuine unresolved conflict	preflight ADRs/principles/docs status records an unresolved authority conflict; resolve it before the first red command
+S2	REJECT	authority: presence-only 'read'	preflight ADRs/principles/docs status must state an explicit authority disposition: aligned with a concrete basis, approved amendment/exception with a durable authority reference, or N/A because
+S3	REJECT	authority: approved amendment with no durable reference	preflight ADRs/principles/docs status must include a durable authority reference for the approved amendment, exception, or waiver
+S4	REJECT	identity: unresolved <paths> placeholder	evidence identity fields are empty or unresolved: Current evidence identities <paths>
+S5	REJECT	review-fix map cell literally TBD	TDD review-fix map row 1 Green command/evidence is empty or unresolved: TBD
+S6	REJECT	atom map: non-universal 'some rows'	Acceptance atom map must state that all rows (or every/each row) list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+S7	REJECT	atom map: no quantifier	Acceptance atom map must state that all rows (or every/each row) list authoritative atoms and proof surfaces, that all criteria are atomic with proof surfaces listed, or blocked because. Example: 'all rows in the acceptance audit below list authoritative atoms and proof surfaces'
+S8	REJECT	coverage-only red cell with no reason clause	compact TDD row 7 red command/failure is not concrete: coverage-only existing behavior; a coverage-only existing-behavior row must justify the skip, as in `coverage-only existing behavior; red-first N/A because behavior already existed and no production code changed`
+S9	REJECT	sequence map: 'most rows list ordered proof'	Acceptance sequence map must state that all rows (or every/each row) list ordered proof or justified sequence N/A, that all criteria are not sequence-sensitive, or blocked because. Example: 'all rows list ordered proof or a justified sequence N/A'
+S10	REJECT	authority: bare 'aligned' with no basis	preflight ADRs/principles/docs status must state an explicit authority disposition: aligned with a concrete basis, approved amendment/exception with a durable authority reference, or N/A because
+P1	ACCEPT	baseline single-issue closing body	-
+P2	ACCEPT	canonical coverage-only red cell	-
+P3	ACCEPT	canonical atom and sequence maps	-
+P4	ACCEPT	withheld structured fixture identity	-
+P5	ACCEPT	browser evidence-only body	-
+P6	ACCEPT	existing contract-change expectation row	-
+P7	ACCEPT	recovery addendum body	-
+P8	ACCEPT	review-fix map body	-
+P9	ACCEPT	child-family body with acceptance manifest	-
+P10	ACCEPT	all-none superseded inventory with terminal punctuation	-

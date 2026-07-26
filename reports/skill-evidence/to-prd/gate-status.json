@@ -1,19 +1,21 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-25T19:15:47.100Z",
+  "generated_at": "2026-07-26T00:13:38.895Z",
   "target_content_hash": "d93ff239ebcca7367c17c01f4393b36168059d4f30c788faa9ef848ebf2a6d5e",
-  "qualifying_uses_on_current_hash": 8,
+  "qualifying_uses_on_current_hash": 9,
   "open_incident_ids": [
     "evt_c5489c95-7147-41e7-9ac8-1cc1c798f386",
+    "evt_0a5bbad8-fabc-4a34-adbc-2f77e89aaedd",
     "evt_f76890b1-2265-449d-a574-daf42ba0b9ff"
   ],
   "candidate_clusters": [
     {
       "symptom_key": "tool-compatibility",
       "open_event_ids": [
-        "evt_c5489c95-7147-41e7-9ac8-1cc1c798f386"
+        "evt_c5489c95-7147-41e7-9ac8-1cc1c798f386",
+        "evt_0a5bbad8-fabc-4a34-adbc-2f77e89aaedd"
       ],
-      "independent_incidents": 1,
+      "independent_incidents": 2,
       "max_severity": "friction"
     },
     {
@@ -35,5 +37,5 @@
   "last_completed_review_id": "dec_581ad8e4-4f9d-4aad-a6ee-59eeec05c8a4",
   "target_name": "to-prd",
   "target_repo_relative_path": ".claude/skills/to-prd",
-  "derivation_session_id": "019f9a90-c292-7f32-a72f-2a63589991ca"
+  "derivation_session_id": "019f9b71-434e-7fb1-a3a2-5ac8329b09bc"
 }
