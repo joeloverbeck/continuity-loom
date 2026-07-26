@@ -22,7 +22,6 @@ export type TransportErrorCategory =
 
 export type OpenRouterResponseClassification =
   | "provider-error"
-  | "no-candidate-content"
   | "incomplete-generation"
   | "unrecognized-envelope"
   | "local-validation"

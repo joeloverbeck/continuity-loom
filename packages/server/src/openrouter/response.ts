@@ -53,7 +53,6 @@ export interface OpenRouterResponseFacts {
 
 export type OpenRouterResponseClassification =
   | "provider-error"
-  | "no-candidate-content"
   | "incomplete-generation"
   | "unrecognized-envelope"
   | "local-validation"
@@ -69,12 +68,12 @@ export interface OpenRouterDiagnosticReceipt {
 export type DecodedOpenRouterResponse =
   | {
       ok: true;
-      candidate: { text: string };
+      candidate?: { text: string };
       response: OpenRouterResponseFacts;
     }
   | ({
       ok: false;
-      classification: "provider-error" | "no-candidate-content" | "unrecognized-envelope";
+      classification: "provider-error" | "unrecognized-envelope";
       diagnostic: OpenRouterDiagnosticReceipt;
     } & NormalizedTransportError);
 
@@ -108,6 +107,14 @@ export function decodeOpenRouterResponse(input: {
   );
   const contentLength = typeof content === "string" ? [...content].length : undefined;
   const usage = decodeUsage(property(input.body, "usage"));
+  const structuralOutcome = structuralOutcomeFor({
+    bodyWasJson: input.bodyWasJson,
+    body: input.body,
+    choices,
+    firstChoice,
+    message,
+    content
+  });
   const response: OpenRouterResponseFacts = {
     httpStatus: input.httpStatus,
     requestedModel: input.requestedModel,
@@ -119,7 +126,8 @@ export function decodeOpenRouterResponse(input: {
     ...(provider === undefined ? {} : { provider }),
     ...(nativeFinishReason === undefined ? {} : { nativeFinishReason }),
     ...(contentLength === undefined ? {} : { contentLength }),
-    ...(usage === undefined ? {} : { usage })
+    ...(usage === undefined ? {} : { usage }),
+    ...(structuralOutcome === undefined ? {} : { structuralOutcome })
   };
 
   const supportedError = supportedProviderError(input.body, firstChoice);
@@ -144,36 +152,36 @@ export function decodeOpenRouterResponse(input: {
     };
   }
 
-  const structuralOutcome = structuralOutcomeFor({
-    bodyWasJson: input.bodyWasJson,
-    body: input.body,
-    choices,
-    firstChoice,
-    message,
-    content
-  });
+  if (
+    termination === "length" ||
+    termination === "content-filter" ||
+    termination === "tool"
+  ) {
+    return {
+      ok: true,
+      response,
+      ...(structuralOutcome === undefined
+        ? { candidate: { text: content as string } }
+        : {})
+    };
+  }
+
   if (structuralOutcome !== undefined) {
-    const diagnostic = { ...response, structuralOutcome };
-    const noContent = structuralOutcome === "empty-content";
     return {
       ok: false,
       ...normalizeOpenRouterError(
         input.httpStatus,
         withRetryAfter(
-          { category: noContent ? "no-content" : "unrecognized-response" },
+          { category: "unrecognized-response" },
           input.retryAfterHeader
         )
       ),
-      classification: noContent ? "no-candidate-content" : "unrecognized-envelope",
+      classification: "unrecognized-envelope",
       diagnostic: createDiagnosticReceipt(
-        noContent ? "no-candidate-content" : "unrecognized-envelope",
-        diagnostic,
-        noContent
-          ? "OpenRouter generated no candidate content."
-          : "The OpenRouter response envelope was unrecognized.",
-        noContent
-          ? "Review the selected model and completion settings, then inspect again before using the existing action. No retry is automatic."
-          : "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic."
+        "unrecognized-envelope",
+        response,
+        "The OpenRouter response envelope was unrecognized.",
+        "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic."
       )
     };
   }

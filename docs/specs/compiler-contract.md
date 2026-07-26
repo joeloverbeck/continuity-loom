@@ -56,10 +56,18 @@ count, content shape and length, token usage, retry timing, and a stable
 structural outcome. It never exposes arbitrary provider metadata, prompts,
 records, credentials, or rejected candidate text. A supported in-band provider
 error takes precedence over any partial candidate content in the same response.
+After that error check, recognized `length`, `content-filter`, and `tool`
+termination facts reach workflow policy even when content is null, missing,
+empty, or structurally unsupported. The content's structural outcome remains
+sanitized diagnostic detail; it cannot erase or relabel a recognized
+termination. A normal completion with any unusable content shape remains an
+unrecognized envelope.
 
 Workflow policy, not transport, decides whether decoded candidate content is
 usable. Generate accepts normal completion and may retain length-limited prose
-as an explicitly incomplete Draft Candidate. Ideate, Record Hygiene,
+as an explicitly incomplete Draft Candidate only when non-empty string
+candidate text exists. A length termination without candidate text is an
+output-limit failure and creates no Draft Candidate. Ideate, Record Hygiene,
 Accepted-Segment Change Review, and Cast Possibilities require normal
 completion before their existing whole-response parsers run. Missing content,
 tool or content-filter termination, provider error, and unrecognized response

@@ -10,7 +10,7 @@ import {
 const defaultChatCompletionEndpoint = "https://openrouter.ai/api/v1/chat/completions";
 
 export type TransportResult =
-  | { ok: true; candidate: { text: string }; response: OpenRouterResponseFacts }
+  | { ok: true; candidate?: { text: string }; response: OpenRouterResponseFacts }
   | ({
       ok: false;
       classification?: OpenRouterResponseClassification;

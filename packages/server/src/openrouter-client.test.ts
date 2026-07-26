@@ -178,6 +178,185 @@ describe("sendChatCompletion", () => {
     expect(JSON.stringify(result)).not.toContain("PARTIAL_PROSE_MUST_NOT_CROSS");
   });
 
+  it("hands a recognized length termination with null content to workflow policy", async () => {
+    const fetchSpy = vi.fn(() =>
+      Promise.resolve(
+        jsonResponse({
+          choices: [{
+            finish_reason: "length",
+            message: { content: null }
+          }]
+        })
+      )
+    );
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const result = await sendChatCompletion({ request, apiKey: "sk-or-test" });
+
+    expect(result).toEqual({
+      ok: true,
+      response: {
+        httpStatus: 200,
+        requestedModel: "anthropic/claude-sonnet-4",
+        termination: "length",
+        nativeFinishReason: "length",
+        choiceCount: 1,
+        contentShape: "null",
+        structuralOutcome: "null-content"
+      }
+    });
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies the decoded response precedence matrix across terminations and content shapes", async () => {
+    const recognizedTerminations = [
+      { finishReason: "length", termination: "length" },
+      { finishReason: "content_filter", termination: "content-filter" },
+      { finishReason: "tool_calls", termination: "tool" }
+    ] as const;
+    const contentCases: Array<{
+      message: Record<string, unknown>;
+      contentShape: "null" | "missing" | "string" | "array" | "object";
+      structuralOutcome?: "missing-content" | "null-content" | "unsupported-content" | "empty-content";
+      candidateText?: string;
+    }> = [
+      { message: { content: null }, contentShape: "null", structuralOutcome: "null-content" },
+      { message: {}, contentShape: "missing", structuralOutcome: "missing-content" },
+      { message: { content: "" }, contentShape: "string", structuralOutcome: "empty-content" },
+      { message: { content: "Candidate text" }, contentShape: "string", candidateText: "Candidate text" },
+      {
+        message: { content: [{ type: "text", text: "STRUCTURED_ARRAY_MUST_NOT_CROSS" }] },
+        contentShape: "array",
+        structuralOutcome: "unsupported-content"
+      },
+      {
+        message: { content: { type: "text", text: "STRUCTURED_OBJECT_MUST_NOT_CROSS" } },
+        contentShape: "object",
+        structuralOutcome: "unsupported-content"
+      }
+    ];
+
+    for (const recognized of recognizedTerminations) {
+      for (const contentCase of contentCases) {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn(() =>
+            Promise.resolve(
+              jsonResponse({
+                choices: [{
+                  finish_reason: recognized.finishReason,
+                  message: contentCase.message
+                }]
+              })
+            )
+          )
+        );
+
+        const result = await sendChatCompletion({ request, apiKey: "sk-or-test" });
+        expect(result).toMatchObject({
+          ok: true,
+          response: {
+            termination: recognized.termination,
+            contentShape: contentCase.contentShape,
+            ...(contentCase.structuralOutcome === undefined
+              ? {}
+              : { structuralOutcome: contentCase.structuralOutcome })
+          }
+        });
+        if (contentCase.candidateText === undefined) {
+          expect(result).not.toHaveProperty("candidate");
+        } else {
+          expect(result).toMatchObject({ candidate: { text: contentCase.candidateText } });
+        }
+      }
+    }
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({
+            choices: [{
+              finish_reason: "length",
+              message: { content: "PROVIDER_ERROR_PARTIAL_MUST_NOT_CROSS" },
+              error: {
+                type: "provider_error",
+                message: "Provider failed."
+              }
+            }]
+          })
+        )
+      )
+    );
+    const providerError = await sendChatCompletion({ request, apiKey: "sk-or-test" });
+    expect(providerError).toMatchObject({
+      ok: false,
+      classification: "provider-error",
+      diagnostic: {
+        classification: "provider-error",
+        details: {
+          termination: "length",
+          contentShape: "string"
+        }
+      }
+    });
+    expect(JSON.stringify(providerError)).not.toContain("PROVIDER_ERROR_PARTIAL_MUST_NOT_CROSS");
+
+    const normalUnusableCases: Array<{
+      message: Record<string, unknown>;
+      structuralOutcome: "missing-content" | "null-content" | "unsupported-content" | "empty-content";
+    }> = [
+      { message: { content: null }, structuralOutcome: "null-content" },
+      { message: {}, structuralOutcome: "missing-content" },
+      { message: { content: "" }, structuralOutcome: "empty-content" },
+      { message: { content: [{ type: "text", text: "UNUSABLE" }] }, structuralOutcome: "unsupported-content" },
+      { message: { content: { type: "text", text: "UNUSABLE" } }, structuralOutcome: "unsupported-content" },
+      { message: { content: 42 }, structuralOutcome: "unsupported-content" }
+    ];
+    for (const contentCase of normalUnusableCases) {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() =>
+          Promise.resolve(
+            jsonResponse({
+              choices: [{ finish_reason: "stop", message: contentCase.message }]
+            })
+          )
+        )
+      );
+      const result = await sendChatCompletion({ request, apiKey: "sk-or-test" });
+      expect(result).toMatchObject({
+        ok: false,
+        category: "unrecognized-response",
+        classification: "unrecognized-envelope",
+        diagnostic: {
+          classification: "unrecognized-envelope",
+          details: {
+            termination: "normal",
+            structuralOutcome: contentCase.structuralOutcome
+          }
+        }
+      });
+      expect(result).not.toHaveProperty("candidate");
+    }
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          jsonResponse({
+            choices: [{ finish_reason: "stop", message: { content: "Complete candidate" } }]
+          })
+        )
+      )
+    );
+    await expect(sendChatCompletion({ request, apiKey: "sk-or-test" })).resolves.toMatchObject({
+      ok: true,
+      candidate: { text: "Complete candidate" },
+      response: { termination: "normal", contentShape: "string" }
+    });
+  });
+
   it("returns missing-key before any network request when the key is absent", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);

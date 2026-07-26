@@ -273,11 +273,16 @@ inspection, and error viewing never make a completion request, and recovery
 never retries automatically.
 
 OpenRouter responses are decoded before any workflow treats text as usable.
-Generate can preserve output stopped by the completion limit, but labels it an
-**Incomplete Draft Candidate** with a diagnostic so you can edit, discard, or
-invoke Generate yourself again. Ideate, Record Hygiene, Change Review, and Cast
-Possibilities require a normal completion; they do not salvage partial
-structured output.
+Provider errors take precedence first. Recognized output-limit, content-filter,
+and tool terminations remain visible even when content is null, missing, empty,
+or structurally unsupported; the content problem appears only as technical
+detail. Generate can preserve non-empty text stopped by the completion limit,
+but labels it an **Incomplete Draft Candidate** with a diagnostic so you can
+edit, discard, or invoke Generate yourself again. An output-limit response with
+no candidate text is a failure and opens no Draft Candidate. A normal completion
+with unusable content is an unrecognized response. Ideate, Record Hygiene,
+Change Review, and Cast Possibilities require a normal completion; they do not
+salvage partial structured output.
 
 Provider errors, missing content, filtered or tool-ended output, unrecognized
 responses, and local validation rejection show a transient sanitized

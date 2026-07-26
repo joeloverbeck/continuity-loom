@@ -111,7 +111,121 @@ describe("OpenRouter send pipeline", () => {
         }
       }
     });
-    expect(transport).toHaveBeenCalledTimes(2);
+
+    transport.mockResolvedValue({
+      ok: true,
+      response: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        termination: "length",
+        nativeFinishReason: "length",
+        choiceCount: 1,
+        contentShape: "null",
+        structuralOutcome: "null-content"
+      }
+    });
+
+    const strictWithoutCandidate = await runOpenRouterSendPipeline({
+      profile: {
+        ...baseProfile,
+        outputPolicy: "strict",
+        staleness: { ...baseProfile.staleness, expectedRequestFingerprint: expectedRequestFingerprint("strict") }
+      },
+      settings,
+      transport
+    });
+    const proseWithoutCandidate = await runOpenRouterSendPipeline({
+      profile: {
+        ...baseProfile,
+        outputPolicy: "prose",
+        staleness: { ...baseProfile.staleness, expectedRequestFingerprint: expectedRequestFingerprint("prose") }
+      },
+      settings,
+      transport
+    });
+
+    for (const result of [strictWithoutCandidate, proseWithoutCandidate]) {
+      expect(result).toMatchObject({
+        ok: false,
+        body: {
+          ok: false,
+          category: "output-limit",
+          classification: "incomplete-generation",
+          diagnostic: {
+            classification: "incomplete-generation",
+            details: {
+              termination: "length",
+              contentShape: "null",
+              structuralOutcome: "null-content"
+            }
+          }
+        }
+      });
+      expect(JSON.stringify(result)).not.toContain("candidate");
+    }
+    expect(transport).toHaveBeenCalledTimes(4);
+
+    transport.mockClear();
+    for (const terminationCase of [
+      {
+        termination: "content-filter" as const,
+        category: "content-policy",
+        summary: "OpenRouter stopped the result for content-policy reasons."
+      },
+      {
+        termination: "tool" as const,
+        category: "invalid-request",
+        summary: "OpenRouter returned an unexpected tool completion."
+      }
+    ]) {
+      for (const candidate of [undefined, { text: "UNUSABLE_TERMINATED_CONTENT" }]) {
+        transport.mockResolvedValue({
+          ok: true,
+          ...(candidate === undefined ? {} : { candidate }),
+          response: {
+            httpStatus: 200,
+            requestedModel: "test/model",
+            termination: terminationCase.termination,
+            choiceCount: 1,
+            contentShape: candidate === undefined ? "null" : "string",
+            ...(candidate === undefined
+              ? { structuralOutcome: "null-content" as const }
+              : { contentLength: candidate.text.length })
+          }
+        });
+
+        for (const outputPolicy of ["strict", "prose"] as const) {
+          const result = await runOpenRouterSendPipeline({
+            profile: {
+              ...baseProfile,
+              outputPolicy,
+              staleness: {
+                ...baseProfile.staleness,
+                expectedRequestFingerprint: expectedRequestFingerprint(outputPolicy)
+              }
+            },
+            settings,
+            transport
+          });
+          expect(result).toMatchObject({
+            ok: false,
+            body: {
+              ok: false,
+              category: terminationCase.category,
+              classification: "incomplete-generation",
+              message: terminationCase.summary,
+              diagnostic: {
+                classification: "incomplete-generation",
+                summary: terminationCase.summary,
+                details: { termination: terminationCase.termination }
+              }
+            }
+          });
+          expect(JSON.stringify(result)).not.toContain("UNUSABLE_TERMINATED_CONTENT");
+        }
+      }
+    }
+    expect(transport).toHaveBeenCalledTimes(8);
   });
 
   it("uses injected settings and transport for one finalized admitted request with trusted metadata", async () => {
@@ -225,12 +339,24 @@ describe("OpenRouter send pipeline", () => {
     for (const source of Object.values(routeSources)) {
       expect(source).not.toContain("admitOpenRouterRequest");
       expect(source).not.toContain("sendChatCompletion");
+      expect(source).not.toContain("decodeOpenRouterResponse");
+      expect(source).not.toContain("normalizeTermination");
+      expect(source).not.toContain("structuralOutcomeFor");
       expect(source).not.toContain("contextWindow:");
       expect(source.match(/\brunOpenRouterSendPipeline\(/g)).toHaveLength(1);
     }
 
     expect(routeSources["generate-routes.ts"]).not.toContain("buildChatCompletionRequest");
     expect(routeSources["ideate-routes.ts"]).not.toContain("buildChatCompletionRequest");
+    expect(routeSources["generate-routes.ts"]).toMatch(/outputPolicy:\s*"prose"/u);
+    for (const filename of [
+      "ideate-routes.ts",
+      "record-hygiene-routes.ts",
+      "cast-possibilities-routes.ts",
+      "accepted-segment-change-review-routes.ts"
+    ]) {
+      expect(routeSources[filename]).toMatch(/outputPolicy:\s*"strict"/u);
+    }
     for (const filename of [
       "record-hygiene-routes.ts",
       "cast-possibilities-routes.ts",

@@ -82,4 +82,58 @@ describe("OpenRouterDiagnosticReceipt", () => {
     fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Copy failed"));
   });
+
+  it.each([
+    {
+      classification: "incomplete-generation" as const,
+      termination: "length" as const,
+      summary: "Generation stopped before the workflow received a complete result.",
+      recovery: "Review the completion ceiling, scope, or model, then inspect again before using the existing action. No retry is automatic."
+    },
+    {
+      classification: "incomplete-generation" as const,
+      termination: "content-filter" as const,
+      summary: "OpenRouter stopped the result for content-policy reasons.",
+      recovery: "Review the provider result and selected model, then inspect again before using the existing action. No retry is automatic."
+    },
+    {
+      classification: "incomplete-generation" as const,
+      termination: "tool" as const,
+      summary: "OpenRouter returned an unexpected tool completion.",
+      recovery: "Review the provider result and selected model, then inspect again before using the existing action. No retry is automatic."
+    },
+    {
+      classification: "unrecognized-envelope" as const,
+      termination: "normal" as const,
+      summary: "The OpenRouter response envelope was unrecognized.",
+      recovery: "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic."
+    }
+  ])("announces $termination before optional structural detail with manual recovery", (outcome) => {
+    render(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          classification: outcome.classification,
+          summary: outcome.summary,
+          recovery: outcome.recovery,
+          details: {
+            httpStatus: 200,
+            requestedModel: "test/model",
+            termination: outcome.termination,
+            choiceCount: 1,
+            contentShape: "null",
+            structuralOutcome: "null-content"
+          }
+        }}
+      />
+    );
+
+    const alert = screen.getByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(alert.textContent).toContain(outcome.summary);
+    expect(alert.textContent).toContain(outcome.recovery);
+    expect(alert.textContent).toContain("Structural outcome: null-content");
+    expect(alert.textContent?.indexOf(outcome.summary)).toBeLessThan(
+      alert.textContent?.indexOf("Structural outcome: null-content") ?? -1
+    );
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+  });
 });

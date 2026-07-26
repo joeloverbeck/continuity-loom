@@ -13,6 +13,7 @@ import {
   getDurableChangeReminder,
   readiness,
   type DurableChangeReminderResponse,
+  type GenerateResponse,
   type OpenRouterDiagnosticReceipt,
 } from "../api.js";
 import { DurableChangeReminder } from "../shell/DurableChangeReminder.js";
@@ -149,6 +150,39 @@ describe("GenerateView", () => {
     fireEvent.click(screen.getByRole("button", { name: "Discard" }));
     expect(screen.queryByRole("alert", { name: "OpenRouter diagnostic" })).toBeNull();
     expect(generate).toHaveBeenCalledTimes(2);
+    expect(localStorage.length).toBe(0);
+    expect(sessionStorage.length).toBe(0);
+  });
+
+  it("presents null-content output-limit and normal responses without creating a candidate or retrying", async () => {
+    vi.mocked(compile).mockResolvedValue(compileResult("<role>\nPrompt"));
+    vi.mocked(generate)
+      .mockResolvedValueOnce(nullContentFailure("length"))
+      .mockResolvedValueOnce(nullContentFailure("normal"));
+
+    renderGenerate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+
+    const outputLimit = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
+    expect(outputLimit.textContent).toContain("Generation stopped before the workflow received a complete result.");
+    expect(outputLimit.textContent).toContain("Review the completion ceiling, scope, or model");
+    expect(outputLimit.textContent).toContain("No retry is automatic.");
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(generate).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate" }));
+
+    await waitFor(() => {
+      const unrecognized = screen.getByRole("alert", { name: "OpenRouter diagnostic" });
+      expect(unrecognized.textContent).toContain("The OpenRouter response envelope was unrecognized.");
+      expect(unrecognized.textContent).toContain("Copy the sanitized diagnostic receipt and check OpenRouter Logs");
+      expect(unrecognized.textContent).toContain("No retry is automatic.");
+    });
+    expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
+    expect(generate).toHaveBeenCalledTimes(2);
+    expect(acceptCandidate).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
   });
@@ -920,6 +954,36 @@ function diagnosticReceipt(
       choiceCount: 1,
       contentShape: "string",
       contentLength: classification === "incomplete-prose" ? 31 : 0
+    }
+  };
+}
+
+function nullContentFailure(termination: "length" | "normal"): GenerateResponse {
+  const outputLimit = termination === "length";
+  const summary = outputLimit
+    ? "Generation stopped before the workflow received a complete result."
+    : "The OpenRouter response envelope was unrecognized.";
+  const recovery = outputLimit
+    ? "Review the completion ceiling, scope, or model, then inspect again before using the existing action. No retry is automatic."
+    : "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic.";
+  return {
+    ok: false,
+    category: outputLimit ? "output-limit" : "unrecognized-response",
+    classification: outputLimit ? "incomplete-generation" : "unrecognized-envelope",
+    message: summary,
+    diagnostic: {
+      classification: outputLimit ? "incomplete-generation" : "unrecognized-envelope",
+      summary,
+      recovery,
+      details: {
+        httpStatus: 200,
+        requestedModel: "openai/gpt-4.1",
+        termination,
+        nativeFinishReason: outputLimit ? "length" : "stop",
+        choiceCount: 1,
+        contentShape: "null",
+        structuralOutcome: "null-content"
+      }
     }
   };
 }

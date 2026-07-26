@@ -156,10 +156,20 @@ function applyOutputPolicy(
   | { ok: false; failure: Record<string, unknown> } {
   const { termination } = result.response;
   if (termination === "normal") {
+    if (result.candidate === undefined) {
+      return {
+        ok: false,
+        failure: workflowMissingCandidateFailure(result.response)
+      };
+    }
     return { ok: true, candidate: result.candidate };
   }
 
-  if (policy === "prose" && termination === "length") {
+  if (
+    policy === "prose" &&
+    termination === "length" &&
+    result.candidate !== undefined
+  ) {
     return {
       ok: true,
       candidate: { ...result.candidate, incomplete: true },
@@ -174,6 +184,22 @@ function applyOutputPolicy(
 
   const failure = workflowTerminationFailure(result.response);
   return { ok: false, failure };
+}
+
+function workflowMissingCandidateFailure(response: OpenRouterResponseFacts): Record<string, unknown> {
+  const summary = "The OpenRouter response envelope was unrecognized.";
+  return {
+    ok: false,
+    category: "unrecognized-response",
+    classification: "unrecognized-envelope",
+    message: summary,
+    diagnostic: createDiagnosticReceipt(
+      "unrecognized-envelope",
+      response,
+      summary,
+      "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic."
+    )
+  };
 }
 
 function workflowTerminationFailure(response: OpenRouterResponseFacts): Record<string, unknown> {
