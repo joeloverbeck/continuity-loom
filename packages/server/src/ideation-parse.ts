@@ -44,8 +44,13 @@ export type ParseIdeationResult =
   | { ok: true; ideas: readonly ParsedIdea[] }
   | { ok: false; reason: IdeationParseFailure };
 
-const ideaHeaderPattern = /^IDEA\s+(\d+)\s*$/i;
+const ideaHeaderPattern = /^IDEA\s+(\d+)\s*:?\s*$/i;
 const ideaHeaderCandidatePattern = /^IDEA\b/i;
+const codeFencePattern = /^`{3,}[A-Za-z0-9_-]*$/;
+const listMarkerPattern = /^[-*+>]\s+/;
+const headingMarkerPattern = /^#{1,6}\s+/;
+const leadingEmphasisPattern = /^[*_]+/;
+const trailingEmphasisPattern = /[*_]+$/;
 const citationPattern = /\[[^\]\r\n]+\]/g;
 const groundsPattern = /^\[[^\]\r\n]+\](?:\s*,\s*\[[^\]\r\n]+\])*$/;
 const skippedMarker = "no compiled record supports this slot.";
@@ -145,31 +150,41 @@ function splitIdeaBlocks(responseText: string):
   const lines = responseText.split(/\r?\n/);
   const blocks: string[][] = [];
   let current: string[] | undefined;
-  let hasPreambleContent = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (ideaHeaderCandidatePattern.test(trimmed)) {
-      current = [trimmed];
+    if (trimmed.length === 0 || codeFencePattern.test(trimmed)) {
+      continue;
+    }
+    const undecorated = stripBlockDecoration(trimmed);
+    const headerCandidate = stripEmphasis(undecorated);
+    if (ideaHeaderCandidatePattern.test(headerCandidate)) {
+      current = [headerCandidate];
       blocks.push(current);
       continue;
     }
+    // Content before the first header is outside every block by definition, so it
+    // is discarded rather than quarantining an otherwise contract-compliant slate.
     if (current === undefined) {
-      hasPreambleContent ||= trimmed.length > 0;
       continue;
     }
-    if (trimmed.length > 0) {
-      current.push(trimmed);
-    }
+    current.push(undecorated);
   }
 
   if (blocks.length === 0) {
     return failure("missing-idea-blocks");
   }
-  if (hasPreambleContent) {
-    return failure("malformed-line");
-  }
   return { ok: true, blocks };
+}
+
+/** Removes a leading Markdown list, blockquote, or ATX heading marker. */
+function stripBlockDecoration(line: string): string {
+  return line.replace(listMarkerPattern, "").replace(headingMarkerPattern, "").trim();
+}
+
+/** Removes leading and trailing Markdown emphasis runs. */
+function stripEmphasis(value: string): string {
+  return value.replace(leadingEmphasisPattern, "").replace(trailingEmphasisPattern, "").trim();
 }
 
 function parseIdeaBlock(
@@ -183,14 +198,17 @@ function parseIdeaBlock(
     if (separator <= 0) {
       return failure("malformed-line", expected.slotNumber);
     }
-    const key = line.slice(0, separator).trim().toLowerCase();
+    const key = stripEmphasis(line.slice(0, separator)).toLowerCase();
+    if (key.length === 0) {
+      return failure("malformed-line", expected.slotNumber);
+    }
     if (!permittedFields.has(key)) {
       return failure("unexpected-field", expected.slotNumber);
     }
     if (fields.has(key)) {
       return failure("duplicate-field", expected.slotNumber);
     }
-    fields.set(key, line.slice(separator + 1).trim());
+    fields.set(key, stripEmphasis(line.slice(separator + 1)));
   }
 
   const operator = fields.get("operator");

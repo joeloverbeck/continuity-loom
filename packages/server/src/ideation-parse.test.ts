@@ -100,6 +100,57 @@ describe("ideation response parser", () => {
 
   it.each([
     {
+      name: "a lead-in sentence before the first header",
+      text: `Here are five grounded possibilities for the next segment:\n\n${normalIdeaBlock(1, "Reveal")}`
+    },
+    {
+      name: "an opening and closing code fence",
+      text: "```md\n" + normalIdeaBlock(1, "Reveal") + "\n```"
+    },
+    {
+      name: "a bold header",
+      text: normalIdeaBlock(1, "Reveal").replace("IDEA 1", "**IDEA 1**")
+    },
+    {
+      name: "an ATX heading header",
+      text: normalIdeaBlock(1, "Reveal").replace("IDEA 1", "## IDEA 1")
+    },
+    {
+      name: "a bulleted header",
+      text: normalIdeaBlock(1, "Reveal").replace("IDEA 1", "- IDEA 1")
+    },
+    {
+      name: "a header with a trailing colon",
+      text: normalIdeaBlock(1, "Reveal").replace("IDEA 1", "IDEA 1:")
+    },
+    {
+      name: "bold field keys inside the tag",
+      text: normalIdeaBlock(1, "Reveal").replace("operator: Reveal", "**operator:** Reveal")
+    },
+    {
+      name: "bold field keys outside the tag",
+      text: normalIdeaBlock(1, "Reveal").replace("operator: Reveal", "**operator**: Reveal")
+    },
+    {
+      name: "bulleted field lines",
+      text: normalIdeaBlock(1, "Reveal").replace("operator: Reveal", "- operator: Reveal")
+    }
+  ])("normalizes $name without weakening the grammar", ({ text }) => {
+    expect(parseIdeationResponse(text, { ...ideaExpectation, slots: [ideaExpectation.slots[0]!] })).toEqual({
+      ok: true,
+      ideas: [{
+        slotNumber: 1,
+        operator: "Reveal",
+        headline: "A grounded possibility.",
+        why: "The assigned records support it.",
+        grounds: ["[SECRET-1]"],
+        unknownCitations: []
+      }]
+    });
+  });
+
+  it.each([
+    {
       name: "no idea blocks",
       text: "No idea blocks here.",
       expectation: ideaExpectation,

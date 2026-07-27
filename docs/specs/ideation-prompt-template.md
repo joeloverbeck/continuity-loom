@@ -129,6 +129,16 @@ no partial candidate text is parsed or returned. A normal completion that
 fails the local parser is likewise quarantined with a safe diagnostic, and its
 raw provider text is not returned to the browser.
 
+The local parser normalizes the response envelope before applying the grammar.
+Content before the first `IDEA` header is discarded, standalone code-fence lines
+are dropped anywhere in the response, and bounded Markdown decoration is
+stripped from headers and from field keys and values: a leading list,
+blockquote, or ATX heading marker, and leading or trailing emphasis runs. An
+`IDEA` header may carry a trailing colon. Normalization touches presentation
+only; it relaxes no semantic rule below. Trailing content after the last field
+line is not envelope material - it belongs to the last block and still
+quarantines the response as a slot-scoped malformed line.
+
 The local parser validates against the requested `ideas` or `questions` mode
 and the exact deterministic slot assignment compiled from that request. Every
 assigned slot must appear exactly once with its assigned operator, and no
@@ -177,6 +187,15 @@ The ideation prompt renders the same `<contradiction_prohibitions>` tag as the p
 ### `<ideation_output_format>`
 
 Defines a flat tagged block. Malformed output is discarded.
+
+The section instructs the model to output nothing before the first `IDEA` line
+and nothing after the last field line, and to use no code fences, Markdown
+headings, bullets, or bold. The prompt is the primary control for response
+shape; the parser's envelope normalization described above is a safety net, not
+a licensed alternative format. The section carries no permission to think or
+narrate before the block: reasoning is requested through the excluded reasoning
+channel required by `docs/adr/0007-output-policy-requires-explicit-excluded-reasoning.md`
+and never reaches candidate content.
 
 For idea mode:
 

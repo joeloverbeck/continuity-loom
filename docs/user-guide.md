@@ -129,7 +129,12 @@ You can choose ideas or questions, set the slate size from 3 to 6, keep or remov
 Typing, counting, validation, prompt compilation, and inspection stay local. Only Get ideas, Get new slate, Regenerate all, and an individual Regenerate action can make one explicit OpenRouter request, and only after the server rebuilds the complete request and confirms it matches the inspected fingerprint. If the request or project changed, Ideate requires a fresh preview instead of sending a stale prompt.
 
 Ideate checks a normally completed response against the mode and exact slots
-shown in the prompt you inspected. A valid normal slot has its assigned
+shown in the prompt you inspected. Ordinary Markdown packaging around the
+answer does not count against it: a lead-in sentence before the first slot,
+code fences around the whole answer, and bold, bulleted, or heading-style slot
+labels are all read through to the underlying slots. Anything written after the
+last slot's final field is not packaging and does quarantine the response. A
+valid normal slot has its assigned
 operator, an idea headline or author-facing question for the selected mode, a
 `why` line, and bracketed grounds. A valid `SKIPPED` slot instead shows that no
 compiled record supports that assigned slot; it does not need a `why` line or
