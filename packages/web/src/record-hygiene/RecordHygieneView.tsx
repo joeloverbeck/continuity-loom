@@ -328,7 +328,7 @@ function ScratchPanel({
             <div className="previewToolbar">
               <button type="button" className="secondaryButton" onClick={() => onCopy(JSON.stringify(state.findings, null, 2))}>Copy findings</button>
             </div>
-            <div className="slateGrid">
+            <div className="scratchCardStack">
               {state.findings.map((finding) => (
                 <HygieneFindingCard
                   key={keeperKey(finding)}

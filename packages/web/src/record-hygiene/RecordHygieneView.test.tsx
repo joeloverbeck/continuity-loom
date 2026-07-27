@@ -93,6 +93,18 @@ describe("RecordHygieneView", () => {
     expect(screen.queryByRole("button", { name: /accept/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /fix all/i })).toBeNull();
 
+    // Tone is carried by a card class, but the action word is always present as text so nothing
+    // depends on perceiving the tint.
+    const cards = document.querySelectorAll(".candidateCard");
+    expect(cards.length).toBeGreaterThanOrEqual(3);
+    const tones = [...cards].map((card) => card.className);
+    expect(tones.some((className) => className.includes("hygieneFindingCard-caution"))).toBe(true);
+    expect(tones.some((className) => className.includes("hygieneFindingCard-protective"))).toBe(true);
+    expect(tones.some((className) => className.includes("hygieneFindingCard-review"))).toBe(true);
+    expect(screen.getByText("REMOVE")).toBeTruthy();
+    expect(screen.getByText("KEEP_DISTINCT")).toBeTruthy();
+    expect(screen.getByText("HUMAN_REVIEW")).toBeTruthy();
+
     fireEvent.click(screen.getAllByRole("button", { name: "[FACT-1]" })[0]!);
 
     await waitFor(() => expect(screen.getByTestId("location").textContent).toBe("/records?recordId=fact-a"));
