@@ -225,7 +225,49 @@ describe("RecordHygieneView", () => {
     expect(screen.getByText("Candidate content failed local validation.")).toBeTruthy();
     expect(screen.queryByText("freeform answer")).toBeNull();
   });
+
+  it("presents shared Assistance output-limit recovery after one explicit Record Hygiene request", async () => {
+    vi.mocked(recordHygieneAnalyze).mockResolvedValue({
+      ok: false,
+      category: "output-limit",
+      message: "OpenRouter stopped at the output limit.",
+      classification: "incomplete-generation",
+      diagnostic: assistanceOutputLimitReceipt()
+    });
+
+    renderRecordHygiene();
+    await analyzeOnce();
+
+    expect(await screen.findByRole("button", { name: "Lower Assistance effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Assistance ceiling" })).toBeTruthy();
+    expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
+  });
 });
+
+function assistanceOutputLimitReceipt() {
+  return {
+    classification: "incomplete-generation" as const,
+    summary: "Generation stopped before the workflow received a complete result.",
+    recovery: "Reasoning may have consumed part or all of the completion allowance.",
+    sentPolicy: {
+      outputClass: "assistance" as const,
+      completionCeiling: 8192,
+      reasoningEnabled: true as const,
+      reasoningEffort: "high" as const,
+      reasoningExcluded: true as const,
+      supportedLowerEfforts: ["low" as const]
+    },
+    details: {
+      httpStatus: 200,
+      requestedModel: "anthropic/claude-sonnet-4",
+      termination: "length" as const,
+      nativeFinishReason: "length",
+      choiceCount: 1,
+      contentShape: "null" as const,
+      structuralOutcome: "null-content" as const
+    }
+  };
+}
 
 function diagnosticReceipt() {
   return {

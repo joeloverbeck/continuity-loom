@@ -290,6 +290,23 @@ with unusable content is an unrecognized response. Ideate, Record Hygiene,
 Change Review, and Cast Possibilities require a normal completion; they do not
 salvage partial structured output.
 
+An output-limit diagnostic names the exact sent Prose or Assistance class,
+completion ceiling, reasoning effort, mandatory/excluded reasoning state,
+termination facts, safe returned model/provider facts, and any provider-reported
+aggregate reasoning-token count. The count does not expose reasoning content and
+is not prose, canon, prompt context, or accepted provenance. Reasoning may have
+consumed part or all of the completion allowance.
+
+The diagnostic offers exactly two policy recovery routes for the affected
+class: choose a supported lower reasoning effort, when one exists, or enter a
+higher completion ceiling. Either button explicitly saves only that class's
+selected setting. It does not disable reasoning, change the other class,
+refresh models, retry, resend, switch model/provider, or make any completion
+request. The prior Prompt Inspector receipt is then stale: inspect again to see
+the changed class, ceiling, effort, enabled/excluded state, and new request
+fingerprint, then invoke the original Generate, Analyze, or Regenerate action
+explicitly if you want one new request.
+
 Provider errors, missing content, filtered or tool-ended output, unrecognized
 responses, and local validation rejection show a transient sanitized
 diagnostic receipt. Expand **Technical details** to inspect safe facts, use

@@ -83,6 +83,131 @@ describe("OpenRouterDiagnosticReceipt", () => {
     await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Copy failed"));
   });
 
+  it("offers only explicit affected-class output-limit recovery and announces stale inspection without sending", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const fetchCalls: Array<{ url: string; init?: RequestInit }> = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string, init?: RequestInit) => {
+        fetchCalls.push({ url, ...(init === undefined ? {} : { init }) });
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({
+            model: "test/model",
+            temperatureMode: "provider_default",
+            proseMaxOutputTokens: 2048,
+            assistanceMaxOutputTokens: 4321,
+            proseReasoningEffort: "low",
+            assistanceReasoningEffort: "medium",
+            hasOpenRouterCredential: true
+          })
+        } as Response);
+      })
+    );
+    const outputLimitReceipt = {
+      classification: "incomplete-generation" as const,
+      summary: "Generation stopped before the workflow received a complete result.",
+      recovery: "Reasoning may have consumed part or all of the completion allowance.",
+      sentPolicy: {
+        outputClass: "assistance" as const,
+        completionCeiling: 4321,
+        reasoningEnabled: true as const,
+        reasoningEffort: "high" as const,
+        reasoningExcluded: true as const,
+        supportedLowerEfforts: ["low", "medium"] as const
+      },
+      details: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        returnedModel: "returned/model",
+        provider: "Safe Provider",
+        termination: "length" as const,
+        nativeFinishReason: "max_tokens",
+        choiceCount: 1,
+        contentShape: "null" as const,
+        structuralOutcome: "null-content",
+        usage: { reasoningTokens: 37 },
+        rawBody: "RAW_BODY_MUST_NOT_COPY",
+        prompt: "PROMPT_MUST_NOT_COPY",
+        candidate: "CANDIDATE_MUST_NOT_COPY",
+        acceptedProse: "ACCEPTED_PROSE_MUST_NOT_COPY",
+        reasoningContent: "REASONING_CONTENT_MUST_NOT_COPY",
+        credentials: "sk-or-secret",
+        providerMetadata: { accountId: "ACCOUNT_MUST_NOT_COPY" }
+      },
+      requestSecret: "REQUEST_SECRET_MUST_NOT_COPY"
+    };
+
+    render(<OpenRouterDiagnosticReceipt receipt={outputLimitReceipt} />);
+
+    expect(screen.getByText("Assistance output policy sent")).toBeTruthy();
+    expect(screen.getByText(/high reasoning effort with a 4321-token completion ceiling/i)).toBeTruthy();
+    expect(screen.getByText(/37 aggregate reasoning tokens/i)).toBeTruthy();
+    expect(screen.queryByRole("checkbox", { name: /reasoning/i })).toBeNull();
+    expect(screen.queryByText(/Prose reasoning effort/i)).toBeNull();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Lower Assistance reasoning effort" }), {
+      target: { value: "medium" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Lower Assistance effort" }));
+    await waitFor(() => expect(screen.getByRole("status").textContent).toContain("Prior inspection is stale"));
+
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Higher Assistance completion ceiling" }), {
+      target: { value: "5000" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Raise Assistance ceiling" }));
+    await waitFor(() => expect(fetchCalls).toHaveLength(2));
+
+    expect(fetchCalls.map((call) => [call.url, call.init?.method, call.init?.body])).toEqual([
+      ["/api/settings/openrouter", "PUT", JSON.stringify({ assistanceReasoningEffort: "medium" })],
+      ["/api/settings/openrouter", "PUT", JSON.stringify({ assistanceMaxOutputTokens: 5000 })]
+    ]);
+    expect(fetchCalls.every((call) => !String(call.url).includes("generate"))).toBe(true);
+    expect(fetchCalls.every((call) => !String(call.url).includes("models"))).toBe(true);
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const copied = writeText.mock.calls[0]?.[0] ?? "";
+    expect(copied).toContain("Output class: assistance");
+    expect(copied).toContain("Returned model: returned/model");
+    expect(copied).toContain("Aggregate reasoning tokens: 37");
+    expect(copied).not.toMatch(
+      /RAW_BODY|PROMPT_MUST|CANDIDATE_MUST|ACCEPTED_PROSE|REASONING_CONTENT|sk-or-secret|ACCOUNT_MUST|REQUEST_SECRET/u
+    );
+  });
+
+  it("keeps the lower-effort route unavailable when the trusted receipt has no supported lower effort", () => {
+    render(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          classification: "incomplete-generation",
+          summary: "Output limit.",
+          recovery: "Choose an explicit affected-class recovery.",
+          sentPolicy: {
+            outputClass: "prose",
+            completionCeiling: 2048,
+            reasoningEnabled: true,
+            reasoningEffort: "minimal",
+            reasoningExcluded: true,
+            supportedLowerEfforts: []
+          },
+          details: {
+            httpStatus: 200,
+            requestedModel: "test/model",
+            termination: "length",
+            choiceCount: 1,
+            contentShape: "null"
+          }
+        }}
+      />
+    );
+
+    expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Lower Prose reasoning effort" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Lower Prose effort" }).disabled).toBe(true);
+    expect(screen.getByRole<HTMLButtonElement>("button", { name: "Raise Prose ceiling" }).disabled).toBe(false);
+  });
+
   it.each([
     {
       classification: "incomplete-generation" as const,

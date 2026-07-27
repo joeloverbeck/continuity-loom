@@ -10,6 +10,85 @@ import {
 import type { OpenRouterSettingsStatus } from "./settings.js";
 
 describe("OpenRouter send pipeline", () => {
+  it("joins an in-band output-limit provider diagnostic to the finalized admitted policy", async () => {
+    const { runOpenRouterSendPipeline } = await import("./openrouter/send-pipeline.js");
+    const settings: OpenRouterSettingsStatus = {
+      model: "test/model",
+      temperatureMode: "provider_default",
+      proseMaxOutputTokens: 2048,
+      assistanceMaxOutputTokens: 8192,
+      proseReasoningEffort: "low",
+      assistanceReasoningEffort: "high",
+      cachedModels: [{
+        id: "test/model",
+        name: "Test Model",
+        supportedParameters: ["max_completion_tokens", "reasoning"],
+        supportedEfforts: ["low", "high"]
+      }],
+      hasOpenRouterCredential: true
+    };
+    const prompt = "Inspected assistance prompt";
+    const requestFingerprint = inspectChatCompletionRequest(
+      buildChatCompletionRequest({ prompt, settings, outputPolicy: "strict" }),
+      "strict",
+      settings
+    ).requestFingerprint;
+    const transport = vi.fn(async () => ({
+      ok: false as const,
+      category: "output-limit" as const,
+      message: "OpenRouter stopped at the output limit.",
+      classification: "provider-error" as const,
+      diagnostic: {
+        classification: "provider-error" as const,
+        summary: "OpenRouter reported an output-limit provider error.",
+        recovery: "Legacy generic recovery.",
+        details: {
+          httpStatus: 200,
+          requestedModel: "test/model",
+          termination: "error" as const,
+          nativeFinishReason: "error",
+          choiceCount: 1,
+          contentShape: "null" as const
+        }
+      }
+    }));
+
+    const result = await runOpenRouterSendPipeline({
+      profile: {
+        outputPolicy: "strict",
+        prompt,
+        promptFingerprint: "prompt-fingerprint",
+        staleness: {
+          mode: "separate",
+          expectedPromptFingerprint: "prompt-fingerprint",
+          expectedRequestFingerprint: requestFingerprint,
+          promptRefusal: { status: 409, body: { ok: false } },
+          providerRefusal: { status: 409, body: { ok: false } }
+        },
+        metadata: { providerFields: "identity", placement: "after", additions: {} }
+      },
+      settings,
+      transport
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      body: {
+        category: "output-limit",
+        diagnostic: {
+          recovery: expect.stringMatching(/lower.*supported reasoning effort.*raise.*completion ceiling/i),
+          sentPolicy: {
+            outputClass: "assistance",
+            completionCeiling: 8192,
+            reasoningEffort: "high",
+            supportedLowerEfforts: ["low"]
+          }
+        }
+      }
+    });
+    expect(transport).toHaveBeenCalledTimes(1);
+  });
+
   it("applies strict and prose completion policies after one decoded transport handoff", async () => {
     const { runOpenRouterSendPipeline } = await import("./openrouter/send-pipeline.js");
     const settings: OpenRouterSettingsStatus = {
@@ -18,12 +97,12 @@ describe("OpenRouter send pipeline", () => {
       proseMaxOutputTokens: 321,
       assistanceMaxOutputTokens: 4321,
       proseReasoningEffort: "low",
-      assistanceReasoningEffort: "low",
+      assistanceReasoningEffort: "high",
       cachedModels: [{
         id: "test/model",
         name: "Test Model",
         supportedParameters: ["max_completion_tokens", "reasoning"],
-        supportedEfforts: ["low"]
+        supportedEfforts: ["low", "high"]
       }],
       hasOpenRouterCredential: true
     };
@@ -44,7 +123,8 @@ describe("OpenRouter send pipeline", () => {
         nativeFinishReason: "length",
         choiceCount: 1,
         contentShape: "string" as const,
-        contentLength: 36
+        contentLength: 36,
+        usage: { reasoningTokens: 37 }
       }
     }));
     const baseProfile = {
@@ -91,10 +171,19 @@ describe("OpenRouter send pipeline", () => {
         classification: "incomplete-generation",
         diagnostic: {
           classification: "incomplete-generation",
+          sentPolicy: {
+            outputClass: "assistance",
+            completionCeiling: 4321,
+            reasoningEnabled: true,
+            reasoningEffort: "high",
+            reasoningExcluded: true,
+            supportedLowerEfforts: ["low"]
+          },
           details: {
             termination: "length",
             contentShape: "string",
-            contentLength: 36
+            contentLength: 36,
+            usage: { reasoningTokens: 37 }
           }
         }
       }
@@ -108,6 +197,14 @@ describe("OpenRouter send pipeline", () => {
       },
       diagnostic: {
         classification: "incomplete-prose",
+        sentPolicy: {
+          outputClass: "prose",
+          completionCeiling: 321,
+          reasoningEnabled: true,
+          reasoningEffort: "low",
+          reasoningExcluded: true,
+          supportedLowerEfforts: []
+        },
         details: {
           termination: "length",
           contentLength: 36

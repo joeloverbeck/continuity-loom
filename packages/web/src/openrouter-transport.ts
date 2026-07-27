@@ -54,6 +54,14 @@ export type OpenRouterDiagnosticReceipt = {
   summary: string;
   recovery: string;
   details: OpenRouterDiagnosticDetails;
+  sentPolicy?: {
+    outputClass: "prose" | "assistance";
+    completionCeiling: number;
+    reasoningEnabled: true;
+    reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+    reasoningExcluded: true;
+    supportedLowerEfforts: readonly ("minimal" | "low" | "medium" | "high" | "xhigh" | "max")[];
+  };
 };
 
 export type TransportFailure = {
@@ -129,5 +137,24 @@ function isDiagnosticReceipt(value: unknown): value is OpenRouterDiagnosticRecei
     typeof receipt.details.requestedModel === "string" &&
     typeof receipt.details.termination === "string" &&
     typeof receipt.details.choiceCount === "number" &&
-    typeof receipt.details.contentShape === "string";
+    typeof receipt.details.contentShape === "string" &&
+    (receipt.sentPolicy === undefined || isDiagnosticSentPolicy(receipt.sentPolicy));
+}
+
+function isDiagnosticSentPolicy(value: unknown): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const policy = value as Record<string, unknown>;
+  const efforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"]);
+  return (policy.outputClass === "prose" || policy.outputClass === "assistance") &&
+    typeof policy.completionCeiling === "number" &&
+    Number.isSafeInteger(policy.completionCeiling) &&
+    policy.completionCeiling > 0 &&
+    policy.reasoningEnabled === true &&
+    typeof policy.reasoningEffort === "string" &&
+    efforts.has(policy.reasoningEffort) &&
+    policy.reasoningExcluded === true &&
+    Array.isArray(policy.supportedLowerEfforts) &&
+    policy.supportedLowerEfforts.every((effort) => typeof effort === "string" && efforts.has(effort));
 }

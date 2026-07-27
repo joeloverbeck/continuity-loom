@@ -2,6 +2,10 @@ import {
   normalizeOpenRouterError,
   type NormalizedTransportError
 } from "./errors.js";
+import type {
+  CompletionCeilingClass,
+  ReasoningEffort
+} from "./output-policy.js";
 
 export type OpenRouterTermination =
   | "normal"
@@ -64,6 +68,16 @@ export interface OpenRouterDiagnosticReceipt {
   summary: string;
   recovery: string;
   details: OpenRouterResponseFacts;
+  sentPolicy?: OpenRouterDiagnosticSentPolicy;
+}
+
+export interface OpenRouterDiagnosticSentPolicy {
+  outputClass: CompletionCeilingClass;
+  completionCeiling: number;
+  reasoningEnabled: true;
+  reasoningEffort: ReasoningEffort;
+  reasoningExcluded: true;
+  supportedLowerEfforts: readonly ReasoningEffort[];
 }
 
 export type DecodedOpenRouterResponse =
@@ -198,9 +212,16 @@ export function createDiagnosticReceipt(
   classification: OpenRouterResponseClassification,
   details: OpenRouterResponseFacts,
   summary: string,
-  recovery: string
+  recovery: string,
+  sentPolicy?: OpenRouterDiagnosticSentPolicy
 ): OpenRouterDiagnosticReceipt {
-  return { classification, summary, recovery, details };
+  return {
+    classification,
+    summary,
+    recovery,
+    details,
+    ...(sentPolicy === undefined ? {} : { sentPolicy })
+  };
 }
 
 function providerRecovery(category: NormalizedTransportError["category"]): string {

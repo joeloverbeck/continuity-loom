@@ -10,9 +10,13 @@ import {
 import {
   createDiagnosticReceipt,
   type OpenRouterDiagnosticReceipt,
+  type OpenRouterDiagnosticSentPolicy,
   type OpenRouterResponseFacts
 } from "./response.js";
-import type { OpenRouterOutputPolicy } from "./output-policy.js";
+import {
+  REASONING_EFFORTS,
+  type OpenRouterOutputPolicy
+} from "./output-policy.js";
 import {
   buildChatCompletionRequest,
   inspectChatCompletionRequest,
@@ -123,10 +127,23 @@ export async function runOpenRouterSendPipeline(
   const transport = input.transport ?? sendChatCompletion;
   const transportResult = await transport({ request });
   if (!transportResult.ok) {
+    if (transportResult.category === "output-limit" && transportResult.diagnostic !== undefined) {
+      return {
+        ok: false,
+        body: {
+          ...transportResult,
+          diagnostic: {
+            ...transportResult.diagnostic,
+            recovery: outputLimitRecovery(),
+            sentPolicy: diagnosticSentPolicy(inspection)
+          }
+        }
+      };
+    }
     return { ok: false, body: transportResult };
   }
 
-  const policyResult = applyOutputPolicy(transportResult, profile.outputPolicy);
+  const policyResult = applyOutputPolicy(transportResult, profile.outputPolicy, inspection);
   if (!policyResult.ok) {
     return { ok: false, body: policyResult.failure };
   }
@@ -142,7 +159,8 @@ export async function runOpenRouterSendPipeline(
 
 function applyOutputPolicy(
   result: Extract<TransportResult, { ok: true }>,
-  policy: OpenRouterSendProfile["outputPolicy"]
+  policy: OpenRouterSendProfile["outputPolicy"],
+  inspection: OpenRouterRequestInspection
 ):
   | {
       ok: true;
@@ -173,12 +191,13 @@ function applyOutputPolicy(
         "incomplete-prose",
         result.response,
         "Generation stopped at the output limit; this Draft Candidate is incomplete.",
-        "Edit or discard this non-canonical draft, or review the completion ceiling and inspect again before an explicit replacement request. No continuation is automatic."
+        outputLimitRecovery(),
+        diagnosticSentPolicy(inspection)
       )
     };
   }
 
-  const failure = workflowTerminationFailure(result.response);
+  const failure = workflowTerminationFailure(result.response, inspection);
   return { ok: false, failure };
 }
 
@@ -198,7 +217,10 @@ function workflowMissingCandidateFailure(response: OpenRouterResponseFacts): Rec
   };
 }
 
-function workflowTerminationFailure(response: OpenRouterResponseFacts): Record<string, unknown> {
+function workflowTerminationFailure(
+  response: OpenRouterResponseFacts,
+  inspection: OpenRouterRequestInspection
+): Record<string, unknown> {
   const category = response.termination === "length"
     ? "output-limit"
     : response.termination === "content-filter"
@@ -225,8 +247,28 @@ function workflowTerminationFailure(response: OpenRouterResponseFacts): Record<s
       response,
       summary,
       response.termination === "length"
-        ? "Review the completion ceiling, scope, or model, then inspect again before using the existing action. No retry is automatic."
-        : "Review the provider result and selected model, then inspect again before using the existing action. No retry is automatic."
+        ? outputLimitRecovery()
+        : "Review the provider result and selected model, then inspect again before using the existing action. No retry is automatic.",
+      response.termination === "length" ? diagnosticSentPolicy(inspection) : undefined
+    )
+  };
+}
+
+function outputLimitRecovery(): string {
+  return "Reasoning may have consumed part or all of the completion allowance. Lower the affected output class's supported reasoning effort or raise that class's completion ceiling, then inspect again before a new explicit request. No reasoning content is exposed, and no setting change, retry, resend, refresh, or fallback is automatic.";
+}
+
+function diagnosticSentPolicy(inspection: OpenRouterRequestInspection): OpenRouterDiagnosticSentPolicy {
+  const selectedIndex = REASONING_EFFORTS.indexOf(inspection.reasoningEffort);
+  const supportedEfforts = inspection.capabilitySnapshot.supportedEfforts ?? [];
+  return {
+    outputClass: inspection.completionCeilingClass,
+    completionCeiling: inspection.maxOutputTokens,
+    reasoningEnabled: true,
+    reasoningEffort: inspection.reasoningEffort,
+    reasoningExcluded: true,
+    supportedLowerEfforts: REASONING_EFFORTS.filter(
+      (effort, index) => index < selectedIndex && supportedEfforts.includes(effort)
     )
   };
 }

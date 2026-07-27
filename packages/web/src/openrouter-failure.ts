@@ -91,7 +91,7 @@ function recoveryGuidance(failure: TransportFailure): string {
     case "refusal":
       return "Review the requested content and provider policy before trying again. No retry is automatic.";
     case "output-limit":
-      return "Review the completion ceiling, scope, or model, then reinspect before using the existing action. No retry is automatic.";
+      return "Use the diagnostic controls to lower the affected class's supported reasoning effort or raise that class's completion ceiling, then reinspect before using the existing action. No retry is automatic.";
     case "no-content":
     case "unrecognized-response":
       return "Copy the sanitized diagnostic receipt and check OpenRouter Logs before using the existing action again. No retry is automatic.";

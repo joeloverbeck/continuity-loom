@@ -622,7 +622,50 @@ describe("IdeateView", () => {
     expect(screen.queryByText("freeform answer")).toBeNull();
     expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(2);
   });
+
+  it("presents shared Assistance output-limit recovery after one explicit Ideate request", async () => {
+    vi.mocked(ideate).mockResolvedValue({
+      ok: false,
+      category: "output-limit",
+      message: "OpenRouter stopped at the output limit.",
+      classification: "incomplete-generation",
+      diagnostic: assistanceOutputLimitReceipt()
+    });
+
+    renderIdeate();
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+
+    expect(await screen.findByRole("button", { name: "Lower Assistance effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Assistance ceiling" })).toBeTruthy();
+    expect(ideate).toHaveBeenCalledTimes(1);
+  });
 });
+
+function assistanceOutputLimitReceipt() {
+  return {
+    classification: "incomplete-generation" as const,
+    summary: "Generation stopped before the workflow received a complete result.",
+    recovery: "Reasoning may have consumed part or all of the completion allowance.",
+    sentPolicy: {
+      outputClass: "assistance" as const,
+      completionCeiling: 8192,
+      reasoningEnabled: true as const,
+      reasoningEffort: "high" as const,
+      reasoningExcluded: true as const,
+      supportedLowerEfforts: ["low" as const]
+    },
+    details: {
+      httpStatus: 200,
+      requestedModel: "anthropic/claude-sonnet-4",
+      termination: "length" as const,
+      nativeFinishReason: "length",
+      choiceCount: 1,
+      contentShape: "null" as const,
+      structuralOutcome: "null-content" as const
+    }
+  };
+}
 
 function diagnosticReceipt() {
   return {

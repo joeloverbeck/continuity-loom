@@ -91,15 +91,18 @@ describe("Cast Possibilities browser workflow", () => {
     const client = fixtureClient("fnv1a32:source-a");
     vi.mocked(client.analyze).mockResolvedValueOnce({
       ok: false,
-      category: "provider-unavailable",
-      message: "The provider is unavailable.",
-      diagnostic: diagnosticReceipt("gen-full-cast-190")
+      category: "output-limit",
+      message: "OpenRouter stopped at the output limit.",
+      classification: "incomplete-generation",
+      diagnostic: outputLimitDiagnosticReceipt("gen-full-cast-199")
     });
     renderView(client);
 
     await sendAnalyze();
     const analysisDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
-    expect(analysisDiagnostic.textContent).toContain("Current-attempt provider diagnostic");
+    expect(analysisDiagnostic.textContent).toContain("output-limit diagnostic");
+    expect(screen.getByRole("button", { name: "Lower Assistance effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Assistance ceiling" })).toBeTruthy();
     const detailsSummary = screen.getByText("Technical details");
     detailsSummary.focus();
     expect(document.activeElement).toBe(detailsSummary);
@@ -122,16 +125,19 @@ describe("Cast Possibilities browser workflow", () => {
     expect(await screen.findByRole("region", { name: "Inspect regeneration for Elian" })).toBeTruthy();
     vi.mocked(client.analyze).mockResolvedValueOnce({
       ok: false,
-      category: "rate-limit",
-      message: "The provider rate limit was reached.",
-      diagnostic: diagnosticReceipt("gen-regeneration-190")
+      category: "output-limit",
+      message: "OpenRouter stopped at the output limit.",
+      classification: "incomplete-generation",
+      diagnostic: outputLimitDiagnosticReceipt("gen-regeneration-199")
     });
     fireEvent.click(screen.getByRole("checkbox", { name: /confirm one regeneration request/i }));
     fireEvent.click(screen.getByRole("button", { name: "Send regeneration" }));
 
     await waitFor(() => expect(client.analyze).toHaveBeenCalledTimes(3));
     const regenerationDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
-    expect(regenerationDiagnostic.textContent).toContain("Generation ID: gen-regeneration-190");
+    expect(regenerationDiagnostic.textContent).toContain("Generation ID: gen-regeneration-199");
+    expect(screen.getByRole("button", { name: "Lower Assistance effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Assistance ceiling" })).toBeTruthy();
     expect(client.analyze).toHaveBeenCalledTimes(3);
     expect(localStorage.length).toBe(0);
     const storedSessionPayload = Array.from({ length: sessionStorage.length }, (_, index) => {
@@ -139,7 +145,7 @@ describe("Cast Possibilities browser workflow", () => {
       return key === null ? "" : sessionStorage.getItem(key) ?? "";
     }).join("\n");
     expect(storedSessionPayload).not.toMatch(
-      /gen-full-cast-190|gen-regeneration-190|Current-attempt provider diagnostic/u
+      /gen-full-cast-199|gen-regeneration-199|output-limit diagnostic/u
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Clear diagnostic" }));
@@ -671,22 +677,30 @@ function fixtureCompileResult(
   } as const;
 }
 
-function diagnosticReceipt(generationId: string): OpenRouterDiagnosticReceipt {
+function outputLimitDiagnosticReceipt(generationId: string): OpenRouterDiagnosticReceipt {
   return {
-    classification: "provider-error",
-    summary: "Current-attempt provider diagnostic",
-    recovery: "Inspect the attempt and use the existing action manually. No retry is automatic.",
+    classification: "incomplete-generation",
+    summary: "output-limit diagnostic",
+    recovery: "Reasoning may have consumed part or all of the completion allowance.",
+    sentPolicy: {
+      outputClass: "assistance",
+      completionCeiling: 8192,
+      reasoningEnabled: true,
+      reasoningEffort: "high",
+      reasoningExcluded: true,
+      supportedLowerEfforts: ["low"]
+    },
     details: {
       httpStatus: 200,
       generationId,
       requestedModel: "test/model",
       returnedModel: "test/model",
       provider: "Test Provider",
-      termination: "error",
-      nativeFinishReason: "error",
+      termination: "length",
+      nativeFinishReason: "length",
       choiceCount: 1,
-      contentShape: "string",
-      contentLength: 0
+      contentShape: "null",
+      structuralOutcome: "null-content"
     }
   };
 }

@@ -270,14 +270,19 @@ describe("AcceptedSegmentChangeReviewView", () => {
 
   it("distinguishes provider diagnostics from local quarantine without an automatic Analyze", async () => {
     analyzeMock.mockResolvedValue({
-      ...providerResponse(),
-      diagnostic: diagnosticReceipt("provider-error")
+      ok: false,
+      category: "output-limit",
+      message: "OpenRouter stopped at the output limit.",
+      classification: "incomplete-generation",
+      diagnostic: outputLimitDiagnosticReceipt()
     });
     renderView();
     await analyze();
 
     const providerDiagnostic = await screen.findByRole("alert", { name: "OpenRouter diagnostic" });
-    expect(providerDiagnostic.textContent).toContain("provider-error diagnostic");
+    expect(providerDiagnostic.textContent).toContain("output-limit diagnostic");
+    expect(screen.getByRole("button", { name: "Lower Assistance effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Assistance ceiling" })).toBeTruthy();
     const detailsSummary = screen.getByText("Technical details");
     detailsSummary.focus();
     expect(document.activeElement).toBe(detailsSummary);
@@ -572,6 +577,34 @@ function diagnosticReceipt(
       ...(classification === "local-validation"
         ? { structuralOutcome: "local-parser-quarantine" }
         : {})
+    }
+  };
+}
+
+function outputLimitDiagnosticReceipt(): OpenRouterDiagnosticReceipt {
+  return {
+    classification: "incomplete-generation",
+    summary: "output-limit diagnostic",
+    recovery: "Reasoning may have consumed part or all of the completion allowance.",
+    sentPolicy: {
+      outputClass: "assistance",
+      completionCeiling: 8192,
+      reasoningEnabled: true,
+      reasoningEffort: "high",
+      reasoningExcluded: true,
+      supportedLowerEfforts: ["low"]
+    },
+    details: {
+      httpStatus: 200,
+      generationId: "gen-change-review-199",
+      requestedModel: "test/model",
+      returnedModel: "test/model",
+      provider: "Test Provider",
+      termination: "length",
+      nativeFinishReason: "length",
+      choiceCount: 1,
+      contentShape: "null",
+      structuralOutcome: "null-content"
     }
   };
 }

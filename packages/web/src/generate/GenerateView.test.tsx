@@ -193,6 +193,8 @@ describe("GenerateView", () => {
     expect(outputLimit.textContent).toContain("Generation stopped before the workflow received a complete result.");
     expect(outputLimit.textContent).toContain("Review the completion ceiling, scope, or model");
     expect(outputLimit.textContent).toContain("No retry is automatic.");
+    expect(screen.getByRole("button", { name: "Lower Prose effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Prose ceiling" })).toBeTruthy();
     expect(screen.queryByRole("textbox", { name: "Candidate text" })).toBeNull();
     expect(generate).toHaveBeenCalledTimes(1);
 
@@ -1041,6 +1043,18 @@ function nullContentFailure(termination: "length" | "normal"): GenerateResponse 
       classification: outputLimit ? "incomplete-generation" : "unrecognized-envelope",
       summary,
       recovery,
+      ...(outputLimit
+        ? {
+            sentPolicy: {
+              outputClass: "prose" as const,
+              completionCeiling: 2200,
+              reasoningEnabled: true as const,
+              reasoningEffort: "high" as const,
+              reasoningExcluded: true as const,
+              supportedLowerEfforts: ["low" as const]
+            }
+          }
+        : {}),
       details: {
         httpStatus: 200,
         requestedModel: "openai/gpt-4.1",

@@ -159,4 +159,17 @@ describe("OpenRouter failure presentation", () => {
       "Generation request failed."
     );
   });
+
+  it("limits output-limit guidance to the two affected-class policy recovery routes", () => {
+    const presented = presentOpenRouterFailure({
+      ok: false,
+      category: "output-limit",
+      message: genericMessages["output-limit"]
+    });
+
+    expect(presented).toMatch(/lower.*supported reasoning effort/i);
+    expect(presented).toMatch(/raise.*completion ceiling/i);
+    expect(presented).not.toMatch(/scope|switch|another model|disable reasoning/i);
+    expect(presented).toContain("No retry is automatic.");
+  });
 });
