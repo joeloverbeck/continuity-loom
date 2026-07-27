@@ -1397,7 +1397,7 @@ button:disabled:hover {
 
 .segmentedControl,
 .ideateControlActions,
-.slateCardActions {
+.scratchCardActions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1450,50 +1450,28 @@ button:disabled:hover {
   overflow-wrap: anywhere;
 }
 
-.ideateRawList {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-  padding-left: 24px;
-}
-
-.ideateRawList article {
-  display: grid;
-  gap: 8px;
-}
-
-.ideateRawList h4,
-.ideateRawList p {
-  margin: 0;
-}
-
-.slateGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-}
-
-.slateCard {
-  display: grid;
-  gap: 12px;
-  border: 1px solid #d8dee8;
-  border-radius: 8px;
-  background: #f7f9fc;
-  padding: 14px;
-}
-
-.slateCardHeader {
-  display: grid;
-  gap: 8px;
-}
-
-.slateCardHeader h4,
-.slateCard p,
 .keepersPanel p {
   margin: 0;
 }
 
-.operatorBadge,
+.operatorBadge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #e8eef6;
+  padding: 4px 10px;
+  color: #245a8d;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+/* Short compiled citation keys, and only those. Change Review, Record Hygiene, and the Ideate
+   Keepers rail all render a bare key here, which is why the pill radius is safe. A resolved record
+   label is a whole payload field and belongs in `.groundChip`, never here. */
 .citationChip {
   display: inline-flex;
   align-items: center;
@@ -1504,11 +1482,6 @@ button:disabled:hover {
   font-size: 0.78rem;
   font-weight: 700;
   overflow-wrap: anywhere;
-}
-
-.operatorBadge {
-  background: #e8eef6;
-  color: #245a8d;
 }
 
 .citationChipList {
@@ -1545,6 +1518,29 @@ button:disabled:hover {
 .keepersList li {
   display: grid;
   gap: 8px;
+  min-width: 0;
+  border: 1px solid #e4e9f1;
+  border-left: 3px solid #245a8d;
+  border-radius: 6px;
+  background: #fbfcfe;
+  padding: 12px;
+}
+
+.keepersList li > .eyebrow {
+  margin: 0;
+}
+
+.keeperHeadline {
+  min-width: 0;
+  color: #202124;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.keepersList .secondaryButton {
+  justify-self: start;
 }
 
 .candidateBody {
@@ -1919,8 +1915,133 @@ button.citationChip:hover {
   border-left-color: #c9d2df;
 }
 
+/* Ideate scratch slate. A grounded idea is the third assistance-scratch surface and uses the same
+   card contract as Change Review and Record Hygiene rather than its own. It mirrors
+   `.scratchCardLayout`: Change Review leads with a meta rail because its enum fields must precede
+   the body, whereas an idea's only meta is the operator (which lives in the header) and its grounds
+   are appended evidence, so prose comes first in both DOM and reading order and only the visual
+   placement is reversed. */
+
+.slateCardLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: 16px 28px;
+  align-items: start;
+  min-width: 0;
+}
+
+.slateCardStatement {
+  max-width: 68ch;
+  margin: 0;
+  font-size: 1.14rem;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.slateCardWhy {
+  max-width: 68ch;
+  margin: 0;
+  color: #39445a;
+  font-size: 0.97rem;
+  line-height: 1.6;
+}
+
+.candidateCard-skipped {
+  border-left-color: #c9d2df;
+  background: #fbfcfd;
+}
+
+.candidateCard-skipped .slateCardStatement {
+  color: #68758a;
+  font-weight: 600;
+}
+
+.groundRail {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.groundRail .scratchFieldLabel {
+  margin: 0;
+}
+
+.groundList {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.groundChip {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid #dfe5ee;
+  border-left: 3px solid #c9d2df;
+  border-radius: 6px;
+  background: #f7f9fc;
+  padding: 8px 10px;
+}
+
+.groundChipKey {
+  color: #245a8d;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+/* Clamped, never truncated. A ground's label is a whole record field (SECRET.secret_claim,
+   CAST MEMBER.identity.one_line, ...), so the complete string stays in the DOM - readable by
+   assistive technology, selectable, and copyable - while the card keeps its rhythm. */
+.groundChipLabel {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: #4d5b6d;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.groundList-expanded .groundChipLabel {
+  display: block;
+  -webkit-line-clamp: none;
+  overflow: visible;
+}
+
+.groundChip-warning {
+  border-color: #e0c47a;
+  border-left-color: #c99a2e;
+  background: #fff8e7;
+}
+
+.groundChip-warning .groundChipKey {
+  color: #6d4a00;
+}
+
+.groundToggle {
+  justify-self: start;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  padding: 2px 0;
+  color: #245a8d;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.groundToggle:hover {
+  background: transparent;
+  color: #1f4d78;
+}
+
 @media (max-width: 820px) {
   .scratchCardLayout,
+  .slateCardLayout,
   .citationGroup {
     grid-template-columns: minmax(0, 1fr);
   }

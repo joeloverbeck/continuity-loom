@@ -26,8 +26,9 @@ import { presentOpenRouterFailure, presentThrownOpenRouterFailure } from "../ope
 import { isTransportFailure } from "../openrouter-transport.js";
 import { PromptInspector } from "../prompt/PromptInspector.js";
 import { ReadinessChecklist } from "../readiness/ReadinessChecklist.js";
+import { citationKeyText } from "./citation-key.js";
 import { IdeateControls } from "./IdeateControls.js";
-import { SlateCard } from "./SlateCard.js";
+import { SlateCard, slateCardTitle } from "./SlateCard.js";
 import { addKeeper, clearKeepers, keeperKey, listKeepers, removeKeeper, type IdeationKeeper } from "./keepers.js";
 
 type IdeateSurfaceState =
@@ -48,7 +49,6 @@ type ScratchState =
   | { status: "empty" }
   | { status: "sending" }
   | { status: "ideas"; ideas: readonly ParsedIdeationIdea[]; citations: Record<string, string> }
-  | { status: "malformed"; raw: string }
   | { status: "error"; message: string; failure?: TransportFailure; diagnostic?: DiagnosticReceipt };
 
 const defaultIdeationRequest: IdeationRequest = {
@@ -363,8 +363,11 @@ export function IdeateView(): React.JSX.Element {
 }
 
 function QuarantineBanner(): React.JSX.Element {
+  // Sticky so the quarantine label stays on screen while any scratch card is, per FOUNDATIONS
+  // 26.1. The slate is capped at 3-6 slots, so one panel-level label is enough and no card
+  // repeats it.
   return (
-    <p className="status statusWarning ideateQuarantine" role="note">
+    <p className="status statusWarning ideateQuarantine scratchNotice" role="note">
       AI-suggested scratch - not story state.
     </p>
   );
@@ -415,7 +418,7 @@ function ReadyIdeate({
     previewIsCurrent &&
     scratchState.status !== "sending";
   const showReadinessChecklist = readiness.blockers.length > 0 || readiness.provider.blockers.length > 0 || readiness.warnings.length > 0;
-  const hasSlate = scratchState.status === "ideas" || scratchState.status === "malformed";
+  const hasSlate = scratchState.status === "ideas";
 
   return (
     <section className="previewStack">
@@ -509,20 +512,13 @@ function ScratchPanel({
         <div className="candidateHeader">
           <div>
             <h3 id="ideate-scratch-title">Scratch slate</h3>
-            <p className="muted">AI-suggested scratch - not story state.</p>
           </div>
         </div>
         {state.status === "empty" || state.status === "sending" ? (
           <p className="muted">No ideas yet.</p>
         ) : null}
-        {state.status === "malformed" ? (
-          <div className="ideateRawScratch">
-            <p className="status statusWarning" role="status">The response could not be parsed into idea blocks.</p>
-            <pre>{state.raw}</pre>
-          </div>
-        ) : null}
         {state.status === "ideas" ? (
-          <div className="slateGrid">
+          <div className="scratchCardStack">
             {state.ideas.map((idea) => (
               <SlateCard
                 key={idea.slotNumber}
@@ -561,7 +557,11 @@ function KeepersPanel({
         <ul className="keepersList">
           {keepers.map((keeper) => (
             <li key={keeperKey(keeper)}>
-              <span>{ideaTitle(keeper)}</span>
+              <p className="eyebrow">{keeper.operator}</p>
+              <span className="keeperHeadline">{ideaTitle(keeper)}</span>
+              {/* The rail is 220-300px wide, which cannot render a resolved record label legibly.
+                  Keepers show the bare key - the short-key use `.citationChip` is built for - and
+                  the full label stays one click away on the slate card the keeper came from. */}
               {keeper.grounds.length > 0 ? (
                 <div className="citationChipList" aria-label={`Grounds for kept ${ideaTitle(keeper)}`}>
                   {keeper.grounds.map((ground) => (
@@ -569,7 +569,7 @@ function KeepersPanel({
                       className={keeper.unknownCitations.includes(ground) ? "citationChip citationChip-warning" : "citationChip"}
                       key={ground}
                     >
-                      {keeper.groundLabels?.[ground] ?? ground}
+                      {citationKeyText(ground)}
                     </span>
                   ))}
                 </div>
@@ -590,8 +590,9 @@ function KeepersPanel({
   );
 }
 
-function ideaTitle(idea: Pick<ParsedIdeationIdea, "headline" | "question" | "slotNumber">): string {
-  return idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
+// Shared with `SlateCard` so a kept idea can never be named differently from the card it came from.
+function ideaTitle(idea: Parameters<typeof slateCardTitle>[0]): string {
+  return slateCardTitle(idea);
 }
 
 function normalizedIdeationRequest(request: IdeationRequest): IdeationRequest {

@@ -5,7 +5,7 @@ import {
   type GenerationReadiness,
   type ReadinessDiagnostic
 } from "@loom/core";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -92,7 +92,7 @@ describe("IdeateView", () => {
     expect(await screen.findByRole("heading", { name: "Ideate" })).toBeTruthy();
     expect((await screen.findByTestId("prompt-body")).textContent).toContain("# Grounded Ideation Prompt");
     expect(screen.getByText("template-ideation")).toBeTruthy();
-    expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(2);
+    expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(1);
     expect(screen.getByText("No ideas yet.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: /insert/i })).toBeNull();
     expect(screen.queryByRole("button", { name: /accept/i })).toBeNull();
@@ -585,6 +585,12 @@ describe("IdeateView", () => {
     expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toContain("The sealed letter changes hands.");
     expect(sessionStorage.getItem("loom.ideate.keepers.v1")).toContain("The letter names a ledger substitution");
 
+    // The rail is too narrow for a resolved label, so it shows the bare key. The stored keeper
+    // payload is unchanged - only what the rail renders is.
+    const keptGrounds = screen.getByLabelText("Grounds for kept The sealed letter changes hands.");
+    expect(within(keptGrounds).getByText("SECRET-1")).toBeTruthy();
+    expect(within(keptGrounds).queryByText("The letter names a ledger substitution")).toBeNull();
+
     fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
 
     expect(screen.queryByRole("heading", { name: "The sealed letter changes hands." })).toBeNull();
@@ -635,7 +641,7 @@ describe("IdeateView", () => {
     );
     expect(screen.getAllByText(/use the existing Ideate action manually/i)).toHaveLength(2);
     expect(screen.queryByText("freeform answer")).toBeNull();
-    expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(2);
+    expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
     expect(writeText.mock.calls[0]?.[0]).toContain("Structural rule: mismatched-operator");

@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("SlateCard", () => {
-  it("renders operator badge, headline, why line, and resolved citation chips", () => {
+  it("leads each ground with its bare citation key and keeps the resolved label alongside it", () => {
     render(
       <SlateCard
         idea={ideaFixture()}
@@ -26,11 +26,45 @@ describe("SlateCard", () => {
     expect(screen.getByText("Reveal")).toBeTruthy();
     expect(screen.getByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
     expect(screen.getByText("The secret and handoff pressure support it.")).toBeTruthy();
-    expect(
-      within(screen.getByLabelText("Grounds for The sealed letter changes hands.")).getByText(
-        "The letter names a ledger substitution"
-      )
-    ).toBeTruthy();
+
+    const grounds = screen.getByLabelText("Grounds for The sealed letter changes hands.");
+    // The key is what the `why` prose names, so it has to be on the card for the claim to be checkable.
+    expect(within(grounds).getByText("SECRET-1")).toBeTruthy();
+    expect(within(grounds).getByText("The letter names a ledger substitution")).toBeTruthy();
+  });
+
+  it("clamps grounds in CSS only, so the complete label survives in the DOM and the toggle un-clamps it", () => {
+    const longLabel = "Iker Aguirre is almost exclusively attracted to older, gorgeous, seductive women, ".repeat(4);
+
+    render(
+      <SlateCard
+        idea={ideaFixture()}
+        citations={{ "[SECRET-1]": longLabel }}
+        isKept={false}
+        onKeep={vi.fn()}
+        onRegenerate={vi.fn()}
+      />
+    );
+
+    const grounds = screen.getByLabelText("Grounds for The sealed letter changes hands.");
+    // Nothing is truncated: the whole label is in the DOM, so assistive technology reads it all and
+    // it stays selectable. Only CSS clamps what a sighted reader sees.
+    expect(within(grounds).getByText(/almost exclusively attracted/).textContent).toBe(longLabel);
+    expect(grounds.className).toBe("groundList");
+
+    const toggle = screen.getByRole("button", { name: "Show full grounds" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+
+    fireEvent.click(toggle);
+
+    expect(grounds.className).toBe("groundList groundList-expanded");
+    expect(screen.getByRole("button", { name: "Hide full grounds" }).getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("offers no grounds toggle when no citation resolved to a label", () => {
+    render(<SlateCard idea={ideaFixture()} isKept={false} onKeep={vi.fn()} onRegenerate={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: /grounds/i })).toBeNull();
   });
 
   it("renders question-mode text and unknown-citation markers", () => {
@@ -45,8 +79,8 @@ describe("SlateCard", () => {
     }} isKept={false} onKeep={vi.fn()} onRegenerate={vi.fn()} />);
 
     expect(screen.getByRole("heading", { name: "Who benefits if the latch rattles now?" })).toBeTruthy();
-    expect(screen.getByText("[CLOCK-99]")).toBeTruthy();
-    expect(screen.getByText("Unknown citations: [CLOCK-99]")).toBeTruthy();
+    expect(screen.getByText("CLOCK-99")).toBeTruthy();
+    expect(screen.getByText("Unknown citations: CLOCK-99")).toBeTruthy();
   });
 
   it("renders an assigned SKIPPED block without inventing normal idea fields", () => {
@@ -62,6 +96,22 @@ describe("SlateCard", () => {
     expect(screen.getByRole("heading", { name: "Skipped slot 1" })).toBeTruthy();
     expect(screen.getByText("No compiled record supports this slot.")).toBeTruthy();
     expect(screen.queryByText(/why:/i)).toBeNull();
+  });
+
+  it("offers no Keep on a skipped slot, because there is nothing to keep", () => {
+    const keep = vi.fn();
+
+    render(<SlateCard idea={{
+      slotNumber: 1,
+      operator: "Reveal",
+      skipped: true,
+      grounds: [],
+      unknownCitations: []
+    }} isKept={false} onKeep={keep} onRegenerate={vi.fn()} />);
+
+    expect(screen.queryByRole("button", { name: "Keep" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Regenerate slot" })).toBeTruthy();
+    expect(keep).not.toHaveBeenCalled();
   });
 
   it("offers keeper and per-slot regenerate actions without insertion affordances", () => {
