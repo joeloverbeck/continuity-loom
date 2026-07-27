@@ -265,7 +265,7 @@ export function AcceptedSegmentChangeReviewView({
           <h2 id="accepted-segment-change-review-title">Accepted-Segment Change Review</h2>
         </div>
       </div>
-      <p className="status statusWarning" role="note">
+      <p className="status statusWarning scratchNotice" role="note">
         Unverified, noncanonical advice. Accepted prose is bounded evidence, never canon or prose-prompt authority.
       </p>
 
@@ -515,8 +515,11 @@ function ReviewPanel({
               message="No change items were returned. Six reasoned coverage rows are present, but this is not proof that canonical state is current."
               guidance="Manually compare the accepted segment and current state before continuing."
             />
-          ) : (
-            <div className="slateGrid">
+          ) : null}
+          {/* Coverage is what makes a thin or empty result interpretable, so it reads before the items. */}
+          <CoverageTable rows={state.result.review.coverage} />
+          {state.result.review.items.length > 0 ? (
+            <div className="scratchCardStack">
               {state.result.review.items.map((item) => (
                 <ChangeCard
                   key={item.id}
@@ -530,8 +533,7 @@ function ReviewPanel({
                 />
               ))}
             </div>
-          )}
-          <CoverageTable rows={state.result.review.coverage} />
+          ) : null}
           <section aria-labelledby="retention-guidance-title">
             <h4 id="retention-guidance-title">Retention guidance</h4>
             <ul>
@@ -566,70 +568,157 @@ function ChangeCard({
   onCopy: () => void;
   onCitation: (citation: string) => void;
 }): React.JSX.Element {
+  const established = item.epistemicStatus === "established change";
+
   return (
-    <article className="candidateCard" aria-labelledby={`change-review-item-${item.id}`}>
-      <h4 id={`change-review-item-${item.id}`}>Possible change {item.id}</h4>
-      <p>{item.changeStatement}</p>
-      {item.epistemicStatus === "established change" ? (
-        <p className="changeReviewExcerpt">
-          <span>Established evidence excerpt</span>: <q>{item.evidenceExcerpt}</q> — bounded accepted-segment
-          evidence, not canon and not prose-prompt authority.
-        </p>
-      ) : (
-        <p className="changeReviewExcerpt">
-          Interpretation requiring author judgment — no extractive excerpt; author judgment required.
-        </p>
-      )}
-      <dl>
-        <dt>Epistemic status</dt><dd>{item.epistemicStatus}</dd>
-        <dt>Retention horizon</dt><dd>{item.retentionHorizon}</dd>
-        <dt>Likely destinations</dt><dd>{item.affectedTargetHints.join(", ")}</dd>
-        <dt>Uncertainty or rival reading</dt><dd>{item.uncertaintyOrRivalReading}</dd>
-      </dl>
-      <div>
-        <p>Evidence citations</p>
-        <div className="previewToolbar">
-          {item.evidence.map((citation) => (
-            <button key={citation} type="button" onClick={() => onCitation(citation)}>
-              Open evidence {citation} for {item.id}
-            </button>
-          ))}
+    <article
+      className={kept ? "candidateCard candidateCard-kept" : "candidateCard"}
+      aria-labelledby={`change-review-item-${item.id}`}
+    >
+      <div className="scratchCardHeader">
+        <div className="scratchCardHeading">
+          <h4 id={`change-review-item-${item.id}`}>Possible change {item.id}</h4>
         </div>
-        <p>Contrast citations</p>
-        <div className="previewToolbar">
-          {item.contrast.map((citation) => (
-            <button key={citation} type="button" onClick={() => onCitation(citation)}>
-              Open contrast {citation} for {item.id}
-            </button>
-          ))}
+        <div className="scratchBadgeRow">
+          <span className={established ? "scratchBadge scratchBadge-established" : "scratchBadge scratchBadge-interpretation"}>
+            {item.epistemicStatus}
+          </span>
+          {kept ? <span className="scratchBadge scratchBadge-session">Kept for this session</span> : null}
+          {reviewed ? <span className="scratchBadge scratchBadge-session">Reviewed for this session</span> : null}
         </div>
       </div>
-      <p>Unverified, noncanonical advice. Independently author any real change in its normal editor.</p>
-      <div className="previewToolbar">
-        <button type="button" onClick={onToggleKept}>{kept ? `Unkeep ${item.id}` : `Keep ${item.id}`}</button>
-        <button type="button" onClick={onToggleReviewed}>{reviewed ? `Mark ${item.id} unreviewed` : `Mark ${item.id} reviewed`}</button>
-        <button type="button" onClick={onCopy}>Copy {item.id}</button>
+
+      <div className="scratchCardLayout">
+        <dl className="scratchCardMeta">
+          <div><dt>Epistemic status</dt><dd>{item.epistemicStatus}</dd></div>
+          <div><dt>Retention horizon</dt><dd>{item.retentionHorizon}</dd></div>
+          <div>
+            <dt>Likely destinations</dt>
+            <dd>{item.affectedTargetHints.map((hint) => <span key={hint}>{withPathBreaks(hint)}</span>)}</dd>
+          </div>
+        </dl>
+
+        <div className="scratchCardBody">
+          <p className="scratchCardStatement">{item.changeStatement}</p>
+          <p className="changeReviewExcerpt">
+            {established ? <q>{item.evidenceExcerpt}</q> : null}
+            <span className="excerptNote">
+              {established
+                ? "Established evidence excerpt — bounded accepted-segment evidence, not canon and not prose-prompt authority."
+                : "Interpretation requiring author judgment — no extractive excerpt; author judgment required."}
+            </span>
+          </p>
+          <div className="scratchCardField">
+            <span className="scratchFieldLabel">Uncertainty or rival reading</span>
+            <p>{item.uncertaintyOrRivalReading}</p>
+          </div>
+          <CitationGroup label="Evidence" relation="evidence" citations={item.evidence} itemId={item.id} onCitation={onCitation} />
+          <CitationGroup label="Contrast" relation="contrast" citations={item.contrast} itemId={item.id} onCitation={onCitation} />
+        </div>
       </div>
-      {kept ? <p>Kept for this session</p> : null}
-      {reviewed ? <p>Reviewed for this session</p> : null}
+
+      <div className="scratchCardFooter">
+        <div className="previewToolbar">
+          <button type="button" onClick={onToggleKept}>{kept ? `Unkeep ${item.id}` : `Keep ${item.id}`}</button>
+          <button type="button" className="secondaryButton" onClick={onToggleReviewed}>
+            {reviewed ? `Mark ${item.id} unreviewed` : `Mark ${item.id} reviewed`}
+          </button>
+          <button type="button" className="secondaryButton" onClick={onCopy}>Copy {item.id}</button>
+        </div>
+        <p className="scratchDisclaimer">
+          Unverified, noncanonical advice — independently author any real change in its normal editor.
+        </p>
+      </div>
     </article>
   );
 }
 
+/** Citation keys carry their own brackets; the chip shows the bare key and keeps the verbose
+ *  navigation phrasing on the accessible name. */
+function CitationGroup({
+  label,
+  relation,
+  citations,
+  itemId,
+  onCitation
+}: {
+  label: string;
+  relation: "evidence" | "contrast";
+  citations: readonly string[];
+  itemId: string;
+  onCitation: (citation: string) => void;
+}): React.JSX.Element | null {
+  if (citations.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="citationGroup">
+      <span className="citationGroupLabel" id={`change-review-${relation}-${itemId}`}>{label}</span>
+      <div className="citationChipList" role="group" aria-labelledby={`change-review-${relation}-${itemId}`}>
+        {citations.map((citation) => (
+          <button
+            key={citation}
+            type="button"
+            className="citationChip"
+            aria-label={`Open ${relation} ${citation} for ${itemId}`}
+            onClick={() => onCitation(citation)}
+          >
+            {stripCitationBrackets(citation)}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Field paths are one long token to a line-breaker. Offering break points after each `.` or `_`
+ *  lets the narrow meta rail wrap at a separator instead of mid-syllable. */
+function withPathBreaks(value: string): React.ReactNode {
+  const segments = value.split(/(?<=[._])/);
+  return segments.map((segment, index) => (
+    <span key={`${segment}-${index}`}>
+      {segment}
+      {index < segments.length - 1 ? <wbr /> : null}
+    </span>
+  ));
+}
+
+function stripCitationBrackets(citation: string): string {
+  return citation.startsWith("[") && citation.endsWith("]") ? citation.slice(1, -1) : citation;
+}
+
 function CoverageTable({ rows }: { rows: ValidReview["review"]["coverage"] }): React.JSX.Element {
   return (
-    <section aria-labelledby="change-review-coverage-title">
+    <section className="coveragePanel" aria-labelledby="change-review-coverage-title">
       <h4 id="change-review-coverage-title">Six-dimension coverage</h4>
-      <table>
-        <thead><tr><th>Dimension</th><th>Status</th><th>Reason</th></tr></thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.dimension}><th scope="row">{row.dimension}</th><td>{row.status}</td><td>{row.reason}</td></tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="coverageTableScroll">
+        <table className="coverageTable">
+          <thead><tr><th>Dimension</th><th>Status</th><th>Reason</th></tr></thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.dimension}>
+                <th scope="row">{row.dimension}</th>
+                <td><span className={coverageStatusClass(row.status)}>{row.status}</span></td>
+                <td>{row.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
+}
+
+/** Tone is redundant with the status word the pill already renders; nothing relies on the colour. */
+function coverageStatusClass(status: string): string {
+  if (status === "changes found") {
+    return "scratchBadge scratchBadge-established";
+  }
+  if (status === "uncertain") {
+    return "scratchBadge scratchBadge-uncertain";
+  }
+  return "scratchBadge";
 }
 
 function ConsumedGuidancePanel({

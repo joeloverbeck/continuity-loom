@@ -210,6 +210,57 @@ describe("AcceptedSegmentChangeReviewView", () => {
     expect(screen.getByText(/Do not create an EVENT for every accepted segment/i)).toBeTruthy();
   });
 
+  it("reads six-dimension coverage before the item stack", async () => {
+    const { container } = renderView();
+    await analyze();
+
+    const coverage = await screen.findByRole("heading", { name: "Six-dimension coverage" });
+    const firstCard = screen.getByRole("heading", { name: "Possible change ITEM-001" });
+    expect(coverage.compareDocumentPosition(firstCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(container.querySelectorAll(".scratchCardStack .candidateCard")).toHaveLength(1);
+  });
+
+  it("keeps the six reasoned coverage rows visible when no items are returned", async () => {
+    analyzeMock.mockResolvedValue(emptyResponse());
+    renderView();
+    await analyze();
+
+    // An empty items list is only interpretable alongside the six reasoned rows.
+    expect(await screen.findByRole("heading", { name: "Six-dimension coverage" })).toBeTruthy();
+    expect(screen.getAllByRole("row")).toHaveLength(7);
+    expect(screen.getByText("Unverified no-change result")).toBeTruthy();
+  });
+
+  it("shows each citation key in full while keeping its verbose accessible name", async () => {
+    renderView();
+    await analyze();
+
+    const contrast = await screen.findByRole("button", {
+      name: "Open contrast [BRIEF:current_authoritative_state.current_location] for ITEM-001"
+    });
+    // The visible chip carries the whole key: the citation is the provenance under review,
+    // so nothing is truncated or hidden behind a tooltip.
+    expect(contrast.textContent).toBe("BRIEF:current_authoritative_state.current_location");
+    expect(contrast.className).toContain("citationChip");
+
+    const evidence = screen.getByRole("button", { name: "Open evidence [SEG-7-S001] for ITEM-001" });
+    expect(evidence.textContent).toBe("SEG-7-S001");
+    expect(evidence.className).toContain("citationChip");
+  });
+
+  it("carries the non-canonical label on every card as well as on the panel", async () => {
+    const { container } = renderView();
+    await analyze();
+
+    await screen.findByRole("heading", { name: "Possible change ITEM-001" });
+    const cards = container.querySelectorAll(".candidateCard");
+    expect(cards).toHaveLength(1);
+    for (const card of cards) {
+      expect(card.querySelector(".scratchDisclaimer")?.textContent).toMatch(/Unverified, noncanonical advice/);
+    }
+    expect(container.querySelector(".scratchNotice")?.textContent).toMatch(/Unverified, noncanonical advice/);
+  });
+
   it("hands only explicitly selected consumed guidance to the existing Generation Brief editor", async () => {
     renderView();
     await screen.findByRole("heading", { name: "Consumed guidance check" });
