@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T08:49:13.401Z",
+  "generated_at": "2026-07-27T17:19:35.332Z",
   "target_content_hash": "a477f4da0f9964c093e28876c3676f0eaaa97a62cc7e3fe777bd48ba361c0624",
-  "qualifying_uses_on_current_hash": 1,
+  "qualifying_uses_on_current_hash": 3,
   "open_incident_ids": [],
   "candidate_clusters": [],
   "state": "closed",
@@ -15,5 +15,5 @@
   "last_completed_review_id": null,
   "target_name": "skill-evolution-status",
   "target_repo_relative_path": ".claude/skills/skill-evolution-status",
-  "derivation_session_id": "2d4b7f11-6e45-4666-b0a3-df6d34e946aa"
+  "derivation_session_id": "bdab23da-b0a9-463e-af3c-4d37ab1e4981"
 }
