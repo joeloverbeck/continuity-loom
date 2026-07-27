@@ -23,11 +23,13 @@ import type {
 import {
   isTransportFailure,
   type OpenRouterDiagnosticReceipt,
+  type OpenRouterReasoningEffort,
   type TransportFailure
 } from "./openrouter-transport.js";
 
 export type {
   OpenRouterDiagnosticReceipt,
+  OpenRouterReasoningEffort,
   TransportErrorCategory,
   TransportFailure
 } from "./openrouter-transport.js";
@@ -121,8 +123,6 @@ export interface OpenRouterRequestInspection {
   topP?: number;
   requestFingerprint: string;
 }
-
-export type OpenRouterReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
 
 export type CompileResponse =
   | (CompileResult & { providerRequest: OpenRouterRequestInspection })

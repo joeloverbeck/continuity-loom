@@ -12,9 +12,10 @@ type OutputLimitReceipt = OpenRouterDiagnosticReceipt & {
 export function isRecoverableOutputLimitReceipt(
   receipt: OpenRouterDiagnosticReceipt
 ): receipt is OutputLimitReceipt {
-  return (receipt.classification === "incomplete-generation" || receipt.classification === "incomplete-prose") &&
-    receipt.details.termination === "length" &&
-    receipt.sentPolicy !== undefined;
+  // The server attaches this trusted projection only after it has classified the
+  // current attempt as an output-limit failure, including normalized in-band
+  // provider errors whose receipt classification remains `provider-error`.
+  return receipt.sentPolicy !== undefined;
 }
 
 export async function lowerOutputLimitEffort(

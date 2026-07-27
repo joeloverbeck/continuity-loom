@@ -28,6 +28,9 @@ export type OpenRouterResponseClassification =
   | "local-validation"
   | "incomplete-prose";
 
+export const OPENROUTER_REASONING_EFFORTS = ["minimal", "low", "medium", "high", "xhigh", "max"] as const;
+export type OpenRouterReasoningEffort = (typeof OPENROUTER_REASONING_EFFORTS)[number];
+
 export type OpenRouterDiagnosticDetails = {
   httpStatus: number;
   generationId?: string;
@@ -58,9 +61,9 @@ export type OpenRouterDiagnosticReceipt = {
     outputClass: "prose" | "assistance";
     completionCeiling: number;
     reasoningEnabled: true;
-    reasoningEffort: "minimal" | "low" | "medium" | "high" | "xhigh" | "max";
+    reasoningEffort: OpenRouterReasoningEffort;
     reasoningExcluded: true;
-    supportedLowerEfforts: readonly ("minimal" | "low" | "medium" | "high" | "xhigh" | "max")[];
+    supportedLowerEfforts: readonly OpenRouterReasoningEffort[];
   };
 };
 
@@ -146,15 +149,19 @@ function isDiagnosticSentPolicy(value: unknown): boolean {
     return false;
   }
   const policy = value as Record<string, unknown>;
-  const efforts = new Set(["minimal", "low", "medium", "high", "xhigh", "max"]);
+  const sentEffortIndex = OPENROUTER_REASONING_EFFORTS.indexOf(policy.reasoningEffort as OpenRouterReasoningEffort);
   return (policy.outputClass === "prose" || policy.outputClass === "assistance") &&
     typeof policy.completionCeiling === "number" &&
     Number.isSafeInteger(policy.completionCeiling) &&
     policy.completionCeiling > 0 &&
     policy.reasoningEnabled === true &&
     typeof policy.reasoningEffort === "string" &&
-    efforts.has(policy.reasoningEffort) &&
+    sentEffortIndex >= 0 &&
     policy.reasoningExcluded === true &&
     Array.isArray(policy.supportedLowerEfforts) &&
-    policy.supportedLowerEfforts.every((effort) => typeof effort === "string" && efforts.has(effort));
+    policy.supportedLowerEfforts.every((effort) =>
+      typeof effort === "string" &&
+      OPENROUTER_REASONING_EFFORTS.indexOf(effort as OpenRouterReasoningEffort) >= 0 &&
+      OPENROUTER_REASONING_EFFORTS.indexOf(effort as OpenRouterReasoningEffort) < sentEffortIndex
+    );
 }

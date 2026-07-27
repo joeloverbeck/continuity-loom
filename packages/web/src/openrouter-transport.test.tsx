@@ -62,6 +62,34 @@ describe("OpenRouter transport failure envelope", () => {
         }
       }
     })).toBe(false);
+    expect(isTransportFailure({
+      ...baseFailure,
+      diagnostic: {
+        ...baseFailure.diagnostic,
+        sentPolicy: {
+          outputClass: "assistance",
+          completionCeiling: 8192,
+          reasoningEnabled: true,
+          reasoningEffort: "low",
+          reasoningExcluded: true,
+          supportedLowerEfforts: ["low"]
+        }
+      }
+    })).toBe(false);
+    expect(isTransportFailure({
+      ...baseFailure,
+      diagnostic: {
+        ...baseFailure.diagnostic,
+        sentPolicy: {
+          outputClass: "assistance",
+          completionCeiling: 8192,
+          reasoningEnabled: true,
+          reasoningEffort: "low",
+          reasoningExcluded: true,
+          supportedLowerEfforts: ["max"]
+        }
+      }
+    })).toBe(false);
   });
 
   it.each([

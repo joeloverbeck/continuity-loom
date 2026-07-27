@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   isRecoverableOutputLimitReceipt,
@@ -17,15 +17,29 @@ export function OpenRouterDiagnosticReceipt({
 }) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
   const recoverable = isRecoverableOutputLimitReceipt(receipt) ? receipt : undefined;
+  const defaultLowerEffort = recoverable?.sentPolicy.supportedLowerEfforts.at(-1) ?? "";
+  const defaultHigherCeiling = String((recoverable?.sentPolicy.completionCeiling ?? 0) + 1);
+  const recoveryPolicyIdentity = recoverable === undefined
+    ? "none"
+    : [
+        recoverable.sentPolicy.outputClass,
+        recoverable.sentPolicy.completionCeiling,
+        recoverable.sentPolicy.reasoningEffort,
+        ...recoverable.sentPolicy.supportedLowerEfforts
+      ].join(":");
   const [lowerEffort, setLowerEffort] = useState<OpenRouterReasoningEffort | "">(
-    recoverable?.sentPolicy.supportedLowerEfforts.at(-1) ?? ""
+    defaultLowerEffort
   );
-  const [higherCeiling, setHigherCeiling] = useState(
-    String((recoverable?.sentPolicy.completionCeiling ?? 0) + 1)
-  );
+  const [higherCeiling, setHigherCeiling] = useState(defaultHigherCeiling);
   const [recoveryStatus, setRecoveryStatus] = useState<string | null>(null);
   const [isRecovering, setIsRecovering] = useState(false);
   const lines = receiptLines(receipt);
+
+  useEffect(() => {
+    setLowerEffort(defaultLowerEffort);
+    setHigherCeiling(defaultHigherCeiling);
+    setRecoveryStatus(null);
+  }, [defaultHigherCeiling, defaultLowerEffort, recoveryPolicyIdentity]);
 
   async function copyReceipt(): Promise<void> {
     try {

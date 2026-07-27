@@ -208,6 +208,84 @@ describe("OpenRouterDiagnosticReceipt", () => {
     expect(screen.getByRole<HTMLButtonElement>("button", { name: "Raise Prose ceiling" }).disabled).toBe(false);
   });
 
+  it("offers recovery for a normalized in-band provider output-limit diagnostic", () => {
+    render(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          ...receipt,
+          summary: "OpenRouter reported an output-limit provider error.",
+          recovery: "Choose an explicit affected-class recovery.",
+          sentPolicy: {
+            outputClass: "prose",
+            completionCeiling: 2048,
+            reasoningEnabled: true,
+            reasoningEffort: "high",
+            reasoningExcluded: true,
+            supportedLowerEfforts: ["low"]
+          }
+        }}
+      />
+    );
+
+    expect(screen.getByRole("button", { name: "Lower Prose effort" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Raise Prose ceiling" })).toBeTruthy();
+  });
+
+  it("resets recovery selections when a later output-limit receipt replaces the current one", async () => {
+    const firstReceipt = {
+      classification: "incomplete-generation" as const,
+      summary: "First output limit.",
+      recovery: "Choose an explicit affected-class recovery.",
+      sentPolicy: {
+        outputClass: "prose" as const,
+        completionCeiling: 2048,
+        reasoningEnabled: true as const,
+        reasoningEffort: "high" as const,
+        reasoningExcluded: true as const,
+        supportedLowerEfforts: ["low", "medium"] as const
+      },
+      details: {
+        httpStatus: 200,
+        requestedModel: "test/model",
+        termination: "length" as const,
+        choiceCount: 1,
+        contentShape: "null" as const
+      }
+    };
+    const { rerender } = render(<OpenRouterDiagnosticReceipt receipt={firstReceipt} />);
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Lower Prose reasoning effort" }), {
+      target: { value: "low" }
+    });
+    fireEvent.change(screen.getByRole("spinbutton", { name: "Higher Prose completion ceiling" }), {
+      target: { value: "5000" }
+    });
+
+    rerender(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          ...firstReceipt,
+          summary: "Second output limit.",
+          sentPolicy: {
+            ...firstReceipt.sentPolicy,
+            completionCeiling: 6000,
+            reasoningEffort: "medium",
+            supportedLowerEfforts: ["minimal"]
+          }
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByRole<HTMLSelectElement>("combobox", { name: "Lower Prose reasoning effort" }).value).toBe(
+        "minimal"
+      );
+      expect(screen.getByRole<HTMLInputElement>("spinbutton", { name: "Higher Prose completion ceiling" }).value).toBe(
+        "6001"
+      );
+    });
+  });
+
   it.each([
     {
       classification: "incomplete-generation" as const,
