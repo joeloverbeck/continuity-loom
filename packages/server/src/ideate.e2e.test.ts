@@ -50,6 +50,7 @@ describe("ideation end-to-end capstone", () => {
     sendChatCompletionMock.mockImplementation(async ({ request }) => {
       const prompt = request.messages[0].content;
       const secretKey = prompt.match(/\[SECRET-\d+\]/)?.[0] ?? "[SECRET-0]";
+      const intentionKey = prompt.match(/\[INTENTION-\d+\]/)?.[0] ?? "[INTENTION-0]";
       return {
         ok: true,
         candidate: {
@@ -58,7 +59,19 @@ describe("ideation end-to-end capstone", () => {
             "operator: Reveal",
             "headline: Let the hinge scrape expose pressure without revealing the letter.",
             "why: The selected secret and cellar objects support a clue-only pressure move.",
-            `grounds: ${secretKey}, [UNKNOWN-99]`
+            `grounds: ${secretKey}, [UNKNOWN-99]`,
+            "",
+            "IDEA 2",
+            "operator: Plan Meets Friction",
+            "headline: Make the courier's immediate intention meet resistance at the cellar door.",
+            "why: The assigned intention supports a local attempt meeting friction.",
+            `grounds: ${intentionKey}`,
+            "",
+            "IDEA 3",
+            "operator: Commit at a Cost",
+            "headline: Make Elin commit to costly concealment as the audit clock presses the secret closer to exposure.",
+            "why: The assigned clock and secret support one commitment under cost.",
+            "grounds: [CLOCK-1], [SECRET-1]"
           ].join("\n")
         },
         response: normalResponse()
@@ -89,23 +102,43 @@ describe("ideation end-to-end capstone", () => {
     const after = await persistedProjectSurfaces(fastify);
     const body = response.json() as {
       ok: true;
-      ideas: Array<{ headline: string; grounds: string[]; unknownCitations: string[] }>;
+      ideas: Array<{ slotNumber: number; operator: string; headline: string; grounds: string[]; unknownCitations: string[] }>;
       metadata: { versions: { template: string; compiler: string; contract: string } };
     };
     const sentPrompt = sendChatCompletionMock.mock.calls[0]?.[0]?.request.messages[0].content ?? "";
 
     expect(firstCompile.prompt).toContain("# Grounded Ideation Prompt");
     expect(firstCompile.prompt.match(/What pressure does &lt;the letter&gt; create\?/g)).toHaveLength(1);
+    expect(firstCompile.prompt).toContain("Slot 3: Commit at a Cost");
+    expect(firstCompile.prompt).toContain("Grounds: [CLOCK-1], [SECRET-1]");
+    expect(firstCompile.prompt).toContain("Dormancy modifier: this slot must reincorporate dormant record [SECRET-1].");
     expect(firstCompile.prompt).toBe(secondCompile.prompt);
     expect(firstCompile.metadata.fingerprint).toBe(secondCompile.metadata.fingerprint);
     expect(response.statusCode).toBe(200);
     expect(body.ok).toBe(true);
-    expect(body.ideas).toHaveLength(1);
+    expect(body).toMatchObject({ ideas: expect.any(Array) });
+    expect(body.ideas).toHaveLength(3);
     expect(body.ideas[0]).toMatchObject({
+      slotNumber: 1,
+      operator: "Reveal",
       headline: "Let the hinge scrape expose pressure without revealing the letter.",
       unknownCitations: ["[UNKNOWN-99]"]
     });
     expect(body.ideas[0]?.grounds).toContain("[SECRET-1]");
+    expect(body.ideas[1]).toMatchObject({
+      slotNumber: 2,
+      operator: "Plan Meets Friction",
+      headline: "Make the courier's immediate intention meet resistance at the cellar door.",
+      grounds: ["[INTENTION-1]"],
+      unknownCitations: []
+    });
+    expect(body.ideas[2]).toMatchObject({
+      slotNumber: 3,
+      operator: "Commit at a Cost",
+      headline: "Make Elin commit to costly concealment as the audit clock presses the secret closer to exposure.",
+      grounds: ["[CLOCK-1]", "[SECRET-1]"],
+      unknownCitations: []
+    });
     expect(body.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);

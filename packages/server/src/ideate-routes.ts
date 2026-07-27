@@ -1,4 +1,5 @@
 import {
+  assignSlots,
   citationKeysFor,
   compilePrompt,
   deriveReadiness,
@@ -10,7 +11,7 @@ import type { ValidationRecord } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
-import { parseIdeationResponse } from "./ideation-parse.js";
+import { describeIdeationParseFailure, parseIdeationResponse } from "./ideation-parse.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
@@ -95,20 +96,34 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
     const citationKeys = citationKeysFor(snapshotResult.snapshot.records);
     const validCitationKeys = new Set(citationKeys.values());
     const citations = citationLabels(snapshotResult.snapshot.records, citationKeys);
-    const parsed = parseIdeationResponse(sendResult.candidate.text, validCitationKeys);
+    const assignment = assignSlots(snapshotResult.snapshot.records, ideationRequest);
+    const parsed = parseIdeationResponse(sendResult.candidate.text, {
+      mode: ideationRequest.mode,
+      slots: assignment.slots.map((slot, index) => ({
+        slotNumber: index + 1,
+        operator: slot.operatorName
+      })),
+      validCitationKeys
+    });
 
     if (!parsed.ok) {
+      const recovery = "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.";
       return {
         ok: true,
         quarantined: true,
         reasonCode: "local-parser-rejected",
         summary: "Candidate content reached Continuity Loom but failed local Ideate validation.",
-        recovery: "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic.",
+        recovery,
         diagnostic: createDiagnosticReceipt(
           "local-validation",
           sendResult.response,
           "Candidate content reached Continuity Loom but failed local Ideate validation.",
-          "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic."
+          recovery,
+          undefined,
+          {
+            ...parsed.reason,
+            message: describeIdeationParseFailure(parsed.reason)
+          }
         )
       };
     }

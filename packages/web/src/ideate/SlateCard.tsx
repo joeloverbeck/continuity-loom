@@ -19,7 +19,9 @@ export function SlateCard({
   onKeep,
   onRegenerate
 }: SlateCardProps): React.JSX.Element {
-  const title = idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
+  const title = idea.skipped
+    ? `Skipped slot ${idea.slotNumber}`
+    : idea.headline ?? idea.question ?? `Idea ${idea.slotNumber}`;
 
   return (
     <article className="slateCard" aria-labelledby={`ideation-idea-${idea.slotNumber}`}>
@@ -27,6 +29,7 @@ export function SlateCard({
         <span className="operatorBadge">{idea.operator}</span>
         <h4 id={`ideation-idea-${idea.slotNumber}`}>{title}</h4>
       </header>
+      {idea.skipped ? <p>No compiled record supports this slot.</p> : null}
       {idea.why ? <p>{idea.why}</p> : null}
       <div className="citationChipList" aria-label={`Grounds for ${title}`}>
         {idea.grounds.map((ground) => (

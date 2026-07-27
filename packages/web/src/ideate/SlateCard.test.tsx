@@ -49,6 +49,21 @@ describe("SlateCard", () => {
     expect(screen.getByText("Unknown citations: [CLOCK-99]")).toBeTruthy();
   });
 
+  it("renders an assigned SKIPPED block without inventing normal idea fields", () => {
+    render(<SlateCard idea={{
+      slotNumber: 1,
+      operator: "Reveal",
+      skipped: true,
+      grounds: [],
+      unknownCitations: []
+    }} isKept={false} onKeep={vi.fn()} onRegenerate={vi.fn()} />);
+
+    expect(screen.getByText("Reveal")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Skipped slot 1" })).toBeTruthy();
+    expect(screen.getByText("No compiled record supports this slot.")).toBeTruthy();
+    expect(screen.queryByText(/why:/i)).toBeNull();
+  });
+
   it("offers keeper and per-slot regenerate actions without insertion affordances", () => {
     const keep = vi.fn();
     const regenerate = vi.fn();

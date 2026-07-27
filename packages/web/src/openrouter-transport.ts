@@ -57,6 +57,11 @@ export type OpenRouterDiagnosticReceipt = {
   summary: string;
   recovery: string;
   details: OpenRouterDiagnosticDetails;
+  structuralReason?: {
+    code: string;
+    message: string;
+    slotNumber?: number;
+  };
   sentPolicy?: {
     outputClass: "prose" | "assistance";
     completionCeiling: number;
@@ -141,7 +146,24 @@ function isDiagnosticReceipt(value: unknown): value is OpenRouterDiagnosticRecei
     typeof receipt.details.termination === "string" &&
     typeof receipt.details.choiceCount === "number" &&
     typeof receipt.details.contentShape === "string" &&
+    (receipt.structuralReason === undefined || isStructuralReason(receipt.structuralReason)) &&
     (receipt.sentPolicy === undefined || isDiagnosticSentPolicy(receipt.sentPolicy));
+}
+
+function isStructuralReason(value: unknown): boolean {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+  const reason = value as Record<string, unknown>;
+  return typeof reason.code === "string" &&
+    reason.code.length > 0 &&
+    typeof reason.message === "string" &&
+    reason.message.length > 0 &&
+    (reason.slotNumber === undefined || (
+      typeof reason.slotNumber === "number" &&
+      Number.isSafeInteger(reason.slotNumber) &&
+      reason.slotNumber > 0
+    ));
 }
 
 function isDiagnosticSentPolicy(value: unknown): boolean {

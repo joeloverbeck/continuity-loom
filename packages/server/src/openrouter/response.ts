@@ -68,7 +68,14 @@ export interface OpenRouterDiagnosticReceipt {
   summary: string;
   recovery: string;
   details: OpenRouterResponseFacts;
+  structuralReason?: OpenRouterStructuralReason;
   sentPolicy?: OpenRouterDiagnosticSentPolicy;
+}
+
+export interface OpenRouterStructuralReason {
+  code: string;
+  message: string;
+  slotNumber?: number;
 }
 
 export interface OpenRouterDiagnosticSentPolicy {
@@ -213,13 +220,15 @@ export function createDiagnosticReceipt(
   details: OpenRouterResponseFacts,
   summary: string,
   recovery: string,
-  sentPolicy?: OpenRouterDiagnosticSentPolicy
+  sentPolicy?: OpenRouterDiagnosticSentPolicy,
+  structuralReason?: OpenRouterStructuralReason
 ): OpenRouterDiagnosticReceipt {
   return {
     classification,
     summary,
     recovery,
     details,
+    ...(structuralReason === undefined ? {} : { structuralReason }),
     ...(sentPolicy === undefined ? {} : { sentPolicy })
   };
 }

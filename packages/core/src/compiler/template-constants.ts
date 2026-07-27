@@ -468,7 +468,7 @@ Ideas must be mutually distinct. Each idea must execute its assigned operator an
 </ideation_quality>`,
   ideation_output_format: `<ideation_output_format>
 Output only an ideas block. Malformed output is discarded.
-You may think briefly before the block, but do not include chain-of-thought or private reasoning.
+Output nothing before the first IDEA line and nothing after the last field line. Do not use code fences, Markdown headings, bullets, or bold; write every header and field as plain text.
 
 For each non-skipped slot, use this flat tagged format:
 IDEA <slot-number>
