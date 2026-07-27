@@ -142,6 +142,31 @@ function reviewStarted(target, triggerIds, at = NOW - HOUR) {
   };
 }
 
+function reviewDisposition(target, triggerIds, declinedIds, at = NOW - HOUR + 1_000) {
+  eventSerial += 1;
+  return {
+    schema_version: 1,
+    event_id: `evt_fixture_${eventSerial}`,
+    event_type: "review_disposition",
+    recorded_at: new Date(at).toISOString(),
+    operator_workflow: "skill-evolution",
+    target: {
+      name: target.name,
+      repo_relative_path: target.path,
+      content_hash: target.hash,
+      repo_head: "fixture-head"
+    },
+    top_level_session_id: "review-session",
+    payload: {
+      review_id: "rev_active_fixture",
+      disposition: "cluster_not_actionable",
+      adjudicated_event_ids: triggerIds,
+      declined_event_ids: declinedIds,
+      note: "authorization held; cluster premise failed"
+    }
+  };
+}
+
 test("a session-ID threshold on a no-ID host is blocked with no command (fail closed)", async (t) => {
   const fx = fixture(t);
   const target = fx.skill("session-threshold");
@@ -264,6 +289,56 @@ test("an eligible_pending_cooldown gate state never removes a ready target from 
 
   assert.equal(report.ready.length, 1);
   assert.equal(report.summary.omitted_not_eligible, 0);
+});
+
+test("the census omits a declined-only residual and readvertises after later qualifying evidence", async (t) => {
+  const fx = fixture(t);
+  const target = fx.skill("declined-residual");
+  const threshold = useEvent(target, {
+    at: NOW - 20_000,
+    label: "threshold-incident",
+    session: "threshold-session",
+    symptom: "cost"
+  });
+  const cleanUses = Array.from({ length: 9 }, (_, index) => useEvent(target, {
+    at: NOW - 19_000 + index,
+    label: `clean-${index + 1}`,
+    outcome: "clean",
+    session: `clean-session-${index + 1}`
+  }));
+  const residual = useEvent(target, {
+    at: NOW - 10_000,
+    label: "declined-residual",
+    session: "residual-session",
+    symptom: "execution"
+  });
+  const completed = [
+    threshold,
+    ...cleanUses,
+    residual,
+    reviewStarted(target, [threshold.event_id]),
+    reviewDisposition(target, [threshold.event_id], [residual.event_id])
+  ];
+  fx.store(target.name, target, completed);
+
+  let report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
+
+  assert.equal(report.ready.length, 0);
+  assert.equal(report.summary.omitted_not_eligible, 1);
+  assert.doesNotMatch(renderReport(report, { timeZone: "UTC" }), /declined-residual/);
+
+  const later = useEvent(target, {
+    at: NOW - 1_000,
+    label: "later-qualifying-incident",
+    session: "later-session",
+    symptom: "coordination"
+  });
+  fx.store(target.name, target, [...completed, later]);
+
+  report = await scanRepository({ root: fx.root, nowMs: NOW, sessionId: "fresh-session" });
+  assert.equal(report.ready.length, 1);
+  assert.equal(report.ready[0].authorization_reason, "ten_use_unresolved");
+  assert.deepEqual(report.ready[0].trigger_event_ids, [residual.event_id, later.event_id]);
 });
 
 test("entries carry the session-invariant threshold identity and never a derived gate state", async (t) => {

@@ -25,7 +25,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { cpSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, lstatSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -118,12 +118,17 @@ function buildEvidencePacket(events, status) {
       const adj = byId.get(id);
       return adj?.payload?.symptom_key != null && triggerKeys.has(adj.payload.symptom_key);
     }));
+  const relatedPriorIncidentIds = new Set(
+    relatedPriorDispositions.flatMap((e) => e.payload.adjudicated_event_ids),
+  );
   return {
     trigger_events: triggers,
     qualifying_uses_on_current_hash: status.qualifying_uses_on_current_hash,
     open_incident_ids: status.open_incident_ids,
     candidate_clusters: status.candidate_clusters,
     related_prior_dispositions: relatedPriorDispositions,
+    related_prior_incident_events: events.filter((e) =>
+      e.event_type === 'use_recorded' && relatedPriorIncidentIds.has(e.event_id)),
     cited_evidence_refs: [...new Set(triggers.flatMap((e) => e.payload.evidence_refs ?? []))],
   };
 }
@@ -172,6 +177,23 @@ function requireActiveReview(ctx, events, hash, reviewId, nowMs) {
 const validationsFor = (events, reviewId) => events.filter(
   (e) => e.event_type === 'validation_completed' && e.payload.review_id === reviewId,
 );
+
+function agentMirrorStatus(ctx) {
+  if (!ctx.target.repo_relative_path.startsWith('.claude/skills/')) return 'not_applicable';
+  const mirror = join(ctx.root, '.agents', 'skills', ctx.target.name);
+  let mirrorStat;
+  try {
+    mirrorStat = lstatSync(mirror);
+  } catch (error) {
+    return error?.code === 'ENOENT' ? 'absent' : 'broken';
+  }
+  if (!mirrorStat.isSymbolicLink()) return 'broken';
+  try {
+    return realpathSync(mirror) === ctx.targetReal ? 'ok' : 'broken';
+  } catch {
+    return 'broken';
+  }
+}
 
 // ---------- commands ----------
 
@@ -306,6 +328,12 @@ function cmdLand(args) {
       fail(3, 'Candidate bytes are not exactly those validated '
         + `(validated ${latest.payload.candidate_hash.slice(0, 12)}…, supplied ${candidateHash.slice(0, 12)}…). Landing refused.`);
     }
+    const mirrorStatus = agentMirrorStatus(ctx);
+    if (mirrorStatus === 'absent' || mirrorStatus === 'broken') {
+      fail(3, `Required agent mirror is ${mirrorStatus} for ${ctx.target.repo_relative_path}; `
+        + 'landing refused before live-target mutation. Repair .agents/skills/'
+        + `${ctx.target.name} so it resolves to the live target, then retry.`);
+    }
     const backupDir = join(ctx.evidenceDir, 'reviews', args.reviewId, 'pre-land-backup');
     if (existsSync(backupDir)) {
       fail(3, `Backup already exists at ${backupDir}; a prior land attempt ran for this review. Inspect before retrying.`);
@@ -327,13 +355,6 @@ function cmdLand(args) {
           : `RESTORE ALSO FAILED (live hash ${restoredHash.slice(0, 12)}…); recover from ${backupDir} or Git.`));
     }
     const changedFiles = diffDirs(backupDir, ctx.targetReal);
-    let mirrorStatus = 'not_applicable';
-    if (ctx.target.repo_relative_path.startsWith('.claude/skills/')) {
-      const mirror = join(ctx.root, '.agents', 'skills', ctx.target.name);
-      try {
-        mirrorStatus = existsSync(mirror) && realpathSync(mirror) === ctx.targetReal ? 'ok' : (existsSync(mirror) ? 'broken' : 'absent');
-      } catch { mirrorStatus = 'broken'; }
-    }
     const event = baseEvent(ctx, landedHash, nowMs, 'change_landed', {
       review_id: args.reviewId,
       before_hash: baseline,
@@ -389,18 +410,52 @@ function cmdClose(args) {
         fail(3, 'candidate_rejected_validation requires the latest validation_completed for this review to record decision=rejected.');
       }
     }
-    const known = new Set(events.map((e) => e.event_id));
+    const known = new Map(events.map((e) => [e.event_id, e]));
     const extra = args.adjudicate ?? [];
     for (const id of extra) {
       if (!known.has(id)) fail(3, `--adjudicate references unknown event_id ${id}. Nothing done.`);
     }
     const adjudicated = [...new Set([...review.payload.trigger_event_ids, ...extra])];
-    const event = baseEvent(ctx, hash, nowMs, 'review_disposition', {
+    const declined = args.decline ?? [];
+    if (new Set(declined).size !== declined.length) {
+      fail(3, '--decline must not repeat an event_id. Nothing done.');
+    }
+    const adjudicatedSet = new Set(adjudicated);
+    const previouslyAdjudicated = new Set(events
+      .filter((e) => e.event_type === 'review_disposition')
+      .flatMap((e) => e.payload.adjudicated_event_ids));
+    const reviewIndex = events.indexOf(review);
+    const preClaimEvents = events.slice(0, reviewIndex);
+    const preClaimAdjudicated = new Set(preClaimEvents
+      .filter((e) => e.event_type === 'review_disposition')
+      .flatMap((e) => e.payload.adjudicated_event_ids));
+    const packetOpenIncidentIds = new Set(preClaimEvents
+      .filter((e) => e.event_type === 'use_recorded'
+        && e.target.content_hash === review.payload.target_hash
+        && e.payload.outcome !== 'clean'
+        && !preClaimAdjudicated.has(e.event_id))
+      .map((e) => e.event_id));
+    const incidentHash = landed ? review.payload.target_hash : hash;
+    for (const id of declined) {
+      const candidate = known.get(id);
+      if (!candidate) fail(3, `--decline references unknown event_id ${id}. Nothing done.`);
+      if (adjudicatedSet.has(id)) fail(3, `Event ${id} cannot be both adjudicated and declined. Nothing done.`);
+      if (!packetOpenIncidentIds.has(id)) {
+        fail(3, `--decline event ${id} was not in this review's bounded evidence packet. Nothing done.`);
+      }
+      if (candidate.event_type !== 'use_recorded' || candidate.payload.outcome === 'clean'
+          || candidate.target.content_hash !== incidentHash || previouslyAdjudicated.has(id)) {
+        fail(3, `--decline requires an open incident from this review's evidence packet; ${id} is not one. Nothing done.`);
+      }
+    }
+    const payload = {
       review_id: args.reviewId,
       disposition: args.disposition,
       adjudicated_event_ids: adjudicated,
       note: args.note,
-    });
+    };
+    if (declined.length) payload.declined_event_ids = declined;
+    const event = baseEvent(ctx, hash, nowMs, 'review_disposition', payload);
     appendValidated(ctx, events, event);
     const after = deriveGate({
       events: [...events, event], errors: [], currentHash: hash, target: ctx.target, sessionId: ctx.sessionId, nowMs,
@@ -410,6 +465,7 @@ function cmdClose(args) {
       closed: args.reviewId,
       disposition: args.disposition,
       adjudicated_event_ids: adjudicated,
+      declined_event_ids: declined,
       state: after.state,
     }, null, 2)}\n`);
   });
@@ -418,7 +474,7 @@ function cmdClose(args) {
 // ---------- CLI ----------
 
 function parseArgs(argv) {
-  const args = { adjudicate: [] };
+  const args = { adjudicate: [], decline: [] };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (!a.startsWith('--')) fail(3, `Unexpected argument: ${a}`);
@@ -426,6 +482,7 @@ function parseArgs(argv) {
     const val = argv[++i];
     if (val === undefined) fail(3, `Missing value for --${key}`);
     if (key === 'adjudicate') args.adjudicate.push(val);
+    else if (key === 'decline') args.decline.push(val);
     else args[key.replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = val;
   }
   return args;
@@ -444,6 +501,7 @@ Usage:
   evolution.mjs close --target <skill-dir> --review-id <id>
                --disposition <${DISPOSITIONS.join('|')}>
                --note "<adjudication rationale>" [--adjudicate <event-id>]...
+               [--decline <open-incident-event-id>]...
 
 Defaults: --root = git toplevel; --session-id defaults to the current host's top-level-session
 identity ($CLAUDE_CODE_SESSION_ID or $CODEX_THREAD_ID), else "unavailable"; two conflicting host

@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveTopLevelSessionId } from './evidence.mjs';
+import { deriveGate, resolveTopLevelSessionId, validateEvent } from './evidence.mjs';
 
 const SCRIPT = join(dirname(fileURLToPath(import.meta.url)), 'evidence.mjs');
 const SELF_SKILL_DIR = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -219,7 +219,7 @@ test('a corrupt event stream blocks derivation and refuses new receipts', () => 
   assert.equal(JSON.parse(d.out).state, 'blocked');
 });
 
-test('review dispositions close incidents; review_started owns the target', () => {
+test('historical review dispositions without declined_event_ids close incidents unchanged; review_started owns the target', () => {
   const sb = sandbox();
   record(sb, incidentArgs('friction', 'execution', 'task a', 'sA'));
   record(sb, incidentArgs('friction', 'execution', 'task b', 'sB'));
@@ -246,6 +246,242 @@ test('review dispositions close incidents; review_started owns the target', () =
   assert.equal(d.state, 'closed');
   assert.equal(d.open_incident_ids.length, 0);
   assert.equal(d.last_completed_review_id, 'r1');
+});
+
+test('legacy retrospective recurrence is not activated by a later clean use', () => {
+  const sb = sandbox();
+  assert.equal(record(sb, incidentArgs('material_failure', 'output', 'contemporaneous material', 'sA')).code, 0);
+  const retrospective = record(sb, [
+    ...incidentArgs('material_failure', 'output', 'retrospective material', 'sB'),
+    '--retrospective', '--evidence-ref', 'reports/retrospective-material.md',
+  ]);
+  assert.equal(retrospective.code, 0, retrospective.err);
+  assert.equal(gate(sb).state, 'collecting');
+
+  const clean = record(sb, ['--outcome', 'clean', '--task-label', 'later clean use'], 'sC');
+
+  assert.equal(clean.code, 0, clean.err);
+  assert.equal(gate(sb).state, 'collecting');
+  assert.equal(gate(sb).authorization_reason, null);
+});
+
+test('review_disposition validates optional declined_event_ids and cluster_not_actionable', () => {
+  const base = {
+    schema_version: 1,
+    event_id: 'evt_disposition_validation',
+    event_type: 'review_disposition',
+    recorded_at: new Date().toISOString(),
+    operator_workflow: 'skill-evolution',
+    target: {
+      name: 'demo-skill',
+      repo_relative_path: '.claude/skills/demo-skill',
+      content_hash: 'target-hash',
+      repo_head: 'repo-head',
+    },
+    top_level_session_id: 'review-session',
+    payload: {
+      review_id: 'rev_validation',
+      disposition: 'cluster_not_actionable',
+      adjudicated_event_ids: ['evt_trigger'],
+    },
+  };
+  assert.deepEqual(validateEvent(base, new Set()), []);
+  assert.deepEqual(validateEvent({
+    ...base,
+    payload: { ...base.payload, declined_event_ids: ['evt_residual'] },
+  }, new Set()), []);
+  assert.match(validateEvent({
+    ...base,
+    payload: { ...base.payload, declined_event_ids: [] },
+  }, new Set()).join('\n'), /non-empty array/);
+  assert.match(validateEvent({
+    ...base,
+    payload: { ...base.payload, declined_event_ids: ['evt_residual', 'evt_residual'] },
+  }, new Set()).join('\n'), /must not contain duplicates/);
+  assert.match(validateEvent({
+    ...base,
+    payload: { ...base.payload, declined_event_ids: ['evt_trigger'] },
+  }, new Set()).join('\n'), /both adjudicated and declined/);
+  let malformedErrors;
+  assert.doesNotThrow(() => {
+    malformedErrors = validateEvent({
+      ...base,
+      payload: {
+        ...base.payload,
+        adjudicated_event_ids: 42,
+        declined_event_ids: ['evt_residual'],
+      },
+    }, new Set());
+  });
+  assert.match(malformedErrors.join('\n'), /adjudicated_event_ids must be a non-empty array/);
+});
+
+test('declined residuals stay visible but cannot reauthorize until a later incident arrives', () => {
+  const sb = sandbox();
+  record(sb, incidentArgs('friction', 'cost', 'threshold incident', 's0'));
+  for (let i = 1; i <= 9; i++) {
+    assert.equal(record(sb, ['--outcome', 'clean', '--task-label', `clean ${i}`], `s${i}`).code, 0);
+  }
+  const thresholdId = gate(sb).trigger_event_ids[0];
+  record(sb, incidentArgs('friction', 'execution', 'declined residual', 's10'));
+  const declinedId = events(sb).at(-1).event_id;
+  const file = join(sb.root, 'reports', 'skill-evidence', 'demo-skill', 'events.jsonl');
+  const baseTarget = events(sb)[0].target;
+  const envelope = (type, id, payload) => JSON.stringify({
+    schema_version: 1,
+    event_id: id,
+    event_type: type,
+    recorded_at: new Date().toISOString(),
+    operator_workflow: 'skill-evolution',
+    target: baseTarget,
+    top_level_session_id: 'review-session',
+    payload,
+  });
+  appendFileSync(file, `${envelope('review_started', 'evt_decline_review_started', {
+    review_id: 'rev_decline',
+  })}\n`);
+  appendFileSync(file, `${envelope('review_disposition', 'evt_decline_review_closed', {
+    review_id: 'rev_decline',
+    disposition: 'cluster_not_actionable',
+    adjudicated_event_ids: [thresholdId],
+    declined_event_ids: [declinedId],
+  })}\n`);
+
+  let derived = JSON.parse(run([
+    'derive', '--root', sb.root, '--target', sb.rel, '--session-id', 'fresh-after-close',
+  ]).out);
+  assert.equal(derived.state, 'collecting');
+  assert.equal(derived.authorization_reason, null);
+  assert.deepEqual(derived.open_incident_ids, [declinedId]);
+  assert.deepEqual(derived.candidate_clusters[0].open_event_ids, [declinedId]);
+
+  const retrospective = record(sb, [
+    ...incidentArgs('friction', 'state', 'later retrospective incident', 's-retro'),
+    '--retrospective', '--evidence-ref', 'reports/retrospective-evidence.md',
+  ]);
+  assert.equal(retrospective.code, 0, retrospective.err);
+  derived = JSON.parse(run([
+    'derive', '--root', sb.root, '--target', sb.rel, '--session-id', 'fresh-after-retrospective',
+  ]).out);
+  assert.equal(derived.state, 'collecting');
+  assert.equal(derived.authorization_reason, null);
+
+  const later = record(sb, incidentArgs('friction', 'coordination', 'later incident', 's11'));
+  assert.equal(later.code, 0, later.err);
+  const laterId = events(sb).at(-1).event_id;
+  derived = JSON.parse(run([
+    'derive', '--root', sb.root, '--target', sb.rel, '--session-id', 'fresh-after-later',
+  ]).out);
+  assert.equal(derived.state, 'eligible');
+  assert.equal(derived.authorization_reason, 'ten_use_unresolved');
+  assert.deepEqual(derived.trigger_event_ids, [declinedId, laterId]);
+  assert.equal(derived.open_incident_ids.includes(declinedId), true);
+});
+
+test('later evidence releases declined residuals through every authorization rule', () => {
+  const target = {
+    name: 'demo-skill',
+    repo_relative_path: '.claude/skills/demo-skill',
+    content_hash: 'unchanged-hash',
+    repo_head: 'repo-head',
+  };
+  let serial = 0;
+  const use = ({ outcome = 'friction', symptom = 'execution', session, clean = false }) => {
+    serial += 1;
+    return {
+      schema_version: 1,
+      event_id: `evt_rule_${serial}`,
+      event_type: 'use_recorded',
+      recorded_at: new Date(1_000 + serial).toISOString(),
+      operator_workflow: 'skill-evidence-capture',
+      target,
+      top_level_session_id: session ?? `session-${serial}`,
+      payload: {
+        qualifying_use: true,
+        retrospective: false,
+        task_fingerprint: `fingerprint-${serial}`,
+        outcome: clean ? 'clean' : outcome,
+        symptom_key: clean ? null : symptom,
+      },
+    };
+  };
+  const cases = [
+    {
+      name: 'severe',
+      incidents: () => [use({ outcome: 'severe_incident', symptom: 'state' })],
+      cleanCount: 0,
+      expectedReason: 'severe',
+      expectedState: 'quarantined_eligible',
+    },
+    {
+      name: 'material recurrence',
+      incidents: () => [
+        use({ outcome: 'material_failure', symptom: 'output' }),
+        use({ outcome: 'material_failure', symptom: 'output' }),
+      ],
+      cleanCount: 0,
+      expectedReason: 'material_recurrence:output',
+      expectedState: 'eligible',
+    },
+    {
+      name: 'friction recurrence',
+      incidents: () => [use({}), use({}), use({})],
+      cleanCount: 0,
+      expectedReason: 'friction_recurrence:execution',
+      expectedState: 'eligible',
+    },
+    {
+      name: 'ten-use unresolved',
+      incidents: () => [use({ symptom: 'cost' })],
+      cleanCount: 9,
+      expectedReason: 'ten_use_unresolved',
+      expectedState: 'eligible',
+    },
+  ];
+
+  for (const rule of cases) {
+    const priorTrigger = use({ symptom: 'unknown' });
+    const cleanUses = Array.from({ length: rule.cleanCount }, () => use({ clean: true }));
+    const declined = rule.incidents();
+    serial += 1;
+    const disposition = {
+      schema_version: 1,
+      event_id: `evt_rule_${serial}`,
+      event_type: 'review_disposition',
+      recorded_at: new Date(1_000 + serial).toISOString(),
+      operator_workflow: 'skill-evolution',
+      target,
+      top_level_session_id: `review-${rule.name}`,
+      payload: {
+        review_id: `review-${rule.name}`,
+        disposition: 'cluster_not_actionable',
+        adjudicated_event_ids: [priorTrigger.event_id],
+        declined_event_ids: declined.map((event) => event.event_id),
+      },
+    };
+    const completed = [priorTrigger, ...cleanUses, ...declined, disposition];
+    const suppressed = deriveGate({
+      events: completed,
+      errors: [],
+      currentHash: target.content_hash,
+      target: { name: target.name, repo_relative_path: target.repo_relative_path },
+      sessionId: 'fresh-before-release',
+      nowMs: 100_000,
+    });
+    assert.equal(suppressed.state, 'collecting', `${rule.name} was not suppressed`);
+
+    const release = use({ symptom: 'coordination', session: `release-${rule.name}` });
+    const released = deriveGate({
+      events: [...completed, release],
+      errors: [],
+      currentHash: target.content_hash,
+      target: { name: target.name, repo_relative_path: target.repo_relative_path },
+      sessionId: 'fresh-after-release',
+      nowMs: 100_000,
+    });
+    assert.equal(released.authorization_reason, rule.expectedReason, rule.name);
+    assert.equal(released.state, rule.expectedState, rule.name);
+  }
 });
 
 test('missing or invalid target refuses safely', () => {

@@ -43,7 +43,7 @@ const SYMPTOM_KEYS = [
 ];
 export const DISPOSITIONS = [
   'resolved_by_change', 'closed_no_skill_defect', 'outside_target',
-  'insufficient_independence', 'monitor_for_recurrence', 'superseded_by_target_version',
+  'insufficient_independence', 'cluster_not_actionable', 'monitor_for_recurrence', 'superseded_by_target_version',
   'candidate_rejected_validation', 'blocked_no_valid_test',
 ];
 const USE_PAYLOAD_KEYS = [
@@ -245,6 +245,20 @@ export function validateEvent(e, seenIds) {
         || p.adjudicated_event_ids.some((x) => !isNonEmptyString(x))) {
       bad('adjudicated_event_ids must be a non-empty array of event ids');
     }
+    if (Object.hasOwn(p, 'declined_event_ids')) {
+      if (!Array.isArray(p.declined_event_ids) || p.declined_event_ids.length === 0
+          || p.declined_event_ids.some((x) => !isNonEmptyString(x))) {
+        bad('declined_event_ids must be a non-empty array of event ids when present');
+      } else {
+        if (new Set(p.declined_event_ids).size !== p.declined_event_ids.length) {
+          bad('declined_event_ids must not contain duplicates');
+        }
+        const adjudicated = new Set(Array.isArray(p.adjudicated_event_ids) ? p.adjudicated_event_ids : []);
+        if (p.declined_event_ids.some((id) => adjudicated.has(id))) {
+          bad('an event cannot be both adjudicated and declined');
+        }
+      }
+    }
   } else if (!isNonEmptyString(p.review_id)) {
     bad(`${e.event_type} payload requires review_id`);
   }
@@ -318,10 +332,35 @@ export function deriveGate({ events, errors, currentHash, target, sessionId, now
       .flatMap((e) => e.payload.adjudicated_event_ids),
   );
 
+  // A declined incident remains open and visible, but its completed review is a
+  // suppression boundary. It becomes threshold-eligible again only when a later
+  // contemporaneous open incident arrives on the unchanged target. Keeping the
+  // activation index (rather than deleting the event) makes the release occur at
+  // that new evidence event, so replay never makes an older event reopen the gate.
+  const declinedActiveFrom = new Map();
+  events.forEach((event, dispositionIndex) => {
+    if (event.event_type !== 'review_disposition' || !Array.isArray(event.payload.declined_event_ids)) return;
+    const releaseOffset = events.slice(dispositionIndex + 1).findIndex((candidate) =>
+      candidate.event_type === 'use_recorded'
+      && candidate.target.content_hash === currentHash
+      && candidate.payload.outcome !== 'clean'
+      && candidate.payload.retrospective !== true
+      && !adjudicated.has(candidate.event_id));
+    const activeFrom = releaseOffset < 0 ? Number.POSITIVE_INFINITY : dispositionIndex + 1 + releaseOffset;
+    for (const id of event.payload.declined_event_ids) {
+      declinedActiveFrom.set(id, Math.max(declinedActiveFrom.get(id) ?? 0, activeFrom));
+    }
+  });
+  const thresholdEligibleAt = (event, index) => index >= (declinedActiveFrom.get(event.event_id) ?? 0);
+  const declinedReleaseIndexes = new Set(
+    [...declinedActiveFrom.values()].filter((index) => Number.isFinite(index)),
+  );
+
   let uses = 0;
   const clusters = new Map(); // symptom_key -> open incident events on current hash, in order
   let fired = null;
-  for (const e of events) {
+  for (let eventIndex = 0; eventIndex < events.length; eventIndex++) {
+    const e = events[eventIndex];
     if (e.event_type !== 'use_recorded' || e.target.content_hash !== currentHash) continue;
     uses += 1;
     const p = e.payload;
@@ -339,23 +378,48 @@ export function deriveGate({ events, errors, currentHash, target, sessionId, now
       fired_at: e.recorded_at,
       threshold_session_id: e.top_level_session_id === 'unavailable' ? null : e.top_level_session_id,
     });
-    if (openIncident && p.outcome === 'severe_incident') {
-      fired = mk('severe', [e]);
-      continue;
-    }
-    if (openIncident) {
-      const cluster = clusters.get(p.symptom_key);
-      const material = cluster.filter((x) => SEVERITY[x.payload.outcome] >= SEVERITY.material_failure);
-      if (SEVERITY[p.outcome] >= SEVERITY.material_failure && independentCount(material) >= 2) {
-        fired = mk(`material_recurrence:${p.symptom_key}`, material);
-        continue;
+    const eligibleClusters = [...clusters.entries()].map(([key, list]) => [
+      key,
+      list.filter((candidate) => thresholdEligibleAt(candidate, eventIndex)),
+    ]);
+    const eligibleOpen = eligibleClusters.flatMap(([, list]) => list);
+    if (declinedReleaseIndexes.has(eventIndex)) {
+      const severe = eligibleOpen.find((candidate) =>
+        candidate.payload.outcome === 'severe_incident' && candidate.payload.retrospective !== true);
+      if (severe) {
+        fired = mk('severe', [severe]);
       }
-      if (independentCount(cluster) >= 3) {
-        fired = mk(`friction_recurrence:${p.symptom_key}`, cluster);
-        continue;
+      for (const [key, cluster] of eligibleClusters) {
+        if (fired) break;
+        const material = cluster.filter((x) => SEVERITY[x.payload.outcome] >= SEVERITY.material_failure);
+        if (material.some((candidate) => candidate.payload.retrospective !== true)
+            && independentCount(material) >= 2) {
+          fired = mk(`material_recurrence:${key}`, material);
+        }
+      }
+      for (const [key, cluster] of eligibleClusters) {
+        if (fired) break;
+        if (cluster.some((candidate) => candidate.payload.retrospective !== true)
+            && independentCount(cluster) >= 3) {
+          fired = mk(`friction_recurrence:${key}`, cluster);
+        }
+      }
+    } else if (openIncident && thresholdEligibleAt(e, eventIndex)) {
+      if (p.outcome === 'severe_incident') {
+        fired = mk('severe', [e]);
+      } else {
+        const cluster = eligibleClusters.find(([key]) => key === p.symptom_key)?.[1] ?? [];
+        const material = cluster.filter((x) => SEVERITY[x.payload.outcome] >= SEVERITY.material_failure);
+        if (SEVERITY[p.outcome] >= SEVERITY.material_failure && independentCount(material) >= 2) {
+          fired = mk(`material_recurrence:${p.symptom_key}`, material);
+        } else if (independentCount(cluster) >= 3) {
+          fired = mk(`friction_recurrence:${p.symptom_key}`, cluster);
+        }
       }
     }
-    const openContemporaneous = [...clusters.values()].flat().filter((x) => x.payload.retrospective !== true);
+    if (fired) continue;
+    const openContemporaneous = [...clusters.values()].flat()
+      .filter((x) => x.payload.retrospective !== true && thresholdEligibleAt(x, eventIndex));
     if (uses >= 10 && openContemporaneous.length >= 1) {
       fired = mk('ten_use_unresolved', openContemporaneous);
     }

@@ -1,6 +1,6 @@
 # Authorized review
 
-You are here only because the preflight printed `authorized: true`. Work from its bounded evidence packet — the trigger events, use counts on the current hash, related prior dispositions, and the concrete artifacts they cite. Do not ingest the full historical ledger; the gate projection exists to keep old incident lore from dominating current judgment. The threshold authorized a diagnosis, not a presumption that the skill is defective or a guarantee of an edit.
+You are here only because the preflight printed `authorized: true`. Work from its bounded evidence packet — the trigger events, use counts on the current hash, related prior dispositions, their adjudicated incident bodies under `related_prior_incident_events`, and the concrete artifacts they cite. Do not ingest the full historical ledger; the gate projection exists to keep old incident lore from dominating current judgment. The threshold authorized a diagnosis, not a presumption that the skill is defective or a guarantee of an edit.
 
 Helper (all event writes, from the repository root): `node .claude/skills/skill-evolution/scripts/evolution.mjs <command> --target <skill-path> …` — every command takes `--target`; see `--help` for the rest. Review artifacts live under `reports/skill-evidence/<skill-key>/reviews/`.
 
@@ -16,7 +16,7 @@ The helper re-evaluates every authorization term under the store lock, appends `
 
 ### 2. Verify threshold premises
 
-Before thinking about repairs, check against the packet only:
+Check the packet only. For duplicate-mechanism judgment, `related_prior_incident_events` supplies the incident bodies adjudicated by related dispositions; it does not permit a full-ledger read.
 
 - every trigger event represents a qualifying use;
 - events claimed as independent are genuinely independent — distinct top-level sessions or materially different tasks, not retries, continuations, subagent reruns, or duplicate accounts of one event;
@@ -24,7 +24,7 @@ Before thinking about repairs, check against the packet only:
 - trigger hashes match the current target version;
 - the candidate symptom cluster is factually plausible as a common symptom (causality is confirmed later, in step 3).
 
-On failure, close and stop: `close --review-id <id> --disposition insufficient_independence|superseded_by_target_version --note "<what failed>"`, then go to step 9.
+On failure, close with the exact outcome and step 9's residual arguments: `superseded_by_target_version` for an invalidated target hash; `insufficient_independence` only for an authorization premise that claimed independence; `cluster_not_actionable` when authorization still holds but the proposed cluster fails the common-mechanism/actionability premise. Existing dispositions keep their meanings. Then go to step 9.
 
 *Done when every premise was confirmed, or the review was closed with the failed premise in the note.*
 
@@ -54,7 +54,7 @@ Define the trials first, so the change cannot pick only tests it already knows h
 
 Escalate to at least five paired trials (add another core-regression case and a fragile, edge, or safety-relevant case) when the change affects destructive or external actions, state integrity or confidentiality, shared conventions or multiple skills, triggering or scope boundaries, a broad workflow section, more than one major behavior, or substantial deletion or reorganization.
 
-Freeze per trial: the raw prompt/task, raw input artifacts, an observable pass/fail or comparison rubric, any deterministic checks, which behavior it protects, and evaluator-independence requirements. Save the frozen plan under `reviews/<review-id>/`.
+Freeze per trial: raw task and artifacts, protected behavior, evaluator independence, and each instrument's pass/fail/tie rubric. Before any candidate exists, name exactly one decisive instrument, an ordered tie-break for the others, and any hard-veto safety, invariant, or deterministic checks. Save the plan under `reviews/<review-id>/`.
 
 If no meaningful fresh validation can be constructed: `close --disposition blocked_no_valid_test`, make no edit, go to step 9.
 
@@ -62,7 +62,7 @@ If no meaningful fresh validation can be constructed: `close --disposition block
 
 ### 5. Construct an isolated candidate
 
-Copy the live target to `reviews/<review-id>/candidate/` (outside skill discovery) and modify only that copy; the live target stays untouched until every trial passes. Design rules:
+Create the authoritative candidate at `reviews/<review-id>/candidate/`. Isolation is an invariant: the live target stays byte-unchanged and undiscoverable through skill resolution, while this candidate remains the sole byte authority for `record-validation` and `land`. Check staging uses only an unmodified copy. Design rules:
 
 - solve the demonstrated mechanism, not every imperfection seen while reading;
 - do not fix unrelated defects noticed during the review — they become evidence only if a real skill use records them;
@@ -75,13 +75,15 @@ Copy the live target to `reviews/<review-id>/candidate/` (outside skill discover
 
 ### 6. Run blind comparative validation
 
-Run every frozen trial against both the unchanged current skill and the candidate, using fresh sessions or independent agents with minimal task-local context. Give executors the raw task and artifacts — never the diagnosis, intended repair, expected answer, or which version they hold; randomize or conceal version labels for evaluators. Run applicable deterministic checks on both versions where comparison matters, and on the candidate before landing. Retain raw outputs and evaluator decisions under `reviews/<review-id>/`.
+Run every frozen trial against the unchanged current skill and candidate in fresh sessions or independent agents. Give executors only the raw task and artifacts; conceal the diagnosis, expected answer, and version labels.
+
+For checks resolving siblings, mirrors, or repository paths, use a temporary sibling-complete staging tree outside discovery: copy the canonical layout, place candidate bytes at the target's canonical relative depth, and recreate applicable mirrors. A location-only failure is a harness artifact; repair and rerun it, and it must not be counted as a trial result. Run applicable deterministic checks on both versions and the candidate before landing. Retain raw outputs and decisions under the review.
 
 *Done when every frozen trial ran on both versions and the raw outputs are on disk.*
 
 ### 7. Apply the acceptance gate
 
-The candidate passes only when it resolves the implicated mechanism on the reproduction case(s); is noninferior on every protected core behavior; introduces no material or severe regression; passes all affected deterministic checks; preserves safety, scope, and ownership invariants; any growth is necessary, minimal, and supported by better outcomes; and it is materially better on the target mechanism rather than merely worded differently. Behaviorally tied: prefer the candidate only when it is meaningfully smaller or clearer; otherwise the current skill stays.
+Apply hard vetoes, then the frozen order: decisive pass/fail decides; on its declared tie, the first non-tie tie-break decides; lower priorities never override it. `Behaviorally tied` means the frozen behavioral instrument set all tied. If every ordered instrument ties, keep the current skill unless the candidate is meaningfully smaller or clearer. Encode the existing mechanism, noninferiority, regression, safety/scope/ownership, minimal-growth, and material-improvement gates as instrument results or hard vetoes.
 
 On failure, leave the target untouched: `record-validation --decision rejected …`, then `close --disposition candidate_rejected_validation`, and go to step 9. A rejected candidate is not a license to improvise another in the same review — new evidence must reopen eligibility. Sole exception: a mechanical candidate defect discovered before any behavioral trial may be corrected once, then the complete frozen suite reruns.
 
@@ -98,13 +100,15 @@ node .claude/skills/skill-evolution/scripts/evolution.mjs land --target <skill-p
   --review-id <id> --candidate <same candidate path>
 ```
 
-`record-validation` freezes the validated candidate hash; `land` reconfirms everything before touching the live target — live hash still equals the claim baseline, candidate bytes exactly those validated, review still owns the target — then backs up the baseline, replaces the live bytes, verifies the landed hash and the `.agents` mirror symlink, and appends `change_landed`. If it refuses because the target moved, authorization expired: `close --disposition superseded_by_target_version` and go to step 9 — never merge a validated candidate into an independently changed target by intuition. If landing verification fails, it restores the baseline itself; record the failure. Do not commit to Git automatically; normal repository recoverability stays as it is.
+`record-validation` freezes the candidate hash. Before mutation, `land` rechecks baseline, candidate bytes, ownership, and the required agent mirror before any live-target mutation for `.claude/skills/` targets. An absent or broken mirror refuses landing with its condition and repair, no target change, and no `change_landed`; healthy and non-applicable mirrors proceed. Then `land` backs up, replaces, verifies, and appends. A moved target requires `superseded_by_target_version`; a failed verification restores the baseline. Never merge by intuition or commit automatically.
 
 *Done when `land` printed the before/after hashes and changed-file list, or the review was closed without landing.*
 
 ### 9. Close, report, complete
 
 If a change landed, adjudicate now: `close --review-id <id> --disposition resolved_by_change --note "<mechanism and result>"`. Every close references the adjudicated trigger events (the helper includes them; add `--adjudicate <event-id>` only for additional events the review genuinely covered). Trigger events stay in `events.jsonl` forever; the disposition is what retires them from the active set.
+
+Before any close, classify other packet incidents: genuinely resolved uses `--adjudicate`; considered but unexamined uses `--decline`, recorded as immutable `declined_event_ids`. A declined event stays visible but cannot by itself reauthorize. A later contemporaneous open incident on the unchanged target releases suppression for normal derivation. The census consumes that projection and omits declined-only evidence.
 
 Then write the review report at `reviews/<review-id>.md` — required for every claimed review, with unreached sections marked `not reached — <disposition>`:
 
@@ -154,4 +158,4 @@ Unrelated imperfections noticed during an authorized review are not in scope: do
 
 ## Terminal outcomes
 
-Every invocation ends in exactly one state. `refused_closed_gate`, `refused_cooldown_or_same_session`, and `refused_self_target` end in `SKILL.md` step 2 with no event and no report. Claimed reviews end as `superseded_by_target_version`, `insufficient_independence`, `outside_target`, `not_reproducible`, `blocked_no_valid_test`, `candidate_rejected_validation`, `resolved_no_change`, or — the only outcome that modifies the live target — `resolved_by_validated_change` (disposition `resolved_by_change`). Name the terminal outcome in the completion.
+Every invocation ends in exactly one state. `refused_closed_gate`, `refused_cooldown_or_same_session`, and `refused_self_target` end in `SKILL.md` step 2 with no event and no report. Claimed reviews end as `superseded_by_target_version`, `insufficient_independence`, `cluster_not_actionable`, `outside_target`, `not_reproducible`, `blocked_no_valid_test`, `candidate_rejected_validation`, `resolved_no_change`, or — the only outcome that modifies the live target — `resolved_by_validated_change` (disposition `resolved_by_change`). Name the terminal outcome in the completion.
