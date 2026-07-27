@@ -356,6 +356,42 @@ describe("IdeateView", () => {
     }, "fingerprint-1", "fingerprint-1");
   });
 
+  it("keeps skipped slots out of the avoid list, so a slot that produced nothing cannot change prompt bytes", async () => {
+    const slate = (headline: string) => ({
+      ok: true as const,
+      ideas: [
+        ideaFixture({ slotNumber: 1, headline }),
+        { slotNumber: 2, operator: "Clock Advances", skipped: true as const, grounds: [], unknownCitations: [] }
+      ],
+      citations: { "[SECRET-1]": "The letter names a ledger substitution" },
+      metadata: generationMetadata()
+    });
+    vi.mocked(compileIdeation).mockImplementation((request = {}) => Promise.resolve(compileResult(
+      "# Grounded Ideation Prompt",
+      `fingerprint:${request.avoidList?.join("|") ?? ""}`
+    )));
+    vi.mocked(ideate)
+      .mockResolvedValueOnce(slate("The sealed letter changes hands."))
+      .mockResolvedValueOnce(slate("The latch interrupts the argument."));
+
+    renderIdeate();
+
+    expect(await screen.findByTestId("prompt-body")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Get ideas" }));
+    expect(await screen.findByRole("heading", { name: "The sealed letter changes hands." })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Skipped slot 2" })).toBeTruthy();
+
+    const getNewSlate = screen.getByRole<HTMLButtonElement>("button", { name: "Get new slate" });
+    await waitFor(() => expect(getNewSlate.disabled).toBe(false));
+    fireEvent.click(getNewSlate);
+    expect(await screen.findByRole("heading", { name: "The latch interrupts the argument." })).toBeTruthy();
+
+    // Only the real headline is avoided. The skipped slot has no headline or question, so its
+    // display placeholder must never reach the compiled request.
+    expect(vi.mocked(ideate).mock.calls[1]?.[0].avoidList).toEqual(["The sealed letter changes hands."]);
+    expect(vi.mocked(ideate).mock.calls[1]?.[1]).toBe("fingerprint:The sealed letter changes hands.");
+  });
+
   it("preserves current focus, avoid-list, and fingerprint through every slate action", async () => {
     const response = (headline: string) => ({
       ok: true as const,

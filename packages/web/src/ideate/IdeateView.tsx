@@ -196,7 +196,10 @@ export function IdeateView(): React.JSX.Element {
         setScratchState({ status: "ideas", ideas: nextIdeas, citations: result.citations });
         changeIdeationRequest({
           ...ideationRequest,
-          avoidList: nextIdeas.map(ideaTitle)
+          // A skipped slot has no headline and no question, so `ideaTitle` falls back to a display
+          // placeholder. The avoid list is prompt-facing request input, and a slot that produced
+          // nothing must not change the compiled prompt or its fingerprint.
+          avoidList: nextIdeas.filter((idea) => !idea.skipped).map(ideaTitle)
         });
         return;
       }
