@@ -82,8 +82,14 @@ describe("ideate routes", () => {
     expect(after).toEqual(before);
   });
 
-  it("quarantines malformed model output without returning provider text", async () => {
-    const rejectedProviderText = "freeform answer model-private-canary";
+  it("propagates a typed structural reason without returning or retrying rejected provider text", async () => {
+    const rejectedProviderText = [
+      "IDEA 1",
+      "operator: Clock Advances",
+      "headline: model-private-field-canary",
+      "why: model-private-why-canary",
+      "grounds: [MODEL-PRIVATE-CITATION]"
+    ].join("\n");
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: rejectedProviderText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -99,12 +105,21 @@ describe("ideate routes", () => {
       ok: true,
       quarantined: true,
       reasonCode: "local-parser-rejected",
+      recovery: "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.",
       diagnostic: {
         classification: "local-validation",
+        structuralReason: {
+          code: "mismatched-operator",
+          slotNumber: 1
+        },
         details: { termination: "normal", contentShape: "string" }
       }
     });
     expect(response.body).not.toContain(rejectedProviderText);
+    expect(response.body).not.toContain("model-private-field-canary");
+    expect(response.body).not.toContain("model-private-why-canary");
+    expect(response.body).not.toContain("MODEL-PRIVATE-CITATION");
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
   it("sends Ideation exactly once when the deterministic estimate exceeds cached context length", async () => {

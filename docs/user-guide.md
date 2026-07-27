@@ -128,6 +128,22 @@ You can choose ideas or questions, set the slate size from 3 to 6, keep or remov
 
 Typing, counting, validation, prompt compilation, and inspection stay local. Only Get ideas, Get new slate, Regenerate all, and an individual Regenerate action can make one explicit OpenRouter request, and only after the server rebuilds the complete request and confirms it matches the inspected fingerprint. If the request or project changed, Ideate requires a fresh preview instead of sending a stale prompt.
 
+Ideate checks a normally completed response against the mode and exact slots
+shown in the prompt you inspected. A valid normal slot has its assigned
+operator, an idea headline or author-facing question for the selected mode, a
+`why` line, and bracketed grounds. A valid `SKIPPED` slot instead shows that no
+compiled record supports that assigned slot; it does not need a `why` line or
+grounds. Missing, duplicate, unexpected, or mismatched slots and fields
+quarantine the whole response rather than opening a partial slate.
+
+When local validation quarantines a response, the diagnostic shows one safe
+structural reason, such as the failed rule and assigned slot number. It never
+shows the rejected response, any excerpt or field value from it, its citations,
+prompt text, or story data. Review the safe reason and, if you want another
+attempt, use the existing Ideate action yourself. Viewing or copying the
+diagnostic never retries, repairs, reformats, salvages, resends, changes
+settings, or contacts the provider.
+
 Ideas are AI-suggested scratch. They are not story state, not records, not Generation Brief fields, not accepted prose, and not prompt context for prose generation. There is no insert-into-records, insert-into-brief, or use-as-prompt action. If an idea is useful, copy it by hand and decide what durable record or brief field you want to author yourself.
 
 Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Author focus is not stored with keepers or anywhere else in browser or project storage. Clear the slate or keepers when you no longer need them; cleared ideas leave no project-store residue.

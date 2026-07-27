@@ -109,6 +109,89 @@ describe("ideate route secret leakage regression", () => {
       expect(output).not.toContain(focusLogCanary);
     }
   });
+
+  it("keeps rejected field values and citations out of the structural receipt and logs", async () => {
+    const rejectedFieldCanary = "IDEATE_REJECTED_FIELD_CANARY_0000";
+    const rejectedCitationCanary = "[IDEATE-REJECTED-CITATION-CANARY]";
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: {
+        text: [
+          "IDEA 1",
+          "operator: Reveal",
+          "headline: A structurally tagged possibility.",
+          "why: The assigned record supports it.",
+          "grounds: [SECRET-1]",
+          `notes: ${rejectedFieldCanary} ${rejectedCitationCanary}`
+        ].join("\n")
+      },
+      response: normalResponse()
+    });
+    const capture = captureProcessWrites();
+    const fastify = createServer({ logger: true });
+    apps.push(fastify);
+
+    try {
+      const created = await fastify.inject({
+        method: "POST",
+        url: "/api/project/create-demo",
+        payload: { parentPath: configDir, folderName: "ideate-rejected-leakage" }
+      });
+      expect(created.statusCode).toBe(201);
+      const settings = await fastify.inject({
+        method: "PUT",
+        url: "/api/settings/openrouter",
+        payload: {
+          model: "anthropic/claude-sonnet-4",
+          temperatureMode: "explicit",
+          temperature: 0.7,
+          proseMaxOutputTokens: 1024,
+          assistanceMaxOutputTokens: 1800,
+          cachedModels: [{
+            id: "anthropic/claude-sonnet-4",
+            name: "Compatible test model",
+            supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+            supportedEfforts: ["low"]
+          }]
+        }
+      });
+      expect(settings.statusCode).toBe(200);
+      const compile = await fastify.inject({
+        method: "POST",
+        url: "/api/compile",
+        payload: { promptKind: "ideation" }
+      });
+      const compileBody = compile.json() as {
+        metadata: { fingerprint: string };
+        providerRequest: { requestFingerprint: string };
+      };
+      expect(compile.statusCode).toBe(200);
+      const response = await fastify.inject({
+        method: "POST",
+        url: "/api/ideate",
+        payload: {
+          expectedPromptFingerprint: compileBody.metadata.fingerprint,
+          expectedRequestFingerprint: compileBody.providerRequest.requestFingerprint
+        }
+      });
+
+      expect(response.json()).toMatchObject({
+        ok: true,
+        quarantined: true,
+        diagnostic: {
+          structuralReason: { code: "unexpected-field", slotNumber: 1 }
+        }
+      });
+      expect(response.body).not.toContain(rejectedFieldCanary);
+      expect(response.body).not.toContain(rejectedCitationCanary);
+      expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+    } finally {
+      const output = capture.restore();
+      expect(output).not.toContain(fakeApiKey);
+      expect(output).not.toContain(rejectedFieldCanary);
+      expect(output).not.toContain(rejectedCitationCanary);
+    }
+  });
 });
 
 function captureProcessWrites(): { restore: () => string } {

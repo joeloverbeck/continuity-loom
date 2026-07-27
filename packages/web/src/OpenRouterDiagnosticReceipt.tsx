@@ -93,6 +93,9 @@ export function OpenRouterDiagnosticReceipt({
     <section className="status statusError openRouterDiagnostic" role="alert" aria-label="OpenRouter diagnostic">
       <p><strong>{receipt.summary}</strong></p>
       <p>{receipt.recovery}</p>
+      {receipt.structuralReason ? (
+        <p><strong>Safe structural reason:</strong> {receipt.structuralReason.message}</p>
+      ) : null}
       {recoverable ? (
         <>
           <p><strong>{outputClassLabel(recoverable.sentPolicy.outputClass)} output policy sent</strong></p>
@@ -192,6 +195,13 @@ export function receiptLines(receipt: Receipt): string[] {
     lines.push(`Reasoning effort: ${receipt.sentPolicy.reasoningEffort}`);
     lines.push(`Reasoning content excluded: ${receipt.sentPolicy.reasoningExcluded}`);
     lines.push(`Supported lower efforts: ${receipt.sentPolicy.supportedLowerEfforts.join(", ") || "none"}`);
+  }
+  if (receipt.structuralReason) {
+    lines.push(`Structural rule: ${receipt.structuralReason.code}`);
+    if (receipt.structuralReason.slotNumber !== undefined) {
+      lines.push(`Structural slot: ${receipt.structuralReason.slotNumber}`);
+    }
+    lines.push(`Structural reason: ${receipt.structuralReason.message}`);
   }
   if (details.generationId) lines.push(`Generation ID: ${details.generationId}`);
   if (details.returnedModel) lines.push(`Returned model: ${details.returnedModel}`);

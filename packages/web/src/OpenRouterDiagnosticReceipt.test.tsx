@@ -30,6 +30,37 @@ describe("OpenRouterDiagnosticReceipt", () => {
     vi.unstubAllGlobals();
   });
 
+  it("renders and copies one content-free local structural reason", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          ...receipt,
+          classification: "local-validation",
+          summary: "Candidate content reached Continuity Loom but failed local Ideate validation.",
+          recovery: "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.",
+          structuralReason: {
+            code: "mismatched-operator",
+            message: "Assigned slot 1: the operator did not match the compiled assignment.",
+            slotNumber: 1
+          }
+        }}
+      />
+    );
+
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain(
+      "Assigned slot 1: the operator did not match the compiled assignment."
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const copied = writeText.mock.calls[0]?.[0] ?? "";
+    expect(copied).toContain("Structural rule: mismatched-operator");
+    expect(copied).toContain("Structural slot: 1");
+    expect(copied).toContain("Structural reason: Assigned slot 1: the operator did not match the compiled assignment.");
+    expect(copied).not.toMatch(/model-private-field-canary|MODEL-PRIVATE-CITATION|rejected candidate/);
+  });
+
   it("renders accessible current-attempt details, safe copy feedback, conditional Logs navigation, and clear", async () => {
     const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
     vi.stubGlobal("navigator", { clipboard: { writeText } });

@@ -36,6 +36,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.clearAllMocks();
 });
 
@@ -602,14 +603,24 @@ describe("IdeateView", () => {
     expect(screen.getByText(`0 / ${IDEATION_FOCUS_MAX_CODE_POINTS}`)).toBeTruthy();
   });
 
-  it("renders a sanitized diagnostic instead of locally rejected provider text", async () => {
+  it("renders and copies the safe structural reason without retrying or exposing rejected text", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
     vi.mocked(ideate).mockResolvedValue({
       ok: true,
       quarantined: true,
       reasonCode: "local-parser-rejected",
       summary: "Candidate content failed local Ideate validation.",
-      recovery: "Inspect the source before using the action again.",
-      diagnostic: diagnosticReceipt()
+      recovery: "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.",
+      diagnostic: {
+        ...diagnosticReceipt(),
+        recovery: "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.",
+        structuralReason: {
+          code: "mismatched-operator",
+          message: "Assigned slot 1: the operator did not match the compiled assignment.",
+          slotNumber: 1
+        }
+      }
     });
 
     renderIdeate();
@@ -619,8 +630,20 @@ describe("IdeateView", () => {
 
     expect(await screen.findByRole("alert", { name: "OpenRouter diagnostic" })).toBeTruthy();
     expect(screen.getByText("Candidate content failed local validation.")).toBeTruthy();
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain(
+      "Assigned slot 1: the operator did not match the compiled assignment."
+    );
+    expect(screen.getAllByText(/use the existing Ideate action manually/i)).toHaveLength(2);
     expect(screen.queryByText("freeform answer")).toBeNull();
     expect(screen.getAllByText("AI-suggested scratch - not story state.")).toHaveLength(2);
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    expect(writeText.mock.calls[0]?.[0]).toContain("Structural rule: mismatched-operator");
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(ideate).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("heading", { level: 4 })).toBeNull();
   });
 
   it("presents shared Assistance output-limit recovery after one explicit Ideate request", async () => {

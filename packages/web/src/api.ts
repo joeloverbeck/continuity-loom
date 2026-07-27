@@ -195,6 +195,7 @@ export interface ParsedIdeationIdea {
   headline?: string;
   question?: string;
   why?: string;
+  skipped?: true;
   grounds: readonly string[];
   unknownCitations: readonly string[];
 }

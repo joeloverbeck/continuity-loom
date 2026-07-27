@@ -129,6 +129,27 @@ no partial candidate text is parsed or returned. A normal completion that
 fails the local parser is likewise quarantined with a safe diagnostic, and its
 raw provider text is not returned to the browser.
 
+The local parser validates against the requested `ideas` or `questions` mode
+and the exact deterministic slot assignment compiled from that request. Every
+assigned slot must appear exactly once with its assigned operator, and no
+unassigned slot may appear. A normal block requires the mode-specific
+`headline:` or `question:` field, `why:`, and at least one bracketed citation in
+`grounds:`. The exact contract-defined `SKIPPED` block requires only its
+assigned slot, assigned operator, and skip marker; it must not carry normal
+idea or question fields. Missing, duplicate, unexpected, mismatched, or
+otherwise malformed structures quarantine the complete response. Unknown
+citation keys remain a visible flag only after an otherwise valid normal block
+has parsed.
+
+Local parser quarantine adds one content-free structural reason to the
+transient sanitized diagnostic: a fixed rule code, a fixed safe explanation,
+and the assigned slot number when the failed rule belongs to one slot. The
+reason never contains a response excerpt, field value, citation, prompt text,
+story data, or rejected candidate text. Recovery tells the author to review
+that safe reason and use the existing Ideate action manually if another attempt
+is wanted. Viewing or copying the receipt never retries, repairs, reformats,
+salvages, resends, changes settings, or makes another provider request.
+
 Focus remains mounted across Ideas/Questions, Count, Dormant slot, Get ideas/Get new slate, Regenerate all, per-slot Regenerate, and Clear all. Clear all removes the slate and keepers but not focus. A newly mounted Ideate view starts blank. Get ideas, Get new slate, Regenerate all, and per-slot Regenerate remain the only provider actions; typing, counting, validation, compilation, inspection, and recovery are localhost-only.
 
 ## Canon, Prose, And Persistence Boundaries
@@ -222,7 +243,7 @@ Keys render inline once at the record's authoritative ideation section:
 | `VISIBLE AFFORDANCE`, `OBJECT`, `LOCATION` | `<locations_objects_affordances>` |
 | `ENTITY STATUS` | `<physical_continuity>` / status lines |
 
-`EMOTION` records render keys at `<relationship_and_emotion_pressure>`. `ENTITY STATUS` records render keys at their authoritative ideation current-state site in `<physical_continuity>`. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on the idea; malformed blocks are rendered only as raw quarantined scratch.
+`EMOTION` records render keys at `<relationship_and_emotion_pressure>`. `ENTITY STATUS` records render keys at their authoritative ideation current-state site in `<physical_continuity>`. Slot `grounds:` lines cite only these short keys. The server verifies returned citation keys against the compiled selected-record key set. Unknown citations are flagged on an otherwise valid idea. Malformed responses are quarantined behind the bounded safe structural reason described above; raw response text and response-derived excerpts do not cross the server boundary.
 
 ## UI Handling
 
