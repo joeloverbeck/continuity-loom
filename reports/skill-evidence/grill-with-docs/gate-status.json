@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T06:40:07.308Z",
+  "generated_at": "2026-07-27T07:19:50.922Z",
   "target_content_hash": "07fae5d588363cf87dd99050d0d70542544568591ac984f4190459f67b11816f",
-  "qualifying_uses_on_current_hash": 1,
+  "qualifying_uses_on_current_hash": 2,
   "open_incident_ids": [],
   "candidate_clusters": [],
   "state": "closed",
@@ -15,5 +15,5 @@
   "last_completed_review_id": null,
   "target_name": "grill-with-docs",
   "target_repo_relative_path": ".claude/skills/grill-with-docs",
-  "derivation_session_id": "66f27119-d7dd-4b0f-9c48-93a96fdb5dc7"
+  "derivation_session_id": "48f16db5-2319-474a-8356-b3f5cc6ad163"
 }
