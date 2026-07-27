@@ -54,13 +54,31 @@ describe("story notes isolation capstone", () => {
       ok: true,
       candidate: {
         text: request.messages[0].content.includes("# Grounded Ideation Prompt")
-          ? [
-              "IDEA 1",
-              "operator: Reveal",
-              "headline: Let the hinge sound pressure the choice.",
-              "why: The selected records support a grounded clue-pressure move.",
-              "grounds: [SECRET-1]"
-            ].join("\n")
+          ? JSON.stringify({
+              contract: "grounded_ideation.v1",
+              ideas: [{
+                slot_number: 1,
+                operator: "reveal",
+                status: "idea",
+                headline: "Let the hinge sound pressure the choice.",
+                why: "The selected secret supports a grounded clue-pressure move.",
+                grounds: ["[SECRET-1]"]
+              }, {
+                slot_number: 2,
+                operator: "plan_meets_friction",
+                status: "idea",
+                headline: "Make the immediate plan meet resistance at the cellar door.",
+                why: "The selected intention supports local friction.",
+                grounds: ["[INTENTION-1]"]
+              }, {
+                slot_number: 3,
+                operator: "commit_at_a_cost",
+                status: "idea",
+                headline: "Force a costly commitment while the audit clock advances.",
+                why: "The selected clock and secret support a commitment under cost.",
+                grounds: ["[CLOCK-1]", "[SECRET-1]"]
+              }]
+            })
           : "Candidate prose."
       },
       response: normalResponse()
@@ -227,7 +245,13 @@ async function putSettings(fastify: ReturnType<typeof createServer>): Promise<vo
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedParameters: [
+          "response_format",
+          "structured_outputs",
+          "temperature",
+          "max_completion_tokens",
+          "reasoning"
+        ],
         supportedEfforts: ["low"]
       }]
     }

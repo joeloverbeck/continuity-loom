@@ -1,6 +1,7 @@
 import {
   buildValidationSnapshot,
   compileAcceptedSegmentChangeReviewPrompt,
+  compileIdeationPrompt,
   compilePrompt,
   compileRecordHygienePrompt,
   demoGenerationSession,
@@ -48,9 +49,8 @@ describe("prompt-facing full-label cross-pillar contract", () => {
       versions: { template: "capstone", compiler: "capstone", contract: "capstone" }
     });
     const prose = compilePrompt(validationSnapshot);
-    const ideate = compilePrompt(validationSnapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    const ideate = compileIdeationPrompt(validationSnapshot, {
+      mode: "ideas", count: 3, dormantSlot: false
     });
     const repositoryRecords = records.map(repositoryRecord);
     const repository = repositoryFor(repositoryRecords, [laterIdRecord.id, earlierIdRecord.id]);

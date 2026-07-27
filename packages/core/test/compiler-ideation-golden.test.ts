@@ -1,6 +1,6 @@
 import {
   buildValidationSnapshot,
-  compilePrompt,
+  compileIdeationPrompt,
   demoGenerationSession,
   demoRecordIds,
   demoRecords,
@@ -87,10 +87,7 @@ function promptWithoutSection(prompt: string, section: string): string {
 
 describe("compiler ideation golden prompt", () => {
   it("matches the frozen ideation prompt baseline byte-for-byte", () => {
-    const result = compilePrompt(ideationSnapshot(), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 5, dormantSlot: true }
-    });
+    const result = compileIdeationPrompt(ideationSnapshot(), { mode: "ideas", count: 5, dormantSlot: true });
     const frozenGolden = readFileSync(new URL("./golden-ideation.prompt.txt", import.meta.url), "utf8");
 
     expect(`${result.prompt}\n`).toBe(frozenGolden);
@@ -98,14 +95,8 @@ describe("compiler ideation golden prompt", () => {
 
   it("renders deterministically with ideation sections, citations, and no prose-only tail", () => {
     const snapshot = ideationSnapshot();
-    const first = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "questions", count: 4, dormantSlot: true }
-    });
-    const second = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "questions", count: 4, dormantSlot: true }
-    });
+    const first = compileIdeationPrompt(snapshot, { mode: "questions", count: 4, dormantSlot: true });
+    const second = compileIdeationPrompt(snapshot, { mode: "questions", count: 4, dormantSlot: true });
 
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);

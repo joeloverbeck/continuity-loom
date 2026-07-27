@@ -2,7 +2,7 @@ import type { ValidationSnapshot } from "../validation/snapshot.js";
 import { EMPTY_STATE_CONSTANTS } from "./empty-states.js";
 import { estimatePromptTokens, fingerprintPrompt } from "./fingerprint.js";
 import { citationKeysFor } from "./ideation/citation-keys.js";
-import type { IdeationRequest, PromptKind } from "./ideation/types.js";
+import type { IdeationAssignment, IdeationRequest } from "./ideation/types.js";
 import { resolvePlaceholder, type PlaceholderName } from "./placeholder-map.js";
 import { renderCastPlaceholder } from "./sections/cast.js";
 import { renderFrontPlaceholder } from "./sections/front.js";
@@ -99,13 +99,24 @@ const secretsAndRevealConstraintBlocks: readonly {
 
 export { SECTION_ORDER };
 
-export interface CompilePromptOptions {
-  promptKind?: PromptKind;
-  ideationRequest?: Partial<IdeationRequest>;
+export function compilePrompt(snapshot: ValidationSnapshot): CompileResult {
+  const prompt = renderProsePrompt(snapshot);
+
+  return compileResult(snapshot, prompt);
 }
 
-export function compilePrompt(snapshot: ValidationSnapshot, options: CompilePromptOptions = {}): CompileResult {
-  const prompt = renderPrompt(snapshot, options);
+/** Package-private renderer for the canonical Ideate compile artifact. */
+export function compileAssignedIdeationPrompt(
+  snapshot: ValidationSnapshot,
+  ideationRequest: IdeationRequest,
+  ideationAssignment: IdeationAssignment
+): CompileResult {
+  const prompt = renderIdeationPrompt(snapshot, ideationRequest, ideationAssignment);
+
+  return compileResult(snapshot, prompt);
+}
+
+function compileResult(snapshot: ValidationSnapshot, prompt: string): CompileResult {
 
   return {
     prompt,
@@ -118,11 +129,7 @@ export function compilePrompt(snapshot: ValidationSnapshot, options: CompileProm
   };
 }
 
-function renderPrompt(snapshot: ValidationSnapshot, options: CompilePromptOptions): string {
-  if (options.promptKind === "ideation") {
-    return renderIdeationPrompt(snapshot, options.ideationRequest ?? {});
-  }
-
+function renderProsePrompt(snapshot: ValidationSnapshot): string {
   return [
     "# Generated Prose Prompt",
     "",
@@ -132,7 +139,11 @@ function renderPrompt(snapshot: ValidationSnapshot, options: CompilePromptOption
   ].join("\n\n");
 }
 
-function renderIdeationPrompt(snapshot: ValidationSnapshot, ideationRequest: Partial<IdeationRequest>): string {
+function renderIdeationPrompt(
+  snapshot: ValidationSnapshot,
+  ideationRequest: IdeationRequest,
+  ideationAssignment: IdeationAssignment
+): string {
   const context: RenderContext = {
     isIdeationPrompt: true,
     citationKeys: citationKeysFor(snapshot.records)
@@ -141,7 +152,9 @@ function renderIdeationPrompt(snapshot: ValidationSnapshot, ideationRequest: Par
   return [
     "# Grounded Ideation Prompt",
     "",
-    ...IDEATION_SECTION_ORDER.map((sectionId) => renderSection(sectionId, snapshot, ideationRequest, context)).filter(
+    ...IDEATION_SECTION_ORDER.map((sectionId) =>
+      renderSection(sectionId, snapshot, ideationRequest, context, ideationAssignment)
+    ).filter(
       (section) => section !== null
     )
   ].join("\n\n");
@@ -151,7 +164,8 @@ function renderSection(
   sectionId: PromptSectionId | IdeationSectionId,
   snapshot: ValidationSnapshot,
   ideationRequest: Partial<IdeationRequest> = {},
-  context: RenderContext
+  context: RenderContext,
+  ideationAssignment?: IdeationAssignment
 ): string | null {
   if (sectionId === "hard_canon" && !hasHardCanon(snapshot)) {
     return null;
@@ -202,7 +216,7 @@ function renderSection(
   }
 
   if (sectionId === "ideation_slots") {
-    return renderIdeationSlotsSection(snapshot, ideationRequest);
+    return renderIdeationSlotsSection(snapshot, ideationRequest, ideationAssignment);
   }
 
   if (sectionId === "content_policy" && context.isIdeationPrompt) {

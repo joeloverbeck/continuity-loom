@@ -41,13 +41,17 @@ describe("ideate routes", () => {
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
       candidate: {
-        text: [
-          "IDEA 1",
-          "operator: Reveal",
-          "headline: Let the hidden item pressure the exchange.",
-          "why: The selected records support a reveal-adjacent pressure move.",
-          "grounds: [SECRET-1], [UNKNOWN-99]"
-        ].join("\n")
+        text: JSON.stringify({
+          contract: "grounded_ideation.v1",
+          ideas: [{
+            slot_number: 1,
+            operator: "reveal",
+            status: "idea",
+            headline: "Let the hidden item pressure the exchange.",
+            why: "The selected records support a reveal-adjacent pressure move.",
+            grounds: ["[SECRET-1]", "[UNKNOWN-99]"]
+          }]
+        })
       },
       response: normalResponse()
     });
@@ -69,6 +73,7 @@ describe("ideate routes", () => {
     };
 
     expect(response.statusCode).toBe(200);
+    expect(body).toMatchObject({ ok: true, ideas: expect.any(Array) });
     expect(body.ideas[0]?.unknownCitations).toEqual(["[UNKNOWN-99]"]);
     expect(body.citations["[SECRET-1]"]).toBe("The loading-door key has been copied.");
     expect(body.metadata).toMatchObject({
@@ -79,17 +84,40 @@ describe("ideate routes", () => {
     expect(sentPrompt).toContain("# Grounded Ideation Prompt");
     expect(sentPrompt.match(/What pressure &lt;opens&gt; the door\?/g)).toHaveLength(1);
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
+    expect(sendChatCompletionMock.mock.calls[0]?.[0].request.response_format).toMatchObject({
+      type: "json_schema",
+      json_schema: {
+        name: "grounded_ideation",
+        strict: true,
+        schema: {
+          properties: {
+            ideas: {
+              items: {
+                properties: {
+                  slot_number: { enum: [1] },
+                  operator: { enum: ["reveal"] }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
     expect(after).toEqual(before);
   });
 
   it("propagates a typed structural reason without returning or retrying rejected provider text", async () => {
-    const rejectedProviderText = [
-      "IDEA 1",
-      "operator: Clock Advances",
-      "headline: model-private-field-canary",
-      "why: model-private-why-canary",
-      "grounds: [MODEL-PRIVATE-CITATION]"
-    ].join("\n");
+    const rejectedProviderText = JSON.stringify({
+      contract: "grounded_ideation.v1",
+      ideas: [{
+        slot_number: 1,
+        operator: "clock_advances",
+        status: "idea",
+        headline: "model-private-field-canary",
+        why: "model-private-why-canary",
+        grounds: ["[MODEL-PRIVATE-CITATION]"]
+      }]
+    });
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: rejectedProviderText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -122,6 +150,38 @@ describe("ideate routes", () => {
     expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
+  it("refuses a model without structured_outputs before provider transport", async () => {
+    process.env.OPENROUTER_API_KEY = keySecretText;
+    const fastify = app();
+    await prepareIdeationProject(fastify);
+    await putSettings(fastify, {
+      cachedModels: [{
+        id: "anthropic/claude-sonnet-4",
+        name: "Response-format-only model",
+        supportedParameters: [
+          "response_format",
+          "temperature",
+          "max_completion_tokens",
+          "reasoning"
+        ],
+        supportedEfforts: ["low"]
+      }]
+    });
+
+    const response = await fastify.inject({
+      method: "POST",
+      url: "/api/ideate",
+      payload: await inspectedIdeationPayload(fastify)
+    });
+
+    expect(response.json()).toMatchObject({
+      ok: false,
+      category: "structured-output-incompatible-model",
+      missingCapabilities: ["structured_outputs"]
+    });
+    expect(sendChatCompletionMock).not.toHaveBeenCalled();
+  });
+
   it("sends Ideation exactly once when the deterministic estimate exceeds cached context length", async () => {
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: "freeform answer" }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
@@ -140,7 +200,13 @@ describe("ideate routes", () => {
           id: "anthropic/claude-sonnet-4",
           name: "Tiny compatible model",
           contextLength: 1,
-          supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+          supportedParameters: [
+            "response_format",
+            "structured_outputs",
+            "temperature",
+            "max_completion_tokens",
+            "reasoning"
+          ],
           supportedEfforts: ["low"]
         }]
       }
@@ -478,7 +544,13 @@ async function putSettings(
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedParameters: [
+          "response_format",
+          "structured_outputs",
+          "temperature",
+          "max_completion_tokens",
+          "reasoning"
+        ],
         supportedEfforts: ["low"]
       }],
       ...overrides

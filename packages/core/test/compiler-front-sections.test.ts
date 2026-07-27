@@ -1,5 +1,6 @@
 import {
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   EMPTY_STATE_CONSTANTS,
   versionInfo,
@@ -553,9 +554,8 @@ describe("compiler front-section resolvers", () => {
     const firstLabel = secretLabelFor(input, secretId);
     const secondLabel = secretLabelFor(input, secondSecretId);
     const prosePrompt = compilePrompt(buildValidationSnapshot(input)).prompt;
-    const ideationPrompt = compilePrompt(buildValidationSnapshot(input), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    const ideationPrompt = compileIdeationPrompt(buildValidationSnapshot(input), {
+      mode: "ideas", count: 3, dormantSlot: false
     }).prompt;
     const proseSecrets = sectionBody(prosePrompt, "secrets_and_reveal_constraints");
     const ideationSecrets = sectionBody(ideationPrompt, "secrets_and_reveal_constraints");

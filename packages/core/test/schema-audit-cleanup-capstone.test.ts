@@ -7,6 +7,7 @@ import {
   DIAGNOSTIC_CODES,
   PLACEHOLDER_MAP,
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   demoGenerationSession,
   demoRecordIds,
@@ -44,14 +45,8 @@ describe("schema-audit cleanup capstone", () => {
     const snapshot = buildValidationSnapshot(cleanInput());
     const firstProse = compilePrompt(snapshot);
     const secondProse = compilePrompt(snapshot);
-    const firstIdeation = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-    });
-    const secondIdeation = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-    });
+    const firstIdeation = compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true });
+    const secondIdeation = compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true });
 
     expect(secondProse.prompt).toBe(firstProse.prompt);
     expect(secondProse.metadata.fingerprint).toBe(firstProse.metadata.fingerprint);
@@ -87,10 +82,7 @@ describe("schema-audit cleanup capstone", () => {
     const snapshot = buildValidationSnapshot(input);
     const prompts = [
       compilePrompt(snapshot).prompt,
-      compilePrompt(snapshot, {
-        promptKind: "ideation",
-        ideationRequest: { mode: "questions", count: 4, dormantSlot: true }
-      }).prompt
+      compileIdeationPrompt(snapshot, { mode: "questions", count: 4, dormantSlot: true }).prompt
     ];
 
     expect(contaminationCanaries.length).toBe(4);
@@ -106,10 +98,7 @@ describe("schema-audit cleanup capstone", () => {
     const snapshot = buildValidationSnapshot(input);
     const prompts = [
       compilePrompt(snapshot).prompt,
-      compilePrompt(snapshot, {
-        promptKind: "ideation",
-        ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-      }).prompt
+      compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true }).prompt
     ];
     const canaries = Object.values(authorOnlyCanaries);
 
@@ -126,10 +115,7 @@ describe("schema-audit cleanup capstone", () => {
     const snapshot = buildValidationSnapshot(input);
     const prompts = [
       compilePrompt(snapshot).prompt,
-      compilePrompt(snapshot, {
-        promptKind: "ideation",
-        ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-      }).prompt
+      compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true }).prompt
     ];
     const removedIdentifiers = [
       "continuity_philosophy",

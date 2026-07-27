@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   deriveReadiness,
   runValidation,
@@ -108,14 +109,8 @@ describe("cross-pillar validation and compilation contracts", () => {
         const readyInput = generatedReadyInput(input);
         const readiness = readinessFor(readyInput, "ideation");
         const snapshot = buildValidationSnapshot(readyInput);
-        const first = compilePrompt(snapshot, {
-          promptKind: "ideation",
-          ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-        });
-        const second = compilePrompt(snapshot, {
-          promptKind: "ideation",
-          ideationRequest: { mode: "ideas", count: 4, dormantSlot: true }
-        });
+        const first = compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true });
+        const second = compileIdeationPrompt(snapshot, { mode: "ideas", count: 4, dormantSlot: true });
 
         expect(readiness.blockers).toEqual([]);
         expect(readiness.canPreview).toBe(true);

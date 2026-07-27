@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   IDEATION_SECTION_ORDER,
   buildValidationSnapshot,
-  compilePrompt,
+  compileIdeationPrompt,
   demoGenerationSession,
   demoStoryConfig,
   type GenerationSession,
@@ -82,14 +82,8 @@ describe("ideation taxonomy capstone", () => {
 
   it("compiles deterministically, preserves ideation section order, and does not evict selected records", () => {
     const records = denseWorkingSet();
-    const first = compilePrompt(snapshotWith(records), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 5, dormantSlot: true }
-    });
-    const second = compilePrompt(snapshotWith(records), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 5, dormantSlot: true }
-    });
+    const first = compileIdeationPrompt(snapshotWith(records), { mode: "ideas", count: 5, dormantSlot: true });
+    const second = compileIdeationPrompt(snapshotWith(records), { mode: "ideas", count: 5, dormantSlot: true });
 
     expect(second.prompt).toBe(first.prompt);
     expect(second.metadata.fingerprint).toBe(first.metadata.fingerprint);

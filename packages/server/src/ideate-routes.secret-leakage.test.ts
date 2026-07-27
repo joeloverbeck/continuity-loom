@@ -68,7 +68,13 @@ describe("ideate route secret leakage regression", () => {
           cachedModels: [{
             id: "anthropic/claude-sonnet-4",
             name: "Compatible test model",
-            supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+            supportedParameters: [
+              "response_format",
+              "structured_outputs",
+              "temperature",
+              "max_completion_tokens",
+              "reasoning"
+            ],
             supportedEfforts: ["low"]
           }]
         }
@@ -116,14 +122,18 @@ describe("ideate route secret leakage regression", () => {
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
       candidate: {
-        text: [
-          "IDEA 1",
-          "operator: Reveal",
-          "headline: A structurally tagged possibility.",
-          "why: The assigned record supports it.",
-          "grounds: [SECRET-1]",
-          `notes: ${rejectedFieldCanary} ${rejectedCitationCanary}`
-        ].join("\n")
+        text: JSON.stringify({
+          contract: "grounded_ideation.v1",
+          ideas: [{
+            slot_number: 1,
+            operator: "reveal",
+            status: "idea",
+            headline: "A structurally tagged possibility.",
+            why: "The assigned record supports it.",
+            grounds: ["[SECRET-1]"],
+            notes: `${rejectedFieldCanary} ${rejectedCitationCanary}`
+          }]
+        })
       },
       response: normalResponse()
     });
@@ -150,7 +160,13 @@ describe("ideate route secret leakage regression", () => {
           cachedModels: [{
             id: "anthropic/claude-sonnet-4",
             name: "Compatible test model",
-            supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+            supportedParameters: [
+              "response_format",
+              "structured_outputs",
+              "temperature",
+              "max_completion_tokens",
+              "reasoning"
+            ],
             supportedEfforts: ["low"]
           }]
         }

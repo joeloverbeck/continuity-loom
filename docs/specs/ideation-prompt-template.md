@@ -114,7 +114,9 @@ Ideate compiles and inspects locally before any provider request. The optional m
 
 Every request edit invalidates the prior preview synchronously. Valid edits start a local compile with a monotonically increasing ownership token. Only the latest attempt may publish prompt bytes and fingerprint; an older response can never restore a stale preview or send eligibility. The exact normalized escaped focus and current fingerprint must be visible in Prompt Inspector before send.
 
-`POST /api/ideate` carries the complete normalized request plus the inspected prompt and provider-request fingerprints. The server reparses the request, rebuilds current project state and readiness, compiles again, selects the global Assistance ceiling, rebuilds the finalized request, and compares both fingerprints before reading credentials or calling OpenRouter. Missing, malformed, over-limit, or stale input makes zero provider calls; a mismatch returns a stale prompt or provider-request refusal. Changing only the Prose ceiling leaves this request unchanged; changing the Assistance ceiling requires fresh inspection. A matching explicit action makes one provider call with the server-rebuilt prompt and selected Assistance ceiling.
+`compileIdeationPrompt(snapshot, ideationRequest)` is the single core compile seam. It calls slot assignment once, then derives the rendered prompt, assignment, provider-safe output schema, parse context, and prompt metadata from that assignment. Both `POST /api/compile` for `promptKind: "ideation"` and `POST /api/ideate` consume that artifact and apply the same strict request options. The finalized request includes `response_format.type: "json_schema"`, `json_schema.strict: true`, and the compiled schema, with provider fallback, transforms, plugins, and tools disabled. The preview fingerprint therefore covers the same finalized request that send rebuilds.
+
+`POST /api/ideate` carries the complete normalized request plus the inspected prompt and provider-request fingerprints. The server reparses the request, rebuilds current project state and readiness, compiles again through the same seam, selects the global Assistance ceiling, rebuilds the finalized request, and compares both fingerprints before reading credentials or calling OpenRouter. Missing, malformed, over-limit, or stale input makes zero provider calls; a mismatch returns a stale prompt or provider-request refusal. A selected model must advertise both `response_format` and `structured_outputs`; otherwise capability admission refuses before transport. Changing only the Prose ceiling leaves this request unchanged; changing the Assistance ceiling requires fresh inspection. A matching explicit action makes one provider call with the server-rebuilt prompt and selected Assistance ceiling.
 
 Prompt Inspector names the effective Assistance class and value. An Assistance
 value below 4,096 produces shared non-gating suitability guidance; the existing
@@ -129,27 +131,23 @@ no partial candidate text is parsed or returned. A normal completion that
 fails the local parser is likewise quarantined with a safe diagnostic, and its
 raw provider text is not returned to the browser.
 
-The local parser normalizes the response envelope before applying the grammar.
-Content before the first `IDEA` header is discarded, standalone code-fence lines
-are dropped anywhere in the response, and bounded Markdown decoration is
-stripped from headers and from field keys and values: a leading list,
-blockquote, or ATX heading marker, and leading or trailing emphasis runs. An
-`IDEA` header may carry a trailing colon. Normalization touches presentation
-only; it relaxes no semantic rule below. Trailing content after the last field
-line is not envelope material - it belongs to the last block and still
-quarantines the response as a slot-scoped malformed line.
+The local parser accepts one complete JSON value, either as provider text or an
+already-decoded object. It accepts no surrounding content and no alternate
+output shape. The top-level object must contain exactly `contract` and
+`ideas`, and `contract` must equal `grounded_ideation.v1`.
 
-The local parser validates against the requested `ideas` or `questions` mode
-and the exact deterministic slot assignment compiled from that request. Every
-assigned slot must appear exactly once with its assigned operator, and no
-unassigned slot may appear. A normal block requires the mode-specific
-`headline:` or `question:` field, `why:`, and at least one bracketed citation in
-`grounds:`. The exact contract-defined `SKIPPED` block requires only its
-assigned slot, assigned operator, and skip marker; it must not carry normal
-idea or question fields. Missing, duplicate, unexpected, mismatched, or
-otherwise malformed structures quarantine the complete response. Unknown
-citation keys remain a visible flag only after an otherwise valid normal block
-has parsed.
+The parser validates against the requested `ideas` or `questions` mode and the
+exact parse context carried from the core compile seam. Every assigned slot must
+appear exactly once with its assigned operator id, and no unassigned slot may
+appear. Every item has exactly `slot_number`, `operator`, `status`, the
+mode-specific `headline` or `question`, `why`, and `grounds`. A normal `idea`
+status requires nonblank mode text, nonblank `why`, and at least one nonblank
+citation string. A `skipped` status requires the mode field and `why` to be the
+empty string and `grounds` to be an empty array. Missing, duplicate,
+unexpected, mismatched, or otherwise malformed structures quarantine the
+complete response. Unknown citation keys remain a visible non-blocking flag
+only after an otherwise valid normal item has parsed; this local defense is
+retained even though the provider schema constrains grounds to compiled keys.
 
 Local parser quarantine adds one content-free structural reason to the
 transient sanitized diagnostic: a fixed rule code, a fixed safe explanation,
@@ -186,36 +184,42 @@ The ideation prompt renders the same `<contradiction_prohibitions>` tag as the p
 
 ### `<ideation_output_format>`
 
-Defines a flat tagged block. Malformed output is discarded.
+Defines the pure-JSON `grounded_ideation.v1` contract. Malformed output is
+discarded. The prompt tells the model to return only `contract` and `ideas`, to
+copy each assigned operator id and slot number exactly, and to add no prose or
+fields outside the supplied strict schema. Reasoning is requested through the
+excluded reasoning channel required by
+`docs/adr/0007-output-policy-requires-explicit-excluded-reasoning.md` and never
+reaches candidate content.
 
-The section instructs the model to output nothing before the first `IDEA` line
-and nothing after the last field line, and to use no code fences, Markdown
-headings, bullets, or bold. The prompt is the primary control for response
-shape; the parser's envelope normalization described above is a safety net, not
-a licensed alternative format. The section carries no permission to think or
-narrate before the block: reasoning is requested through the excluded reasoning
-channel required by `docs/adr/0007-output-policy-requires-explicit-excluded-reasoning.md`
-and never reaches candidate content.
+The compiler produces this request-specific provider-safe shape:
 
-For idea mode:
-
-```md
-IDEA <slot-number>
-operator: <operator name>
-headline: <one sentence, premise level, about 25 words or fewer>
-why: <one sentence paraphrasing why the cited records support the idea>
-grounds: <comma-separated citation keys from that slot>
+```json
+{
+  "contract": "grounded_ideation.v1",
+  "ideas": [
+    {
+      "slot_number": 1,
+      "operator": "reveal",
+      "status": "idea",
+      "headline": "A premise-level possibility.",
+      "why": "Why the compiled grounds support it.",
+      "grounds": ["[SECRET-1]"]
+    }
+  ]
+}
 ```
 
-For question mode, replace `headline` with `question` and phrase it as an author-facing story question.
-
-For unsupported slots:
-
-```md
-IDEA <slot-number>
-operator: <operator name>
-SKIPPED: no compiled record supports this slot.
-```
+`contract` is a single-value enum. `slot_number` is an enum of assigned slot
+numbers, `operator` is an enum of their machine-readable operator ids, `status`
+is `idea` or `skipped`, and each `grounds` item is an enum over all citation
+keys in the snapshot. All properties are required and objects reject additional
+properties. Question mode compiles `question` instead of `headline`. For
+`status: "idea"`, the mode field and `why` are nonblank and `grounds` is
+nonempty. For `status: "skipped"`, the mode field and `why` are `""` and
+`grounds` is `[]`. Provider-unsupported conditional and cardinality keywords
+are intentionally omitted from the schema and re-enforced fail-closed by the
+deterministic parser.
 
 ## Operator Taxonomy
 

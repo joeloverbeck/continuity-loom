@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildValidationSnapshot,
   compileAcceptedSegmentChangeReviewPrompt,
+  compileIdeationPrompt,
   compilePrompt,
   compileRecordHygienePrompt,
   demoGenerationSession,
@@ -42,9 +43,8 @@ describe("accepted-segment-change-review cross-pillar capstone", () => {
       versions: { template: "1.7.0", compiler: "1.9.0", contract: "1.10.0" }
     });
     const prosePrompt = compilePrompt(snapshot).prompt;
-    const ideationPrompt = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    const ideationPrompt = compileIdeationPrompt(snapshot, {
+      mode: "ideas", count: 3, dormantSlot: false
     }).prompt;
     const hygienePrompt = compileRecordHygienePrompt(hygieneSnapshot()).prompt;
     const reviewSnapshot = changeReviewSnapshot();

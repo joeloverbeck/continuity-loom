@@ -1,14 +1,19 @@
 import type { ValidationSnapshot } from "../../validation/snapshot.js";
 import { escapeDataText } from "../escaping.js";
 import { assignSlots } from "../ideation/slot-assignment.js";
-import { ideationRequestSchema, type IdeationRequest } from "../ideation/types.js";
+import {
+  ideationRequestSchema,
+  type IdeationAssignment,
+  type IdeationRequest
+} from "../ideation/types.js";
 
 export function renderIdeationSlotsSection(
   snapshot: ValidationSnapshot,
-  requestInput: Partial<IdeationRequest> = {}
+  requestInput: Partial<IdeationRequest> = {},
+  assignmentInput?: IdeationAssignment
 ): string {
   const request = ideationRequestSchema.parse(requestInput);
-  const assignment = assignSlots(snapshot.records, request);
+  const assignment = assignmentInput ?? assignSlots(snapshot.records, request);
   const modeLine =
     request.mode === "questions"
       ? "Mode: questions. Render each slot as an author-facing story question."

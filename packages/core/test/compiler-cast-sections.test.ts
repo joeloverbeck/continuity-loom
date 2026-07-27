@@ -1,5 +1,6 @@
 import {
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   EMPTY_STATE_CONSTANTS,
   type BuildValidationSnapshotInput,
@@ -371,8 +372,8 @@ describe("compiler cast-section resolvers", () => {
     expect(compilePrompt(buildValidationSnapshot(firstInput)).prompt).toBe(
       compilePrompt(buildValidationSnapshot(secondInput)).prompt
     );
-    expect(compilePrompt(buildValidationSnapshot(firstInput), { promptKind: "ideation" }).prompt).toBe(
-      compilePrompt(buildValidationSnapshot(secondInput), { promptKind: "ideation" }).prompt
+    expect(compileIdeationPrompt(buildValidationSnapshot(firstInput)).prompt).toBe(
+      compileIdeationPrompt(buildValidationSnapshot(secondInput)).prompt
     );
   });
 
@@ -399,7 +400,7 @@ describe("compiler cast-section resolvers", () => {
   });
 
   it("omits present-minor current voice pressure from ideation prompts", () => {
-    const populated = compilePrompt(buildValidationSnapshot(input()), { promptKind: "ideation" }).prompt;
+    const populated = compileIdeationPrompt(buildValidationSnapshot(input())).prompt;
 
     expect(sectionBody(populated, "present_minor_cast")).toContain("Jon");
     expect(sectionBody(populated, "present_minor_cast")).not.toContain("current generation voice pressure");

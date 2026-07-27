@@ -1,5 +1,6 @@
 import {
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   demoGenerationSession,
   demoRecords,
@@ -239,13 +240,11 @@ describe("compiler golden prompt", () => {
     expect(compilePrompt(buildValidationSnapshot(migratedInput)).prompt).toBe(
       compilePrompt(buildValidationSnapshot(legacyInput)).prompt
     );
-    expect(compilePrompt(buildValidationSnapshot(migratedInput), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    expect(compileIdeationPrompt(buildValidationSnapshot(migratedInput), {
+      mode: "ideas", count: 3, dormantSlot: false
     }).prompt).toBe(
-      compilePrompt(buildValidationSnapshot(legacyInput), {
-        promptKind: "ideation",
-        ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+      compileIdeationPrompt(buildValidationSnapshot(legacyInput), {
+        mode: "ideas", count: 3, dormantSlot: false
       }).prompt
     );
   });
@@ -261,13 +260,11 @@ describe("compiler golden prompt", () => {
     expect(compilePrompt(buildValidationSnapshot(migratedInput)).prompt).toBe(
       compilePrompt(buildValidationSnapshot(legacyInput)).prompt
     );
-    expect(compilePrompt(buildValidationSnapshot(migratedInput), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+    expect(compileIdeationPrompt(buildValidationSnapshot(migratedInput), {
+      mode: "ideas", count: 3, dormantSlot: false
     }).prompt).toBe(
-      compilePrompt(buildValidationSnapshot(legacyInput), {
-        promptKind: "ideation",
-        ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
+      compileIdeationPrompt(buildValidationSnapshot(legacyInput), {
+        mode: "ideas", count: 3, dormantSlot: false
       }).prompt
     );
   });

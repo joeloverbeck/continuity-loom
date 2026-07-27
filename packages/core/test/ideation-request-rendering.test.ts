@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  compileIdeationPrompt,
   compilePrompt,
   demoGenerationSession,
   demoRecordIds,
@@ -77,16 +78,10 @@ No grounded ideation slots are available.
 
   it("renders one escaped non-canonical Author focus and fingerprints only nonblank focus", () => {
     const snapshot = snapshotWith([]);
-    const missing = compilePrompt(snapshot, { promptKind: "ideation", ideationRequest: {} });
-    const blank = compilePrompt(snapshot, { promptKind: "ideation", ideationRequest: { focus: "" } });
-    const whitespace = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { focus: " \t\n" }
-    });
-    const focused = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { focus: "  What if <gate> & river?  " }
-    });
+    const missing = compileIdeationPrompt(snapshot, {});
+    const blank = compileIdeationPrompt(snapshot, { focus: "" });
+    const whitespace = compileIdeationPrompt(snapshot, { focus: " \t\n" });
+    const focused = compileIdeationPrompt(snapshot, { focus: "  What if <gate> & river?  " });
 
     expect(blank.prompt).toBe(missing.prompt);
     expect(whitespace.prompt).toBe(missing.prompt);
@@ -107,9 +102,8 @@ No grounded ideation slots are available.
   });
 
   it("keeps prose-only continuation sections and hidden clock instructions out of ideation prompts", () => {
-    const result = compilePrompt(snapshotWith([ideationRecord("CLOCK", "clock")]), {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: true, avoidList: ["repeat the last slate"] }
+    const result = compileIdeationPrompt(snapshotWith([ideationRecord("CLOCK", "clock")]), {
+      mode: "ideas", count: 3, dormantSlot: true, avoidList: ["repeat the last slate"]
     });
 
     expect(result.prompt).toContain("<ideation_slots>");
@@ -137,11 +131,8 @@ No grounded ideation slots are available.
       ],
       generationSession
     );
-    const ideation = compilePrompt(snapshot, {
-      promptKind: "ideation",
-      ideationRequest: { mode: "ideas", count: 3, dormantSlot: false }
-    }).prompt;
-    const prose = compilePrompt(snapshot, { promptKind: "prose" }).prompt;
+    const ideation = compileIdeationPrompt(snapshot, { mode: "ideas", count: 3, dormantSlot: false }).prompt;
+    const prose = compilePrompt(snapshot).prompt;
 
     expect(ideation).toContain("[EMOTION-1] Elin keeps fear under tight control");
     expect(ideation).toContain("statuses: [ENTITY STATUS-1] Elin stands by the flour bin");
@@ -152,7 +143,7 @@ No grounded ideation slots are available.
   });
 
   it("keeps focused requests inside slots while retaining selected POV knowledge", () => {
-    const prompt = compilePrompt(snapshotWith([
+    const prompt = compileIdeationPrompt(snapshotWith([
       ideationRecord("BELIEF", "pov-belief", {
         payload: {
           holder: demoRecordIds.elinEntity,
@@ -160,17 +151,14 @@ No grounded ideation slots are available.
           claim: "Elin knows the hinge was replaced."
         }
       })
-    ]), {
-      promptKind: "ideation",
-      ideationRequest: { focus: "What pressure follows from the hinge?" }
-    }).prompt;
+    ]), { focus: "What pressure follows from the hinge?" }).prompt;
 
     expect(prompt).toContain("POV knows:\n- Elin knows the hinge was replaced.");
     expect(prompt.match(/What pressure follows from the hinge\?/g)).toHaveLength(1);
   });
 
   it("does not substitute Author focus for an empty hidden-truth value", () => {
-    const prompt = compilePrompt(snapshotWith([
+    const prompt = compileIdeationPrompt(snapshotWith([
       ideationRecord("SECRET", "empty-secret", {
         payload: {
           status: "hidden",
@@ -179,10 +167,7 @@ No grounded ideation slots are available.
           reveal_permission: "locked"
         }
       })
-    ]), {
-      promptKind: "ideation",
-      ideationRequest: { focus: "Invent no replacement truth" }
-    }).prompt;
+    ]), { focus: "Invent no replacement truth" }).prompt;
 
     expect(prompt.match(/Invent no replacement truth/g)).toHaveLength(1);
     expect(prompt).not.toContain("[artifact_truth]");

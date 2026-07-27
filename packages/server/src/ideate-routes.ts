@@ -1,17 +1,18 @@
 import {
-  assignSlots,
   citationKeysFor,
-  compilePrompt,
+  compileIdeationPrompt,
+  describeIdeationParseFailure,
   deriveReadiness,
   displayLabel,
   ideationRequestSchema,
+  parseIdeationOutput,
   runValidation
 } from "@loom/core";
 import type { ValidationRecord } from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { z, ZodError } from "zod";
 
-import { describeIdeationParseFailure, parseIdeationResponse } from "./ideation-parse.js";
+import { ideationRequestOptions } from "./ideation-request-options.js";
 import { runOpenRouterSendPipeline } from "./openrouter/send-pipeline.js";
 import { createDiagnosticReceipt } from "./openrouter/response.js";
 import type { ProjectStoreManager } from "./project-store.js";
@@ -49,16 +50,14 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
       };
     }
 
-    const compileResult = compilePrompt(snapshotResult.snapshot, {
-      promptKind: "ideation",
-      ideationRequest
-    });
+    const compileResult = compileIdeationPrompt(snapshotResult.snapshot, ideationRequest);
 
     const sendResult = await runOpenRouterSendPipeline({
       profile: {
         outputPolicy: "strict",
         prompt: compileResult.prompt,
         promptFingerprint: compileResult.metadata.fingerprint,
+        requestOptions: ideationRequestOptions(compileResult.outputSchema),
         staleness: {
           mode: "separate",
           expectedPromptFingerprint,
@@ -94,17 +93,8 @@ export function registerIdeateRoutes(app: FastifyInstance, manager: ProjectStore
     }
 
     const citationKeys = citationKeysFor(snapshotResult.snapshot.records);
-    const validCitationKeys = new Set(citationKeys.values());
     const citations = citationLabels(snapshotResult.snapshot.records, citationKeys);
-    const assignment = assignSlots(snapshotResult.snapshot.records, ideationRequest);
-    const parsed = parseIdeationResponse(sendResult.candidate.text, {
-      mode: ideationRequest.mode,
-      slots: assignment.slots.map((slot, index) => ({
-        slotNumber: index + 1,
-        operator: slot.operatorName
-      })),
-      validCitationKeys
-    });
+    const parsed = parseIdeationOutput(sendResult.candidate.text, compileResult.parseContext);
 
     if (!parsed.ok) {
       const recovery = "Review the safe structural reason, then use the existing Ideate action manually if you want another attempt. No retry is automatic.";

@@ -48,6 +48,8 @@ export const ideationRequestSchema = z
 
 export type IdeationRequest = z.infer<typeof ideationRequestSchema>;
 
+export const IDEATION_OUTPUT_CONTRACT = "grounded_ideation.v1";
+
 export type IdeationOperatorId =
   | "reveal"
   | "plan_meets_friction"
@@ -72,4 +74,25 @@ export interface IdeationAssignment {
   requestedCount: number;
   assignedCount: number;
   shrunk: boolean;
+}
+
+export interface IdeationParseContext {
+  mode: IdeationMode;
+  slots: readonly {
+    slotNumber: number;
+    operator: IdeationOperatorId;
+    operatorName: string;
+  }[];
+  validCitationKeys: ReadonlySet<string>;
+}
+
+export interface ParsedIdea {
+  slotNumber: number;
+  operator: string;
+  headline?: string;
+  question?: string;
+  why?: string;
+  skipped?: true;
+  grounds: readonly string[];
+  unknownCitations: readonly string[];
 }

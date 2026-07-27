@@ -54,25 +54,31 @@ describe("ideation end-to-end capstone", () => {
       return {
         ok: true,
         candidate: {
-          text: [
-            "IDEA 1",
-            "operator: Reveal",
-            "headline: Let the hinge scrape expose pressure without revealing the letter.",
-            "why: The selected secret and cellar objects support a clue-only pressure move.",
-            `grounds: ${secretKey}, [UNKNOWN-99]`,
-            "",
-            "IDEA 2",
-            "operator: Plan Meets Friction",
-            "headline: Make the courier's immediate intention meet resistance at the cellar door.",
-            "why: The assigned intention supports a local attempt meeting friction.",
-            `grounds: ${intentionKey}`,
-            "",
-            "IDEA 3",
-            "operator: Commit at a Cost",
-            "headline: Make Elin commit to costly concealment as the audit clock presses the secret closer to exposure.",
-            "why: The assigned clock and secret support one commitment under cost.",
-            "grounds: [CLOCK-1], [SECRET-1]"
-          ].join("\n")
+          text: JSON.stringify({
+            contract: "grounded_ideation.v1",
+            ideas: [{
+              slot_number: 1,
+              operator: "reveal",
+              status: "idea",
+              headline: "Let the hinge scrape expose pressure without revealing the letter.",
+              why: "The selected secret and cellar objects support a clue-only pressure move.",
+              grounds: [secretKey, "[UNKNOWN-99]"]
+            }, {
+              slot_number: 2,
+              operator: "plan_meets_friction",
+              status: "idea",
+              headline: "Make the courier's immediate intention meet resistance at the cellar door.",
+              why: "The assigned intention supports a local attempt meeting friction.",
+              grounds: [intentionKey]
+            }, {
+              slot_number: 3,
+              operator: "commit_at_a_cost",
+              status: "idea",
+              headline: "Make Elin commit to costly concealment as the audit clock presses the secret closer to exposure.",
+              why: "The assigned clock and secret support one commitment under cost.",
+              grounds: ["[CLOCK-1]", "[SECRET-1]"]
+            }]
+          })
         },
         response: normalResponse()
       };
@@ -225,7 +231,13 @@ async function putSettings(fastify: FastifyApp): Promise<void> {
       cachedModels: [{
         id: "anthropic/claude-sonnet-4",
         name: "Compatible test model",
-        supportedParameters: ["temperature", "max_completion_tokens", "reasoning"],
+        supportedParameters: [
+          "response_format",
+          "structured_outputs",
+          "temperature",
+          "max_completion_tokens",
+          "reasoning"
+        ],
         supportedEfforts: ["low"]
       }]
     }

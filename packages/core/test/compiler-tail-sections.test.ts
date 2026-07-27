@@ -1,5 +1,6 @@
 import {
   buildValidationSnapshot,
+  compileIdeationPrompt,
   compilePrompt,
   EMPTY_STATE_CONSTANTS,
   type BuildValidationSnapshotInput,
@@ -233,7 +234,7 @@ describe("compiler tail-section resolvers", () => {
   });
 
   it("renders location hazards and social rules in ideation tail sections", () => {
-    const prompt = compilePrompt(buildValidationSnapshot(input()), { promptKind: "ideation" }).prompt;
+    const prompt = compileIdeationPrompt(buildValidationSnapshot(input())).prompt;
     const locationsObjects = sectionBody(prompt, "locations_objects_affordances");
 
     expect(locationsObjects).toContain("hazards or shelters: Loose rail on the west turn., Alcove gives cover from the landing.");

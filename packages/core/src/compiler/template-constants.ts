@@ -467,20 +467,11 @@ Prefer causal pressure, try-fail friction, dormant-pressure return, consequence,
 Ideas must be mutually distinct. Each idea must execute its assigned operator and produce one dominant local state transition. No two ideas may use the same operator or end in the same dominant change target: information access, attempt state, observable tactic or control shift, immediate feasible-action set, operative interpretation, temporal pressure, duty or effect activation, relational pressure, or commitment under cost. Different wording, actors, or citation keys do not by themselves make ideas distinct. Prefer different grounds where deterministic assignment permits; when a ground must recur, the assigned move and changed state must still differ. Who acts and which pressure fires are secondary preferences, not the primary distinctness test.
 </ideation_quality>`,
   ideation_output_format: `<ideation_output_format>
-Output only an ideas block. Malformed output is discarded.
-Output nothing before the first IDEA line and nothing after the last field line. Do not use code fences, Markdown headings, bullets, or bold; write every header and field as plain text.
-
-For each non-skipped slot, use this flat tagged format:
-IDEA <slot-number>
-operator: <operator name>
-headline: <one sentence, premise level, about 25 words or fewer>
-why: <one sentence paraphrasing why the cited records support the idea>
-grounds: <comma-separated citation keys from that slot>
-
-For question mode, replace headline with question and phrase it as an author-facing story question.
-For an unsupported slot, output:
-IDEA <slot-number>
-operator: <operator name>
-SKIPPED: no compiled record supports this slot.
+Return one JSON object that conforms exactly to the supplied grounded_ideation.v1 schema. Malformed output is discarded.
+Return contract and ideas only. Every ideas item must contain slot_number, operator, status, the mode field, why, and grounds.
+Copy the assigned slot's Operator id exactly into operator. Never use the display name. Copy the assigned slot number into slot_number.
+For status idea, write a nonblank premise-level headline or author-facing question, a nonblank why, and at least one citation key in grounds.
+For status skipped, write an empty string for the mode field and why, and an empty grounds array.
+Return JSON only. Do not add prose, Markdown, code fences, commentary, or fields outside the schema.
 </ideation_output_format>`
 });

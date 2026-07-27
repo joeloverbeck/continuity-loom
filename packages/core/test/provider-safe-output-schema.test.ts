@@ -5,7 +5,8 @@ import {
   PROVIDER_UNSAFE_OUTPUT_SCHEMA_KEYWORDS,
   acceptedSegmentChangeReviewOutputJsonSchema,
   castPossibilitiesOutputJsonSchema,
-  collectDisallowedOutputSchemaKeywords
+  collectDisallowedOutputSchemaKeywords,
+  ideationOutputJsonSchema
 } from "../src/index.js";
 
 const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
@@ -21,7 +22,18 @@ const compiledSchemas: ReadonlyArray<readonly [string, unknown]> = [
     mustRender: ["Keep the archive door locked."],
     mayRenderIfNaturallyCaused: ["A practical response."],
     doNotForce: ["Do not reveal the archive contents."]
-  })]
+  })],
+  ["ideation", ideationOutputJsonSchema({
+    requestedCount: 1,
+    assignedCount: 1,
+    shrunk: false,
+    slots: [{
+      operator: "reveal",
+      operatorName: "Reveal",
+      definition: "Surface a hidden fact.",
+      recordKeys: ["[SECRET-1]"]
+    }]
+  }, "ideas", ["[SECRET-1]"])]
 ];
 
 describe("provider-safe strict output schemas", () => {

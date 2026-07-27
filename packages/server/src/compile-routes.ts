@@ -1,8 +1,16 @@
-import { compilePrompt, deriveReadiness, ideationRequestSchema, promptKindSchema, runValidation } from "@loom/core";
+import {
+  compileIdeationPrompt,
+  compilePrompt,
+  deriveReadiness,
+  ideationRequestSchema,
+  promptKindSchema,
+  runValidation
+} from "@loom/core";
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 
 import { buildChatCompletionRequest, inspectChatCompletionRequest } from "./openrouter/request.js";
+import { ideationRequestOptions } from "./ideation-request-options.js";
 import type { ProjectStoreManager } from "./project-store.js";
 import { readOpenRouterSettings } from "./settings.js";
 import { buildSnapshotFromOpenProject } from "./snapshot-builder.js";
@@ -38,15 +46,23 @@ export function registerCompileRoutes(app: FastifyInstance, manager: ProjectStor
       };
     }
 
-    const compiled = compilePrompt(snapshotResult.snapshot, compileRequest.value);
+    const ideationCompiled = compileRequest.value.promptKind === "ideation"
+      ? compileIdeationPrompt(snapshotResult.snapshot, compileRequest.value.ideationRequest)
+      : undefined;
+    const compiled = ideationCompiled ?? compilePrompt(snapshotResult.snapshot);
     const settings = readOpenRouterSettings();
     const outputPolicy = compileRequest.value.promptKind === "prose" ? "prose" : "strict";
+    const requestOptions = ideationCompiled !== undefined
+      ? ideationRequestOptions(ideationCompiled.outputSchema)
+      : undefined;
     return {
-      ...compiled,
+      prompt: compiled.prompt,
+      metadata: compiled.metadata,
       providerRequest: inspectChatCompletionRequest(buildChatCompletionRequest({
         prompt: compiled.prompt,
         settings,
-        outputPolicy
+        outputPolicy,
+        ...(requestOptions === undefined ? {} : { requestOptions })
       }), outputPolicy, settings)
     };
   });
