@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-29T10:32:28.466Z",
+  "generated_at": "2026-07-29T15:50:17.279Z",
   "target_content_hash": "4664a842e65b7c8d6d6b8d6b68e480721be4c27375ec6524774771625b3beec4",
-  "qualifying_uses_on_current_hash": 14,
+  "qualifying_uses_on_current_hash": 15,
   "open_incident_ids": [
     "evt_eec1a769-684d-43d8-b274-5345937792b9",
-    "evt_c0cf746e-73ad-47cb-be26-07d7a0d45dc9"
+    "evt_c0cf746e-73ad-47cb-be26-07d7a0d45dc9",
+    "evt_96590174-986b-4d93-a308-f15cbae644e0"
   ],
   "candidate_clusters": [
     {
@@ -19,9 +20,10 @@
     {
       "symptom_key": "output",
       "open_event_ids": [
-        "evt_c0cf746e-73ad-47cb-be26-07d7a0d45dc9"
+        "evt_c0cf746e-73ad-47cb-be26-07d7a0d45dc9",
+        "evt_96590174-986b-4d93-a308-f15cbae644e0"
       ],
-      "independent_incidents": 1,
+      "independent_incidents": 2,
       "max_severity": "friction"
     }
   ],
@@ -37,5 +39,5 @@
   "last_completed_review_id": "rev_301fd08e-0548-4b97-903c-67b9970967a1",
   "target_name": "code-review",
   "target_repo_relative_path": ".claude/skills/code-review",
-  "derivation_session_id": "019fad2e-fa81-7cc2-9af0-ccf75a5a4367"
+  "derivation_session_id": "019fadbd-811e-7ef0-8f50-b14c097b8033"
 }
