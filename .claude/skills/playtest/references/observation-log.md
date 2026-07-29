@@ -51,11 +51,13 @@ earlier misunderstandings and append corrections rather than rewriting history.
 - Expected private-note use:
 - Expected working-set behavior:
 - Expected Generation Brief work:
+- Expected Cast Possibilities trigger and eligible characters:
 - Expected assistance:
 - Sealed mental model:
 
 ## Method pilot plan
 
+- Cast Possibilities pre-directive comparison (conditional standing method): trigger-expected | naturalistic-skip-expected | pending-unavailable; at most one per run
 - Independent Claim Challenges (standing check): eligible-after-draft | no-decision-driving-claims | pending-unavailable
 - Change Review delta comparison (standing method): triggers-on-continuity-planning | not-triggered | pending-unavailable; at most two per run
 ```
@@ -136,6 +138,40 @@ never rewrite the observed count to make it look minimal.
 Keep these blocks in the scratchpad only when the instrument naturally triggers. Do not copy story
 substance, full prompts, raw responses, candidate prose, or accepted prose into them.
 
+### Cast Possibilities Pre-Directive Comparison
+
+Complete the prepared planning block after saving the visible Cast-ready state and before opening or
+extracting the Cast prompt. Seal the character-indexed hypothesis packet under the run's `/tmp`
+scratch tree and record its lowercase SHA-256 fingerprint. After the single cold draw, compare every
+eligible character in temporary scratch, then independently author and explicitly save the final
+directive through the visible editor.
+
+```markdown
+- Trigger: triggered | skipped | not reached
+- Naturalistic skip / not-reached reason:
+- Eligible characters:
+- Saved Cast-ready visible state confirmed:
+- Proposed non-POV actions absent from must_render:
+- Hypothesis packet fingerprint:
+- Hypotheses sealed after saved visible state:
+- Hypotheses sealed before Cast prompt opened or extracted:
+- Cast prompt fingerprint:
+- Cold executor provenance:
+- Substantive response obtained:
+- Bounded harness recovery used:
+- Final directive independently authored after comparison:
+- Final directive explicitly saved:
+
+| Character | Hypothesis disposition | Card 1 | Card 2 | Card 3 | Final field disposition | Intervention burden | Related finding IDs |
+| --------- | ---------------------- | ------ | ------ | ------ | ----------------------- | ------------------- | ------------------- |
+```
+
+Use only `retained`, `revised`, or `rejected` for hypothesis disposition; `contributed`,
+`considered but not used`, `rejected`, or `unscorable` for each expected card; and `must_render`,
+`may_render_if_naturally_caused`, or `omitted` for the final field disposition. Every material
+discrepancy cites an existing Cumulative Finding Ledger ID. Exact hypotheses, raw cards, and
+story-bearing comparison text remain temporary and never enter the report.
+
 ### Change Review Delta Comparison
 
 Seal the independent canonical-update baseline before compiling the Accepted-Segment Change Review
@@ -182,7 +218,7 @@ challenger to validate product semantics.
 
 ## Evidence-basis vocabulary
 
-Tag each schema-v2 or schema-v3 Prioritized Finding and each challenged claim with one or more
+Tag each schema-v2, schema-v3, or schema-v4 Prioritized Finding and each challenged claim with one or more
 comma-separated values from this fixed vocabulary:
 
 - `direct-visible`
@@ -220,7 +256,7 @@ Use one primary classification:
 Use one primary category where applicable: onboarding, project-setup, information-architecture,
 story-configuration, records, private-notes, active-working-set, generation-brief, readiness,
 prompt-inspection, prose-prompt, candidate, acceptance, accepted-segments, ideate,
-record-hygiene, accepted-segment-change-review, continuation, persistence, accessibility, layout,
+record-hygiene, cast-possibilities, accepted-segment-change-review, continuation, persistence, accessibility, layout,
 performance, diagnostics, privacy, or provider-safety.
 
 ## Severity

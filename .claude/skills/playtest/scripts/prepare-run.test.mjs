@@ -48,6 +48,20 @@ test("prepares a new-story run without creating the project folder", () => {
     assert.match(scratchpad, /### Quantitative boundary snapshots/);
     assert.match(scratchpad, /## Change Review delta-comparison ledger/);
     assert.match(scratchpad, /- Comparisons this run \(0-2\):/);
+    assert.match(scratchpad, /## Cast Possibilities pre-directive plan/);
+    assert.match(
+      scratchpad,
+      /- Trigger: pending - run when at least one eligible non-POV active\/full character may receive next-directive participation requirements/
+    );
+    assert.match(scratchpad, /- Saved Cast-ready visible state confirmed:/);
+    assert.match(scratchpad, /- Proposed non-POV actions absent from must_render:/);
+    assert.match(scratchpad, /- Hypothesis packet fingerprint:/);
+    assert.match(scratchpad, /- Hypotheses sealed before Cast prompt opened or extracted:/);
+    assert.match(scratchpad, /## Cast Possibilities per-character comparison ledger/);
+    assert.match(
+      scratchpad,
+      /\| Character \| Hypothesis disposition \| Card 1 \| Card 2 \| Card 3 \| Final field disposition \| Intervention burden \| Related finding IDs \|/
+    );
   } finally {
     rmSync(repoRoot, { recursive: true, force: true });
     rmSync(

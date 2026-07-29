@@ -4,6 +4,7 @@
 
 - [Exchange protocol](#exchange-protocol)
 - [Universal usefulness verdict](#universal-usefulness-verdict)
+- [Cast Possibilities](#cast-possibilities)
 - [Change Review delta comparison](#change-review-delta-comparison)
 - [Prose prompt](#prose-prompt)
 - [Generation Brief field-influence ledger](#generation-brief-field-influence-ledger)
@@ -77,6 +78,72 @@ For each raw response, record:
 Separate **prompt-contract mismatch** from **model-output failure**. If the prompt explicitly asks
 for a low-value class of output and the model supplies it, the prompt—not model compliance—is the
 primary issue.
+
+## Cast Possibilities
+
+Run this pre-directive comparison whenever at least one eligible non-POV
+`active_onstage_cast_full` character may receive a participation requirement in the next local
+directive. If no such character exists, record a naturalistic skip reason and do not create a
+comparison episode.
+
+### Save, then seal before inspection
+
+Through the visible UI, first create or curate the records, active working set, cast functions, and
+saved Cast-ready local moment. The saved draft may contain POV actions and scene-level constraints,
+but it must not yet contain the playtester's proposed non-POV character actions in
+`manual_moment_directive.must_render`.
+
+After that saved visible state and its relevant authoring context exist, but before opening or
+extracting the Cast Possibilities prompt, write one temporary character-indexed hypothesis for every
+eligible character. Each hypothesis contains a proposed observable action and its expected local
+effect, not polished Generation Brief wording. Keep the story-bearing packet only under the run's
+`/tmp` scratch tree and record the lowercase SHA-256 fingerprint of its exact UTF-8 bytes. Do not
+alter the packet after sealing it.
+
+### Draw once in a genuinely fresh context
+
+Open and inspect Cast Possibilities through the visible UI, record its displayed source disclosure,
+and extract that exact visible prompt under the [exchange protocol](#exchange-protocol). Dispatch it
+once to one genuinely fresh cold context. Do not press Analyze, make an OpenRouter request, inject,
+intercept, mock, or import the cold response into the app's provider-result surface.
+
+There is no quality retry. A substantive response that is weak, empty in useful content, malformed,
+misleading, or low-value remains the one Cast draw: evaluate it, record the verdict, and reject any
+unsafe or unhelpful content as needed. Bounded harness recovery is allowed only when the dispatch
+produces no substantive response at all. One comparison episode remains one comparison even when
+that recovery is needed. If recovery still produces no substantive response, stop with a blocked
+report before adding any proposed non-POV action to `must_render` or compiling the prose prompt.
+
+Apply the [universal usefulness verdict](#universal-usefulness-verdict) and additionally assess:
+
+- exact eligible-character coverage and output-contract compliance;
+- observable behavior rather than forbidden non-POV interiority;
+- dossier grounding, character fit, moment fit, immediate feasibility, and useful local effect;
+- meaningful distinction among the three cards for each character;
+- continuity, knowledge, reveal, and physical-situation safety;
+- absence of drafted dialogue, scene prose, branches, future sequences, and plot planning; and
+- likely layer: prompt contract, model execution, source data, UI workflow, or not assessable.
+
+### Compare, then author independently
+
+In temporary scratch, compare every eligible character's sealed hypothesis with the untouched Cast
+result. Record one hypothesis disposition (`retained`, `revised`, or `rejected`); one outcome for
+each of the three expected card slots (`contributed`, `considered but not used`, `rejected`, or
+`unscorable`); one final field disposition (`must_render`,
+`may_render_if_naturally_caused`, or `omitted`); intervention burden; and every related Cumulative
+Finding Ledger ID.
+
+The comparison creates no per-character quota. The playtester may retain its own hypothesis, use a
+card-informed choice, combine or revise the two inputs, reject all Cast content, move a possibility
+to `may_render_if_naturally_caused`, or omit character-specific direction. Only after the comparison
+may the playtester independently author final directive text through the visible Generation Brief
+editor and explicitly save it. Never copy, apply, insert, prefill, stage, or treat Cast output as
+prompt or continuity authority. Keep non-POV rendering observable through behavior, speech, timing,
+silence, posture, gesture, or object handling rather than forbidden interiority.
+
+After the final save, proceed to prose-prompt evaluation normally. The Generation Brief
+field-influence ledger evaluates the final saved directive and must not describe Cast output as
+direct prose-prompt context.
 
 ## Change Review delta comparison
 
@@ -249,11 +316,12 @@ the response against the sealed baseline under
 
 ## Temporary artifact cleanup
 
-Keep exact prompts, raw responses, and sealed Change Review baselines only until the final report is
-validated. Then delete the exchange directory. The report retains fingerprints, structured verdicts,
+Keep exact prompts, raw responses, sealed Cast hypothesis packets, exact story-bearing Cast
+comparisons, and sealed Change Review baselines only until the final report is validated. Then
+delete the exchange directory and scratchpad. The report retains fingerprints, structured verdicts,
 counts, correspondence and coverage tallies, adoption and editing burden, and only the shortest
-excerpt necessary to make a finding intelligible. Exact story-bearing baseline text never enters a
-durable report.
+excerpt necessary to make a finding intelligible. Exact story-bearing hypotheses, comparisons, and
+baseline text never enter a durable report or evidence directory.
 
 **Completion criterion:** every invoked prompt has a raw-response verdict and adoption ledger;
 every intentionally populated prompt-facing Generation Brief field is accounted for; retry and

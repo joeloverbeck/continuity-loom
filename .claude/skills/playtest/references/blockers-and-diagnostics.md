@@ -11,6 +11,9 @@ A blocker prevents the sincere author journey or its one-segment boundary after 
   prompt, enter a user-supplied candidate, accept it, or verify the accepted sequence;
 - a required control stalls, crashes, or repeatedly loses author work;
 - the cold-subagent surface is unavailable;
+- a required Cast Possibilities prompt cannot be inspected or extracted after the trigger applies;
+- a triggered Cast draw still produces no substantive response after its one bounded harness
+  recovery, before any proposed non-POV action enters `must_render` or the prose prompt is compiled;
 - neither of the two allowed prose attempts can become acceptable without replacement-level
   rewriting;
 - a provider send is attempted, even when the browser guard blocks it;
@@ -18,11 +21,19 @@ A blocker prevents the sincere author journey or its one-segment boundary after 
 
 Confusing terminology, excessive work, a poor response, or an avoidable workaround is not
 automatically a blocker when the author can still proceed sincerely. Report severity by actual
-impact. A weak, empty, malformed, or misleading Accepted-Segment Change Review cold draw is not a
-blocker and receives no quality retry; only a genuinely absent substantive response permits one
-bounded harness re-dispatch under [Bounded recovery](#bounded-recovery).
+impact. A substantive weak, effectively empty, malformed, misleading, or low-value Cast
+Possibilities or Accepted-Segment Change Review cold draw is not automatically a blocker and
+receives no quality retry; it remains evidence and may be rejected. Only a harness failure that
+produces no substantive response permits one bounded harness re-dispatch under
+[Bounded recovery](#bounded-recovery).
 
 ## Bounded recovery
+
+For a Cast Possibilities cold dispatch that produces no substantive response, preserve the absent
+attempt as harness evidence and make at most one re-dispatch of the unchanged exact visible prompt
+to a new genuinely fresh cold context. This is recovery, not a quality retry, and the episode still
+counts as one comparison. If the recovery also produces no substantive response, stop before final
+non-POV directive authorship or prose-prompt compilation and write a blocked report.
 
 When a probable blocker appears:
 

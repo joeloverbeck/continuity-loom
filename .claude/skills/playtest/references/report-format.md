@@ -21,7 +21,7 @@ Use scalar YAML values:
 ```yaml
 ---
 report_type: continuity-loom-author-playtest
-schema_version: 3
+schema_version: 4
 run_id: playtest-example-2026-07-17T120000Z
 report_stem: playtest-example-2026-07-17T120000Z
 story_title: Example Story
@@ -47,6 +47,7 @@ counterfactual_probes: 0
 cold_first_view_witnesses: 0
 independent_claim_challenges: 0
 change_review_comparisons: 0
+cast_possibilities_comparisons: 0
 candidate_intervention: light
 ---
 ```
@@ -64,10 +65,11 @@ Allowed alternatives:
 - unreachable scalar values: `null`;
 - `candidate_intervention`: `none`, `light`, `substantial`, `rewrite`, or `not-reached`.
 
-All newly authored reports use schema `3`. Existing schema-v1 and schema-v2 reports remain historical
-artifacts; do not rewrite them. The validator accepts them through isolated compatibility paths —
-including the retired schema-v2 Paired-Draw Check — and warns, rather than fails, when a v1 report
-declares one counterfactual but predates the disclosure block.
+All newly authored reports use schema `4`. Existing schema-v1, schema-v2, and schema-v3 reports
+remain historical artifacts; do not rewrite them. The validator accepts each through its isolated
+compatibility path — including the retired schema-v2 Paired-Draw Check and schema-v3 Change Review
+delta-comparison contract — and warns, rather than fails, when a v1 report declares one
+counterfactual but predates the disclosure block.
 
 Count unchanged-prompt cold attempts separately from diagnostic counterfactuals:
 
@@ -86,11 +88,15 @@ Method-evidence counters describe only structurally disclosed instruments:
 
 - `cold_first_view_witnesses`: `0` or `1`;
 - `independent_claim_challenges`: `0` through `3`; and
-- `change_review_comparisons`: `0`, `1`, or `2`.
+- `change_review_comparisons`: `0`, `1`, or `2`; and
+- `cast_possibilities_comparisons`: exactly `0` or `1` in schema 4.
 
 Each Change Review delta comparison's single cold draw also counts as one unchanged-prompt
 `cold_assistance_attempts`. A missing, unavailable, or naturally ineligible instrument remains `0`
 and is explained under Coverage Limitations; never create eligibility merely to increment a counter.
+Each Cast Possibilities cold response produced from the unchanged exact prompt is accounted for by
+`cold_assistance_attempts` under the same existing rule. One Cast comparison episode remains one
+comparison even when a genuinely absent response requires bounded harness recovery.
 The retired `paired_draw_checks` counter is not authored in new reports; it survives only for
 historical schema-v2 validation.
 
@@ -215,6 +221,36 @@ author-only fields whose purpose was unclear; do not label them ignored prose co
 For skipped surfaces, give the naturalistic reason. State that provider response parsing/result
 cards were not exercised on the cold path.
 
+When `cast_possibilities_comparisons` is `1`, add exactly one privacy-safe subsection inside
+`## Assistance Evaluation`:
+
+```markdown
+### Cast Possibilities Pre-Directive Comparison
+
+| Hypothesis fingerprint | Prompt fingerprint | Timestamp | Executor host | Executor model | Model identity exposed | Eligible characters | Hypotheses retained | Hypotheses revised | Hypotheses rejected | Cards contributed | Cards considered-not-used | Cards rejected | Cards unscorable | Final must_render | Final may_render | Final omitted | Response verdict | Intervention burden | Related finding IDs |
+| ---------------------- | ------------------ | --------- | ------------- | -------------- | ---------------------- | ------------------: | -------------------: | ------------------: | -------------------: | ----------------: | ------------------------: | -------------: | -----------------: | ----------------: | ---------------: | ------------: | ---------------- | ------------------- | ------------------- |
+| <64-character SHA-256> | <64-character SHA-256> | <UTC> | <host family> | <exact exposed model or unknown> | true/false | 2 | 1 | 1 | 0 | 2 | 2 | 1 | 1 | 1 | 0 | 1 | mixed | light | F001 |
+```
+
+- Both fingerprints are lowercase 64-character SHA-256 values. The hypothesis fingerprint is for
+  the exact sealed UTF-8 hypothesis packet; the prompt fingerprint is for the exact visibly
+  inspected Cast prompt.
+- Timestamp, executor host, executor model, and identity exposure follow the existing independent
+  execution provenance rules. Use `unknown` only when model identity is not exposed.
+- Every count cell is a non-negative integer, and a recorded episode has at least one eligible
+  character. Hypotheses retained + revised + rejected equals Eligible characters. Cards
+  contributed + considered-not-used + rejected + unscorable equals three times Eligible
+  characters. Final `must_render` + `may_render` + omitted equals Eligible characters.
+- `Response verdict` is exactly `useful`, `mixed`, `low-value`, `misleading`, `malformed`, or
+  `blocked`. `Related finding IDs` cites every material discrepancy in the Cumulative Finding
+  Ledger, or uses `none - <specific reason>` only when all differences are nonmaterial.
+- The report retains no hypothesis packet, full prompt, raw response, record payload, or exact
+  story-bearing comparison text.
+
+When `cast_possibilities_comparisons` is `0`, omit the subsection entirely and include exactly one
+Cast Possibilities row in the Assistance Evaluation table whose `Why invoked or skipped` cell
+explicitly states why it was `skipped` or `not reached`.
+
 When `change_review_comparisons` is `1` or `2`, add this privacy-safe disclosure inside
 `## Assistance Evaluation` with exactly one row per comparison:
 
@@ -276,8 +312,8 @@ the host does not expose.
 The Cold First-View Witness is retired (owner disposition 2026-07-22) and never runs in a new
 report, so `cold_first_view_witnesses` is always `0` and no witness subsection is authored. The
 validator still accepts historical schema-v2/v3 reports that carry a `1` count with the witness
-table that previously sat inside `## Story Intent and Expectations`; do not add or rewrite that
-table in new work.
+table that previously sat inside `## Story Intent and Expectations`; schema-v4 reports carry the
+counter forward as `0`. Do not add or rewrite that table in new work.
 
 ### Independent Claim Challenges
 
@@ -311,7 +347,7 @@ is no longer a sunset-bounded pilot.
 
 ### Paired-Draw Check (retired — schema-v2 historical only)
 
-The Segment Reconciliation Paired-Draw Check is retired and is never authored in a new schema-v3
+The Segment Reconciliation Paired-Draw Check is retired and is never authored in a new schema-v4
 report; the [Change Review delta comparison](#assistance-evaluation) replaces it. This spec remains
 only so the validator still accepts historical schema-v2 reports that already carry paired-draw
 evidence. When a historical `paired_draw_checks` is `1`, the disclosure sat in `## Prompt Usefulness`

@@ -234,6 +234,8 @@ function withCounterfactualDisclosure(
 }
 
 const CHANGE_REVIEW_PROMPT_FINGERPRINT = "e".repeat(64);
+const CAST_HYPOTHESIS_FINGERPRINT = "f".repeat(64);
+const CAST_PROMPT_FINGERPRINT = "a".repeat(64);
 
 function v3Frontmatter(overrides = {}) {
   return frontmatter({
@@ -281,6 +283,71 @@ function v3Body({ rows = [changeReviewComparisonRow()], includeDisclosure = true
     `${changeReviewComparisonDisclosure(rows)}
 
 ## Candidate and Accepted Segment`
+  );
+}
+
+function v4Frontmatter(overrides = {}) {
+  return frontmatter({
+    schema_version: "4",
+    cold_first_view_witnesses: "0",
+    independent_claim_challenges: "0",
+    change_review_comparisons: "0",
+    cast_possibilities_comparisons: "1",
+    ...overrides
+  });
+}
+
+function castPossibilitiesComparisonRow(overrides = {}) {
+  const cells = {
+    hypothesisFingerprint: CAST_HYPOTHESIS_FINGERPRINT,
+    promptFingerprint: CAST_PROMPT_FINGERPRINT,
+    timestamp: "2026-07-17T12:20:00Z",
+    host: "codex",
+    model: "gpt-5",
+    exposed: "true",
+    eligible: "2",
+    retained: "1",
+    revised: "1",
+    rejectedHypotheses: "0",
+    contributed: "2",
+    considered: "2",
+    rejectedCards: "1",
+    unscorable: "1",
+    finalMustRender: "1",
+    finalMayRender: "0",
+    finalOmitted: "1",
+    verdict: "mixed",
+    burden: "light",
+    findingRefs: "F001",
+    ...overrides
+  };
+  return `| ${cells.hypothesisFingerprint} | ${cells.promptFingerprint} | ${cells.timestamp} | ${cells.host} | ${cells.model} | ${cells.exposed} | ${cells.eligible} | ${cells.retained} | ${cells.revised} | ${cells.rejectedHypotheses} | ${cells.contributed} | ${cells.considered} | ${cells.rejectedCards} | ${cells.unscorable} | ${cells.finalMustRender} | ${cells.finalMayRender} | ${cells.finalOmitted} | ${cells.verdict} | ${cells.burden} | ${cells.findingRefs} |`;
+}
+
+function castPossibilitiesComparisonDisclosure(rows = [castPossibilitiesComparisonRow()]) {
+  return `### Cast Possibilities Pre-Directive Comparison
+
+| Hypothesis fingerprint | Prompt fingerprint | Timestamp | Executor host | Executor model | Model identity exposed | Eligible characters | Hypotheses retained | Hypotheses revised | Hypotheses rejected | Cards contributed | Cards considered-not-used | Cards rejected | Cards unscorable | Final must_render | Final may_render | Final omitted | Response verdict | Intervention burden | Related finding IDs |
+|---|---|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|
+${rows.join("\n")}`;
+}
+
+function v4Body({
+  rows = [castPossibilitiesComparisonRow()],
+  includeDisclosure = true,
+  castReason = includeDisclosure
+    ? "Invoked before final directive authorship"
+    : "Skipped - no eligible non-POV active/full character",
+  castResult = includeDisclosure ? "Three cards per eligible character" : "Not reached"
+} = {}) {
+  const body = v3Body({ includeDisclosure: false }).replace(
+    "| Hygiene | Needed | Sparse | 1 | 0 | Record editor | useful |",
+    `| Hygiene | Needed | Sparse | 1 | 0 | Record editor | useful |\n| Cast Possibilities | ${castReason} | ${castResult} | 1 | 5 | Independently authored Generation Brief | mixed |`
+  );
+  if (!includeDisclosure) return body;
+  return body.replace(
+    "## Candidate and Accepted Segment",
+    `${castPossibilitiesComparisonDisclosure(rows)}\n\n## Candidate and Accepted Segment`
   );
 }
 
@@ -388,6 +455,247 @@ test("accepts formatter-aligned schema v2 method table headers", () => {
 
 test("accepts a complete schema v3 report with a Change Review delta comparison", () => {
   const { errors, warnings } = validateReport(fixture(v3Frontmatter(), v3Body()));
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("accepts a complete schema v4 report with a Cast Possibilities comparison", () => {
+  const { errors, warnings } = validateReport(fixture(v4Frontmatter(), v4Body()));
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("rejects a schema v4 comparison with no eligible characters", () => {
+  const rows = [
+    castPossibilitiesComparisonRow({
+      eligible: "0",
+      retained: "0",
+      revised: "0",
+      contributed: "0",
+      considered: "0",
+      rejectedCards: "0",
+      unscorable: "0",
+      finalMustRender: "0",
+      finalOmitted: "0"
+    })
+  ];
+  const { errors } = validateReport(fixture(v4Frontmatter(), v4Body({ rows })));
+  assert.ok(errors.some((error) => error.includes("requires at least one eligible character")));
+});
+
+test("accepts a schema v4 zero-comparison report with an explicit skip reason", () => {
+  const { errors, warnings } = validateReport(
+    fixture(
+      v4Frontmatter({ cast_possibilities_comparisons: "0" }),
+      v4Body({ includeDisclosure: false })
+    )
+  );
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("accepts a schema v4 zero-comparison report with a naturalistic reason", () => {
+  const { errors, warnings } = validateReport(
+    fixture(
+      v4Frontmatter({ cast_possibilities_comparisons: "0" }),
+      v4Body({ includeDisclosure: false, castReason: "No eligible characters existed" })
+    )
+  );
+  assert.deepEqual(errors, []);
+  assert.deepEqual(warnings, []);
+});
+
+test("rejects a schema v4 zero-comparison report with only a skip status", () => {
+  for (const castReason of ["Skipped", "Not reached"]) {
+    const { errors } = validateReport(
+      fixture(
+        v4Frontmatter({ cast_possibilities_comparisons: "0" }),
+        v4Body({ includeDisclosure: false, castReason })
+      )
+    );
+    assert.ok(
+      errors.some((error) => error.includes("state why it was skipped or not reached")),
+      `expected ${castReason} to fail without a reason`
+    );
+  }
+});
+
+test("rejects a schema v4 comparison count of one without its subsection", () => {
+  const { errors } = validateReport(fixture(v4Frontmatter(), v4Body({ includeDisclosure: false })));
+  assert.ok(
+    errors.some((error) =>
+      error.includes("### Cast Possibilities Pre-Directive Comparison in ## Assistance Evaluation")
+    )
+  );
+});
+
+test("rejects a schema v4 comparison subsection when the counter is zero", () => {
+  const { errors } = validateReport(
+    fixture(v4Frontmatter({ cast_possibilities_comparisons: "0" }), v4Body())
+  );
+  assert.ok(
+    errors.some((error) =>
+      error.includes(
+        "cast_possibilities_comparisons must be greater than 0 when ### Cast Possibilities Pre-Directive Comparison is present"
+      )
+    )
+  );
+});
+
+test("rejects duplicate schema v4 comparison subsections", () => {
+  const body = v4Body().replace(
+    "## Candidate and Accepted Segment",
+    `${castPossibilitiesComparisonDisclosure()}\n\n## Candidate and Accepted Segment`
+  );
+  const { errors } = validateReport(fixture(v4Frontmatter(), body));
+  assert.ok(errors.includes("Cast Possibilities Pre-Directive Comparison must appear exactly once."));
+});
+
+test("rejects a schema v4 report missing the Cast comparison counter", () => {
+  const { errors } = validateReport(
+    fixture(v4Frontmatter({ cast_possibilities_comparisons: undefined }), v4Body())
+  );
+  assert.ok(errors.some((error) => error.includes("cast_possibilities_comparisons")));
+});
+
+test("rejects schema v4 Cast comparison counter values outside zero or one", () => {
+  for (const invalid of ["2", "many"]) {
+    const { errors } = validateReport(
+      fixture(v4Frontmatter({ cast_possibilities_comparisons: invalid }), v4Body())
+    );
+    assert.ok(
+      errors.some((error) => error.includes("cast_possibilities_comparisons")),
+      `expected ${invalid} to fail`
+    );
+  }
+});
+
+test("rejects malformed schema v4 hypothesis and prompt fingerprints", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({
+        rows: [
+          castPossibilitiesComparisonRow({
+            hypothesisFingerprint: "ABC123",
+            promptFingerprint: "def456"
+          })
+        ]
+      })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("hypothesis fingerprint")));
+  assert.ok(errors.some((error) => error.includes("lowercase 64-character fingerprint")));
+});
+
+test("rejects malformed schema v4 independent-executor provenance", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({
+        rows: [
+          castPossibilitiesComparisonRow({
+            timestamp: "yesterday",
+            model: "unknown",
+            exposed: "true"
+          })
+        ]
+      })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("ISO-8601 UTC timestamp")));
+  assert.ok(errors.some((error) => error.includes("requires the exact model identifier")));
+});
+
+test("accepts every schema v4 Cast response verdict", () => {
+  for (const verdict of ["useful", "mixed", "low-value", "misleading", "malformed", "blocked"]) {
+    const { errors } = validateReport(
+      fixture(
+        v4Frontmatter(),
+        v4Body({ rows: [castPossibilitiesComparisonRow({ verdict })] })
+      )
+    );
+    assert.deepEqual(errors, [], `expected ${verdict} to validate`);
+  }
+});
+
+test("rejects an unsupported schema v4 Cast response verdict", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ verdict: "excellent" })] })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("unsupported response verdict: excellent")));
+});
+
+test("rejects a negative schema v4 aggregate count", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ retained: "-1" })] })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("non-negative integer Hypotheses retained")));
+});
+
+test("rejects inconsistent schema v4 hypothesis dispositions", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ retained: "2", revised: "1" })] })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("hypothesis dispositions must sum")));
+});
+
+test("rejects inconsistent schema v4 card outcomes", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ contributed: "3" })] })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("card outcomes must sum to three times")));
+});
+
+test("rejects inconsistent schema v4 final field dispositions", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ finalOmitted: "2" })] })
+    )
+  );
+  assert.ok(errors.some((error) => error.includes("final field dispositions must sum")));
+});
+
+test("rejects a schema v4 comparison that references an unknown finding", () => {
+  const { errors } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({ rows: [castPossibilitiesComparisonRow({ findingRefs: "F404" })] })
+    )
+  );
+  assert.ok(
+    errors.some((error) =>
+      error.includes("references finding F404 that is absent from the Cumulative Finding Ledger")
+    )
+  );
+});
+
+test("accepts the schema v4 nonmaterial none-reason finding disposition", () => {
+  const { errors, warnings } = validateReport(
+    fixture(
+      v4Frontmatter(),
+      v4Body({
+        rows: [
+          castPossibilitiesComparisonRow({
+            findingRefs: "none - all differences were nonmaterial phrasing"
+          })
+        ]
+      })
+    )
+  );
   assert.deepEqual(errors, []);
   assert.deepEqual(warnings, []);
 });

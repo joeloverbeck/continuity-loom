@@ -58,6 +58,10 @@ const V3_COUNT_KEYS = [
   "change_review_comparisons"
 ];
 
+// Schema v4 adds the Cast Possibilities pre-directive comparison while
+// preserving every schema-v3 method counter and validation path.
+const V4_COUNT_KEYS = [...V3_COUNT_KEYS, "cast_possibilities_comparisons"];
+
 const INTERVENTIONS = new Set(["none", "light", "substantial", "rewrite", "not-reached"]);
 const EVIDENCE_BASIS_TAGS = new Set([
   "direct-visible",
@@ -88,6 +92,14 @@ const SUBSTITUTION_VERDICTS = new Set([
   "independent audit still required",
   "unsafe or misleading",
   "not assessable"
+]);
+const CAST_RESPONSE_VERDICTS = new Set([
+  "useful",
+  "mixed",
+  "low-value",
+  "misleading",
+  "malformed",
+  "blocked"
 ]);
 const CORRESPONDENCE_CLASSES = [
   "matched",
@@ -126,11 +138,13 @@ const V2_FINDINGS_HEADER =
   "| ID | Severity | Classification | Category | Summary | Confidence | Status | Evidence basis |";
 const CUMULATIVE_FINDINGS_HEADER =
   "| ID | First seen | Classification | Summary | Current status | Latest evidence |";
+const ASSISTANCE_EVALUATION_HEADER =
+  "| Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |";
 
 const COMMON_REQUIRED_TABLE_HEADERS = [
   "| Prompt | Author need | Contract compliance | Actionable outputs | No-change / low-value outputs | Adopted | Verdict | Confidence |",
   "| Field | Author need | Intended observable influence | Visible prompt evidence | Response evidence | Verdict | Confidence |",
-  "| Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |",
+  ASSISTANCE_EVALUATION_HEADER,
   CUMULATIVE_FINDINGS_HEADER
 ];
 
@@ -265,7 +279,7 @@ function stableIds(rows, tableName, errors) {
 
 function findingLedgerErrors(markdown, schemaVersion) {
   const errors = [];
-  const prioritizedHeader = ["2", "3"].includes(schemaVersion)
+  const prioritizedHeader = ["2", "3", "4"].includes(schemaVersion)
     ? V2_FINDINGS_HEADER
     : V1_FINDINGS_HEADER;
   const prioritizedRows = tableRows(
@@ -742,6 +756,196 @@ function v3MethodEvidenceErrors(markdown, counts) {
   return errors;
 }
 
+function castAssistanceEvaluationErrors(assistance, comparisonCount) {
+  const errors = [];
+  const assistanceRows = tableRows(assistance, ASSISTANCE_EVALUATION_HEADER);
+  const castAssistanceRows = assistanceRows?.filter((row) => row?.[0] === "Cast Possibilities") ?? [];
+  if (castAssistanceRows.length !== 1) {
+    errors.push("Assistance Evaluation requires exactly one Cast Possibilities row.");
+    return errors;
+  }
+
+  const skipReason = castAssistanceRows[0][1]?.trim() ?? "";
+  const reasonWithoutStatus = skipReason
+    .replace(/^(?:skipped|not reached)\b\s*(?:[-—:]\s*)?/i, "")
+    .trim();
+  if (comparisonCount === 0 && reasonWithoutStatus === "") {
+    errors.push(
+      "A zero Cast Possibilities comparison count requires the Assistance Evaluation row to state why it was skipped or not reached."
+    );
+  }
+  return errors;
+}
+
+function castCountErrors(countCells, context) {
+  const errors = [];
+  const parsedCounts = new Map();
+  for (const [label, value] of countCells) {
+    if (!/^\d+$/.test(value ?? "")) {
+      errors.push(`${context} requires a non-negative integer ${label} count.`);
+    } else {
+      parsedCounts.set(label, Number(value));
+    }
+  }
+  return { errors, parsedCounts };
+}
+
+function castAggregateErrors(parsedCounts, context) {
+  const errors = [];
+  const eligible = parsedCounts.get("Eligible characters");
+  if (eligible === undefined) return errors;
+  if (eligible < 1) errors.push(`${context} requires at least one eligible character.`);
+
+  const aggregateChecks = [
+    {
+      labels: ["Hypotheses retained", "Hypotheses revised", "Hypotheses rejected"],
+      expected: eligible,
+      message: "hypothesis dispositions must sum to Eligible characters."
+    },
+    {
+      labels: [
+        "Cards contributed",
+        "Cards considered-not-used",
+        "Cards rejected",
+        "Cards unscorable"
+      ],
+      expected: eligible * 3,
+      message: "card outcomes must sum to three times Eligible characters."
+    },
+    {
+      labels: ["Final must_render", "Final may_render", "Final omitted"],
+      expected: eligible,
+      message: "final field dispositions must sum to Eligible characters."
+    }
+  ];
+  for (const { labels, expected, message } of aggregateChecks) {
+    const total = labels.reduce(
+      (sum, label) => sum + (parsedCounts.get(label) ?? Number.NaN),
+      0
+    );
+    if (Number.isFinite(total) && total !== expected) errors.push(`${context} ${message}`);
+  }
+  return errors;
+}
+
+function castComparisonRowErrors(row, index, cumulativeIds) {
+  const context = `Cast Possibilities Pre-Directive Comparison row ${index + 1}`;
+  if (row.length !== 20) return [`${context} must contain 20 columns.`];
+
+  const [
+    hypothesisFingerprint,
+    promptFingerprint,
+    timestamp,
+    host,
+    model,
+    exposed,
+    ...comparisonCells
+  ] = row;
+  const [
+    eligibleCharacters,
+    hypothesesRetained,
+    hypothesesRevised,
+    hypothesesRejected,
+    cardsContributed,
+    cardsConsideredNotUsed,
+    cardsRejected,
+    cardsUnscorable,
+    finalMustRender,
+    finalMayRender,
+    finalOmitted,
+    responseVerdict,
+    interventionBurden,
+    findingRefs
+  ] = comparisonCells;
+  const errors = [];
+
+  if (!FINGERPRINT_PATTERN.test(hypothesisFingerprint ?? "")) {
+    errors.push(`${context} requires a lowercase 64-character hypothesis fingerprint.`);
+  }
+  errors.push(
+    ...provenanceErrors(
+      { timestamp, host, model, exposed, fingerprint: promptFingerprint },
+      context
+    )
+  );
+  const countResult = castCountErrors(
+    [
+      ["Eligible characters", eligibleCharacters],
+      ["Hypotheses retained", hypothesesRetained],
+      ["Hypotheses revised", hypothesesRevised],
+      ["Hypotheses rejected", hypothesesRejected],
+      ["Cards contributed", cardsContributed],
+      ["Cards considered-not-used", cardsConsideredNotUsed],
+      ["Cards rejected", cardsRejected],
+      ["Cards unscorable", cardsUnscorable],
+      ["Final must_render", finalMustRender],
+      ["Final may_render", finalMayRender],
+      ["Final omitted", finalOmitted]
+    ],
+    context
+  );
+  errors.push(...countResult.errors, ...castAggregateErrors(countResult.parsedCounts, context));
+  if (!CAST_RESPONSE_VERDICTS.has(responseVerdict)) {
+    errors.push(`${context} has unsupported response verdict: ${responseVerdict || "<blank>"}`);
+  }
+  if (!interventionBurden?.trim()) {
+    errors.push(`${context} requires a non-empty intervention burden.`);
+  }
+  errors.push(...findingReferenceErrors(findingRefs, cumulativeIds, context));
+  return errors;
+}
+
+function castPossibilitiesComparisonErrors(markdown, comparisonCount, cumulativeIds) {
+  const errors = [];
+  const assistance = reportSection(markdown, "## Assistance Evaluation") ?? "";
+  const subsectionHeading = "### Cast Possibilities Pre-Directive Comparison";
+  const subsectionOccurrences = assistance
+    .split(/\r?\n/)
+    .filter((line) => line === subsectionHeading).length;
+  const conditional = conditionalSubsection(
+    markdown,
+    "## Assistance Evaluation",
+    subsectionHeading,
+    comparisonCount,
+    "cast_possibilities_comparisons"
+  );
+  errors.push(...conditional.errors, ...castAssistanceEvaluationErrors(assistance, comparisonCount));
+  if (subsectionOccurrences > 1) {
+    errors.push("Cast Possibilities Pre-Directive Comparison must appear exactly once.");
+  }
+
+  if (conditional.subsection === null) return errors;
+  const header =
+    "| Hypothesis fingerprint | Prompt fingerprint | Timestamp | Executor host | Executor model | Model identity exposed | Eligible characters | Hypotheses retained | Hypotheses revised | Hypotheses rejected | Cards contributed | Cards considered-not-used | Cards rejected | Cards unscorable | Final must_render | Final may_render | Final omitted | Response verdict | Intervention burden | Related finding IDs |";
+  const rows = tableRows(conditional.subsection, header);
+  if (!rows) {
+    errors.push(`Cast Possibilities Pre-Directive Comparison requires this table header: ${header}`);
+    return errors;
+  }
+  if (rows.length !== comparisonCount) {
+    errors.push(
+      `cast_possibilities_comparisons is ${comparisonCount}, but the Cast Possibilities Pre-Directive Comparison table has ${rows.length} row(s).`
+    );
+  }
+
+  for (const [index, row] of rows.entries()) {
+    errors.push(...castComparisonRowErrors(row, index, cumulativeIds));
+  }
+  return errors;
+}
+
+function v4MethodEvidenceErrors(markdown, counts) {
+  const errors = [...v3MethodEvidenceErrors(markdown, counts)];
+  errors.push(
+    ...castPossibilitiesComparisonErrors(
+      markdown,
+      counts.cast_possibilities_comparisons,
+      cumulativeLedgerIdSet(markdown)
+    )
+  );
+  return errors;
+}
+
 function counterfactualDisclosureErrors(markdown, probeCount) {
   const errors = [];
   const promptUsefulness = reportSection(markdown, "## Prompt Usefulness") ?? "";
@@ -969,6 +1173,8 @@ export function validateReport(reportPath) {
       ? V2_COUNT_KEYS
       : frontmatter.schema_version === "3"
         ? V3_COUNT_KEYS
+        : frontmatter.schema_version === "4"
+          ? V4_COUNT_KEYS
         : [];
   for (const key of versionCountKeys) {
     if (!(key in frontmatter) || frontmatter[key] === "") {
@@ -979,8 +1185,8 @@ export function validateReport(reportPath) {
   if (frontmatter.report_type !== "continuity-loom-author-playtest") {
     errors.push('report_type must be "continuity-loom-author-playtest".');
   }
-  if (!new Set(["1", "2", "3"]).has(frontmatter.schema_version)) {
-    errors.push('schema_version must be "1", "2", or "3".');
+  if (!new Set(["1", "2", "3", "4"]).has(frontmatter.schema_version)) {
+    errors.push('schema_version must be "1", "2", "3", or "4".');
   }
   if (!isNull(frontmatter.viewport) && frontmatter.viewport !== "1440x900") {
     errors.push('viewport must be "1440x900" or null.');
@@ -1091,7 +1297,7 @@ export function validateReport(reportPath) {
     }
   }
 
-  if (frontmatter.schema_version === "2" || frontmatter.schema_version === "3") {
+  if (["2", "3", "4"].includes(frontmatter.schema_version)) {
     if ((counts.cold_first_view_witnesses ?? 0) > 1) {
       errors.push("cold_first_view_witnesses must not exceed 1.");
     }
@@ -1110,6 +1316,15 @@ export function validateReport(reportPath) {
       errors.push("change_review_comparisons must not exceed 2.");
     }
     errors.push(...v3MethodEvidenceErrors(markdown, counts));
+  }
+  if (frontmatter.schema_version === "4") {
+    if ((counts.change_review_comparisons ?? 0) > 2) {
+      errors.push("change_review_comparisons must not exceed 2.");
+    }
+    if ((counts.cast_possibilities_comparisons ?? 0) > 1) {
+      errors.push("cast_possibilities_comparisons must be 0 or 1.");
+    }
+    errors.push(...v4MethodEvidenceErrors(markdown, counts));
   }
 
   const providerAttempts = counts.provider_request_attempts ?? 0;
@@ -1158,7 +1373,9 @@ export function validateReport(reportPath) {
   }
 
   const requiredTableHeaders = [
-    ["2", "3"].includes(frontmatter.schema_version) ? V2_FINDINGS_HEADER : V1_FINDINGS_HEADER,
+    ["2", "3", "4"].includes(frontmatter.schema_version)
+      ? V2_FINDINGS_HEADER
+      : V1_FINDINGS_HEADER,
     ...COMMON_REQUIRED_TABLE_HEADERS
   ];
   for (const header of requiredTableHeaders) {

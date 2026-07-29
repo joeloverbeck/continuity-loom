@@ -57,13 +57,21 @@ Before launching, complete these scratchpad fields:
 - intended characters, POV, speakers, silent/onstage presences, and offstage pressures;
 - expected continuity, physical, knowledge, reveal, voice, and content constraints;
 - expected useful records and private notes;
-- expected Generation Brief work;
-- expected help from Ideate, Record Hygiene, or Accepted-Segment Change Review;
+- expected Generation Brief work, distinguishing the saved Cast-ready draft from final directive
+  authorship when eligible non-POV characters may receive participation requirements;
+- whether Cast Possibilities is expected to trigger, which characters are expected to be eligible,
+  and the author need it should inform;
+- expected help from optional Ideate, Record Hygiene, or Accepted-Segment Change Review use;
 - the sealed mental model of how a first-time author expects the app to support the work;
 - explicit non-goals and material that must not be forced.
 
 Do not pre-judge that a named field or surface is useful. State the author need first; later record
 whether the product made the right representation discoverable and worthwhile.
+
+Cast Possibilities is not governed by the ordinary optional-assistance rule. Its pre-directive
+comparison is conditional and required whenever at least one eligible non-POV
+`active_onstage_cast_full` character may receive a participation requirement in the next local
+directive. If none exists, record the naturalistic skip reason before proceeding.
 
 Do not read `reports/playtest-method-register.md` (a retired, historical file) during setup or the
 author journey; it is not priming material. Do not search unrelated reports to decide whether an

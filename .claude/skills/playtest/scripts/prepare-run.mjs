@@ -192,6 +192,32 @@ export function prepareRun({
 - Expected assistance:
 - Sealed mental model:
 
+## Cast Possibilities pre-directive plan
+
+- Trigger: pending - run when at least one eligible non-POV active/full character may receive next-directive participation requirements
+- Naturalistic skip reason:
+- Eligible characters:
+- Saved Cast-ready visible state confirmed:
+- Proposed non-POV actions absent from must_render:
+- Hypothesis packet path under this run's /tmp scratch tree:
+- Hypothesis packet fingerprint:
+- Hypotheses sealed after saved visible state:
+- Hypotheses sealed before Cast prompt opened or extracted:
+- Cast prompt fingerprint:
+- Cold executor host:
+- Cold executor model:
+- Model identity exposed:
+- Cold response timestamp:
+- Substantive response obtained:
+- Bounded harness recovery used:
+- Final directive independently authored after comparison:
+- Final directive explicitly saved:
+
+## Cast Possibilities per-character comparison ledger
+
+| Character | Hypothesis disposition | Card 1 | Card 2 | Card 3 | Final field disposition | Intervention burden | Related finding IDs |
+| --------- | ---------------------- | ------ | ------ | ------ | ----------------------- | ------------------- | ------------------- |
+
 ## Quantitative journey ledger
 - Status: inactive - activate only when the invocation requests counts or cost comparisons
 - Requested boundaries: none

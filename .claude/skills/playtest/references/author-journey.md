@@ -57,14 +57,28 @@ destination, not a secret shortcut through the UI:
    POV, active speaker, active silent presence, physically active character, present-minor
    speaker, and offstage pressure appears in the appropriate visible cast band/function. Do not
    silently include a record merely because it is globally important.
-5. **Generation Brief.** Fill the universal minimum and only the context-gated fields that the
-   intended moment makes useful. For every populated field, record the author need and expected
-   observable influence before prompt compilation. Treat validation-focus controls as readiness
-   controls rather than expected prose content unless the UI says otherwise.
-6. **Readiness.** Save the draft, inspect blockers and warnings, and resolve blockers through the
-   canonical UI. Assess whether diagnostics identify the real author action, whether field help
-   arrives at the right time, and whether warnings are proportionate. Never weaken or bypass a
-   blocker.
+5. **Generation Brief, pre-directive save.** Through the visible editor, save a Cast-ready local
+   moment with the universal saved fields Cast Possibilities requires. The draft may contain POV
+   actions and scene-level constraints, but it must not yet contain the playtester's proposed
+   non-POV character actions in `manual_moment_directive.must_render`. Determine whether at least
+   one eligible non-POV `active_onstage_cast_full` character may receive a participation
+   requirement in the next local directive. If so, after the saved visible state and relevant
+   authoring context exist but before opening or extracting the Cast prompt, seal one temporary
+   character-indexed hypothesis per eligible character under the run's `/tmp` scratch tree. Each
+   hypothesis contains an observable action and expected local effect, not polished directive text.
+6. **Cast comparison and final Generation Brief.** When triggered, follow
+   [Cast Possibilities](prompt-evaluation.md#cast-possibilities), compare the sealed hypotheses with
+   the untouched cold result, and only then independently author the final non-POV directive text
+   through the visible editor. Save it explicitly. Each eligible character may land in
+   `must_render`, `may_render_if_naturally_caused`, or omission; there is no quota. When Cast does
+   not trigger, record the naturalistic skip reason, then finish the brief normally. For every
+   deliberately populated final field, record the author need and expected observable influence
+   before prose-prompt compilation. Treat validation-focus controls as readiness controls rather
+   than expected prose content unless the UI says otherwise.
+7. **Readiness.** After final directive authorship or the recorded Cast skip, inspect blockers and
+   warnings and resolve blockers through the canonical UI. Assess whether diagnostics identify the
+   real author action, whether field help arrives at the right time, and whether warnings are
+   proportionate. Never weaken or bypass a blocker.
 
 Do not mechanically fill every optional field. An unused field is evidence only when a natural
 author need caused it to be populated and the response had a fair opportunity to reflect it.
@@ -73,8 +87,14 @@ value never becomes visible.
 
 ## Assistance surfaces
 
-Use assistance only when the author need arises, and log why each surface was invoked or skipped:
+Use ordinary assistance when the author need arises, and log why each surface was invoked or
+skipped. Apply the Cast trigger independently of that optional-use rule:
 
+- **Cast Possibilities (conditional pre-directive comparison):** run whenever at least one eligible
+  non-POV active/full character may receive a next-directive participation requirement. Save the
+  Cast-ready draft without proposed non-POV `must_render` actions, seal one hypothesis per eligible
+  character, then inspect and evaluate Cast before final directive authorship. This trigger is not
+  ordinary optional assistance use; when no eligible character exists, record the naturalistic skip.
 - **Ideate:** when the author is genuinely stuck or wants grounded possibilities/questions before
   committing the next local directive.
 - **Record Hygiene:** when records plausibly overlap, restate one another, feel stale, or create

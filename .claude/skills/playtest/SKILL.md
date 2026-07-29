@@ -1,6 +1,6 @@
 ---
 name: playtest
-description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Evaluates the prose prompt and any naturally invoked Ideate, Record Hygiene, or Accepted-Segment Change Review prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
+description: Playtest Continuity Loom as a source-and-doc-blind author in the real browser, creating a new story or continuing from a supplied playtest report through one accepted local prose segment. Use when the user asks to playtest the app with a story premise, asks to create a story through the app, or supplies a prior playtest report and asks to continue it. Conditionally compares independent pre-directive hypotheses with Cast Possibilities before authoring eligible non-POV directive actions, evaluates the prose prompt and any naturally invoked Ideate, Record Hygiene, or Accepted-Segment Change Review prompts with cold-context subagents without making OpenRouter requests, then writes a cumulative evidence-backed report.
 ---
 
 # Continuity Loom Author Playtest
@@ -31,12 +31,17 @@ exhausted. Always produce a report. Observe and report; never fix the app during
   brief, expected answer, suspected defect, prior response, or repository context beyond the
   prompt file.
 - **Human gatekeeping.** Judge raw assistance before manually re-authoring useful suggestions in
-  Records or Generation Brief. Judge raw prose before pasting it through **Write or paste
+  Records or Generation Brief. When Cast Possibilities triggers, preserve the playtester's sealed
+  behavior hypotheses and the untouched Cast draw as separate inputs, then independently author
+  and explicitly save any final non-POV directive text. Judge raw prose before pasting it through **Write or paste
   candidate**, visibly editing it, and accepting it. Never treat assistance output or accepted
   prose as automatic continuity authority.
 - **Naturalistic coverage.** Fill fields and use Private Notes, Ideate, Record Hygiene, and
-  Accepted-Segment Change Review when a sincere author would. Do not manufacture irrelevant data
-  merely to tick a feature box; record every skipped surface and why it was not naturally needed.
+  Accepted-Segment Change Review when a sincere author would. Run the conditional Cast Possibilities
+  pre-directive comparison whenever at least one eligible non-POV active/full character may receive
+  a participation requirement in the next local directive; otherwise record the naturalistic skip
+  reason. Do not manufacture irrelevant data merely to tick a feature box; record every skipped
+  surface and why it was not naturally needed.
 - **Transient story data.** New projects, prompts, raw subagent responses, candidate prose,
   routine screenshots, settings, and the structured scratchpad stay under `/tmp`. Continuation
   works only while the project path named by the supplied report still exists.
@@ -73,7 +78,7 @@ The retired Segment Reconciliation Paired-Draw Check no longer runs. The
 [Change Review delta comparison](references/prompt-evaluation.md#change-review-delta-comparison) is
 its replacement, but it is a standing part of the post-acceptance method rather than a sunset-bounded
 pilot: it does not reuse the paired-draw counter, evidence tags, or bounded-pilot machinery, and its
-per-comparison work is recorded through `change_review_comparisons` and the schema-v3 report
+per-comparison work is recorded through `change_review_comparisons` and the schema-v3-and-later report
 disclosure.
 
 If a pilot does not trigger naturally, record it as pending rather than manufacturing eligibility.
@@ -113,7 +118,7 @@ and request the owner's `keep`, `revise`, or `retire` decision in the final resp
 
 Read [Run setup](references/run-setup.md) and [Observation scratchpad](references/observation-log.md).
 Run `scripts/prepare-run.mjs`, capture the worktree baseline, and fill the scratchpad's story
-intent, author expectations, sealed mental model, and run plan before launching the app. For a
+intent, author expectations, sealed mental model, Cast trigger expectation, and run plan before launching the app. For a
 continuation, confirm the supplied report resolves to an existing `/tmp` project. Done when all
 run paths exist, the baseline is recorded, and the pre-use expectations are complete.
 
@@ -136,18 +141,26 @@ corrected, or left unclear about the initial mental model and continuation state
 
 Follow the authoring loop in [Author journey](references/author-journey.md): configure the story,
 create and curate records, use Private Notes only as inert scratch, curate the active working set
-and cast functions, fill a natural Generation Brief, and resolve readiness through the UI.
-Record the intended influence of every deliberately populated Generation Brief field before
-compiling. Done when readiness permits prompt inspection or the blocker policy terminates the
-run.
+and cast functions, then save a Cast-ready local-moment draft through the visible UI. The draft may
+contain POV actions and scene-level constraints, but before the Cast comparison it must not contain
+proposed non-POV character actions in `manual_moment_directive.must_render`. If the conditional
+trigger applies, seal one temporary observable-action/local-effect hypothesis per eligible character
+after that visible save and before opening or extracting the Cast prompt. Done when either the
+sealed packet is ready for Cast evaluation or a naturalistic skip reason is recorded.
 
 ### 5. Evaluate prompts without OpenRouter
 
-Read [Cold prompt evaluation](references/prompt-evaluation.md). Extract the visible prose prompt
-to `/tmp`, dispatch one fresh cold subagent, assess its untouched response, and allow at most one
-fresh prose retry. Use one targeted counterfactual probe only when it can clarify a high-impact
-ignored field; never use that diagnostic response in the app. Evaluate Ideate, Record Hygiene, and
-Accepted-Segment Change Review the same way when naturally invoked. Unlike the prose prompt, the
+Read [Cold prompt evaluation](references/prompt-evaluation.md). When Cast Possibilities triggered,
+extract its exact visible prompt only after sealing the hypotheses, dispatch it once to one fresh
+cold context, compare every eligible character, and only then independently author and explicitly
+save the final directive through the visible Generation Brief editor. A substantive Cast response
+gets no quality retry; absent substantive output after bounded harness recovery blocks before any
+non-POV action enters `must_render` or the prose prompt is compiled. After final directive authorship
+or a naturalistic Cast skip, resolve readiness, extract the visible prose prompt to `/tmp`, dispatch
+one fresh cold subagent, assess its untouched response, and allow at most one fresh prose retry. Use
+one targeted counterfactual probe only when it can clarify a high-impact ignored field; never use
+that diagnostic response in the app. Evaluate Ideate, Record Hygiene, and Accepted-Segment Change
+Review the same way when naturally invoked. Unlike the prose prompt, the
 Accepted-Segment Change Review draw is single-draw: run its exact visible prompt once in one fresh
 cold context and take no quality retry for weak, empty, malformed, or misleading output. Done when
 every invoked prompt has a structured usefulness verdict and every populated Generation Brief field
@@ -175,9 +188,10 @@ contemporaneous observations, product findings, or evidence tags.
 
 Read [Blockers and diagnostics](references/blockers-and-diagnostics.md) when any probable blocker
 or visible defect appears, then read [Report format](references/report-format.md). Consolidate the
-scratchpad into a new schema-v3 cumulative report. Before publication, independently challenge up
-to three eligible decision-driving claims (a standing check on every report that has them), and let
-the main operator retain resolution authority.
+scratchpad into a new schema-v4 cumulative report; schema versions 1 through 3 remain historical
+compatibility paths and are never rewritten. Before publication, independently challenge up to
+three eligible decision-driving claims (a standing check on every report that has them), and let the
+main operator retain resolution authority.
 Close browser and app sessions, remove session plumbing and uncited evidence, then validate with
 `scripts/validate-report.mjs`. Keep the scratchpad and temporary exchange files until the report
 passes; then delete them, rerun the validator, and compare final worktree status with the baseline.
