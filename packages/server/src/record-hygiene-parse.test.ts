@@ -4,7 +4,7 @@ import {
   parseRecordHygieneResponse,
   type RecordHygieneParseFailureCode
 } from "./record-hygiene-parse.js";
-import { decorateRecordHygieneContract } from "../test/support/record-hygiene.js";
+import { decorateRecordHygieneContract } from "../../../test/record-hygiene-response.js";
 
 const validKeys = new Set(["[FACT-1]", "[FACT-2]", "[BELIEF-1]"]);
 const failureMessages = {

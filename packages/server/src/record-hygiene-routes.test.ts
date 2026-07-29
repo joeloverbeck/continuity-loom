@@ -12,7 +12,7 @@ vi.mock("./openrouter/client.js", () => ({
 import { sendChatCompletion } from "./openrouter/client.js";
 import { createServer } from "./server.js";
 import { writeOpenRouterSettings } from "./settings.js";
-import { decorateRecordHygieneContract } from "../test/support/record-hygiene.js";
+import { decorateRecordHygieneContract } from "../../../test/record-hygiene-response.js";
 
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const apps: ReturnType<typeof createServer>[] = [];
