@@ -77,9 +77,9 @@ Create the authoritative candidate at `reviews/<review-id>/candidate/`. Isolatio
 
 ### 6. Run blind comparative validation
 
-Run every frozen trial against the unchanged current skill and candidate in fresh sessions or independent agents. Give executors only the raw task and artifacts; conceal the diagnosis, expected answer, and version labels.
+Run every frozen trial against the unchanged current skill and candidate in fresh sessions or independent agents. Give executors only the raw task and artifacts; conceal the diagnosis, expected answer, and version labels. The evidence store holds all three — incident bodies, this review's diagnosis, and the candidate bytes — so every executor prompt must bar reading it.
 
-For checks resolving siblings, mirrors, or repository paths, use a temporary sibling-complete staging tree outside discovery: copy the canonical layout, place candidate bytes at the target's canonical relative depth, and recreate applicable mirrors. A location-only failure is a harness artifact; repair and rerun it, and it must not be counted as a trial result. Run applicable deterministic checks on both versions and the candidate before landing. Retain raw outputs and decisions under the review.
+For checks resolving siblings, mirrors, or repository paths, use a temporary sibling-complete staging tree outside discovery: copy the canonical layout, place candidate bytes at the target's canonical relative depth, and recreate applicable mirrors. A harness artifact — a location-only failure, or an executor that reached concealed material — is repaired and rerun, and must not be counted as a trial result. Run applicable deterministic checks on both versions and the candidate before landing. Retain raw outputs and decisions under the review.
 
 *Done when every frozen trial ran on both versions and the raw outputs are on disk.*
 
