@@ -38,7 +38,7 @@ Now — and only now — read the target skill, plus the minimum external contra
 | **Target compliance defect** — the right rule exists but its structure, placement, salience, or instruction competition repeatedly defeats compliance | yes | — |
 | Outside target — another skill, contract, tool, environment, model limitation, or user instruction owns it | no | `outside_target` → `outside_target` |
 | Task-specific novelty — does not generalize beyond the triggering task | no | `resolved_no_change` → `closed_no_skill_defect` |
-| Not reproducible on a fresh case, or symptom without a demonstrated mechanism | no | `not_reproducible` → `monitor_for_recurrence` |
+| Not reproducible from the evidence, or symptom without a demonstrated mechanism | no | `not_reproducible` → `monitor_for_recurrence` |
 
 For a non-proceeding class: close with the mapped disposition and a factual note, route outside-target evidence to its owner factually without proposing an unsanctioned repair, never edit another owner from this review, and go to step 9.
 
@@ -46,7 +46,9 @@ For a non-proceeding class: close with the mapped disposition and a factual note
 
 ### 4. Freeze the validation plan before any candidate exists
 
-Define the trials first, so the change cannot pick only tests it already knows how to pass. Ordinary, narrow change — at least three paired trials:
+Name the incident's binding constraint first — the condition without which the failure does not occur, such as load, volume, instruction recency or context distance, caller-owned input size, or elapsed run length — then decide whether the trial instrument can vary it. A trial executor starts fresh and short-context with the contract in hand, so a constraint that exists only deep inside a long run is outside what any trial set can express. When the instrument cannot vary the constraint, or no meaningful fresh validation can be constructed at all: `close --review-id <id> --disposition blocked_no_valid_test --note "<the constraint>"`, freeze no plan, build no candidate, run no trial, and go to step 9.
+
+Only then define the trials, so the change cannot pick only tests it already knows how to pass. Ordinary, narrow change — at least three paired trials:
 
 1. a fresh reproduction of the implicated mechanism;
 2. an adjacent case exercising the same capability differently;
@@ -56,11 +58,11 @@ Escalate to at least five paired trials (add another core-regression case and a 
 
 Freeze per trial: raw task and artifacts, protected behavior, evaluator independence, and each instrument's pass/fail/tie rubric. Before any candidate exists, name exactly one decisive instrument, an ordered tie-break for the others, and any hard-veto safety, invariant, or deterministic checks. Save the plan under `reviews/<review-id>/`.
 
-If no meaningful fresh validation can be constructed: `close --disposition blocked_no_valid_test`, make no edit, go to step 9.
-
-*Done when the full trial set is frozen on disk, or the review was closed as blocked.*
+*Done when the binding constraint is named and variable by the trials and the full trial set is frozen on disk, or the review was closed as blocked.*
 
 ### 5. Construct an isolated candidate
+
+Run the frozen reproduction trial(s) on the unchanged current skill before building anything, under step 6's rules; they are its current arm, not extra runs, and their outcome never reopens the frozen plan. If the mechanism does not recur there, no candidate can be materially better: `close --review-id <id> --disposition monitor_for_recurrence --note "<what the current arm did>"` and go to step 9.
 
 Create the authoritative candidate at `reviews/<review-id>/candidate/`. Isolation is an invariant: the live target stays byte-unchanged and undiscoverable through skill resolution, while this candidate remains the sole byte authority for `record-validation` and `land`. Check staging uses only an unmodified copy. Design rules:
 
@@ -71,7 +73,7 @@ Create the authoritative candidate at `reviews/<review-id>/candidate/`. Isolatio
 - growth only for a proven missing capability that cannot be expressed by replacing existing text;
 - tool- or repository-specific details go in conditional references, not universal runtime rules; shared guidance keeps one canonical home.
 
-*Done when the candidate differs from the live target only where the mechanism demands it.*
+*Done when the mechanism recurred on the current arm and the candidate differs from the live target only where the mechanism demands it, or the review was closed as not reproducible.*
 
 ### 6. Run blind comparative validation
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T18:31:19.552Z",
+  "generated_at": "2026-07-29T08:47:40.204Z",
   "target_content_hash": "1073b9c05b88df68e028a4376e9ddf5d5d5ff4e794a5dd8b456d0fc1cd7da847",
-  "qualifying_uses_on_current_hash": 13,
+  "qualifying_uses_on_current_hash": 14,
   "open_incident_ids": [
     "evt_be96c08c-7928-4197-bca7-f0acb3d19a3d",
     "evt_3232deb1-2502-4028-bc2f-d816776b2532",
@@ -32,5 +32,5 @@
   "last_completed_review_id": "dec_13b31438-44d9-447c-8107-34a10aff9f28",
   "target_name": "domain-modeling",
   "target_repo_relative_path": ".claude/skills/domain-modeling",
-  "derivation_session_id": "ea20debf-3b98-41ca-b409-16f312d73d13"
+  "derivation_session_id": "019facc8-749d-7ee2-8a98-0da97018e725"
 }
