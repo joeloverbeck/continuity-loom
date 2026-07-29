@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join } from "node:path";
 import test from "node:test";
@@ -43,7 +43,7 @@ function createSourceFixture(t, options = {}) {
     ? "reports/playtest-fixture-2026-07-16T120000Z.md"
     : "null";
   const schemaVersion = options.schemaVersion ?? "1";
-  const evidenceBasisSchema = ["2", "3"].includes(schemaVersion);
+  const evidenceBasisSchema = ["2", "3", "4"].includes(schemaVersion);
   const prioritizedRows = (options.prioritizedRows ?? DEFAULT_PRIORITIZED).map((row) =>
     evidenceBasisSchema && row.length === 7 ? [...row, "direct-visible"] : row
   );
@@ -97,7 +97,13 @@ paired_draw_checks: 0
 independent_claim_challenges: 0
 change_review_comparisons: ${changeReviewComparisons}
 `
-      : ""
+      : schemaVersion === "4"
+        ? `cold_first_view_witnesses: 0
+independent_claim_challenges: 0
+change_review_comparisons: 0
+cast_possibilities_comparisons: 0
+`
+        : ""
 }candidate_intervention: light
 ---
 
@@ -156,6 +162,7 @@ ${markdownRows(prioritizedRows)}
 | Surface | Why invoked or skipped | Cold response result | Useful/adopted | Noise/rejected | Application path | Verdict |
 | --- | --- | --- | --- | --- | --- | --- |
 | Ideate | Not needed | skipped | none | none | none | intentional |
+${schemaVersion === "4" ? "| Cast Possibilities | Skipped - no eligible non-POV active/full character | skipped | none | none | none | intentional |" : ""}
 ${changeReviewSection}
 ## Candidate and Accepted Segment
 
@@ -539,6 +546,26 @@ test("accepts a schema v3 report as the inventory frontier", (t) => {
   assert.deepEqual(result.errors, []);
   assert.equal(result.counts.prioritizedFindings, 1);
   assert.deepEqual(result.cumulativeIds, ["F001", "F002"]);
+});
+
+test("accepts a schema v4 report with the evidence-basis inventory", (t) => {
+  const fixture = createSourceFixture(t, { schemaVersion: "4" });
+  const markdown = readFileSync(fixture.reportPath, "utf8");
+  const result = inspectSourceReport(fixture.reportPath);
+
+  assert.match(
+    markdown,
+    /^\| ID \| Severity \| Classification \| Category \| Summary \| Confidence \| Status \| Evidence basis \|$/m
+  );
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.counts, {
+    prioritizedFindings: 1,
+    cumulativeLedgerRows: 2,
+    strengthRows: 1
+  });
+  assert.deepEqual(result.prioritizedIds, ["F001"]);
+  assert.deepEqual(result.cumulativeIds, ["F001", "F002"]);
+  assert.deepEqual(result.strengthIds, ["F002"]);
 });
 
 test("dispositions a schema v3 change-review comparison finding through the frontier", (t) => {
