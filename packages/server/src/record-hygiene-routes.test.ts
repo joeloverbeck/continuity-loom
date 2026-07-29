@@ -12,6 +12,7 @@ vi.mock("./openrouter/client.js", () => ({
 import { sendChatCompletion } from "./openrouter/client.js";
 import { createServer } from "./server.js";
 import { writeOpenRouterSettings } from "./settings.js";
+import { decorateRecordHygieneContract } from "../test/support/record-hygiene.js";
 
 const sendChatCompletionMock = vi.mocked(sendChatCompletion);
 const apps: ReturnType<typeof createServer>[] = [];
@@ -255,7 +256,7 @@ describe("record hygiene routes", () => {
   it("sends the server-compiled prompt, returns parsed findings, and does not mutate project data", async () => {
     sendChatCompletionMock.mockResolvedValue({
       ok: true,
-      candidate: { text: `Here is the requested review.\n\`\`\`text\n${decorateContract(validHygieneResponse())}\n\`\`\`` },
+      candidate: { text: `Here is the requested review.\n\`\`\`text\n${decorateRecordHygieneContract(validHygieneResponse())}\n\`\`\`` },
       response: normalResponse()
     });
     process.env.OPENROUTER_API_KEY = keySecretText;
@@ -517,25 +518,6 @@ function validHygieneResponse(detail = "They appear to restate the same locked-d
     "confidence: high",
     "END HYGIENE REVIEW"
   ].join("\n");
-}
-
-function decorateContract(response: string): string {
-  return response.split("\n").map((line) => {
-    if (line === "HYGIENE REVIEW") {
-      return "## **HYGIENE REVIEW**";
-    }
-    if (line === "END HYGIENE REVIEW") {
-      return "> **END HYGIENE REVIEW**";
-    }
-    if (line.startsWith("FINDING ")) {
-      return `> ### **${line}**`;
-    }
-    const separator = line.indexOf(":");
-    if (separator > 0) {
-      return `- **${line.slice(0, separator)}:** **${line.slice(separator + 1).trim()}**`;
-    }
-    return line;
-  }).join("\n");
 }
 
 function captureProcessWrites(): { restore: () => string } {

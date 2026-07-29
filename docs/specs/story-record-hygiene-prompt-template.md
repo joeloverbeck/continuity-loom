@@ -129,6 +129,8 @@ END HYGIENE REVIEW
 
 The local parser tolerates bounded presentational drift: lead-in text before the first `HYGIENE REVIEW` sentinel, standalone surrounding backtick fences, and Markdown decoration on sentinels, `FINDING` headers, field keys, and field values. It strips only that presentation layer. It does not normalize semantic values, accept content after `END HYGIENE REVIEW`, or relax any field, enum, citation, survivor, count, uniqueness, or same-type rule.
 
+This normalization helper remains private to Record Hygiene. Ideate now uses a strict JSON output schema and has no compatible free-text normalization seam to share; the cross-workflow reuse boundary is the sanitized `structuralReason` diagnostic receipt, not response parsing.
+
 Findings require at least two distinct citations. `MERGE` and `REMOVE` require same-type citations and one cited survivor. Missing or malformed sentinels, trailing content, malformed or unexpected fields/content, missing fields, unknown actions, relations, confidence values, duplicate finding numbers, duplicate clusters, unknown or insufficient citations, cross-type merge/remove, invalid survivors, or mismatched `findings_reported` make the output malformed and quarantine the whole response.
 
 Local inspection selects and discloses the global Assistance ceiling and binds

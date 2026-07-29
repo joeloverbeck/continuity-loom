@@ -4,6 +4,7 @@ import {
   parseRecordHygieneResponse,
   type RecordHygieneParseFailureCode
 } from "./record-hygiene-parse.js";
+import { decorateRecordHygieneContract } from "../test/support/record-hygiene.js";
 
 const validKeys = new Set(["[FACT-1]", "[FACT-2]", "[BELIEF-1]"]);
 const failureMessages = {
@@ -51,7 +52,7 @@ describe("record hygiene response parser", () => {
   it.each([
     ["lead-in sentence", `Here is the requested review.\n${validResponse()}`],
     ["surrounding code fences", `\`\`\`text\n${validResponse()}\n\`\`\``],
-    ["decorated contract lines", decorateContract(validResponse())]
+    ["decorated contract lines", decorateRecordHygieneContract(validResponse())]
   ])("accepts the bounded response envelope variant: %s", (_name, text) => {
     const result = parseRecordHygieneResponse(text, validKeys);
 
@@ -131,23 +132,4 @@ function twoFindingResponse(secondNumber: number, secondCluster: string): string
     findingBlock(secondNumber).replace("cluster: locked-door-facts", `cluster: ${secondCluster}`),
     "END HYGIENE REVIEW"
   ].join("\n");
-}
-
-function decorateContract(response: string): string {
-  return response.split("\n").map((line) => {
-    if (line === "HYGIENE REVIEW") {
-      return "## **HYGIENE REVIEW**";
-    }
-    if (line === "END HYGIENE REVIEW") {
-      return "> **END HYGIENE REVIEW**";
-    }
-    if (line.startsWith("FINDING ")) {
-      return `> ### **${line}**`;
-    }
-    const separator = line.indexOf(":");
-    if (separator > 0) {
-      return `- **${line.slice(0, separator)}:** **${line.slice(separator + 1).trim()}**`;
-    }
-    return line;
-  }).join("\n");
 }
