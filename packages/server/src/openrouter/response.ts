@@ -76,6 +76,7 @@ export interface OpenRouterStructuralReason {
   code: string;
   message: string;
   slotNumber?: number;
+  findingNumber?: number;
 }
 
 export interface OpenRouterDiagnosticSentPolicy {

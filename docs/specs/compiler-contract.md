@@ -2,7 +2,7 @@
 
 Status: active reference — deterministic prompt/compiler mapping, prompt section order, empty-state rendering, validation focus matrix, and blocker/warning taxonomy
 Authority: domain authority for prompt compiler and validation bridge (see docs/ACTIVE-DOCS.md)
-Contract version: `1.16.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
+Contract version: `1.17.0`; any change that bumps `contract.version` or `compiler.version` in `packages/core/src/version.ts` must update this pin in the same revision.
 
 ---
 
@@ -360,6 +360,10 @@ The record-hygiene prompt is the project-review assistance source profile. It re
 All sections render deterministically. When no records satisfy the source predicate, `<record_hygiene_records>` renders `No non-archived hygiene-active atomic records exist in this project.` The remaining sections still render so the prompt remains inspectable, but the UI disables OpenRouter send because there is nothing to review.
 
 No prose or ideation section renders in the record-hygiene prompt.
+
+`<record_hygiene_output_format>` requires exactly one undecorated plain-text contract block with no preamble, trailing text, backtick fence, Markdown heading, bullet, or bold decoration. The local parser may remove lead-in text before the first `HYGIENE REVIEW` sentinel, standalone surrounding backtick fences, and bounded Markdown decoration from sentinels, `FINDING` headers, field keys, and field values. That presentation normalization never changes semantic values or weakens the output grammar. Missing or malformed sentinels, content after `END HYGIENE REVIEW`, count disagreement, duplicate finding numbers or clusters, malformed/duplicate/unexpected/missing fields, invalid enums, insufficient or unknown citations, invalid survivors, and cross-type destructive actions quarantine the whole response.
+
+Parser rejection returns one content-free structural reason with a fixed `code`, fixed safe `message`, and positive `findingNumber` when the failure belongs to a numbered finding. The rejected response and excerpts never cross the server boundary. The browser renders and copies the shared sanitized receipt; it never displays raw output or initiates an automatic retry.
 
 ### 3.4 Accepted-Segment Change Review Prompt Section Order
 

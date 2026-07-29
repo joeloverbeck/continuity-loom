@@ -89,17 +89,20 @@ export function registerRecordHygieneRoutes(app: FastifyInstance, manager: Proje
     const parsed = parseRecordHygieneResponse(sendResult.candidate.text, validCitationKeys);
 
     if (!parsed.ok) {
+      const recovery = "Review the safe structural reason, then use the existing Record Hygiene action manually if you want another attempt. No retry is automatic.";
       return {
         ok: true,
         quarantined: true,
         reasonCode: "local-parser-rejected",
         summary: "Candidate content reached Continuity Loom but failed local Record Hygiene validation.",
-        recovery: "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic.",
+        recovery,
         diagnostic: createDiagnosticReceipt(
           "local-validation",
           sendResult.response,
           "Candidate content reached Continuity Loom but failed local Record Hygiene validation.",
-          "Inspect the source and sanitized diagnostic, then use the existing action manually. No retry is automatic."
+          recovery,
+          undefined,
+          parsed.reason
         )
       };
     }

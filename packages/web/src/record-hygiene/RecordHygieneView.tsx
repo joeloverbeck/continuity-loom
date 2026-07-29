@@ -36,7 +36,6 @@ type ScratchState =
   | { status: "empty" }
   | { status: "sending" }
   | { status: "findings"; findings: readonly ParsedRecordHygieneFinding[] }
-  | { status: "malformed"; raw: string }
   | { status: "error"; message: string; diagnostic?: DiagnosticReceipt };
 
 type HygieneMode = RecordHygieneRequest["mode"];
@@ -298,7 +297,7 @@ function ScratchPanel({
   onOpenRecord: (recordId: string) => void;
 }): React.JSX.Element {
   const keeperKeys = new Set(keepers.map(keeperKey));
-  const hasOutput = state.status === "findings" || state.status === "malformed";
+  const hasOutput = state.status === "findings";
 
   return (
     <section className="ideateScratchLayout" aria-label="Record hygiene scratch">
@@ -314,14 +313,6 @@ function ScratchPanel({
         </div>
 
         {state.status === "empty" || state.status === "sending" ? <p className="muted">No findings yet.</p> : null}
-
-        {state.status === "malformed" ? (
-          <div className="ideateRawScratch">
-            <p className="status statusWarning" role="status">Non-canonical raw output. The response could not be parsed into hygiene findings.</p>
-            <button type="button" className="secondaryButton" onClick={() => onCopy(state.raw)}>Copy raw output</button>
-            <pre>{state.raw}</pre>
-          </div>
-        ) : null}
 
         {state.status === "findings" ? (
           <>

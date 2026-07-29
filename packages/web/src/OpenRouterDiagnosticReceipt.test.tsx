@@ -61,6 +61,35 @@ describe("OpenRouterDiagnosticReceipt", () => {
     expect(copied).not.toMatch(/model-private-field-canary|MODEL-PRIVATE-CITATION|rejected candidate/);
   });
 
+  it("renders and copies a finding-scoped structural reason without response content", async () => {
+    const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    render(
+      <OpenRouterDiagnosticReceipt
+        receipt={{
+          ...receipt,
+          classification: "local-validation",
+          structuralReason: {
+            code: "invalid-action",
+            message: "A finding action was not recognized.",
+            findingNumber: 2
+          }
+        }}
+      />
+    );
+
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain("Finding 2");
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain(
+      "A finding action was not recognized."
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
+    const copied = writeText.mock.calls[0]?.[0] ?? "";
+    expect(copied).toContain("Structural finding: 2");
+    expect(copied).toContain("Structural reason: A finding action was not recognized.");
+    expect(copied).not.toMatch(/FIX_ALL|model-private-canary|rejected candidate/);
+  });
+
   it("renders accessible current-attempt details, safe copy feedback, conditional Logs navigation, and clear", async () => {
     const writeText = vi.fn<(text: string) => Promise<void>>(() => Promise.resolve());
     vi.stubGlobal("navigator", { clipboard: { writeText } });

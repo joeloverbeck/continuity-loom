@@ -1,8 +1,33 @@
 import { describe, expect, it } from "vitest";
 
-import { parseRecordHygieneResponse } from "./record-hygiene-parse.js";
+import {
+  parseRecordHygieneResponse,
+  type RecordHygieneParseFailureCode
+} from "./record-hygiene-parse.js";
 
 const validKeys = new Set(["[FACT-1]", "[FACT-2]", "[BELIEF-1]"]);
+const failureMessages = {
+  "missing-review-start": "The response did not contain the HYGIENE REVIEW start marker.",
+  "missing-review-end": "The response did not contain the END HYGIENE REVIEW marker.",
+  "trailing-content": "The response contained text after the END HYGIENE REVIEW marker.",
+  "malformed-findings-count": "The response did not contain a valid findings_reported count.",
+  "malformed-finding-header": "A FINDING header did not contain a valid positive finding number.",
+  "unexpected-content": "The review contained content outside a numbered FINDING block.",
+  "findings-count-mismatch": "The findings_reported count did not match the number of FINDING blocks.",
+  "duplicate-finding-number": "A finding number appeared more than once.",
+  "duplicate-cluster": "A finding cluster appeared more than once.",
+  "malformed-field": "A finding line did not use the required tagged field structure.",
+  "duplicate-field": "A finding field appeared more than once.",
+  "unexpected-field": "A finding contained a field outside the Record Hygiene output contract.",
+  "missing-required-field": "A finding was missing a required non-empty field.",
+  "invalid-relation": "A finding relation was not recognized.",
+  "invalid-action": "A finding action was not recognized.",
+  "invalid-confidence": "A finding confidence was not recognized.",
+  "insufficient-citations": "A finding did not contain at least two distinct citations.",
+  "unknown-citation": "A finding cited a record outside the compiled Record Hygiene source.",
+  "invalid-survivor": "A finding survivor did not match the action and cited records.",
+  "cross-type-destructive-action": "A MERGE or REMOVE finding cited more than one record type."
+} satisfies Record<RecordHygieneParseFailureCode, string>;
 
 describe("record hygiene response parser", () => {
   it("parses valid advisory findings without producing record-write payloads", () => {
@@ -24,16 +49,56 @@ describe("record hygiene response parser", () => {
   });
 
   it.each([
-    ["unknown citation", validResponse().replace("[FACT-2]", "[FACT-99]")],
-    ["cross-type merge", validResponse().replace("[FACT-2]", "[BELIEF-1]")],
-    ["missing survivor", validResponse().replace("survivor: [FACT-1]", "survivor: none")],
-    ["duplicate finding number", `${validResponse().replace("findings_reported: 1", "findings_reported: 2")}\n${findingBlock(1)}`],
-    ["duplicate cluster", `${validResponse().replace("findings_reported: 1", "findings_reported: 2").replace("END HYGIENE REVIEW", "")}\n${findingBlock(2)}\nEND HYGIENE REVIEW`],
-    ["missing marker", validResponse().replace("\nEND HYGIENE REVIEW", "")],
-    ["count mismatch", validResponse().replace("findings_reported: 1", "findings_reported: 2")],
-    ["unknown action", validResponse().replace("action: MERGE", "action: FIX_ALL")]
-  ])("quarantines malformed output: %s", (_name, text) => {
-    expect(parseRecordHygieneResponse(text, validKeys)).toEqual({ ok: false, raw: text });
+    ["lead-in sentence", `Here is the requested review.\n${validResponse()}`],
+    ["surrounding code fences", `\`\`\`text\n${validResponse()}\n\`\`\``],
+    ["decorated contract lines", decorateContract(validResponse())]
+  ])("accepts the bounded response envelope variant: %s", (_name, text) => {
+    const result = parseRecordHygieneResponse(text, validKeys);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.number).toBe(1);
+  });
+
+  it.each([
+    ["missing review start", validResponse().replace("HYGIENE REVIEW\n", ""), { code: "missing-review-start" }],
+    ["missing review end", validResponse().replace("\nEND HYGIENE REVIEW", ""), { code: "missing-review-end" }],
+    ["trailing content", `${validResponse()}\nThanks for reading.`, { code: "trailing-content" }],
+    ["malformed findings count", validResponse().replace("findings_reported: 1", "findings_reported: one"), { code: "malformed-findings-count" }],
+    ["unsafe findings count", validResponse().replace("findings_reported: 1", "findings_reported: 9007199254740992"), { code: "malformed-findings-count" }],
+    ["malformed finding header", validResponse().replace("FINDING 1", "FINDING one"), { code: "malformed-finding-header" }],
+    ["zero finding number", validResponse().replace("FINDING 1", "FINDING 0"), { code: "malformed-finding-header" }],
+    ["unsafe finding number", validResponse().replace("FINDING 1", "FINDING 9007199254740992"), { code: "malformed-finding-header" }],
+    ["unexpected content before first finding", validResponse().replace("FINDING 1", "unexpected prose\nFINDING 1"), { code: "unexpected-content" }],
+    ["wrong findings count", validResponse().replace("findings_reported: 1", "findings_reported: 2"), { code: "findings-count-mismatch" }],
+    ["duplicate finding number", twoFindingResponse(1, "second-cluster"), { code: "duplicate-finding-number", findingNumber: 1 }],
+    ["duplicate cluster", twoFindingResponse(2, "locked-door-facts"), { code: "duplicate-cluster", findingNumber: 2 }],
+    ["malformed field line", validResponse().replace("relation: NEAR_DUPLICATE", "not-a-field"), { code: "malformed-field", findingNumber: 1 }],
+    ["duplicate field", validResponse().replace("action: MERGE", "action: MERGE\naction: KEEP_DISTINCT"), { code: "duplicate-field", findingNumber: 1 }],
+    ["unexpected field", validResponse().replace("action: MERGE", "action: MERGE\nreplacement_payload: forbidden"), { code: "unexpected-field", findingNumber: 1 }],
+    ["missing required field", validResponse().replace("shared_core: Both facts say the same door is locked.\n", ""), { code: "missing-required-field", findingNumber: 1 }],
+    ["unknown relation", validResponse().replace("relation: NEAR_DUPLICATE", "relation: SAME_ENOUGH"), { code: "invalid-relation", findingNumber: 1 }],
+    ["unknown action", validResponse().replace("action: MERGE", "action: FIX_ALL"), { code: "invalid-action", findingNumber: 1 }],
+    ["unknown confidence", validResponse().replace("confidence: high", "confidence: certain"), { code: "invalid-confidence", findingNumber: 1 }],
+    ["fewer than two distinct citations", validResponse().replace("[FACT-1], [FACT-2]", "[FACT-1], [FACT-1]"), { code: "insufficient-citations", findingNumber: 1 }],
+    ["unknown citation type or key", validResponse().replace("[FACT-2]", "[LOCATION-1]"), { code: "unknown-citation", findingNumber: 1 }],
+    ["invalid survivor", validResponse().replace("survivor: [FACT-1]", "survivor: none"), { code: "invalid-survivor", findingNumber: 1 }],
+    ["cross-type merge", validResponse().replace("[FACT-2]", "[BELIEF-1]"), { code: "cross-type-destructive-action", findingNumber: 1 }]
+  ])("quarantines malformed output with a typed content-free reason: %s", (_name, text, reason) => {
+    const result = parseRecordHygieneResponse(text, validKeys);
+
+    expect(result).toMatchObject({ ok: false, reason });
+    if (result.ok) {
+      return;
+    }
+    expect(result.reason).toHaveProperty(
+      "message",
+      failureMessages[reason.code as RecordHygieneParseFailureCode]
+    );
+    expect(JSON.stringify(result)).not.toContain("Both facts say the same door is locked");
   });
 });
 
@@ -56,4 +121,33 @@ function findingBlock(number: number): string {
     "reference_caution: Retarget inbound references before removing anything.",
     "confidence: high"
   ].join("\n");
+}
+
+function twoFindingResponse(secondNumber: number, secondCluster: string): string {
+  return [
+    "HYGIENE REVIEW",
+    "findings_reported: 2",
+    findingBlock(1),
+    findingBlock(secondNumber).replace("cluster: locked-door-facts", `cluster: ${secondCluster}`),
+    "END HYGIENE REVIEW"
+  ].join("\n");
+}
+
+function decorateContract(response: string): string {
+  return response.split("\n").map((line) => {
+    if (line === "HYGIENE REVIEW") {
+      return "## **HYGIENE REVIEW**";
+    }
+    if (line === "END HYGIENE REVIEW") {
+      return "> **END HYGIENE REVIEW**";
+    }
+    if (line.startsWith("FINDING ")) {
+      return `> ### **${line}**`;
+    }
+    const separator = line.indexOf(":");
+    if (separator > 0) {
+      return `- **${line.slice(0, separator)}:** **${line.slice(separator + 1).trim()}**`;
+    }
+    return line;
+  }).join("\n");
 }

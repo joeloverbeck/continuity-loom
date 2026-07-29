@@ -145,7 +145,7 @@ describe("ideation end-to-end capstone", () => {
       grounds: ["[CLOCK-1]", "[SECRET-1]"],
       unknownCitations: []
     });
-    expect(body.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" });
     expect(sentPrompt).toBe(firstCompile.prompt);
     expect(sentPrompt).not.toContain(keySecretText);
     expect(response.body).not.toContain(keySecretText);

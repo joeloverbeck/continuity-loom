@@ -312,7 +312,7 @@ describe("generate routes", () => {
         reasoningEffort: "low",
         reasoningExcluded: true,
         topP: 0.9,
-          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+          versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
       }
     });
     expect(Object.keys(body.metadata).some((key) => /apiKey|api_key|key|prompt|candidate/i.test(key))).toBe(false);
@@ -353,7 +353,7 @@ describe("generate routes", () => {
       reasoningEnabled: true,
       reasoningEffort: "low",
       reasoningExcluded: true,
-          versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+          versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
     });
     expect(body.metadata).not.toHaveProperty("topP");
   });

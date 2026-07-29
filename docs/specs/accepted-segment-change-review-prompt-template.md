@@ -5,7 +5,7 @@ Authority: domain authority for the accepted-segment-change-review assistance pr
 Profile id: `accepted-segment-change-review`
 Template version: `2.1.0`
 Compiler version: `2.0.0`
-Compiler-contract version: `1.16.0`
+Compiler-contract version: `1.17.0`
 Output contract: `accepted_segment_change_review.v2`
 
 ## Purpose

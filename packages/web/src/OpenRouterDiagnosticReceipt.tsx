@@ -94,7 +94,12 @@ export function OpenRouterDiagnosticReceipt({
       <p><strong>{receipt.summary}</strong></p>
       <p>{receipt.recovery}</p>
       {receipt.structuralReason ? (
-        <p><strong>Safe structural reason:</strong> {receipt.structuralReason.message}</p>
+        <p>
+          <strong>Safe structural reason:</strong>{" "}
+          {receipt.structuralReason.findingNumber === undefined
+            ? receipt.structuralReason.message
+            : `Finding ${receipt.structuralReason.findingNumber}: ${receipt.structuralReason.message}`}
+        </p>
       ) : null}
       {recoverable ? (
         <>
@@ -200,6 +205,9 @@ export function receiptLines(receipt: Receipt): string[] {
     lines.push(`Structural rule: ${receipt.structuralReason.code}`);
     if (receipt.structuralReason.slotNumber !== undefined) {
       lines.push(`Structural slot: ${receipt.structuralReason.slotNumber}`);
+    }
+    if (receipt.structuralReason.findingNumber !== undefined) {
+      lines.push(`Structural finding: ${receipt.structuralReason.findingNumber}`);
     }
     lines.push(`Structural reason: ${receipt.structuralReason.message}`);
   }

@@ -105,7 +105,7 @@ Each record renders one complete payload-derived label, projected status, full e
 
 ## 10. Output Contract
 
-The model must return:
+The model must return exactly one plain-text contract block and nothing else. It must not add preamble or trailing text, wrap the contract in backtick code fences, or decorate sentinels, `FINDING` headers, field keys, or field values with Markdown headings, bullets, or bold. The contract is:
 
 ```text
 HYGIENE REVIEW
@@ -127,7 +127,9 @@ confidence: high | medium | low
 END HYGIENE REVIEW
 ```
 
-Findings require at least two distinct citations. `MERGE` and `REMOVE` require same-type citations and one cited survivor. Unknown actions, relations, confidence values, duplicate finding numbers, duplicate clusters, unknown citations, cross-type merge/remove, mismatched `findings_reported`, or a missing `END HYGIENE REVIEW` marker make the output malformed and quarantined.
+The local parser tolerates bounded presentational drift: lead-in text before the first `HYGIENE REVIEW` sentinel, standalone surrounding backtick fences, and Markdown decoration on sentinels, `FINDING` headers, field keys, and field values. It strips only that presentation layer. It does not normalize semantic values, accept content after `END HYGIENE REVIEW`, or relax any field, enum, citation, survivor, count, uniqueness, or same-type rule.
+
+Findings require at least two distinct citations. `MERGE` and `REMOVE` require same-type citations and one cited survivor. Missing or malformed sentinels, trailing content, malformed or unexpected fields/content, missing fields, unknown actions, relations, confidence values, duplicate finding numbers, duplicate clusters, unknown or insufficient citations, cross-type merge/remove, invalid survivors, or mismatched `findings_reported` make the output malformed and quarantine the whole response.
 
 Local inspection selects and discloses the global Assistance ceiling and binds
 the finalized request fingerprint to that value. Changing only Prose leaves the
@@ -140,7 +142,10 @@ Record Hygiene requires a normal decoded completion before parsing. Provider
 errors, length limits, content-filter or tool termination, missing content, and
 unrecognized envelopes yield a sanitized transient diagnostic and no findings.
 A normal completion rejected by the local parser yields the same safe receipt
-shape; raw or partial provider output is never returned to the browser.
+shape with a fixed structural code, fixed safe message, and finding number when
+the failure belongs to a numbered finding. The receipt is readable and copyable.
+Raw or partial provider output and excerpts are never returned to the browser,
+and no follow-up request is automatic.
 
 ## 11. UI Quarantine
 

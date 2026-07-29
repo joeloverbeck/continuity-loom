@@ -253,7 +253,11 @@ describe("record hygiene routes", () => {
   });
 
   it("sends the server-compiled prompt, returns parsed findings, and does not mutate project data", async () => {
-    sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: validHygieneResponse() }, response: normalResponse() });
+    sendChatCompletionMock.mockResolvedValue({
+      ok: true,
+      candidate: { text: `Here is the requested review.\n\`\`\`text\n${decorateContract(validHygieneResponse())}\n\`\`\`` },
+      response: normalResponse()
+    });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
     await prepareHygieneProject(fastify);
@@ -299,7 +303,7 @@ describe("record hygiene routes", () => {
   });
 
   it("quarantines malformed model output without returning provider text", async () => {
-    const rejectedProviderText = "freeform hygiene answer model-private-canary";
+    const rejectedProviderText = validHygieneResponse("model-private-canary").replace("action: REWORD", "action: FIX_ALL");
     sendChatCompletionMock.mockResolvedValue({ ok: true, candidate: { text: rejectedProviderText }, response: normalResponse() });
     process.env.OPENROUTER_API_KEY = keySecretText;
     const fastify = app();
@@ -313,10 +317,20 @@ describe("record hygiene routes", () => {
       reasonCode: "local-parser-rejected",
       diagnostic: {
         classification: "local-validation",
-        details: { termination: "normal", contentShape: "string" }
+        details: { termination: "normal", contentShape: "string" },
+        structuralReason: {
+          code: "invalid-action",
+          message: "A finding action was not recognized.",
+          findingNumber: 1
+        }
       }
     });
-    expect(response.body).not.toContain(rejectedProviderText);
+    expect(response.json()).toMatchObject({
+      recovery: "Review the safe structural reason, then use the existing Record Hygiene action manually if you want another attempt. No retry is automatic."
+    });
+    expect(response.body).not.toContain("model-private-canary");
+    expect(response.body).not.toContain("FIX_ALL");
+    expect(sendChatCompletionMock).toHaveBeenCalledTimes(1);
   });
 
   it("warns through inspection and sends once without record eviction when the context estimate is too large", async () => {
@@ -503,6 +517,25 @@ function validHygieneResponse(detail = "They appear to restate the same locked-d
     "confidence: high",
     "END HYGIENE REVIEW"
   ].join("\n");
+}
+
+function decorateContract(response: string): string {
+  return response.split("\n").map((line) => {
+    if (line === "HYGIENE REVIEW") {
+      return "## **HYGIENE REVIEW**";
+    }
+    if (line === "END HYGIENE REVIEW") {
+      return "> **END HYGIENE REVIEW**";
+    }
+    if (line.startsWith("FINDING ")) {
+      return `> ### **${line}**`;
+    }
+    const separator = line.indexOf(":");
+    if (separator > 0) {
+      return `- **${line.slice(0, separator)}:** **${line.slice(separator + 1).trim()}**`;
+    }
+    return line;
+  }).join("\n");
 }
 
 function captureProcessWrites(): { restore: () => string } {

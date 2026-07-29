@@ -693,7 +693,7 @@ function fixtureSnapshot(generationSessionPatch: Record<string, unknown> = {}) {
         special_style_constraints: []
       }
     },
-    versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+    versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
   });
 }
 

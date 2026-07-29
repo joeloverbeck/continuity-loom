@@ -61,6 +61,7 @@ export type OpenRouterDiagnosticReceipt = {
     code: string;
     message: string;
     slotNumber?: number;
+    findingNumber?: number;
   };
   sentPolicy?: {
     outputClass: "prose" | "assistance";
@@ -163,6 +164,11 @@ function isStructuralReason(value: unknown): boolean {
       typeof reason.slotNumber === "number" &&
       Number.isSafeInteger(reason.slotNumber) &&
       reason.slotNumber > 0
+    )) &&
+    (reason.findingNumber === undefined || (
+      typeof reason.findingNumber === "number" &&
+      Number.isSafeInteger(reason.findingNumber) &&
+      reason.findingNumber > 0
     ));
 }
 

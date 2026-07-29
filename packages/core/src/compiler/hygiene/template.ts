@@ -36,5 +36,5 @@ export const RECORD_HYGIENE_STATIC_SECTIONS: Readonly<Record<Exclude<RecordHygie
   record_hygiene_review_procedure:
     "Review records by citation keys. Compare semantic identity, current slice, taxonomic function, material differences, and reference cautions. Report only findings with at least two distinct citations. Do not invent records, statuses, or canonical replacement text.",
   record_hygiene_output_format:
-    "Return exactly: HYGIENE REVIEW, findings_reported: <number>, then numbered FINDING blocks with cluster, relation, action, citations, shared_core, material_differences, why_it_matters, manual_recommendation, survivor when required, reference_caution, confidence, and final END HYGIENE REVIEW."
+    "Return exactly one plain-text contract block and nothing else. Do not add a preamble or trailing text. Do not wrap the contract in backtick code fences, and do not decorate sentinels, FINDING headers, field keys, or field values with Markdown headings, bullets, or bold. The contract block is: HYGIENE REVIEW, findings_reported: <number>, then numbered FINDING blocks with cluster, relation, action, citations, shared_core, material_differences, why_it_matters, manual_recommendation, survivor when required, reference_caution, confidence, and final END HYGIENE REVIEW."
 };

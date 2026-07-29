@@ -159,7 +159,7 @@ describe("compile routes", () => {
 
     expect(first.statusCode).toBe(200);
     expect(firstBody.prompt).toContain("<final_output_instruction>");
-    expect(firstBody.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
+    expect(firstBody.metadata.versions).toEqual({ template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" });
     expect(secondBody.prompt).toBe(firstBody.prompt);
     expect(secondBody.metadata.fingerprint).toBe(firstBody.metadata.fingerprint);
   });
@@ -259,7 +259,7 @@ describe("compile routes", () => {
     expect(body.prompt).toContain("Mode: questions.");
     expect(body.prompt.match(/What if &lt;the door&gt; resists\?/g)).toHaveLength(1);
     expect(body.prompt).not.toContain("<final_output_instruction>");
-    expect(body.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
+    expect(body.metadata.versions).toEqual({ template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" });
   });
 
   it("rejects over-limit Author focus without returning prompt bytes", async () => {

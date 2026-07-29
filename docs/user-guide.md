@@ -212,6 +212,8 @@ The record-hygiene prompt reviews non-archived hygiene-active atomic records wit
 
 Findings are AI-suggested review scratch. They are not validation diagnostics, not story state, not records, not working-set entries, not Generation Brief fields, and not prompt context for prose generation. There is no apply, merge, delete, deactivate, archive, accept, fix-all, working-set mutation, or use-as-prose action. If a finding is useful, navigate to the cited records and edit them manually.
 
+If a completed response cannot be parsed safely, Record Hygiene shows a sanitized diagnostic receipt with a fixed structural reason and, when applicable, the finding number. You can read or copy that receipt, but the rejected provider response and excerpts are never shown. Review the reason, then use Analyze manually if you want another attempt; no retry or follow-up request is automatic.
+
 Keepers are session-scoped scratch stored in browser session storage. They can survive a page reload within the same browser session, but they are not project data and are not written to the local project store. Clear the review scratch or keepers when you no longer need them.
 
 ## Accepted-Segment Change Review - Review Latest Accepted Segment

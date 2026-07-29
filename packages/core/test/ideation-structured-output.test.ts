@@ -16,7 +16,7 @@ describe("Ideate structured-output compilation", () => {
       records: structuredClone(demoRecords),
       generationSession: demoGenerationSession,
       storyConfig: demoStoryConfig,
-      versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+      versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
     });
 
     // @ts-expect-error compilePrompt is prose-only; Ideate must use compileIdeationPrompt.
@@ -45,7 +45,7 @@ describe("Ideate structured-output compilation", () => {
       records: structuredClone(demoRecords),
       generationSession: demoGenerationSession,
       storyConfig: demoStoryConfig,
-      versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+      versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
     });
 
     expect(core.compileIdeationPrompt).toBeTypeOf("function");
@@ -85,7 +85,7 @@ describe("Ideate structured-output compilation", () => {
       records: structuredClone(demoRecords),
       generationSession: demoGenerationSession,
       storyConfig: demoStoryConfig,
-      versions: { template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" }
+      versions: { template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" }
     });
 
     const result = compileIdeationPrompt(snapshot, {

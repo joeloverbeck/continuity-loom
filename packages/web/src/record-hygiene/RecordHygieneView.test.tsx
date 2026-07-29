@@ -235,7 +235,19 @@ describe("RecordHygieneView", () => {
 
     expect(await screen.findByRole("alert", { name: "OpenRouter diagnostic" })).toBeTruthy();
     expect(screen.getByText("Candidate content failed local validation.")).toBeTruthy();
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain("Finding 1");
+    expect(screen.getByText("Safe structural reason:").parentElement?.textContent).toContain(
+      "A finding action was not recognized."
+    );
     expect(screen.queryByText("freeform answer")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Copy raw output" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy diagnostic receipt" }));
+    await waitFor(() => expect(clipboardWriteText).toHaveBeenCalledTimes(1));
+    expect(clipboardWriteText.mock.calls[0]?.[0]).toContain("Structural finding: 1");
+    fireEvent.click(screen.getByRole("button", { name: "Clear diagnostic" }));
+    expect(await screen.findByText("No findings yet.")).toBeTruthy();
+    expect(recordHygieneAnalyze).toHaveBeenCalledTimes(1);
   });
 
   it("presents shared Assistance output-limit recovery after one explicit Record Hygiene request", async () => {
@@ -286,6 +298,11 @@ function diagnosticReceipt() {
     classification: "local-validation" as const,
     summary: "Candidate content failed local validation.",
     recovery: "Inspect the source before using the action again.",
+    structuralReason: {
+      code: "invalid-action",
+      message: "A finding action was not recognized.",
+      findingNumber: 1
+    },
     details: {
       httpStatus: 200,
       requestedModel: "anthropic/claude-sonnet-4",

@@ -22,7 +22,7 @@ describe("record hygiene compiler", () => {
     expect(result.prompt).toContain("<record key=\"[FACT-1]\"");
     expect(result.prompt).toContain("<record key=\"[ENTITY STATUS-1]\"");
     expect(result.prompt).toContain("outgoing: holder -> [FACT-1] (fact-a)");
-    expect(result.metadata.versions).toEqual({ template: "1.11.0", compiler: "1.13.0", contract: "1.16.0" });
+    expect(result.metadata.versions).toEqual({ template: "1.12.0", compiler: "1.14.0", contract: "1.17.0" });
     expect(result.metadata.countsByType?.FACT).toBe(1);
     expect(result.metadata.citationMap?.["[FACT-1]"]).toBe("fact-a");
   });
@@ -35,6 +35,16 @@ describe("record hygiene compiler", () => {
     expect(result.prompt).toContain("hygiene_record_count: 0");
     expect(result.prompt).toContain("No non-archived hygiene-active atomic records exist in this project.");
     expect(result.metadata.countsByType?.FACT).toBe(0);
+  });
+
+  it("requires one undecorated contract block with no surrounding response text", () => {
+    const result = compileRecordHygienePrompt(snapshot([]));
+    const outputFormat = sectionBody(result.prompt, "record_hygiene_output_format");
+
+    expect(outputFormat).toContain("Return exactly one plain-text contract block and nothing else.");
+    expect(outputFormat).toContain("Do not add a preamble or trailing text.");
+    expect(outputFormat).toContain("Do not wrap the contract in backtick code fences");
+    expect(outputFormat).toContain("Markdown headings, bullets, or bold");
   });
 
   it("accepts both request modes and rejects unknown modes", () => {
