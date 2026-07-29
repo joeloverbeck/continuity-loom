@@ -1,11 +1,12 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-27T18:33:01.925Z",
+  "generated_at": "2026-07-29T23:26:50.134Z",
   "target_content_hash": "d93ff239ebcca7367c17c01f4393b36168059d4f30c788faa9ef848ebf2a6d5e",
-  "qualifying_uses_on_current_hash": 10,
+  "qualifying_uses_on_current_hash": 11,
   "open_incident_ids": [
     "evt_c5489c95-7147-41e7-9ac8-1cc1c798f386",
     "evt_0a5bbad8-fabc-4a34-adbc-2f77e89aaedd",
+    "evt_351d7e65-9a5a-4d5b-bee2-fb18fb60c155",
     "evt_f76890b1-2265-449d-a574-daf42ba0b9ff"
   ],
   "candidate_clusters": [
@@ -13,9 +14,10 @@
       "symptom_key": "tool-compatibility",
       "open_event_ids": [
         "evt_c5489c95-7147-41e7-9ac8-1cc1c798f386",
-        "evt_0a5bbad8-fabc-4a34-adbc-2f77e89aaedd"
+        "evt_0a5bbad8-fabc-4a34-adbc-2f77e89aaedd",
+        "evt_351d7e65-9a5a-4d5b-bee2-fb18fb60c155"
       ],
-      "independent_incidents": 2,
+      "independent_incidents": 3,
       "max_severity": "friction"
     },
     {
@@ -27,7 +29,7 @@
       "max_severity": "friction"
     }
   ],
-  "state": "eligible_pending_cooldown",
+  "state": "eligible",
   "authorized_workflow": "skill-evolution",
   "authorization_reason": "ten_use_unresolved",
   "trigger_event_ids": [
@@ -41,5 +43,5 @@
   "last_completed_review_id": "dec_581ad8e4-4f9d-4aad-a6ee-59eeec05c8a4",
   "target_name": "to-prd",
   "target_repo_relative_path": ".claude/skills/to-prd",
-  "derivation_session_id": "ea20debf-3b98-41ca-b409-16f312d73d13"
+  "derivation_session_id": "019faf30-3a65-7351-93e3-76ec4c3acd09"
 }
