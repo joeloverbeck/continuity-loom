@@ -1,51 +1,19 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-07-29T15:48:57.492Z",
-  "target_content_hash": "ccd33707b0610dcf17d9f7b45115e7e7f22822b752f8b289e8b1d91cff6ce016",
-  "qualifying_uses_on_current_hash": 9,
-  "open_incident_ids": [
-    "evt_ac6bc79e-b3ac-46cd-95b3-99b7531a3b40",
-    "evt_1b0b6bb4-4c29-4cb3-9d3d-04cc0cf87c54",
-    "evt_5b770ac7-0c9b-4139-a9ab-ee9a4d8d19b1",
-    "evt_5b2531a1-fe59-4023-9c6e-8e1ba4577fab",
-    "evt_2dcda0e4-73d1-4fc4-93b8-50acc6217aa8",
-    "evt_9acb2652-c6c2-4919-80fc-bc188240707e"
-  ],
-  "candidate_clusters": [
-    {
-      "symptom_key": "execution",
-      "open_event_ids": [
-        "evt_ac6bc79e-b3ac-46cd-95b3-99b7531a3b40"
-      ],
-      "independent_incidents": 1,
-      "max_severity": "friction"
-    },
-    {
-      "symptom_key": "cost",
-      "open_event_ids": [
-        "evt_1b0b6bb4-4c29-4cb3-9d3d-04cc0cf87c54",
-        "evt_5b770ac7-0c9b-4139-a9ab-ee9a4d8d19b1",
-        "evt_5b2531a1-fe59-4023-9c6e-8e1ba4577fab",
-        "evt_2dcda0e4-73d1-4fc4-93b8-50acc6217aa8",
-        "evt_9acb2652-c6c2-4919-80fc-bc188240707e"
-      ],
-      "independent_incidents": 5,
-      "max_severity": "friction"
-    }
-  ],
-  "state": "eligible",
-  "authorized_workflow": "skill-evolution",
-  "authorization_reason": "friction_recurrence:cost",
-  "trigger_event_ids": [
-    "evt_1b0b6bb4-4c29-4cb3-9d3d-04cc0cf87c54",
-    "evt_5b770ac7-0c9b-4139-a9ab-ee9a4d8d19b1",
-    "evt_5b2531a1-fe59-4023-9c6e-8e1ba4577fab"
-  ],
-  "threshold_session_id": "019fa42d-1fb6-7f11-a46b-23e83ea5d19c",
+  "generated_at": "2026-07-29T23:55:02.342Z",
+  "target_content_hash": "94b5c3dbcceaa99d42ec65670bf76241459e51633ef0e7ddf8ec70b63efe6027",
+  "qualifying_uses_on_current_hash": 0,
+  "open_incident_ids": [],
+  "candidate_clusters": [],
+  "state": "closed",
+  "authorized_workflow": null,
+  "authorization_reason": null,
+  "trigger_event_ids": [],
+  "threshold_session_id": null,
   "not_before": null,
   "active_review_id": null,
-  "last_completed_review_id": "rev_4e5092f1-25cc-4f89-861c-8d9e7a8e4c88",
+  "last_completed_review_id": "rev_5f41929f-2681-4ac9-b39a-17a500fd08cb",
   "target_name": "implement",
   "target_repo_relative_path": ".claude/skills/implement",
-  "derivation_session_id": "019fadbd-811e-7ef0-8f50-b14c097b8033"
+  "derivation_session_id": "5ff26fe3-90b5-4d0d-9e14-e0c3dbc8ed91"
 }

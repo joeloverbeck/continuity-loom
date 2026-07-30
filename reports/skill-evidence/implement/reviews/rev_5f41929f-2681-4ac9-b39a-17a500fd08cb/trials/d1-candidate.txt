@@ -1,0 +1,25 @@
+F1	flip	ACCEPT	
+F2	flip	ACCEPT	
+F3	flip	ACCEPT	
+F4	flip	ACCEPT	
+F5	flip	ACCEPT	
+F6	flip	ACCEPT	
+F7	flip	ACCEPT	
+F8	flip	ACCEPT	
+F9	flip	ACCEPT	
+F10	flip	ACCEPT	
+S1	safety	REJECT	- evidence identity refresh contains an unresolved value "TBD"; name the real identifier, or put a literal identifier containing that word in backticks or quotation marks
+S2	safety	REJECT	- evidence identity refresh contains an unresolved value "pending"; name the real identifier, or put a literal identifier containing that word in backticks or quotation marks
+S3	safety	REJECT	- evidence identity refresh contains an unresolved value "TODO"; name the real identifier, or put a literal identifier containing that word in backticks or quotation marks || - superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities
+S4	safety	REJECT	- evidence identity refresh contains an unresolved value "unknown"; name the real identifier, or put a literal identifier containing that word in backticks or quotation marks || - superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities
+S5	safety	REJECT	- verification command ledger row 1 must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result
+S6	safety	REJECT	- verification command ledger row 1 must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result
+S7	safety	REJECT	- verification command ledger row 1 must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result
+S8	safety	REJECT	- verification command ledger row 1 must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result
+S9	safety	REJECT	- verification command ledger row 1 must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result || - forbidden unresolved angle-token placeholder <result>
+S10	safety	REJECT	- satisfied audit row Evidence contains an unresolved value "pending"; put a literal identifier containing that word in backticks or quotation marks: | #1 | AC1 - does the thing | atoms: atomic; proof surfaces: reports/pending-review-notes.md; sequence: N/A because criterion is not sequence-sensitive | satisfied |
+R1	preserved	ACCEPT	
+R2	preserved	ACCEPT	
+R3	preserved	ACCEPT	
+R4	preserved	ACCEPT	
+R5	preserved	ACCEPT	

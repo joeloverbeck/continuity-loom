@@ -1,0 +1,69 @@
+--- .claude/skills/implement/scripts/validate-closeout-body.mjs	2026-07-24 12:55:13.000565541 +0200
++++ reports/skill-evidence/implement/reviews/rev_5f41929f-2681-4ac9-b39a-17a500fd08cb/candidate/scripts/validate-closeout-body.mjs	2026-07-30 01:37:26.633453729 +0200
+@@ -363,6 +363,13 @@
+   return `Accepted residuals: ${records.length}; affected axes ${axes.join(", ") || "none"}; durable record ${sink}; unhandled findings none beyond accepted residuals.`;
+ };
+ 
++const citedLiteral = /`[^`\n]*`|"[^"\n]*"|“[^”\n]*”/g;
++const unresolvedWord = /\b(?:TODO|TBD|pending|unknown)\b/i;
++// The identity lines are an inventory of real identifiers, and repository paths, fixture
++// names, session names, and revision IDs routinely embed these words as one component of a
++// larger token. Only a standalone word is an unresolved value there.
++const unresolvedIdentifierWord = /(?<![\w./-])(?:TODO|TBD|pending|unknown)(?![\w./-])/i;
++
+ const concreteSha = (value) => value.match(/`?\b([0-9a-f]{7,40})\b`?/i)?.[1];
+ const compatibleSha = (left, right) => {
+   const normalizedLeft = left.toLowerCase();
+@@ -370,6 +377,13 @@
+   return normalizedLeft.startsWith(normalizedRight) || normalizedRight.startsWith(normalizedLeft);
+ };
+ 
++// Real gates report success in their own vocabulary: tsc and eslint print no pass/fail word,
++// vitest prints "N passing", a build prints "succeeded".
++const observedResult =
++  /\b(?:passed|passing|failed|failing|blocked|unavailable|not applicable|succeeded|ok)\b|\bexit\s+\d+\b|\b(?:no|\d+)\s+(?:errors?|warnings?|failures?)\b/i;
++// A run that exercised nothing is not verification evidence.
++const vacuousResult = /\b(?:0\s+(?:tests?|cases?|checks?|passing|passed)|no\s+tests?)\b/i;
++
+ const currentnessCommitShas = (value) =>
+   [...value.matchAll(/\b(?:final\s+)?commit(?:ted)?(?:\s+SHA)?\s+`?([0-9a-f]{7,40})\b`?/gi)]
+     .map((match) => match[1]);
+@@ -494,8 +508,13 @@
+       /active revisions\s+none(?:;|$)/i,
+       /artifacts\s+none(?:;|$)/i
+     ].every((pattern) => pattern.test(normalizedSupersededIdentities));
+-    if (/\b(?:TODO|TBD|pending|unknown)\b/i.test(`${currentIdentities} ${supersededIdentities} ${supersededSweep}`)) {
+-      errors.push("evidence identity refresh contains an unresolved value");
++    const unresolvedIdentity = `${currentIdentities} ${supersededIdentities} ${supersededSweep}`
++      .replace(citedLiteral, " ")
++      .match(unresolvedIdentifierWord);
++    if (unresolvedIdentity) {
++      errors.push(
++        `evidence identity refresh contains an unresolved value "${unresolvedIdentity[0]}"; name the real identifier, or put a literal identifier containing that word in backticks or quotation marks`
++      );
+     }
+     if (/fixture paths\s+none published because/i.test(currentIdentities)) {
+       errors.push("withheld fixture paths must use the structured 'fixture paths withheld because ...' identity form");
+@@ -549,8 +568,10 @@
+     if (!/^`\S(?:.*\S)?`$/.test(command)) {
+       errors.push(`verification command ledger row ${row} must contain an exact backticked command`);
+     }
+-    if (!/\b(?:passed|failed|blocked|unavailable|not applicable)\b/i.test(result)) {
+-      errors.push(`verification command ledger row ${row} must contain an observed pass/fail/block result`);
++    if (!observedResult.test(result) || vacuousResult.test(result)) {
++      errors.push(
++        `verification command ledger row ${row} must contain an observed result: passed, passing, failed, failing, blocked, unavailable, not applicable, succeeded, ok, "exit <n>", or a "<no|N> errors/warnings/failures" count; a zero-work result such as "0 passing" or "no tests found" is not an observed result`
++      );
+     }
+     if (!/^[1-9]\d*$/.test(runCount)) {
+       errors.push(`verification command ledger row ${row} run count must be a positive integer`);
+@@ -653,8 +674,7 @@
+         errors.push(`satisfied audit row Evidence is missing ${label} | ${cells.join(" | ")} |`);
+       }
+     }
+-    const citedLiteral = /`[^`\n]*`|"[^"\n]*"|“[^”\n]*”/g;
+-    const unresolvedValue = evidence.replace(citedLiteral, " ").match(/\b(?:TODO|TBD|pending|unknown)\b/i);
++    const unresolvedValue = evidence.replace(citedLiteral, " ").match(unresolvedWord);
+     if (unresolvedValue) {
+       errors.push(
+         `satisfied audit row Evidence contains an unresolved value "${unresolvedValue[0]}"; put a literal identifier containing that word in backticks or quotation marks: | ${cells.join(" | ")} |`

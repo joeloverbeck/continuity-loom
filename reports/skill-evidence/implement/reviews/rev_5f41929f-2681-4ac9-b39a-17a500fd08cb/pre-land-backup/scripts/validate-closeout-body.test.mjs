@@ -1040,51 +1040,7 @@ test("closeout validator rejects unresolved current evidence identities", () => 
   const result = runValidator(body, manifest);
 
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /evidence identity refresh contains an unresolved value "TODO"/);
-});
-
-test("closeout validator accepts identity values that embed an unresolved word in a real identifier", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  const body = closeoutBody([
-    `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
-    `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-    `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-  ]).replace(
-    "Current evidence identities: fixture paths none",
-    "Current evidence identities: fixture paths reports/corpus/05-pending-source.md | reports/task-08-unknown-future-contract/rubric.md"
-  );
-  const result = runValidator(body, manifest);
-
-  assert.equal(result.status, 0, result.stderr);
-});
-
-test("closeout validator accepts observed results in each verification runner's own vocabulary", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  for (const observed of ["exit 0; no errors", "0 errors, 0 warnings", "21 passing", "succeeded; 3 packages built"]) {
-    const body = closeoutBody([
-      `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
-      `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-      `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-    ]).replace("passed - 3 tests", observed);
-    const result = runValidator(body, manifest);
-
-    assert.equal(result.status, 0, `${observed}: ${result.stderr}`);
-  }
-});
-
-test("closeout validator rejects a zero-work verification result and names the accepted forms", () => {
-  const manifest = buildAcceptanceManifest(issueInput);
-  for (const vacuous of ["0 passing", "no tests found", "see above"]) {
-    const body = closeoutBody([
-      `| #359 | AC1 - First exact behavior | ${evidence} | satisfied |`,
-      `| #359 | AC2 - Second exact behavior with a continuation | ${evidence} | satisfied |`,
-      `| #359 | Principles - Principles/ADR conformance for #359 | ${evidence} | satisfied |`
-    ]).replace("passed - 3 tests", vacuous);
-    const result = runValidator(body, manifest);
-
-    assert.equal(result.status, 1, vacuous);
-    assert.match(result.stderr, /must contain an observed result: passed, passing, failed/);
-  }
+  assert.match(result.stderr, /evidence identity refresh contains an unresolved value/);
 });
 
 test("closing validator rejects a local staging path in publishable sink fields", () => {

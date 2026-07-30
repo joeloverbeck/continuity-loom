@@ -1,0 +1,25 @@
+F1	flip	REJECT	- evidence identity refresh contains an unresolved value
+F2	flip	REJECT	- evidence identity refresh contains an unresolved value
+F3	flip	REJECT	- evidence identity refresh contains an unresolved value
+F4	flip	REJECT	- evidence identity refresh contains an unresolved value
+F5	flip	REJECT	- evidence identity refresh contains an unresolved value
+F6	flip	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+F7	flip	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+F8	flip	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+F9	flip	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+F10	flip	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+S1	safety	REJECT	- evidence identity refresh contains an unresolved value
+S2	safety	REJECT	- evidence identity refresh contains an unresolved value
+S3	safety	REJECT	- evidence identity refresh contains an unresolved value || - superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities
+S4	safety	REJECT	- evidence identity refresh contains an unresolved value || - superseded-token sweep must report 'no hits outside classified identity/history lines and no active-proof hits' for listed superseded identities
+S5	safety	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+S6	safety	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+S7	safety	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+S8	safety	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result
+S9	safety	REJECT	- verification command ledger row 1 must contain an observed pass/fail/block result || - forbidden unresolved angle-token placeholder <result>
+S10	safety	REJECT	- satisfied audit row Evidence contains an unresolved value "pending"; put a literal identifier containing that word in backticks or quotation marks: | #1 | AC1 - does the thing | atoms: atomic; proof surfaces: reports/pending-review-notes.md; sequence: N/A because criterion is not sequence-sensitive | satisfied |
+R1	preserved	ACCEPT	
+R2	preserved	ACCEPT	
+R3	preserved	ACCEPT	
+R4	preserved	ACCEPT	
+R5	preserved	ACCEPT	
