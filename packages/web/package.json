@@ -14,7 +14,7 @@
     "@hookform/resolvers": "^5.7.1",
     "@loom/core": "0.0.0",
     "@radix-ui/react-popover": "^1.1.23",
-    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-table": "^9.1.0",
     "@vitejs/plugin-react": "^6.0.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
