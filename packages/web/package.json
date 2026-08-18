@@ -11,7 +11,7 @@
     "test": "vitest run --environment jsdom"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.7.1",
+    "@hookform/resolvers": "^5.9.0",
     "@loom/core": "0.0.0",
     "@radix-ui/react-popover": "^1.1.23",
     "@tanstack/react-table": "^8.21.3",
