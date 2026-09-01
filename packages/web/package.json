@@ -15,14 +15,14 @@
     "@loom/core": "0.0.0",
     "@radix-ui/react-popover": "^1.1.23",
     "@tanstack/react-table": "^8.21.3",
-    "@vitejs/plugin-react": "^6.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.86.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7.18.2",
+    "react-router-dom": "^7.18.3",
     "vite": "^8.2.2",
-    "zod": "^4.4.3"
+    "zod": "^4.5.2"
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.0",
